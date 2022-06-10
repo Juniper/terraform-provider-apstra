@@ -3,6 +3,7 @@ package apstra
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"os"
 
 	"github.com/chrismarget-j/goapstra"
@@ -176,7 +177,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create client",
-			"Unable to create hashicups client:\n\n"+err.Error(),
+			fmt.Sprintf("error creating apstra client - %s", err),
 		)
 		return
 	}

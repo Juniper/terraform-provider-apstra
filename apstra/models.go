@@ -5,43 +5,22 @@ import (
 )
 
 type AsnPool struct {
-	Id          types.String `tfsdk:"id"`
-	DisplayName types.String `tfsdk:"display_name"`
+	Id          types.String   `tfsdk:"id"`
+	DisplayName types.String   `tfsdk:"display_name"`
+	Status      types.String   `tfsdk:"status"`
+	Tags        []types.String `tfsdk:"tags"`
+	//Used        types.Int64    `tfsdk:"used"`
+	//UsedPercent types.Float64  `tfsdk:"used_percentage"`
+	//Created     types.String   `tfsdk:"created"`
+	//Modified    types.String   `tfsdk:"modified"`
+	//Ranges      []AsnRange     `tfsdk:"ranges"`
 }
 
-//
-//// Order -
-//type Order struct {
-//	ID          types.String `tfsdk:"id"`
-//	Items       []OrderItem  `tfsdk:"items"`
-//	LastUpdated types.String `tfsdk:"last_updated"`
-//}
-//
-//// OrderItem -
-//type OrderItem struct {
-//	Coffee   Coffee `tfsdk:"coffee"`
-//	Quantity int    `tfsdk:"quantity"`
-//}
-//
-//// Coffee -
-//// This Coffee struct is for Order.Items[].Coffee which does not have an
-//// ingredients field in the schema defined by plugin framework. Since the
-//// resource schema must match the struct exactly (extra field will return an
-//// error). This struct has Ingredients commented out.
-//type Coffee struct {
-//	ID          int          `tfsdk:"id"`
-//	Name        types.String `tfsdk:"name"`
-//	Teaser      types.String `tfsdk:"teaser"`
-//	Description types.String `tfsdk:"description"`
-//	Price       types.Number `tfsdk:"price"`
-//	Image       types.String `tfsdk:"image"`
-//	// Ingredients []Ingredient   `tfsdk:"ingredients"`
-//}
-//
-//// Ingredient -
-//// type Ingredient struct {
-//// 	Id       int    `tfsdk:"ingredient_id"`
-//// 	Name     string `tfsdk:"name"`
-//// 	Quantity int    `tfsdk:"quantity"`
-//// 	Unit     string `tfsdk:"unit"`
-//// }
+type AsnRange struct {
+	Status         types.String  `tfsdk:"status"`
+	First          types.Int64   `tfsdk:"first"`
+	Last           types.Int64   `tfsdk:"last"`
+	Total          types.Int64   `tfsdk:"total"`
+	Used           types.Int64   `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}

@@ -19,12 +19,20 @@ func (r dataSourceAsnPoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 				Computed: true,
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"id": {
-						Type:     types.StringType,
 						Computed: true,
+						Type:     types.StringType,
 					},
 					"display_name": {
-						Type:     types.StringType,
 						Computed: true,
+						Type:     types.StringType,
+					},
+					"status": {
+						Computed: true,
+						Type:     types.StringType,
+					},
+					"tags": {
+						Computed: true,
+						Type:     types.ListType{ElemType: types.StringType},
 					},
 				}, tfsdk.ListNestedAttributesOptions{}),
 			},
@@ -52,16 +60,24 @@ func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRe
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error retrieving ASN pools",
-			err.Error(),
+			fmt.Sprintf("error retrieving ASN pools - %s", err),
 		)
 		return
 	}
 
-	// Map response body to resource schema
+	// map response body to resource schema
 	for _, asnPool := range asnPools {
+		// convert tags from []string to []types.String
+		var tags []types.String
+		for _, t := range asnPool.Tags {
+			tags = append(tags, types.String{Value: t})
+		}
+
 		resourceState.AsnPools = append(resourceState.AsnPools, AsnPool{
 			Id:          types.String{Value: string(asnPool.Id)},
 			DisplayName: types.String{Value: asnPool.DisplayName},
+			Status:      types.String{Value: asnPool.Status},
+			Tags:        tags,
 		})
 	}
 

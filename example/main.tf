@@ -15,8 +15,8 @@ provider "apstra" {
   tls_no_verify = true
 }
 
-data "apstra_asn_pools" "pools" {}
+data "apstra_asn_pools" "x" {}
 
-output "pools" {
-  value = data.apstra_asn_pools.pools
+output "asn_pools" {
+  value = data.apstra_asn_pools.x
 }
