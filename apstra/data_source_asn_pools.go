@@ -50,6 +50,10 @@ func (r dataSourceAsnPoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						Computed: true,
 						Type:     types.StringType,
 					},
+					"total": {
+						Computed: true,
+						Type:     types.Int64Type,
+					},
 				}, tfsdk.ListNestedAttributesOptions{}),
 			},
 		},
@@ -98,6 +102,7 @@ func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRe
 			UsedPercent: types.Float64{Value: float64(asnPool.UsedPercentage)},
 			Created:     types.String{Value: asnPool.CreatedAt.String()},
 			Modified:    types.String{Value: asnPool.LastModifiedAt.String()},
+			Total:       types.Int64{Value: int64(asnPool.Total)},
 		})
 	}
 

@@ -13,6 +13,7 @@ type AsnPool struct {
 	UsedPercent types.Float64  `tfsdk:"used_percentage"`
 	Created     types.String   `tfsdk:"created"`
 	Modified    types.String   `tfsdk:"modified"`
+	Total       types.Int64    `tfsdk:"total"`
 	//Ranges      []AsnRange     `tfsdk:"ranges"`
 }
 
