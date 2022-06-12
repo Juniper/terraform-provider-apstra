@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"math"
 	"os"
 
 	"github.com/chrismarget-j/goapstra"
@@ -23,7 +24,7 @@ type provider struct {
 	client     *goapstra.Client
 }
 
-// GetSchema
+// GetSchema returns provider schema
 func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
@@ -81,102 +82,40 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		return
 	}
 
-	// User must provide a user to the provider
-	var username string
-	if config.Username.Unknown {
-		// Cannot connect to client with an unknown value
-		resp.Diagnostics.AddWarning(
-			"Unable to create client",
-			"Cannot use unknown value as username",
-		)
+	switch {
+	case config.Username.Unknown:
+		resp.Diagnostics.AddWarning("Unable to create client", "Cannot use unknown value as 'Username'")
+		return
+	case config.Password.Unknown:
+		resp.Diagnostics.AddWarning("Unable to create client", "Cannot use unknown value as 'Password'")
+		return
+	case config.Host.Unknown:
+		resp.Diagnostics.AddWarning("Unable to create client", "Cannot use unknown value as 'Host'")
 		return
 	}
 
-	if config.Username.Null {
-		username = os.Getenv("HASHICUPS_USERNAME")
-	} else {
-		username = config.Username.Value
-	}
-
-	if username == "" {
-		// Error vs warning - empty value must stop execution
+	if config.Port.Value < 0 || config.Port.Value > math.MaxUint16 {
 		resp.Diagnostics.AddError(
-			"Unable to find username",
-			"Username cannot be an empty string",
-		)
-		return
+			"invalid port",
+			fmt.Sprintf("'Port' %d out of range", config.Port.Value))
 	}
 
-	// User must provide a password to the provider
-	var password string
-	if config.Password.Unknown {
-		// Cannot connect to client with an unknown value
-		resp.Diagnostics.AddError(
-			"Unable to create client",
-			"Cannot use unknown value as password",
-		)
-		return
-	}
-
-	if config.Password.Null {
-		password = os.Getenv("HASHICUPS_PASSWORD")
-	} else {
-		password = config.Password.Value
-	}
-
-	if password == "" {
-		// Error vs warning - empty value must stop execution
-		resp.Diagnostics.AddError(
-			"Unable to find password",
-			"password cannot be an empty string",
-		)
-		return
-	}
-
-	// User must specify a host
-	var host string
-	if config.Host.Unknown {
-		// Cannot connect to client with an unknown value
-		resp.Diagnostics.AddError(
-			"Unable to create client",
-			"Cannot use unknown value as host",
-		)
-		return
-	}
-
-	if config.Host.Null {
-		host = os.Getenv("HASHICUPS_HOST")
-	} else {
-		host = config.Host.Value
-	}
-
-	if host == "" {
-		// Error vs warning - empty value must stop execution
-		resp.Diagnostics.AddError(
-			"Unable to find host",
-			"Host cannot be an empty string",
-		)
-		return
-	}
-
-	// todo: verify 'port' not out of range for uint16
-	// todo: import from environment if unset
-	// todo: do something with ClientCfg.ErrChan
+	// todo: do something with ClientCfg.ErrChan?
 
 	// Create a new goapstra client and set it to the provider client
 	c, err := goapstra.NewClient(&goapstra.ClientCfg{
 		Scheme:    config.Scheme.Value,
-		Host:      config.Host.Value,
-		Port:      uint16(config.Port.Value),
 		User:      config.Username.Value,
 		Pass:      config.Password.Value,
+		Host:      config.Host.Value,
+		Port:      uint16(config.Port.Value),
 		TlsConfig: &tls.Config{InsecureSkipVerify: config.TlsNoVerify.Value},
 		Timeout:   0,
 		ErrChan:   nil,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unable to create client",
+			"unable to create client",
 			fmt.Sprintf("error creating apstra client - %s", err),
 		)
 		return
@@ -186,14 +125,14 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	p.configured = true
 }
 
-// GetResources - Defines provider resources
+// GetResources defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
 		//"asn_pool": resourceAsnPoolType{},
 	}, nil
 }
 
-// GetDataSources - Defines provider data sources
+// GetDataSources defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
 		"apstra_asn_pools": dataSourceAsnPoolsType{},
