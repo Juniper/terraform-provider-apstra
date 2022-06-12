@@ -14,7 +14,7 @@ type AsnPool struct {
 	Created     types.String   `tfsdk:"created"`
 	Modified    types.String   `tfsdk:"modified"`
 	Total       types.Int64    `tfsdk:"total"`
-	//Ranges      []AsnRange     `tfsdk:"ranges"`
+	Ranges      []AsnRange     `tfsdk:"ranges"`
 }
 
 type AsnRange struct {

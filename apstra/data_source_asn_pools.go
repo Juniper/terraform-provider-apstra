@@ -54,6 +54,35 @@ func (r dataSourceAsnPoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						Computed: true,
 						Type:     types.Int64Type,
 					},
+					"ranges": {
+						Computed: true,
+						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+							"status": {
+								Type:     types.StringType,
+								Computed: true,
+							},
+							"first": {
+								Type:     types.Int64Type,
+								Computed: true,
+							},
+							"last": {
+								Type:     types.Int64Type,
+								Computed: true,
+							},
+							"total": {
+								Type:     types.Int64Type,
+								Computed: true,
+							},
+							"used": {
+								Type:     types.Int64Type,
+								Computed: true,
+							},
+							"used_percentage": {
+								Type:     types.Float64Type,
+								Computed: true,
+							},
+						}, tfsdk.ListNestedAttributesOptions{}),
+					},
 				}, tfsdk.ListNestedAttributesOptions{}),
 			},
 		},
@@ -93,6 +122,18 @@ func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRe
 			tags = append(tags, types.String{Value: t})
 		}
 
+		var asnRanges []AsnRange
+		for _, r := range asnPool.Ranges {
+			asnRanges = append(asnRanges, AsnRange{
+				Status:         types.String{Value: r.Status},
+				First:          types.Int64{Value: int64(r.First)},
+				Last:           types.Int64{Value: int64(r.Last)},
+				Total:          types.Int64{Value: int64(r.Total)},
+				Used:           types.Int64{Value: int64(r.Used)},
+				UsedPercentage: types.Float64{Value: float64(r.UsedPercentage)},
+			})
+		}
+
 		resourceState.AsnPools = append(resourceState.AsnPools, AsnPool{
 			Id:          types.String{Value: string(asnPool.Id)},
 			DisplayName: types.String{Value: asnPool.DisplayName},
@@ -103,6 +144,7 @@ func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRe
 			Created:     types.String{Value: asnPool.CreatedAt.String()},
 			Modified:    types.String{Value: asnPool.LastModifiedAt.String()},
 			Total:       types.Int64{Value: int64(asnPool.Total)},
+			Ranges:      asnRanges,
 		})
 	}
 
