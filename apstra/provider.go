@@ -15,6 +15,11 @@ import (
 
 var stderr = os.Stderr
 
+const (
+	resourceAsnPoolName   = "apstra_asn_pool"
+	dataSourceAsnPoolName = "apstra_asn_pools"
+)
+
 func New() tfsdk.Provider {
 	return &provider{}
 }
@@ -30,27 +35,27 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 		Attributes: map[string]tfsdk.Attribute{
 			"scheme": {
 				Type:     types.StringType,
-				Optional: false,
+				Optional: true,
 				Computed: true,
 			},
 			"host": {
 				Type:     types.StringType,
-				Optional: false,
+				Optional: true,
 				Computed: true,
 			},
 			"port": {
 				Type:     types.Int64Type,
-				Optional: false,
+				Optional: true,
 				Computed: true,
 			},
 			"username": {
 				Type:     types.StringType,
-				Optional: false,
+				Optional: true,
 				Computed: true,
 			},
 			"password": {
 				Type:      types.StringType,
-				Optional:  false,
+				Optional:  true,
 				Computed:  true,
 				Sensitive: true,
 			},
@@ -128,13 +133,13 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 // GetResources defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		//"asn_pool": resourceAsnPoolType{},
+		resourceAsnPoolName: resourceAsnPoolType{},
 	}, nil
 }
 
 // GetDataSources defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
-		"apstra_asn_pools": dataSourceAsnPoolsType{},
+		dataSourceAsnPoolName: dataSourceAsnPoolsType{},
 	}, nil
 }

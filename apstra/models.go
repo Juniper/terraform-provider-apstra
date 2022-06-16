@@ -4,7 +4,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type AsnPool struct {
+type ResourceAsnPool struct {
+	Id          types.String   `tfsdk:"id"`
+	DisplayName types.String   `tfsdk:"display_name"`
+	Tags        []types.String `tfsdk:"tags"`
+}
+
+type DataAsnPool struct {
 	Id          types.String   `tfsdk:"id"`
 	DisplayName types.String   `tfsdk:"display_name"`
 	Status      types.String   `tfsdk:"status"`

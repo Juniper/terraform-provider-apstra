@@ -102,7 +102,7 @@ type dataSourceAsnPools struct {
 func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
 	// Declare struct that this function will set to this data source's state
 	var resourceState struct {
-		AsnPools []AsnPool `tfsdk:"apstra_asn_pools"`
+		AsnPools []DataAsnPool `tfsdk:"apstra_asn_pools"`
 	}
 
 	asnPools, err := r.p.client.GetAsnPools(ctx)
@@ -134,7 +134,7 @@ func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRe
 			})
 		}
 
-		resourceState.AsnPools = append(resourceState.AsnPools, AsnPool{
+		resourceState.AsnPools = append(resourceState.AsnPools, DataAsnPool{
 			Id:          types.String{Value: string(asnPool.Id)},
 			DisplayName: types.String{Value: asnPool.DisplayName},
 			Status:      types.String{Value: asnPool.Status},
