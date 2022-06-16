@@ -10,6 +10,12 @@ type ResourceAsnPool struct {
 	Tags        []types.String `tfsdk:"tags"`
 }
 
+type ResourceAsnPoolRange struct {
+	PoolId types.String `tfsdk:"pool_id"`
+	First  types.Int64  `tfsdk:"first"`
+	Last   types.Int64  `tfsdk:"last"`
+}
+
 type DataAsnPool struct {
 	Id          types.String   `tfsdk:"id"`
 	DisplayName types.String   `tfsdk:"display_name"`
