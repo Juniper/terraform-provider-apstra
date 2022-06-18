@@ -119,6 +119,7 @@ func (r resourceAsnPool) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 	}
 
 	// Map response body to resource schema attribute
+	// todo: error check state.Id vs. asnPool.Id
 	state.Id = types.String{Value: string(asnPool.Id)}
 	state.DisplayName = types.String{Value: asnPool.DisplayName}
 	var tags []types.String

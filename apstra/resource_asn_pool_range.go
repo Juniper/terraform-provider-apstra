@@ -72,19 +72,20 @@ func (r resourceAsnPoolRange) Create(ctx context.Context, req tfsdk.CreateResour
 		return
 	}
 
-	// Create new ASN Pool
+	// Create new ASN Pool Range
 	err := r.p.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.Value), &goapstra.AsnRange{
 		First: uint32(plan.First.Value),
 		Last:  uint32(plan.Last.Value),
 	})
 	if err != nil {
-		// todo ensure that CreateAsnPoolRange returns ace.Notfound
-		// todo check for ace.Notfound
-		resp.Diagnostics.AddError(
-			"error creating new asn pool",
-			"Could not create order, unexpected error: "+err.Error(),
-		)
-		return
+		var ace goapstra.ApstraClientErr
+		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrExists) { // these are okay
+			resp.Diagnostics.AddError(
+				"error creating new asn pool",
+				"Could not create order, unexpected error: "+err.Error(),
+			)
+			return
+		}
 	}
 
 	// Set State
@@ -154,6 +155,7 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 	}
 
 	// Delete ASN pool range by calling API
+	// todo: delete doesn't work right now -- wtf?
 	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRange{
 		First: uint32(state.First.Value),
 		Last:  uint32(state.First.Value),
@@ -161,7 +163,7 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-			// ASN pool deleted outside of terraform, so the range within the pool is irrelevant
+			// ASN pool deleted outside terraform, so the range within the pool is irrelevant
 			resp.State.RemoveResource(ctx)
 			return
 		} else {

@@ -16,8 +16,9 @@ import (
 var stderr = os.Stderr
 
 const (
-	resourceAsnPoolName   = "apstra_asn_pool"
-	dataSourceAsnPoolName = "apstra_asn_pools"
+	resourceAsnPoolName      = "apstra_asn_pool"
+	resourceAsnPoolRangeName = "apstra_asn_pool_range"
+	dataSourceAsnPoolName    = "apstra_asn_pools"
 )
 
 func New() tfsdk.Provider {
@@ -59,7 +60,7 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 				Computed:  true,
 				Sensitive: true,
 			},
-			"tls_no_verify": {
+			"i_dont_care_about_tls_verification_and_i_should_feel_bad": {
 				Type:     types.BoolType,
 				Optional: true,
 				Computed: true,
@@ -75,7 +76,7 @@ type providerData struct {
 	Port        types.Int64  `tfsdk:"port"`
 	Username    types.String `tfsdk:"username"`
 	Password    types.String `tfsdk:"password"`
-	TlsNoVerify types.Bool   `tfsdk:"tls_no_verify"`
+	TlsNoVerify types.Bool   `tfsdk:"i_dont_care_about_tls_verification_and_i_should_feel_bad"`
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
@@ -133,7 +134,8 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 // GetResources defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		resourceAsnPoolName: resourceAsnPoolType{},
+		resourceAsnPoolName:      resourceAsnPoolType{},
+		resourceAsnPoolRangeName: resourceAsnPoolRangeType{},
 	}, nil
 }
 
