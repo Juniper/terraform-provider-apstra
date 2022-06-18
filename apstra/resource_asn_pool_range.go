@@ -158,7 +158,7 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 	// todo: delete doesn't work right now -- wtf?
 	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRange{
 		First: uint32(state.First.Value),
-		Last:  uint32(state.First.Value),
+		Last:  uint32(state.Last.Value),
 	})
 	if err != nil {
 		var ace goapstra.ApstraClientErr
