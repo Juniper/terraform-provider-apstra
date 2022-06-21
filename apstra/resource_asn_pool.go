@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
@@ -223,12 +222,6 @@ func (r resourceAsnPool) Delete(ctx context.Context, req tfsdk.DeleteResourceReq
 
 	// Remove resource from state
 	resp.State.RemoveResource(ctx)
-}
-
-// Import resource
-func (r resourceAsnPool) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	//Save the import identifier in the id attribute
-	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
 }
 
 func asnPoolTagsFromPlan(in []types.String) []string {

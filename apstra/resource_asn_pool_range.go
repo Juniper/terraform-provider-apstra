@@ -180,8 +180,3 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 		}
 	}
 }
-
-func (r resourceAsnPoolRange) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	//Save the import identifier in the id attribute
-	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
-}
