@@ -28,14 +28,12 @@ func (r resourceAsnPoolRangeType) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
 			},
-			// todo: validator
 			"first": {
 				Type:          types.Int64Type,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
 				Validators:    []tfsdk.AttributeValidator{int64validator.Between(minAsn, maxAsn)},
 			},
-			// todo: validator
 			"last": {
 				Type:          types.Int64Type,
 				Required:      true,
@@ -182,9 +180,6 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 			return
 		}
 	}
-
-	// Remove resource from state
-	resp.State.RemoveResource(ctx)
 }
 
 func (r resourceAsnPoolRange) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
