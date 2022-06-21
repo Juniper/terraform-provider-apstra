@@ -64,6 +64,7 @@ func (r resourceAsnPoolRange) Create(ctx context.Context, req tfsdk.CreateResour
 		return
 	}
 
+	// todo: make this a validator
 	if plan.First.Value > plan.Last.Value {
 		resp.Diagnostics.AddError(
 			"create asn pool range input error",
