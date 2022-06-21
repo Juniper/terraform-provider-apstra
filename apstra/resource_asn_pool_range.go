@@ -9,13 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"math"
 )
 
 const (
-	minAsn = 1
-	maxAsn = math.MaxUint32 - 1 // 4294967294
+	minAsn = 1              // rfc4893 says 0 is okay, but apstra says "Must be between 1 and 4294967295"
+	maxAsn = math.MaxUint32 // 4294967295 rfc4893
 )
 
 type resourceAsnPoolRangeType struct{}
