@@ -66,7 +66,7 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 				Computed: true,
 			},
 		},
-	}, nil
+	}, diag.Diagnostics{}
 }
 
 // Provider schema struct

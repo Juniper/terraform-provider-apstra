@@ -81,9 +81,9 @@ func (r dataSourceAsnPoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 								Type:     types.Float64Type,
 								Computed: true,
 							},
-						}, tfsdk.ListNestedAttributesOptions{}),
+						}),
 					},
-				}, tfsdk.ListNestedAttributesOptions{}),
+				}),
 			},
 		},
 	}, nil

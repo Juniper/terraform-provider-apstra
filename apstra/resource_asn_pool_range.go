@@ -5,10 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/chrismarget-j/goapstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"math"
+)
+
+const (
+	minAsn = 1
+	maxAsn = math.MaxUint32 - 1 // 4294967294
 )
 
 type resourceAsnPoolRangeType struct{}
@@ -26,12 +33,14 @@ func (r resourceAsnPoolRangeType) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Type:          types.Int64Type,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Validators:    []tfsdk.AttributeValidator{int64validator.Between(minAsn, maxAsn)},
 			},
 			// todo: validator
 			"last": {
 				Type:          types.Int64Type,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Validators:    []tfsdk.AttributeValidator{int64validator.Between(minAsn, maxAsn)},
 			},
 		},
 	}, nil
@@ -140,13 +149,11 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	resp.Diagnostics.Append(diags...)
 }
 
-// Update resource
-func (r resourceAsnPoolRange) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceAsnPoolRange) Update(_ context.Context, _ tfsdk.UpdateResourceRequest, _ *tfsdk.UpdateResourceResponse) {
 	// No update method because Read() will never report a state change, only
 	// resource existence (or not)
 }
 
-// Delete resource
 func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
 	var state ResourceAsnPoolRange
 	diags := req.State.Get(ctx, &state)
@@ -156,7 +163,6 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 	}
 
 	// Delete ASN pool range by calling API
-	// todo: delete doesn't work right now -- wtf?
 	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRange{
 		First: uint32(state.First.Value),
 		Last:  uint32(state.Last.Value),
@@ -181,7 +187,6 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 	resp.State.RemoveResource(ctx)
 }
 
-// Import resource
 func (r resourceAsnPoolRange) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
 	//Save the import identifier in the id attribute
 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
