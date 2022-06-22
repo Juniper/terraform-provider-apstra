@@ -21,19 +21,13 @@ const (
 	dataSourceAsnPoolName    = "apstra_asn_pools"
 )
 
-func New() tfsdk.ProviderWithConfigValidators {
+func New() tfsdk.Provider {
 	return &provider{}
 }
 
 type provider struct {
 	configured bool
 	client     *goapstra.Client
-}
-
-func (p provider) ConfigValidators(ctx context.Context) []tfsdk.ProviderConfigValidator {
-	//todo: how 'bout some Config Validators instead of an empty slice?
-	//https://www.terraform.io/plugin/framework/validation
-	return []tfsdk.ProviderConfigValidator{}
 }
 
 // GetSchema returns provider schema

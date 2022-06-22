@@ -49,6 +49,31 @@ func (r resourceAsnPoolRangeType) NewResource(_ context.Context, p tfsdk.Provide
 	}, nil
 }
 
+func (r resourceAsnPoolRange) ValidateConfig(ctx context.Context, req tfsdk.ValidateResourceConfigRequest, resp *tfsdk.ValidateResourceConfigResponse) {
+	var config ResourceAsnPoolRange
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if config.First.Unknown || config.First.Null {
+		return
+	}
+
+	if config.Last.Unknown || config.Last.Null {
+		return
+	}
+
+	if config.First.Value > config.Last.Value {
+		resp.Diagnostics.AddError(
+			"swap 'first' and 'last'",
+			fmt.Sprintf("first (%d) cannot be greater than last (%d)", config.First.Value, config.Last.Value),
+		)
+	}
+
+}
+
 type resourceAsnPoolRange struct {
 	p provider
 }
