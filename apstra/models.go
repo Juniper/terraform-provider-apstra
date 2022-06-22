@@ -17,16 +17,16 @@ type ResourceAsnPoolRange struct {
 }
 
 type DataAsnPool struct {
-	Id          types.String   `tfsdk:"id"`
-	DisplayName types.String   `tfsdk:"display_name"`
-	Status      types.String   `tfsdk:"status"`
-	Tags        []types.String `tfsdk:"tags"`
-	Used        types.Int64    `tfsdk:"used"`
-	UsedPercent types.Float64  `tfsdk:"used_percentage"`
-	Created     types.String   `tfsdk:"created"`
-	Modified    types.String   `tfsdk:"modified"`
-	Total       types.Int64    `tfsdk:"total"`
-	Ranges      []AsnRange     `tfsdk:"ranges"`
+	Id             types.String   `tfsdk:"id"`
+	DisplayName    types.String   `tfsdk:"display_name"`
+	Status         types.String   `tfsdk:"status"`
+	Tags           []types.String `tfsdk:"tags"`
+	Used           types.Int64    `tfsdk:"used"`
+	UsedPercent    types.Float64  `tfsdk:"used_percentage"`
+	CreatedAt      types.String   `tfsdk:"created_at"`
+	LastModifiedAt types.String   `tfsdk:"last_modified_at"`
+	Total          types.Int64    `tfsdk:"total"`
+	Ranges         []AsnRange     `tfsdk:"ranges"`
 }
 
 type AsnRange struct {
@@ -36,4 +36,8 @@ type AsnRange struct {
 	Total          types.Int64   `tfsdk:"total"`
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+type DataAsnPoolIds struct {
+	Ids []types.String `tfsdk:"ids"`
 }

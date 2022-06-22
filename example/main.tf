@@ -7,16 +7,31 @@ terraform {
 }
 
 provider "apstra" {
-  scheme = "https"
-  host     = "66.129.234.203"
-  port     = 31000
-  username = "admin"
-  password = "admin"
-  tls_no_verify = true
+  i_dont_care_about_tls_verification_and_i_should_feel_bad = true
 }
 
-data "apstra_asn_pools" "x" {}
+resource "apstra_asn_pool" "my_pool" {
+  display_name = "terraform did this"
+  tags = ["baz", "bang", "whoosh"]
+}
 
-output "asn_pools" {
-  value = data.apstra_asn_pools.x
+resource "apstra_asn_pool_range" "my_pool" {
+  count = 10
+  pool_id = apstra_asn_pool.my_pool.id
+  first = (count.index * 100) + 1
+  last = (count.index * 100) + 100
+}
+
+data "apstra_asn_pool" "my_pool" {
+  id = apstra_asn_pool.my_pool.id
+}
+
+data "apstra_asn_pools" "all_pools" {}
+
+output "my_pool" {
+  value = data.apstra_asn_pool.my_pool.id
+}
+
+output "all_pools" {
+  value = data.apstra_asn_pools.all_pools.ids
 }
