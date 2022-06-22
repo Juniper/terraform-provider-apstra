@@ -41,3 +41,9 @@ type AsnRange struct {
 type DataAsnPoolIds struct {
 	Ids []types.String `tfsdk:"ids"`
 }
+
+type DataAsnPoolId struct {
+	Id          types.String   `tfsdk:"id"`
+	DisplayName types.String   `tfsdk:"display_name"`
+	Tags        []types.String `tfsdk:"tags""`
+}

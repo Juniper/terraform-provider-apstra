@@ -20,6 +20,7 @@ const (
 	resourceAsnPoolRangeName = "apstra_asn_pool_range"
 	dataSourceAsnPoolName    = "apstra_asn_pool"
 	dataSourceAsnPoolsName   = "apstra_asn_pools"
+	dataSourceAsnPoolIdName  = "apstra_asn_pool_id"
 )
 
 func New() tfsdk.Provider {
@@ -143,7 +144,8 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 // GetDataSources defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
-		dataSourceAsnPoolName:  dataSourceAsnPoolType{},
-		dataSourceAsnPoolsName: dataSourceAsnPoolsType{},
+		dataSourceAsnPoolName:   dataSourceAsnPoolType{},
+		dataSourceAsnPoolsName:  dataSourceAsnPoolsType{},
+		dataSourceAsnPoolIdName: dataSourceAsnPoolIdType{},
 	}, nil
 }

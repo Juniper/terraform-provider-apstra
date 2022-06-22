@@ -28,10 +28,19 @@ data "apstra_asn_pool" "my_pool" {
 
 data "apstra_asn_pools" "all_pools" {}
 
+data "apstra_asn_pool_id" "default_4_byte_pool" {
+  display_name = "terraform did this"
+  tags = ["baz"]
+}
+
 output "my_pool" {
   value = data.apstra_asn_pool.my_pool.id
 }
 
 output "all_pools" {
   value = data.apstra_asn_pools.all_pools.ids
+}
+
+output "lookup_pool" {
+  value = data.apstra_asn_pool_id.default_4_byte_pool.id
 }
