@@ -18,9 +18,6 @@ func (r dataSourceAsnPoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Computed: true,
 				Type:     types.StringType,
 			},
-			//"filters": {
-			//	Optional: true,
-			//	Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
 			"display_name": {
 				Optional: true,
 				Type:     types.StringType,
@@ -28,8 +25,6 @@ func (r dataSourceAsnPoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 			"tags": {
 				Optional: true,
 				Type:     types.ListType{ElemType: types.StringType},
-				//},
-				//}),
 			},
 		},
 	}, nil
