@@ -63,7 +63,7 @@ func (r dataSourceAsnPoolId) Read(ctx context.Context, req tfsdk.ReadDataSourceR
 	var asnPoolId string // for search results
 	var found bool       // for search results
 	for _, p := range pools {
-		if asnPoolFilterMatch(ctx, &p, &config) {
+		if asnPoolFilterMatch(&p, &config) {
 			if !found {
 				found = true
 				asnPoolId = string(p.Id)
@@ -93,26 +93,26 @@ func (r dataSourceAsnPoolId) Read(ctx context.Context, req tfsdk.ReadDataSourceR
 	}
 }
 
-func asnPoolFilterMatch(ctx context.Context, p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
-	if !cfg.DisplayName.IsNull() && !asnPoolMatchDisplayName(ctx, p, cfg) {
+func asnPoolFilterMatch(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
+	if !cfg.DisplayName.IsNull() && !asnPoolMatchDisplayName(p, cfg) {
 		return false
 	}
 
-	if len(cfg.Tags) > 0 && !asnPoolMatchTags(ctx, p, cfg) {
+	if len(cfg.Tags) > 0 && !asnPoolMatchTags(p, cfg) {
 		return false
 	}
 
 	return true
 }
 
-func asnPoolMatchDisplayName(ctx context.Context, p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
+func asnPoolMatchDisplayName(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
 	if p.DisplayName == cfg.DisplayName.Value {
 		return true
 	}
 	return false
 }
 
-func asnPoolMatchTags(ctx context.Context, p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
+func asnPoolMatchTags(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
 	// map-ify pool tags from API
 	pTags := make(map[string]struct{})
 	for _, t := range p.Tags {
