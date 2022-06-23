@@ -113,8 +113,8 @@ func (r resourceAsnPoolRange) Create(ctx context.Context, req tfsdk.CreateResour
 		var ace goapstra.ApstraClientErr
 		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrExists) { // these are okay
 			resp.Diagnostics.AddError(
-				"error creating new asn pool",
-				"Could not create order, unexpected error: "+err.Error(),
+				"error creating new ASN Pool Range",
+				"Could not create ASN Pool Range, unexpected error: "+err.Error(),
 			)
 			return
 		}

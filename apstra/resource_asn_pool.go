@@ -69,8 +69,8 @@ func (r resourceAsnPool) Create(ctx context.Context, req tfsdk.CreateResourceReq
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error creating new asn pool",
-			"Could not create order, unexpected error: "+err.Error(),
+			"error creating new ASN Pool",
+			"Could not create ASN Pool, unexpected error: "+err.Error(),
 		)
 		return
 	}
@@ -100,7 +100,7 @@ func (r resourceAsnPool) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 		return
 	}
 
-	// Get ASN pool ID from API and then update what is in state from what the API returns
+	// Get ASN pool from API and then update what is in state from what the API returns
 	asnPool, err := r.p.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
