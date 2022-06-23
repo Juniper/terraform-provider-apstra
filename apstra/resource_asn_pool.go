@@ -121,11 +121,7 @@ func (r resourceAsnPool) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 	// todo: error check state.Id vs. asnPool.Id
 	state.Id = types.String{Value: string(asnPool.Id)}
 	state.DisplayName = types.String{Value: asnPool.DisplayName}
-	var tags []types.String
-	for _, t := range asnPool.Tags {
-		tags = append(tags, types.String{Value: t})
-	}
-	state.Tags = tags
+	state.Tags = asnPoolTagsFromApi(asnPool.Tags)
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)
@@ -229,6 +225,14 @@ func asnPoolTagsFromPlan(in []types.String) []string {
 	out := []string{}
 	for _, t := range in {
 		out = append(out, t.Value)
+	}
+	return out
+}
+
+func asnPoolTagsFromApi(in []string) []types.String {
+	var out []types.String
+	for _, t := range in {
+		out = append(out, types.String{Value: t})
 	}
 	return out
 }
