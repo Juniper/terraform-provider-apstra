@@ -29,25 +29,15 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 			//	Optional: true,
 			//	Type:     types.SetType{ElemType: types.StringType},
 			//},
-			//"has_username": {
-			//	Type:     types.BoolType,
-			//	Computed: true,
-			//	PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
-			//},
-			//"has_password": {
-			//	Type:     types.BoolType,
-			//	Computed: true,
-			//	PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
-			//},
 			"username": {
-				Type:     types.StringType,
-				Optional: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				Type:          types.StringType,
+				Optional:      true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
 			},
 			"password": {
-				Type:     types.StringType,
-				Optional: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				Type:          types.StringType,
+				Optional:      true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
 			},
 			"platform": {
 				Type:     types.StringType,
@@ -160,16 +150,13 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	// todo: error check state.Id vs. agentProfile.Id
 	state.Id = types.String{Value: string(agentProfile.Id)}
 	state.Name = types.String{Value: agentProfile.Label}
-	state.Username = types.String{Value: "bogus username"} // default?
-	state.Password = types.String{Value: "bogus password"} // default?
+	state.Username = types.String{Unknown: true}
+	state.Password = types.String{Unknown: true}
 	if agentProfile.Platform == "" {
 		state.Platform = types.String{Null: true}
 	} else {
 		state.Platform = types.String{Value: agentProfile.Platform}
 	}
-	//state.Packages = agentProfilePackagesFromApi(agentProfile.Packages)
-	//state.HasUsername = types.Bool{Value: agentProfile.HasUsername}
-	//state.HasPassword = types.Bool{Value: agentProfile.HasPassword}
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)

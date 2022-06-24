@@ -8,8 +8,6 @@ type ResourceAgentProfile struct {
 	Id   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	//Packages []types.String `tfsdk:"packages"`
-	//HasUsername types.Bool     `tfsdk:"has_username"`
-	//HasPassword types.Bool     `tfsdk:"has_password"`
 	Platform types.String `tfsdk:"platform"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
