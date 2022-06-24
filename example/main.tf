@@ -54,8 +54,12 @@ provider "apstra" {
 resource "apstra_agent_profile" "my_profile" {
   name = "myprofile"
   platform = "fooplatform"
-  packages = toset([
-    "\"bar==1.1\"",
-    "\"foo==2.2\"",
-  ])
+  packages = {
+    "bar" = "1.1"
+    "foo" = "2.2"
+  }
+  open_options = {
+    "op1" = "val1"
+    "op2" = "val2"
+  }
 }

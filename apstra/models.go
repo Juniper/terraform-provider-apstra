@@ -5,11 +5,11 @@ import (
 )
 
 type ResourceAgentProfile struct {
-	Id       types.String `tfsdk:"id"`
-	Name     types.String `tfsdk:"name"`
-	Packages types.Set    `tfsdk:"packages"`
-	Platform types.String `tfsdk:"platform"`
-	//OpenOptions types.Map      `tfsdk:"open_options"`
+	Id          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Platform    types.String `tfsdk:"platform"`
+	Packages    types.Map    `tfsdk:"packages"`
+	OpenOptions types.Map    `tfsdk:"open_options"`
 }
 
 type ResourceAsnPool struct {
