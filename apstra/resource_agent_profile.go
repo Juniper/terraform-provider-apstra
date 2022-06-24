@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 type resourceAgentProfileType struct{}
@@ -19,7 +18,6 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 			"id": {
 				Type:     types.StringType,
 				Computed: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
 			},
 			"name": {
 				Type:     types.StringType,
@@ -52,7 +50,6 @@ type resourceAgentProfile struct {
 }
 
 func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	fmt.Fprintf(stderr, "[DEBUG]-xxxxxx this is Create\n")
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -86,8 +83,6 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 		return
 	}
 
-	tflog.Trace(ctx, "xxxx created Agent Profile", map[string]interface{}{"id": string(id)})
-
 	// Generate resource state struct
 	var result = ResourceAgentProfile{
 		Name:     types.String{Value: plan.Name.Value},
@@ -103,7 +98,6 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 }
 
 func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	fmt.Fprintf(stderr, "[DEBUG]-xxxxxx this is Read\n")
 	// Get current state
 	var state ResourceAgentProfile
 	diags := req.State.Get(ctx, &state)
