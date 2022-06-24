@@ -43,7 +43,6 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Optional: true,
 				Type:     types.SetType{ElemType: types.StringType},
 			},
-			// todo: validate non-empty
 			"platform": {
 				Type:     types.StringType,
 				Optional: true,
