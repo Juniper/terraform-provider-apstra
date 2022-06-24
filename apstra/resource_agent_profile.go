@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/chrismarget-j/goapstra"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -22,24 +21,37 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 			},
 			// todo: validate non-empty
 			"name": {
-				Type:       types.StringType,
-				Required:   true,
-				Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+				Type:     types.StringType,
+				Required: true,
+				//Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
 			},
+			// todo: currently, 'packages' must be specified like this in the terraform config:
+			//   packages = toset([
+			//    "\"bar==1.1\"",
+			//    "\"foo==2.2\"",
+			//  ])
+			// the Api wants to see:
+			// {
+			//  "packages": [
+			//    "\"foo==1.1\"",
+			//    "\"bar==2.2\""
+			//  ]
+			// }
+			//
+			// Change to a map[string]string and handle it elsewhere.
 			"packages": {
-				Optional:   true,
-				Type:       types.SetType{ElemType: types.StringType},
-				Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+				Optional: true,
+				Type:     types.SetType{ElemType: types.StringType},
 			},
 			// todo: validate non-empty
 			"platform": {
-				Type:       types.StringType,
-				Optional:   true,
-				Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+				Type:     types.StringType,
+				Optional: true,
 			},
 			//"open_options": {
 			//	Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{}),
 			//	Optional:   true,
+			//	Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
 			//},
 		},
 	}, nil
@@ -208,18 +220,21 @@ func (r resourceAgentProfile) Delete(ctx context.Context, req tfsdk.DeleteResour
 	}
 }
 
-func agentProfilePackagesFromPlan(in []types.String) []string {
+func agentProfilePackagesFromPlan(in types.Set) []string {
 	var out []string
-	for _, p := range in {
-		out = append(out, p.Value)
+	for _, p := range in.Elems {
+		out = append(out, p.String())
 	}
 	return out
 }
 
-func agentProfilePackagesFromApi(in []string) []types.String {
-	var out []types.String
+func agentProfilePackagesFromApi(in []string) types.Set {
+	out := types.Set{
+		ElemType: types.StringType,
+		Null:     len(in) == 0,
+	}
 	for _, p := range in {
-		out = append(out, types.String{Value: p})
+		out.Elems = append(out.Elems, types.String{Value: p})
 	}
 	return out
 }

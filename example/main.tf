@@ -52,5 +52,10 @@ provider "apstra" {
 #}
 
 resource "apstra_agent_profile" "my_profile" {
-  name = "my profile"
+  name = "myprofile"
+  platform = "fooplatform"
+  packages = toset([
+    "\"bar==1.1\"",
+    "\"foo==2.2\"",
+  ])
 }
