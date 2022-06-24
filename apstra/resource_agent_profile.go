@@ -19,14 +19,16 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Type:     types.StringType,
 				Computed: true,
 			},
+			// todo: validate non-empty
 			"name": {
 				Type:     types.StringType,
 				Required: true,
 			},
-			//"packages": {
-			//	Optional: true,
-			//	Type:     types.SetType{ElemType: types.StringType},
-			//},
+			"packages": {
+				Optional: true,
+				Type:     types.SetType{ElemType: types.StringType},
+			},
+			// todo: validate non-empty
 			"platform": {
 				Type:     types.StringType,
 				Optional: true,
@@ -66,15 +68,12 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 		return
 	}
 
-	// prep packages for new Agent Profile
-	//packages := agentProfilePackagesFromPlan(plan.Packages)
-
 	// Create new Agent Profile
-	agentProfileConfig := goapstra.SystemAgentProfileConfig{
+	id, err := r.p.client.CreateSystemAgentProfile(ctx, &goapstra.SystemAgentProfileConfig{
 		Label:    plan.Name.Value,
 		Platform: plan.Platform.Value,
-	}
-	id, err := r.p.client.CreateSystemAgentProfile(ctx, &agentProfileConfig)
+		Packages: agentProfilePackagesFromPlan(plan.Packages),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent Profile",
@@ -87,6 +86,7 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 	var result = ResourceAgentProfile{
 		Name:     types.String{Value: plan.Name.Value},
 		Id:       types.String{Value: string(id)},
+		Packages: plan.Packages,
 		Platform: plan.Platform,
 	}
 
@@ -126,6 +126,7 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	// Map response body to resource schema attribute
 	state.Id = types.String{Value: string(agentProfile.Id)}
 	state.Name = types.String{Value: agentProfile.Label}
+	state.Packages = agentProfilePackagesFromApi(agentProfile.Packages)
 
 	if agentProfile.Platform == "" {
 		state.Platform = types.String{Null: true}
@@ -140,31 +141,28 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 
 // Update resource
 func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	// Get plan values
-	var plan ResourceAgentProfile
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Get current state
 	var state ResourceAgentProfile
-	diags = req.State.Get(ctx, &state)
+	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// prep packages for new Agent Profile
-	//packages := agentProfilePackagesFromPlan(plan.Packages)
+	// Get plan values
+	var plan ResourceAgentProfile
+	diags = req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Update new Agent Profile
-	agentProfileConfig := goapstra.SystemAgentProfileConfig{
+	err := r.p.client.UpdateSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), &goapstra.SystemAgentProfileConfig{
 		Label:    plan.Name.Value,
 		Platform: plan.Platform.Value,
-	}
-	err := r.p.client.UpdateSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), &agentProfileConfig)
+		Packages: agentProfilePackagesFromPlan(plan.Packages),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
@@ -176,6 +174,7 @@ func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResour
 	// Update state
 	state.Name = plan.Name
 	state.Platform = plan.Platform
+	state.Packages = plan.Packages
 
 	// Set state
 	diags = resp.State.Set(ctx, state)
@@ -194,26 +193,19 @@ func (r resourceAgentProfile) Delete(ctx context.Context, req tfsdk.DeleteResour
 		return
 	}
 
-	// Get System Agent Profile ID from state
-	id := state.Id.Value
-
 	// Delete System Agent Profile by calling API
-	err := r.p.client.DeleteSystemAgentProfile(ctx, goapstra.ObjectId(id))
+	err := r.p.client.DeleteSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error deleting Agent Profile",
-			fmt.Sprintf("could not delete Agent Profile '%s' - %s", id, err),
+			fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.Value, err),
 		)
 		return
 	}
-
-	// Remove resource from state
-	resp.State.RemoveResource(ctx)
 }
 
 func agentProfilePackagesFromPlan(in []types.String) []string {
-	//goland:noinspection GoPreferNilSlice
-	out := []string{}
+	var out []string
 	for _, p := range in {
 		out = append(out, p.Value)
 	}
