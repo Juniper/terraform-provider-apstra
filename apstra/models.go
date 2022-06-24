@@ -9,8 +9,6 @@ type ResourceAgentProfile struct {
 	Name types.String `tfsdk:"name"`
 	//Packages []types.String `tfsdk:"packages"`
 	Platform types.String `tfsdk:"platform"`
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
 	//OpenOptions types.Map      `tfsdk:"open_options"`
 }
 

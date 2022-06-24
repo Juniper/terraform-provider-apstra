@@ -29,16 +29,6 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 			//	Optional: true,
 			//	Type:     types.SetType{ElemType: types.StringType},
 			//},
-			"username": {
-				Type:          types.StringType,
-				Optional:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
-			},
-			"password": {
-				Type:          types.StringType,
-				Optional:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
-			},
 			"platform": {
 				Type:     types.StringType,
 				Optional: true,
@@ -85,30 +75,23 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 	// Create new Agent Profile
 	agentProfileConfig := goapstra.SystemAgentProfileConfig{
 		Label:    plan.Name.Value,
-		Username: plan.Username.Value,
-		Password: plan.Password.Value,
 		Platform: plan.Platform.Value,
 	}
 	id, err := r.p.client.CreateSystemAgentProfile(ctx, &agentProfileConfig)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent Profile",
-			"Could not create order, unexpected error: "+err.Error(),
+			"Could not create, unexpected error: "+err.Error(),
 		)
 		return
 	}
 
-	tflog.Trace(ctx, "created Agent Profile", map[string]interface{}{"id": string(id)})
+	tflog.Trace(ctx, "xxxx created Agent Profile", map[string]interface{}{"id": string(id)})
 
 	// Generate resource state struct
 	var result = ResourceAgentProfile{
-		Name: types.String{Value: plan.Name.Value},
-		Id:   types.String{Value: string(id)},
-		//Packages: plan.Packages,
-		//HasUsername: types.Bool{Value: !plan.Username.IsNull()},
-		//HasPassword: types.Bool{Value: !plan.Password.IsNull()},
-		Username: types.String{Value: plan.Username.Value},
-		Password: types.String{Value: plan.Password.Value},
+		Name:     types.String{Value: plan.Name.Value},
+		Id:       types.String{Value: string(id)},
 		Platform: plan.Platform,
 	}
 
@@ -140,18 +123,16 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 		} else {
 			resp.Diagnostics.AddError(
 				"error reading Agent Profile",
-				fmt.Sprintf("could not read Agent Profile '%s' - %s", state.Id.Value, err),
+				fmt.Sprintf("Could not Read '%s' - %s", state.Id.Value, err),
 			)
 			return
 		}
 	}
 
 	// Map response body to resource schema attribute
-	// todo: error check state.Id vs. agentProfile.Id
 	state.Id = types.String{Value: string(agentProfile.Id)}
 	state.Name = types.String{Value: agentProfile.Label}
-	state.Username = types.String{Unknown: true}
-	state.Password = types.String{Unknown: true}
+
 	if agentProfile.Platform == "" {
 		state.Platform = types.String{Null: true}
 	} else {
@@ -165,68 +146,49 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 
 // Update resource
 func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	//// Get plan values
-	//var plan ResourceAgentProfile
-	//diags := req.Plan.Get(ctx, &plan)
-	//resp.Diagnostics.Append(diags...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//// Get current state
-	//var state ResourceAgentProfile
-	//diags = req.State.Get(ctx, &state)
-	//resp.Diagnostics.Append(diags...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//// Fetch existing []goapstra.AsnRange
-	////goland:noinspection GoPreferNilSlice
-	//agentProfileFromApi, err := r.p.client.GetSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
-	//if err != nil {
-	//	var ace goapstra.ApstraClientErr
-	//	if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
-	//		resp.Diagnostics.AddError(
-	//			fmt.Sprintf("cannot update %s", resourceAgentProfileName),
-	//			fmt.Sprintf("error fetching existing ASN ranges - ASN pool '%s' not found", state.Id.Value),
-	//		)
-	//		return
-	//	}
-	//	// some other unknown error
-	//	resp.Diagnostics.AddError(
-	//		fmt.Sprintf("cannot update %s", resourceAgentProfileName),
-	//		fmt.Sprintf("error fetching existing ASN ranges for ASN pool '%s' - %s", state.Id.Value, err.Error()),
-	//	)
-	//	return
-	//}
-	//
-	//// Generate API request body from plan
-	//// todo: flesh out
-	//send := &goapstra.SystemAgentProfileConfig{
-	//	Label:    plan.Label.Value,
-	//	Packages: agentProfilePackagesFromPlan(plan.Packages),
-	//}
-	//
-	//// Create/Update the Agent Profile
-	//err = r.p.client.UpdateSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), send)
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		fmt.Sprintf("cannot update %s", resourceAgentProfileName),
-	//		fmt.Sprintf("cannot update %s '%s' - %s", resourceAgentProfileName, plan.Id.Value, err.Error()),
-	//	)
-	//	return
-	//}
-	//// todo: pretty bold saving plan data directly to state w/out checking whether the API call worked...
-	//state.DisplayName = plan.DisplayName
-	//state.Tags = plan.Tags
-	//
-	//// Set new state
-	//diags = resp.State.Set(ctx, state)
-	//resp.Diagnostics.Append(diags...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
+	// Get plan values
+	var plan ResourceAgentProfile
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get current state
+	var state ResourceAgentProfile
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// prep packages for new Agent Profile
+	//packages := agentProfilePackagesFromPlan(plan.Packages)
+
+	// Update new Agent Profile
+	agentProfileConfig := goapstra.SystemAgentProfileConfig{
+		Label:    plan.Name.Value,
+		Platform: plan.Platform.Value,
+	}
+	err := r.p.client.UpdateSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), &agentProfileConfig)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error updating Agent Profile",
+			fmt.Sprintf("Could not Update '%s' - %s", state.Id.Value, err),
+		)
+		return
+	}
+
+	// Update state
+	state.Name = plan.Name
+	state.Platform = plan.Platform
+
+	// Set state
+	diags = resp.State.Set(ctx, state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 // Delete resource

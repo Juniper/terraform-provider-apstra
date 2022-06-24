@@ -53,6 +53,4 @@ provider "apstra" {
 
 resource "apstra_agent_profile" "my_profile" {
   name = "my profile"
-  username = "bogus username"
-  password = "bogus password"
 }
