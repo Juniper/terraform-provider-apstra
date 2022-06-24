@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/chrismarget-j/goapstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -21,17 +22,20 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 			},
 			// todo: validate non-empty
 			"name": {
-				Type:     types.StringType,
-				Required: true,
+				Type:       types.StringType,
+				Required:   true,
+				Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
 			},
 			"packages": {
-				Optional: true,
-				Type:     types.SetType{ElemType: types.StringType},
+				Optional:   true,
+				Type:       types.SetType{ElemType: types.StringType},
+				Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
 			},
 			// todo: validate non-empty
 			"platform": {
-				Type:     types.StringType,
-				Optional: true,
+				Type:       types.StringType,
+				Optional:   true,
+				Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
 			},
 			//"open_options": {
 			//	Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{}),
