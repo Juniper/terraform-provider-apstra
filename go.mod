@@ -3,9 +3,9 @@ module terraform-provider-apstra
 go 1.18
 
 require (
-	github.com/chrismarget-j/goapstra v0.0.0-20220622144415-89f355769256
+	github.com/chrismarget-j/goapstra v0.0.0-20220624124430-8546b62a6675
 	github.com/hashicorp/terraform-plugin-framework v0.9.0
-	github.com/hashicorp/terraform-plugin-go v0.9.1
+	github.com/hashicorp/terraform-plugin-framework-validators v0.2.0
 	github.com/hashicorp/terraform-plugin-log v0.4.1
 )
 
@@ -16,7 +16,7 @@ require (
 	github.com/hashicorp/go-hclog v1.2.1 // indirect
 	github.com/hashicorp/go-plugin v1.4.4 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
-	github.com/hashicorp/terraform-plugin-framework-validators v0.2.0 // indirect
+	github.com/hashicorp/terraform-plugin-go v0.9.1 // indirect
 	github.com/hashicorp/terraform-registry-address v0.0.0-20210412075316-9b2996cce896 // indirect
 	github.com/hashicorp/terraform-svchost v0.0.0-20200729002733-f050f53b9734 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect

@@ -4,6 +4,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ResourceAgentProfile struct {
+	Id   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
+	//Packages []types.String `tfsdk:"packages"`
+	//HasUsername types.Bool     `tfsdk:"has_username"`
+	//HasPassword types.Bool     `tfsdk:"has_password"`
+	Platform types.String `tfsdk:"platform"`
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
+	//OpenOptions types.Map      `tfsdk:"open_options"`
+}
+
 type ResourceAsnPool struct {
 	Id          types.String   `tfsdk:"id"`
 	DisplayName types.String   `tfsdk:"display_name"`
@@ -46,4 +58,14 @@ type DataAsnPoolId struct {
 	Id          types.String   `tfsdk:"id"`
 	DisplayName types.String   `tfsdk:"display_name"`
 	Tags        []types.String `tfsdk:"tags""`
+}
+
+type DataAgentProfileIds struct {
+	Ids []types.String `tfsdk:"ids"`
+}
+
+type DataAgentProfileId struct {
+	Id    types.String   `tfsdk:"id"`
+	Label types.String   `tfsdk:"label"`
+	Tags  []types.String `tfsdk:"tags""`
 }

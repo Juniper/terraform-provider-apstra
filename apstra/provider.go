@@ -16,11 +16,13 @@ import (
 var stderr = os.Stderr
 
 const (
-	resourceAsnPoolName      = "apstra_asn_pool"
-	resourceAsnPoolRangeName = "apstra_asn_pool_range"
-	dataSourceAsnPoolName    = "apstra_asn_pool"
-	dataSourceAsnPoolsName   = "apstra_asn_pools"
-	dataSourceAsnPoolIdName  = "apstra_asn_pool_id"
+	dataSourceAgentProfilesName = "apstra_agent_profiles"
+	dataSourceAsnPoolName       = "apstra_asn_pool"
+	dataSourceAsnPoolsName      = "apstra_asn_pools"
+	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
+	resourceAsnPoolName         = "apstra_asn_pool"
+	resourceAsnPoolRangeName    = "apstra_asn_pool_range"
+	resourceAgentProfileName    = "apstra_agent_profile"
 )
 
 func New() tfsdk.Provider {
@@ -138,14 +140,16 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 	return map[string]tfsdk.ResourceType{
 		resourceAsnPoolName:      resourceAsnPoolType{},
 		resourceAsnPoolRangeName: resourceAsnPoolRangeType{},
+		resourceAgentProfileName: resourceAgentProfileType{},
 	}, nil
 }
 
 // GetDataSources defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
-		dataSourceAsnPoolName:   dataSourceAsnPoolType{},
-		dataSourceAsnPoolsName:  dataSourceAsnPoolsType{},
-		dataSourceAsnPoolIdName: dataSourceAsnPoolIdType{},
+		dataSourceAsnPoolName:       dataSourceAsnPoolType{},
+		dataSourceAsnPoolsName:      dataSourceAsnPoolsType{},
+		dataSourceAsnPoolIdName:     dataSourceAsnPoolIdType{},
+		dataSourceAgentProfilesName: dataSourceAgentProfilesType{},
 	}, nil
 }
