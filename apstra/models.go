@@ -65,3 +65,13 @@ type DataAgentProfileId struct {
 	Label types.String   `tfsdk:"label"`
 	Tags  []types.String `tfsdk:"tags""`
 }
+
+type DataAgentProfile struct {
+	Id          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Platform    types.String `tfsdk:"platform"`
+	HasUsername types.Bool   `tfsdk:"has_username"`
+	HasPassword types.Bool   `tfsdk:"has_password"`
+	Packages    types.Map    `tfsdk:"packages"`
+	OpenOptions types.Map    `tfsdk:"open_options"`
+}

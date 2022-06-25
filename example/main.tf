@@ -51,9 +51,19 @@ provider "apstra" {
 #  value = data.apstra_agent_profiles.agent_profile_ids.ids
 #}
 
-resource "apstra_agent_profile" "my_profile" {
-  name = "myprofile"
-  platform = "fooplatform"
+data "apstra_agent_profile" "foo" {
+  # specify one of 'name' or 'id'
+#  name = "manual"
+  id = "99dbe9da-44e4-4de5-9f50-ebb26cd4934d"
+}
+
+output "agent_profile_manual" {
+  value = data.apstra_agent_profile.foo
+}
+
+resource "apstra_agent_profile" "ap" {
+  name = "terraform"
+  platform = "junos"
   packages = {
     "bar" = "1.1"
     "foo" = "2.2"

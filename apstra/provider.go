@@ -17,6 +17,7 @@ var stderr = os.Stderr
 
 const (
 	dataSourceAgentProfilesName = "apstra_agent_profiles"
+	dataSourceAgentProfileName  = "apstra_agent_profile"
 	dataSourceAsnPoolName       = "apstra_asn_pool"
 	dataSourceAsnPoolsName      = "apstra_asn_pools"
 	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
@@ -151,5 +152,6 @@ func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourc
 		dataSourceAsnPoolsName:      dataSourceAsnPoolsType{},
 		dataSourceAsnPoolIdName:     dataSourceAsnPoolIdType{},
 		dataSourceAgentProfilesName: dataSourceAgentProfilesType{},
+		dataSourceAgentProfileName:  dataSourceAgentProfileType{},
 	}, nil
 }
