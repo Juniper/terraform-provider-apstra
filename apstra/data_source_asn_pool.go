@@ -18,7 +18,7 @@ func (r dataSourceAsnPoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 				Required: true,
 				Type:     types.StringType,
 			},
-			"display_name": {
+			"name": {
 				Computed: true,
 				Type:     types.StringType,
 			},
@@ -139,7 +139,7 @@ func (r dataSourceAsnPool) Read(ctx context.Context, req tfsdk.ReadDataSourceReq
 	// Set state
 	diags = resp.State.Set(ctx, &DataAsnPool{
 		Id:             types.String{Value: string(asnPool.Id)},
-		DisplayName:    types.String{Value: asnPool.DisplayName},
+		Name:           types.String{Value: asnPool.DisplayName},
 		Status:         types.String{Value: asnPool.Status},
 		Tags:           tags,
 		Used:           types.Int64{Value: int64(asnPool.Used)},

@@ -20,7 +20,7 @@ func (r resourceAsnPoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 				Type:     types.StringType,
 				Computed: true,
 			},
-			"display_name": {
+			"name": {
 				Type:     types.StringType,
 				Required: true,
 			},
@@ -64,7 +64,7 @@ func (r resourceAsnPool) Create(ctx context.Context, req tfsdk.CreateResourceReq
 
 	// Create new ASN Pool
 	id, err := r.p.client.CreateAsnPool(ctx, &goapstra.AsnPool{
-		DisplayName: plan.DisplayName.Value,
+		DisplayName: plan.Name.Value,
 		Tags:        tags,
 	})
 	if err != nil {
@@ -79,9 +79,9 @@ func (r resourceAsnPool) Create(ctx context.Context, req tfsdk.CreateResourceReq
 
 	// Generate resource state struct
 	var result = ResourceAsnPool{
-		Id:          types.String{Value: string(id)},
-		DisplayName: plan.DisplayName,
-		Tags:        plan.Tags,
+		Id:   types.String{Value: string(id)},
+		Name: plan.Name,
+		Tags: plan.Tags,
 	}
 
 	diags = resp.State.Set(ctx, result)
@@ -120,7 +120,7 @@ func (r resourceAsnPool) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 	// Map response body to resource schema attribute
 	// todo: error check state.Id vs. asnPool.Id
 	state.Id = types.String{Value: string(asnPool.Id)}
-	state.DisplayName = types.String{Value: asnPool.DisplayName}
+	state.Name = types.String{Value: asnPool.DisplayName}
 	state.Tags = asnPoolTagsFromApi(asnPool.Tags)
 
 	// Set state
@@ -168,7 +168,7 @@ func (r resourceAsnPool) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 
 	// Generate API request body from plan
 	send := &goapstra.AsnPool{
-		DisplayName: plan.DisplayName.Value,
+		DisplayName: plan.Name.Value,
 		Ranges:      poolFromApi.Ranges,
 		Tags:        asnPoolTagsFromPlan(plan.Tags),
 	}
@@ -182,8 +182,7 @@ func (r resourceAsnPool) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 		)
 		return
 	}
-	// todo: pretty bold saving plan data directly to state w/out checking whether the API call worked...
-	state.DisplayName = plan.DisplayName
+	state.Name = plan.Name
 	state.Tags = plan.Tags
 
 	// Set new state

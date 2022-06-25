@@ -13,9 +13,9 @@ type ResourceAgentProfile struct {
 }
 
 type ResourceAsnPool struct {
-	Id          types.String   `tfsdk:"id"`
-	DisplayName types.String   `tfsdk:"display_name"`
-	Tags        []types.String `tfsdk:"tags"`
+	Id   types.String   `tfsdk:"id"`
+	Name types.String   `tfsdk:"name"`
+	Tags []types.String `tfsdk:"tags"`
 }
 
 type ResourceAsnPoolRange struct {
@@ -26,7 +26,7 @@ type ResourceAsnPoolRange struct {
 
 type DataAsnPool struct {
 	Id             types.String   `tfsdk:"id"`
-	DisplayName    types.String   `tfsdk:"display_name"`
+	Name           types.String   `tfsdk:"name"`
 	Status         types.String   `tfsdk:"status"`
 	Tags           []types.String `tfsdk:"tags"`
 	Used           types.Int64    `tfsdk:"used"`
@@ -51,9 +51,9 @@ type DataAsnPoolIds struct {
 }
 
 type DataAsnPoolId struct {
-	Id          types.String   `tfsdk:"id"`
-	DisplayName types.String   `tfsdk:"display_name"`
-	Tags        []types.String `tfsdk:"tags""`
+	Id   types.String   `tfsdk:"id"`
+	Name types.String   `tfsdk:"name"`
+	Tags []types.String `tfsdk:"tags""`
 }
 
 type DataAgentProfileIds struct {

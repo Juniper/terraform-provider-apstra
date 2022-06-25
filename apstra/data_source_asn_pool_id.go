@@ -18,7 +18,7 @@ func (r dataSourceAsnPoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Computed: true,
 				Type:     types.StringType,
 			},
-			"display_name": {
+			"name": {
 				Optional: true,
 				Type:     types.StringType,
 			},
@@ -70,7 +70,7 @@ func (r dataSourceAsnPoolId) Read(ctx context.Context, req tfsdk.ReadDataSourceR
 			} else {
 				resp.Diagnostics.AddError(
 					"multiple matches found",
-					"consider updating 'display_name' or 'tags' to ensure exactly one ASN Pool is matched",
+					"consider updating 'name' or 'tags' to ensure exactly one ASN Pool is matched",
 				)
 				return
 			}
@@ -94,7 +94,7 @@ func (r dataSourceAsnPoolId) Read(ctx context.Context, req tfsdk.ReadDataSourceR
 }
 
 func asnPoolFilterMatch(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
-	if !cfg.DisplayName.IsNull() && !asnPoolMatchDisplayName(p, cfg) {
+	if !cfg.Name.IsNull() && !asnPoolMatchName(p, cfg) {
 		return false
 	}
 
@@ -105,8 +105,8 @@ func asnPoolFilterMatch(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
 	return true
 }
 
-func asnPoolMatchDisplayName(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
-	if p.DisplayName == cfg.DisplayName.Value {
+func asnPoolMatchName(p *goapstra.AsnPool, cfg *DataAsnPoolId) bool {
+	if p.DisplayName == cfg.Name.Value {
 		return true
 	}
 	return false
