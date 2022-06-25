@@ -60,7 +60,7 @@ a Go client library at https://github.com/chrismarget-j/goapstra
    ```
    
 ### Resources
-ToDo: check out `example/main.tf`
+ToDo: check out [`example/main.tf`](example/main.tf)
 
 ### Data Sources
-ToDo: check out `example/main.tf`
+ToDo: check out [`example/main.tf`](example/main.tf)
