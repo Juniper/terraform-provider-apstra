@@ -142,33 +142,42 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	}
 
 	// Get ASN pool info from API and then update what is in state from what the API returns
-	found, err := r.p.client.AsnPoolRangeExists(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRange{
-		First: uint32(state.First.Value),
-		Last:  uint32(state.Last.Value),
-	})
+	asnPool, err := r.p.client.GetAsnPool(ctx, goapstra.ObjectId(state.PoolId.Value))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-			// ASN pool deleted outside of terraform
-			resp.State.RemoveResource(ctx)
-			return
-		} else {
-			resp.Diagnostics.AddError(
-				"error reading ASN pool",
-				fmt.Sprintf("could not read ASN pool '%s' - %s", state.PoolId.Value, err),
-			)
-			return
-		}
-	}
-
-	if !found {
-		resp.State.RemoveResource(ctx)
+		resp.Diagnostics.AddError(
+			"error reading parent ASN pool range",
+			fmt.Sprintf("could not read ASN pool '%s' - %s", state.PoolId.Value, err),
+		)
 		return
 	}
 
-	// Reset state
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	found := goapstra.AsnPoolRangeInSlice(
+		&goapstra.AsnRange{
+			First: uint32(state.First.Value),
+			Last:  uint32(state.Last.Value),
+		},
+		asnPool.Ranges)
+
+	if found { // exact match range in pool - this is what we expect
+		// Reset state
+		diags = resp.State.Set(ctx, &state)
+		resp.Diagnostics.Append(diags...)
+		return
+	} else { // exact match range not found - maybe one or both ends have been edited?
+		for _, testRange := range asnPool.Ranges {
+			if goapstra.AsnOverlap(goapstra.AsnRange{
+				First: uint32(state.First.Value),
+				Last:  uint32(state.Last.Value),
+			}, testRange) {
+				// overlapping pool found!  -- we'll choose to recognize it as the pool we're looking for, but edited.
+				state.First = types.Int64{Value: int64(testRange.First)}
+				state.Last = types.Int64{Value: int64(testRange.Last)}
+				diags = resp.State.Set(ctx, &state)
+				resp.Diagnostics.Append(diags...)
+				return
+			}
+		}
+	}
 }
 
 func (r resourceAsnPoolRange) Update(_ context.Context, _ tfsdk.UpdateResourceRequest, _ *tfsdk.UpdateResourceResponse) {
