@@ -17,8 +17,9 @@ func (r resourceAsnPoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Type:     types.StringType,
-				Computed: true,
+				Type:          types.StringType,
+				Computed:      true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
 			},
 			"name": {
 				Type:     types.StringType,
