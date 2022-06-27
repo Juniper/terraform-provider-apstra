@@ -163,7 +163,9 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRe
 		diags = resp.State.Set(ctx, &state)
 		resp.Diagnostics.Append(diags...)
 		return
-	} else { // exact match range not found - maybe one or both ends have been edited?
+	} else { // exact match range not found - maybe it's been edited?
+		// we assume that any range overlapping our intended range is *this pool*, but edited.
+		// really need range IDs here.
 		for _, testRange := range asnPool.Ranges {
 			if goapstra.AsnOverlap(goapstra.AsnRange{
 				First: uint32(state.First.Value),
