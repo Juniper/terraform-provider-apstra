@@ -70,7 +70,7 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 	}
 
 	// Create new Agent Profile
-	id, err := r.p.client.CreateSystemAgentProfile(ctx, &goapstra.SystemAgentProfileConfig{
+	id, err := r.p.client.CreateAgentProfile(ctx, &goapstra.AgentProfileConfig{
 		Label:       plan.Name.Value,
 		Platform:    plan.Platform.Value,
 		Packages:    typeMapStringToMapStringString(plan.Packages),
@@ -110,7 +110,7 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	}
 
 	// Get Agent Profile from API and then update what is in state from what the API returns
-	agentProfile, err := r.p.client.GetSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	agentProfile, err := r.p.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -162,7 +162,7 @@ func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResour
 	}
 
 	// Update new Agent Profile
-	err := r.p.client.UpdateSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), &goapstra.SystemAgentProfileConfig{
+	err := r.p.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), &goapstra.AgentProfileConfig{
 		Label:       plan.Name.Value,
 		Platform:    plan.Platform.Value,
 		Packages:    typeMapStringToMapStringString(plan.Packages),
@@ -199,8 +199,8 @@ func (r resourceAgentProfile) Delete(ctx context.Context, req tfsdk.DeleteResour
 		return
 	}
 
-	// Delete System Agent Profile by calling API
-	err := r.p.client.DeleteSystemAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	// Delete Agent Profile by calling API
+	err := r.p.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error deleting Agent Profile",

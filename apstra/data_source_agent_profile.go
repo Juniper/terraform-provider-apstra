@@ -75,12 +75,12 @@ func (r dataSourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadDataSour
 	}
 
 	var err error
-	var agentProfile *goapstra.SystemAgentProfile
+	var agentProfile *goapstra.AgentProfile
 	if config.Name.Null == false {
-		agentProfile, err = r.p.client.GetSystemAgentProfileByLabel(ctx, config.Name.Value)
+		agentProfile, err = r.p.client.GetAgentProfileByLabel(ctx, config.Name.Value)
 	}
 	if config.Id.Null == false {
-		agentProfile, err = r.p.client.GetSystemAgentProfile(ctx, goapstra.ObjectId(config.Id.Value))
+		agentProfile, err = r.p.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.Value))
 	}
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -32,7 +32,7 @@ type dataSourceAgentProfiles struct {
 }
 
 func (r dataSourceAgentProfiles) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	ids, err := r.p.client.ListSystemAgentProfileIds(ctx)
+	ids, err := r.p.client.ListAgentProfileIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error retrieving ASN pool IDs",
