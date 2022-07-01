@@ -24,6 +24,7 @@ const (
 	resourceAsnPoolName         = "apstra_asn_pool"
 	resourceAsnPoolRangeName    = "apstra_asn_pool_range"
 	resourceAgentProfileName    = "apstra_agent_profile"
+	resourceManagedDeviceName   = "apstra_managed_device"
 )
 
 func New() tfsdk.Provider {
@@ -139,9 +140,10 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 // GetResources defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		resourceAsnPoolName:      resourceAsnPoolType{},
-		resourceAsnPoolRangeName: resourceAsnPoolRangeType{},
-		resourceAgentProfileName: resourceAgentProfileType{},
+		resourceAsnPoolName:       resourceAsnPoolType{},
+		resourceAsnPoolRangeName:  resourceAsnPoolRangeType{},
+		resourceAgentProfileName:  resourceAgentProfileType{},
+		resourceManagedDeviceName: resourceManagedDeviceType{},
 	}, nil
 }
 

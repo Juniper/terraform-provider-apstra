@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     apstra = {
-      source  = "example.com/chrismarget-j/apstra"
+      source = "example.com/chrismarget-j/apstra"
     }
   }
 }
@@ -11,31 +11,32 @@ terraform {
 // hostname/username/password in the environment, use https, and insist on cert
 // validation.
 provider "apstra" {
-/*
-  scheme = "https" // env APSTRA_SCHEME default 'https'
-  host = ""       // env APSTRA_HOST
-  port = 443      // env APSTRA_PORT
-  username = ""   // env APSTRA_USER
-  password = ""   // env APSTRA_PASS
-*/
+  # scheme = "https" # optional, alternate env var APSTRA_SCHEME, default 'https'
+  # host = ""        # optional, alternate env var APSTRA_HOST
+  # port = 443       # optional, alternate env var APSTRA_PORT, default 443
+  # username = ""    # optional, alternate env var APSTRA_USER
+  # password = ""    # optional, alternate env var APSTRA_PASS
   i_dont_care_about_tls_verification_and_i_should_feel_bad = true
 }
 
 // create an ASN pool with no ASN ranges defined
 resource "apstra_asn_pool" "my_pool" {
   name = "my_pool"
-  tags = ["foo", "bar"]
+  tags = ["foo", "bar"] # optional, does not appear in web UI
 }
 
 // create ASN ranges within the ASN pool
-resource "apstra_asn_pool_range" "my_range" {
-  count = 2
+resource "apstra_asn_pool_range" "one_hundred_ASNs" {
   pool_id = apstra_asn_pool.my_pool.id
-  first = (count.index * 100) + 1
-  last = (count.index * 100) + 100
+  first   = 1
+  last    = 100
 }
 
-// look up the details of an ASN pool by ID number. Output looks like:
+// look up the details of an ASN pool by ID number
+data "apstra_asn_pool" "my_pool" {
+  id = apstra_asn_pool.my_pool.id
+}
+// data.apstra_asn_pool output looksl like:
 /*
 {
   "created_at" = "1970-01-01 00:00:00 +0000 UTC"
@@ -70,11 +71,10 @@ resource "apstra_asn_pool_range" "my_range" {
   "used_percentage" = 0
 }
 */
-data "apstra_asn_pool" "my_pool" {
-  id = apstra_asn_pool.my_pool.id
-}
 
-// look up ID numbers of all ASN pools. output looks like:
+// look up ID numbers of all ASN pools
+data "apstra_asn_pools" "all_pools" {}
+// data.apstra_asn_pools output looks like:
 /*
 {
   "ids" = toset([
@@ -86,7 +86,6 @@ data "apstra_asn_pool" "my_pool" {
   ])
 }
 */
-data "apstra_asn_pools" "all_pools" {}
 
 // Create an agent profile. note that we cannot reasonably manage the username
 // or password in the profile via terraform, because we cannot check the state.
@@ -96,20 +95,25 @@ data "apstra_asn_pools" "all_pools" {}
 // bummer. For now, add the credentials (or the whole agent profile) manually
 // via web UI.
 resource "apstra_agent_profile" "my_agent_profile" {
-  name = "my agent profile"
+  name     = "my agent profile"
   platform = "junos"
-  packages = {
-    "foo" = "1.1"
-    "bar" = "2.2"
-  }
-  open_options = {
-    "op1" = "val1"
-    "op2" = "val2"
-  }
+  #  packages = { # optional
+  #    "foo" = "1.1"
+  #    "bar" = "2.2"
+  #  }
+  #  open_options = { # optional
+  #    "op1" = "val1"
+  #    "op2" = "val2"
+  #  }
 }
 
-// look up an agent profile using either its name or its ID number (not both).
-// output looks like:
+// look up an agent profile
+data "apstra_agent_profile" "aap" {
+  # must populate either name or its id (not both)
+  name = "foo"
+  #  id = apstra_agent_profile.my_agent_profile.id
+}
+// data.apstra_agent_profile output looks like:
 /*
 {
   "has_password" = false
@@ -127,10 +131,6 @@ resource "apstra_agent_profile" "my_agent_profile" {
   "platform" = "junos"
 }
 */
-data "apstra_agent_profile" "my_agent_profile" {
-#  name = apstra_agent_profile.my_agent_profile.name
-  id = apstra_agent_profile.my_agent_profile.id
-}
 
 // List all agent profile IDs. Output looks like:
 /*
@@ -143,3 +143,30 @@ data "apstra_agent_profile" "my_agent_profile" {
 }
 */
 data "apstra_agent_profiles" "all_agent_profiles" {}
+
+locals {
+  switch_info = {
+    "525400F320EE" = { "ip" = "172.20.24.11", "location" = "rack 1" },
+    "5254009873B7" = { "ip" = "172.20.24.12", "location" = "rack 2" },
+    "5254002A74A1" = { "ip" = "172.20.24.13", "location" = "rack 3" },
+    "5254000F13E8" = { "ip" = "172.20.24.14", "location" = "east spine rack" },
+    "525400AE80F4" = { "ip" = "172.20.24.15", "location" = "west spine rack" }
+  }
+}
+
+#// create a managed device
+#resource "apstra_managed_device" "switch" {
+#  for_each         = local.switch_info
+#  device_key       = each.key                         # optional: populate for auto-acknowledge; omit to manually acknowledge
+#  management_ip    = each.value.ip                    # required
+#  location         = each.value.location              # optional
+#  agent_label      = "you won't see this anyway"      # optional, does not appear in web UI
+#  agent_profile_id = data.apstra_agent_profile.aap.id # required, sets platform type and credentials
+#}
+
+// create a managed device
+resource "apstra_managed_device" "switch" {
+  management_ip    = "172.20.24.13"
+  agent_label      = "you won't see this anyway"      # optional, does not appear in web UI
+  agent_profile_id = data.apstra_agent_profile.aap.id # required, sets platform type and credentials
+}

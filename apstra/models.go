@@ -4,6 +4,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type ResourceManagedDevice struct {
+	AgentId        types.String `tfsdk:"agent_id"`
+	SystemId       types.String `tfsdk:"system_id"`
+	ManagementIp   types.String `tfsdk:"management_ip"`
+	DeviceKey      types.String `tfsdk:"device_key"`
+	AgentProfileId types.String `tfsdk:"agent_profile_id"`
+	AgentLabel     types.String `tfsdk:"agent_label"`
+	Location       types.String `tfsdk:"location"`
+	OnBox          types.Bool   `tfsdk:"on_box"`
+}
+
 type ResourceAgentProfile struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
