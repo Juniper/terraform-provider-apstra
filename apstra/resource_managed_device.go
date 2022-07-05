@@ -99,15 +99,6 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 		return
 	}
 
-	// todo location requres device key
-	//if plan.Location.IsUnknown() && plan.DeviceKey.IsUnknown() {
-	//	resp.Diagnostics.AddError(
-	//		"",
-	//		"",
-	//	)
-	//	return
-	//}
-
 	// look up agent profile info
 	agentProfile, err := r.p.client.GetAgentProfile(ctx, goapstra.ObjectId(plan.AgentProfileId.Value))
 	if err != nil {
