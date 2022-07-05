@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
 )
 
 const (
@@ -189,7 +188,6 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	if !plan.DeviceKey.IsNull() && !plan.DeviceKey.IsUnknown() {
 		// mismatched device key is fatal
 		if plan.DeviceKey.Value != systemInfo.DeviceKey {
-			os.Stderr.WriteString(fmt.Sprintf("xxxxxx found device key '%s' doesn't match plan ('%s')!", systemInfo.DeviceKey, plan.DeviceKey.Value))
 			resp.Diagnostics.AddError(
 				"error system mismatch",
 				fmt.Sprintf("Could config expects switch device_key '%s', device reports %s",
@@ -262,7 +260,6 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 		}
 	}
 
-	os.Stderr.WriteString(fmt.Sprintf("xxxxx agent_type: '%d' ('%s')\n", agentInfo.RunningConfig.AgentType, agentInfo.RunningConfig.AgentType.String()))
 	state.SystemId = types.String{Value: string(systemInfo.Id)}
 	state.ManagementIp = types.String{Value: agentInfo.RunningConfig.ManagementIp}
 	state.AgentProfileId = types.String{Value: string(agentInfo.Config.Profile)}
@@ -270,11 +267,8 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 	state.OnBox = types.Bool{}
 
 	if agentInfo.RunningConfig.AgentType == goapstra.AgentTypeOnbox {
-		os.Stderr.WriteString("xxxxx this should not print")
 		state.OnBox.Value = true
 	}
-
-	os.Stderr.WriteString(fmt.Sprintf("xxxxx onbox: n_%t u_%t v_%t\n", state.OnBox.Null, state.OnBox.Unknown, state.OnBox.Value))
 
 	// record device key and location if possible
 	if systemInfo != nil {
@@ -428,22 +422,3 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 		}
 	}
 }
-
-//func agentWaitForConnectionState(ctx context.Context, c *goapstra.Client, id goapstra.ObjectId, desired string) error {
-//	var actual string
-//	for actual != desired {
-//		select {
-//		case <-ctx.Done():
-//			return ctx.Err()
-//		default:
-//			time.Sleep(time.Millisecond * sleepMilliSeconds)
-//		}
-//
-//		agent, err := c.GetAgent(ctx, id)
-//		if err != nil {
-//			return err
-//		}
-//		actual = agent.Status.ConnectionState
-//	}
-//	return nil
-//}
