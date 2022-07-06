@@ -94,6 +94,11 @@ type ResourceIp4Pool struct {
 	Tags []types.String `tfsdk:"tags"`
 }
 
+type ResourceIp4Subnet struct {
+	PoolId types.String `tfsdk:"pooL_id"`
+	Cidr   types.String `tfsdk:"cidr"`
+}
+
 // helper structs used by 'resource' and 'data source' objects follow
 
 type AsnRange struct {

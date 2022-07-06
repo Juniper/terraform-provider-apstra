@@ -21,12 +21,14 @@ const (
 	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
 	dataSourceAsnPoolName       = "apstra_asn_pool"
 	dataSourceAsnPoolsName      = "apstra_asn_pools"
-	resourceAgentProfileName    = "apstra_agent_profile"
-	resourceAsnPoolName         = "apstra_asn_pool"
-	resourceIp4PoolName         = "apstra_ip4_pool"
-	resourceAsnPoolRangeName    = "apstra_asn_pool_range"
-	resourceBlueprintName       = "apstra_blueprint"
-	resourceManagedDeviceName   = "apstra_managed_device"
+
+	resourceAgentProfileName  = "apstra_agent_profile"
+	resourceAsnPoolName       = "apstra_asn_pool"
+	resourceAsnPoolRangeName  = "apstra_asn_pool_range"
+	resourceIp4PoolName       = "apstra_ip4_pool"
+	resourceIp4PoolSubnetName = "apstra_ip4_pool_subnet"
+	resourceBlueprintName     = "apstra_blueprint"
+	resourceManagedDeviceName = "apstra_managed_device"
 )
 
 func New() tfsdk.Provider {
@@ -144,8 +146,9 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 	return map[string]tfsdk.ResourceType{
 		resourceAgentProfileName:  resourceAgentProfileType{},
 		resourceAsnPoolName:       resourceAsnPoolType{},
-		resourceIp4PoolName:       resourceIp4PoolType{},
 		resourceAsnPoolRangeName:  resourceAsnPoolRangeType{},
+		resourceIp4PoolName:       resourceIp4PoolType{},
+		resourceIp4PoolSubnetName: resourceIp4PoolSubnetType{},
 		resourceBlueprintName:     resourceBlueprintType{},
 		resourceManagedDeviceName: resourceManagedDeviceType{},
 	}, nil

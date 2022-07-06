@@ -115,6 +115,12 @@ github.com/chrismarget-j/goapstra v0.0.0-20220706200754-71fe80cc7896 h1:4CZh8GCN
 github.com/chrismarget-j/goapstra v0.0.0-20220706200754-71fe80cc7896/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
 github.com/chrismarget-j/goapstra v0.0.0-20220706202040-2a793054f5a6 h1:YOJiN527v4uJkWCudetZ8aswCrw5gDynomnTEuIN+wA=
 github.com/chrismarget-j/goapstra v0.0.0-20220706202040-2a793054f5a6/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
+github.com/chrismarget-j/goapstra v0.0.0-20220706204727-0f95fc48ed1f h1:FxbszO89VAWtmJueoE/J/lgBwiarkUwHIA4J/Wtfn4w=
+github.com/chrismarget-j/goapstra v0.0.0-20220706204727-0f95fc48ed1f/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
+github.com/chrismarget-j/goapstra v0.0.0-20220706210440-5cc80fa4d730 h1:AcevngEBg0uWmZqCvA8WgWdlUHRZsYbFOGlk/hK+C3U=
+github.com/chrismarget-j/goapstra v0.0.0-20220706210440-5cc80fa4d730/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
+github.com/chrismarget-j/goapstra v0.0.0-20220706213630-a605b0fa0db1 h1:d7GrCFTbsvVTp6VFMJR+RckPIqCk7IXNGnLNKgRCe7g=
+github.com/chrismarget-j/goapstra v0.0.0-20220706213630-a605b0fa0db1/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
