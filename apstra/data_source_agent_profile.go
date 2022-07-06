@@ -85,7 +85,7 @@ func (r dataSourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadDataSour
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error retrieving Agent Profile",
-			fmt.Sprintf("error retrieving agent profile '%s' - %s", config.Id.Value, err),
+			fmt.Sprintf("error retrieving agent profile '%s%s' - %s", config.Id.Value, config.Name.Value, err),
 		)
 		return
 	}
