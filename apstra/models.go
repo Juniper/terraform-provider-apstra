@@ -77,6 +77,17 @@ type ResourceManagedDevice struct {
 	OnBox          types.Bool   `tfsdk:"on_box"`
 }
 
+type ResourceBlueprint struct {
+	Id         types.String   `tfsdk:"id"`
+	Name       types.String   `tfsdk:"name"`
+	TemplateId types.String   `tfsdk:"template_id"`
+	LeafAsns   []types.String `tfsdk:"leaf_asn_pool_ids"`
+	LeafIp4s   []types.String `tfsdk:"leaf_ip_pool_ids"`
+	LinkIp4s   []types.String `tfsdk:"link_ip_pool_ids"`
+	SpineAsns  []types.String `tfsdk:"spine_asn_pool_ids"`
+	SpineIp4s  []types.String `tfsdk:"spine_ip_pool_ids"`
+}
+
 // helper structs used by 'resource' and 'data source' objects follow
 
 type AsnRange struct {

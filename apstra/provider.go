@@ -16,14 +16,15 @@ import (
 var stderr = os.Stderr
 
 const (
-	dataSourceAgentProfilesName = "apstra_agent_profiles"
 	dataSourceAgentProfileName  = "apstra_agent_profile"
+	dataSourceAgentProfilesName = "apstra_agent_profiles"
+	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
 	dataSourceAsnPoolName       = "apstra_asn_pool"
 	dataSourceAsnPoolsName      = "apstra_asn_pools"
-	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
+	resourceAgentProfileName    = "apstra_agent_profile"
 	resourceAsnPoolName         = "apstra_asn_pool"
 	resourceAsnPoolRangeName    = "apstra_asn_pool_range"
-	resourceAgentProfileName    = "apstra_agent_profile"
+	resourceBlueprintName       = "apstra_blueprint"
 	resourceManagedDeviceName   = "apstra_managed_device"
 )
 
@@ -140,9 +141,10 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 // GetResources defines provider resources
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
+		resourceAgentProfileName:  resourceAgentProfileType{},
 		resourceAsnPoolName:       resourceAsnPoolType{},
 		resourceAsnPoolRangeName:  resourceAsnPoolRangeType{},
-		resourceAgentProfileName:  resourceAgentProfileType{},
+		resourceBlueprintName:     resourceBlueprintType{},
 		resourceManagedDeviceName: resourceManagedDeviceType{},
 	}, nil
 }

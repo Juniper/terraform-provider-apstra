@@ -20,22 +20,22 @@ provider "apstra" {
 }
 
 // create an ASN pool with no ASN ranges defined
-resource "apstra_asn_pool" "my_pool" {
-  name = "my_pool"
-  tags = ["foo", "bar"] # optional, does not appear in web UI
-}
+#resource "apstra_asn_pool" "my_pool" {
+#  name = "my_pool"
+#  tags = ["foo", "bar"] # optional, does not appear in web UI
+#}
 
 // create ASN ranges within the ASN pool
-resource "apstra_asn_pool_range" "one_hundred_ASNs" {
-  pool_id = apstra_asn_pool.my_pool.id
-  first   = 1
-  last    = 100
-}
+#resource "apstra_asn_pool_range" "one_hundred_ASNs" {
+#  pool_id = apstra_asn_pool.my_pool.id
+#  first   = 1
+#  last    = 100
+#}
 
 // look up the details of an ASN pool by ID number
-data "apstra_asn_pool" "my_pool" {
-  id = apstra_asn_pool.my_pool.id
-}
+#data "apstra_asn_pool" "my_pool" {
+#  id = apstra_asn_pool.my_pool.id
+#}
 // data.apstra_asn_pool output looksl like:
 /*
 {
@@ -73,7 +73,7 @@ data "apstra_asn_pool" "my_pool" {
 */
 
 // look up ID numbers of all ASN pools
-data "apstra_asn_pools" "all_pools" {}
+#data "apstra_asn_pools" "all_pools" {}
 // data.apstra_asn_pools output looks like:
 /*
 {
@@ -94,23 +94,23 @@ data "apstra_asn_pools" "all_pools" {}
 // That may be a good thing: Filling TF config and state with secrets is a
 // bummer. For now, add the credentials (or the whole agent profile) manually
 // via web UI.
-resource "apstra_agent_profile" "my_agent_profile" {
-  name     = "my agent profile"
-  platform = "junos"
-  #  packages = { # optional
-  #    "foo" = "1.1"
-  #    "bar" = "2.2"
-  #  }
-  #  open_options = { # optional
-  #    "op1" = "val1"
-  #    "op2" = "val2"
-  #  }
-}
+#resource "apstra_agent_profile" "my_agent_profile" {
+#  name     = "my agent profile"
+#  platform = "junos"
+#  #  packages = { # optional
+#  #    "foo" = "1.1"
+#  #    "bar" = "2.2"
+#  #  }
+#  #  open_options = { # optional
+#  #    "op1" = "val1"
+#  #    "op2" = "val2"
+#  #  }
+#}
 
 // look up an agent profile
 data "apstra_agent_profile" "aap" {
   # must populate either name or its id (not both)
-  name = "foo"
+  name = "profile_vqfx"
   #  id = apstra_agent_profile.my_agent_profile.id
 }
 // data.apstra_agent_profile output looks like:
@@ -142,31 +142,35 @@ data "apstra_agent_profile" "aap" {
   ])
 }
 */
-data "apstra_agent_profiles" "all_agent_profiles" {}
+#data "apstra_agent_profiles" "all_agent_profiles" {}
 
 locals {
   switch_info = {
-    "525400F320EE" = { "ip" = "172.20.24.11", "location" = "rack 1" },
-    "5254009873B7" = { "ip" = "172.20.24.12", "location" = "rack 2" },
-    "5254002A74A1" = { "ip" = "172.20.24.13", "location" = "rack 3" },
-    "5254000F13E8" = { "ip" = "172.20.24.14", "location" = "east spine rack" },
-    "525400AE80F4" = { "ip" = "172.20.24.15", "location" = "west spine rack" }
+    "525400559292" = { "ip" = "172.20.23.11", "location" = "spine1" },
+    "525400601877" = { "ip" = "172.20.23.12", "location" = "spine2" },
+    "5254007642A5" = { "ip" = "172.20.23.13", "location" = "leaf1" },
+    "5254000A1177" = { "ip" = "172.20.23.14", "location" = "leaf3" },
+    "52540035B92A" = { "ip" = "172.20.23.15", "location" = "leaf2" }
   }
 }
 
-#// create a managed device
+// create a managed device
+
 #resource "apstra_managed_device" "switch" {
 #  for_each         = local.switch_info
-#  device_key       = each.key                         # optional: populate for auto-acknowledge; omit to manually acknowledge
-#  management_ip    = each.value.ip                    # required
-#  location         = each.value.location              # optional
-#  agent_label      = "you won't see this anyway"      # optional, does not appear in web UI
+#  management_ip    = each.value.ip
+#  agent_label      = each.value.location              # optional, does not appear in web UI
 #  agent_profile_id = data.apstra_agent_profile.aap.id # required, sets platform type and credentials
+#  device_key       = each.key
 #}
 
-// create a managed device
-resource "apstra_managed_device" "switch" {
-  management_ip    = "172.20.24.13"
-  agent_label      = "you won't see this anyway"      # optional, does not appear in web UI
-  agent_profile_id = data.apstra_agent_profile.aap.id # required, sets platform type and credentials
+// create an 'datacenter/two_stage_l3clos' blueprint from an existing template.
+resource "apstra_blueprint" "my_blueprint" {
+  name               = "my blueprint"
+  template_id        = "lab_evpn_mlag"
+  spine_asn_pool_ids = ["Private-4200000000-4294967294"]
+  leaf_asn_pool_ids  = ["Private-64512-65534"]
+  spine_ip_pool_ids  = ["TESTNET-203_0_113_0-24"]
+  leaf_ip_pool_ids   = ["Private-172_16_0_0-12"]
+  link_ip_pool_ids   = ["Private-10_0_0_0-8", "Private-172_16_0_0-12", "Private-10_0_0_0-8"]
 }
