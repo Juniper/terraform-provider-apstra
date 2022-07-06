@@ -3,7 +3,7 @@ module terraform-provider-apstra
 go 1.18
 
 require (
-	github.com/chrismarget-j/goapstra v0.0.0-20220705161053-835cbe088a99
+	github.com/chrismarget-j/goapstra v0.0.0-20220706141216-4531c0f90f2b
 	github.com/hashicorp/terraform-plugin-framework v0.9.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.2.0
 	github.com/hashicorp/terraform-plugin-log v0.4.1
