@@ -88,6 +88,12 @@ type ResourceBlueprint struct {
 	SpineIp4s  []types.String `tfsdk:"spine_ip_pool_ids"`
 }
 
+type ResourceIp4Pool struct {
+	Id   types.String   `tfsdk:"id"`
+	Name types.String   `tfsdk:"name"`
+	Tags []types.String `tfsdk:"tags"`
+}
+
 // helper structs used by 'resource' and 'data source' objects follow
 
 type AsnRange struct {
