@@ -157,7 +157,7 @@ output "asn_report" {
 }
 ```
 Result:
-```json
+```hcl
 asn_report = {
   "3ddb7a6a-4c84-458f-8632-705764c0f6ca" = {
     "free" = 100
