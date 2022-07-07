@@ -55,8 +55,15 @@ type DataAsnPoolId struct {
 	Name types.String   `tfsdk:"name"`
 	Tags []types.String `tfsdk:"tags""`
 }
+
 type DataAsnPoolIds struct {
 	Ids []types.String `tfsdk:"ids"`
+}
+
+type DataIp4PoolId struct {
+	Id   types.String   `tfsdk:"id"`
+	Name types.String   `tfsdk:"name"`
+	Tags []types.String `tfsdk:"tags""`
 }
 
 type ResourceAgentProfile struct {

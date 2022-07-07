@@ -22,6 +22,7 @@ const (
 	dataSourceAsnPoolName       = "apstra_asn_pool"
 	dataSourceAsnPoolsName      = "apstra_asn_pools"
 	dataSourceIp4PoolName       = "apstra_ip4_pool"
+	dataSourceIp4PoolIdName     = "apstra_ip4_pool_id"
 
 	resourceAgentProfileName  = "apstra_agent_profile"
 	resourceAsnPoolName       = "apstra_asn_pool"
@@ -164,5 +165,6 @@ func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourc
 		dataSourceAgentProfilesName: dataSourceAgentProfilesType{},
 		dataSourceAgentProfileName:  dataSourceAgentProfileType{},
 		dataSourceIp4PoolName:       dataSourceIp4PoolType{},
+		dataSourceIp4PoolIdName:     dataSourceIp4PoolIdType{},
 	}, nil
 }
