@@ -118,10 +118,7 @@ func (r dataSourceAsnPool) Read(ctx context.Context, req tfsdk.ReadDataSourceReq
 	}
 
 	// convert pool tags from []string to []types.String
-	var tags []types.String
-	for _, t := range asnPool.Tags {
-		tags = append(tags, types.String{Value: t})
-	}
+	tags := sliceStringToSliceTfString(asnPool.Tags)
 
 	// convert pool ranges goapstra.AsnRange to AsnRange
 	var asnRanges []AsnRange
