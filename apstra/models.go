@@ -37,6 +37,19 @@ type DataAsnPool struct {
 	Ranges         []AsnRange     `tfsdk:"ranges"`
 }
 
+type DataIp4Pool struct {
+	Id             types.String   `tfsdk:"id"`
+	Name           types.String   `tfsdk:"name"`
+	Status         types.String   `tfsdk:"status"`
+	Tags           []types.String `tfsdk:"tags"`
+	Used           types.Int64    `tfsdk:"used"`
+	UsedPercent    types.Float64  `tfsdk:"used_percentage"`
+	CreatedAt      types.String   `tfsdk:"created_at"`
+	LastModifiedAt types.String   `tfsdk:"last_modified_at"`
+	Total          types.Int64    `tfsdk:"total"`
+	Subnets        []Ip4Subnet    `tfsdk:"subnets"`
+}
+
 type DataAsnPoolId struct {
 	Id   types.String   `tfsdk:"id"`
 	Name types.String   `tfsdk:"name"`
@@ -105,6 +118,14 @@ type AsnRange struct {
 	Status         types.String  `tfsdk:"status"`
 	First          types.Int64   `tfsdk:"first"`
 	Last           types.Int64   `tfsdk:"last"`
+	Total          types.Int64   `tfsdk:"total"`
+	Used           types.Int64   `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+type Ip4Subnet struct {
+	Status         types.String  `tfsdk:"status"`
+	Network        types.String  `tfsdk:"network"`
 	Total          types.Int64   `tfsdk:"total"`
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
