@@ -74,8 +74,8 @@ func (r resourceIp4Subnet) Create(ctx context.Context, req tfsdk.CreateResourceR
 		var ace goapstra.ApstraClientErr
 		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrExists) { // these are okay
 			resp.Diagnostics.AddError(
-				"error creating new ASN Pool Range",
-				"Could not create ASN Pool Range, unexpected error: "+err.Error(),
+				"error creating new IPv4 Pool Subnet",
+				"Could not create IPv4 Pool Subnet, unexpected error: "+err.Error(),
 			)
 			return
 		}
@@ -84,7 +84,7 @@ func (r resourceIp4Subnet) Create(ctx context.Context, req tfsdk.CreateResourceR
 	// Set State
 	diags = resp.State.Set(ctx, ResourceIp4Subnet{
 		PoolId: types.String{Value: plan.PoolId.Value},
-		Cidr:   types.String{Value: plan.PoolId.Value},
+		Cidr:   types.String{Value: plan.Cidr.Value},
 	})
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

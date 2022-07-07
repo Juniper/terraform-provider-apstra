@@ -119,7 +119,7 @@ type ResourceIp4Pool struct {
 }
 
 type ResourceIp4Subnet struct {
-	PoolId types.String `tfsdk:"pooL_id"`
+	PoolId types.String `tfsdk:"pool_id"`
 	Cidr   types.String `tfsdk:"cidr"`
 }
 
