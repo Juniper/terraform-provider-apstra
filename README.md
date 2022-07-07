@@ -3,7 +3,7 @@
 This is the beginning of a Terraform provider for Juniper Apstra. It relies on
 a Go client library at https://github.com/chrismarget-j/goapstra
 
-### Getting Started
+## Getting Started
 
 1. Get access to both this repo and the client library repo, both of which are
    currently private. You're reading this, so that's a good start.
@@ -60,9 +60,52 @@ a Go client library at https://github.com/chrismarget-j/goapstra
    cd example
    terraform plan
    ```
-   
-### Resources
-ToDo: check out [`example/main.tf`](example/main.tf)
+## Data Sources
 
-### Data Sources
-ToDo: check out [`example/main.tf`](example/main.tf)
+### Data Source: apstra_agent_profile
+
+`apstra_agent_profile` provides details about a specific agent profile.
+
+This resource looks up details of agent profiles using either its name (Apstra
+ensures these are unique), or its ID (but not both).
+
+#### Example Usage
+
+The following example shows how a module might accept an agent profile's name as
+an input variable and use it to retrieve the agent profile ID when provisioning
+a managed device (a switch).
+
+```hcl
+variable "agent_profile_name" {} 
+variable "switch_mgmt_ip" {}
+
+data "apstra_agent_profile" "selected" {
+   name = var.agent_profile_name
+}
+
+resource "apstra_managed_device" "switch" {
+   agent_profile_id = data.apstra_agent_profile.selected.id
+   management_ip    = var.switch_mgmt_ip
+}
+```
+
+#### Argument Reference
+
+The arguments of this data source act as filters for querying the available
+agent profiles.
+
+The following arguments are optional:
+* `id` - (Optional) ID of the agent profile. Required when `name` is omitted.
+* `name` - (Optional) Name of the agent profile. Required when `id` is omitted.
+
+#### Attributes Reference
+
+In addition to the attributes above, the following attributes are exported:
+* `platform` (string) Indicates the platform supported by the agent profile.
+* `has_username` (boolean) Indicates whether a username has been configured.
+* `has_password` (boolean) Indicates whether a password has been configured.
+* `packages` (map[package]version) Admin-provided software packages stored on the Apstra server
+  applied to devices using the profile.
+* `open_options` (map[key]value) Configured parameters for offbox agents.
+
+## Resources
