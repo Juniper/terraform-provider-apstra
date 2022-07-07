@@ -25,6 +25,7 @@ func (r dataSourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, 
 				Computed: true,
 				Type:     types.StringType,
 			},
+			// todo: make platform a search criteria
 			"platform": {
 				Computed: true,
 				Type:     types.StringType,
