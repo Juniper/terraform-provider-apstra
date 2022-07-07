@@ -70,7 +70,6 @@ This resource looks up details of agent profiles using either its name (Apstra
 ensures these are unique), or its ID (but not both).
 
 #### Example Usage
-
 The following example shows how a module might accept an agent profile's name as
 an input variable and use it to retrieve the agent profile ID when provisioning
 a managed device (a switch).
@@ -90,30 +89,28 @@ resource "apstra_managed_device" "switch" {
 ```
 
 #### Argument Reference
-
 The arguments of this data source act as filters for querying the available
 agent profiles.
 
 The following arguments are optional:
-* `id` - (Optional) ID of the agent profile. Required when `name` is omitted.
-* `name` - (Optional) Name of the agent profile. Required when `id` is omitted.
+* `id` (string) ID of the agent profile. Required when `name` is omitted.
+* `name` (string) Name of the agent profile. Required when `id` is omitted.
 
 #### Attributes Reference
-
 In addition to the attributes above, the following attributes are exported:
 * `platform` (string) Indicates the platform supported by the agent profile.
-* `has_username` (boolean) Indicates whether a username has been configured.
-* `has_password` (boolean) Indicates whether a password has been configured.
+* `has_username` (bool) Indicates whether a username has been configured.
+* `has_password` (bool) Indicates whether a password has been configured.
 * `packages` (map[package]version) Admin-provided software packages stored on the Apstra server
   applied to devices using the profile.
 * `open_options` (map[key]value) Configured parameters for offbox agents.
 
+---
 ### Data Source: apstra_agent_profiles
 
 `apstra_agent_profiles` provides a list of all agent profile IDs.
 
 #### Example Usage
-
 The following example shows outputting all agent profile IDs.
 
 ```hcl
@@ -125,19 +122,17 @@ output "agent_profiles" {
 ```
 
 #### Argument Reference
-
 No arguments.
 
 #### Attributes Reference
+* `ids` (list[string]) Apstra ID numbers of each agent profile
 
-* `ids` list[string] Apstra ID numbers of each agent profile
-
+---
 ### Data Source: apstra_asn_pool
 
 `apstra_asn_pool` provides details of a specific ASN pool by ID.
 
 #### Example Usage
-
 The following example shows outputting a report of free space across all ASN
 pools:
 
@@ -179,9 +174,97 @@ asn_report = {
 ```
 
 #### Argument Reference
+The following arguments are required:
+* `id` (string) ID of the desired ASN resource pool.
 
+#### Attributes Reference
+In addition to the attributes above, the following attributes are exported:
+* `name` (string) The name of the ASN resource pool.
+* `status` (string) Status of the ASN resource pool (string reported by Apstra).
+* `tags` (list[string]) Tags applied to the ASN resource pool.
+* `total` (number) Total number of ASNs in the ASN resource pool.
+* `used` (number) Count of used ASNs in the ASN resource pool.
+* `used_percentage` (number) Percent of used ASNs in the ASN resource pool.
+* `created_at` (string) Creation time.
+* `last_modified_at` (string) Last modification time.
+* `ranges` (list[object]) Individual ASN ranges within the pool, consisting of:
+  * `status` (string) Status of the ASN resource pool (string reported by Apstra).
+  * `first` (number) Lowest numbered AS in this ASN range.
+  * `last` (number) Highest numbered AS in this ASN range.
+  * `total` (number) Total number of ASNs in this ASN range.
+  * `used` (number) Count of used ASNs in this ASN range
+  * `used_percentage` (number) Percent of used ASNs in this ASN range
+
+---
+### Data Source: apstra_asn_pool_id
+`apstra_asn_pool_id` returns the pool ID of the ASN resource pool matching the
+supplied criteria. It is incumbent on the user to ensure the criteria matches
+exactly one ASN pool. Matching zero pools or more than one pool will produce an
+error.
+
+#### Example Usage
+The following example shows how a module can use the search capability to deploy
+a blueprint using a tag-based search for ASN pools:
+
+```hcl
+variable "site" { default = "ashburn"}
+variable "env" {default = "dev"}
+variable "template" {}
+variable "spine_ip_pool" {}
+variable "leaf_ip_pool" {}
+variable "link_ip_pool" {}
+
+data "apstra_asn_pool_id" "spine" {
+   tags = [site, env, "spine"]
+}
+
+data "apstra_asn_pool_id" "leaf" {
+   tags = [site, env, "leaf"]
+}
+
+resource "apstra_blueprint" "my_blueprint" {
+   name               = "my blueprint"
+   template_id        = var.bp_template
+   spine_asn_pool_ids = [data.apstra_asn_pool_id.spine.id]
+   leaf_asn_pool_ids  = [data.apstra_asn_pool_id.leaf.id]
+   spine_ip_pool_ids  = var.spine_ip_pool
+   leaf_ip_pool_ids   = var.leaf_ip_pool
+   link_ip_pool_ids   = var.link_ip_pool
+}
+```
+
+#### Argument Reference
+The arguments of this data source act as filters for querying the available
+ASN resource pools.
+
+The following arguments are optional. At least one must be supplied, and the
+complete set of arguments must select exactly one ASN resource pool:
+* `name` - (Optional) Name of the ASN resource pool.
+* `tags` - list[string] List of tags applied to ASN resource pools. For a pool
+to match, every tag in this list must appear on the ASN resource pool. The pool
+may have other tags which do not appear in this list.
+
+#### Attributes Reference
+In addition to the attributes above, the following attributes are exported:
+* `id` - Apstra ID number of the matching ASN resource pool.
+
+---
+### Data Source: apstra_asn_pool_ids
+`apstra_asn_pool_ids` returns the pool IDs all ASN resource pools
+
+#### Example Usage
+The following example shows outputting all ASN pool IDs.
+
+```hcl
+data "apstra_asn_pool_ids" "all" {}
+
+output asn_pool_ids {
+   value = data.apstra_asn_pool_ids.all.ids
+}
+```
+
+#### Argument Reference
 No arguments.
 
 #### Attributes Reference
-
-* `ids` list[string] Apstra ID numbers of each agent profile
+* `ids` - list[string] Apstra ID numbers of each ASN resource pool.
