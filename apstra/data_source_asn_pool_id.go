@@ -45,8 +45,8 @@ func (r dataSourceAsnPoolId) Read(ctx context.Context, req tfsdk.ReadDataSourceR
 	pools, err := r.p.client.GetAsnPools(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error retrieving ASN pool IDs",
-			fmt.Sprintf("error retrieving ASN pool IDs - %s", err),
+			"Error retrieving ASN pools",
+			fmt.Sprintf("error retrieving ASN pools - %s", err),
 		)
 		return
 	}
