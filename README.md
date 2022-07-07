@@ -130,11 +130,11 @@ No arguments.
 ---
 ### Data Source: apstra_asn_pool
 
-`apstra_asn_pool` provides details of a specific ASN pool by ID.
+`apstra_asn_pool` provides details of a specific ASN resource pool by ID.
 
 #### Example Usage
 The following example shows outputting a report of free space across all ASN
-pools:
+resource pools:
 
 ```hcl
 data "apstra_asn_pool_ids" "all" {}
@@ -268,3 +268,157 @@ No arguments.
 
 #### Attributes Reference
 * `ids` - list[string] Apstra ID numbers of each ASN resource pool.
+
+---
+### Data Source: apstra_ip4_pool
+
+`apstra_ip4_pool` provides details of a specific IPv4 resource pool by ID.
+
+#### Example Usage
+The following example shows outputting a report of free space across all IPv4
+resource pools.
+
+```hcl
+data "apstra_ip4_pool_ids" "all" {}
+
+data "apstra_ip4_pool" "all" {
+   for_each = toset(data.apstra_ip4_pool_ids.all.ids)
+   id = each.value
+}
+
+output "ipv4_pool_report" {
+  value = {for k, v in data.apstra_ip4_pool.all : k => {
+    name = v.name
+    free = v.total - v.used
+  }}
+}
+```
+Result:
+```hcl
+ipv4_pool_report = {
+  "091a4c18-0911-4f78-8db3-c1033b88e08f" = {
+    "free" = 1008
+    "name" = "leaf-loopback"
+  }
+  "472b87f2-6174-448c-b3d1-b57c2b48ab58" = {
+    "free" = 1022
+    "name" = "spine-loopback"
+  }
+  "Private-10_0_0_0-8" = {
+    "free" = 16777216
+    "name" = "Private-10.0.0.0/8"
+  }
+  "Private-172_16_0_0-12" = {
+    "free" = 1048576
+    "name" = "Private-172.16.0.0/12"
+  }
+  "Private-192_168_0_0-16" = {
+    "free" = 65536
+    "name" = "Private-192.168.0.0/16"
+  }
+  "cc023b60-9941-40a5-a07c-2b15920e544f" = {
+    "free" = 992
+    "name" = "spine-leaf"
+  }
+}
+```
+
+#### Argument Reference
+The following arguments are required:
+* `id` (string) ID of the desired IPv4 resource pool.
+
+#### Attributes Reference
+In addition to the attributes above, the following attributes are exported:
+* `name` (string) The name of the IPv4 resource pool.
+* `status` (string) Status of the IPv4 resource pool (string reported by Apstra).
+* `tags` (list[string]) Tags applied to the IPv4 resource pool.
+* `total` (number) Total number of addresses in the IPv4 resource pool.
+* `used` (number) Count of used addresses in the IPv4 resource pool.
+* `used_percentage` (number) Percent of used addresses in the IPv4 resource pool.
+* `created_at` (string) Creation time.
+* `last_modified_at` (string) Last modification time.
+* `subnets` (list[object]) Individual IPv4 allocations within the pool, consisting of:
+   * `status` (string) Status of the IPv4 resource pool (string reported by Apstra).
+   * `network` (string) Network specification in CIDR syntax ("10.0.0.0/8")
+   * `total` (number) Total number of addresses in this IPv4 range.
+   * `used` (number) Count of used addresses in this IPv4 range
+   * `used_percentage` (number) Percent of used addresses in this IPv4 range
+
+---
+### Data Source: apstra_ip4_pool_id
+`apstra_ip4_pool_id` returns the pool ID of the IPv4 resource pool matching the
+supplied criteria. It is incumbent on the user to ensure the criteria matches
+exactly one IPv4 pool. Matching zero pools or more than one pool will produce an
+error.
+
+#### Example Usage
+The following example shows how a module can use the search capability to deploy
+a blueprint using a tag-based search for IPv4 pools:
+
+```hcl
+variable "site" { default = "ashburn"}
+variable "env" {default = "dev"}
+variable "template" {}
+variable "spine_asn_pool" {}
+variable "leaf_asn_pool" {}
+
+data "apstra_ip4_pool_id" "spine" {
+   tags = [site, env, "spine"]
+}
+
+data "apstra_ip4_pool_id" "leaf" {
+   tags = [site, env, "leaf"]
+}
+
+data "apstra_ip4_pool_id" "link" {
+  tags = [site, env, "link"]
+}
+
+resource "apstra_blueprint" "my_blueprint" {
+   name               = "my blueprint"
+   template_id        = var.bp_template
+   spine_asn_pool_ids = spine.asn_pool
+   leaf_asn_pool_ids  = leaf.asn_pool
+   spine_ip_pool_ids  = [data.apstra_ip4_pool_id.spine.id]
+   leaf_ip_pool_ids   = [data.apstra_ip4_pool_id.leaf.id]
+   link_ip_pool_ids   = [data.apstra_asn_pool_id.link.id]
+}
+```
+
+#### Argument Reference
+The arguments of this data source act as filters for querying the available
+IPv4 resource pools.
+
+The following arguments are optional. At least one must be supplied, and the
+complete set of arguments must select exactly one IPv4 resource pool:
+* `name` - (Optional) Name of the IPv4 resource pool.
+* `tags` - list[string] List of tags applied to IPv4 resource pools. For a pool
+  to match, every tag in this list must appear on the IPv4 resource pool. The
+  pool may have other tags which do not appear in this list.
+
+#### Attributes Reference
+In addition to the attributes above, the following attributes are exported:
+* `id` - Apstra ID number of the matching IPv4 resource pool.
+
+---
+### Data Source: apstra_ip4_pool_ids
+`apstra_ip4_pool_ids` returns the pool IDs all IPv4 resource pools
+
+#### Example Usage
+The following example shows outputting all IPv4 pool IDs.
+
+```hcl
+data "apstra_ip4_pool_ids" "all" {}
+
+output ip4_pool_ids {
+   value = data.apstra_ip4_pool_ids.all.ids
+}
+```
+
+#### Argument Reference
+No arguments.
+
+#### Attributes Reference
+* `ids` - list[string] Apstra ID numbers of each IPv4 resource pool.
+
+---
