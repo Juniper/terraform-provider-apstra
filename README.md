@@ -20,7 +20,7 @@ a Go client library at https://github.com/chrismarget-j/goapstra
 1. Install [`terraform`](https://www.terraform.io/downloads) and [`Go`](https://go.dev/dl/) on your machine.
 1. Clone this repo to your local system:
    ```shell
-   git@github.com:chrismarget-j/terraform-provider-apstra.git
+   git clone git@github.com:chrismarget-j/terraform-provider-apstra.git
    ```
 1. Build the provider:
    ```shell
@@ -28,7 +28,9 @@ a Go client library at https://github.com/chrismarget-j/goapstra
    go install
    ```
    The provider should now be located at `~/golang/bin/terraform-provider-apstra`
-1. Configure terraform to look for the apstra provider locally. My `~/.terraformrc` looks like:
+1. Configure terraform to use the local copy of apstra provider, rather than
+   attempting to fetch it from a terraform registry. My `~/.terraformrc` looks
+   like:
    ```
    provider_installation {
    
