@@ -108,4 +108,80 @@ In addition to the attributes above, the following attributes are exported:
   applied to devices using the profile.
 * `open_options` (map[key]value) Configured parameters for offbox agents.
 
-## Resources
+### Data Source: apstra_agent_profiles
+
+`apstra_agent_profiles` provides a list of all agent profile IDs.
+
+#### Example Usage
+
+The following example shows outputting all agent profile IDs.
+
+```hcl
+data "apstra_agent_profiles" "all" {}
+
+output "agent_profiles" {
+   value = data.apstra_agent_profiles.all
+}
+```
+
+#### Argument Reference
+
+No arguments.
+
+#### Attributes Reference
+
+* `ids` list[string] Apstra ID numbers of each agent profile
+
+### Data Source: apstra_asn_pool
+
+`apstra_asn_pool` provides details of a specific ASN pool by ID.
+
+#### Example Usage
+
+The following example shows outputting a report of free space across all ASN
+pools:
+
+```hcl
+data "apstra_asn_pool_ids" "all" {}
+
+data "apstra_asn_pool" "all" {
+   for_each = toset(data.apstra_asn_pool_ids.all.ids)
+   id = each.value
+}
+
+output "asn_report" {
+  value = {for k, v in data.apstra_asn_pool.all : k => {
+    name = v.name
+    free = v.total - v.used
+  }}
+}
+```
+Result:
+```json
+asn_report = {
+  "3ddb7a6a-4c84-458f-8632-705764c0f6ca" = {
+    "free" = 100
+    "name" = "spine"
+  }
+  "Private-4200000000-4294967294" = {
+    "free" = 94967293
+    "name" = "Private-4200000000-4294967294"
+  }
+  "Private-64512-65534" = {
+    "free" = 1020
+    "name" = "Private-64512-65534"
+  }
+  "dd0d3b45-2020-4382-9c01-c43e7d474546" = {
+    "free" = 10002
+    "name" = "leaf"
+  }
+}
+```
+
+#### Argument Reference
+
+No arguments.
+
+#### Attributes Reference
+
+* `ids` list[string] Apstra ID numbers of each agent profile
