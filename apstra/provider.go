@@ -20,9 +20,10 @@ const (
 	dataSourceAgentProfilesName = "apstra_agent_profiles"
 	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
 	dataSourceAsnPoolName       = "apstra_asn_pool"
-	dataSourceAsnPoolsName      = "apstra_asn_pools"
-	dataSourceIp4PoolName       = "apstra_ip4_pool"
+	dataSourceAsnPoolIdsName    = "apstra_asn_pool_ids"
 	dataSourceIp4PoolIdName     = "apstra_ip4_pool_id"
+	dataSourceIp4PoolName       = "apstra_ip4_pool"
+	dataSourceIp4PoolIdsName    = "apstra_ip4_pool_ids"
 
 	resourceAgentProfileName  = "apstra_agent_profile"
 	resourceAsnPoolName       = "apstra_asn_pool"
@@ -159,12 +160,13 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 // GetDataSources defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
-		dataSourceAsnPoolName:       dataSourceAsnPoolType{},
-		dataSourceAsnPoolsName:      dataSourceAsnPoolsType{},
 		dataSourceAsnPoolIdName:     dataSourceAsnPoolIdType{},
+		dataSourceAsnPoolName:       dataSourceAsnPoolType{},
+		dataSourceAsnPoolIdsName:    dataSourceAsnPoolsType{},
 		dataSourceAgentProfilesName: dataSourceAgentProfilesType{},
 		dataSourceAgentProfileName:  dataSourceAgentProfileType{},
-		dataSourceIp4PoolName:       dataSourceIp4PoolType{},
 		dataSourceIp4PoolIdName:     dataSourceIp4PoolIdType{},
+		dataSourceIp4PoolIdsName:    dataSourceIp4PoolsType{},
+		dataSourceIp4PoolName:       dataSourceIp4PoolType{},
 	}, nil
 }
