@@ -67,7 +67,7 @@ type dataSourceLogicalDevice struct {
 	p provider
 }
 
-func (r dataSourceLogicalDevice) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (r dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req tfsdk.ValidateDataSourceConfigRequest, resp *tfsdk.ValidateDataSourceConfigResponse) {
 	var config DataLogicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -76,10 +76,17 @@ func (r dataSourceLogicalDevice) Read(ctx context.Context, req tfsdk.ReadDataSou
 	}
 
 	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
-		resp.Diagnostics.AddError(
-			"cannot search for Logical Device",
-			"exactly one of 'name' or 'id' must be specified",
-		)
+		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'name' must be specified")
+		return
+	}
+}
+
+func (r dataSourceLogicalDevice) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+	var config DataLogicalDevice
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	var err error
