@@ -70,6 +70,12 @@ type DataIp4PoolIds struct {
 	Ids []types.String `tfsdk:"ids"`
 }
 
+type DataLogicalDevice struct {
+	Id     types.String         `tfsdk:"id"`
+	Name   types.String         `tfsdk:"name"`
+	Panels []LogicalDevicePanel `tfsdk:"panels"`
+}
+
 type ResourceAgentProfile struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
@@ -140,4 +146,16 @@ type Ip4Subnet struct {
 	Total          types.Int64   `tfsdk:"total"`
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+type LogicalDevicePanel struct {
+	Rows       types.Int64              `tfsdk:"rows"`
+	Columns    types.Int64              `tfsdk:"columns"`
+	PortGroups []LogicalDevicePortGroup `tfsdk:"port_groups"`
+}
+
+type LogicalDevicePortGroup struct {
+	Count types.Int64    `tfsdk:"port_count"`
+	Speed types.Int64    `tfsdk:"port_speed_gbps"`
+	Roles []types.String `tfsdk:"port_roles"`
 }
