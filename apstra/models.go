@@ -76,6 +76,12 @@ type DataLogicalDevice struct {
 	Panels []LogicalDevicePanel `tfsdk:"panels"`
 }
 
+type DataTag struct {
+	Id    types.String `tfsdk:"id"`
+	Key   types.String `tfsdk:"key"`
+	Value types.String `tfsdk:"value"`
+}
+
 type ResourceAgentProfile struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`

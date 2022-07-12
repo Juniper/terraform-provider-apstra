@@ -422,3 +422,91 @@ No arguments.
 * `ids` - list[string] Apstra ID numbers of each IPv4 resource pool.
 
 ---
+### Data Source: apstra_logical_device
+
+`apstra_logical_device` provides details about a specific logical device (a
+template used by apstra when creating rack types -- which are also templates).
+
+This resource looks up details of a logical device using either its name (which
+is *not* guaranteed unique), or its ID (but not both). If your environment has
+multiple logical devices with the same name, "by name" lookups will produce an
+error.
+
+#### Example Usage
+The following example shows how a module might accept a logical device name as
+an input variable and use it to retrieve the agent profile ID when provisioning
+a rack type.
+
+```hcl
+variable "logical_device_name" {} 
+
+data "apstra_logical_device" "selected" {
+   name = var.logical_device_name
+}
+
+resource "apstra_rack_type" "my_rack" {
+  todo = "all of this"
+}
+```
+
+#### Argument Reference
+The arguments of this data source act as filters for querying the available
+agent profiles.
+
+The following arguments are optional:
+* `id` (string) ID of the logical device. Required when `name` is omitted.
+* `name` (string) Name of the logical device. Required when `id` is omitted.
+
+#### Attributes Reference
+In addition to the attributes above, the following attributes are exported:
+* `panels` (list[object]) Detail connectivity features of the logical device.
+  * `rows` (string) Detail physical dimension of the panel in the vertical
+  direction.
+  * `columns` (string) Detail physical dimension of the panel in the horizontal
+  direction.
+  * `port_groups` (list[object]) Ordered logical groupings of interfaces by
+  speed or purpose within a panel.
+    * `port_count` (number) Number of ports in the group.
+    * `port_speed_gbps` (number) Port speed in Gbps
+    * `port_roles` (list[string]) One or more of: `access`, `generic`,
+      `l3_server`, `leaf`, `peer`, `server`, `spine`, `superspine` and
+      `unused`.
+      
+---
+### Data Source: apstra_tag
+
+`apstra_tag` provides details about a specific tag.
+
+This resource looks up details of a tag using exactly one of its id and its
+key(Web Ui: *name*).
+
+#### Example Usage
+The following example shows how a module might accept a tag key as an input
+variable,then use it to retrieve the appropriate tag when templating devices
+within a rack type.
+
+```hcl
+variable "tag_key" {} 
+
+data "apstra_tag" "selected" {
+   key = var.tag_key
+}
+
+resource "apstra_rack_type" "my_rack" {
+  todo = "all of this"
+}
+```
+
+#### Argument Reference
+The arguments of this data source act as filters for querying the available
+tags.
+
+The following arguments are optional:
+* `id` (string) ID of the logical device. Required when `key` is omitted.
+* `key` (string) Key (Web Ui: *name*) of the tag. Required when `id` is omitted.
+
+#### Attributes Reference
+In addition to the attributes above, the following attributes are exported:
+* `value` (string) Value (Web UI: *description*) field of the tag.
+
+---
