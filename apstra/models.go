@@ -114,14 +114,15 @@ type ResourceManagedDevice struct {
 }
 
 type ResourceBlueprint struct {
-	Id         types.String   `tfsdk:"id"`
-	Name       types.String   `tfsdk:"name"`
-	TemplateId types.String   `tfsdk:"template_id"`
-	LeafAsns   []types.String `tfsdk:"leaf_asn_pool_ids"`
-	LeafIp4s   []types.String `tfsdk:"leaf_ip_pool_ids"`
-	LinkIp4s   []types.String `tfsdk:"link_ip_pool_ids"`
-	SpineAsns  []types.String `tfsdk:"spine_asn_pool_ids"`
-	SpineIp4s  []types.String `tfsdk:"spine_ip_pool_ids"`
+	Id         types.String      `tfsdk:"id"`
+	Name       types.String      `tfsdk:"name"`
+	TemplateId types.String      `tfsdk:"template_id"`
+	LeafAsns   []types.String    `tfsdk:"leaf_asn_pool_ids"`
+	LeafIp4s   []types.String    `tfsdk:"leaf_ip_pool_ids"`
+	LinkIp4s   []types.String    `tfsdk:"link_ip_pool_ids"`
+	SpineAsns  []types.String    `tfsdk:"spine_asn_pool_ids"`
+	SpineIp4s  []types.String    `tfsdk:"spine_ip_pool_ids"`
+	Switches   map[string]Switch `tfsdk:"switches"`
 }
 
 type ResourceIp4Pool struct {
@@ -164,4 +165,11 @@ type LogicalDevicePortGroup struct {
 	Count types.Int64    `tfsdk:"port_count"`
 	Speed types.Int64    `tfsdk:"port_speed_gbps"`
 	Roles []types.String `tfsdk:"port_roles"`
+}
+
+type Switch struct {
+	InterfaceMap   types.String `tfsdk:"interface_map"`
+	InterfaceMapId types.String `tfsdk:"interface_map_id"`
+	DeviceKey      types.String `tfsdk:"device_key"`
+	SystemId       types.String `tfsdk:"system_id"`
 }

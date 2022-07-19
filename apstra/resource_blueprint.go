@@ -2,12 +2,12 @@ package apstra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/chrismarget-j/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
 )
 
 type resourceBlueprintType struct{}
@@ -49,6 +49,28 @@ func (r resourceBlueprintType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 			"spine_ip_pool_ids": {
 				Type:     types.SetType{ElemType: types.StringType},
 				Required: true,
+			},
+			"switches": {
+				Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
+					"interface_map": {
+						Type:     types.StringType,
+						Optional: true, // todo Change to Optional + Computed, pick the only candidate ifMap where possible
+						Computed: true,
+					},
+					"interface_map_id": {
+						Type:     types.StringType,
+						Computed: true,
+					},
+					"device_key": {
+						Type:     types.StringType,
+						Required: true,
+					},
+					"system_id": {
+						Type:     types.StringType,
+						Computed: true,
+					},
+				}),
+				Optional: true,
 			},
 		},
 	}, nil
@@ -109,7 +131,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// create blueprint
-	id, err := r.p.client.CreateBlueprintFromTemplate(ctx, &goapstra.CreateBluePrintFromTemplate{
+	blueprintId, err := r.p.client.CreateBlueprintFromTemplate(ctx, &goapstra.CreateBluePrintFromTemplate{
 		RefDesign:  goapstra.RefDesignDatacenter,
 		Label:      plan.Name.Value,
 		TemplateId: plan.TemplateId.Value,
@@ -118,10 +140,13 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 		resp.Diagnostics.AddError("error creating Blueprint", err.Error())
 		return
 	}
-	plan.Id = types.String{Value: string(id)}
+	plan.Id = types.String{Value: string(blueprintId)}
+
+	// create a client specific to the reference design
+	refDesignClient, err := r.p.client.NewTwoStageL3ClosClient(ctx, blueprintId)
 
 	// assign leaf ASN pool
-	err = r.p.client.SetResourceAllocation(ctx, id, &goapstra.ResourceGroupAllocation{
+	err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type:    goapstra.ResourceTypeAsnPool,
 		Name:    goapstra.ResourceGroupNameLeafAsn,
 		PoolIds: tfStringSliceToSliceObjectId(plan.LeafAsns),
@@ -132,7 +157,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// assign leaf IP4 pool
-	err = r.p.client.SetResourceAllocation(ctx, id, &goapstra.ResourceGroupAllocation{
+	err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type:    goapstra.ResourceTypeIp4Pool,
 		Name:    goapstra.ResourceGroupNameLeafIps,
 		PoolIds: tfStringSliceToSliceObjectId(plan.LeafIp4s),
@@ -143,7 +168,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// assign link IP4 pool
-	err = r.p.client.SetResourceAllocation(ctx, id, &goapstra.ResourceGroupAllocation{
+	err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type:    goapstra.ResourceTypeIp4Pool,
 		Name:    goapstra.ResourceGroupNameLinkIps,
 		PoolIds: tfStringSliceToSliceObjectId(plan.LinkIp4s),
@@ -154,7 +179,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// assign spine ASN pool
-	err = r.p.client.SetResourceAllocation(ctx, id, &goapstra.ResourceGroupAllocation{
+	err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type:    goapstra.ResourceTypeAsnPool,
 		Name:    goapstra.ResourceGroupNameSpineAsn,
 		PoolIds: tfStringSliceToSliceObjectId(plan.SpineAsns),
@@ -165,7 +190,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// assign spine IP4 pool
-	err = r.p.client.SetResourceAllocation(ctx, id, &goapstra.ResourceGroupAllocation{
+	err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type:    goapstra.ResourceTypeIp4Pool,
 		Name:    goapstra.ResourceGroupNameSpineIps,
 		PoolIds: tfStringSliceToSliceObjectId(plan.SpineIp4s),
@@ -174,6 +199,22 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 		resp.Diagnostics.AddError("error setting resource group allocation", err.Error())
 		return
 	}
+
+	// determine interface map assignments
+	ifMapAssignments, err := generateSwitchToInterfaceMapAssignments(ctx, r.p.client, blueprintId, resp, plan.Switches)
+	if err != nil {
+		resp.Diagnostics.AddError("error generating interface map assignments", err.Error())
+	}
+
+	// assign interface maps
+	err = refDesignClient.SetInterfaceMapAssignments(ctx, ifMapAssignments)
+	if err != nil {
+		if err != nil {
+			resp.Diagnostics.AddError("error assigning interface maps", err.Error())
+		}
+	}
+
+	// todo: warning about systems w/out interface map assignments
 
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
@@ -197,7 +238,13 @@ func (r resourceBlueprint) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		return
 	}
 
-	leafAsns, err := r.p.client.GetResourceAllocation(ctx, blueprint.Id, &goapstra.ResourceGroupAllocation{
+	refDesignClient, err := r.p.client.NewTwoStageL3ClosClient(ctx, blueprint.Id)
+	if err != nil {
+		resp.Diagnostics.AddError("error getting ref design client", err.Error())
+		return
+	}
+
+	leafAsns, err := refDesignClient.GetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type: goapstra.ResourceTypeAsnPool,
 		Name: goapstra.ResourceGroupNameLeafAsn,
 	})
@@ -205,7 +252,7 @@ func (r resourceBlueprint) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		resp.Diagnostics.AddError("error reading blueprint resource allocation", err.Error())
 		return
 	}
-	leafIps, err := r.p.client.GetResourceAllocation(ctx, blueprint.Id, &goapstra.ResourceGroupAllocation{
+	leafIps, err := refDesignClient.GetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type: goapstra.ResourceTypeIp4Pool,
 		Name: goapstra.ResourceGroupNameLeafIps,
 	})
@@ -213,7 +260,7 @@ func (r resourceBlueprint) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		resp.Diagnostics.AddError("error reading blueprint resource allocation", err.Error())
 		return
 	}
-	linkIps, err := r.p.client.GetResourceAllocation(ctx, blueprint.Id, &goapstra.ResourceGroupAllocation{
+	linkIps, err := refDesignClient.GetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type: goapstra.ResourceTypeIp4Pool,
 		Name: goapstra.ResourceGroupNameLinkIps,
 	})
@@ -221,7 +268,7 @@ func (r resourceBlueprint) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		resp.Diagnostics.AddError("error reading blueprint resource allocation", err.Error())
 		return
 	}
-	spineAsns, err := r.p.client.GetResourceAllocation(ctx, blueprint.Id, &goapstra.ResourceGroupAllocation{
+	spineAsns, err := refDesignClient.GetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type: goapstra.ResourceTypeAsnPool,
 		Name: goapstra.ResourceGroupNameSpineAsn,
 	})
@@ -229,7 +276,7 @@ func (r resourceBlueprint) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		resp.Diagnostics.AddError("error reading blueprint resource allocation", err.Error())
 		return
 	}
-	spineIps, err := r.p.client.GetResourceAllocation(ctx, blueprint.Id, &goapstra.ResourceGroupAllocation{
+	spineIps, err := refDesignClient.GetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 		Type: goapstra.ResourceTypeIp4Pool,
 		Name: goapstra.ResourceGroupNameSpineIps,
 	})
@@ -278,8 +325,10 @@ func (r resourceBlueprint) Update(ctx context.Context, req tfsdk.UpdateResourceR
 
 	var err error
 
+	refDesignClient, err := r.p.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.Id.Value))
+
 	if !setsOfStringsMatch(plan.LeafAsns, state.LeafAsns) {
-		err = r.p.client.SetResourceAllocation(ctx, goapstra.ObjectId(plan.Id.Value), &goapstra.ResourceGroupAllocation{
+		err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 			Type:    goapstra.ResourceTypeAsnPool,
 			Name:    goapstra.ResourceGroupNameLeafIps,
 			PoolIds: tfStringSliceToSliceObjectId(plan.LeafAsns),
@@ -290,7 +339,7 @@ func (r resourceBlueprint) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	}
 
 	if !setsOfStringsMatch(plan.LeafIp4s, state.LeafIp4s) {
-		err = r.p.client.SetResourceAllocation(ctx, goapstra.ObjectId(plan.Id.Value), &goapstra.ResourceGroupAllocation{
+		err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 			Type:    goapstra.ResourceTypeIp4Pool,
 			Name:    goapstra.ResourceGroupNameLeafIps,
 			PoolIds: tfStringSliceToSliceObjectId(plan.LeafIp4s),
@@ -301,7 +350,7 @@ func (r resourceBlueprint) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	}
 
 	if !setsOfStringsMatch(plan.LinkIp4s, state.LinkIp4s) {
-		err = r.p.client.SetResourceAllocation(ctx, goapstra.ObjectId(plan.Id.Value), &goapstra.ResourceGroupAllocation{
+		err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 			Type:    goapstra.ResourceTypeIp4Pool,
 			Name:    goapstra.ResourceGroupNameLinkIps,
 			PoolIds: tfStringSliceToSliceObjectId(plan.LinkIp4s),
@@ -312,7 +361,7 @@ func (r resourceBlueprint) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	}
 
 	if !setsOfStringsMatch(plan.SpineAsns, state.SpineAsns) {
-		err = r.p.client.SetResourceAllocation(ctx, goapstra.ObjectId(plan.Id.Value), &goapstra.ResourceGroupAllocation{
+		err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 			Type:    goapstra.ResourceTypeAsnPool,
 			Name:    goapstra.ResourceGroupNameSpineIps,
 			PoolIds: tfStringSliceToSliceObjectId(plan.SpineAsns),
@@ -323,7 +372,7 @@ func (r resourceBlueprint) Update(ctx context.Context, req tfsdk.UpdateResourceR
 	}
 
 	if !setsOfStringsMatch(plan.SpineIp4s, state.SpineIp4s) {
-		err = r.p.client.SetResourceAllocation(ctx, goapstra.ObjectId(plan.Id.Value), &goapstra.ResourceGroupAllocation{
+		err = refDesignClient.SetResourceAllocation(ctx, &goapstra.ResourceGroupAllocation{
 			Type:    goapstra.ResourceTypeIp4Pool,
 			Name:    goapstra.ResourceGroupNameSpineIps,
 			PoolIds: tfStringSliceToSliceObjectId(plan.SpineIp4s),
@@ -406,8 +455,6 @@ testPool:
 }
 
 func setsOfStringsMatch(a []types.String, b []types.String) bool {
-	os.Stderr.WriteString(fmt.Sprintf("xxxx len a %d\n", len(a)))
-	os.Stderr.WriteString(fmt.Sprintf("xxxx len b %d\n", len(b)))
 	if len(a) != len(b) {
 		return false
 	}
@@ -422,4 +469,253 @@ loopA:
 		return false
 	}
 	return true
+}
+
+type switchLabelToInterfaceMap map[string]struct {
+	label string
+	id    string
+}
+
+// getSwitches queries the graph db for 'switch' type systems, returns
+// map[string]string (map[label]id)
+func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId) (map[string]string, error) {
+	var switchQr struct {
+		Count int `json:"count"`
+		Items []struct {
+			System struct {
+				Label string `json:"label"`
+				Id    string `json:"id"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}
+	err := client.NewQuery(bpId).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("system")},
+			{"name", goapstra.QEStringVal("n_system")},
+			{"system_type", goapstra.QEStringVal("switch")},
+		}).
+		Do(&switchQr)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]string, switchQr.Count)
+	for _, item := range switchQr.Items {
+		result[item.System.Label] = item.System.Id
+	}
+
+	return result, nil
+}
+
+// getSwitchAssignedInterfaceMap // getSwitches queries the graph db for
+// 'switch' type systems with an assigned interface map, returns
+// switchLabelToInterfaceMap
+func getSwitchAssignedInterfaceMap(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId) (switchLabelToInterfaceMap, error) {
+	var assignedInterfaceMapQR struct {
+		Items []struct {
+			System struct {
+				Label string `json:"label"`
+			} `json:"n_system"`
+			InterfaceMap struct {
+				Id    string `json:"id"`
+				Label string `json:"label"`
+			} `json:"n_interface_map"`
+		} `json:"items"`
+	}
+	err := client.NewQuery(bpId).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("system")},
+			{"name", goapstra.QEStringVal("n_system")},
+			{"system_type", goapstra.QEStringVal("switch")},
+		}).
+		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("interface_map")},
+			{"name", goapstra.QEStringVal("n_interface_map")},
+		}).
+		Do(&assignedInterfaceMapQR)
+	if err != nil {
+		return nil, err
+	}
+
+	response := make(switchLabelToInterfaceMap)
+	for _, i := range assignedInterfaceMapQR.Items {
+		response[i.System.Label] = struct {
+			label string
+			id    string
+		}{label: i.InterfaceMap.Label, id: i.InterfaceMap.Id}
+	}
+
+	return response, err
+}
+
+type switchLabelToCandidateInterfaceMaps map[string][]struct {
+	Id    string
+	Label string
+}
+
+func (o *switchLabelToCandidateInterfaceMaps) string() (string, error) {
+	data, err := json.Marshal(o)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+// getSwitchCandidateInterfaceMaps queries the graph db for
+// 'switch' type systems and their candidate interface maps.
+// It returns switchLabelToCandidateInterfaceMaps.
+func getSwitchCandidateInterfaceMaps(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId) (switchLabelToCandidateInterfaceMaps, error) {
+	var candidateInterfaceMapsQR struct {
+		Items []struct {
+			System struct {
+				Label string `json:"label"`
+			} `json:"n_system"`
+			InterfaceMap struct {
+				Id    string `json:"id"`
+				Label string `json:"label"`
+			} `json:"n_interface_map"`
+		} `json:"items"`
+	}
+	err := client.NewQuery(bpId).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("system")},
+			{"name", goapstra.QEStringVal("n_system")},
+			{"system_type", goapstra.QEStringVal("switch")},
+		}).
+		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("logical_device")},
+		}).
+		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("interface_map")},
+			{"name", goapstra.QEStringVal("n_interface_map")},
+		}).
+		Do(&candidateInterfaceMapsQR)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(switchLabelToCandidateInterfaceMaps)
+
+	for _, item := range candidateInterfaceMapsQR.Items {
+		mapEntry := result[item.System.Label]
+		mapEntry = append(mapEntry, struct {
+			Id    string
+			Label string
+		}{Id: item.InterfaceMap.Id, Label: item.InterfaceMap.Label})
+		result[item.System.Label] = mapEntry
+	}
+
+	return result, nil
+}
+
+// planSwitchesToSimpleStruct takes the map[string]Switch from the TF plan,
+// returns a simple map containing only valid/populated records
+func planSwitchesToSimpleStruct(switchPlan map[string]Switch) map[string]struct {
+	ifMap     string
+	deviceKey string
+} {
+	result := make(map[string]struct {
+		ifMap     string
+		deviceKey string
+	})
+	for switchLabel, switchInfo := range switchPlan {
+		populated := false
+		i := struct {
+			ifMap     string
+			deviceKey string
+		}{}
+		if !switchInfo.InterfaceMap.IsNull() && !switchInfo.InterfaceMap.IsUnknown() {
+			i.ifMap = switchInfo.InterfaceMap.Value
+			populated = true
+		}
+		if !switchInfo.DeviceKey.IsNull() && !switchInfo.DeviceKey.IsUnknown() {
+			i.ifMap = switchInfo.DeviceKey.Value
+			populated = true
+		}
+		if populated {
+			result[switchLabel] = i
+		}
+	}
+	return result
+}
+
+// generateSwitchToInterfaceMapAssignments takes the 'switches' map from the
+// terraform plan and returns goapstra.SystemIdToInterfaceMapAssignment
+// representing all switches in the blueprint and
+func generateSwitchToInterfaceMapAssignments(ctx context.Context, client *goapstra.Client, blueprint goapstra.ObjectId, resp *tfsdk.CreateResourceResponse, switchPlan map[string]Switch) (goapstra.SystemIdToInterfaceMapAssignment, error) {
+	switchInfoByLabel := make(map[string]struct {
+		switchId           string
+		ifMapLabelFromPlan string // the label
+		ifMapCandidate     map[string]string
+	})
+
+	// all map[label]id for all switches
+	switchLabelToId, err := getSwitchLabelId(ctx, client, blueprint)
+	if err != nil {
+		return nil, err
+	}
+
+	// all planned info
+	switchLabelToPlan := planSwitchesToSimpleStruct(switchPlan)
+
+	// all ifMap Candidates
+	switchLabelToCandidates, err := getSwitchCandidateInterfaceMaps(ctx, client, blueprint)
+	if err != nil {
+		return nil, err
+	}
+
+	// build the easy-to-consume switchInfoByLabel structure
+	for switchLabel, switchId := range switchLabelToId {
+		ifMapCandidateLabelToId := make(map[string]string)
+		for _, candidate := range switchLabelToCandidates[switchLabel] {
+			ifMapCandidateLabelToId[candidate.Label] = candidate.Id
+		}
+		switchInfoByLabel[switchLabel] = struct {
+			switchId           string
+			ifMapLabelFromPlan string
+			ifMapCandidate     map[string]string
+		}{switchId: switchId, ifMapLabelFromPlan: switchLabelToPlan[switchLabel].ifMap, ifMapCandidate: ifMapCandidateLabelToId}
+	}
+
+	result := make(goapstra.SystemIdToInterfaceMapAssignment)
+	for switchLabel, switchId := range switchLabelToId {
+		ifMapFromPlan := switchInfoByLabel[switchLabel].ifMapLabelFromPlan
+		if ifMapFromPlan != "" {
+			// user supplied an ifMapLabel
+			if ifMapId, found := switchInfoByLabel[switchLabel].ifMapCandidate[ifMapFromPlan]; !found {
+				resp.Diagnostics.AddWarning(
+					"invalid interface map not assigned to system",
+					fmt.Sprintf("interface map '%s' not found among candidates for '%s'", ifMapFromPlan, switchLabel))
+			} else {
+				result[switchId] = ifMapId
+			}
+		} else {
+			resp.Diagnostics.AddWarning("no ifmaplabel in plan for", switchLabel)
+			// user didn't supply an ifMapLabel
+			switch len(switchInfoByLabel[switchLabel].ifMapCandidate) {
+			case 0:
+				resp.Diagnostics.AddWarning(
+					"cannot assign interface map",
+					fmt.Sprintf("system '%s' has no candidate interface maps", switchLabel))
+			case 1:
+				var ifMapId string
+				for _, v := range switchInfoByLabel[switchLabel].ifMapCandidate {
+					ifMapId = v
+				}
+				result[switchId] = ifMapId
+			default:
+				resp.Diagnostics.AddWarning(
+					"cannot assign interface map",
+					fmt.Sprintf("cowardly refusing to choose between %d interface maps for '%s'",
+						len(switchInfoByLabel[switchLabel].ifMapCandidate), switchLabel))
+			}
+		}
+	}
+	return result, nil
 }
