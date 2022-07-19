@@ -201,7 +201,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// determine interface map assignments
-	ifMapAssignments, err := generateSwitchToInterfaceMapAssignments(ctx, r.p.client, blueprintId, resp, plan.Switches)
+	ifMapAssignments, err := generateSwitchToInterfaceMapAssignments(ctx, r.p.client, blueprintId, resp, &plan)
 	if err != nil {
 		resp.Diagnostics.AddError("error generating interface map assignments", err.Error())
 	}
@@ -648,7 +648,7 @@ func planSwitchesToSimpleStruct(switchPlan map[string]Switch) map[string]struct 
 // generateSwitchToInterfaceMapAssignments takes the 'switches' map from the
 // terraform plan and returns goapstra.SystemIdToInterfaceMapAssignment
 // representing all switches in the blueprint and
-func generateSwitchToInterfaceMapAssignments(ctx context.Context, client *goapstra.Client, blueprint goapstra.ObjectId, resp *tfsdk.CreateResourceResponse, switchPlan map[string]Switch) (goapstra.SystemIdToInterfaceMapAssignment, error) {
+func generateSwitchToInterfaceMapAssignments(ctx context.Context, client *goapstra.Client, blueprint goapstra.ObjectId, resp *tfsdk.CreateResourceResponse, plan *ResourceBlueprint) (goapstra.SystemIdToInterfaceMapAssignment, error) {
 	switchInfoByLabel := make(map[string]struct {
 		switchId           string
 		ifMapLabelFromPlan string // the label
@@ -662,7 +662,7 @@ func generateSwitchToInterfaceMapAssignments(ctx context.Context, client *goapst
 	}
 
 	// all planned info
-	switchLabelToPlan := planSwitchesToSimpleStruct(switchPlan)
+	switchLabelToPlan := planSwitchesToSimpleStruct(plan.Switches)
 
 	// all ifMap Candidates
 	switchLabelToCandidates, err := getSwitchCandidateInterfaceMaps(ctx, client, blueprint)
