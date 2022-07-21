@@ -112,12 +112,18 @@ func (r resourceIp4Subnet) Read(ctx context.Context, req tfsdk.ReadResourceReque
 
 	// Get IP pool info from API and then update what is in state from what the API returns
 	pool, err := r.p.client.GetIp4Pool(ctx, goapstra.ObjectId(state.PoolId.Value))
+	ace := goapstra.ApstraClientErr{}
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"error reading parent IPv4 pool",
-			fmt.Sprintf("could not read IPv4 pool '%s' - %s", state.PoolId.Value, err),
-		)
-		return
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		} else {
+			resp.Diagnostics.AddError(
+				"error reading parent IPv4 pool",
+				fmt.Sprintf("could not read IPv4 pool '%s' - %s", state.PoolId.Value, err),
+			)
+			return
+		}
 	}
 
 	var foundSomething bool
