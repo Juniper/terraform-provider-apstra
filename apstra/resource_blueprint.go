@@ -69,8 +69,9 @@ func (r resourceBlueprintType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 						Computed: true,
 					},
 					"system_node_id": {
-						Type:     types.StringType,
-						Computed: true,
+						Type:          types.StringType,
+						Computed:      true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
 					},
 				}),
 				Optional: true,
@@ -411,30 +412,30 @@ func (r resourceBlueprint) Read(ctx context.Context, req tfsdk.ReadResourceReque
 		return
 	}
 
-	// get all system -> interface_map assignments
-	switchLabelToInterfaceMap, err := getSwitchAssignedInterfaceMap(ctx, r.p.client, blueprintStatus.Id)
-	if err != nil {
-		resp.Diagnostics.AddError("error reading interface map assignments", err.Error())
-		return
-	}
-	// loop over system -> interface_map assignments
-	for switchLabel, ifMap := range switchLabelToInterfaceMap {
-		// update assignment for switches found in TF state
-		if switchInfo, found := state.Switches[switchLabel]; found {
-			switchInfo.InterfaceMap = types.String{Value: ifMap.label}
-			state.Switches[switchLabel] = switchInfo
+	// get switch info
+	for switchLabel, stateSwitch := range state.Switches {
+		// assign details of each known switch (don't add elements to the state.Switches map)
+		//	- DeviceKey : required user input
+		//	- InterfaceMap : optional user input - if only one option, we'll auto-assign
+		//	- DeviceProfile : a.k.a. aos_hcl_model - determined from InterfaceMap, represents physical device/model
+		//	- SystemNodeId : id of the "type='system', system_type="switch" graph db node representing a spine/leaf/etc...
+		systemInfo, err := getSystemNodeInfo(ctx, r.p.client, blueprintStatus.Id, switchLabel)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("error while reading info for system node '%s'", switchLabel),
+				err.Error())
 		}
-	}
-
-	// update graph db node id for all switches in blueprint
-	switchLabelToGraphDbId, err := getSwitchLabelId(ctx, r.p.client, blueprintStatus.Id)
-	if err != nil {
-		resp.Diagnostics.AddWarning("unable to query blueprint graph db", err.Error())
-	}
-	for switchLabel, graphDbId := range switchLabelToGraphDbId {
-		switchState := state.Switches[switchLabel]
-		switchState.SystemNodeId = types.String{Value: graphDbId}
-		state.Switches[switchLabel] = switchState
+		stateSwitch.SystemNodeId = types.String{Value: systemInfo.id}
+		stateSwitch.DeviceKey = types.String{Value: systemInfo.systemId}
+		interfaceMap, err := getNodeInterfaceMap(ctx, r.p.client, blueprintStatus.Id, switchLabel)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("error while reading interface map for node '%s'", switchLabel),
+				err.Error())
+		}
+		stateSwitch.InterfaceMap = types.String{Value: interfaceMap.label}
+		stateSwitch.DeviceProfile = types.String{Value: interfaceMap.deviceProfileId}
+		state.Switches[switchLabel] = stateSwitch
 	}
 
 	state.Name = types.String{Value: blueprintStatus.Label}
@@ -1080,18 +1081,73 @@ func ifmapCandidateFromCandidates(label string, candidates []ifmapInfo) *ifmapIn
 	return nil
 }
 
-func getValidDeviceKeys(ctx context.Context, client *goapstra.Client) ([]string, error) {
-	managedSystems, err := client.GetAllSystemsInfo(ctx)
+func getNodeInterfaceMap(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string) (*ifmapInfo, error) {
+	var interfaceMapQR struct {
+		Items []struct {
+			InterfaceMap struct {
+				Id              string `json:"id"`
+				Label           string `json:"label"`
+				DeviceProfileId string `json:"device_profile_id"`
+			} `json:"n_interface_map"`
+		} `json:"items"`
+	}
+	err := client.NewQuery(bpId).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("system")},
+			{"label", goapstra.QEStringVal(label)},
+		}).
+		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("interface_map")},
+			{"name", goapstra.QEStringVal("n_interface_map")},
+		}).
+		Do(&interfaceMapQR)
 	if err != nil {
 		return nil, err
 	}
-
-	var result []string
-	for _, ms := range managedSystems {
-		if ms.DeviceKey == "" {
-			return nil, fmt.Errorf("apstra returned empty device key for managed system '%s'", ms.Id)
-		}
-		result = append(result, ms.DeviceKey)
+	if len(interfaceMapQR.Items) != 1 {
+		return nil, fmt.Errorf("expected exactly one interface map, got %d", len(interfaceMapQR.Items))
 	}
-	return result, nil
+	return &ifmapInfo{
+		id:              interfaceMapQR.Items[0].InterfaceMap.Id,
+		label:           interfaceMapQR.Items[0].InterfaceMap.Label,
+		deviceProfileId: interfaceMapQR.Items[0].InterfaceMap.DeviceProfileId,
+	}, nil
+}
+
+type systemNodeInfo struct {
+	id       string
+	label    string
+	systemId string
+}
+
+func getSystemNodeInfo(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string) (*systemNodeInfo, error) {
+	var systemQR struct {
+		Items []struct {
+			System struct {
+				Id       string `json:"id"`
+				Label    string `json:"label"`
+				SystemID string `json:"system_id"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}
+	err := client.NewQuery(bpId).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("system")},
+			{"label", goapstra.QEStringVal(label)},
+			{"name", goapstra.QEStringVal("n_system")},
+		}).Do(&systemQR)
+	if err != nil {
+		return nil, err
+	}
+	if len(systemQR.Items) != 1 {
+		return nil, fmt.Errorf("expected exactly one system node, got %d", len(systemQR.Items))
+	}
+	return &systemNodeInfo{
+		id:       systemQR.Items[0].System.Id,
+		label:    systemQR.Items[0].System.Label,
+		systemId: systemQR.Items[0].System.SystemID,
+	}, nil
 }
