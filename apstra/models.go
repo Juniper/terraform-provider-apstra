@@ -168,8 +168,8 @@ type LogicalDevicePortGroup struct {
 }
 
 type Switch struct {
-	InterfaceMap   types.String `tfsdk:"interface_map"`
-	InterfaceMapId types.String `tfsdk:"interface_map_id"`
-	DeviceKey      types.String `tfsdk:"device_key"`
-	SystemId       types.String `tfsdk:"system_id"`
+	InterfaceMap  types.String `tfsdk:"interface_map"`
+	DeviceKey     types.String `tfsdk:"device_key"`
+	DeviceProfile types.String `tfsdk:"device_profile"`
+	SystemNodeId  types.String `tfsdk:"system_node_id"`
 }
