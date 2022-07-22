@@ -18,12 +18,12 @@ func (r dataSourceTagType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Computed: true,
 				Type:     types.StringType,
 			},
-			"key": {
+			"name": {
 				Optional: true,
 				Computed: true,
 				Type:     types.StringType,
 			},
-			"value": {
+			"description": {
 				Computed: true,
 				Type:     types.StringType,
 			},
@@ -49,7 +49,7 @@ func (r dataSourceTag) ValidateConfig(ctx context.Context, req tfsdk.ValidateDat
 		return
 	}
 
-	if (config.Key.Null && config.Id.Null) || (!config.Key.Null && !config.Id.Null) { // XOR
+	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
 		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'key' must be specified")
 		return
 	}
@@ -65,8 +65,8 @@ func (r dataSourceTag) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest
 
 	var err error
 	var tag *goapstra.DesignTag
-	if config.Key.Null == false {
-		tag, err = r.p.client.GetTagByLabel(ctx, config.Key.Value)
+	if config.Name.Null == false {
+		tag, err = r.p.client.GetTagByLabel(ctx, goapstra.TagLabel(config.Name.Value))
 	}
 	if config.Id.Null == false {
 		tag, err = r.p.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
@@ -78,9 +78,9 @@ func (r dataSourceTag) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest
 
 	// Set state
 	diags = resp.State.Set(ctx, &DataTag{
-		Id:    types.String{Value: string(tag.Id)},
-		Key:   types.String{Value: tag.Label},
-		Value: types.String{Value: tag.Description},
+		Id:          types.String{Value: string(tag.Id)},
+		Name:        types.String{Value: string(tag.Label)},
+		Description: types.String{Value: tag.Description},
 	})
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

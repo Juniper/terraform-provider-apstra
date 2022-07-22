@@ -34,6 +34,7 @@ const (
 	resourceIp4PoolSubnetName = "apstra_ip4_pool_subnet"
 	resourceBlueprintName     = "apstra_blueprint"
 	resourceManagedDeviceName = "apstra_managed_device"
+	resourceRackTypeName      = "apstra_rack_type"
 )
 
 func New() tfsdk.Provider {
@@ -156,6 +157,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 		resourceIp4PoolSubnetName: resourceIp4PoolSubnetType{},
 		resourceBlueprintName:     resourceBlueprintType{},
 		resourceManagedDeviceName: resourceManagedDeviceType{},
+		//resourceRackTypeName:      resourceRackTypeName{},
 	}, nil
 }
 

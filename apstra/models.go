@@ -77,9 +77,9 @@ type DataLogicalDevice struct {
 }
 
 type DataTag struct {
-	Id    types.String `tfsdk:"id"`
-	Key   types.String `tfsdk:"key"`
-	Value types.String `tfsdk:"value"`
+	Id          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
 }
 
 type ResourceAgentProfile struct {
@@ -100,17 +100,6 @@ type ResourceAsnPoolRange struct {
 	PoolId types.String `tfsdk:"pool_id"`
 	First  types.Int64  `tfsdk:"first"`
 	Last   types.Int64  `tfsdk:"last"`
-}
-
-type ResourceManagedDevice struct {
-	AgentId        types.String `tfsdk:"agent_id"`
-	SystemId       types.String `tfsdk:"system_id"`
-	ManagementIp   types.String `tfsdk:"management_ip"`
-	DeviceKey      types.String `tfsdk:"device_key"`
-	AgentProfileId types.String `tfsdk:"agent_profile_id"`
-	AgentLabel     types.String `tfsdk:"agent_label"`
-	Location       types.String `tfsdk:"location"`
-	OnBox          types.Bool   `tfsdk:"on_box"`
 }
 
 type ResourceBlueprint struct {
@@ -134,6 +123,20 @@ type ResourceIp4Pool struct {
 type ResourceIp4Subnet struct {
 	PoolId types.String `tfsdk:"pool_id"`
 	Cidr   types.String `tfsdk:"cidr"`
+}
+
+type ResourceManagedDevice struct {
+	AgentId        types.String `tfsdk:"agent_id"`
+	SystemId       types.String `tfsdk:"system_id"`
+	ManagementIp   types.String `tfsdk:"management_ip"`
+	DeviceKey      types.String `tfsdk:"device_key"`
+	AgentProfileId types.String `tfsdk:"agent_profile_id"`
+	AgentLabel     types.String `tfsdk:"agent_label"`
+	Location       types.String `tfsdk:"location"`
+	OnBox          types.Bool   `tfsdk:"on_box"`
+}
+
+type ResourceRackType struct {
 }
 
 // helper structs used by 'resource' and 'data source' objects follow
