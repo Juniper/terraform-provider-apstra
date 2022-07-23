@@ -17,7 +17,7 @@ type DataAgentProfile struct {
 type DataAgentProfileId struct {
 	Id    types.String   `tfsdk:"id"`
 	Label types.String   `tfsdk:"label"`
-	Tags  []types.String `tfsdk:"tags""`
+	Tags  []types.String `tfsdk:"tags"`
 }
 
 type DataAgentProfileIds struct {
@@ -53,7 +53,7 @@ type DataIp4Pool struct {
 type DataAsnPoolId struct {
 	Id   types.String   `tfsdk:"id"`
 	Name types.String   `tfsdk:"name"`
-	Tags []types.String `tfsdk:"tags""`
+	Tags []types.String `tfsdk:"tags"`
 }
 
 type DataAsnPoolIds struct {
@@ -63,7 +63,7 @@ type DataAsnPoolIds struct {
 type DataIp4PoolId struct {
 	Id   types.String   `tfsdk:"id"`
 	Name types.String   `tfsdk:"name"`
-	Tags []types.String `tfsdk:"tags""`
+	Tags []types.String `tfsdk:"tags"`
 }
 
 type DataIp4PoolIds struct {
@@ -137,6 +137,13 @@ type ResourceManagedDevice struct {
 }
 
 type ResourceRackType struct {
+	Id                       types.String `tfsdk:"id"`
+	Name                     types.String `tfsdk:"name"`
+	Description              types.String `tfsdk:"description"`
+	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
+	LeafSwitches             []LeafSwitch `tfsdk:"leaf_switches"`
+	//AccessSwitches           []AccessSwitch  `tfsdk:"access_switches"`
+	//GenericSystems           []GenericSystem `tfsdk:"generic_systems"`
 }
 
 // helper structs used by 'resource' and 'data source' objects follow
@@ -176,3 +183,22 @@ type Switch struct {
 	DeviceProfile types.String `tfsdk:"device_profile"`
 	SystemNodeId  types.String `tfsdk:"system_node_id"`
 }
+
+type LeafSwitch struct {
+	Name                        types.String   `tfsdk:"name"`
+	LinkPerSpineCount           types.Int64    `tfsdk:"spine_link_count"`
+	LinkPerSpineSpeed           types.String   `tfsdk:"spine_link_speed"`
+	LeafLeafL3LinkCount         types.Int64    `tfsdk:"l3_peer_link_count"`
+	LeafLeafL3LinkSpeed         types.String   `tfsdk:"l3_peer_link_speed"`
+	LeafLeafL3LinkPortChannelId types.Int64    `tfsdk:"l3_peer_link_port_channel_id"`
+	LeafLeafLinkCount           types.Int64    `tfsdk:"peer_link_count"`
+	LeafLeafLinkSpeed           types.String   `tfsdk:"peer_link_speed"`
+	LeafLeafLinkPortChannelId   types.Int64    `tfsdk:"peer_link_port_channel_id"`
+	MlagVlanId                  types.Int64    `tfsdk:"mlag_vlan_id"`
+	RedundancyProtocol          types.String   `tfsdk:"redundancy_protocol"`
+	Tags                        []types.String `tfsdk:"tags"`
+	LogicalDeviceId             types.String   `tfsdk:"logical_device_id"`
+}
+
+type AccessSwitch struct{}
+type GenericSystem struct{}

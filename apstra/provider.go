@@ -157,7 +157,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 		resourceIp4PoolSubnetName: resourceIp4PoolSubnetType{},
 		resourceBlueprintName:     resourceBlueprintType{},
 		resourceManagedDeviceName: resourceManagedDeviceType{},
-		//resourceRackTypeName:      resourceRackTypeName{},
+		resourceRackTypeName:      resourceRackTypeType{},
 	}, nil
 }
 
