@@ -143,7 +143,7 @@ type ResourceRackType struct {
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
 	LeafSwitches             []LeafSwitch `tfsdk:"leaf_switches"`
 	//AccessSwitches           []AccessSwitch  `tfsdk:"access_switches"`
-	//GenericSystems           []GenericSystem `tfsdk:"generic_systems"`
+	GenericSystems []GenericSystem `tfsdk:"generic_systems"`
 }
 
 // helper structs used by 'resource' and 'data source' objects follow
@@ -185,20 +185,43 @@ type Switch struct {
 }
 
 type LeafSwitch struct {
-	Name                        types.String   `tfsdk:"name"`
-	LinkPerSpineCount           types.Int64    `tfsdk:"spine_link_count"`
-	LinkPerSpineSpeed           types.String   `tfsdk:"spine_link_speed"`
-	LeafLeafL3LinkCount         types.Int64    `tfsdk:"l3_peer_link_count"`
-	LeafLeafL3LinkSpeed         types.String   `tfsdk:"l3_peer_link_speed"`
-	LeafLeafL3LinkPortChannelId types.Int64    `tfsdk:"l3_peer_link_port_channel_id"`
-	LeafLeafLinkCount           types.Int64    `tfsdk:"peer_link_count"`
-	LeafLeafLinkSpeed           types.String   `tfsdk:"peer_link_speed"`
-	LeafLeafLinkPortChannelId   types.Int64    `tfsdk:"peer_link_port_channel_id"`
-	MlagVlanId                  types.Int64    `tfsdk:"mlag_vlan_id"`
-	RedundancyProtocol          types.String   `tfsdk:"redundancy_protocol"`
-	Tags                        []types.String `tfsdk:"tags"`
-	LogicalDeviceId             types.String   `tfsdk:"logical_device_id"`
+	Name               types.String   `tfsdk:"name"`
+	LogicalDeviceId    types.String   `tfsdk:"logical_device_id"`
+	LinkPerSpineCount  types.Int64    `tfsdk:"spine_link_count"`
+	LinkPerSpineSpeed  types.String   `tfsdk:"spine_link_speed"`
+	RedundancyProtocol types.String   `tfsdk:"redundancy_protocol"` // ["","mlag","esi"]
+	Tags               []types.String `tfsdk:"tags"`
+	//MlagVlanId                  types.Int64  `tfsdk:"mlag_vlan_id"`                 // required w/"mlag"
+	//LeafLeafLinkCount           types.Int64  `tfsdk:"peer_link_count"`              // required w/"mlag"
+	//LeafLeafLinkSpeed           types.String `tfsdk:"peer_link_speed"`              // required w/"mlag"
+	//LeafLeafLinkPortChannelId   types.Int64  `tfsdk:"peer_link_port_channel_id"`    // required w/"mlag"
+	//LeafLeafL3LinkCount         types.Int64  `tfsdk:"l3_peer_link_count"`           // required w/"mlag"
+	//LeafLeafL3LinkSpeed         types.String `tfsdk:"l3_peer_link_speed"`           // required w/"mlag"
+	//LeafLeafL3LinkPortChannelId types.Int64  `tfsdk:"l3_peer_link_port_channel_id"` // required w/"mlag"
 }
 
-type AccessSwitch struct{}
-type GenericSystem struct{}
+type GenericSystem struct {
+	Name             types.String   `tfsdk:"name"`
+	Count            types.Int64    `tfsdk:"count"`
+	LogicalDeviceId  types.String   `tfsdk:"logical_device_id"`
+	PortChannelIdMin types.Int64    `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64    `tfsdk:"port_channel_id_max"`
+	Tags             []types.String `tfsdk:"tags"`
+	Links            []GSLink       `tfsdk:"links"`
+}
+
+type GSLink struct {
+	Name               types.String   `tfsdk:"name"`               // none
+	TargetSwitchLabel  types.String   `tfsdk:"target_switch_name"` // none
+	LagMode            types.String   `tfsdk:"lag_mode"`           // none (omit)
+	LinkPerSwitchCount types.Int64    `tfsdk:"links_per_switch"`   // none
+	Speed              types.String   `tfsdk:"speed"`              // none
+	SwitchPeer         types.String   `tfsdk:"switch_peer""`
+	Tags               []types.String `tfsdk:"tags"` // none
+}
+
+type TagDetails struct{}           // todo add to leaf/access/generic to detect changes on apstra side
+type LogicalDeviceDetails struct{} // todo add to leaf/access/generic to detect changes on apstra side
+
+type AccessSwitch struct{} // todo
+type ASLink struct{}       //todo
