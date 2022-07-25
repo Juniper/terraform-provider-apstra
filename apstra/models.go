@@ -137,13 +137,13 @@ type ResourceManagedDevice struct {
 }
 
 type ResourceRackType struct {
-	Id                       types.String `tfsdk:"id"`
-	Name                     types.String `tfsdk:"name"`
-	Description              types.String `tfsdk:"description"`
-	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             []LeafSwitch `tfsdk:"leaf_switches"`
-	//AccessSwitches           []AccessSwitch  `tfsdk:"access_switches"`
-	GenericSystems []GenericSystem `tfsdk:"generic_systems"`
+	Id                       types.String             `tfsdk:"id"`
+	Name                     types.String             `tfsdk:"name"`
+	Description              types.String             `tfsdk:"description"`
+	FabricConnectivityDesign types.String             `tfsdk:"fabric_connectivity_design"`
+	LeafSwitches             map[string]LeafSwitch    `tfsdk:"leaf_switches"`
+	GenericSystems           map[string]GenericSystem `tfsdk:"generic_systems"`
+	//AccessSwitches         map[string]AccessSwitch  `tfsdk:"access_switches"`
 }
 
 // helper structs used by 'resource' and 'data source' objects follow
@@ -184,13 +184,17 @@ type Switch struct {
 	SystemNodeId  types.String `tfsdk:"system_node_id"`
 }
 
+type tagClone struct {
+	Label       string `json:"label"`
+	Description string `json:"description"`
+}
+
 type LeafSwitch struct {
-	Name               types.String   `tfsdk:"name"`
-	LogicalDeviceId    types.String   `tfsdk:"logical_device_id"`
-	LinkPerSpineCount  types.Int64    `tfsdk:"spine_link_count"`
-	LinkPerSpineSpeed  types.String   `tfsdk:"spine_link_speed"`
-	RedundancyProtocol types.String   `tfsdk:"redundancy_protocol"` // ["","mlag","esi"]
-	Tags               []types.String `tfsdk:"tags"`
+	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
+	LinkPerSpineCount  types.Int64  `tfsdk:"spine_link_count"`
+	LinkPerSpineSpeed  types.String `tfsdk:"spine_link_speed"`
+	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"` // ["","mlag","esi"]
+	//Tags               []types.String `tfsdk:"tags"` // todo: need to handle the read-only problem
 	//MlagVlanId                  types.Int64  `tfsdk:"mlag_vlan_id"`                 // required w/"mlag"
 	//LeafLeafLinkCount           types.Int64  `tfsdk:"peer_link_count"`              // required w/"mlag"
 	//LeafLeafLinkSpeed           types.String `tfsdk:"peer_link_speed"`              // required w/"mlag"
@@ -201,27 +205,23 @@ type LeafSwitch struct {
 }
 
 type GenericSystem struct {
-	Name             types.String   `tfsdk:"name"`
-	Count            types.Int64    `tfsdk:"count"`
-	LogicalDeviceId  types.String   `tfsdk:"logical_device_id"`
-	PortChannelIdMin types.Int64    `tfsdk:"port_channel_id_min"`
-	PortChannelIdMax types.Int64    `tfsdk:"port_channel_id_max"`
-	Tags             []types.String `tfsdk:"tags"`
-	Links            []GSLink       `tfsdk:"links"`
+	Count            types.Int64  `tfsdk:"count"`
+	LogicalDeviceId  types.String `tfsdk:"logical_device_id"`
+	PortChannelIdMin types.Int64  `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64  `tfsdk:"port_channel_id_max"`
+	//Tags             []types.String `tfsdk:"tags"` // todo: need to handle the read-only problem
+	Links []GSLink `tfsdk:"links"`
 }
 
 type GSLink struct {
-	Name               types.String   `tfsdk:"name"`               // none
-	TargetSwitchLabel  types.String   `tfsdk:"target_switch_name"` // none
-	LagMode            types.String   `tfsdk:"lag_mode"`           // none (omit)
-	LinkPerSwitchCount types.Int64    `tfsdk:"links_per_switch"`   // none
-	Speed              types.String   `tfsdk:"speed"`              // none
-	SwitchPeer         types.String   `tfsdk:"switch_peer""`
-	Tags               []types.String `tfsdk:"tags"` // none
+	Name               types.String `tfsdk:"name"`               // none
+	TargetSwitchLabel  types.String `tfsdk:"target_switch_name"` // none
+	LagMode            types.String `tfsdk:"lag_mode"`           // none (omit)
+	LinkPerSwitchCount types.Int64  `tfsdk:"links_per_switch"`   // none
+	Speed              types.String `tfsdk:"speed"`              // none
+	SwitchPeer         types.String `tfsdk:"switch_peer""`
+	//Tags             []types.String `tfsdk:"tags"` // todo: need to handle the read-only problem
 }
-
-type TagDetails struct{}           // todo add to leaf/access/generic to detect changes on apstra side
-type LogicalDeviceDetails struct{} // todo add to leaf/access/generic to detect changes on apstra side
 
 type AccessSwitch struct{} // todo
 type ASLink struct{}       //todo
