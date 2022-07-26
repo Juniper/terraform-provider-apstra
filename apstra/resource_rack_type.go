@@ -641,7 +641,7 @@ func parseTfGenericSystemsToGoapstraGenericSystemsRequests(plan *ResourceRackTyp
 func (r ResourceRackType) Validate(diags *diag.Diagnostics) {
 	for _, gs := range r.GenericSystems {
 		for _, link := range gs.Links {
-			if !link.LagMode.IsNull() && !link.SwitchPeer.IsNull() {
+			if !link.LagMode.IsNull() && link.SwitchPeer.Value != "" {
 				diags.AddError("incompatible generic system link config",
 					"'switch_peer' cannot be set concurrently with 'lag_mode'")
 			}
