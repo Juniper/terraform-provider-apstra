@@ -675,7 +675,7 @@ func (r *ResourceRackType) Compute(diags *diag.Diagnostics) {
 				//	}
 				default:
 					diags.AddError("no such switch",
-						fmt.Sprintf("generic system '%s' link %d calls for unknown switch '%s'", gsName, linkNum, link.SwitchPeer.Value))
+						fmt.Sprintf("generic system '%s' link %d calls for unknown switch '%s'", gsName, linkNum, link.TargetSwitchLabel.Value))
 					return
 				}
 
