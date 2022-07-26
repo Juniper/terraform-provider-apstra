@@ -2,7 +2,6 @@ package apstra
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/chrismarget-j/goapstra"
@@ -323,11 +322,6 @@ func (r resourceRackType) Read(ctx context.Context, req tfsdk.ReadResourceReques
 
 	newState := goApstraRackTypeToResourceRackType(rt, &resp.Diagnostics)
 
-	o, _ := json.Marshal(oldState.GenericSystems["single_homed_a"])
-	n, _ := json.Marshal(newState.GenericSystems["single_homed_a"])
-	resp.Diagnostics.AddWarning("o", string(o))
-	resp.Diagnostics.AddWarning("n", string(n))
-
 	// copy read-only elements of old state into new state
 	copyReadOnlyAttributes(oldState, newState)
 
@@ -643,9 +637,36 @@ func (r *ResourceRackType) Compute(diags *diag.Diagnostics) {
 				// with LAG enabled, switch_peer must be empty
 				r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Null: true}
 			} else {
-				// with LAG disabled, switch_peer must be non-empty
-				if link.SwitchPeer.IsUnknown() {
+				// LAG is disabled.
+
+				// set booleans to indicate link target switch type
+				_, linkTargetLeaf := r.LeafSwitches[link.TargetSwitchLabel.Value]
+				//_, linkTargetAccess := r.AccessSwitches[link.TargetSwitchLabel.Value]
+
+				// flag whether the target switch (whichever link/access) has mlag/esi capability
+				var targetSwitchRedundant bool
+				switch {
+				case linkTargetLeaf:
+					if !r.LeafSwitches[link.TargetSwitchLabel.Value].RedundancyProtocol.IsNull() {
+						targetSwitchRedundant = true
+					}
+				//case link_to_access:
+				//	if !r.AccessSwitches[link.TargetSwitchLabel.Value].RedundancyProtocol.IsNull() {
+				//		targetSwitchRedundant = true
+				//	}
+				default:
+					diags.AddError("no such switch",
+						fmt.Sprintf("generic system '%s' link %d calls for unknown switch '%s'", gsName, linkNum, link.SwitchPeer.Value))
+					return
+				}
+
+				// where switches come in pairs (redundant esi/mlag capability),
+				// non-lag links must specify which (first/second) switch they
+				// intend to target
+				if targetSwitchRedundant && link.SwitchPeer.IsUnknown() {
 					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Value: goapstra.RackLinkSwitchPeerFirst.String()}
+				} else {
+					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Value: goapstra.RackLinkSwitchPeerNone.String()}
 				}
 			}
 
