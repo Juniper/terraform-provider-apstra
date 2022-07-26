@@ -251,10 +251,17 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 		}
 	}
 
+	var agentLabel types.String
+	if agentInfo.RunningConfig.Label == "" {
+		agentLabel = types.String{Null: true}
+	} else {
+		agentLabel = types.String{Value: agentInfo.RunningConfig.Label}
+	}
+
 	state.SystemId = types.String{Value: string(systemInfo.Id)}
 	state.ManagementIp = types.String{Value: agentInfo.RunningConfig.ManagementIp}
 	state.AgentProfileId = types.String{Value: string(agentInfo.Config.Profile)}
-	state.AgentLabel = types.String{Value: agentInfo.RunningConfig.Label}
+	state.AgentLabel = agentLabel
 	state.OnBox = types.Bool{}
 
 	if agentInfo.RunningConfig.AgentType == goapstra.AgentTypeOnbox {
