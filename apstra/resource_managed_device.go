@@ -143,12 +143,12 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	}
 
 	// Install the new agent
-	jobStatus, err := r.p.client.AgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
+	_, err = r.p.client.AgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error running Install job",
-			fmt.Sprintf("Could not run install (job %d) on new agent '%s', unexpected error: %s",
-				jobStatus.JobId, agentId, err.Error()),
+			fmt.Sprintf("Could not run 'install' job on new agent '%s', unexpected error: %s",
+				agentId, err.Error()),
 		)
 		return
 	}
