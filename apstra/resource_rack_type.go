@@ -29,7 +29,6 @@ func (r resourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 		goapstra.RackLinkLagModeStatic.String(),
 	}
 	gsLinkSwitchPeers := []string{
-		goapstra.RackLinkSwitchPeerNone.String(),
 		goapstra.RackLinkSwitchPeerFirst.String(),
 		goapstra.RackLinkSwitchPeerSecond.String(),
 	}
@@ -551,9 +550,9 @@ func parseGSLagMode(lm types.String) goapstra.RackLinkLagMode {
 
 func parseGSLinkSwitchPeer(sp types.String) goapstra.RackLinkSwitchPeer {
 	switch {
-	case sp.Value == goapstra.RackLinkSwitchPeerFirst.String():
+	case !sp.Null && !sp.Unknown && sp.Value == goapstra.RackLinkSwitchPeerFirst.String():
 		return goapstra.RackLinkSwitchPeerFirst
-	case sp.Value == goapstra.RackLinkSwitchPeerSecond.String():
+	case !sp.Null && !sp.Unknown && sp.Value == goapstra.RackLinkSwitchPeerSecond.String():
 		return goapstra.RackLinkSwitchPeerSecond
 	default:
 		return goapstra.RackLinkSwitchPeerNone
@@ -658,37 +657,39 @@ func (r *ResourceRackType) Compute(diags *diag.Diagnostics) {
 			} else {
 				// LAG is disabled.
 
-				// set booleans to indicate link target switch type
-				_, linkTargetLeaf := r.LeafSwitches[link.TargetSwitchLabel.Value]
-				//_, linkTargetAccess := r.AccessSwitches[link.TargetSwitchLabel.Value]
-
-				// flag whether the target switch (whichever link/access) has mlag/esi capability
-				var targetSwitchRedundant bool
-				switch {
-				case linkTargetLeaf:
-					if !r.LeafSwitches[link.TargetSwitchLabel.Value].RedundancyProtocol.IsNull() {
-						targetSwitchRedundant = true
-					}
-				//case link_to_access:
-				//	if !r.AccessSwitches[link.TargetSwitchLabel.Value].RedundancyProtocol.IsNull() {
-				//		targetSwitchRedundant = true
-				//	}
-				default:
-					diags.AddError("no such switch",
-						fmt.Sprintf("generic system '%s' link %d calls for unknown switch '%s'", gsName, linkNum, link.TargetSwitchLabel.Value))
+				switchLagEnabled := r.switchIsRedundant(link.TargetSwitchLabel.Value, diags)
+				if diags.HasError() {
 					return
 				}
 
-				// where switches come in pairs (redundant esi/mlag capability),
-				// non-lag links must specify which (first/second) switch they
-				// intend to target
-				if targetSwitchRedundant && link.SwitchPeer.IsUnknown() {
-					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Value: goapstra.RackLinkSwitchPeerFirst.String()}
-				} else {
+				switch {
+				case !switchLagEnabled:
 					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Null: true}
+				case switchLagEnabled && link.SwitchPeer.IsUnknown():
+					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Value: goapstra.RackLinkSwitchPeerFirst.String()}
 				}
 			}
 
 		}
 	}
+}
+
+func (r ResourceRackType) switchIsRedundant(switchLabel string, diags *diag.Diagnostics) bool {
+	// set booleans to indicate link target switch type (leaf or access).
+	// this is possible because switch labels within a rack are guaranteed unique.
+	// the given label can only be in one list (or zero lists).
+	leaf, linkTargetsALeafSwitch := r.LeafSwitches[switchLabel]
+	//access, linkTargetsAnAccessSwitch := r.AccessSwitches[switchLabel] //todo: required for access switch support
+
+	switch {
+	case linkTargetsALeafSwitch && !leaf.RedundancyProtocol.IsNull():
+		return true
+	//case linkTargetsAnAccessSwitch && !access.RedundancyProtocol.IsNull(): // todo: required for access switch support
+	//	return true                                                          // todo: required for access switch support
+	default:
+		diags.AddError("no such switch",
+			fmt.Sprintf("a link targets unknown switch '%s'", switchLabel))
+		return false
+	}
+
 }
