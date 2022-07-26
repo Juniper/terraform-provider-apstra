@@ -323,14 +323,19 @@ func (r resourceRackType) Read(ctx context.Context, req tfsdk.ReadResourceReques
 	newState := goApstraRackTypeToResourceRackType(rt, &resp.Diagnostics)
 
 	// copy read-only elements of old state into new state
-	copyReadOnlyAttributes(oldState, newState)
+	copyReadOnlyAttributes(oldState, newState, &resp.Diagnostics)
+
+	//o, _ := json.Marshal(oldState)
+	//n, _ := json.Marshal(newState)
+	//resp.Diagnostics.AddWarning("o", string(o))
+	//resp.Diagnostics.AddWarning("n", string(n))
 
 	// Set state
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
-func copyReadOnlyAttributes(savedState *ResourceRackType, fromApstra *ResourceRackType) {
+func copyReadOnlyAttributes(savedState *ResourceRackType, fromApstra *ResourceRackType, diags *diag.Diagnostics) {
 	// enhance data read from API with LogicalDeviceId found in the state file
 	for name, oldLeafSwitch := range savedState.LeafSwitches {
 		if leafSwitchPerAPI, found := fromApstra.LeafSwitches[name]; found {
@@ -395,13 +400,13 @@ func goapstraRtGenericSystemsToTfGenericSystems(genericSystems []goapstra.RackEl
 			PortChannelIdMin: portChannelIdMin,
 			PortChannelIdMax: portChannelIdMax,
 			//Tags:             goapstraDesignTagsToTfTagLabels(genericSystem.Tags),
-			Links: goApstraGenericSystemRackLinksToTfGSLinks(genericSystem.Links),
+			Links: goApstraGenericSystemRackLinksToTfGSLinks(genericSystem.Links, diags),
 		}
 	}
 	return result
 }
 
-func goApstraGenericSystemRackLinksToTfGSLinks(in []goapstra.RackLink) []GSLink {
+func goApstraGenericSystemRackLinksToTfGSLinks(in []goapstra.RackLink, diags *diag.Diagnostics) []GSLink {
 	if len(in) == 0 {
 		return nil
 	}
@@ -415,13 +420,20 @@ func goApstraGenericSystemRackLinksToTfGSLinks(in []goapstra.RackLink) []GSLink 
 			lagMode = types.String{Value: link.LagMode.String()}
 		}
 
+		var switchPeer types.String
+		if link.SwitchPeer == goapstra.RackLinkSwitchPeerNone {
+			switchPeer = types.String{Null: true}
+		} else {
+			switchPeer = types.String{Value: link.SwitchPeer.String()}
+		}
+
 		out[i] = GSLink{
 			Name:               types.String{Value: link.Label},
 			TargetSwitchLabel:  types.String{Value: link.TargetSwitchLabel},
 			LagMode:            lagMode,
 			LinkPerSwitchCount: types.Int64{Value: int64(link.LinkPerSwitchCount)},
 			Speed:              types.String{Value: string(link.LinkSpeed)},
-			SwitchPeer:         types.String{Value: link.SwitchPeer.String()},
+			SwitchPeer:         switchPeer,
 			//Tags:               goapstraDesignTagsToTfTagLabels(link.Tags),
 		}
 	}
@@ -429,10 +441,17 @@ func goApstraGenericSystemRackLinksToTfGSLinks(in []goapstra.RackLink) []GSLink 
 }
 
 func goApstraRackTypeToResourceRackType(rt *goapstra.RackType, diags *diag.Diagnostics) *ResourceRackType {
+	var description types.String
+	if rt.Description == "" {
+		description = types.String{Null: true}
+	} else {
+		description = types.String{Value: rt.Description}
+	}
+
 	return &ResourceRackType{
 		Id:                       types.String{Value: string(rt.Id)},
 		Name:                     types.String{Value: rt.DisplayName},
-		Description:              types.String{Value: rt.Description},
+		Description:              description,
 		FabricConnectivityDesign: types.String{Value: rt.FabricConnectivityDesign.String()},
 		LeafSwitches:             goapstraRtLeafSwitchesToTfLeafSwitches(rt.LeafSwitches, diags),
 		GenericSystems:           goapstraRtGenericSystemsToTfGenericSystems(rt.GenericSystems, diags),
@@ -666,7 +685,7 @@ func (r *ResourceRackType) Compute(diags *diag.Diagnostics) {
 				if targetSwitchRedundant && link.SwitchPeer.IsUnknown() {
 					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Value: goapstra.RackLinkSwitchPeerFirst.String()}
 				} else {
-					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Value: goapstra.RackLinkSwitchPeerNone.String()}
+					r.GenericSystems[gsName].Links[linkNum].SwitchPeer = types.String{Null: true}
 				}
 			}
 
