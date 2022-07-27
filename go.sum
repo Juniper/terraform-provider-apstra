@@ -5,20 +5,10 @@ github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kd
 github.com/apparentlymart/go-textseg v1.0.0/go.mod h1:z96Txxhf3xSFMPmb5X/1W05FF/Nj9VFpLOpjS5yuumk=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/chrismarget-j/goapstra v0.0.0-20220722230357-ef2b0bb1c809 h1:XyvR9NCLV28RwSr2Wa83jldiq1B7z/65Y/gN2nDFGuQ=
-github.com/chrismarget-j/goapstra v0.0.0-20220722230357-ef2b0bb1c809/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220723193031-ba578246a8ab h1:jpAkTChppdmZQJsoUBN7d3IsibS6AQUqv8PoyP+jMyc=
-github.com/chrismarget-j/goapstra v0.0.0-20220723193031-ba578246a8ab/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220723212343-bf96feda5631 h1:bERiOtD6w1wOKlBkRA8Xdr8xRsVxOQTbns9D4qSoGoA=
-github.com/chrismarget-j/goapstra v0.0.0-20220723212343-bf96feda5631/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220723225304-a4140f63b9f9 h1:OPMYLtbOLEY8BsYrmzThJy+55D/cAvXWcy6rjYIzvwY=
-github.com/chrismarget-j/goapstra v0.0.0-20220723225304-a4140f63b9f9/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220724192447-4427e0093ddc h1:8f/IHTcMS2KQA5qE2PUBpGbemNjIYw5wNK7Ht3SiJqM=
-github.com/chrismarget-j/goapstra v0.0.0-20220724192447-4427e0093ddc/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220724200539-a2c5acce08f7 h1:s7cvPOEA91zsk08n6WgkUAgRZHZE8S1SAqpd1qcylCI=
-github.com/chrismarget-j/goapstra v0.0.0-20220724200539-a2c5acce08f7/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220724202814-d9ab0c7ce242 h1:RJjrGWxxd+Q6gz8tmGyqBQJ8oYseKFQS2HjC2X8XznM=
-github.com/chrismarget-j/goapstra v0.0.0-20220724202814-d9ab0c7ce242/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
+github.com/chrismarget-j/goapstra v0.0.0-20220727144430-e5ec39997b09 h1:GszaV1y82vxTRoCwDCCQBLC2TcDAI5lDepqjIySygrU=
+github.com/chrismarget-j/goapstra v0.0.0-20220727144430-e5ec39997b09/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
+github.com/chrismarget-j/goapstra v0.0.0-20220727144627-454d58783f1c h1:REHQo6Wqx8DdyOVofLflV/8T8XHE0aLziwYXoNHUtno=
+github.com/chrismarget-j/goapstra v0.0.0-20220727144627-454d58783f1c/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
@@ -78,8 +68,6 @@ github.com/hashicorp/go-uuid v1.0.3/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/b
 github.com/hashicorp/go-version v1.2.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/hashicorp/terraform-plugin-framework v0.10.0 h1:LGYcnvNdVaZA1ZHe53BHLVjaaGs7HTiq6+9Js29stL4=
 github.com/hashicorp/terraform-plugin-framework v0.10.0/go.mod h1:CK7Opzukfu/2CPJs+HzUdfHrFlp+ZIQeSxjF0x8k464=
-github.com/hashicorp/terraform-plugin-framework-validators v0.2.0 h1:+bmU82GBrmImRfP7jq9g9hHKWrsvWc8xOFJiojPxiEY=
-github.com/hashicorp/terraform-plugin-framework-validators v0.2.0/go.mod h1:1h4uI89dby5g+/esMKVVys5Xju4NpnSYisGcLZxoFeU=
 github.com/hashicorp/terraform-plugin-framework-validators v0.4.0 h1:GVX4gDFdtFZi/E4DjvPmRDf5zBLFAHi8M7Qzehgov+Q=
 github.com/hashicorp/terraform-plugin-framework-validators v0.4.0/go.mod h1:hkGjFzftzT/HRe1It0e8//tGZ3j18PedTq4hHS8NJ/Q=
 github.com/hashicorp/terraform-plugin-go v0.12.0 h1:6wW9mT1dSs0Xq4LR6HXj1heQ5ovr5GxXNJwkErZzpJw=
@@ -122,7 +110,6 @@ github.com/stretchr/testify v1.7.2/go.mod h1:R6va5+xMeoiuVRoj+gSkQ7d3FALtqAAGI1F
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
 github.com/vmihailenco/msgpack/v4 v4.3.12 h1:07s4sz9IReOgdikxLTKNbBdqDMLsjPKXwvCazn8G65U=
 github.com/vmihailenco/msgpack/v4 v4.3.12/go.mod h1:gborTTJjAo/GWTqqRjrLCn9pgNN+NXzzngzBKDPIqw4=
-github.com/vmihailenco/tagparser v0.1.1 h1:quXMXlA39OCbd2wAdTsGDlK9RkOk6Wuw+x37wVyIuWY=
 github.com/vmihailenco/tagparser v0.1.1/go.mod h1:OeAg3pn3UbLjkWt+rN9oFYB6u/cQgqMEUPoW2WPyhdI=
 github.com/vmihailenco/tagparser v0.1.2 h1:gnjoVuB/kljJ5wICEEOpx98oXMWPLj22G67Vbd1qPqc=
 github.com/vmihailenco/tagparser v0.1.2/go.mod h1:OeAg3pn3UbLjkWt+rN9oFYB6u/cQgqMEUPoW2WPyhdI=
@@ -147,8 +134,6 @@ golang.org/x/net v0.0.0-20200301022130-244492dfa37a/go.mod h1:z5CRVTTTmAJ677TzLL
 golang.org/x/net v0.0.0-20200822124328-c89045814202/go.mod h1:/O7V0waA8r7cgGh81Ro3o1hOxt32SMVPicZroKQ2sZA=
 golang.org/x/net v0.0.0-20201021035429-f5854403a974/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/net v0.0.0-20210119194325-5f4716e94777/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
-golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 h1:CIJ76btIcR3eFI5EgSo6k1qKw9KJexJuRLI9G7Hp5wE=
-golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20220708220712-1185a9018129 h1:vucSRfWwTsoXro7P+3Cjlr6flUMtzCwzlvkxEQtHHB0=
 golang.org/x/net v0.0.0-20220708220712-1185a9018129/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
@@ -169,7 +154,6 @@ golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
-golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 h1:nonptSpoQ4vQjyraW20DXPAglgQfVnM9ZC6MmNLMR60=
 golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 h1:0A+M6Uqn+Eje4kHMK80dtF3JCXC4ykBgQG4Fe06QRhQ=
 golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
@@ -188,7 +172,6 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
-google.golang.org/appengine v1.6.5 h1:tycE03LOZYQNhDpS27tcQdAzLCVMaj7QT2SXxebnpCM=
 google.golang.org/appengine v1.6.5/go.mod h1:8WjMMxjGQR8xUklV/ARdw2HLXBOI7O7uCIDZVag1xfc=
 google.golang.org/appengine v1.6.7 h1:FZR1q0exgwxzPzp/aF+VccGrSfxfPpkBqjIIEq3ru6c=
 google.golang.org/appengine v1.6.7/go.mod h1:8WjMMxjGQR8xUklV/ARdw2HLXBOI7O7uCIDZVag1xfc=
