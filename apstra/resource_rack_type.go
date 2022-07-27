@@ -334,6 +334,84 @@ func (r resourceRackType) Read(ctx context.Context, req tfsdk.ReadResourceReques
 	resp.Diagnostics.Append(diags...)
 }
 
+// Update resource
+func (r resourceRackType) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+	// Get current state
+	state := &ResourceRackType{}
+	diags := req.State.Get(ctx, state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get plan values
+	plan := &ResourceRackType{}
+	diags = req.Plan.Get(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate plan
+	plan.Validate(&resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Compute required elements
+	plan.Compute(&resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	rtReq := goapstra.RackTypeRequest{
+		DisplayName:              plan.Name.Value,
+		Description:              plan.Description.Value,
+		FabricConnectivityDesign: parseFCD(plan.FabricConnectivityDesign),
+		LeafSwitches:             parseTfLeafSwitchesToGoapstraLeafSwitchRequests(plan, &diags),
+		GenericSystems:           parseTfGenericSystemsToGoapstraGenericSystemsRequests(plan, &diags),
+		//AccessSwitches:         parseTfAccessSwitchesToGoapstraAccessSwitchRequests(&plan),
+	}
+
+	// one of the parse functions above may have generated an error
+	if diags.HasError() {
+		return
+	}
+
+	err := r.p.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.Value), &rtReq)
+	if err != nil {
+		resp.Diagnostics.AddError("error creating rack type", err.Error())
+		return
+	}
+
+	// Set state
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+// Delete resource
+func (r resourceRackType) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+	var state ResourceRackType
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Delete rack type by calling API
+	err := r.p.client.DeleteRackType(ctx, goapstra.ObjectId(state.Id.Value))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error deleting Rack Type",
+			fmt.Sprintf("could not delete Rack Type '%s' - %s", state.Id.Value, err),
+		)
+		return
+	}
+}
+
 func copyReadOnlyAttributes(savedState *ResourceRackType, fromApstra *ResourceRackType, diags *diag.Diagnostics) {
 	// enhance data read from API with LogicalDeviceId found in the state file
 	for name, oldLeafSwitch := range savedState.LeafSwitches {
@@ -467,52 +545,6 @@ func goapstraDesignTagsToTfTagLabels(in []goapstra.DesignTag) []types.String {
 		out[i] = types.String{Value: string(tag.Label)}
 	}
 	return out
-}
-
-// Update resource
-func (r resourceRackType) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	// Get current state
-	var state ResourceRackType
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get plan values
-	var plan ResourceRackType
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Set state
-	diags = resp.State.Set(ctx, state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-}
-
-// Delete resource
-func (r resourceRackType) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	var state ResourceRackType
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Delete rack type by calling API
-	err := r.p.client.DeleteRackType(ctx, goapstra.ObjectId(state.Id.Value))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error deleting Rack Type",
-			fmt.Sprintf("could not delete Rack Type '%s' - %s", state.Id.Value, err),
-		)
-		return
-	}
 }
 
 func parseFCD(fcd types.String) goapstra.FabricConnectivityDesign {
@@ -684,8 +716,12 @@ func (r ResourceRackType) switchIsRedundant(switchLabel string, diags *diag.Diag
 	switch {
 	case linkTargetsALeafSwitch && !leaf.RedundancyProtocol.IsNull():
 		return true
+	case linkTargetsALeafSwitch && leaf.RedundancyProtocol.IsNull():
+		return false
 	//case linkTargetsAnAccessSwitch && !access.RedundancyProtocol.IsNull(): // todo: required for access switch support
 	//	return true                                                          // todo: required for access switch support
+	//case linkTargetsAnAccessSwitch && access.RedundancyProtocol.IsNull():  // todo: required for access switch support
+	//	return false                                                         // todo: required for access switch support
 	default:
 		diags.AddError("no such switch",
 			fmt.Sprintf("a link targets unknown switch '%s'", switchLabel))
