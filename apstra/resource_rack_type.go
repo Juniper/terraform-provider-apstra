@@ -380,7 +380,7 @@ func (r resourceRackType) Update(ctx context.Context, req tfsdk.UpdateResourceRe
 
 	err := r.p.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.Value), &rtReq)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating rack type", err.Error())
+		resp.Diagnostics.AddError("error updating rack type", err.Error())
 		return
 	}
 
