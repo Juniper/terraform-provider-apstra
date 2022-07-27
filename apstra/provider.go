@@ -35,6 +35,7 @@ const (
 	resourceBlueprintName     = "apstra_blueprint"
 	resourceManagedDeviceName = "apstra_managed_device"
 	resourceRackTypeName      = "apstra_rack_type"
+	resourceWireframeName     = "apstra_template"
 )
 
 func New() tfsdk.Provider {
@@ -158,6 +159,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 		resourceBlueprintName:     resourceBlueprintType{},
 		resourceManagedDeviceName: resourceManagedDeviceType{},
 		resourceRackTypeName:      resourceRackTypeType{},
+		resourceWireframeName:     resourceWireframeType{},
 	}, nil
 }
 

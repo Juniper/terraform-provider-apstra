@@ -146,6 +146,12 @@ type ResourceRackType struct {
 	//AccessSwitches         map[string]AccessSwitch  `tfsdk:"access_switches"`
 }
 
+type ResourceWireframe struct {
+	Id   types.String   `tfsdk:"id"`
+	Name types.String   `tfsdk:"name"`
+	Tags []types.String `tfsdk:"tags"`
+}
+
 // helper structs used by 'resource' and 'data source' objects follow
 
 type AsnRange struct {
