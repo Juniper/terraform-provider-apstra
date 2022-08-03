@@ -2,7 +2,6 @@ package apstra
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/chrismarget-j/goapstra"
@@ -865,18 +864,18 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 	return result, nil
 }
 
-type switchLabelToCandidateInterfaceMaps map[string][]struct {
-	Id    string
-	Label string
-}
-
-func (o *switchLabelToCandidateInterfaceMaps) string() (string, error) {
-	data, err := json.Marshal(o)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
+//type switchLabelToCandidateInterfaceMaps map[string][]struct {
+//	Id    string
+//	Label string
+//}
+//
+//func (o *switchLabelToCandidateInterfaceMaps) string() (string, error) {
+//	data, err := json.Marshal(o)
+//	if err != nil {
+//		return "", err
+//	}
+//	return string(data), nil
+//}
 
 //// getSwitchCandidateInterfaceMaps queries the graph db for
 //// 'switch' type systems and their candidate interface maps.
