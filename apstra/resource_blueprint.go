@@ -878,55 +878,55 @@ func (o *switchLabelToCandidateInterfaceMaps) string() (string, error) {
 	return string(data), nil
 }
 
-// getSwitchCandidateInterfaceMaps queries the graph db for
-// 'switch' type systems and their candidate interface maps.
-// It returns switchLabelToCandidateInterfaceMaps.
-func getSwitchCandidateInterfaceMaps(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId) (switchLabelToCandidateInterfaceMaps, error) {
-	var candidateInterfaceMapsQR struct {
-		Items []struct {
-			System struct {
-				Label string `json:"label"`
-			} `json:"n_system"`
-			InterfaceMap struct {
-				Id    string `json:"id"`
-				Label string `json:"label"`
-			} `json:"n_interface_map"`
-		} `json:"items"`
-	}
-	err := client.NewQuery(bpId).
-		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"name", goapstra.QEStringVal("n_system")},
-			{"system_type", goapstra.QEStringVal("switch")},
-		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("logical_device")},
-		}).
-		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("interface_map")},
-			{"name", goapstra.QEStringVal("n_interface_map")},
-		}).
-		Do(&candidateInterfaceMapsQR)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(switchLabelToCandidateInterfaceMaps)
-
-	for _, item := range candidateInterfaceMapsQR.Items {
-		mapEntry := result[item.System.Label]
-		mapEntry = append(mapEntry, struct {
-			Id    string
-			Label string
-		}{Id: item.InterfaceMap.Id, Label: item.InterfaceMap.Label})
-		result[item.System.Label] = mapEntry
-	}
-
-	return result, nil
-}
+//// getSwitchCandidateInterfaceMaps queries the graph db for
+//// 'switch' type systems and their candidate interface maps.
+//// It returns switchLabelToCandidateInterfaceMaps.
+//func getSwitchCandidateInterfaceMaps(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId) (switchLabelToCandidateInterfaceMaps, error) {
+//	var candidateInterfaceMapsQR struct {
+//		Items []struct {
+//			System struct {
+//				Label string `json:"label"`
+//			} `json:"n_system"`
+//			InterfaceMap struct {
+//				Id    string `json:"id"`
+//				Label string `json:"label"`
+//			} `json:"n_interface_map"`
+//		} `json:"items"`
+//	}
+//	err := client.NewQuery(bpId).
+//		SetContext(ctx).
+//		Node([]goapstra.QEEAttribute{
+//			{"type", goapstra.QEStringVal("system")},
+//			{"name", goapstra.QEStringVal("n_system")},
+//			{"system_type", goapstra.QEStringVal("switch")},
+//		}).
+//		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
+//		Node([]goapstra.QEEAttribute{
+//			{"type", goapstra.QEStringVal("logical_device")},
+//		}).
+//		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
+//		Node([]goapstra.QEEAttribute{
+//			{"type", goapstra.QEStringVal("interface_map")},
+//			{"name", goapstra.QEStringVal("n_interface_map")},
+//		}).
+//		Do(&candidateInterfaceMapsQR)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	result := make(switchLabelToCandidateInterfaceMaps)
+//
+//	for _, item := range candidateInterfaceMapsQR.Items {
+//		mapEntry := result[item.System.Label]
+//		mapEntry = append(mapEntry, struct {
+//			Id    string
+//			Label string
+//		}{Id: item.InterfaceMap.Id, Label: item.InterfaceMap.Label})
+//		result[item.System.Label] = mapEntry
+//	}
+//
+//	return result, nil
+//}
 
 func warnAboutSwitchesMissingFromPlan(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, switches map[string]Switch, diag *diag.Diagnostics) error {
 	switchLabelToGraphDbId, err := getSwitchLabelId(ctx, client, bpId)
