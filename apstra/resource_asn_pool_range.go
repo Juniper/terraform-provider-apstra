@@ -144,11 +144,18 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	// Get ASN pool info from API and then update what is in state from what the API returns
 	asnPool, err := r.p.client.GetAsnPool(ctx, goapstra.ObjectId(state.PoolId.Value))
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"error reading parent ASN pool range",
-			fmt.Sprintf("could not read ASN pool '%s' - %s", state.PoolId.Value, err),
-		)
-		return
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			// resource deleted outside of terraform
+			resp.State.RemoveResource(ctx)
+			return
+		} else {
+			resp.Diagnostics.AddError(
+				"error reading ASN pool",
+				fmt.Sprintf("could not read ASN pool to check pool range range '%d-%d' - %s", state.First.Value, state.Last.Value, err),
+			)
+			return
+		}
 	}
 
 	found := goapstra.AsnPoolRangeInSlice(
