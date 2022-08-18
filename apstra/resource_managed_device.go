@@ -118,21 +118,13 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 		)
 	}
 
-	var agentType goapstra.AgentType
-	if plan.OnBox.Value {
-		agentType = goapstra.AgentTypeOnbox
-	} else {
-		plan.OnBox = types.Bool{Value: false}
-		agentType = goapstra.AgentTypeOffbox
-	}
-
 	// Create new Agent for this Managed Device
-	agentId, err := r.p.client.CreateAgent(ctx, &goapstra.AgentCfg{
-		AgentType:     agentType,
-		ManagementIp:  plan.ManagementIp.Value,
-		Profile:       goapstra.ObjectId(plan.AgentProfileId.Value),
-		OperationMode: goapstra.AgentModeFull,
-		Label:         plan.AgentLabel.Value,
+	agentId, err := r.p.client.CreateAgent(ctx, &goapstra.SystemAgentRequest{
+		AgentTypeOffbox: goapstra.AgentTypeOffbox(!plan.OnBox.Value),
+		ManagementIp:    plan.ManagementIp.Value,
+		Profile:         goapstra.ObjectId(plan.AgentProfileId.Value),
+		OperationMode:   goapstra.AgentModeFull,
+		Label:           plan.AgentLabel.Value,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -143,7 +135,7 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	}
 
 	// Install the new agent
-	_, err = r.p.client.AgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
+	_, err = r.p.client.SystemAgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error running Install job",
@@ -154,7 +146,7 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	}
 
 	// figure out the new switch system Id
-	agentInfo, err := r.p.client.GetAgentInfo(ctx, agentId)
+	agentInfo, err := r.p.client.GetSystemAgent(ctx, agentId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error fetching agent info",
@@ -222,7 +214,7 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 	}
 
 	// Get AgentInfo from API
-	agentInfo, err := r.p.client.GetAgentInfo(ctx, goapstra.ObjectId(state.AgentId.Value))
+	agentInfo, err := r.p.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -262,11 +254,7 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 	state.ManagementIp = types.String{Value: agentInfo.RunningConfig.ManagementIp}
 	state.AgentProfileId = types.String{Value: string(agentInfo.Config.Profile)}
 	state.AgentLabel = agentLabel
-	state.OnBox = types.Bool{}
-
-	if agentInfo.RunningConfig.AgentType == goapstra.AgentTypeOnbox {
-		state.OnBox.Value = true
-	}
+	state.OnBox = types.Bool{Value: bool(!agentInfo.Config.AgentTypeOffBox)}
 
 	// record device key and location if possible
 	if systemInfo != nil {
@@ -303,7 +291,7 @@ func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResou
 
 	// update agent as needed
 	if state.AgentProfileId.Value != plan.AgentProfileId.Value || state.AgentLabel.Value != plan.AgentLabel.Value {
-		err := r.p.client.UpdateAgent(ctx, goapstra.ObjectId(state.AgentId.Value), &goapstra.AgentCfg{
+		err := r.p.client.UpdateSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value), &goapstra.SystemAgentRequest{
 			Profile: goapstra.ObjectId(plan.AgentProfileId.Value),
 			Label:   plan.AgentLabel.Value,
 		})
@@ -364,7 +352,7 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 
 	var agentDoesNotExist, systemDoesNotExist bool
 
-	_, err := r.p.client.GetAgentInfo(ctx, goapstra.ObjectId(state.AgentId.Value))
+	_, err := r.p.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
@@ -393,7 +381,7 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 	}
 
 	if !agentDoesNotExist {
-		err = r.p.client.DeleteAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
+		err = r.p.client.DeleteSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
 		if err != nil {
 			var ace goapstra.ApstraClientErr
 			if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {

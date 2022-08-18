@@ -153,7 +153,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	}
 
 	// create blueprint
-	blueprintId, err := r.p.client.CreateBlueprintFromTemplate(ctx, &goapstra.CreateBluePrintFromTemplate{
+	blueprintId, err := r.p.client.CreateBlueprintFromTemplate(ctx, &goapstra.CreateBlueprintFromTemplate{
 		RefDesign:  goapstra.RefDesignDatacenter,
 		Label:      plan.Name.Value,
 		TemplateId: plan.TemplateId.Value,
