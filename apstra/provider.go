@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"math"
+	"net/http"
 	"os"
 
-	"github.com/chrismarget-j/goapstra"
+	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -16,6 +18,8 @@ import (
 var stderr = os.Stderr
 
 const (
+	envTlsKeyLogFile = "APSTRA_API_TLS_LOGFILE"
+
 	dataSourceAgentProfileName  = "apstra_agent_profile"
 	dataSourceAgentProfilesName = "apstra_agent_profiles"
 	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
@@ -124,18 +128,33 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	}
 
 	// todo: do something with ClientCfg.ErrChan?
+	logFile, err := os.OpenFile(".terraform.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		resp.Diagnostics.AddError("error opening logfile", err.Error())
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logger := log.New(logFile, "", 0)
+	klw, err := keyLogWriterFromEnv(envTlsKeyLogFile)
+	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: config.TlsNoVerify.Value,
+		KeyLogWriter:       klw,
+	}}}
 
 	// Create a new goapstra client and set it to the provider client
-	c, err := goapstra.NewClient(&goapstra.ClientCfg{
-		Scheme:    config.Scheme.Value,
-		User:      config.Username.Value,
-		Pass:      config.Password.Value,
-		Host:      config.Host.Value,
-		Port:      uint16(config.Port.Value),
-		TlsConfig: &tls.Config{InsecureSkipVerify: config.TlsNoVerify.Value},
-		Timeout:   0,
-		ErrChan:   nil,
-	})
+	c, err := goapstra.ClientCfg{
+		Scheme:     config.Scheme.Value,
+		User:       config.Username.Value,
+		Pass:       config.Password.Value,
+		Host:       config.Host.Value,
+		Port:       uint16(config.Port.Value),
+		HttpClient: httpClient,
+		Logger:     logger,
+		Timeout:    0,
+		ErrChan:    nil,
+	}.NewClient()
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"unable to create client",

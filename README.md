@@ -1,7 +1,7 @@
 # terraform-provider-apstra
 
 This is the beginning of a Terraform provider for Juniper Apstra. It relies on
-a Go client library at https://github.com/chrismarget-j/goapstra
+a Go client library at https://bitbucket.org/apstrktr/goapstra
 
 ## Getting Started
 
@@ -10,7 +10,7 @@ a Go client library at https://github.com/chrismarget-j/goapstra
 1. Configure `go` so that it doesn't try to use a public mirror for these repos
    by running the following shell command:
    ```shell
-   go env -w GOPRIVATE=github.com/chrismarget-j
+   go env -w GOPRIVATE=bitbucket.org/apstrktr
    ```
 1. Add an `ssh` key to your github account.
 1. Configure `git` to use `ssh` for these repositories with this shell command:
@@ -20,7 +20,7 @@ a Go client library at https://github.com/chrismarget-j/goapstra
 1. Install [`terraform`](https://www.terraform.io/downloads) and [`Go`](https://go.dev/dl/) on your machine.
 1. Clone this repo to your local system:
    ```shell
-   git clone git@github.com:chrismarget-j/terraform-provider-apstra.git
+   git clone git@bitbucket.org/apstrktr/terraform-provider-apstra.git
    ```
 1. Build the provider:
    ```shell
@@ -35,7 +35,7 @@ a Go client library at https://github.com/chrismarget-j/goapstra
    provider_installation {
    
      dev_overrides {
-       "example.com/chrismarget-j/apstra" = "/Users/cmarget/golang/bin"
+       "example.com/apstrktr/apstra" = "/Users/cmarget/golang/bin"
      }
    
      # For all other providers, install them directly from their origin provider
