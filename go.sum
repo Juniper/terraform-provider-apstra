@@ -1,3 +1,5 @@
+bitbucket.org/apstrktr/goapstra v0.0.0-20220829151220-c0980e9bde92 h1:CxcYX5lVqvXMitupLObMkQoI+psle1PrOIw1plR+83U=
+bitbucket.org/apstrktr/goapstra v0.0.0-20220829151220-c0980e9bde92/go.mod h1:I5nSJE4g8pmQHkEnK4dZaHJt6IEm4RItZVc9EQ2C8MA=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -5,16 +7,6 @@ github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kd
 github.com/apparentlymart/go-textseg v1.0.0/go.mod h1:z96Txxhf3xSFMPmb5X/1W05FF/Nj9VFpLOpjS5yuumk=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/chrismarget-j/goapstra v0.0.0-20220727144627-454d58783f1c h1:REHQo6Wqx8DdyOVofLflV/8T8XHE0aLziwYXoNHUtno=
-github.com/chrismarget-j/goapstra v0.0.0-20220727144627-454d58783f1c/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220803230138-ad57441abfdd h1:N2MfLC7/VRrXkGr/oxKLBZV0zWTB//a544V+egHTzgg=
-github.com/chrismarget-j/goapstra v0.0.0-20220803230138-ad57441abfdd/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220808133043-9eef8a55a975 h1:eJxNq/EcUYJjmu7emgPTDGQM3aa0Wh2np4pqr0AFkBQ=
-github.com/chrismarget-j/goapstra v0.0.0-20220808133043-9eef8a55a975/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220810174110-59c097d793a5 h1:8iqCgGKGdH9R7vHzhlOSJVNpkS1XBVqz9IP+lemNuO4=
-github.com/chrismarget-j/goapstra v0.0.0-20220810174110-59c097d793a5/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
-github.com/chrismarget-j/goapstra v0.0.0-20220817204946-074362c88897 h1:eSqnOy8tErm7K+u+/L1R0KH9CKziaaJNRUMHMnN6l6k=
-github.com/chrismarget-j/goapstra v0.0.0-20220817204946-074362c88897/go.mod h1:20s6QAGQFuHF6wUXRujj0F05VVi56FHGouw9v+kR3Vo=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
@@ -206,8 +198,6 @@ google.golang.org/protobuf v1.25.0/go.mod h1:9JNX74DMeImyA3h4bdi1ymwjUzf21/xIlba
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
-google.golang.org/protobuf v1.28.0 h1:w43yiav+6bVFTBQFZX0r7ipe9JQ1QsbMgHwbBziscLw=
-google.golang.org/protobuf v1.28.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.28.1 h1:d0NfwRgPtno5B1Wa6L2DAG+KivqkdutMf1UhdNx175w=
 google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

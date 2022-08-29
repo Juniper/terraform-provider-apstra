@@ -9,7 +9,7 @@ import (
 
 func main() {
 	err := providerserver.Serve(context.Background(), apstra.New, providerserver.ServeOpts{
-		Address: "example.com/chrismarget-j/apstra",
+		Address: "example.com/apstrktr/apstra",
 	})
 	if err != nil {
 		log.Fatal(err)

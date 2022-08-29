@@ -2,7 +2,7 @@ package apstra
 
 import (
 	"context"
-	"github.com/chrismarget-j/goapstra"
+	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"

@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     apstra = {
-      source = "example.com/chrismarget-j/apstra"
+      source = "example.com/apstrktr/apstra"
     }
   }
 }

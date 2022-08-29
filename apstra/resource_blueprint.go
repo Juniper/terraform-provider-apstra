@@ -1,10 +1,10 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/chrismarget-j/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -156,7 +156,7 @@ func (r resourceBlueprint) Create(ctx context.Context, req tfsdk.CreateResourceR
 	blueprintId, err := r.p.client.CreateBlueprintFromTemplate(ctx, &goapstra.CreateBlueprintFromTemplate{
 		RefDesign:  goapstra.RefDesignDatacenter,
 		Label:      plan.Name.Value,
-		TemplateId: plan.TemplateId.Value,
+		TemplateId: goapstra.ObjectId(plan.TemplateId.Value),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("error creating Blueprint", err.Error())

@@ -133,7 +133,7 @@ type ResourceManagedDevice struct {
 	AgentProfileId types.String `tfsdk:"agent_profile_id"`
 	AgentLabel     types.String `tfsdk:"agent_label"`
 	Location       types.String `tfsdk:"location"`
-	OnBox          types.Bool   `tfsdk:"on_box"`
+	OffBox         types.Bool   `tfsdk:"off_box"`
 }
 
 type ResourceRackType struct {

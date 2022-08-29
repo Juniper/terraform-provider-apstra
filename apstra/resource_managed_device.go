@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/chrismarget-j/goapstra"
+	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -48,7 +48,7 @@ func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, d
 				Type:     types.StringType,
 				Optional: true,
 			},
-			"on_box": {
+			"off_box": {
 				Type:          types.BoolType,
 				Computed:      true,
 				Optional:      true,
@@ -120,7 +120,7 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 
 	// Create new Agent for this Managed Device
 	agentId, err := r.p.client.CreateAgent(ctx, &goapstra.SystemAgentRequest{
-		AgentTypeOffbox: goapstra.AgentTypeOffbox(!plan.OnBox.Value),
+		AgentTypeOffbox: goapstra.AgentTypeOffbox(plan.OffBox.Value),
 		ManagementIp:    plan.ManagementIp.Value,
 		Profile:         goapstra.ObjectId(plan.AgentProfileId.Value),
 		OperationMode:   goapstra.AgentModeFull,
@@ -173,7 +173,7 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 		if plan.DeviceKey.Value != systemInfo.DeviceKey {
 			resp.Diagnostics.AddError(
 				"error system mismatch",
-				fmt.Sprintf("Could config expects switch device_key '%s', device reports %s",
+				fmt.Sprintf("config expects switch device_key '%s', device reports '%s'",
 					plan.DeviceKey.Value, systemInfo.DeviceKey),
 			)
 			return
@@ -254,7 +254,7 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 	state.ManagementIp = types.String{Value: agentInfo.RunningConfig.ManagementIp}
 	state.AgentProfileId = types.String{Value: string(agentInfo.Config.Profile)}
 	state.AgentLabel = agentLabel
-	state.OnBox = types.Bool{Value: bool(!agentInfo.Config.AgentTypeOffBox)}
+	state.OffBox = types.Bool{Value: bool(agentInfo.Config.AgentTypeOffBox)}
 
 	// record device key and location if possible
 	if systemInfo != nil {
