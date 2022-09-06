@@ -1,35 +1,52 @@
 terraform {
   required_providers {
     apstra = {
-      source = "example.com/apstrktr/apstra"
+      source = "example.com/chrismarget-j/apstra"
     }
   }
 }
 
+locals {
+  env = "prod"
+  as_numbers = {
+    spine = [100, 199]
+    leaf  = [10000, 19999]
+  }
+  ip_pools = {
+    spine = "10.0.0.0/24"
+    leaf  = "10.0.1.0/24"
+    links = "10.0.2.0/24"
+  }
+}
 
-// this stanza is completely optional. Without it, the provider will look for
-// hostname/username/password in the environment, use https, and insist on cert
-// validation.
 provider "apstra" {
-  # scheme = "https" # optional, alternate env var APSTRA_SCHEME, default 'https'
-  # host = ""        # optional, alternate env var APSTRA_HOST
-  # port = 443       # optional, alternate env var APSTRA_PORT, default 443
-  # username = ""    # optional, alternate env var APSTRA_USER
-  # password = ""    # optional, alternate env var APSTRA_PASS
   i_dont_care_about_tls_verification_and_i_should_feel_bad = true
 }
 
-// create an ASN pool with no ASN ranges defined
-#resource "apstra_asn_pool" "my_pool" {
-#  name = "my_pool"
-#  tags = ["foo", "bar"] # optional, does not appear in web UI
+#resource "apstra_asn_pool" "x" {
+#  for_each = toset(keys(local.as_numbers))
+#  name     = join(" ", ["my", each.key, "AS", "numbers"])
+#  tags     = [each.key, local.env]
+#}
+#
+#resource "apstra_asn_pool_range" "x" {
+#  for_each = toset(keys(local.as_numbers))
+#  pool_id  = apstra_asn_pool.x[each.key].id
+#  first    = local.as_numbers[each.key][0]
+#  last     = local.as_numbers[each.key][1]
 #}
 
-// create ASN ranges within the ASN pool
-#resource "apstra_asn_pool_range" "one_hundred_ASNs" {
-#  pool_id = apstra_asn_pool.my_pool.id
-#  first   = 1
-#  last    = 100
+#resource "apstra_asn_pool" "x" {
+#  for_each = toset(keys(local.as_numbers))
+#  name = each.value
+#  tags = ["prod", "boston", each.value]
+#}
+#
+#resource "apstra_asn_pool_range" "y" {
+#  for_each = toset(keys(local.as_numbers))
+#  pool_id = apstra_asn_pool.x[each.value].id
+#  first = local.as_numbers[each.value][0]
+#  last = local.as_numbers[each.value][1]
 #}
 
 // look up the details of an ASN pool by ID number
@@ -107,12 +124,14 @@ provider "apstra" {
 #  #  }
 #}
 
-// look up an agent profile
-data "apstra_agent_profile" "aap" {
-  # must populate either name or its id (not both)
-  name = "profile_vqfx"
-  #  id = apstra_agent_profile.my_agent_profile.id
-}
+#data "apstra_agent_profile" "aap" {
+#  name = "profile_vqfx"
+#}
+#
+#output "foo" {
+#  value = data.apstra_agent_profile.aap
+#}
+
 // data.apstra_agent_profile output looks like:
 /*
 {
@@ -146,7 +165,7 @@ data "apstra_agent_profile" "aap" {
 
 locals {
   switch_info = {
-    "525400559292" = { "ip" = "172.20.23.11", "location" = "spine1" },
+    "525400559292" = { "ip" = "172.20.23.11", "location" = "spine1", template_role = "spine1"},
     "525400601877" = { "ip" = "172.20.23.12", "location" = "spine2" },
     "5254007642A5" = { "ip" = "172.20.23.13", "location" = "leaf1" },
     "5254000A1177" = { "ip" = "172.20.23.14", "location" = "leaf3" },
@@ -160,8 +179,22 @@ locals {
 #  for_each         = local.switch_info
 #  management_ip    = each.value.ip
 #  agent_label      = each.value.location              # optional, does not appear in web UI
-#  agent_profile_id = data.apstra_agent_profile.aap.id # required, sets platform type and credentials
+#  agent_profile_id = apstra_agent_profile.my_agent_profile.id # required, sets platform type and credentials
 #  device_key       = each.key
+#}
+
+#resource "apstra_ip4_pool" "some_pool" {
+#  name = "some pool"
+#  tags = ["tag one", "tag two"]
+#}
+#
+#output "some_pool" {
+#  value = apstra_ip4_pool.some_pool.id
+#}
+
+#resource "apstra_ip4_pool_subnet" "some_subnet" {
+#  pool_id = apstra_ip4_pool.some_pool.id
+#  cidr = "10.0.0.0/16"
 #}
 
 // create an 'datacenter/two_stage_l3clos' blueprint from an existing template.
@@ -173,4 +206,34 @@ resource "apstra_blueprint" "my_blueprint" {
   spine_ip_pool_ids  = ["TESTNET-203_0_113_0-24"]
   leaf_ip_pool_ids   = ["Private-172_16_0_0-12"]
   link_ip_pool_ids   = ["Private-10_0_0_0-8", "Private-172_16_0_0-12", "Private-10_0_0_0-8"]
+}
+
+#data "apstra_ip4_pool_id" "x" {
+#  name = "Private-192.168.0.0/16"
+#  tags = ["default"]
+#}
+
+
+#data "apstra_asn_pool" "all" {
+#  for_each = toset(data.apstra_asn_pool_ids.all.ids)
+#  id = each.value
+#}
+
+#locals {
+#  free_asns_to_pool_ids = {for k, v in data.apstra_asn_pool.all : k => {
+#    name = v.name
+#    free = v.total - v.used
+#  }}
+#}
+
+
+data "apstra_ip4_pool_ids" "all" {}
+
+data "apstra_ip4_pool" "all" {
+  for_each = toset(data.apstra_ip4_pool_ids.all.ids)
+  id = each.value
+}
+
+output "ipv4_pool_report" {
+  value = data.apstra_ip4_pool.all
 }

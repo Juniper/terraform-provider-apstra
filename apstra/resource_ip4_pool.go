@@ -1,10 +1,10 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -160,12 +160,17 @@ func (r resourceIp4Pool) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 	}
 
 	// Generate API request body from plan
-	new := poolFromApi.ToNew()
-	new.DisplayName = plan.Name.Value
-	new.Tags = sliceTfStringToSliceString(plan.Tags)
+	newReq := &goapstra.NewIp4PoolRequest{
+		DisplayName: plan.Name.Value,
+		Tags:        sliceTfStringToSliceString(plan.Tags),
+	}
+
+	for _, s := range poolFromApi.Subnets {
+		newReq.Subnets = append(newReq.Subnets, goapstra.NewIp4Subnet{Network: s.Network.String()})
+	}
 
 	// Create/Update ASN pool
-	err = r.p.client.UpdateIp4Pool(ctx, goapstra.ObjectId(state.Id.Value), new)
+	err = r.p.client.UpdateIp4Pool(ctx, goapstra.ObjectId(state.Id.Value), newReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("cannot update %s", resourceIp4PoolName),
