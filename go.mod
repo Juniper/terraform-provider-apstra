@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/terraform-plugin-log v0.6.0
 )
 
-//replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra debug
+replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20220830171329-9697aa3297fb
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect

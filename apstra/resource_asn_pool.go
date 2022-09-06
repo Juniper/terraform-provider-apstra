@@ -1,10 +1,10 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -64,7 +64,7 @@ func (r resourceAsnPool) Create(ctx context.Context, req tfsdk.CreateResourceReq
 	tags := asnPoolTagsFromPlan(plan.Tags)
 
 	// Create new ASN Pool
-	id, err := r.p.client.CreateAsnPool(ctx, &goapstra.AsnPool{
+	id, err := r.p.client.CreateAsnPool(ctx, &goapstra.AsnPoolRequest{
 		DisplayName: plan.Name.Value,
 		Tags:        tags,
 	})
@@ -168,10 +168,13 @@ func (r resourceAsnPool) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 	}
 
 	// Generate API request body from plan
-	send := &goapstra.AsnPool{
+	send := &goapstra.AsnPoolRequest{
 		DisplayName: plan.Name.Value,
-		Ranges:      poolFromApi.Ranges,
 		Tags:        asnPoolTagsFromPlan(plan.Tags),
+	}
+	send.Ranges = make([]goapstra.IntfAsnRange, len(poolFromApi.Ranges))
+	for i, r := range poolFromApi.Ranges {
+		send.Ranges[i] = r
 	}
 
 	// Create/Update ASN pool
