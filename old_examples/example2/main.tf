@@ -20,7 +20,16 @@ locals {
 }
 
 provider "apstra" {
+<<<<<<< HEAD:old_examples/example/main.tf
+  # scheme                = "https" # optional, alternate env var APSTRA_SCHEME, default 'https'
+  # host                  = ""      # optional, alternate env var APSTRA_HOST
+  # port                  = 443     # optional, alternate env var APSTRA_PORT, default 443
+  # username              = ""      # optional, alternate env var APSTRA_USER
+  # password              = ""      # optional, alternate env var APSTRA_PASS
+  tls_validation_disabled = true
+=======
   i_dont_care_about_tls_verification_and_i_should_feel_bad = true
+>>>>>>> c06b001a85079a2c3b7d795f3c6cd3fc7286d6f6:old_examples/example2/main.tf
 }
 
 #resource "apstra_asn_pool" "x" {

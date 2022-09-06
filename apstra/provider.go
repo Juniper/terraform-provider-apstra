@@ -1,18 +1,17 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"log"
 	"math"
 	"net/http"
 	"os"
-
-	"bitbucket.org/apstrktr/goapstra"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var stderr = os.Stderr
@@ -56,35 +55,41 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"scheme": {
-				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Type:                types.StringType,
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "URL Scheme used to connect to Apstra, default value is 'https'.",
 			},
 			"host": {
-				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Type:                types.StringType,
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Hostname or IP address of the Apstra API server.",
 			},
 			"port": {
-				Type:     types.Int64Type,
-				Optional: true,
-				Computed: true,
+				Type:                types.Int64Type,
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "TCP port number of the Apstra API listener.",
 			},
 			"username": {
-				Type:     types.StringType,
-				Optional: true,
-				Computed: true,
+				Type:                types.StringType,
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Apstra API username.",
 			},
 			"password": {
-				Type:      types.StringType,
-				Optional:  true,
-				Computed:  true,
-				Sensitive: true,
+				Type:                types.StringType,
+				Optional:            true,
+				Computed:            true,
+				Sensitive:           true,
+				MarkdownDescription: "Apstra API password.",
 			},
-			"i_dont_care_about_tls_verification_and_i_should_feel_bad": {
-				Type:     types.BoolType,
-				Optional: true,
-				Computed: true,
+			"tls_validation_disabled": {
+				Type:                types.BoolType,
+				Optional:            true,
+				Computed:            true,
+				MarkdownDescription: "Set 'true' to disable TLS certificate validation.",
 			},
 		},
 	}, diag.Diagnostics{}
@@ -97,7 +102,7 @@ type providerData struct {
 	Port        types.Int64  `tfsdk:"port"`
 	Username    types.String `tfsdk:"username"`
 	Password    types.String `tfsdk:"password"`
-	TlsNoVerify types.Bool   `tfsdk:"i_dont_care_about_tls_verification_and_i_should_feel_bad"`
+	TlsNoVerify types.Bool   `tfsdk:"tls_validation_disabled"`
 }
 
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {

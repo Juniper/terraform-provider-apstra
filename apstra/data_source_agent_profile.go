@@ -1,9 +1,9 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -16,37 +16,45 @@ func (r dataSourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, 
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Optional: true,
-				Computed: true,
-				Type:     types.StringType,
+				Optional:            true,
+				Computed:            true,
+				Type:                types.StringType,
+				MarkdownDescription: "ID of the agent profile. Required when name is omitted.",
 			},
 			"name": {
-				Optional: true,
-				Computed: true,
-				Type:     types.StringType,
+				Optional:            true,
+				Computed:            true,
+				Type:                types.StringType,
+				MarkdownDescription: "Name of the agent profile. Required when id is omitted.",
 			},
 			// todo: make platform a search criteria
 			"platform": {
-				Computed: true,
-				Type:     types.StringType,
+				Computed:            true,
+				Type:                types.StringType,
+				MarkdownDescription: "Indicates the platform supported by the agent profile.",
 			},
 			"has_username": {
-				Computed: true,
-				Type:     types.BoolType,
+				Computed:            true,
+				Type:                types.BoolType,
+				MarkdownDescription: "Indicates whether a username has been configured.",
 			},
 			"has_password": {
-				Computed: true,
-				Type:     types.BoolType,
+				Computed:            true,
+				Type:                types.BoolType,
+				MarkdownDescription: "Indicates whether a password has been configured.",
 			},
 			"packages": {
-				Computed: true,
-				Type:     types.MapType{ElemType: types.StringType},
+				Computed:            true,
+				Type:                types.MapType{ElemType: types.StringType},
+				MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
 			},
 			"open_options": {
-				Computed: true,
-				Type:     types.MapType{ElemType: types.StringType},
+				Computed:            true,
+				Type:                types.MapType{ElemType: types.StringType},
+				MarkdownDescription: "Configured parameters for offbox agents",
 			},
 		},
+		MarkdownDescription: "This resource looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
 	}, nil
 }
 
