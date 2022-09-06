@@ -1,5 +1,5 @@
-bitbucket.org/apstrktr/goapstra v0.0.0-20220829151220-c0980e9bde92 h1:CxcYX5lVqvXMitupLObMkQoI+psle1PrOIw1plR+83U=
-bitbucket.org/apstrktr/goapstra v0.0.0-20220829151220-c0980e9bde92/go.mod h1:I5nSJE4g8pmQHkEnK4dZaHJt6IEm4RItZVc9EQ2C8MA=
+bitbucket.org/apstrktr/goapstra v0.0.0-20220830171329-9697aa3297fb h1:VazidU1/1j1u6AgMEPgaGzh7GUJd0ydAAYwO2pDKb5s=
+bitbucket.org/apstrktr/goapstra v0.0.0-20220830171329-9697aa3297fb/go.mod h1:I5nSJE4g8pmQHkEnK4dZaHJt6IEm4RItZVc9EQ2C8MA=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=

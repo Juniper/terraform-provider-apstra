@@ -3,13 +3,13 @@ module terraform-provider-apstra
 go 1.18
 
 require (
-	bitbucket.org/apstrktr/goapstra v0.0.0-20220829151220-c0980e9bde92
+	bitbucket.org/apstrktr/goapstra v0.0.0-20220830171329-9697aa3297fb
 	github.com/hashicorp/terraform-plugin-framework v0.10.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.4.0
 	github.com/hashicorp/terraform-plugin-log v0.6.0
 )
 
-//replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra debug
+replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20220830171329-9697aa3297fb
 
 require (
 	github.com/fatih/color v1.13.0 // indirect

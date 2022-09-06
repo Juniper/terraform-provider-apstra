@@ -1,10 +1,10 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -105,7 +105,7 @@ func (r resourceAsnPoolRange) Create(ctx context.Context, req tfsdk.CreateResour
 	}
 
 	// Create new ASN Pool Range
-	err := r.p.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.Value), &goapstra.AsnRange{
+	err := r.p.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.Value), &goapstra.AsnRangeRequest{
 		First: uint32(plan.First.Value),
 		Last:  uint32(plan.Last.Value),
 	})
@@ -158,14 +158,12 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRe
 		}
 	}
 
-	found := goapstra.AsnPoolRangeInSlice(
-		&goapstra.AsnRange{
-			First: uint32(state.First.Value),
-			Last:  uint32(state.Last.Value),
-		},
-		asnPool.Ranges)
+	indexOf := asnPool.Ranges.IndexOf(goapstra.AsnRange{
+		First: uint32(state.First.Value),
+		Last:  uint32(state.Last.Value),
+	})
 
-	if found { // exact match range in pool - this is what we expect
+	if indexOf >= 0 { // exact match range in pool - this is what we expect
 		// Reset state
 		diags = resp.State.Set(ctx, &state)
 		resp.Diagnostics.Append(diags...)
@@ -203,7 +201,7 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResour
 	}
 
 	// Delete ASN pool range by calling API
-	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRange{
+	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRangeRequest{
 		First: uint32(state.First.Value),
 		Last:  uint32(state.Last.Value),
 	})
