@@ -14,10 +14,12 @@ func (r dataSourceAgentProfilesType) GetSchema(_ context.Context) (tfsdk.Schema,
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"ids": {
-				Computed: true,
-				Type:     types.SetType{ElemType: types.StringType},
+				Computed:            true,
+				Type:                types.SetType{ElemType: types.StringType},
+				MarkdownDescription: "A set of Apstra ID numbers of each Agent Profile.",
 			},
 		},
+		MarkdownDescription: "This resource returns the ID numbers of each Agent Profile.",
 	}, nil
 }
 

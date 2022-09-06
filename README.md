@@ -106,28 +106,6 @@ In addition to the attributes above, the following attributes are exported:
 * `open_options` (map[key]value) Configured parameters for offbox agents.
 
 ---
-### Data Source: apstra_agent_profiles
-
-`apstra_agent_profiles` provides a list of all agent profile IDs.
-
-#### Example Usage
-The following example shows outputting all agent profile IDs.
-
-```hcl
-data "apstra_agent_profiles" "all" {}
-
-output "agent_profiles" {
-   value = data.apstra_agent_profiles.all
-}
-```
-
-#### Argument Reference
-No arguments.
-
-#### Attributes Reference
-* `ids` (list[string]) Apstra ID numbers of each agent profile
-
----
 ### Data Source: apstra_asn_pool
 
 `apstra_asn_pool` provides details of a specific ASN resource pool by ID.
