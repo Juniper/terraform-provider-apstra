@@ -1,0 +1,27 @@
+---
+page_title: "Provider: Apstra"
+description: |-
+  The Apstra provider allows Terraform to control Juniper Apstra fabrics.
+---
+
+# {{ .ProviderShortName | upper }} Provider
+
+The Apstra provider allows Terraform to control Juniper Apstra fabrics.
+
+At this time, it covers day 0 and day 1 operations (design and deployment).
+Broadly speaking, these capabilities include everything on Apstra's Design and
+Resource panels, plus the ability to instantiate a new blueprint from a template.
+
+Use the navigation to the left to read about the available resources.
+
+## Configuration
+
+{{ tffile "examples/provider/provider.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}
+
+## Environment Variables
+
+```
+something something something
+```

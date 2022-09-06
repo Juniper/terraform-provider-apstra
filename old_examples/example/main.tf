@@ -11,12 +11,12 @@ terraform {
 // hostname/username/password in the environment, use https, and insist on cert
 // validation.
 provider "apstra" {
-  # scheme = "https" # optional, alternate env var APSTRA_SCHEME, default 'https'
-  # host = ""        # optional, alternate env var APSTRA_HOST
-  # port = 443       # optional, alternate env var APSTRA_PORT, default 443
-  # username = ""    # optional, alternate env var APSTRA_USER
-  # password = ""    # optional, alternate env var APSTRA_PASS
-  i_dont_care_about_tls_verification_and_i_should_feel_bad = true
+  # scheme                = "https" # optional, alternate env var APSTRA_SCHEME, default 'https'
+  # host                  = ""      # optional, alternate env var APSTRA_HOST
+  # port                  = 443     # optional, alternate env var APSTRA_PORT, default 443
+  # username              = ""      # optional, alternate env var APSTRA_USER
+  # password              = ""      # optional, alternate env var APSTRA_PASS
+  tls_validation_disabled = true
 }
 
 // create an ASN pool with no ASN ranges defined
