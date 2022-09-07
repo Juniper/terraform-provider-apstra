@@ -11,6 +11,6 @@ description: |-
 
 ## Example Usage
 
-{{ tffile "examples/data-sources/agent_profile/example.tf" }}
+{{ tffile (printf "examples/data-sources/%s/example.tf" .Name)}}
 
 {{ .SchemaMarkdown | trimspace }}
