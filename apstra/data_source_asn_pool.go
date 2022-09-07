@@ -1,9 +1,9 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -13,69 +13,86 @@ type dataSourceAsnPoolType struct{}
 
 func (r dataSourceAsnPoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source provides details about a specific ASN Resource Pool by its ID.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Required: true,
-				Type:     types.StringType,
+				MarkdownDescription: "ID of the desired ASN Resource Pool.",
+				Required:            true,
+				Type:                types.StringType,
 			},
 			"name": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Display name of the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"status": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Status of the ASN Resource Pool, as reported by Apstra.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"tags": {
-				Computed: true,
-				Type:     types.ListType{ElemType: types.StringType},
-			},
-			"used": {
-				Computed: true,
-				Type:     types.Int64Type,
-			},
-			"used_percentage": {
-				Computed: true,
-				Type:     types.Float64Type,
-			},
-			"created_at": {
-				Computed: true,
-				Type:     types.StringType,
-			},
-			"last_modified_at": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Tags applied to the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.ListType{ElemType: types.StringType},
 			},
 			"total": {
-				Computed: true,
-				Type:     types.Int64Type,
+				MarkdownDescription: "Total number of ASNs in the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"used": {
+				MarkdownDescription: "Count of used ASNs in the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"used_percentage": {
+				MarkdownDescription: "Percent of used ASNs in the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.Float64Type,
+			},
+			"created_at": {
+				MarkdownDescription: "Creation time of the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"last_modified_at": {
+				MarkdownDescription: "Modification time of the ASN Resource Pool.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"ranges": {
-				Computed: true,
+				MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
+				Computed:            true,
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"status": {
-						Type:     types.StringType,
-						Computed: true,
+						MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",
+						Type:                types.StringType,
+						Computed:            true,
 					},
 					"first": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Lowest numbered AS in this ASN Pool Range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"last": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Highest numbered AS in this ASN Pool Range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"total": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Total number of ASNs in the ASN Pool Range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"used": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Count of used ASNs in the ASN Pool Range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"used_percentage": {
-						Type:     types.Float64Type,
-						Computed: true,
+						MarkdownDescription: "Percent of used ASNs in the ASN Pool Range.",
+						Type:                types.Float64Type,
+						Computed:            true,
 					},
 				}),
 			},
