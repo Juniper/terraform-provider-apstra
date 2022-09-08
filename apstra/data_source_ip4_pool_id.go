@@ -1,9 +1,9 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -13,18 +13,26 @@ type dataSourceIp4PoolIdType struct{}
 
 func (r dataSourceIp4PoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source returns the pool ID of the IPv4 resource pool matching the supplied criteria. " +
+			"At least one optional attribute is required. " +
+			"It is incumbent on the user to ensure the criteria matches exactly one IPv4 pool. " +
+			"Matching zero pools or more than one pool will produce an error.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "The pool ID of IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"name": {
+				MarkdownDescription: "Used to filter when searching for a single match.  The name of the single matching IPv4 resource pool.",
+
 				Optional: true,
 				Type:     types.StringType,
 			},
 			"tags": {
-				Optional: true,
-				Type:     types.ListType{ElemType: types.StringType},
+				MarkdownDescription: "Used to filter when searching for a single match.  Required tags of the single matching IPv4 resource pool.  The pool may have other tags which do not appear on this list",
+				Optional:            true,
+				Type:                types.ListType{ElemType: types.StringType},
 			},
 		},
 	}, nil

@@ -1,8 +1,8 @@
 package apstra
 
 import (
-	"context"
 	"bitbucket.org/apstrktr/goapstra"
+	"context"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -12,20 +12,27 @@ type dataSourceTagType struct{}
 
 func (r dataSourceTagType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source provides details of a specific tag.\n\n" +
+			"At least one optional attribute is required. " +
+			"It is incumbent on the user to ensure the criteria matches exactly one tag. " +
+			"Matching zero tags or more than one tag will produce an error.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Optional: true,
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Tag id.  Required when the tag name is omitted.",
+				Optional:            true,
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"name": {
-				Optional: true,
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Tag name.  Required when tag id is omitted.",
+				Optional:            true,
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"description": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "The description of the returned tag.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 		},
 	}, nil

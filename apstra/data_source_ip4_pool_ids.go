@@ -12,10 +12,12 @@ type dataSourceIp4PoolsType struct{}
 
 func (r dataSourceIp4PoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source returns the pool IDs all IPv4 resource pools",
 		Attributes: map[string]tfsdk.Attribute{
 			"ids": {
-				Computed: true,
-				Type:     types.SetType{ElemType: types.StringType},
+				MarkdownDescription: "All pool IDs of all IPv4 resource pools.",
+				Computed:            true,
+				Type:                types.SetType{ElemType: types.StringType},
 			},
 		},
 	}, nil
