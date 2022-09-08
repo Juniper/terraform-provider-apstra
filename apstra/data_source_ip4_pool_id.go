@@ -25,9 +25,8 @@ func (r dataSourceIp4PoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 			},
 			"name": {
 				MarkdownDescription: "Used to filter when searching for a single match.  The name of the single matching IPv4 resource pool.",
-
-				Optional: true,
-				Type:     types.StringType,
+				Optional:            true,
+				Type:                types.StringType,
 			},
 			"tags": {
 				MarkdownDescription: "Used to filter when searching for a single match.  Required tags of the single matching IPv4 resource pool.  The pool may have other tags which do not appear on this list",

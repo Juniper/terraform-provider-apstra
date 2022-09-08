@@ -1,10 +1,10 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
