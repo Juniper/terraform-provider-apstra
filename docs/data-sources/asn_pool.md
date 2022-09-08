@@ -2,12 +2,12 @@
 page_title: "apstra_asn_pool Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source provides details about a specific ASN Resource Pool by its ID.
+  This data source provides details of a single ASN Resource Pool by its ID.
 ---
 
 # apstra_asn_pool (Data Source)
 
-This data source provides details about a specific ASN Resource Pool by its ID.
+This data source provides details of a single ASN Resource Pool by its ID.
 
 ## Example Usage
 

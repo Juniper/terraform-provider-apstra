@@ -1,9 +1,9 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -13,65 +13,82 @@ type dataSourceIp4PoolType struct{}
 
 func (r dataSourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source provides details of a single IPv4 resource pool by ID.",
+
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Required: true,
-				Type:     types.StringType,
+				MarkdownDescription: "ID of the desired IPv4 Resource Pool.",
+				Required:            true,
+				Type:                types.StringType,
 			},
 			"name": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "(Non unique) name of the ASN resource pool.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"status": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Status of the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"tags": {
-				Computed: true,
-				Type:     types.ListType{ElemType: types.StringType},
+				MarkdownDescription: "Tags applied to the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.ListType{ElemType: types.StringType},
 			},
 			"used": {
-				Computed: true,
-				Type:     types.Int64Type,
+				MarkdownDescription: "Count of used addresses in the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.Int64Type,
 			},
 			"used_percentage": {
-				Computed: true,
-				Type:     types.Float64Type,
+				MarkdownDescription: "Percent of used addresses in the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.Float64Type,
 			},
 			"created_at": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Creation time.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"last_modified_at": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Last modification time.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"total": {
-				Computed: true,
-				Type:     types.Int64Type,
+				MarkdownDescription: "Total number of addresses in the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.Int64Type,
 			},
 			"subnets": {
-				Computed: true,
+				MarkdownDescription: "Individual IPv4 allocations within the pool, consisting of:",
+				Computed:            true,
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"status": {
-						Type:     types.StringType,
-						Computed: true,
+						MarkdownDescription: "Status of the IPv4 resource pool.",
+						Type:                types.StringType,
+						Computed:            true,
 					},
 					"network": {
-						Type:     types.StringType,
-						Required: true,
+						MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
+						Type:                types.StringType,
+						Required:            true,
 					},
 					"total": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Total number of addresses in this IPv4 range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"used": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Count of used addresses in this IPv4 range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"used_percentage": {
-						Type:     types.Float64Type,
-						Computed: true,
+						MarkdownDescription: "Percent of used addresses in this IPv4 range.",
+						Type:                types.Float64Type,
+						Computed:            true,
 					},
 				}),
 			},

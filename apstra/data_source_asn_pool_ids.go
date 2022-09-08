@@ -12,10 +12,12 @@ type dataSourceAsnPoolsType struct{}
 
 func (r dataSourceAsnPoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source returns the IDs of all ASN resource pools",
 		Attributes: map[string]tfsdk.Attribute{
 			"ids": {
-				Computed: true,
-				Type:     types.SetType{ElemType: types.StringType},
+				MarkdownDescription: "The IDs of all ASN resource pools.",
+				Computed:            true,
+				Type:                types.SetType{ElemType: types.StringType},
 			},
 		},
 	}, nil
