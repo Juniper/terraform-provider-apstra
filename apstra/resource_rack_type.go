@@ -267,6 +267,12 @@ func (r resourceRackType) ValidateConfig(ctx context.Context, req tfsdk.Validate
 		resp.Diagnostics.AddError(
 			"missing required configuration element",
 			"at least one 'leaf_switches' element is required")
+		return
+	}
+
+	cfg.detectDeviceNameCollisions(&resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 }
 
@@ -804,4 +810,31 @@ func (o *ResourceRackType) switchIsRedundant(switchLabel string, diags *diag.Dia
 	diags.AddError("no such switch",
 		fmt.Sprintf("rack type '%s' has no switch with label '%s' ", o.Id.Value, switchLabel))
 	return false
+}
+
+func (o *ResourceRackType) detectDeviceNameCollisions(diags *diag.Diagnostics) {
+	// map keyed by string to detect device name collisions within a rack type
+	rackDeviceNames := make(map[string]struct{}, len(o.LeafSwitches)+len(o.GenericSystems)) // todo: add len(o.AccessSwitches) here
+
+	for _, d := range o.LeafSwitches {
+		if _, found := rackDeviceNames[d.Name.Value]; found {
+			diags.AddError("rack type device name conflict",
+				fmt.Sprintf("multiple devices use the name '%s'", d.Name.Value))
+		}
+		rackDeviceNames[d.Name.Value] = struct{}{}
+	}
+	//for _, d := range o.AccessSwitches {                                       // todo: required for access switch support
+	//	if _, found := rackDeviceNames[d.Name.Value]; found {                    // todo: required for access switch support
+	//		diags.AddError("rack type device name conflict",                     // todo: required for access switch support
+	//			fmt.Sprintf("multiple devices use the name '%s'", d.Name.Value)) // todo: required for access switch support
+	//	}                                                                        // todo: required for access switch support
+	//	rackDeviceNames[d.Name.Value] = struct{}{}                               // todo: required for access switch support
+	//}
+	for _, d := range o.GenericSystems {
+		if _, found := rackDeviceNames[d.Name.Value]; found {
+			diags.AddError("rack type device name conflict",
+				fmt.Sprintf("multiple devices use the name '%s'", d.Name.Value))
+		}
+		rackDeviceNames[d.Name.Value] = struct{}{}
+	}
 }
