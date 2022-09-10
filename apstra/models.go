@@ -137,13 +137,13 @@ type ResourceManagedDevice struct {
 }
 
 type ResourceRackType struct {
-	Id                       types.String             `tfsdk:"id"`
-	Name                     types.String             `tfsdk:"name"`
-	Description              types.String             `tfsdk:"description"`
-	FabricConnectivityDesign types.String             `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             map[string]LeafSwitch    `tfsdk:"leaf_switches"`
-	GenericSystems           map[string]GenericSystem `tfsdk:"generic_systems"`
-	//AccessSwitches         map[string]AccessSwitch  `tfsdk:"access_switches"`
+	Id                       types.String    `tfsdk:"id"`
+	Name                     types.String    `tfsdk:"name"`
+	Description              types.String    `tfsdk:"description"`
+	FabricConnectivityDesign types.String    `tfsdk:"fabric_connectivity_design"`
+	LeafSwitches             []LeafSwitch    `tfsdk:"leaf_switches"`
+	GenericSystems           []GenericSystem `tfsdk:"generic_systems"`
+	//AccessSwitches         []AccessSwitch  `tfsdk:"access_switches"`
 }
 
 type ResourceWireframe struct {
@@ -196,6 +196,7 @@ type tagClone struct {
 }
 
 type LeafSwitch struct {
+	Name               types.String `tfsdk:"name"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	LinkPerSpineCount  types.Int64  `tfsdk:"spine_link_count"`
 	LinkPerSpineSpeed  types.String `tfsdk:"spine_link_speed"`
@@ -211,6 +212,7 @@ type LeafSwitch struct {
 }
 
 type GenericSystem struct {
+	Name             types.String `tfsdk:"name"`
 	Count            types.Int64  `tfsdk:"count"`
 	LogicalDeviceId  types.String `tfsdk:"logical_device_id"`
 	PortChannelIdMin types.Int64  `tfsdk:"port_channel_id_min"`
