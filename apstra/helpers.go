@@ -24,12 +24,7 @@ func sliceStringToSliceTfString(in []string) []types.String {
 	return out
 }
 
-func keyLogWriterFromEnv(keyLogEnv string) (*os.File, error) {
-	fileName, foundKeyLogFile := os.LookupEnv(keyLogEnv)
-	if !foundKeyLogFile {
-		return nil, nil
-	}
-
+func newKeyLogWriter(fileName string) (*os.File, error) {
 	// expand ~ style home directory
 	if strings.HasPrefix(fileName, "~/") {
 		dirname, _ := os.UserHomeDir()

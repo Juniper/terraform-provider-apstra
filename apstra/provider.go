@@ -9,15 +9,18 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"log"
-	"math"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 )
 
 var stderr = os.Stderr
 
 const (
-	envTlsKeyLogFile = "APSTRA_API_TLS_LOGFILE"
+	envTlsKeyLogFile  = "APSTRA_TLS_KEYLOG"
+	envApstraUsername = "APSTRA_USER"
+	envApstraPassword = "APSTRA_PASS"
 
 	dataSourceAgentProfileName  = "apstra_agent_profile"
 	dataSourceAgentProfilesName = "apstra_agent_profiles"
@@ -54,36 +57,12 @@ type provider struct {
 func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
-			"scheme": {
-				Type:                types.StringType,
-				Optional:            true,
-				Computed:            true,
-				MarkdownDescription: "URL Scheme used to connect to Apstra, default value is 'https'.",
-			},
-			"host": {
-				Type:                types.StringType,
-				Optional:            true,
-				Computed:            true,
-				MarkdownDescription: "Hostname or IP address of the Apstra API server.",
-			},
-			"port": {
-				Type:                types.Int64Type,
-				Optional:            true,
-				Computed:            true,
-				MarkdownDescription: "TCP port number of the Apstra API listener.",
-			},
-			"username": {
-				Type:                types.StringType,
-				Optional:            true,
-				Computed:            true,
-				MarkdownDescription: "Apstra API username.",
-			},
-			"password": {
-				Type:                types.StringType,
-				Optional:            true,
-				Computed:            true,
-				Sensitive:           true,
-				MarkdownDescription: "Apstra API password.",
+			"url": {
+				Type:     types.StringType,
+				Required: true,
+				MarkdownDescription: "URL of the apstra server, e.g. `http://<user>:<password>@apstra.juniper.net:443/`\n" +
+					"If username or password are omitted environment variables `" + envApstraUsername + "` and `" +
+					envApstraPassword + "` will be used.",
 			},
 			"tls_validation_disabled": {
 				Type:                types.BoolType,
@@ -97,11 +76,7 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 
 // Provider schema struct
 type providerData struct {
-	Scheme      types.String `tfsdk:"scheme"`
-	Host        types.String `tfsdk:"host"`
-	Port        types.Int64  `tfsdk:"port"`
-	Username    types.String `tfsdk:"username"`
-	Password    types.String `tfsdk:"password"`
+	Url         types.String `tfsdk:"url"`
 	TlsNoVerify types.Bool   `tfsdk:"tls_validation_disabled"`
 }
 
@@ -114,52 +89,56 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		return
 	}
 
-	switch {
-	case config.Username.Unknown:
-		resp.Diagnostics.AddWarning("Unable to create client", "Cannot use unknown value as 'Username'")
-		return
-	case config.Password.Unknown:
-		resp.Diagnostics.AddWarning("Unable to create client", "Cannot use unknown value as 'Password'")
-		return
-	case config.Host.Unknown:
-		resp.Diagnostics.AddWarning("Unable to create client", "Cannot use unknown value as 'Host'")
-		return
+	// initial client config from URL string
+	cfg, err := goapstraClientCfgFromUrlString(config.Url.Value)
+	if err != nil {
+		resp.Diagnostics.AddError("error parsing apstra url", err.Error())
 	}
 
-	if config.Port.Value < 0 || config.Port.Value > math.MaxUint16 {
-		resp.Diagnostics.AddError(
-			"invalid port",
-			fmt.Sprintf("'Port' %d out of range", config.Port.Value))
+	// try to fill missing username from environment
+	if cfg.User == "" {
+		user, userOk := os.LookupEnv(envApstraUsername)
+		if !userOk || user == "" {
+			resp.Diagnostics.AddError("apstra configuration error", "unable to determine apstra username")
+			return
+		}
+		cfg.User = user
 	}
 
-	// todo: do something with ClientCfg.ErrChan?
+	// try to fill missing password from environment
+	if cfg.Pass == "" {
+		pass, passOk := os.LookupEnv(envApstraPassword)
+		if !passOk || pass == "" {
+			resp.Diagnostics.AddError("apstra configuration error", "unable to determine apstra password")
+			return
+		}
+		cfg.Pass = pass
+	}
+
+	// set up logger
 	logFile, err := os.OpenFile(".terraform.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		resp.Diagnostics.AddError("error opening logfile", err.Error())
 	}
-	if err != nil {
-		log.Fatal(err)
+	logger := log.New(logFile, "", 0)
+	cfg.Logger = logger
+
+	// create client's httpClient with the configured TLS verification switch
+	cfg.HttpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: config.TlsNoVerify.Value}}}
+
+	// TLS key log
+	if fileName, ok := os.LookupEnv(envTlsKeyLogFile); ok {
+		klw, err := newKeyLogWriter(fileName)
+		if err != nil {
+			resp.Diagnostics.AddError("error setting up TLS key log", err.Error())
+		}
+		cfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.KeyLogWriter = klw
 	}
 
-	logger := log.New(logFile, "", 0)
-	klw, err := keyLogWriterFromEnv(envTlsKeyLogFile)
-	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{
-		InsecureSkipVerify: config.TlsNoVerify.Value,
-		KeyLogWriter:       klw,
-	}}}
+	// todo: do something with cfg.ErrChan?
 
-	// Create a new goapstra client and set it to the provider client
-	c, err := goapstra.ClientCfg{
-		Scheme:     config.Scheme.Value,
-		User:       config.Username.Value,
-		Pass:       config.Password.Value,
-		Host:       config.Host.Value,
-		Port:       uint16(config.Port.Value),
-		HttpClient: httpClient,
-		Logger:     logger,
-		Timeout:    0,
-		ErrChan:    nil,
-	}.NewClient()
+	// store the client in the provider
+	p.client, err = cfg.NewClient()
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"unable to create client",
@@ -168,7 +147,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		return
 	}
 
-	p.client = c
+	// set the provider's "configured" flag to indicate it's ready to go
 	p.configured = true
 }
 
@@ -200,5 +179,26 @@ func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourc
 		dataSourceIp4PoolName:       dataSourceIp4PoolType{},
 		dataSourceLogicalDeviceName: dataSourceLogicalDeviceType{},
 		dataSourceTagName:           dataSourceTagType{},
+	}, nil
+}
+
+func goapstraClientCfgFromUrlString(urlStr string) (*goapstra.ClientCfg, error) {
+	apstraUrl, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, err
+	}
+
+	port, err := strconv.ParseUint(apstraUrl.Port(), 10, 16)
+	if err != nil {
+		return nil, err
+	}
+	pass, _ := apstraUrl.User.Password()
+
+	return &goapstra.ClientCfg{
+		Scheme: apstraUrl.Scheme,
+		User:   apstraUrl.User.Username(),
+		Pass:   pass,
+		Host:   apstraUrl.Hostname(),
+		Port:   uint16(port),
 	}, nil
 }
