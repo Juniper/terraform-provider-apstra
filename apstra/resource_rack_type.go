@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
@@ -72,7 +74,7 @@ func (r resourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 				MarkdownDescription: "Object ID for the Rack Type, assigned by Apstra.",
 				Type:                types.StringType,
 				Computed:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"name": {
 				MarkdownDescription: "Rack Type name, displayed in the Apstra web UI.",
@@ -249,17 +251,17 @@ func (r resourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.D
 	}, nil
 }
 
-func (r resourceRackTypeType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceRackTypeType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceRackType{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type resourceRackType struct {
-	p provider
+	p apstraProvider
 }
 
-func (r resourceRackType) ValidateConfig(ctx context.Context, req tfsdk.ValidateResourceConfigRequest, resp *tfsdk.ValidateResourceConfigResponse) {
+func (r resourceRackType) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var cfg ResourceRackType
 	req.Config.Get(ctx, &cfg)
 
@@ -276,7 +278,7 @@ func (r resourceRackType) ValidateConfig(ctx context.Context, req tfsdk.Validate
 	}
 }
 
-func (r resourceRackType) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceRackType) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -335,7 +337,7 @@ func (r resourceRackType) Create(ctx context.Context, req tfsdk.CreateResourceRe
 	}
 }
 
-func (r resourceRackType) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceRackType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	oldState := &ResourceRackType{}
 	diags := req.State.Get(ctx, oldState)
@@ -371,7 +373,7 @@ func (r resourceRackType) Read(ctx context.Context, req tfsdk.ReadResourceReques
 }
 
 // Update resource
-func (r resourceRackType) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get current state
 	state := &ResourceRackType{}
 	diags := req.State.Get(ctx, state)
@@ -429,7 +431,7 @@ func (r resourceRackType) Update(ctx context.Context, req tfsdk.UpdateResourceRe
 }
 
 // Delete resource
-func (r resourceRackType) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceRackType) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceRackType
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

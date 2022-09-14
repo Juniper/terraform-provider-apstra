@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -58,17 +60,17 @@ func (r dataSourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, 
 	}, nil
 }
 
-func (r dataSourceAgentProfileType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (r dataSourceAgentProfileType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceAgentProfile{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type dataSourceAgentProfile struct {
-	p provider
+	p apstraProvider
 }
 
-func (r dataSourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (r dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataAgentProfile
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

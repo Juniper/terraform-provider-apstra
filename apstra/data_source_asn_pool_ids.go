@@ -3,7 +3,9 @@ package apstra
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -23,17 +25,17 @@ func (r dataSourceAsnPoolsType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 	}, nil
 }
 
-func (r dataSourceAsnPoolsType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (r dataSourceAsnPoolsType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceAsnPools{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type dataSourceAsnPools struct {
-	p provider
+	p apstraProvider
 }
 
-func (r dataSourceAsnPools) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (r dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	poolIds, err := r.p.client.ListAsnPoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
