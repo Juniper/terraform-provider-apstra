@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -23,22 +25,22 @@ func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, d
 			"agent_id": {
 				Type:          types.StringType,
 				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"system_id": {
 				Type:          types.StringType,
 				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"management_ip": {
 				Type:          types.StringType,
 				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
 			"device_key": {
 				Type:          types.StringType,
 				Optional:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
 			"agent_profile_id": {
 				Type:     types.StringType,
@@ -52,7 +54,7 @@ func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, d
 				Type:          types.BoolType,
 				Computed:      true,
 				Optional:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace(), tfsdk.UseStateForUnknown()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace(), resource.UseStateForUnknown()},
 			},
 			"location": {
 				Type:     types.StringType,
@@ -62,17 +64,17 @@ func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, d
 	}, nil
 }
 
-func (r resourceManagedDeviceType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceManagedDeviceType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceManagedDevice{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type resourceManagedDevice struct {
-	p provider
+	p apstraProvider
 }
 
-func (r resourceManagedDevice) ValidateConfig(ctx context.Context, req tfsdk.ValidateResourceConfigRequest, resp *tfsdk.ValidateResourceConfigResponse) {
+func (r resourceManagedDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var cfg ResourceManagedDevice
 	req.Config.Get(ctx, &cfg)
 	if cfg.DeviceKey.IsNull() && !cfg.Location.IsNull() {
@@ -82,7 +84,7 @@ func (r resourceManagedDevice) ValidateConfig(ctx context.Context, req tfsdk.Val
 	}
 }
 
-func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceManagedDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -204,7 +206,7 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	}
 }
 
-func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceManagedDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state ResourceManagedDevice
 	diags := req.State.Get(ctx, &state)
@@ -272,7 +274,7 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 }
 
 // Update resource
-func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceManagedDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get current state
 	var state ResourceManagedDevice
 	diags := req.State.Get(ctx, &state)
@@ -342,7 +344,7 @@ func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResou
 }
 
 // Delete resource
-func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceManagedDevice
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

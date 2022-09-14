@@ -3,7 +3,9 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -38,17 +40,17 @@ func (r dataSourceTagType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 	}, nil
 }
 
-func (r dataSourceTagType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (r dataSourceTagType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceTag{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type dataSourceTag struct {
-	p provider
+	p apstraProvider
 }
 
-func (r dataSourceTag) ValidateConfig(ctx context.Context, req tfsdk.ValidateDataSourceConfigRequest, resp *tfsdk.ValidateDataSourceConfigResponse) {
+func (r dataSourceTag) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config DataTag
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -62,7 +64,7 @@ func (r dataSourceTag) ValidateConfig(ctx context.Context, req tfsdk.ValidateDat
 	}
 }
 
-func (r dataSourceTag) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (r dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataTag
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

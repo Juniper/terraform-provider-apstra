@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -18,7 +20,7 @@ func (r resourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 			"id": {
 				Type:          types.StringType,
 				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"name": {
 				Type:     types.StringType,
@@ -32,17 +34,17 @@ func (r resourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	}, nil
 }
 
-func (r resourceIp4PoolType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceIp4PoolType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceIp4Pool{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type resourceIp4Pool struct {
-	p provider
+	p apstraProvider
 }
 
-func (r resourceIp4Pool) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceIp4Pool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -84,7 +86,7 @@ func (r resourceIp4Pool) Create(ctx context.Context, req tfsdk.CreateResourceReq
 	}
 }
 
-func (r resourceIp4Pool) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceIp4Pool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state ResourceIp4Pool
 	diags := req.State.Get(ctx, &state)
@@ -122,7 +124,7 @@ func (r resourceIp4Pool) Read(ctx context.Context, req tfsdk.ReadResourceRequest
 }
 
 // Update resource
-func (r resourceIp4Pool) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan ResourceIp4Pool
 	diags := req.Plan.Get(ctx, &plan)
@@ -188,7 +190,7 @@ func (r resourceIp4Pool) Update(ctx context.Context, req tfsdk.UpdateResourceReq
 }
 
 // Delete resource
-func (r resourceIp4Pool) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceIp4Pool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceIp4Pool
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

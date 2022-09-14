@@ -3,7 +3,9 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -73,17 +75,17 @@ func (r dataSourceLogicalDeviceType) GetSchema(_ context.Context) (tfsdk.Schema,
 	}, nil
 }
 
-func (r dataSourceLogicalDeviceType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (r dataSourceLogicalDeviceType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceLogicalDevice{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type dataSourceLogicalDevice struct {
-	p provider
+	p apstraProvider
 }
 
-func (r dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req tfsdk.ValidateDataSourceConfigRequest, resp *tfsdk.ValidateDataSourceConfigResponse) {
+func (r dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config DataLogicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -97,7 +99,7 @@ func (r dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req tfsdk.V
 	}
 }
 
-func (r dataSourceLogicalDevice) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (r dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataLogicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

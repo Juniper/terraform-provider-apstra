@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"log"
@@ -22,16 +23,20 @@ const (
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
 
-	dataSourceAgentProfileName  = "apstra_agent_profile"
-	dataSourceAgentProfilesName = "apstra_agent_profiles"
-	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
-	dataSourceAsnPoolName       = "apstra_asn_pool"
-	dataSourceAsnPoolIdsName    = "apstra_asn_pool_ids"
-	dataSourceIp4PoolIdName     = "apstra_ip4_pool_id"
-	dataSourceIp4PoolName       = "apstra_ip4_pool"
-	dataSourceIp4PoolIdsName    = "apstra_ip4_pool_ids"
-	dataSourceLogicalDeviceName = "apstra_logical_device"
-	dataSourceTagName           = "apstra_tag"
+	dataSourceAgentProfileName    = "apstra_agent_profile"
+	dataSourceAgentProfilesName   = "apstra_agent_profiles"
+	dataSourceAsnPoolIdName       = "apstra_asn_pool_id"
+	dataSourceAsnPoolName         = "apstra_asn_pool"
+	dataSourceAsnPoolIdsName      = "apstra_asn_pool_ids"
+	dataSourceIp4PoolIdName       = "apstra_ip4_pool_id"
+	dataSourceIp4PoolName         = "apstra_ip4_pool"
+	dataSourceIp4PoolIdsName      = "apstra_ip4_pool_ids"
+	dataSourceLogicalDeviceName   = "apstra_logical_device"
+	dataSourceRackTypeName        = "apstra_rack_type"
+	dataSourceTemplateL3Collapsed = "apstra_l3collapsed_template"
+	//dataSourceTemplatePodBased  = "apstra_podbased_template"
+	//dataSourceTemplateRackBased = "apstra_rackbased_template"
+	dataSourceTagName = "apstra_tag"
 
 	resourceAgentProfileName  = "apstra_agent_profile"
 	resourceAsnPoolName       = "apstra_asn_pool"
@@ -41,20 +46,23 @@ const (
 	resourceBlueprintName     = "apstra_blueprint"
 	resourceManagedDeviceName = "apstra_managed_device"
 	resourceRackTypeName      = "apstra_rack_type"
-	resourceWireframeName     = "apstra_template"
+	//resourceSourceTemplateL3Collapsed = "apstra_l3collapsed_template"
+	//resourceSourceTemplatePodBased    = "apstra_podbased_template"
+	//resourceSourceTemplateRackBased   = "apstra_rackbased_template"
+	resourceWireframeName = "apstra_template"
 )
 
-func New() tfsdk.Provider {
-	return &provider{}
+func New() provider.Provider {
+	return &apstraProvider{}
 }
 
-type provider struct {
+type apstraProvider struct {
 	configured bool
 	client     *goapstra.Client
 }
 
 // GetSchema returns provider schema
-func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *apstraProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"url": {
@@ -80,7 +88,7 @@ type providerData struct {
 	TlsNoVerify types.Bool   `tfsdk:"tls_validation_disabled"`
 }
 
-func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
+func (p *apstraProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	// Retrieve provider data from configuration
 	var config providerData
 	diags := req.Config.Get(ctx, &config)
@@ -152,8 +160,8 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 }
 
 // GetResources defines provider resources
-func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
-	return map[string]tfsdk.ResourceType{
+func (p *apstraProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
+	return map[string]provider.ResourceType{
 		resourceAgentProfileName:  resourceAgentProfileType{},
 		resourceAsnPoolName:       resourceAsnPoolType{},
 		resourceAsnPoolRangeName:  resourceAsnPoolRangeType{},
@@ -162,13 +170,16 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 		resourceBlueprintName:     resourceBlueprintType{},
 		resourceManagedDeviceName: resourceManagedDeviceType{},
 		resourceRackTypeName:      resourceRackTypeType{},
-		resourceWireframeName:     resourceWireframeType{},
+		//resourceSourceTemplateL3Collapsed: resourceSourceTemplateL3CollapsedType{},
+		//resourceSourceTemplatePodBased:    resourceSourceTemplatePodBasedType{},
+		//resourceSourceTemplateRackBased:   resourceSourceTemplateRackBasedType{},
+		resourceWireframeName: resourceWireframeType{},
 	}, nil
 }
 
 // GetDataSources defines provider data sources
-func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{
+func (p *apstraProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
+	return map[string]provider.DataSourceType{
 		dataSourceAsnPoolIdName:     dataSourceAsnPoolIdType{},
 		dataSourceAsnPoolName:       dataSourceAsnPoolType{},
 		dataSourceAsnPoolIdsName:    dataSourceAsnPoolsType{},
@@ -178,7 +189,11 @@ func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourc
 		dataSourceIp4PoolIdsName:    dataSourceIp4PoolsType{},
 		dataSourceIp4PoolName:       dataSourceIp4PoolType{},
 		dataSourceLogicalDeviceName: dataSourceLogicalDeviceType{},
-		dataSourceTagName:           dataSourceTagType{},
+		//dataSourceRackTypeName:      dataSourceRackTypeType{},
+		//dataSourceTemplateL3Collapsed: dataSourceTemplateL3CollapsedType{},
+		//dataSourceTemplatePodBased:    dataSourceTemplatePodBasedType{},
+		//dataSourceTemplateRackBased:   dataSourceTemplateRackBasedType{},
+		dataSourceTagName: dataSourceTagType{},
 	}, nil
 }
 

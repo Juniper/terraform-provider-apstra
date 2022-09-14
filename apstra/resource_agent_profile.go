@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -42,17 +44,17 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (r resourceAgentProfileType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceAgentProfileType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceAgentProfile{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type resourceAgentProfile struct {
-	p provider
+	p apstraProvider
 }
 
-func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceAgentProfile) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -100,7 +102,7 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 	}
 }
 
-func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceAgentProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state ResourceAgentProfile
 	diags := req.State.Get(ctx, &state)
@@ -144,7 +146,7 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 }
 
 // Update resource
-func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get current state
 	var state ResourceAgentProfile
 	diags := req.State.Get(ctx, &state)
@@ -191,7 +193,7 @@ func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResour
 }
 
 // Delete resource
-func (r resourceAgentProfile) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceAgentProfile
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

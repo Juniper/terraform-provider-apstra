@@ -4,7 +4,9 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -37,17 +39,17 @@ func (r dataSourceIp4PoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 	}, nil
 }
 
-func (r dataSourceIp4PoolIdType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (r dataSourceIp4PoolIdType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceIp4PoolId{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
 type dataSourceIp4PoolId struct {
-	p provider
+	p apstraProvider
 }
 
-func (r dataSourceIp4PoolId) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (r dataSourceIp4PoolId) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// get all ASN Pools from Apstra
 	pools, err := r.p.client.GetIp4Pools(ctx)
 	if err != nil {

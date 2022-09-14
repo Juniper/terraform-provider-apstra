@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math"
@@ -25,31 +27,31 @@ func (r resourceAsnPoolRangeType) GetSchema(_ context.Context) (tfsdk.Schema, di
 			"pool_id": {
 				Type:          types.StringType,
 				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
 			"first": {
 				Type:          types.Int64Type,
 				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 				Validators:    []tfsdk.AttributeValidator{int64validator.Between(minAsn, maxAsn)},
 			},
 			"last": {
 				Type:          types.Int64Type,
 				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 				Validators:    []tfsdk.AttributeValidator{int64validator.Between(minAsn, maxAsn)},
 			},
 		},
 	}, nil
 }
 
-func (r resourceAsnPoolRangeType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceAsnPoolRangeType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceAsnPoolRange{
-		p: *(p.(*provider)),
+		p: *(p.(*apstraProvider)),
 	}, nil
 }
 
-func (r resourceAsnPoolRange) ValidateConfig(ctx context.Context, req tfsdk.ValidateResourceConfigRequest, resp *tfsdk.ValidateResourceConfigResponse) {
+func (r resourceAsnPoolRange) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var config ResourceAsnPoolRange
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -75,10 +77,10 @@ func (r resourceAsnPoolRange) ValidateConfig(ctx context.Context, req tfsdk.Vali
 }
 
 type resourceAsnPoolRange struct {
-	p provider
+	p apstraProvider
 }
 
-func (r resourceAsnPoolRange) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -132,7 +134,7 @@ func (r resourceAsnPoolRange) Create(ctx context.Context, req tfsdk.CreateResour
 	}
 }
 
-func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
 	var state ResourceAsnPoolRange
 	diags := req.State.Get(ctx, &state)
@@ -187,12 +189,12 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	}
 }
 
-func (r resourceAsnPoolRange) Update(_ context.Context, _ tfsdk.UpdateResourceRequest, _ *tfsdk.UpdateResourceResponse) {
+func (r resourceAsnPoolRange) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
 	// No update method because Read() will never report a state change, only
 	// resource existence (or not)
 }
 
-func (r resourceAsnPoolRange) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceAsnPoolRange) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceAsnPoolRange
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
