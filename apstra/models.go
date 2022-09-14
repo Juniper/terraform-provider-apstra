@@ -76,6 +76,16 @@ type DataLogicalDevice struct {
 	Panels []LogicalDevicePanel `tfsdk:"panels"`
 }
 
+type DataRackType struct {
+	Id                       types.String      `tfsdk:"id"`
+	Name                     types.String      `tfsdk:"name"`
+	Description              types.String      `tfsdk:"description"`
+	FabricConnectivityDesign types.String      `tfsdk:"fabric_connectivity_design"`
+	LeafSwitches             []DSLeafSwitch    `tfsdk:"leaf_switches"`
+	AccessSwitches           []DSAccessSwitch  `tfsdk:"access_switches"`
+	GenericSystems           []DSGenericSystem `tfsdk:"generic_systems"`
+}
+
 type DataTag struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
@@ -233,3 +243,67 @@ type GSLink struct {
 
 type AccessSwitch struct{} // todo
 type ASLink struct{}       //todo
+
+type DSLeafSwitch struct {
+	Label              types.String         `tfsdk:"name"`
+	DisplayName        types.String         `tfsdk:"display_name"`
+	LinkPerSpineCount  types.Int64          `tfsdk:"spine_link_count"`
+	LinkPerSpineSpeed  types.String         `tfsdk:"spine_link_speed"`
+	RedundancyProtocol types.String         `tfsdk:"redundancy_protocol"`
+	Tags               []TagData            `tfsdk:"tags"`
+	MlagInfo           *MlagInfo            `tfsdk:"mlag_info"`
+	Panels             []LogicalDevicePanel `tfsdk:"panels"`
+}
+
+type DSAccessSwitch struct {
+	Label              types.String         `tfsdk:"name"`
+	DisplayName        types.String         `tfsdk:"display_name"`
+	Count              types.Int64          `tfsdk:"count"`
+	RedundancyProtocol types.String         `tfsdk:"redundancy_protocol"`
+	EsiLagInfo         *EsiLagInfo          `tfsdk:"esi_lag_info"`
+	Links              []RackLink           `tfsdk:"links"`
+	Panels             []LogicalDevicePanel `tfsdk:"panels"`
+	Tags               []TagData            `tfsdk:"tags"`
+}
+
+type DSGenericSystem struct {
+	Label            types.String         `tfsdk:"name"`
+	DisplayName      types.String         `tfsdk:"display_name"`
+	Count            types.Int64          `tfsdk:"count"`
+	PortChannelIdMin types.Int64          `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64          `tfsdk:"port_channel_id_max"`
+	Tags             []TagData            `tfsdk:"tags"`
+	Panels           []LogicalDevicePanel `tfsdk:"panels"`
+	Links            []RackLink           `tfsdk:"links"`
+}
+
+type MlagInfo struct {
+	VlanId                      types.Int64  `tfsdk:"mlag_keepalive_vlan"`
+	LeafLeafLinkCount           types.Int64  `tfsdk:"peer_links"`
+	LeafLeafLinkSpeed           types.String `tfsdk:"peer_link_speed"`
+	LeafLeafLinkPortChannelId   types.Int64  `tfsdk:"peer_link_port_channel_id"`
+	LeafLeafL3LinkCount         types.Int64  `tfsdk:"l3_peer_links"`
+	LeafLeafL3LinkSpeed         types.String `tfsdk:"l3_peer_link_speed"`
+	LeafLeafL3LinkPortChannelId types.Int64  `tfsdk:"l3_peer_link_port_channel_id"`
+}
+
+type EsiLagInfo struct {
+	AccessAccessLinkCount types.Int64  `tfsdk:"l3_peer_link_count"`
+	AccessAccessLinkSpeed types.String `tfsdk:"l3_peer_link_speed"`
+}
+
+// TagData is tag data w/out ID element, as cloned into some other design object.
+type TagData struct {
+	Label       types.String `tfsdk:"label"`
+	Description types.String `tfsdk:"description"`
+}
+
+type RackLink struct {
+	Name               types.String `tfsdk:"name"`
+	TargetSwitchLabel  types.String `tfsdk:"target_switch_name"`
+	LagMode            types.String `tfsdk:"lag_mode"`
+	LinkPerSwitchCount types.Int64  `tfsdk:"links_per_switch"`
+	Speed              types.String `tfsdk:"speed"`
+	SwitchPeer         types.String `tfsdk:"switch_peer""`
+	Tags               []TagData    `tfsdk:"tags"`
+}

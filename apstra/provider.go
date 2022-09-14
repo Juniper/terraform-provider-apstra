@@ -23,17 +23,17 @@ const (
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
 
-	dataSourceAgentProfileName    = "apstra_agent_profile"
-	dataSourceAgentProfilesName   = "apstra_agent_profiles"
-	dataSourceAsnPoolIdName       = "apstra_asn_pool_id"
-	dataSourceAsnPoolName         = "apstra_asn_pool"
-	dataSourceAsnPoolIdsName      = "apstra_asn_pool_ids"
-	dataSourceIp4PoolIdName       = "apstra_ip4_pool_id"
-	dataSourceIp4PoolName         = "apstra_ip4_pool"
-	dataSourceIp4PoolIdsName      = "apstra_ip4_pool_ids"
-	dataSourceLogicalDeviceName   = "apstra_logical_device"
-	dataSourceRackTypeName        = "apstra_rack_type"
-	dataSourceTemplateL3Collapsed = "apstra_l3collapsed_template"
+	dataSourceAgentProfileName  = "apstra_agent_profile"
+	dataSourceAgentProfilesName = "apstra_agent_profiles"
+	dataSourceAsnPoolIdName     = "apstra_asn_pool_id"
+	dataSourceAsnPoolName       = "apstra_asn_pool"
+	dataSourceAsnPoolIdsName    = "apstra_asn_pool_ids"
+	dataSourceIp4PoolIdName     = "apstra_ip4_pool_id"
+	dataSourceIp4PoolName       = "apstra_ip4_pool"
+	dataSourceIp4PoolIdsName    = "apstra_ip4_pool_ids"
+	dataSourceLogicalDeviceName = "apstra_logical_device"
+	dataSourceRackTypeName      = "apstra_rack_type"
+	//dataSourceTemplateL3Collapsed = "apstra_l3collapsed_template"
 	//dataSourceTemplatePodBased  = "apstra_podbased_template"
 	//dataSourceTemplateRackBased = "apstra_rackbased_template"
 	dataSourceTagName = "apstra_tag"
@@ -189,7 +189,7 @@ func (p *apstraProvider) GetDataSources(_ context.Context) (map[string]provider.
 		dataSourceIp4PoolIdsName:    dataSourceIp4PoolsType{},
 		dataSourceIp4PoolName:       dataSourceIp4PoolType{},
 		dataSourceLogicalDeviceName: dataSourceLogicalDeviceType{},
-		//dataSourceRackTypeName:      dataSourceRackTypeType{},
+		dataSourceRackTypeName:      dataSourceRackTypeType{},
 		//dataSourceTemplateL3Collapsed: dataSourceTemplateL3CollapsedType{},
 		//dataSourceTemplatePodBased:    dataSourceTemplatePodBasedType{},
 		//dataSourceTemplateRackBased:   dataSourceTemplateRackBasedType{},
