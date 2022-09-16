@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -115,7 +114,6 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 							"label": {
 								MarkdownDescription: "Tag label (name) field.",
-								Optional:            true,
 								Computed:            true,
 								Type:                types.StringType,
 							},
@@ -127,7 +125,7 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						}),
 					},
 					"mlag_info": {
-						MarkdownDescription: "Details settings when the leaf switch is an MLAG-capable switch pair.",
+						MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
 						Computed:            true,
 						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 							"mlag_keepalive_vlan": {
@@ -249,7 +247,6 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 								Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 									"label": {
 										MarkdownDescription: "Tag label (name) field.",
-										Optional:            true,
 										Computed:            true,
 										Type:                types.StringType,
 									},
@@ -300,12 +297,11 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						}),
 					},
 					"tags": {
-						MarkdownDescription: "Details any tags applied to the Leaf Switch",
+						MarkdownDescription: "Details any tags applied to the Access Switch",
 						Computed:            true,
 						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 							"label": {
 								MarkdownDescription: "Tag label (name) field.",
-								Optional:            true,
 								Computed:            true,
 								Type:                types.StringType,
 							},
@@ -390,7 +386,6 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 							"label": {
 								MarkdownDescription: "Tag label (name) field.",
-								Optional:            true,
 								Computed:            true,
 								Type:                types.StringType,
 							},
@@ -441,7 +436,6 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 								Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 									"label": {
 										MarkdownDescription: "Tag label (name) field.",
-										Optional:            true,
 										Computed:            true,
 										Type:                types.StringType,
 									},
@@ -499,9 +493,6 @@ func (r dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest
 	// Set state
 	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
 
 func goApstraRackTypeToDataSourceRackType(rt *goapstra.RackType, diags *diag.Diagnostics) *DataRackType {
@@ -520,11 +511,13 @@ func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnos
 	leafs := make([]DSLeafSwitch, len(rt.LeafSwitches))
 	for i, leaf := range rt.LeafSwitches {
 		leafs[i] = DSLeafSwitch{
-			Label:              types.String{Value: leaf.Label},
-			DisplayName:        types.String{Value: leaf.DisplayName},
+			Name:               types.String{Value: leaf.Label},
 			LinkPerSpineCount:  types.Int64{Value: int64(leaf.LinkPerSpineCount)},
 			LinkPerSpineSpeed:  types.String{Value: string(leaf.LinkPerSpineSpeed)},
 			RedundancyProtocol: types.String{Value: leaf.RedundancyProtocol.String()},
+			DisplayName:        types.String{Value: leaf.DisplayName},
+			TagData:            sliceGoapstraTagDataToSliceTfTagData(leaf.Tags, diags),
+			Panels:             goApstraPanelsToTfPanels(leaf.Panels, diags),
 			MlagInfo: &MlagInfo{
 				VlanId:                      types.Int64{Value: int64(leaf.MlagVlanId)},
 				LeafLeafLinkCount:           types.Int64{Value: int64(leaf.LeafLeafLinkCount)},
@@ -534,8 +527,6 @@ func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnos
 				LeafLeafL3LinkSpeed:         types.String{Value: string(leaf.LeafLeafL3LinkSpeed)},
 				LeafLeafL3LinkPortChannelId: types.Int64{Value: int64(leaf.LeafLeafL3LinkPortChannelId)},
 			},
-			Tags:   goApstraTagsToTfTags(leaf.Tags, diags),
-			Panels: goApstraPanelsToTfPanels(leaf.Panels, diags),
 		}
 	}
 	return leafs
@@ -545,14 +536,17 @@ func goApstraRackTypeToDSAccessSwitches(rt *goapstra.RackType, diags *diag.Diagn
 	accessSwitches := make([]DSAccessSwitch, len(rt.LeafSwitches))
 	for i, accessSwitch := range rt.AccessSwitches {
 		accessSwitches[i] = DSAccessSwitch{
-			Label:              types.String{Value: accessSwitch.Label},
+			Name:               types.String{Value: accessSwitch.Label},
 			DisplayName:        types.String{Value: accessSwitch.DisplayName},
 			Count:              types.Int64{Value: int64(accessSwitch.InstanceCount)},
 			RedundancyProtocol: types.String{Value: accessSwitch.RedundancyProtocol.String()},
 			Links:              goApstraLinksToTfLinks(accessSwitch.Links, diags),
 			Panels:             goApstraPanelsToTfPanels(accessSwitch.Panels, diags),
-			Tags:               goApstraTagsToTfTags(accessSwitch.Tags, diags),
-			EsiLagInfo:         goApstraAccessSwitchToTfEsiLagInfo(&accessSwitch, diags),
+			Tags:               sliceGoapstraTagDataToSliceTfTagData(accessSwitch.Tags, diags),
+			EsiLagInfo: &EsiLagInfo{
+				AccessAccessLinkCount: types.Int64{Value: int64(accessSwitch.AccessAccessLinkCount)},
+				AccessAccessLinkSpeed: types.String{Value: string(accessSwitch.AccessAccessLinkSpeed)},
+			},
 		}
 	}
 	return accessSwitches
@@ -562,28 +556,17 @@ func goApstraRackTypeToDSGenericSystems(rt *goapstra.RackType, diags *diag.Diagn
 	genericSystems := make([]DSGenericSystem, len(rt.GenericSystems))
 	for i, genericSystem := range rt.GenericSystems {
 		genericSystems[i] = DSGenericSystem{
-			Label:            types.String{Value: genericSystem.Label},
+			Name:             types.String{Value: genericSystem.Label},
 			DisplayName:      types.String{Value: genericSystem.DisplayName},
 			Count:            types.Int64{Value: int64(genericSystem.Count)},
 			PortChannelIdMin: types.Int64{Value: int64(genericSystem.PortChannelIdMin)},
 			PortChannelIdMax: types.Int64{Value: int64(genericSystem.PortChannelIdMax)},
-			Tags:             goApstraTagsToTfTags(genericSystem.Tags, diags),
+			Tags:             sliceGoapstraTagDataToSliceTfTagData(genericSystem.Tags, diags),
 			Panels:           goApstraPanelsToTfPanels(genericSystem.Panels, diags),
 			Links:            goApstraLinksToTfLinks(genericSystem.Links, diags),
 		}
 	}
 	return genericSystems
-}
-
-func goApstraTagsToTfTags(in []goapstra.DesignTag, diags *diag.Diagnostics) []TagData {
-	out := make([]TagData, len(in))
-	for i, tag := range in {
-		out[i] = TagData{
-			Label:       types.String{Value: string(tag.Label)},
-			Description: types.String{Value: tag.Description},
-		}
-	}
-	return out
 }
 
 func goApstraLinksToTfLinks(in []goapstra.RackLink, diags *diag.Diagnostics) []RackLink {
@@ -596,7 +579,7 @@ func goApstraLinksToTfLinks(in []goapstra.RackLink, diags *diag.Diagnostics) []R
 			LinkPerSwitchCount: types.Int64{Value: int64(link.LinkPerSwitchCount)},
 			Speed:              types.String{Value: string(link.LinkSpeed)},
 			SwitchPeer:         types.String{Value: link.SwitchPeer.String()},
-			Tags:               goApstraTagsToTfTags(link.Tags, diags),
+			TagData:            sliceGoapstraTagDataToSliceTfTagData(link.Tags, diags),
 		}
 	}
 	return out
@@ -621,13 +604,13 @@ func goApstraPanelsToTfPanels(in []goapstra.LogicalDevicePanel, diags *diag.Diag
 	return out
 }
 
-func goApstraAccessSwitchToTfEsiLagInfo(in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) *EsiLagInfo {
-	if in.RedundancyProtocol != goapstra.AccessRedundancyProtocolEsi {
-		return nil
+func sliceGoapstraTagDataToSliceTfTagData(in []goapstra.DesignTag, diags *diag.Diagnostics) []TagData {
+	out := make([]TagData, len(in))
+	for i, tag := range in {
+		out[i] = TagData{
+			Label:       types.String{Value: string(tag.Label)},
+			Description: types.String{Value: tag.Description},
+		}
 	}
-	diags.AddWarning("here", fmt.Sprintf("count: %d, speed: '%s'", in.AccessAccessLinkCount, in.AccessAccessLinkSpeed))
-	return &EsiLagInfo{
-		AccessAccessLinkCount: types.Int64{Value: int64(in.AccessAccessLinkCount)},
-		AccessAccessLinkSpeed: types.String{Value: string(in.AccessAccessLinkSpeed)},
-	}
+	return out
 }
