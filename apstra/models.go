@@ -150,13 +150,13 @@ type ResourceManagedDevice struct {
 }
 
 type ResourceRackType struct {
-	Id                       types.String     `tfsdk:"id"`
-	Name                     types.String     `tfsdk:"name"`
-	Description              types.String     `tfsdk:"description"`
-	FabricConnectivityDesign types.String     `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             []RLeafSwitch    `tfsdk:"leaf_switches"`
-	GenericSystems           []RGenericSystem `tfsdk:"generic_systems"`
-	AccessSwitches           []RAccessSwitch  `tfsdk:"access_switches"`
+	Id                       types.String  `tfsdk:"id"`
+	Name                     types.String  `tfsdk:"name"`
+	Description              types.String  `tfsdk:"description"`
+	FabricConnectivityDesign types.String  `tfsdk:"fabric_connectivity_design"`
+	LeafSwitches             []RLeafSwitch `tfsdk:"leaf_switches"`
+	//GenericSystems           []RGenericSystem `tfsdk:"generic_systems"`
+	//AccessSwitches           []RAccessSwitch  `tfsdk:"access_switches"`
 }
 
 type ResourceWireframe struct {
@@ -185,9 +185,9 @@ type Ip4Subnet struct {
 }
 
 type LogicalDevicePanel struct {
-	Rows       types.Int64              `tfsdk:"rows"`
-	Columns    types.Int64              `tfsdk:"columns"`
-	PortGroups []LogicalDevicePortGroup `tfsdk:"port_groups"`
+	Rows types.Int64 `tfsdk:"rows"`
+	//Columns types.Int64 `tfsdk:"columns"`
+	//PortGroups []LogicalDevicePortGroup `tfsdk:"port_groups"`
 }
 
 type LogicalDevicePortGroup struct {
@@ -242,7 +242,7 @@ type RLeafSwitch struct {
 	Panels             []LogicalDevicePanel `tfsdk:"panels"`
 	MlagInfo           *MlagInfo            `tfsdk:"mlag_info"`
 	TagLabels          tagLabels            `tfsdk:"tags"`
-	TagData            []TagData            `tfsdk:"tag_data"`
+	//TagData            []TagData            `tfsdk:"tag_data"`
 }
 
 func (o *RLeafSwitch) redundancyProtocol() goapstra.LeafRedundancyProtocol {
@@ -267,9 +267,12 @@ func (o *RLeafSwitch) checkMlagInfoPresent(diags *diag.Diagnostics) {
 func (o *RLeafSwitch) copyWriteOnlyAttributesFrom(src *RLeafSwitch, diags *diag.Diagnostics) {
 	// copy Logical Device ID
 	o.LogicalDeviceId = types.String{Value: src.LogicalDeviceId.Value}
+
 	// copy Tag Labels
-	o.TagLabels = make(tagLabels, len(src.TagLabels))
-	copy(o.TagLabels, src.TagLabels)
+	if len(src.TagLabels) > 0 {
+		o.TagLabels = make(tagLabels, len(src.TagLabels))
+		copy(o.TagLabels, src.TagLabels)
+	}
 }
 
 type RAccessSwitch struct {
@@ -323,9 +326,12 @@ func (o *RAccessSwitch) checkLinksLagConfig(rt *ResourceRackType, diags *diag.Di
 func (o *RAccessSwitch) copyWriteOnlyAttributesFrom(src *RAccessSwitch, diags *diag.Diagnostics) {
 	// copy Logical Device ID
 	o.LogicalDeviceId = types.String{Value: src.LogicalDeviceId.Value}
+
 	// copy Tag Labels
-	o.TagLabels = make(tagLabels, len(src.TagLabels))
-	copy(o.TagLabels, src.TagLabels)
+	if len(src.TagLabels) > 0 {
+		o.TagLabels = make(tagLabels, len(src.TagLabels))
+		copy(o.TagLabels, src.TagLabels)
+	}
 }
 
 type RGenericSystem struct {
@@ -381,17 +387,23 @@ func (o *RGenericSystem) checkLinksLagConfig(rt *ResourceRackType, diags *diag.D
 func (o *RGenericSystem) copyWriteOnlyAttributesFrom(src *RGenericSystem, diags *diag.Diagnostics) {
 	// copy Logical Device ID
 	o.LogicalDeviceId = types.String{Value: src.LogicalDeviceId.Value}
+
 	// copy Tag Labels
-	o.TagLabels = make(tagLabels, len(src.TagLabels))
-	copy(o.TagLabels, src.TagLabels)
+	if len(src.TagLabels) > 0 {
+		o.TagLabels = make(tagLabels, len(src.TagLabels))
+		copy(o.TagLabels, src.TagLabels)
+	}
+
 	// copy Tag Labels of each Link
 	for _, srcRackLink := range src.Links {
 		dstRackLinkIndex := o.getRackLinkIndexByName(srcRackLink.Name.Value, diags)
 		if diags.HasError() {
 			return
 		}
-		o.Links[dstRackLinkIndex].TagLabels = make(tagLabels, len(srcRackLink.TagLabels))
-		copy(o.Links[dstRackLinkIndex].TagLabels, srcRackLink.TagLabels)
+		if len(srcRackLink.TagLabels) > 0 {
+			o.Links[dstRackLinkIndex].TagLabels = make(tagLabels, len(srcRackLink.TagLabels))
+			copy(o.Links[dstRackLinkIndex].TagLabels, srcRackLink.TagLabels)
+		}
 	}
 }
 

@@ -135,9 +135,10 @@ func (r dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadRe
 			})
 		}
 		panels = append(panels, LogicalDevicePanel{
-			Rows:       types.Int64{Value: int64(p.PanelLayout.RowCount)},
-			Columns:    types.Int64{Value: int64(p.PanelLayout.ColumnCount)},
-			PortGroups: portGroups,
+			// todo: restore
+			Rows: types.Int64{Value: int64(p.PanelLayout.RowCount)},
+			//Columns: types.Int64{Value: int64(p.PanelLayout.ColumnCount)},
+			//PortGroups: portGroups,
 		})
 	}
 

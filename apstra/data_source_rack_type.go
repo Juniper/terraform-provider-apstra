@@ -518,7 +518,9 @@ func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnos
 			DisplayName:        types.String{Value: leaf.DisplayName},
 			TagData:            sliceGoapstraTagDataToSliceTfTagData(leaf.Tags, diags),
 			Panels:             goApstraPanelsToTfPanels(leaf.Panels, diags),
-			MlagInfo: &MlagInfo{
+		}
+		if leaf.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
+			leafs[i].MlagInfo = &MlagInfo{
 				VlanId:                      types.Int64{Value: int64(leaf.MlagVlanId)},
 				LeafLeafLinkCount:           types.Int64{Value: int64(leaf.LeafLeafLinkCount)},
 				LeafLeafLinkSpeed:           types.String{Value: string(leaf.LeafLeafLinkSpeed)},
@@ -526,8 +528,9 @@ func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnos
 				LeafLeafL3LinkCount:         types.Int64{Value: int64(leaf.LeafLeafL3LinkCount)},
 				LeafLeafL3LinkSpeed:         types.String{Value: string(leaf.LeafLeafL3LinkSpeed)},
 				LeafLeafL3LinkPortChannelId: types.Int64{Value: int64(leaf.LeafLeafL3LinkPortChannelId)},
-			},
+			}
 		}
+
 	}
 	return leafs
 }
@@ -543,10 +546,12 @@ func goApstraRackTypeToDSAccessSwitches(rt *goapstra.RackType, diags *diag.Diagn
 			Links:              goApstraLinksToTfLinks(accessSwitch.Links, diags),
 			Panels:             goApstraPanelsToTfPanels(accessSwitch.Panels, diags),
 			Tags:               sliceGoapstraTagDataToSliceTfTagData(accessSwitch.Tags, diags),
-			EsiLagInfo: &EsiLagInfo{
+		}
+		if accessSwitch.RedundancyProtocol == goapstra.AccessRedundancyProtocolEsi {
+			accessSwitches[i].EsiLagInfo = &EsiLagInfo{
 				AccessAccessLinkCount: types.Int64{Value: int64(accessSwitch.AccessAccessLinkCount)},
 				AccessAccessLinkSpeed: types.String{Value: string(accessSwitch.AccessAccessLinkSpeed)},
-			},
+			}
 		}
 	}
 	return accessSwitches
@@ -586,20 +591,28 @@ func goApstraLinksToTfLinks(in []goapstra.RackLink, diags *diag.Diagnostics) []R
 }
 
 func goApstraPanelsToTfPanels(in []goapstra.LogicalDevicePanel, diags *diag.Diagnostics) []LogicalDevicePanel {
+	if len(in) == 0 {
+		return nil
+	}
 	out := make([]LogicalDevicePanel, len(in))
 	for i, panel := range in {
+		_ = panel // todo delete
 		out[i] = LogicalDevicePanel{
-			Rows:       types.Int64{Value: int64(panel.PanelLayout.RowCount)},
-			Columns:    types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
-			PortGroups: make([]LogicalDevicePortGroup, len(panel.PortGroups)),
+			// todo restore
+			Rows: types.Int64{Value: int64(panel.PanelLayout.RowCount)},
+			//Columns: types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
+			//PortGroups: make([]LogicalDevicePortGroup, len(panel.PortGroups)),
 		}
-		for j, pg := range panel.PortGroups {
-			out[i].PortGroups[j] = LogicalDevicePortGroup{
-				Count: types.Int64{Value: int64(pg.Count)},
-				Speed: types.Int64{Value: pg.Speed.BitsPerSecond()},
-				Roles: sliceStringToSliceTfString(pg.Roles.Strings()),
-			}
-		}
+		//diags.Append(tfsdk.ValueFrom(context.Background(), panel.PanelLayout.RowCount, types.Int64Type, out[i].Rows)...)
+		//diags.Append(tfsdk.ValueFrom(context.Background(), panel.PanelLayout.ColumnCount, types.Int64Type, out[i].Columns)...)
+		// todo restore
+		//for j, pg := range panel.PortGroups {
+		//out[i].PortGroups[j] = LogicalDevicePortGroup{
+		//	Count: types.Int64{Value: int64(pg.Count)},
+		//	Speed: types.Int64{Value: pg.Speed.BitsPerSecond()},
+		//	Roles: sliceStringToSliceTfString(pg.Roles.Strings()),
+		//}
+		//}
 	}
 	return out
 }
