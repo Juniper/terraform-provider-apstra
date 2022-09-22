@@ -15,7 +15,11 @@ import (
 
 type resourceBlueprintType struct{}
 
-func (r resourceBlueprintType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceBlueprint) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_blueprint"
+}
+
+func (r resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -83,12 +87,12 @@ func (r resourceBlueprintType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 
 func (r resourceBlueprintType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceBlueprint{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type resourceBlueprint struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r resourceBlueprint) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -941,8 +945,8 @@ func warnAboutSwitchesMissingFromPlan(ctx context.Context, client *goapstra.Clie
 		}
 	}
 	if len(missing) != 0 {
-		diag.AddWarning("switches with no configuration",
-			fmt.Sprintf("please add the following to %s.switches: ['%s']", resourceBlueprintName, strings.Join(missing, "', '")))
+		diag.AddWarning("switch missing from plan",
+			fmt.Sprintf("blueprint expects the following switches: ['%s']", strings.Join(missing, "', '")))
 	}
 	return nil
 }

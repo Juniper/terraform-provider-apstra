@@ -14,7 +14,11 @@ import (
 
 type dataSourceAsnPoolType struct{}
 
-func (r dataSourceAsnPoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r dataSourceAsnPool) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "apstra_asn_pool"
+}
+
+func (r dataSourceAsnPool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source provides details of a single ASN Resource Pool by its ID.",
 		Attributes: map[string]tfsdk.Attribute{
@@ -105,12 +109,12 @@ func (r dataSourceAsnPoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 
 func (r dataSourceAsnPoolType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceAsnPool{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type dataSourceAsnPool struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

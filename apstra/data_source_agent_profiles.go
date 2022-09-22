@@ -12,7 +12,11 @@ import (
 
 type dataSourceAgentProfilesType struct{}
 
-func (r dataSourceAgentProfilesType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r dataSourceAgentProfiles) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "apstra_agent_profiles"
+}
+
+func (r dataSourceAgentProfiles) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"ids": {
@@ -27,12 +31,12 @@ func (r dataSourceAgentProfilesType) GetSchema(_ context.Context) (tfsdk.Schema,
 
 func (r dataSourceAgentProfilesType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceAgentProfiles{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type dataSourceAgentProfiles struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

@@ -15,7 +15,11 @@ import (
 
 type resourceAgentProfileType struct{}
 
-func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceAgentProfile) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_agent_profile"
+}
+
+func (r resourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -46,12 +50,12 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 
 func (r resourceAgentProfileType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceAgentProfile{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type resourceAgentProfile struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r resourceAgentProfile) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

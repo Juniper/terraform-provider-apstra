@@ -14,7 +14,11 @@ import (
 
 type resourceIp4PoolType struct{}
 
-func (r resourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceIp4Pool) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_ip4_pool"
+}
+
+func (r resourceIp4Pool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -36,12 +40,12 @@ func (r resourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 
 func (r resourceIp4PoolType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceIp4Pool{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type resourceIp4Pool struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r resourceIp4Pool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -147,15 +151,13 @@ func (r resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest,
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("cannot update %s", resourceIp4PoolName),
+			resp.Diagnostics.AddError("API error",
 				fmt.Sprintf("error fetching existing ASN ranges - ASN pool '%s' not found", state.Id.Value),
 			)
 			return
 		}
 		// some other unknown error
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("cannot update %s", resourceIp4PoolName),
+		resp.Diagnostics.AddError("API error",
 			fmt.Sprintf("error fetching existing ASN ranges for ASN pool '%s' - %s", state.Id.Value, err.Error()),
 		)
 		return
@@ -174,9 +176,8 @@ func (r resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest,
 	// Create/Update ASN pool
 	err = r.p.client.UpdateIp4Pool(ctx, goapstra.ObjectId(state.Id.Value), newReq)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("cannot update %s", resourceIp4PoolName),
-			fmt.Sprintf("cannot update %s '%s' - %s", resourceIp4PoolName, plan.Id.Value, err.Error()),
+		resp.Diagnostics.AddError("API error",
+			fmt.Sprintf("cannot update '%s' - %s", plan.Id.Value, err.Error()),
 		)
 		return
 	}

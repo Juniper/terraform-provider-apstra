@@ -12,7 +12,11 @@ import (
 
 type dataSourceTagType struct{}
 
-func (r dataSourceTagType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r dataSourceTag) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "apstra_tag"
+}
+
+func (r dataSourceTag) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source provides details of a specific tag.\n\n" +
 			"At least one optional attribute is required. " +
@@ -42,12 +46,12 @@ func (r dataSourceTagType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 
 func (r dataSourceTagType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceTag{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type dataSourceTag struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r dataSourceTag) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {

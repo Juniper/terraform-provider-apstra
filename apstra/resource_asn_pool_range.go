@@ -21,7 +21,11 @@ const (
 
 type resourceAsnPoolRangeType struct{}
 
-func (r resourceAsnPoolRangeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceAsnPoolRange) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_asn_pool_range"
+}
+
+func (r resourceAsnPoolRange) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"pool_id": {
@@ -47,7 +51,7 @@ func (r resourceAsnPoolRangeType) GetSchema(_ context.Context) (tfsdk.Schema, di
 
 func (r resourceAsnPoolRangeType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceAsnPoolRange{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
@@ -77,7 +81,7 @@ func (r resourceAsnPoolRange) ValidateConfig(ctx context.Context, req resource.V
 }
 
 type resourceAsnPoolRange struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

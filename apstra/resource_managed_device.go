@@ -19,7 +19,11 @@ const (
 
 type resourceManagedDeviceType struct{}
 
-func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceManagedDevice) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_managed_device"
+}
+
+func (r resourceManagedDevice) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"agent_id": {
@@ -66,12 +70,12 @@ func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, d
 
 func (r resourceManagedDeviceType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceManagedDevice{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type resourceManagedDevice struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r resourceManagedDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {

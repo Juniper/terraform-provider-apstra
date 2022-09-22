@@ -13,7 +13,11 @@ import (
 
 type dataSourceIp4PoolIdType struct{}
 
-func (r dataSourceIp4PoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r dataSourceIp4PoolId) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "apstra_ip4_pool_id"
+}
+
+func (r dataSourceIp4PoolId) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source returns the pool ID of the IPv4 resource pool matching the supplied criteria. " +
 			"At least one optional attribute is required. " +
@@ -41,12 +45,12 @@ func (r dataSourceIp4PoolIdType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 
 func (r dataSourceIp4PoolIdType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceIp4PoolId{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type dataSourceIp4PoolId struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r dataSourceIp4PoolId) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {

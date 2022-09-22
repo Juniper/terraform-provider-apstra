@@ -15,7 +15,11 @@ import (
 
 type resourceIp4PoolSubnetType struct{}
 
-func (r resourceIp4PoolSubnetType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceIp4PoolSubnet) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_ip4_pool_subnet"
+}
+
+func (r resourceIp4PoolSubnet) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"pool_id": {
@@ -34,16 +38,16 @@ func (r resourceIp4PoolSubnetType) GetSchema(_ context.Context) (tfsdk.Schema, d
 }
 
 func (r resourceIp4PoolSubnetType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	return resourceIp4Subnet{
-		p: *(p.(*apstraProvider)),
+	return resourceIp4PoolSubnet{
+		p: *(p.(*Provider)),
 	}, nil
 }
 
-type resourceIp4Subnet struct {
-	p apstraProvider
+type resourceIp4PoolSubnet struct {
+	p Provider
 }
 
-func (r resourceIp4Subnet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r resourceIp4PoolSubnet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError(
 			"Provider not configured",
@@ -53,7 +57,7 @@ func (r resourceIp4Subnet) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Retrieve values from plan
-	var plan ResourceIp4Subnet
+	var plan ResourceIp4PoolSubnet
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -84,7 +88,7 @@ func (r resourceIp4Subnet) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Set State
-	diags = resp.State.Set(ctx, ResourceIp4Subnet{
+	diags = resp.State.Set(ctx, ResourceIp4PoolSubnet{
 		PoolId: types.String{Value: plan.PoolId.Value},
 		Cidr:   types.String{Value: plan.Cidr.Value},
 	})
@@ -94,9 +98,9 @@ func (r resourceIp4Subnet) Create(ctx context.Context, req resource.CreateReques
 	}
 }
 
-func (r resourceIp4Subnet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r resourceIp4PoolSubnet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
-	var state ResourceIp4Subnet
+	var state ResourceIp4PoolSubnet
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -154,13 +158,13 @@ func (r resourceIp4Subnet) Read(ctx context.Context, req resource.ReadRequest, r
 	return
 }
 
-func (r resourceIp4Subnet) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
+func (r resourceIp4PoolSubnet) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
 	// No update method because Read() will never report a state change, only
 	// resource existence (or not)
 }
 
-func (r resourceIp4Subnet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state ResourceIp4Subnet
+func (r resourceIp4PoolSubnet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceIp4PoolSubnet
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

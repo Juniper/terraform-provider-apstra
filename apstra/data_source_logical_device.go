@@ -12,7 +12,11 @@ import (
 
 type dataSourceLogicalDeviceType struct{}
 
-func (r dataSourceLogicalDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r dataSourceLogicalDevice) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "apstra_logical_device"
+}
+
+func (r dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source provides details about a specific logical device " +
 			"(a logical device is a template used by apstra when creating rack types (rack types are also templates)).\n\n" +
@@ -77,12 +81,12 @@ func (r dataSourceLogicalDeviceType) GetSchema(_ context.Context) (tfsdk.Schema,
 
 func (r dataSourceLogicalDeviceType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceLogicalDevice{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type dataSourceLogicalDevice struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {

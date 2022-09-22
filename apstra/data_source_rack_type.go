@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -13,7 +14,11 @@ import (
 
 type dataSourceRackTypeType struct{}
 
-func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r dataSourceRackType) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = "apstra_rack_typex"
+}
+
+func (r dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source provides details of a specific Rack Type.\n\n" +
 			"At least one optional attribute is required. " +
@@ -456,12 +461,12 @@ func (r dataSourceRackTypeType) GetSchema(_ context.Context) (tfsdk.Schema, diag
 
 func (r dataSourceRackTypeType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
 	return dataSourceRackType{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type dataSourceRackType struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -516,7 +521,7 @@ func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnos
 			LinkPerSpineSpeed:  types.String{Value: string(leaf.LinkPerSpineSpeed)},
 			RedundancyProtocol: types.String{Value: leaf.RedundancyProtocol.String()},
 			DisplayName:        types.String{Value: leaf.DisplayName},
-			TagData:            sliceGoapstraTagDataToSliceTfTagData(leaf.Tags, diags),
+			TagData:            sliceGoapstraTagDataToSliceTypesObject(leaf.Tags, diags),
 			Panels:             goApstraPanelsToTfPanels(leaf.Panels, diags),
 		}
 		if leaf.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
@@ -545,7 +550,7 @@ func goApstraRackTypeToDSAccessSwitches(rt *goapstra.RackType, diags *diag.Diagn
 			RedundancyProtocol: types.String{Value: accessSwitch.RedundancyProtocol.String()},
 			Links:              goApstraLinksToTfLinks(accessSwitch.Links, diags),
 			Panels:             goApstraPanelsToTfPanels(accessSwitch.Panels, diags),
-			Tags:               sliceGoapstraTagDataToSliceTfTagData(accessSwitch.Tags, diags),
+			Tags:               sliceGoapstraTagDataToSliceTypesObject(accessSwitch.Tags, diags),
 		}
 		if accessSwitch.RedundancyProtocol == goapstra.AccessRedundancyProtocolEsi {
 			accessSwitches[i].EsiLagInfo = &EsiLagInfo{
@@ -566,7 +571,7 @@ func goApstraRackTypeToDSGenericSystems(rt *goapstra.RackType, diags *diag.Diagn
 			Count:            types.Int64{Value: int64(genericSystem.Count)},
 			PortChannelIdMin: types.Int64{Value: int64(genericSystem.PortChannelIdMin)},
 			PortChannelIdMax: types.Int64{Value: int64(genericSystem.PortChannelIdMax)},
-			Tags:             sliceGoapstraTagDataToSliceTfTagData(genericSystem.Tags, diags),
+			Tags:             sliceGoapstraTagDataToSliceTypesObject(genericSystem.Tags, diags),
 			Panels:           goApstraPanelsToTfPanels(genericSystem.Panels, diags),
 			Links:            goApstraLinksToTfLinks(genericSystem.Links, diags),
 		}
@@ -584,7 +589,7 @@ func goApstraLinksToTfLinks(in []goapstra.RackLink, diags *diag.Diagnostics) []R
 			LinkPerSwitchCount: types.Int64{Value: int64(link.LinkPerSwitchCount)},
 			Speed:              types.String{Value: string(link.LinkSpeed)},
 			SwitchPeer:         types.String{Value: link.SwitchPeer.String()},
-			TagData:            sliceGoapstraTagDataToSliceTfTagData(link.Tags, diags),
+			TagData:            sliceGoapstraTagDataToSliceTypesObject(link.Tags, diags),
 		}
 	}
 	return out
@@ -617,12 +622,21 @@ func goApstraPanelsToTfPanels(in []goapstra.LogicalDevicePanel, diags *diag.Diag
 	return out
 }
 
-func sliceGoapstraTagDataToSliceTfTagData(in []goapstra.DesignTag, diags *diag.Diagnostics) []TagData {
-	out := make([]TagData, len(in))
+func sliceGoapstraTagDataToSliceTypesObject(in []goapstra.DesignTag, diags *diag.Diagnostics) []types.Object {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]types.Object, len(in))
 	for i, tag := range in {
-		out[i] = TagData{
-			Label:       types.String{Value: string(tag.Label)},
-			Description: types.String{Value: tag.Description},
+		out[i] = types.Object{
+			Attrs: map[string]attr.Value{
+				"label":       types.String{Value: string(tag.Label)},
+				"description": types.String{Value: string(tag.Description)},
+			},
+			AttrTypes: map[string]attr.Type{
+				"label":       types.StringType,
+				"description": types.StringType,
+			},
 		}
 	}
 	return out

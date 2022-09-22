@@ -11,7 +11,11 @@ import (
 
 type resourceWireframeType struct{}
 
-func (r resourceWireframeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceWireframe) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = "apstra_wireframe"
+}
+
+func (r resourceWireframe) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -33,12 +37,12 @@ func (r resourceWireframeType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 
 func (r resourceWireframeType) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
 	return resourceWireframe{
-		p: *(p.(*apstraProvider)),
+		p: *(p.(*Provider)),
 	}, nil
 }
 
 type resourceWireframe struct {
-	p apstraProvider
+	p Provider
 }
 
 func (r resourceWireframe) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
