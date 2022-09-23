@@ -1,2 +1,2 @@
 dist/
-terraform.tfstate*
+test/terraform.tfstate*
