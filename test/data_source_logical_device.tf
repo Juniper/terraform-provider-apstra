@@ -1,5 +1,5 @@
 data "apstra_logical_device" "by_id" {
-  id = "AOS-1x1-1"
+  id = "AOS-8x10-1"
 }
 
 output "apsta_logical_device_by_id" {

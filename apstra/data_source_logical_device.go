@@ -88,7 +88,17 @@ func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, di
 					"panels": {
 						MarkdownDescription: "Detail connectivity features of the logical device.",
 						Computed:            true,
-						Type:                logicalDevicePanelSchema(),
+						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+							"columns": {
+								Computed: true,
+								Type:     types.Int64Type,
+							},
+							"rows": {
+								Computed: true,
+								Type:     types.Int64Type,
+							},
+						}),
+						//Type:                logicalDevicePanelSchema(),
 						//Type: types.ListType{ElemType: types.ObjectType{AttrTypes: map[string]attr.Type{
 						//	"rows":    types.Int64Type,
 						//	"columns": types.Int64Type,
