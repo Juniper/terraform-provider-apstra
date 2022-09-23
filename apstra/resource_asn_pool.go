@@ -176,7 +176,7 @@ func (r resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest,
 		DisplayName: plan.Name.Value,
 		Tags:        asnPoolTagsFromPlan(plan.Tags),
 	}
-	send.Ranges = make([]goapstra.IntfAsnRange, len(poolFromApi.Ranges))
+	send.Ranges = make([]goapstra.IntfIntRange, len(poolFromApi.Ranges))
 	for i, r := range poolFromApi.Ranges {
 		send.Ranges[i] = r
 	}

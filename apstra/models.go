@@ -5,50 +5,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type DataAgentProfile struct {
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Platform    types.String `tfsdk:"platform"`
-	HasUsername types.Bool   `tfsdk:"has_username"`
-	HasPassword types.Bool   `tfsdk:"has_password"`
-	Packages    types.Map    `tfsdk:"packages"`
-	OpenOptions types.Map    `tfsdk:"open_options"`
-}
-
 type DataAgentProfileId struct {
 	Id    types.String   `tfsdk:"id"`
 	Label types.String   `tfsdk:"label"`
 	Tags  []types.String `tfsdk:"tags"`
-}
-
-type DataAgentProfileIds struct {
-	Ids []types.String `tfsdk:"ids"`
-}
-
-type DataAsnPool struct {
-	Id             types.String   `tfsdk:"id"`
-	Name           types.String   `tfsdk:"name"`
-	Status         types.String   `tfsdk:"status"`
-	Tags           []types.String `tfsdk:"tags"`
-	Used           types.Int64    `tfsdk:"used"`
-	UsedPercent    types.Float64  `tfsdk:"used_percentage"`
-	CreatedAt      types.String   `tfsdk:"created_at"`
-	LastModifiedAt types.String   `tfsdk:"last_modified_at"`
-	Total          types.Int64    `tfsdk:"total"`
-	Ranges         []AsnRange     `tfsdk:"ranges"`
-}
-
-type DataIp4Pool struct {
-	Id             types.String   `tfsdk:"id"`
-	Name           types.String   `tfsdk:"name"`
-	Status         types.String   `tfsdk:"status"`
-	Tags           []types.String `tfsdk:"tags"`
-	Used           types.Int64    `tfsdk:"used"`
-	UsedPercent    types.Float64  `tfsdk:"used_percentage"`
-	CreatedAt      types.String   `tfsdk:"created_at"`
-	LastModifiedAt types.String   `tfsdk:"last_modified_at"`
-	Total          types.Int64    `tfsdk:"total"`
-	Subnets        []Ip4Subnet    `tfsdk:"subnets"`
 }
 
 type DataAsnPoolId struct {
@@ -69,12 +29,6 @@ type DataIp4PoolId struct {
 
 type DataIp4PoolIds struct {
 	Ids []types.String `tfsdk:"ids"`
-}
-
-type DataLogicalDevice struct {
-	Id     types.String         `tfsdk:"id"`
-	Name   types.String         `tfsdk:"name"`
-	Panels []LogicalDevicePanel `tfsdk:"panels"`
 }
 
 type DataRackType struct {
@@ -154,23 +108,6 @@ type ResourceWireframe struct {
 }
 
 // helper structs used by 'resource' and 'data source' objects follow
-
-type AsnRange struct {
-	Status         types.String  `tfsdk:"status"`
-	First          types.Int64   `tfsdk:"first"`
-	Last           types.Int64   `tfsdk:"last"`
-	Total          types.Int64   `tfsdk:"total"`
-	Used           types.Int64   `tfsdk:"used"`
-	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
-}
-
-type Ip4Subnet struct {
-	Status         types.String  `tfsdk:"status"`
-	Network        types.String  `tfsdk:"network"`
-	Total          types.Int64   `tfsdk:"total"`
-	Used           types.Int64   `tfsdk:"used"`
-	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
-}
 
 type Switch struct {
 	InterfaceMap  types.String `tfsdk:"interface_map"`
@@ -253,21 +190,4 @@ type RackLink struct {
 	SwitchPeer         types.String   `tfsdk:"switch_peer"`
 	TagLabels          tagLabels      `tfsdk:"tags"` // needs to be cloned from state on Read()
 	TagData            []types.Object `tfsdk:"tag_data"`
-}
-
-type LogicalDeviceData struct {
-	DisplayName types.String   `tfsdk:"name"`
-	Panels      []types.Object `tfsdk:"panels"`
-}
-
-type LogicalDevicePanel struct {
-	Rows       types.Int64              `tfsdk:"rows"`
-	Columns    types.Int64              `tfsdk:"columns"`
-	PortGroups []LogicalDevicePortGroup `tfsdk:"port_groups"`
-}
-
-type LogicalDevicePortGroup struct {
-	Count types.Int64    `tfsdk:"port_count"`
-	Speed types.Int64    `tfsdk:"port_speed_gbps"`
-	Roles []types.String `tfsdk:"port_roles"`
 }

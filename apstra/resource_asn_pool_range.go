@@ -111,7 +111,7 @@ func (r resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateReq
 	}
 
 	// Create new ASN Pool Range
-	err := r.p.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.Value), &goapstra.AsnRangeRequest{
+	err := r.p.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.Value), &goapstra.IntRangeRequest{
 		First: uint32(plan.First.Value),
 		Last:  uint32(plan.Last.Value),
 	})
@@ -164,7 +164,7 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadRequest
 		}
 	}
 
-	indexOf := asnPool.Ranges.IndexOf(goapstra.AsnRange{
+	indexOf := asnPool.Ranges.IndexOf(goapstra.IntRange{
 		First: uint32(state.First.Value),
 		Last:  uint32(state.Last.Value),
 	})
@@ -178,7 +178,7 @@ func (r resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadRequest
 		// we assume that any range overlapping our intended range is *this pool*, but edited.
 		// really need range IDs here.
 		for _, testRange := range asnPool.Ranges {
-			if goapstra.AsnOverlap(goapstra.AsnRange{
+			if goapstra.IntOverlap(goapstra.IntRange{
 				First: uint32(state.First.Value),
 				Last:  uint32(state.Last.Value),
 			}, testRange) {
@@ -207,7 +207,7 @@ func (r resourceAsnPoolRange) Delete(ctx context.Context, req resource.DeleteReq
 	}
 
 	// Delete ASN pool range by calling API
-	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnRangeRequest{
+	err := r.p.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.IntRangeRequest{
 		First: uint32(state.First.Value),
 		Last:  uint32(state.Last.Value),
 	})

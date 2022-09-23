@@ -19,6 +19,9 @@ import (
 )
 
 const (
+	DefaultVersion = "0.0.0"
+	DefaultCommit  = "devel"
+
 	envTlsKeyLogFile  = "APSTRA_TLS_KEYLOG"
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
@@ -44,7 +47,7 @@ type providerData struct {
 
 func (p *Provider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "apstra"
-	resp.Version = p.Version + "-" + p.Commit
+	resp.Version = p.Version + "_" + p.Commit
 }
 
 func (p *Provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -180,45 +183,43 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// data passed to Resource and DataSource Configure() methods
-	providerData := &providerData{client: client}
-	resp.ResourceData = providerData
-	resp.DataSourceData = providerData
-}
-
-// Resources defines provider resources
-func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		//func() resource.Resource { return resourceAgentProfile{} },
-		//func() resource.Resource { return resourceAsnPool{} },
-		//func() resource.Resource { return resourceAsnPoolRange{} },
-		//func() resource.Resource { return resourceBlueprint{} },
-		//func() resource.Resource { return resourceIp4Pool{} },
-		//func() resource.Resource { return resourceIp4PoolSubnet{} },
-		//func() resource.Resource { return resourceManagedDevice{} },
-		//func() resource.Resource { return &ResourceRackType{} },
-		//func() resource.Resource { return resourceSourceTemplateL3Collapsed{} },
-		//func() resource.Resource { return resourceSourceTemplatePodBased{} },
-		//func() resource.Resource { return resourceSourceTemplateRackBased{} },
-		//func() resource.Resource { return resourceWireframe{} },
-	}
+	pd := &providerData{client: client}
+	resp.ResourceData = pd
+	resp.DataSourceData = pd
 }
 
 // DataSources defines provider data sources
 func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		//func() datasource.DataSource { return dataSourceAgentProfile{} },
-		//func() datasource.DataSource { return dataSourceAgentProfiles{} },
-		//func() datasource.DataSource { return dataSourceAsnPool{} },
-		//func() datasource.DataSource { return dataSourceAsnPoolId{} },
-		//func() datasource.DataSource { return dataSourceAsnPools{} },
-		//func() datasource.DataSource { return dataSourceIp4PoolId{} },
-		//func() datasource.DataSource { return dataSourceIp4Pools{} },
-		//func() datasource.DataSource { return dataSourceIp4Pool{} },
-		//func() datasource.DataSource { return dataSourceLogicalDevice{} },
-		//func() datasource.DataSource { return dataSourceRackType{} },
-		//func() datasource.DataSource { return dataSourceTemplateL3Collapsed{}},
-		//func() datasource.DataSource { return dataSourceTemplatePodBased{}},
-		//func() datasource.DataSource { return dataSourceTemplateRackBased{}},
-		//func() datasource.DataSource { return dataSourceTag{} },
+		func() datasource.DataSource { return &dataSourceAgentProfile{} },
+		func() datasource.DataSource { return &dataSourceAgentProfiles{} },
+		func() datasource.DataSource { return &dataSourceAsnPool{} },
+		func() datasource.DataSource { return &dataSourceAsnPools{} },
+		func() datasource.DataSource { return &dataSourceIp4Pools{} },
+		func() datasource.DataSource { return &dataSourceIp4Pool{} },
+		func() datasource.DataSource { return &dataSourceLogicalDevice{} },
+		//func() datasource.DataSource { return &dataSourceRackType{} },
+		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{}},
+		//func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
+		//func() datasource.DataSource { return &dataSourceTemplateRackBased{}},
+		//func() datasource.DataSource { return &dataSourceTag{} },
+	}
+}
+
+// Resources defines provider resources
+func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		//func() resource.Resource { return &resourceAgentProfile{} },
+		//func() resource.Resource { return &resourceAsnPool{} },
+		//func() resource.Resource { return &resourceAsnPoolRange{} },
+		//func() resource.Resource { return &resourceBlueprint{} },
+		//func() resource.Resource { return &resourceIp4Pool{} },
+		//func() resource.Resource { return &resourceIp4PoolSubnet{} },
+		//func() resource.Resource { return &resourceManagedDevice{} },
+		//func() resource.Resource { return &ResourceRackType{} },
+		//func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
+		//func() resource.Resource { return &resourceSourceTemplatePodBased{} },
+		//func() resource.Resource { return &resourceSourceTemplateRackBased{} },
+		//func() resource.Resource { return &resourceWireframe{} },
 	}
 }

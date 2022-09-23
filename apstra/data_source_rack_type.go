@@ -606,13 +606,13 @@ func goApstraPanelsToTfPanels(in []goapstra.LogicalDevicePanel, diags *diag.Diag
 			// todo restore
 			Rows: types.Int64{Value: int64(panel.PanelLayout.RowCount)},
 			//Columns: types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
-			//PortGroups: make([]LogicalDevicePortGroup, len(panel.PortGroups)),
+			//PortGroups: make([]logicalDevicePortGroup, len(panel.PortGroups)),
 		}
 		//diags.Append(tfsdk.ValueFrom(context.Background(), panel.PanelLayout.RowCount, types.Int64Type, out[i].Rows)...)
 		//diags.Append(tfsdk.ValueFrom(context.Background(), panel.PanelLayout.ColumnCount, types.Int64Type, out[i].Columns)...)
 		// todo restore
 		//for j, pg := range panel.PortGroups {
-		//out[i].PortGroups[j] = LogicalDevicePortGroup{
+		//out[i].PortGroups[j] = logicalDevicePortGroup{
 		//	Count: types.Int64{Value: int64(pg.Count)},
 		//	Speed: types.Int64{Value: pg.Speed.BitsPerSecond()},
 		//	Roles: sliceStringToSliceTfString(pg.Roles.Strings()),

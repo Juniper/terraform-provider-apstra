@@ -16,13 +16,13 @@ func sliceTfStringToSliceString(in []types.String) []string {
 	return out
 }
 
-func sliceStringToSliceTfString(in []string) []types.String {
-	var out []types.String
-	for _, t := range in {
-		out = append(out, types.String{Value: t})
-	}
-	return out
-}
+//func sliceStringToSliceTfString(in []string) []types.String {
+//	var out []types.String
+//	for _, t := range in {
+//		out = append(out, types.String{Value: t})
+//	}
+//	return out
+//}
 
 func newKeyLogWriter(fileName string) (*os.File, error) {
 	// expand ~ style home directory

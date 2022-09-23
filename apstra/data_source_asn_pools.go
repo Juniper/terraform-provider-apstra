@@ -10,17 +10,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfiles{}
+var _ datasource.DataSourceWithConfigure = &dataSourceAsnPools{}
 
-type dataSourceAgentProfiles struct {
+type dataSourceAsnPools struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceAgentProfiles) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_agent_profiles"
+func (o *dataSourceAsnPools) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_asn_pools"
 }
 
-func (o *dataSourceAgentProfiles) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceAsnPools) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -35,20 +35,20 @@ func (o *dataSourceAgentProfiles) Configure(ctx context.Context, req datasource.
 	}
 }
 
-func (o *dataSourceAgentProfiles) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (o *dataSourceAsnPools) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
-		MarkdownDescription: "This resource returns the ID numbers of each Agent Profile.",
+		MarkdownDescription: "This data source returns the IDs of all ASN resource pools",
 		Attributes: map[string]tfsdk.Attribute{
 			"ids": {
+				MarkdownDescription: "Pool IDs of all ASN resource pools.",
 				Computed:            true,
 				Type:                types.SetType{ElemType: types.StringType},
-				MarkdownDescription: "A set of Apstra ID numbers of each Agent Profile.",
 			},
 		},
 	}, nil
 }
 
-func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
 		Ids []types.String `tfsdk:"ids"`
 	}
@@ -58,19 +58,19 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	ids, err := o.client.ListAgentProfileIds(ctx)
+	poolIds, err := o.client.ListAsnPoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error retrieving Agent Profile IDs",
-			fmt.Sprintf("error retrieving Agent Profile IDs - %s", err),
+			"Error retrieving ASN pool IDs",
+			fmt.Sprintf("error retrieving ASN pool IDs - %s", err),
 		)
 		return
 	}
 
 	// map response body to resource schema
-	config.Ids = make([]types.String, len(ids))
-	for i, Id := range ids {
-		config.Ids[i] = types.String{Value: string(Id)}
+	config.Ids = make([]types.String, len(poolIds))
+	for i, id := range poolIds {
+		config.Ids[i] = types.String{Value: string(id)}
 	}
 
 	// Set state
