@@ -1,7 +1,6 @@
 package apstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -118,10 +117,10 @@ type Switch struct {
 
 type tagLabels []types.String
 
-func (o tagLabels) toGoapstraTagLabels() []goapstra.TagLabel {
-	result := make([]goapstra.TagLabel, len(o))
+func (o tagLabels) toGoapstraTagLabels() []string {
+	result := make([]string, len(o))
 	for i, tl := range o {
-		result[i] = goapstra.TagLabel(tl.Value)
+		result[i] = tl.Value
 	}
 	return result
 }

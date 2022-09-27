@@ -11,7 +11,7 @@ require (
 )
 
 //                                                                                        HHMMSS
-replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20220923204937-0aecb78f4a36
+replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20220926222210-2467a3275546
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect

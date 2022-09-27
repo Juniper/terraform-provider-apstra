@@ -79,7 +79,7 @@ func (r dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, res
 	var err error
 	var tag *goapstra.DesignTag
 	if config.Name.Null == false {
-		tag, err = r.p.client.GetTagByLabel(ctx, goapstra.TagLabel(config.Name.Value))
+		tag, err = r.p.client.GetTagByLabel(ctx, config.Name.Value)
 	}
 	if config.Id.Null == false {
 		tag, err = r.p.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
@@ -92,8 +92,8 @@ func (r dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, res
 	// Set state
 	diags = resp.State.Set(ctx, &DataTag{
 		Id:          types.String{Value: string(tag.Id)},
-		Name:        types.String{Value: string(tag.Label)},
-		Description: types.String{Value: tag.Description},
+		Name:        types.String{Value: tag.Data.Label},
+		Description: types.String{Value: tag.Data.Description},
 	})
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

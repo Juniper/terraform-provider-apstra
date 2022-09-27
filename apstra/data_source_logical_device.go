@@ -69,22 +69,6 @@ func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, di
 						Computed:            true,
 						Type:                types.StringType,
 					},
-					//"panels": {
-					//	MarkdownDescription: "Detail connectivity features of the logical device.",
-					//	Computed:            true,
-					//	Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					//		"rows": {
-					//			MarkdownDescription: "Physical vertical dimension of the panel.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"columns": {
-					//			MarkdownDescription: "Physical horizontal dimension of the panel.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//	}),
-					//},
 					"panels": {
 						MarkdownDescription: "Detail connectivity features of the logical device.",
 						Computed:            true,
@@ -97,42 +81,29 @@ func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, di
 								Computed: true,
 								Type:     types.Int64Type,
 							},
+							"port_groups": {
+								MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+								Computed:            true,
+								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+									"port_count": {
+										MarkdownDescription: "Number of ports in the group.",
+										Computed:            true,
+										Type:                types.Int64Type,
+									},
+									"port_speed_gbps": {
+										MarkdownDescription: "Port speed in Gbps.",
+										Computed:            true,
+										Type:                types.Int64Type,
+									},
+									//"port_roles": {
+									//	MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+									//	Computed:            true,
+									//	Type:                types.SetType{ElemType: types.StringType},
+									//},
+								}),
+							},
 						}),
-						//Type:                logicalDevicePanelSchema(),
-						//Type: types.ListType{ElemType: types.ObjectType{AttrTypes: map[string]attr.Type{
-						//	"rows":    types.Int64Type,
-						//	"columns": types.Int64Type,
-						//}}},
 					},
-					//Type: types.ListType{
-					//	ElemType: types.ObjectType{
-					//		AttrTypes: map[string]attr.Type{
-					//			"rows":    types.Int64Type,
-					//			"columns": types.Int64Type,
-					//		},
-					//	},
-					//},
-					//"port_groups": {
-					//	MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-					//	Computed:            true,
-					//	Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					//		"port_count": {
-					//			MarkdownDescription: "Number of ports in the group.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"port_speed_gbps": {
-					//			MarkdownDescription: "Port speed in Gbps.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"port_roles": {
-					//			MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-					//			Computed:            true,
-					//			Type:                types.SetType{ElemType: types.StringType},
-					//		},
-					//	}),
-					//},
 				}),
 			},
 		},
@@ -177,51 +148,6 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	newState := newLogicalDeviceFromApi(logicalDevice)
-	//config.Id = types.String{Value: string(logicalDevice.Id)}
-	//config.Name = types.String{Value: logicalDevice.Data.DisplayName}
-	//config.Data = newLogicalDeviceData(logicalDevice)
-	//config.Data = types.Object{
-	//	Attrs: map[string]attr.Value{
-	//		"name": types.String{},
-	//	},
-	//	DisplayName: types.String{},
-	//	Panels:      make([]LogicalDevicePanel, len(logicalDevice.Panels)),
-	//}
-	//for i, panel := range logicalDevice.Panels {
-	//	config.Data.Attrs["panels"].(types.List).Elems[i] = types.Object{
-	//		AttrTypes: map[string]attr.Type{
-	//			"rows":    types.Int64Type,
-	//			"columns": types.Int64Type,
-	//		},
-	//		Attrs: map[string]attr.Value{
-	//			"rows":    types.Int64{Value: int64(panel.PanelLayout.RowCount)},
-	//			"columns": types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
-	//		},
-	//	}
-	//}
-	//for i, panel := range logicalDevice.Panels {
-	//	config.Data.Panels[i].AttrTypes = map[string]attr.Type{
-	//		"rows":    types.Int64Type,
-	//		"columns": types.Int64Type,
-	//		//"port_groups": types.ListType{},
-	//	}
-	//	//var portGroups []logicalDevicePortGroup
-	//	//for _, pg := range p.PortGroups {
-	//	//	var roles []types.String
-	//	//	for _, role := range pg.Roles.Strings() {
-	//	//		roles = append(roles, types.String{Value: role})
-	//	//	}
-	//	//	portGroups = append(portGroups, logicalDevicePortGroup{
-	//	//		Count: types.Int64{Value: int64(pg.Count)},
-	//	//		Speed: types.Int64{Value: pg.Speed.BitsPerSecond() / 1000 / 1000 / 1000},
-	//	//		Roles: roles,
-	//	//	})
-	//	//}
-	//	//config.Data.Panels[i].Attrs = map[string]attr.Value{
-	//	//	"rows":    types.Int64{Value: int64(panel.PanelLayout.RowCount)},
-	//	//	"columns": types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
-	//	//}
-	//}
 
 	// Set state
 	diags = resp.State.Set(ctx, &newState)
@@ -232,11 +158,6 @@ type DLogicalDevice struct {
 	Id   types.String `tfsdk:"id"`   // optional input
 	Name types.String `tfsdk:"name"` // optional input
 	Data types.Object `tfsdk:"data"`
-}
-
-type LogicalDeviceData struct {
-	DisplayName types.String `tfsdk:"name"`
-	//Panels      []LogicalDevicePanel `tfsdk:"panels"`
 }
 
 type LogicalDevicePanel struct {
@@ -259,26 +180,35 @@ func newLogicalDeviceFromApi(in *goapstra.LogicalDevice) *DLogicalDevice {
 	}
 }
 
-func logicalDevicePanelSchema() attr.Type {
-	return types.ListType{
-		ElemType: types.ObjectType{
-			AttrTypes: map[string]attr.Type{
-				"rows":    types.Int64Type,
-				"columns": types.Int64Type,
+func newLogicalDevicePanelPortGroups(in []goapstra.LogicalDevicePortGroup) []attr.Value {
+	portGroups := make([]attr.Value, len(in))
+	for i, pg := range in {
+		portGroups[i] = types.Object{
+			AttrTypes: logicalDevicePanelPortGroupsListElementAttrTypes(),
+			Attrs: map[string]attr.Value{
+				"port_count":      types.Int64{Value: int64(pg.Count)},
+				"port_speed_gbps": types.Int64{Value: pg.Speed.BitsPerSecond()},
+				//"port_roles": types.String,
 			},
-		},
+		}
 	}
+	return portGroups
 }
 
 func newLogicalDevicePanel(in goapstra.LogicalDevicePanel) types.Object {
 	return types.Object{
 		AttrTypes: map[string]attr.Type{
-			"rows":    types.Int64Type,
-			"columns": types.Int64Type,
+			"rows":        types.Int64Type,
+			"columns":     types.Int64Type,
+			"port_groups": logicalDeviceDataPanelPortGroupsListSchema(),
 		},
 		Attrs: map[string]attr.Value{
 			"rows":    types.Int64{Value: int64(in.PanelLayout.RowCount)},
 			"columns": types.Int64{Value: int64(in.PanelLayout.ColumnCount)},
+			"port_groups": types.List{
+				ElemType: logicalDeviceDataPanelPortGroupObjectSchema(),
+				Elems:    newLogicalDevicePanelPortGroups(in.PortGroups),
+			},
 		},
 	}
 }
@@ -292,55 +222,57 @@ func newLogicalDevicePanels(in *goapstra.LogicalDevice) []attr.Value {
 }
 
 func newLogicalDeviceData(in *goapstra.LogicalDevice) types.Object {
-	panels := make([]types.Object, len(in.Data.Panels))
-	for i, panel := range in.Data.Panels {
-		panels[i] = newLogicalDevicePanel(panel)
-	}
-
 	return types.Object{
 		AttrTypes: map[string]attr.Type{
 			"name":   types.StringType,
 			"panels": logicalDevicePanelSchema(),
-			//"panels": types.ListType{
-			//	ElemType: types.ObjectType{
-			//		AttrTypes: map[string]attr.Type{
-			//			"rows":    types.Int64Type,
-			//			"columns": types.Int64Type,
-			//		},
-			//	},
-			//},
 		},
 		Attrs: map[string]attr.Value{
 			"name": types.String{Value: in.Data.DisplayName},
 			"panels": types.List{
-				ElemType: types.ObjectType{
-					AttrTypes: map[string]attr.Type{
-						"rows":    types.Int64Type,
-						"columns": types.Int64Type,
-					},
-				},
-				Elems: newLogicalDevicePanels(in),
+				ElemType: logicalDeviceDataPanelObjectSchema(),
+				Elems:    newLogicalDevicePanels(in),
 			},
 		},
 	}
 }
 
-// 	state.Ratings2 = types.List{
-//		Elems: make([]attr.Value, len(apiResponse.Ratings)),
-//		ElemType: types.ObjectType{AttrTypes: map[string]attr.Type{
-//			"source": types.StringType,
-//			"value":  types.StringType,
-//		}},
-//	}
-//	for i, rating := range apiResponse.Ratings {
-//		state.Ratings2.Elems[i] = types.Object{
-//			AttrTypes: map[string]attr.Type{
-//				"source": types.StringType,
-//				"value":  types.StringType,
-//			},
-//			Attrs: map[string]attr.Value{
-//				"source": types.String{Value: rating.Source},
-//				"value":  types.String{Value: rating.Value},
-//			},
-//		}
-//	}
+func logicalDevicePanelPortGroupsListElementAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"port_count":      types.Int64Type,
+		"port_speed_gbps": types.Int64Type,
+		//"port_roles": types.String,
+	}
+}
+
+func logicalDeviceDataPanelPortGroupObjectSchema() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: logicalDevicePanelPortGroupsListElementAttrTypes(),
+	}
+}
+
+func logicalDeviceDataPanelPortGroupsListSchema() types.ListType {
+	return types.ListType{
+		ElemType: logicalDeviceDataPanelPortGroupObjectSchema(),
+	}
+}
+
+func logicalDeviceDataPanelsListElementAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"rows":        types.Int64Type,
+		"columns":     types.Int64Type,
+		"port_groups": logicalDeviceDataPanelPortGroupsListSchema(),
+	}
+}
+
+func logicalDeviceDataPanelObjectSchema() types.ObjectType {
+	return types.ObjectType{
+		AttrTypes: logicalDeviceDataPanelsListElementAttrTypes(),
+	}
+}
+
+func logicalDevicePanelSchema() attr.Type {
+	return types.ListType{
+		ElemType: logicalDeviceDataPanelObjectSchema(),
+	}
+}
