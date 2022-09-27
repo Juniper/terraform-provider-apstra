@@ -190,3 +190,10 @@ type RackLink struct {
 	TagLabels          tagLabels      `tfsdk:"tags"` // needs to be cloned from state on Read()
 	TagData            []types.Object `tfsdk:"tag_data"`
 }
+
+// todo: delete this eventually?
+type LogicalDevicePanel struct {
+	Rows    types.Int64 `tfsdk:"rows"`
+	Columns types.Int64 `tfsdk:"columns"`
+	//PortGroups []LogicalDevicePortGroup `tfsdk:"port_groups"`
+}
