@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 )
 
 const (
@@ -84,64 +83,41 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	apstraUrl, err := url.Parse(config.Url.Value)
+	parsedUrl, err := url.Parse(config.Url.Value)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("error parsing URL '%s'", config.Url.Value), err.Error())
 		return
 	}
 
-	clientCfg := &goapstra.ClientCfg{
-		Scheme: apstraUrl.Scheme,
-		User:   apstraUrl.User.Username(),
-		Host:   apstraUrl.Hostname(),
-	}
-
-	// parse password from URL, if it exists
-	if pass, ok := apstraUrl.User.Password(); ok {
-		clientCfg.Pass = pass
-	}
-
-	// parse port string from URL, if it exists
-	portStr := apstraUrl.Port()
-	if portStr == "" {
-		switch apstraUrl.Scheme {
-		case "http":
-			clientCfg.Port = 80
-		case "https":
-			clientCfg.Port = 443
-		default:
-			resp.Diagnostics.AddError("cannot guess port number",
-				fmt.Sprintf("url scheme is '%s'", apstraUrl.Scheme))
-			return
-		}
-	} else {
-		port64, err := strconv.ParseUint(portStr, 10, 16)
-		if err != nil {
-			resp.Diagnostics.AddError(fmt.Sprintf("error parsing port string", portStr), err.Error())
-			return
-		}
-		clientCfg.Port = uint16(port64)
-	}
-
-	// try to fill missing username from environment
-	if clientCfg.User == "" {
-		if user, ok := os.LookupEnv(envApstraUsername); ok {
-			clientCfg.User = user
+	// determine apstra username
+	user := parsedUrl.User.Username()
+	if user == "" {
+		if val, ok := os.LookupEnv(envApstraUsername); ok {
+			user = val
 		} else {
 			resp.Diagnostics.AddError(errProviderInvalidConfig, "unable to determine apstra username")
 			return
 		}
 	}
 
-	// try to fill missing password from environment
-	if clientCfg.Pass == "" {
-		//resp.Diagnostics.AddWarning("yep", "no password")
-		if pass, ok := os.LookupEnv(envApstraPassword); ok {
-			clientCfg.Pass = pass
+	// determine apstra password
+	pass, found := parsedUrl.User.Password()
+	if !found {
+		if val, ok := os.LookupEnv(envApstraPassword); ok {
+			pass = val
 		} else {
 			resp.Diagnostics.AddError(errProviderInvalidConfig, "unable to determine apstra password")
 			return
 		}
+	}
+
+	// remove credentials from URL prior to rendering it into ClientCfg
+	parsedUrl.User = nil
+
+	clientCfg := &goapstra.ClientCfg{
+		Url:  parsedUrl.String(),
+		User: user,
+		Pass: pass,
 	}
 
 	// set up logger
@@ -179,6 +155,13 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 			"unable to create client",
 			fmt.Sprintf("error creating apstra client - %s", err),
 		)
+		return
+	}
+
+	// login after creation so that future parallel workflows don't trigger TOO MANY REQUESTS threshold
+	err = client.Login(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("apstra login failure", err.Error())
 		return
 	}
 
