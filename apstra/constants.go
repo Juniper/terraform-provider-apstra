@@ -14,7 +14,7 @@ const (
 	errResourceUnconfiguredUpdateDetail       = "Unconfigured resource encountered in Update() operation, possibly because it depends on an unknown value from another object. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!"
 	errResourceUnconfiguredDeleteDetail       = "Unconfigured resource encountered in Delete() operation, possibly because it depends on an unknown value from another object. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!"
 	errReadingAllocation                      = "error reading '%s' resource allocation '%s' for blueprint '%s'"
-	errSettingAllocation                      = "error setting '%s' resource allocation '%s' for blueprint '%s'"
+	errSettingAllocation                      = "error setting resource allocation"
 	errProviderBug                            = "Provider Bug. Please report this issue to the provider maintainers."
 	errInvalidConfig                          = "invalid configuration"
 	errTemplateTypeInvalidElement             = "template '%s' has type '%s' which never permits '%s' to be set"
@@ -22,4 +22,9 @@ const (
 	errDataSourceReadFail         = "Data Source Read() failure'"
 	errResourceReadFail           = "Resource Read() failure'"
 	errInsufficientConfigElements = "Available configuration elements did provide a solution. Please report this issue to the provider maintainers"
+
+	warnUnwantedResourceSummary = "ignoring attempt to set resource allocation because it is not needed by blueprint"
+	warnUnwantedResourceDetail  = "not allocating resources for '%s' please remove element from the configuration"
+	warnMissingResourceSummary  = "blueprint staged with missing resources"
+	warnMissingResourceDetail   = "the following resource assignments should be added to the configuration: %s"
 )

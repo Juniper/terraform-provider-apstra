@@ -213,12 +213,16 @@ func getTfsdkTag(i interface{}, f string, diags *diag.Diagnostics) string {
 	return field.Tag.Get("tfsdk")
 }
 
-func newRga(name goapstra.ResourceGroupName, poolIds types.Set, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
+func newRga(name goapstra.ResourceGroupName, set *types.Set, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
+	poolIds := make([]goapstra.ObjectId, 0)
+	if !set.IsNull() {
+		poolIds = sliceAttrValueToSliceObjectId(set.Elems)
+	}
 	return &goapstra.ResourceGroupAllocation{
 		ResourceGroup: goapstra.ResourceGroup{
 			Type: resourceTypeNameFromResourceGroupName(name, diags),
 			Name: name,
 		},
-		PoolIds: sliceAttrValueToSliceObjectId(poolIds.Elems),
+		PoolIds: poolIds,
 	}
 }

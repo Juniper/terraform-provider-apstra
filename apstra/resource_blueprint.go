@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"crypto/md5"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -13,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"reflect"
 	"strings"
 )
 
@@ -306,6 +306,8 @@ func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.Val
 	// validate addressing schemes are appropriate for the template type
 	config.validateConfigAddressingSchemes(&resp.Diagnostics)
 
+	// todo: catch case where addressing scheme and fabric ip[46] pools are misaligned
+
 	// ensure ASN pools from the plan exist on Apstra
 	var asnPools []attr.Value
 	asnPools = append(asnPools, config.SuperspineAsnPoolIds.Elems...)
@@ -415,6 +417,8 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
+	plan.Id = types.String{Value: string(blueprintId)}
+
 	// create a client specific to the reference design
 	blueprint, err := o.client.NewTwoStageL3ClosClient(ctx, blueprintId)
 	if err != nil {
@@ -427,6 +431,9 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// warn the user about any omitted resource group allocations
+	warnMissingResourceGroupAllocations(ctx, blueprint, &resp.Diagnostics)
 
 	//// warn about switches discovered in the graph db, and which do not appear in the tf config
 	//err = warnAboutSwitchesMissingFromPlan(ctx, r.p.client, blueprintId, plan.Switches, &resp.Diagnostics)
@@ -515,31 +522,7 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 	//	}
 	//}
 
-	diags = resp.State.Set(ctx, &rBlueprint{
-		Id:                        types.String{Value: string(blueprintId)},
-		TemplateType:              types.String{Value: templateType.String()},
-		Name:                      plan.Name,
-		TemplateId:                plan.TemplateId,
-		SuperspineSpineAddressing: plan.SuperspineSpineAddressing,
-		SpineLeafAddressing:       plan.SpineLeafAddressing,
-
-		SuperspineAsnPoolIds:   plan.SuperspineAsnPoolIds,   // ASN
-		SpineAsnPoolIds:        plan.SpineAsnPoolIds,        // ASN
-		LeafAsnPoolIds:         plan.LeafAsnPoolIds,         // ASN
-		AccessAsnPoolIds:       plan.AccessAsnPoolIds,       // ASN
-		SuperspineIp4PoolIds:   plan.SuperspineIp4PoolIds,   // loopback
-		SpineIp4PoolIds:        plan.SpineIp4PoolIds,        // loopback
-		LeafIp4PoolIds:         plan.LeafIp4PoolIds,         // loopback
-		AccessIp4PoolIds:       plan.AccessIp4PoolIds,       // loopback
-		SuperspineSpinePoolIp4: plan.SuperspineSpinePoolIp4, // fabric v4
-		SpineLeafPoolIp4:       plan.SpineLeafPoolIp4,       // fabric v4
-		LeafLeafPoolIp4:        plan.LeafLeafPoolIp4,        // fabric v4
-		LeafMlagPeerIp4:        plan.LeafMlagPeerIp4,        // other v4
-		AccessEsiPeerIp4:       plan.AccessIp4PoolIds,       // other v4
-		VtepIps:                plan.VtepIps,                // other v4
-		SuperspineSpinePoolIp6: plan.SuperspineSpinePoolIp6, // fabric v6
-		SpineLeafPoolIp6:       plan.SpineLeafPoolIp6,       // fabric v6
-	})
+	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -678,29 +661,29 @@ func (o *resourceBlueprint) Update(ctx context.Context, req resource.UpdateReque
 
 	// check all 16 resource pools, implement changes as necessary
 	if !setOfAttrValuesMatch(plan.SuperspineAsnPoolIds, state.SuperspineAsnPoolIds) {
-		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSuperspineAsn, plan.LeafAsnPoolIds, &resp.Diagnostics)
+		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSuperspineAsn, plan.SuperspineAsnPoolIds, &resp.Diagnostics)
 	}
 	if !setOfAttrValuesMatch(plan.SpineAsnPoolIds, state.SpineAsnPoolIds) {
-		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSpineAsn, plan.LeafAsnPoolIds, &resp.Diagnostics)
+		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSpineAsn, plan.SpineAsnPoolIds, &resp.Diagnostics)
 	}
 	if !setOfAttrValuesMatch(plan.LeafAsnPoolIds, state.LeafAsnPoolIds) {
 		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameLeafAsn, plan.LeafAsnPoolIds, &resp.Diagnostics)
 	}
 	if !setOfAttrValuesMatch(plan.AccessAsnPoolIds, state.AccessAsnPoolIds) {
-		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameAccessAsn, plan.LeafAsnPoolIds, &resp.Diagnostics)
+		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameAccessAsn, plan.AccessAsnPoolIds, &resp.Diagnostics)
 	}
 
 	if !setOfAttrValuesMatch(plan.SuperspineIp4PoolIds, state.SuperspineIp4PoolIds) {
-		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSuperspineIp4, plan.LeafIp4PoolIds, &resp.Diagnostics)
+		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSuperspineIp4, plan.SuperspineIp4PoolIds, &resp.Diagnostics)
 	}
 	if !setOfAttrValuesMatch(plan.SpineIp4PoolIds, state.SpineIp4PoolIds) {
-		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSpineIp4, plan.LeafIp4PoolIds, &resp.Diagnostics)
+		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameSpineIp4, plan.SpineIp4PoolIds, &resp.Diagnostics)
 	}
 	if !setOfAttrValuesMatch(plan.LeafIp4PoolIds, state.LeafIp4PoolIds) {
 		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameLeafIp4, plan.LeafIp4PoolIds, &resp.Diagnostics)
 	}
 	if !setOfAttrValuesMatch(plan.AccessIp4PoolIds, state.AccessIp4PoolIds) {
-		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameAccessIp4, plan.LeafIp4PoolIds, &resp.Diagnostics)
+		setResourceAllocation(ctx, blueprint, goapstra.ResourceGroupNameAccessIp4, plan.AccessIp4PoolIds, &resp.Diagnostics)
 	}
 
 	if !setOfAttrValuesMatch(plan.SuperspineSpinePoolIp4, state.SuperspineSpinePoolIp4) {
@@ -1389,95 +1372,150 @@ func (o *rBlueprint) validateConfigAddressingSchemes(diags *diag.Diagnostics) {
 }
 
 func (o *rBlueprint) setResourceAllocations(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	hashResourceGroup := func(in *goapstra.ResourceGroup) [16]byte {
-		return md5.Sum([]byte(in.Type.String() + ":" + in.Name.String()))
-	}
-
-	// rgaMap is a map of all resource group allocations we might possibly request,
-	// keyed by tfsdk tag. At least some of these will be Empty or Null.
-	rgaMap := make(map[string]goapstra.ResourceGroupAllocation, 16) // 16 groups below
-
-	// add switch ASN resource pools to the resource group allocation slice
-	rgaMap[getTfsdkTag(o, "SuperspineAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineAsn, o.SuperspineAsnPoolIds, diags)
-	rgaMap[getTfsdkTag(o, "SpineAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSpineAsn, o.SpineAsnPoolIds, diags)
-	rgaMap[getTfsdkTag(o, "LeafAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameLeafAsn, o.LeafAsnPoolIds, diags)
-	rgaMap[getTfsdkTag(o, "AccessAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameAccessAsn, o.AccessAsnPoolIds, diags)
-
-	// add switch loopback resource pools to the resource group allocation slice
-	rgaMap[getTfsdkTag(o, "SuperspineIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineIp4, o.SuperspineIp4PoolIds, diags)
-	rgaMap[getTfsdkTag(o, "SpineIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSpineIp4, o.SpineIp4PoolIds, diags)
-	rgaMap[getTfsdkTag(o, "LeafIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameLeafIp4, o.LeafIp4PoolIds, diags)
-	rgaMap[getTfsdkTag(o, "AccessIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameAccessIp4, o.AccessIp4PoolIds, diags)
-
-	// add fabric ipv4 resource pools to the resource group allocation slice
-	rgaMap[getTfsdkTag(o, "SuperspineSpinePoolIp4", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineSpineIp4, o.SuperspineSpinePoolIp4, diags)
-	rgaMap[getTfsdkTag(o, "SpineLeafPoolIp4", diags)] = *newRga(goapstra.ResourceGroupNameSpineLeafIp4, o.SpineLeafPoolIp4, diags)
-	rgaMap[getTfsdkTag(o, "LeafLeafPoolIp4", diags)] = *newRga(goapstra.ResourceGroupNameLeafLeafIp4, o.LeafLeafPoolIp4, diags)
-
-	// add other ipv4 resource pools to the resource group allocation slice
-	rgaMap[getTfsdkTag(o, "LeafMlagPeerIp4", diags)] = *newRga(goapstra.ResourceGroupNameMlagDomainSviSubnets, o.LeafMlagPeerIp4, diags)
-	rgaMap[getTfsdkTag(o, "AccessEsiPeerIp4", diags)] = *newRga(goapstra.ResourceGroupNameAccessAccessIps, o.AccessEsiPeerIp4, diags)
-	rgaMap[getTfsdkTag(o, "VtepIps", diags)] = *newRga(goapstra.ResourceGroupNameVtepIps, o.VtepIps, diags)
-
-	// add fabric ipv6 resource pools to the resource group allocation slice
-	rgaMap[getTfsdkTag(o, "SuperspineSpinePoolIp6", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineSpineIp6, o.SuperspineSpinePoolIp6, diags)
-	rgaMap[getTfsdkTag(o, "SpineLeafPoolIp6", diags)] = *newRga(goapstra.ResourceGroupNameSpineLeafIp6, o.SpineLeafPoolIp6, diags)
-
-	// fetch all resource group allocations the blueprint is expecting
-	blueprintResources, err := client.GetAllResourceAllocations(ctx)
-	if err != nil {
-		diags.AddError("error fetching blueprint resource allocations", err.Error())
-		return
-	}
-
-	// convert to map for easy lookup
-	rgHashMap := make(map[[16]byte]struct{}, len(blueprintResources))
-	for _, rg := range blueprintResources {
-		rgHashMap[hashResourceGroup(&rg.ResourceGroup)] = struct{}{}
-	}
-
-	for k, rga := range rgaMap {
-		if rga.PoolIds == nil || len(rga.PoolIds) == 0 {
-			continue // skip empty or nil groups
-		}
-		if _, ok := rgHashMap[hashResourceGroup(&rga.ResourceGroup)]; !ok {
-			diags.AddWarning(
-				"unused resource group",
-				fmt.Sprintf("blueprint '%s' doesn't need resource group '%s'", client.Id(), k))
-			continue
-		}
-		err = client.SetResourceAllocation(ctx, &rga)
-		if err != nil {
-			diags.AddError("error setting resource group allocation", err.Error())
-		}
-	}
-
-	for _, set := range []*types.Set{
-		&o.SuperspineAsnPoolIds,
-		&o.SpineAsnPoolIds,
-		&o.LeafAsnPoolIds,
-		&o.AccessAsnPoolIds,
-		&o.SuperspineIp4PoolIds,
-		&o.SpineIp4PoolIds,
-		&o.LeafIp4PoolIds,
-		&o.AccessIp4PoolIds,
-		&o.SuperspineSpinePoolIp4,
-		&o.SpineLeafPoolIp4,
-		&o.LeafLeafPoolIp4,
-		&o.LeafMlagPeerIp4,
-		&o.AccessEsiPeerIp4,
-		&o.VtepIps,
-		&o.SuperspineSpinePoolIp6,
-		&o.SpineLeafPoolIp6,
-	} {
-		if set.IsUnknown() {
-			*set = types.Set{ElemType: types.StringType, Null: true}
-		}
-	}
-	//test
-	//if o.VtepIps.IsUnknown() {
-	//	o.VtepIps = types.Set{Null: true, ElemType: types.StringType}
+	//// fetch all resource group allocations the blueprint is expecting
+	//blueprintResources, err := client.GetAllResourceAllocations(ctx)
+	//if err != nil {
+	//	diags.AddError("error fetching blueprint resource allocations", err.Error())
+	//	return
 	//}
+
+	//// convert blueprint's expected resource groups to map for easy lookup
+	//bpRgMap := make(map[[16]byte]struct{}, len(blueprintResources))
+	//hashRg := func(in *goapstra.ResourceGroup) [16]byte {
+	//	return md5.Sum([]byte(in.Type.String() + ":" + in.Name.String()))
+	//}
+	//for _, rg := range blueprintResources {
+	//	bpRgMap[hashRg(&rg.ResourceGroup)] = struct{}{}
+	//}
+
+	o.setPoolAllocationByTfsdkTag(ctx, "superspine_asn_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "spine_asn_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "leaf_asn_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "access_asn_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "superspine_loopback_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "spine_loopback_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "leaf_loopback_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "access_loopback_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "superspine_spine_ip4_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "spine_leaf_ip4_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "leaf_leaf_ip4_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "leaf_mlag_peer_link_ip4_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "access_esi_peer_link_ip4_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "vtep_ip4_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "superspine_spine_ip6_pool_ids", client, diags)
+	o.setPoolAllocationByTfsdkTag(ctx, "spine_leaf_ip6_pool_ids", client, diags)
+
+	//var rga *goapstra.ResourceGroupAllocation
+	//
+	//rga = newRga(tfsdkTagToRgn("superspine_asn_pool_ids", diags), o.getResourcePoolByTag("superspine_asn_pool_ids", diags), diags)
+	//if _, ok := bpRgMap[hashRg(&rga.ResourceGroup)]; ok {
+	//	diagAddErr(errSettingAllocation, client.SetResourceAllocation(ctx, rga), diags)
+	//} else {
+	//	diags.AddWarning(warnUnwantedResourceSummary, fmt.Sprintf(warnUnwantedResourceDetail, "superspine_asn_pool_ids"))
+	//	o.setResourcePoolByTag("superspine_asn_pool_ids", types.Set{ElemType: types.StringType, Null: true}, diags)
+	//}
+	//
+	//rga = newRga(tfsdkTagToRgn("spine_asn_pool_ids", diags), o.getResourcePoolByTag("spine_asn_pool_ids", diags), diags)
+	//if _, ok := bpRgMap[hashRg(&rga.ResourceGroup)]; ok {
+	//	diagAddErr(errSettingAllocation, client.SetResourceAllocation(ctx, rga), diags)
+	//} else {
+	//	diags.AddWarning(warnUnwantedResourceSummary, fmt.Sprintf(warnUnwantedResourceDetail, "spine_asn_pool_ids"))
+	//	o.setResourcePoolByTag("spine_asn_pool_ids", types.Set{ElemType: types.StringType, Null: true}, diags)
+	//}
+
+	//rga = newRga(tfsdkTagToRgn(getTfsdkTag(o, "SpineAsnPoolIds", diags), diags), o.SpineAsnPoolIds, diags)
+	//if _, ok := bpRgMap[hashRg(&rga.ResourceGroup)]; ok {
+	//	diagAddErr(errSettingAllocation, client.SetResourceAllocation(ctx, rga), diags)
+	//} else {
+	//	diags.AddWarning(warnUnwantedResourceSummary, fmt.Sprintf(warnUnwantedResourceDetail, "SpineAsnPoolIds"))
+	//	o.SpineAsnPoolIds = types.Set{ElemType: types.StringType, Null: true}
+	//}
+
+	//// rgaMap is a map of all resource group allocations we might possibly request,
+	//// keyed by tfsdk tag. At least some of these will be Empty or Null.
+	//rgaMap := make(map[string]goapstra.ResourceGroupAllocation, 16) // 16 groups below
+	//
+	//// add switch ASN resource pools to the resource group allocation slice
+	//rgaMap[getTfsdkTag(o, "SuperspineAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineAsn, o.SuperspineAsnPoolIds, diags)
+	//rgaMap[getTfsdkTag(o, "SpineAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSpineAsn, o.SpineAsnPoolIds, diags)
+	//rgaMap[getTfsdkTag(o, "LeafAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameLeafAsn, o.LeafAsnPoolIds, diags)
+	//rgaMap[getTfsdkTag(o, "AccessAsnPoolIds", diags)] = *newRga(goapstra.ResourceGroupNameAccessAsn, o.AccessAsnPoolIds, diags)
+	//
+	//// add switch loopback resource pools to the resource group allocation slice
+	//rgaMap[getTfsdkTag(o, "SuperspineIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineIp4, o.SuperspineIp4PoolIds, diags)
+	//rgaMap[getTfsdkTag(o, "SpineIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameSpineIp4, o.SpineIp4PoolIds, diags)
+	//rgaMap[getTfsdkTag(o, "LeafIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameLeafIp4, o.LeafIp4PoolIds, diags)
+	//rgaMap[getTfsdkTag(o, "AccessIp4PoolIds", diags)] = *newRga(goapstra.ResourceGroupNameAccessIp4, o.AccessIp4PoolIds, diags)
+	//
+	//// add fabric ipv4 resource pools to the resource group allocation slice
+	//rgaMap[getTfsdkTag(o, "SuperspineSpinePoolIp4", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineSpineIp4, o.SuperspineSpinePoolIp4, diags)
+	//rgaMap[getTfsdkTag(o, "SpineLeafPoolIp4", diags)] = *newRga(goapstra.ResourceGroupNameSpineLeafIp4, o.SpineLeafPoolIp4, diags)
+	//rgaMap[getTfsdkTag(o, "LeafLeafPoolIp4", diags)] = *newRga(goapstra.ResourceGroupNameLeafLeafIp4, o.LeafLeafPoolIp4, diags)
+	//
+	//// add other ipv4 resource pools to the resource group allocation slice
+	//rgaMap[getTfsdkTag(o, "LeafMlagPeerIp4", diags)] = *newRga(goapstra.ResourceGroupNameMlagDomainSviSubnets, o.LeafMlagPeerIp4, diags)
+	//rgaMap[getTfsdkTag(o, "AccessEsiPeerIp4", diags)] = *newRga(goapstra.ResourceGroupNameAccessAccessIps, o.AccessEsiPeerIp4, diags)
+	//rgaMap[getTfsdkTag(o, "VtepIps", diags)] = *newRga(goapstra.ResourceGroupNameVtepIps, o.VtepIps, diags)
+	//
+	//// add fabric ipv6 resource pools to the resource group allocation slice
+	//rgaMap[getTfsdkTag(o, "SuperspineSpinePoolIp6", diags)] = *newRga(goapstra.ResourceGroupNameSuperspineSpineIp6, o.SuperspineSpinePoolIp6, diags)
+	//rgaMap[getTfsdkTag(o, "SpineLeafPoolIp6", diags)] = *newRga(goapstra.ResourceGroupNameSpineLeafIp6, o.SpineLeafPoolIp6, diags)
+	//
+	//for k, rga := range rgaMap {
+	//	if rga.PoolIds == nil || len(rga.PoolIds) == 0 {
+	//		continue // skip empty or nil groups
+	//	}
+	//	if _, ok := bpRgMap[hashRg(&rga.ResourceGroup)]; !ok {
+	//		diags.AddWarning(
+	//			"unused resource group",
+	//			fmt.Sprintf("blueprint '%s' doesn't need resource group '%s'", client.Id(), k))
+	//		continue
+	//	}
+	//	err = client.SetResourceAllocation(ctx, &rga)
+	//	if err != nil {
+	//		diags.AddError("error setting resource group allocation", err.Error())
+	//	}
+	//}
+	//
+	//for _, set := range []*types.Set{
+	//	&o.SuperspineAsnPoolIds,
+	//	&o.SpineAsnPoolIds,
+	//	&o.LeafAsnPoolIds,
+	//	&o.AccessAsnPoolIds,
+	//	&o.SuperspineIp4PoolIds,
+	//	&o.SpineIp4PoolIds,
+	//	&o.LeafIp4PoolIds,
+	//	&o.AccessIp4PoolIds,
+	//	&o.SuperspineSpinePoolIp4,
+	//	&o.SpineLeafPoolIp4,
+	//	&o.LeafLeafPoolIp4,
+	//	&o.LeafMlagPeerIp4,
+	//	&o.AccessEsiPeerIp4,
+	//	&o.VtepIps,
+	//	&o.SuperspineSpinePoolIp6,
+	//	&o.SpineLeafPoolIp6,
+	//} {
+	//	if set.IsUnknown() {
+	//		*set = types.Set{ElemType: types.StringType, Null: true}
+	//	}
+	//}
+	////test
+	////if o.VtepIps.IsUnknown() {
+	////	o.VtepIps = types.Set{Null: true, ElemType: types.StringType}
+	////}
+}
+
+func (o *rBlueprint) setResourceAllocation(ctx context.Context, client *goapstra.TwoStageL3ClosClient, tag string, diags *diag.Diagnostics) {
+	//findTfsdkName := func(t reflect.StructTag) (string, error) {
+	//	if jt, ok := t.Lookup("tfsdk"); ok {
+	//		return strings.Split(jt, ",")[0], nil
+	//	}
+	//	return "", fmt.Errorf("tag '%s' does not define a tfsdk tag", tag)
+	//}
+	//
+	//groupName := tfsdkTagToRgn(tag, diags)
+	//newRga(groupName)
+	//client.GetResourceAllocation(ctx)
 }
 
 func (o *rBlueprint) getResourceAllocations(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -1554,6 +1592,124 @@ func resourceTypeNameFromResourceGroupName(in goapstra.ResourceGroupName, diags 
 	return goapstra.ResourceTypeUnknown
 }
 
+func (o *rBlueprint) getTfsdkTag(fn string, diags *diag.Diagnostics) string {
+	field, ok := reflect.TypeOf(o).Elem().FieldByName(fn)
+	if !ok {
+		diags.AddError(errProviderBug, fmt.Sprintf("attempt to look up nonexistent element '%s' of type '%s'", fn, reflect.TypeOf(o)))
+	}
+	return field.Tag.Get("tfsdk")
+}
+
+func (o *rBlueprint) fieldNameToRgn(fn string, diags *diag.Diagnostics) goapstra.ResourceGroupName {
+	tag := o.getTfsdkTag(fn, diags)
+	return tfsdkTagToRgn(tag, diags)
+}
+
+func (o *rBlueprint) getResourcePoolByTag(fieldName string, diags *diag.Diagnostics) types.Set {
+	v := reflect.ValueOf(o).Elem()
+	// It's possible we can cache this, which is why precompute all these ahead of time.
+	findTfsdkName := func(t reflect.StructTag) string {
+		if jt, ok := t.Lookup("tfsdk"); ok {
+			return jt
+		}
+		diags.AddError(errProviderBug, fmt.Sprintf("attempt to lookupg nonexistent tfsdk tag '%s'", fieldName))
+		return ""
+	}
+	fieldNames := map[string]int{}
+	for i := 0; i < v.NumField(); i++ {
+		typeField := v.Type().Field(i)
+		tag := typeField.Tag
+		tname := findTfsdkName(tag)
+		fieldNames[tname] = i
+	}
+
+	fieldNum, ok := fieldNames[fieldName]
+	if !ok {
+		diags.AddError(errProviderBug, fmt.Sprintf("field '%s' does not exist within the provided item", fieldName))
+	}
+	//return v.Interface().(types.Set)
+	fieldVal := v.Field(fieldNum)
+	return fieldVal.Interface().(types.Set)
+	//fieldVal.Set(reflect.ValueOf(value))
+	//return fieldVal.ptr.(*types.Set)
+}
+
+func (o *rBlueprint) setResourcePoolByTag(fieldName string, value types.Set, diags *diag.Diagnostics) {
+	v := reflect.ValueOf(o).Elem()
+	// It's possible we can cache this, which is why precompute all these ahead of time.
+	findTfsdkName := func(t reflect.StructTag) string {
+		if jt, ok := t.Lookup("tfsdk"); ok {
+			return jt
+		}
+		diags.AddError(errProviderBug, fmt.Sprintf("attempt to lookupg nonexistent tfsdk tag '%s'", fieldName))
+		return ""
+	}
+	fieldNames := map[string]int{}
+	for i := 0; i < v.NumField(); i++ {
+		typeField := v.Type().Field(i)
+		tag := typeField.Tag
+		tname := findTfsdkName(tag)
+		fieldNames[tname] = i
+	}
+
+	fieldNum, ok := fieldNames[fieldName]
+	if !ok {
+		diags.AddError(errProviderBug, fmt.Sprintf("field '%s' does not exist within the provided item", fieldName))
+	}
+	fieldVal := v.Field(fieldNum)
+	fieldVal.Set(reflect.ValueOf(value))
+}
+
+func (o *rBlueprint) setPoolAllocationByTfsdkTag(ctx context.Context, tag string, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	// extract the poolSet matching 'tag' from o
+	poolSet := o.getResourcePoolByTag(tag, diags)
+
+	// create a goapstra.ResourceGroupAllocation object for (a) query and (b) assignment
+	rga := newRga(tfsdkTagToRgn(tag, diags), &poolSet, diags)
+
+	// get apstra's opinion on the resource group in question
+	_, err := client.GetResourceAllocation(ctx, &rga.ResourceGroup)
+	if err != nil {
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
+			// the blueprint doesn't need/want this resource group.
+			if poolSet.IsNull() {
+				return // apstra does not want, and the set is null - nothing to do
+			}
+			if poolSet.IsUnknown() {
+				// can't have unknown values in TF state
+				o.setResourcePoolByTag(tag, types.Set{ElemType: types.StringType, Null: true}, diags)
+				return
+			}
+			// blueprint doesn't want it, but the pool is non-null (appears in the TF config) warn the user.
+			diags.AddWarning(warnUnwantedResourceSummary, fmt.Sprintf(warnUnwantedResourceDetail, tag))
+			// overwrite the planned value so that TF state doesn't reflect the unwanted group
+			o.setResourcePoolByTag(tag, types.Set{ElemType: types.StringType, Null: true}, diags)
+			return
+		} else {
+			// not a 404
+			diags.AddWarning("error reading resource allocation", err.Error())
+			return
+		}
+	}
+
+	if poolSet.IsUnknown() && len(poolSet.Elems) != 0 {
+		diags.AddError("oh snap", "an unknown, but non-empty poolSet")
+	}
+
+	if poolSet.IsUnknown() {
+		// can't have unknown values in TF state
+		o.setResourcePoolByTag(tag, types.Set{ElemType: types.StringType, Null: true}, diags)
+		return
+	}
+
+	// Apstra was expecting something, so set it
+	err = client.SetResourceAllocation(ctx, rga)
+	if err != nil {
+		diags.AddError(errSettingAllocation, err.Error())
+	}
+}
+
 func getResourceAllocation(ctx context.Context, client *goapstra.TwoStageL3ClosClient, resourceName goapstra.ResourceGroupName, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
 	resourceType := resourceTypeNameFromResourceGroupName(resourceName, diags)
 	if resourceType == goapstra.ResourceTypeUnknown && diags.HasError() {
@@ -1569,7 +1725,12 @@ func getResourceAllocation(ctx context.Context, client *goapstra.TwoStageL3ClosC
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			return nil
 		}
-		diags.AddError(fmt.Sprintf(errReadingAllocation, goapstra.ResourceTypeAsnPool.String(), goapstra.ResourceGroupNameSpineAsn.String(), client.Id()), err.Error())
+		diags.AddError(
+			fmt.Sprintf(errReadingAllocation,
+				goapstra.ResourceTypeAsnPool.String(),
+				goapstra.ResourceGroupNameSpineAsn.String(),
+				client.Id()),
+			err.Error())
 		return nil
 	}
 	return allocation
@@ -1581,10 +1742,8 @@ func setResourceAllocation(ctx context.Context, client *goapstra.TwoStageL3ClosC
 		return // not sure if this will ever happen
 	}
 
-	err := client.SetResourceAllocation(ctx, newRga(resourceName, poolIds, diags))
-	if err != nil {
-		diags.AddError("error setting resource allocation", err.Error())
-	}
+	err := client.SetResourceAllocation(ctx, newRga(resourceName, &poolIds, diags))
+	diags.AddError("error setting resource allocation", err.Error())
 }
 
 func setBlueprintName(ctx context.Context, client *goapstra.TwoStageL3ClosClient, name string, diags *diag.Diagnostics) {
@@ -1631,4 +1790,100 @@ func parseFabricAddressingPolicy(in types.String, diags *diag.Diagnostics) goaps
 	}
 	diags.AddWarning(errProviderBug, fmt.Sprintf("cannot handle '%s' when parsing fabric addressing policy", in))
 	return -1
+}
+
+func tfsdkTagToRgn(tag string, diags *diag.Diagnostics) goapstra.ResourceGroupName {
+	switch tag {
+	case "superspine_asn_pool_ids":
+		return goapstra.ResourceGroupNameSuperspineAsn
+	case "spine_asn_pool_ids":
+		return goapstra.ResourceGroupNameSpineAsn
+	case "leaf_asn_pool_ids":
+		return goapstra.ResourceGroupNameLeafAsn
+	case "access_asn_pool_ids":
+		return goapstra.ResourceGroupNameAccessAsn
+	case "superspine_loopback_pool_ids":
+		return goapstra.ResourceGroupNameSuperspineIp4
+	case "spine_loopback_pool_ids":
+		return goapstra.ResourceGroupNameSpineIp4
+	case "leaf_loopback_pool_ids":
+		return goapstra.ResourceGroupNameLeafIp4
+	case "access_loopback_pool_ids":
+		return goapstra.ResourceGroupNameAccessIp4
+	case "superspine_spine_ip4_pool_ids":
+		return goapstra.ResourceGroupNameSuperspineSpineIp4
+	case "spine_leaf_ip4_pool_ids":
+		return goapstra.ResourceGroupNameSpineLeafIp4
+	case "leaf_leaf_ip4_pool_ids":
+		return goapstra.ResourceGroupNameLeafLeafIp4
+	case "leaf_mlag_peer_link_ip4_pool_ids":
+		return goapstra.ResourceGroupNameMlagDomainSviSubnets
+	case "access_esi_peer_link_ip4_pool_ids":
+		return goapstra.ResourceGroupNameAccessAccessIps
+	case "vtep_ip4_pool_ids":
+		return goapstra.ResourceGroupNameVtepIps
+	case "superspine_spine_ip6_pool_ids":
+		return goapstra.ResourceGroupNameSuperspineSpineIp6
+	case "spine_leaf_ip6_pool_ids":
+		return goapstra.ResourceGroupNameSpineLeafIp6
+	}
+	diags.AddError(errProviderBug, fmt.Sprintf("tfsdk tag '%s' unknown", tag))
+	return goapstra.ResourceGroupNameUnknown
+}
+
+func rgnToTfsdkTag(rgn goapstra.ResourceGroupName, diags *diag.Diagnostics) string {
+	switch rgn {
+	case goapstra.ResourceGroupNameSuperspineAsn:
+		return "superspine_asn_pool_ids"
+	case goapstra.ResourceGroupNameSpineAsn:
+		return "spine_asn_pool_ids"
+	case goapstra.ResourceGroupNameLeafAsn:
+		return "leaf_asn_pool_ids"
+	case goapstra.ResourceGroupNameAccessAsn:
+		return "access_asn_pool_ids"
+	case goapstra.ResourceGroupNameSuperspineIp4:
+		return "superspine_loopback_pool_ids"
+	case goapstra.ResourceGroupNameSpineIp4:
+		return "spine_loopback_pool_ids"
+	case goapstra.ResourceGroupNameLeafIp4:
+		return "leaf_loopback_pool_ids"
+	case goapstra.ResourceGroupNameAccessIp4:
+		return "access_loopback_pool_ids"
+	case goapstra.ResourceGroupNameSuperspineSpineIp4:
+		return "superspine_spine_ip4_pool_ids"
+	case goapstra.ResourceGroupNameSpineLeafIp4:
+		return "spine_leaf_ip4_pool_ids"
+	case goapstra.ResourceGroupNameLeafLeafIp4:
+		return "leaf_leaf_ip4_pool_ids"
+	case goapstra.ResourceGroupNameMlagDomainSviSubnets:
+		return "leaf_mlag_peer_link_ip4_pool_ids"
+	case goapstra.ResourceGroupNameAccessAccessIps:
+		return "access_esi_peer_link_ip4_pool_ids"
+	case goapstra.ResourceGroupNameVtepIps:
+		return "vtep_ip4_pool_ids"
+	case goapstra.ResourceGroupNameSuperspineSpineIp6:
+		return "superspine_spine_ip6_pool_ids"
+	case goapstra.ResourceGroupNameSpineLeafIp6:
+		return "spine_leaf_ip6_pool_ids"
+	}
+	diags.AddError(errProviderBug, fmt.Sprintf("resource group name '%s' unknown", rgn.String()))
+	return ""
+}
+
+func warnMissingResourceGroupAllocations(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	allocations, err := client.GetResourceAllocations(ctx)
+	if err != nil {
+		diags.AddError("error fetching resource group allocations", err.Error())
+		return
+	}
+
+	var missing []string
+	for _, allocation := range allocations {
+		if allocation.IsEmpty() {
+			missing = append(missing, fmt.Sprintf("%q", rgnToTfsdkTag(allocation.ResourceGroup.Name, diags)))
+		}
+	}
+	if len(missing) != 0 {
+		diags.AddWarning(warnMissingResourceSummary, fmt.Sprintf(warnMissingResourceDetail, strings.Join(missing, ", ")))
+	}
 }
