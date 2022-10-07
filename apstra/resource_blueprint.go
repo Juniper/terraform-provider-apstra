@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+const defaultFabricAddressingPolicy = goapstra.AddressingSchemeIp4
+
 var _ resource.ResourceWithConfigure = &resourceBlueprint{}
 var _ resource.ResourceWithValidateConfig = &resourceBlueprint{}
 
@@ -514,10 +516,12 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 	//}
 
 	diags = resp.State.Set(ctx, &rBlueprint{
-		Id:           types.String{Value: string(blueprintId)},
-		Name:         types.String{Value: plan.Name.Value},
-		TemplateId:   types.String{Value: plan.TemplateId.Value},
-		TemplateType: types.String{Value: templateType.String()},
+		Id:                        types.String{Value: string(blueprintId)},
+		TemplateType:              types.String{Value: templateType.String()},
+		Name:                      plan.Name,
+		TemplateId:                plan.TemplateId,
+		SuperspineSpineAddressing: plan.SuperspineSpineAddressing,
+		SpineLeafAddressing:       plan.SpineLeafAddressing,
 
 		SuperspineAsnPoolIds:   plan.SuperspineAsnPoolIds,   // ASN
 		SpineAsnPoolIds:        plan.SpineAsnPoolIds,        // ASN
@@ -1447,6 +1451,33 @@ func (o *rBlueprint) setResourceAllocations(ctx context.Context, client *goapstr
 			diags.AddError("error setting resource group allocation", err.Error())
 		}
 	}
+
+	for _, set := range []*types.Set{
+		&o.SuperspineAsnPoolIds,
+		&o.SpineAsnPoolIds,
+		&o.LeafAsnPoolIds,
+		&o.AccessAsnPoolIds,
+		&o.SuperspineIp4PoolIds,
+		&o.SpineIp4PoolIds,
+		&o.LeafIp4PoolIds,
+		&o.AccessIp4PoolIds,
+		&o.SuperspineSpinePoolIp4,
+		&o.SpineLeafPoolIp4,
+		&o.LeafLeafPoolIp4,
+		&o.LeafMlagPeerIp4,
+		&o.AccessEsiPeerIp4,
+		&o.VtepIps,
+		&o.SuperspineSpinePoolIp6,
+		&o.SpineLeafPoolIp6,
+	} {
+		if set.IsUnknown() {
+			*set = types.Set{ElemType: types.StringType, Null: true}
+		}
+	}
+	//test
+	//if o.VtepIps.IsUnknown() {
+	//	o.VtepIps = types.Set{Null: true, ElemType: types.StringType}
+	//}
 }
 
 func (o *rBlueprint) getResourceAllocations(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -1499,13 +1530,19 @@ func resourceTypeNameFromResourceGroupName(in goapstra.ResourceGroupName, diags 
 		return goapstra.ResourceTypeIp4Pool
 	case goapstra.ResourceGroupNameAccessIp4:
 		return goapstra.ResourceTypeIp4Pool
+
 	case goapstra.ResourceGroupNameSuperspineSpineIp4:
 		return goapstra.ResourceTypeIp4Pool
 	case goapstra.ResourceGroupNameSpineLeafIp4:
 		return goapstra.ResourceTypeIp4Pool
 	case goapstra.ResourceGroupNameLeafLeafIp4:
 		return goapstra.ResourceTypeIp4Pool
+
+	case goapstra.ResourceGroupNameMlagDomainSviSubnets:
+		return goapstra.ResourceTypeIp4Pool
 	case goapstra.ResourceGroupNameAccessAccessIps:
+		return goapstra.ResourceTypeIp4Pool
+	case goapstra.ResourceGroupNameVtepIps:
 		return goapstra.ResourceTypeIp4Pool
 
 	case goapstra.ResourceGroupNameSuperspineSpineIp6:
@@ -1581,6 +1618,9 @@ func setBlueprintName(ctx context.Context, client *goapstra.TwoStageL3ClosClient
 }
 
 func parseFabricAddressingPolicy(in types.String, diags *diag.Diagnostics) goapstra.AddressingScheme {
+	if in.IsNull() {
+		return defaultFabricAddressingPolicy
+	}
 	switch in.Value {
 	case goapstra.AddressingSchemeIp4.String():
 		return goapstra.AddressingSchemeIp4
