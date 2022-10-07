@@ -132,6 +132,7 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
+		return
 	}
 
 	// Get current state

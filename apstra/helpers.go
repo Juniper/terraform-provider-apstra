@@ -205,10 +205,20 @@ func addressingScheme(in string, diags *diag.Diagnostics) goapstra.AddressingSch
 	return goapstra.AddressingSchemeIp4
 }
 
-func getTfsdkTag(i interface{}, elementName string, diags *diag.Diagnostics) string {
-	field, ok := reflect.TypeOf(i).Elem().FieldByName(elementName)
+func getTfsdkTag(i interface{}, f string, diags *diag.Diagnostics) string {
+	field, ok := reflect.TypeOf(i).Elem().FieldByName(f)
 	if !ok {
-		diags.AddError(errProviderBug, fmt.Sprintf("attempt to look up nonexistent element '%s' of type '%s'", elementName, reflect.TypeOf(i)))
+		diags.AddError(errProviderBug, fmt.Sprintf("attempt to look up nonexistent element '%s' of type '%s'", f, reflect.TypeOf(i)))
 	}
 	return field.Tag.Get("tfsdk")
+}
+
+func newRga(name goapstra.ResourceGroupName, poolIds types.Set, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
+	return &goapstra.ResourceGroupAllocation{
+		ResourceGroup: goapstra.ResourceGroup{
+			Type: resourceTypeNameFromResourceGroupName(name, diags),
+			Name: name,
+		},
+		PoolIds: sliceAttrValueToSliceObjectId(poolIds.Elems),
+	}
 }

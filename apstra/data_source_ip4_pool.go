@@ -138,6 +138,7 @@ func (o *dataSourceIp4Pool) ValidateConfig(ctx context.Context, req datasource.V
 func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		return
 	}
 
 	var config dIp4Pool

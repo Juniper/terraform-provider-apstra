@@ -464,6 +464,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		return
 	}
 
 	var config DataRackType

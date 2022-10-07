@@ -62,6 +62,7 @@ func (o *dataSourceTag) ValidateConfig(ctx context.Context, req datasource.Valid
 func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		return
 	}
 
 	var config DataTag
