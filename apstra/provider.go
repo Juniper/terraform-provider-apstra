@@ -178,6 +178,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceAgentProfiles{} },
 		func() datasource.DataSource { return &dataSourceAsnPool{} },
 		func() datasource.DataSource { return &dataSourceAsnPools{} },
+		func() datasource.DataSource { return &dataSourceBlueprintIds{} },
 		func() datasource.DataSource { return &dataSourceIp4Pools{} },
 		func() datasource.DataSource { return &dataSourceIp4Pool{} },
 		func() datasource.DataSource { return &dataSourceLogicalDevice{} },
@@ -192,10 +193,10 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 // Resources defines provider resources
 func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		//func() resource.Resource { return &resourceAgentProfile{} },
-		//func() resource.Resource { return &resourceAsnPool{} },
-		//func() resource.Resource { return &resourceAsnPoolRange{} },
-		//func() resource.Resource { return &resourceBlueprint{} },
+		func() resource.Resource { return &resourceAgentProfile{} },
+		func() resource.Resource { return &resourceAsnPool{} },
+		func() resource.Resource { return &resourceAsnPoolRange{} },
+		func() resource.Resource { return &resourceBlueprint{} },
 		//func() resource.Resource { return &resourceIp4Pool{} },
 		//func() resource.Resource { return &resourceIp4PoolSubnet{} },
 		//func() resource.Resource { return &resourceManagedDevice{} },

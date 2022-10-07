@@ -4,7 +4,6 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -39,44 +38,44 @@ func (o *dataSourceAgentProfile) Configure(ctx context.Context, req datasource.C
 
 func (o *dataSourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
-		MarkdownDescription: "This resource looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
+		MarkdownDescription: "This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
+				MarkdownDescription: "ID of the agent profile. Required when name is omitted.",
 				Optional:            true,
 				Computed:            true,
 				Type:                types.StringType,
-				MarkdownDescription: "ID of the agent profile. Required when name is omitted.",
 			},
 			"name": {
+				MarkdownDescription: "Name of the agent profile. Required when id is omitted.",
 				Optional:            true,
 				Computed:            true,
 				Type:                types.StringType,
-				MarkdownDescription: "Name of the agent profile. Required when id is omitted.",
 			},
 			"platform": {
+				MarkdownDescription: "Indicates the platform supported by the agent profile.",
 				Computed:            true,
 				Type:                types.StringType,
-				MarkdownDescription: "Indicates the platform supported by the agent profile.",
 			},
 			"has_username": {
+				MarkdownDescription: "Indicates whether a username has been configured.",
 				Computed:            true,
 				Type:                types.BoolType,
-				MarkdownDescription: "Indicates whether a username has been configured.",
 			},
 			"has_password": {
+				MarkdownDescription: "Indicates whether a password has been configured.",
 				Computed:            true,
 				Type:                types.BoolType,
-				MarkdownDescription: "Indicates whether a password has been configured.",
 			},
 			"packages": {
+				MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
 				Computed:            true,
 				Type:                types.MapType{ElemType: types.StringType},
-				MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
 			},
 			"open_options": {
+				MarkdownDescription: "Configured parameters for offbox agents",
 				Computed:            true,
 				Type:                types.MapType{ElemType: types.StringType},
-				MarkdownDescription: "Configured parameters for offbox agents",
 			},
 		},
 	}, nil
@@ -99,6 +98,11 @@ func (o *dataSourceAgentProfile) ValidateConfig(ctx context.Context, req datasou
 }
 
 func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		return
+	}
+
 	var config dAgentProfile
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -124,35 +128,16 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	// reset every element in config
-	config.Id = types.String{Value: string(agentProfile.Id)}
-	config.Name = types.String{Value: agentProfile.Label}
-	config.Platform = types.String{Value: agentProfile.Platform}
-	config.HasUsername = types.Bool{Value: agentProfile.HasUsername}
-	config.HasPassword = types.Bool{Value: agentProfile.HasPassword}
-	config.OpenOptions = types.Map{
-		Null:     len(agentProfile.OpenOptions) == 0,
-		Elems:    make(map[string]attr.Value, len(agentProfile.OpenOptions)),
-		ElemType: types.StringType,
-	}
-	config.Packages = types.Map{
-		Null:     len(agentProfile.Packages) == 0,
-		Elems:    make(map[string]attr.Value, len(agentProfile.Packages)),
-		ElemType: types.StringType,
-	}
-
-	// populate OpenOptions map
-	for k, v := range agentProfile.OpenOptions {
-		config.OpenOptions.Elems[k] = types.String{Value: v}
-	}
-
-	// populate Packages map
-	for k, v := range agentProfile.Packages {
-		config.Packages.Elems[k] = types.String{Value: v}
-	}
-
 	// Set state
-	diags = resp.State.Set(ctx, &config)
+	diags = resp.State.Set(ctx, &dAgentProfile{
+		Id:          types.String{Value: string(agentProfile.Id)},
+		Name:        types.String{Value: agentProfile.Label},
+		Platform:    platformToTFString(agentProfile.Platform),
+		HasUsername: types.Bool{Value: agentProfile.HasUsername},
+		HasPassword: types.Bool{Value: agentProfile.HasPassword},
+		Packages:    mapStringStringToTypesMap(agentProfile.Packages),
+		OpenOptions: mapStringStringToTypesMap(agentProfile.OpenOptions),
+	})
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -164,4 +149,29 @@ type dAgentProfile struct {
 	HasPassword types.Bool   `tfsdk:"has_password"`
 	Packages    types.Map    `tfsdk:"packages"`
 	OpenOptions types.Map    `tfsdk:"open_options"`
+}
+
+func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
+	var platform string
+	if o.Platform.IsNull() || o.Platform.IsUnknown() {
+		platform = ""
+	} else {
+		platform = o.Platform.Value
+	}
+	return &goapstra.AgentProfileConfig{
+		Label:       o.Name.Value,
+		Platform:    platform,
+		Packages:    typesMapToMapStringString(o.Packages),
+		OpenOptions: typesMapToMapStringString(o.OpenOptions),
+	}
+}
+
+func platformToTFString(platform string) types.String {
+	var result types.String
+	if platform == "" {
+		result = types.String{Null: true}
+	} else {
+		result = types.String{Value: platform}
+	}
+	return result
 }

@@ -124,6 +124,10 @@ func (o *dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req dataso
 }
 
 func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+	}
+
 	var config DLogicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

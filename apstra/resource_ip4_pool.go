@@ -30,10 +30,6 @@ func (r resourceIp4Pool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagno
 				Type:     types.StringType,
 				Required: true,
 			},
-			"tags": {
-				Optional: true,
-				Type:     types.SetType{ElemType: types.StringType},
-			},
 		},
 	}, nil
 }
@@ -69,7 +65,7 @@ func (r resourceIp4Pool) Create(ctx context.Context, req resource.CreateRequest,
 	tags := sliceTfStringToSliceString(plan.Tags)
 
 	// Create new Pool
-	id, err := r.p.client.CreateIp4Pool(ctx, &goapstra.NewIp4PoolRequest{
+	id, err := r.p.client.CreateIp4Pool(ctx, &goapstra.NewIpPoolRequest{
 		DisplayName: plan.Name.Value,
 		Tags:        tags,
 	})
@@ -120,7 +116,6 @@ func (r resourceIp4Pool) Read(ctx context.Context, req resource.ReadRequest, res
 	// todo: error check state.Id vs. asnPool.Id
 	state.Id = types.String{Value: string(pool.Id)}
 	state.Name = types.String{Value: pool.DisplayName}
-	state.Tags = asnPoolTagsFromApi(pool.Tags)
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)
@@ -164,13 +159,13 @@ func (r resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest,
 	}
 
 	// Generate API request body from plan
-	newReq := &goapstra.NewIp4PoolRequest{
+	newReq := &goapstra.NewIpPoolRequest{
 		DisplayName: plan.Name.Value,
 		Tags:        sliceTfStringToSliceString(plan.Tags),
 	}
 
 	for _, s := range poolFromApi.Subnets {
-		newReq.Subnets = append(newReq.Subnets, goapstra.NewIp4Subnet{Network: s.Network.String()})
+		newReq.Subnets = append(newReq.Subnets, goapstra.NewIpSubnet{Network: s.Network.String()})
 	}
 
 	// Create/Update ASN pool

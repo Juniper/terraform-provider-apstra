@@ -142,6 +142,11 @@ func (o *dataSourceAsnPool) ValidateConfig(ctx context.Context, req datasource.V
 }
 
 func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		return
+	}
+
 	var config dAsnPool
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)

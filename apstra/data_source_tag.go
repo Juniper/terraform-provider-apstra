@@ -5,18 +5,19 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceTagType struct{}
+type dataSourceTag struct {
+	client *goapstra.Client
+}
 
-func (r dataSourceTag) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceTag) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "apstra_tag"
 }
 
-func (r dataSourceTag) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (o *dataSourceTag) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source provides details of a specific tag.\n\n" +
 			"At least one optional attribute is required. " +
@@ -44,17 +45,7 @@ func (r dataSourceTag) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnost
 	}, nil
 }
 
-func (r dataSourceTagType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceTag{
-		p: *(p.(*Provider)),
-	}, nil
-}
-
-type dataSourceTag struct {
-	p Provider
-}
-
-func (r dataSourceTag) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+func (o *dataSourceTag) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config DataTag
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -68,7 +59,11 @@ func (r dataSourceTag) ValidateConfig(ctx context.Context, req datasource.Valida
 	}
 }
 
-func (r dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+	}
+
 	var config DataTag
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -79,10 +74,10 @@ func (r dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, res
 	var err error
 	var tag *goapstra.DesignTag
 	if config.Name.Null == false {
-		tag, err = r.p.client.GetTagByLabel(ctx, config.Name.Value)
+		tag, err = o.client.GetTagByLabel(ctx, config.Name.Value)
 	}
 	if config.Id.Null == false {
-		tag, err = r.p.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
+		tag, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving Tag", err.Error())

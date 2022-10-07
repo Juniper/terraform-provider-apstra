@@ -9,3 +9,4 @@
 `examples/<type>/<name>/example.tf`
 1. Delete that `data-source` or `resource` documentation from README.md.
 1. Execute `go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs` from the repo root to rebuild the docs.
+1. Alternate: install tfplugindocs: `go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest`

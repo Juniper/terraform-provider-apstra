@@ -7,19 +7,20 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceRackTypeType struct{}
+type dataSourceRackType struct {
+	client *goapstra.Client
+}
 
-func (r dataSourceRackType) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceRackType) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = "apstra_rack_typex"
 }
 
-func (r dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		MarkdownDescription: "This data source provides details of a specific Rack Type.\n\n" +
 			"At least one optional attribute is required. " +
@@ -460,17 +461,11 @@ func (r dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 	}, nil
 }
 
-func (r dataSourceRackTypeType) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	return dataSourceRackType{
-		p: *(p.(*Provider)),
-	}, nil
-}
+func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+	}
 
-type dataSourceRackType struct {
-	p Provider
-}
-
-func (r dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataRackType
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -481,10 +476,10 @@ func (r dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest
 	var err error
 	var rt *goapstra.RackType
 	if config.Name.Null == false {
-		rt, err = r.p.client.GetRackTypeByName(ctx, config.Name.Value)
+		rt, err = o.client.GetRackTypeByName(ctx, config.Name.Value)
 	}
 	if config.Id.Null == false {
-		rt, err = r.p.client.GetRackType(ctx, goapstra.ObjectId(config.Id.Value))
+		rt, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.Value))
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving Tag", err.Error())

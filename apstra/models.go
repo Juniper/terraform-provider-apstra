@@ -46,14 +46,6 @@ type DataTag struct {
 	Description types.String `tfsdk:"description"`
 }
 
-type ResourceAgentProfile struct {
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Platform    types.String `tfsdk:"platform"`
-	Packages    types.Map    `tfsdk:"packages"`
-	OpenOptions types.Map    `tfsdk:"open_options"`
-}
-
 type ResourceAsnPool struct {
 	Id   types.String   `tfsdk:"id"`
 	Name types.String   `tfsdk:"name"`

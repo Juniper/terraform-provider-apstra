@@ -49,6 +49,11 @@ func (o *dataSourceAsnPools) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 }
 
 func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		return
+	}
+
 	var config struct {
 		Ids []types.String `tfsdk:"ids"`
 	}

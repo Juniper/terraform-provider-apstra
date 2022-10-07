@@ -136,6 +136,10 @@ func (o *dataSourceIp4Pool) ValidateConfig(ctx context.Context, req datasource.V
 }
 
 func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+	}
+
 	var config dIp4Pool
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -144,12 +148,12 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	var err error
-	var ip4Pool *goapstra.Ip4Pool
+	var ipPool *goapstra.IpPool
 	switch {
 	case !config.Name.Null:
-		ip4Pool, err = o.client.GetIp4PoolByName(ctx, config.Name.Value)
+		ipPool, err = o.client.GetIp4PoolByName(ctx, config.Name.Value)
 	case !config.Id.Null:
-		ip4Pool, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.Value))
+		ipPool, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.Value))
 	default:
 		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
 	}
@@ -160,22 +164,22 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	config.Id = types.String{Value: string(ip4Pool.Id)}
-	config.Name = types.String{Value: ip4Pool.DisplayName}
-	config.Status = types.String{Value: ip4Pool.Status}
-	config.UsedPercent = types.Float64{Value: float64(ip4Pool.UsedPercentage)}
-	config.CreatedAt = types.String{Value: ip4Pool.CreatedAt.String()}
-	config.LastModifiedAt = types.String{Value: ip4Pool.LastModifiedAt.String()}
-	config.Used = types.Int64{Value: ip4Pool.Used}
-	config.Total = types.Int64{Value: ip4Pool.Total}
-	config.Subnets = make([]dIp4PoolSubnet, len(ip4Pool.Subnets))
+	config.Id = types.String{Value: string(ipPool.Id)}
+	config.Name = types.String{Value: ipPool.DisplayName}
+	config.Status = types.String{Value: ipPool.Status}
+	config.UsedPercent = types.Float64{Value: float64(ipPool.UsedPercentage)}
+	config.CreatedAt = types.String{Value: ipPool.CreatedAt.String()}
+	config.LastModifiedAt = types.String{Value: ipPool.LastModifiedAt.String()}
+	config.Used = types.Number{Value: bigIntToBigFloat(&ipPool.Used)}
+	config.Total = types.Number{Value: bigIntToBigFloat(&ipPool.Total)}
+	config.Subnets = make([]dIp4PoolSubnet, len(ipPool.Subnets))
 
-	for i, subnet := range ip4Pool.Subnets {
+	for i, subnet := range ipPool.Subnets {
 		config.Subnets[i] = dIp4PoolSubnet{
 			Status:         types.String{Value: subnet.Status},
 			Network:        types.String{Value: subnet.Network.String()},
-			Total:          types.Int64{Value: subnet.Total},
-			Used:           types.Int64{Value: subnet.Used},
+			Total:          types.Number{Value: bigIntToBigFloat(&subnet.Total)},
+			Used:           types.Number{Value: bigIntToBigFloat(&subnet.Used)},
 			UsedPercentage: types.Float64{Value: float64(subnet.UsedPercentage)},
 		}
 	}
@@ -189,18 +193,18 @@ type dIp4Pool struct {
 	Id             types.String     `tfsdk:"id"`
 	Name           types.String     `tfsdk:"name"`
 	Status         types.String     `tfsdk:"status"`
-	Used           types.Int64      `tfsdk:"used"`
+	Used           types.Number     `tfsdk:"used"`
 	UsedPercent    types.Float64    `tfsdk:"used_percentage"`
 	CreatedAt      types.String     `tfsdk:"created_at"`
 	LastModifiedAt types.String     `tfsdk:"last_modified_at"`
-	Total          types.Int64      `tfsdk:"total"`
+	Total          types.Number     `tfsdk:"total"`
 	Subnets        []dIp4PoolSubnet `tfsdk:"subnets"`
 }
 
 type dIp4PoolSubnet struct {
 	Status         types.String  `tfsdk:"status"`
 	Network        types.String  `tfsdk:"network"`
-	Total          types.Int64   `tfsdk:"total"`
-	Used           types.Int64   `tfsdk:"used"`
+	Total          types.Number  `tfsdk:"total"`
+	Used           types.Number  `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
