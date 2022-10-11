@@ -1628,7 +1628,7 @@ func (o *rBlueprint) populateSwitchInfo(ctx context.Context, client *goapstra.Cl
 				var ace goapstra.ApstraClientErr
 				if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 					diags.AddAttributeError(
-						path.Root("switches").AtMapKey(switchRole),
+						path.Root("switches").AtMapKey(switchRole).AtName("interface_map"),
 						"interface_map not found",
 						fmt.Sprintf("interface_map '%s' not found", ifMapId))
 				} else {
