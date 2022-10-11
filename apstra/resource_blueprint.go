@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -97,99 +98,110 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				MarkdownDescription: fmt.Sprintf("ID(s) of the ASN Pool(s) to be used on superspine switches "+
 					"in blueprints built from `%s` templates.",
 					goapstra.TemplateTypePodBased),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"spine_asn_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the ASN Pool(s) to be used on spine switches "+
 					"in blueprints built from `%s` or `%s` templates.",
 					goapstra.TemplateTypePodBased, goapstra.TemplateTypeRackBased),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"leaf_asn_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the ASN Pool(s) to be used on leaf switches "+
 					"in blueprints built from `%s`, `%s` or `%s` templates.",
 					goapstra.TemplateTypePodBased, goapstra.TemplateTypeRackBased, goapstra.TemplateTypeL3Collapsed),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"access_asn_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the ASN Pool(s) to be used on access switches "+
 					"in blueprints featuring access switches concigured for `%s` redundancy mode.",
 					goapstra.AccessRedundancyProtocolEsi),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 
 			"superspine_loopback_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for superspine switch "+
 					"loopback interfaces in blueprints built from %s templates.", goapstra.TemplateTypePodBased),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"spine_loopback_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for spine switch "+
 					"loopback interfaces in blueprints built from %s or %s templates.",
 					goapstra.TemplateTypePodBased.String(), goapstra.TemplateTypeRackBased),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"leaf_loopback_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for leaf switch "+
 					"loopback interfaces in blueprints built from %s, %s or %s templates.",
 					goapstra.TemplateTypePodBased, goapstra.TemplateTypeRackBased, goapstra.TemplateTypeL3Collapsed),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"access_loopback_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for access switch "+
 					"peer-link interfaces in blueprints featuring access switches concigured for `%s` redundancy mode.",
 					goapstra.AccessRedundancyProtocolEsi),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 
 			"superspine_spine_ip4_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for superspine/spine "+
 					"fabric links in blueprints built from `%s` templates.", goapstra.TemplateTypePodBased),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"spine_leaf_ip4_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for superspine/spine "+
 					"fabric links in blueprints built from `%s` or `%s` templates.",
 					goapstra.TemplateTypePodBased, goapstra.TemplateTypeRackBased),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"leaf_leaf_ip4_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for leaf/leaf "+
 					"fabric links in blueprints built from `%s` templates.", goapstra.TemplateTypeL3Collapsed),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 
 			"leaf_mlag_peer_link_ip4_pool_ids": {
@@ -199,6 +211,7 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Optional:            true,
 				Computed:            true,
 				Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"access_esi_peer_link_ip4_pool_ids": {
 				// todo validate
@@ -207,6 +220,7 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Optional:            true,
 				Computed:            true,
 				Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"vtep_ip4_pool_ids": {
 				// todo validate
@@ -215,16 +229,18 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Optional:            true,
 				Computed:            true,
 				Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 
 			"superspine_spine_ip6_pool_ids": {
 				MarkdownDescription: fmt.Sprintf("ID(s) of the IPv4 Pool(s) to be used for superspine/spine "+
 					"fabric links in blueprints built from `%s` templates and using addressing mode `%s` or `%s`.",
 					goapstra.TemplateTypePodBased, goapstra.AddressingSchemeIp6, goapstra.AddressingSchemeIp46),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"spine_leaf_ip6_pool_ids": {
 				// todo validate
@@ -232,10 +248,11 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 					"links in blueprints built from `%s` or `%s` templates and using addressing mode `%s` or `%s`.",
 					goapstra.TemplateTypePodBased, goapstra.TemplateTypePodBased,
 					goapstra.AddressingSchemeIp6, goapstra.AddressingSchemeIp46),
-				Type:       types.SetType{ElemType: types.StringType},
-				Optional:   true,
-				Computed:   true,
-				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Type:          types.SetType{ElemType: types.StringType},
+				Optional:      true,
+				Computed:      true,
+				Validators:    []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 
 			"template_type": {
@@ -248,30 +265,38 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 				Computed:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
-			//"switches": {
-			//	Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
-			//		"interface_map_id": {
-			//			Type:          types.StringType,
-			//			Optional:      true,
-			//			Computed:      true,
-			//			PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
-			//		},
-			//		"device_key": {
-			//			Type:     types.StringType,
-			//			Required: true,
-			//		},
-			//		"device_profile": {
-			//			Type:     types.StringType,
-			//			Computed: true,
-			//		},
-			//		"system_node_id": {
-			//			Type:          types.StringType,
-			//			Computed:      true,
-			//			PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
-			//		},
-			//	}),
-			//	Optional: true,
-			//},
+			"switches": {
+				MarkdownDescription: "Map of switch info keyed by blueprint role (e.g., 'spine1', or" +
+					" '[a_esi_001_leaf1](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/images/blueprints/staged/physical/build1/resource_stage_401.png)'",
+				Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
+					"interface_map_id": {
+						MarkdownDescription: "links a Logical Device (design element) to a Device Profile which" +
+							"describes a hardware model. Optional when only a single interface map references the " +
+							"logical device underpinning the node in question.",
+						Type:          types.StringType,
+						Optional:      true,
+						Computed:      true,
+						PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+					},
+					"device_key": {
+						MarkdownDescription: "Unique ID for a device, generally the serial number.",
+						Type:                types.StringType,
+						Required:            true,
+					},
+					"device_profile": {
+						MarkdownDescription: "",
+						Type:                types.StringType,
+						Computed:            true,
+					},
+					"system_node_id": {
+						MarkdownDescription: "ID number of the blueprint graphdb node representing this system.",
+						Type:                types.StringType,
+						Computed:            true,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+					},
+				}),
+				Optional: true,
+			},
 		},
 	}, nil
 }
@@ -348,9 +373,37 @@ func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.Val
 			fmt.Sprintf("requested pool(s) %s not found", missing))
 	}
 
+	config.populateSwitchInfo(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	//// ensure switches (by device key) exist on Apstra
+	//asi, err := o.client.GetAllSystemsInfo(ctx) // pull all managed systems info from Apstra
+	//if err != nil {
+	//	resp.Diagnostics.AddError("get managed system info", err.Error())
+	//	return
+	//}
+	//deviceKeyToSystemInfo := make(map[string]*goapstra.ManagedSystemInfo, len(asi)) // map-ify the Apstra output
+	//for _, si := range asi {
+	//	deviceKeyToSystemInfo[si.DeviceKey] = &si
+	//}
+	//// check each planned switch exists in Apstra
+	//// and save the aos_hcl_model (device profile) //todo nope
+	//for switchLabel, switchFromPlan := range config.Switches {
+	//	deviceKey := switchFromPlan.Attrs["device_key"].(types.String).Value
+	//	if si, found := deviceKeyToSystemInfo[deviceKey]; !found {
+	//		resp.Diagnostics.AddError("switch not found",
+	//			fmt.Sprintf("no switch with device_key '%s' exists on Apstra", deviceKey))
+	//		return
+	//		//} else {
+	//		//	switchFromPlan.DeviceProfile = types.String{Value: si.Facts.AosHclModel}
+	//		//	plan.Switches[switchLabel] = switchFromPlan
+	//		_ = si
+	//		_ = switchLabel
+	//	}
+	//}
+
 }
 
 func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -376,28 +429,6 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 
 	// save the just-learned template type to our config object b/c it's needed later
 	plan.TemplateType = types.String{Value: templateType.String()}
-
-	//// ensure switches (by device key) exist on Apstra
-	//asi, err := r.p.client.GetAllSystemsInfo(ctx) // pull all managed systems info from Apstra
-	//if err != nil {
-	//	resp.Diagnostics.AddError("get managed system info", err.Error())
-	//	return
-	//}
-	//deviceKeyToSystemInfo := make(map[string]*goapstra.ManagedSystemInfo) // map-ify the Apstra output
-	//for _, si := range asi {
-	//	deviceKeyToSystemInfo[si.DeviceKey] = &si
-	//}
-	//// check each planned switch exists in Apstra, and save the aos_hcl_model (device profile)
-	//for switchLabel, switchFromPlan := range plan.Switches {
-	//	if si, found := deviceKeyToSystemInfo[switchFromPlan.DeviceKey.Value]; !found {
-	//		resp.Diagnostics.AddError("switch not found",
-	//			fmt.Sprintf("no switch with device_key '%s' exists on Apstra", switchFromPlan.DeviceKey.Value))
-	//		return
-	//	} else {
-	//		switchFromPlan.DeviceProfile = types.String{Value: si.Facts.AosHclModel}
-	//		plan.Switches[switchLabel] = switchFromPlan
-	//	}
-	//}
 
 	// create blueprint
 	blueprintId, err := o.client.CreateBlueprintFromTemplate(ctx, &goapstra.CreateBlueprintFromTemplateRequest{
@@ -1147,12 +1178,13 @@ func getSystemNodeInfo(ctx context.Context, client *goapstra.Client, bpId goapst
 }
 
 type rBlueprint struct {
-	Id                        types.String `tfsdk:"id"`
-	Name                      types.String `tfsdk:"name"`
-	TemplateId                types.String `tfsdk:"template_id"`
-	TemplateType              types.String `tfsdk:"template_type"`
-	SuperspineSpineAddressing types.String `tfsdk:"superspine_spine_addressing"`
-	SpineLeafAddressing       types.String `tfsdk:"spine_leaf_addressing"`
+	Id                        types.String            `tfsdk:"id"`
+	Name                      types.String            `tfsdk:"name"`
+	TemplateId                types.String            `tfsdk:"template_id"`
+	TemplateType              types.String            `tfsdk:"template_type"`
+	SuperspineSpineAddressing types.String            `tfsdk:"superspine_spine_addressing"`
+	SpineLeafAddressing       types.String            `tfsdk:"spine_leaf_addressing"`
+	Switches                  map[string]types.Object `tfsdk:"switches"`
 
 	// asn pools
 	SuperspineAsnPoolIds types.Set `tfsdk:"superspine_asn_pool_ids"` // asn superspine
@@ -1537,6 +1569,106 @@ func (o *rBlueprint) updateResourcePoolAllocationByTfsdkTag(ctx context.Context,
 	}
 }
 
+//func (o *rBlueprint) validateInterfaceMapsExist(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//	// loop over switches mentioned in plan
+//	for switchRole, plannedSwitch := range o.Switches {
+//		if !plannedSwitch.Attrs["interface_map_id"].IsNull() { // do nothing if interface_map_id is null
+//			// see if the ifmap exists
+//			_, err := client.GetInterfaceMap(ctx, goapstra.ObjectId(plannedSwitch.Attrs["interface_map_id"].(types.String).Value))
+//			if err != nil {
+//				var ace goapstra.ApstraClientErr
+//				if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
+//					diags.AddError(
+//						"error interface map not found",
+//						fmt.Sprintf("interface map '%s' claimed by switch '%s' not found",
+//							plannedSwitch.Attrs["interface_map_id"].(types.String).Value,
+//							switchRole))
+//				}
+//				// some other error
+//				diags.AddError(
+//					fmt.Sprintf("error fetching interface map '%s'", plannedSwitch.Attrs["interface_map_id"].(types.String).Value),
+//					err.Error())
+//			}
+//		}
+//	}
+//}
+
+// populateSwitchInfo uses the device_key (s/n) string for each switch in o.Switches to:
+// - populate the device_profile (hardware model) by calling GetAllSystemInfo
+// - validate (or populate, if omitted and only one possibility) the interface_map
+func (o *rBlueprint) populateSwitchInfo(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	allSystemsInfo := getAllSystemsInfo(ctx, client, diags)
+	if diags.HasError() {
+		return
+	}
+
+	// loop over each switch in the plan
+	for switchRole, plannedSwitch := range o.Switches {
+		// ensure managed device (by device_key / s/n) exists
+		deviceKey := plannedSwitch.Attrs["device_key"].(types.String).Value
+		var msi goapstra.ManagedSystemInfo
+		var deviceProfile goapstra.ObjectId
+		var found bool
+		if msi, found = allSystemsInfo[deviceKey]; found {
+			deviceProfile = msi.Facts.AosHclModel
+			// save the device profile
+			o.Switches[switchRole].Attrs["device_profile"] = types.String{Value: string(deviceProfile)}
+		} else {
+			// device key unknown
+			diags.AddError("switch not found", fmt.Sprintf("switch with device key '%s' not found", deviceKey))
+			return
+		}
+
+		// ensure user-specified interface_map (if any) exists
+		ifMapId := plannedSwitch.Attrs["interface_map_id"].(types.String)
+		if !ifMapId.IsNull() {
+			// the user gave us an interface_map to use
+			ifMapDigest, err := client.GetInterfaceMapDigest(ctx, goapstra.ObjectId(ifMapId.Value))
+			if err != nil {
+				var ace goapstra.ApstraClientErr
+				if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+					diags.AddAttributeError(
+						path.Root("switches").AtMapKey(switchRole),
+						"interface_map not found",
+						fmt.Sprintf("interface_map '%s' not found", ifMapId))
+				} else {
+					diags.AddError("error fetching interface_map digest", err.Error())
+				}
+				return
+			}
+
+			// is the user-specified interface_map compatible with the switch?
+			if ifMapDigest.DeviceProfile.Id != deviceProfile {
+				diags.AddAttributeError(
+					path.Root("switches").AtMapKey(switchRole),
+					"incorrect device profile",
+					fmt.Sprintf("interface_map '%s' not compatible with discovered device profile '%s'",
+						ifMapId.Value, deviceProfile),
+				)
+			}
+		} else {
+			// the user didn't give us an interface_map to use
+			ifMapDigests, err := client.GetInterfaceMapDigestsByDeviceProfile(ctx, deviceProfile)
+			if err != nil {
+				diags.AddError("error fetching interface_map digests", err.Error())
+			}
+			switch len(ifMapDigests) {
+			case 0:
+				// no matching interface_maps for this switch -- error
+				diags.AddAttributeError(path.Root("switches").AtMapKey(switchRole),
+					"no matching interface_maps",
+					fmt.Sprintf("no interface_maps support switch device profile '%s'", deviceProfile))
+			case 1:
+				// optimal case: exactly one match. assign it.
+				o.Switches[switchRole].Attrs["interface_map"] = types.String{Value: string(ifMapDigests[0].Id)}
+			default:
+				// multiple match -- not an error combination of device_profile
+				// and logical_device may disambiguate
+			}
+		}
+	}
+}
+
 func setBlueprintName(ctx context.Context, client *goapstra.TwoStageL3ClosClient, name string, diags *diag.Diagnostics) {
 	type node struct {
 		Label string            `json:"label,omitempty"`
@@ -1707,4 +1839,20 @@ func listOfResourceGroupAllocationTags() []string {
 		"superspine_spine_ip6_pool_ids",
 		"spine_leaf_ip6_pool_ids",
 	}
+}
+
+func getAllSystemsInfo(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) map[string]goapstra.ManagedSystemInfo {
+	// pull SystemInfo for all switches managed by apstra
+	asi, err := client.GetAllSystemsInfo(ctx) // pull all managed systems info from Apstra
+	if err != nil {
+		diags.AddError("get managed system info", err.Error())
+		return nil
+	}
+
+	// organize the []ManagedSystemInfo into a map by device key (serial number)
+	deviceKeyToSystemInfo := make(map[string]goapstra.ManagedSystemInfo, len(asi)) // map-ify the Apstra output
+	for _, si := range asi {
+		deviceKeyToSystemInfo[si.DeviceKey] = si
+	}
+	return deviceKeyToSystemInfo
 }
