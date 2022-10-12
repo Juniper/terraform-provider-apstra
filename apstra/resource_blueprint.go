@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -382,11 +383,13 @@ func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.Val
 		return
 	}
 
+	// populate device profile IDs, detect errors along the way
 	config.populateDeviceProfileIds(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// populate interface map IDs, detect errors along the way
 	config.populateInterfaceMapIds(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -417,7 +420,7 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 	// save the just-learned template type to our config object b/c it's needed later
 	plan.TemplateType = types.String{Value: templateType.String()}
 
-	// record the device profile of each switch the user told us about (use device key)
+	// compute the device profile of each switch the user told us about (use device key)
 	plan.populateDeviceProfileIds(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -465,26 +468,32 @@ func (o *resourceBlueprint) Create(ctx context.Context, req resource.CreateReque
 		return
 	}
 
-	// record the bp system node IDs
+	// compute the blueprint "system" node IDs (switches)
 	plan.populateSystemNodeIds(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// record the interface map IDs
+	// compute the interface map IDs
 	plan.populateInterfaceMapIds(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set interface map assignments (selects hardware model, but not specific instance)
-	plan.setInterfaceMapAssignments(ctx, blueprint, &resp.Diagnostics)
+	plan.assignInterfaceMaps(ctx, blueprint, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// warn about switches discovered in the graph db, and which do not appear in the tf config
 	plan.warnSwitchConfigVsBlueprint(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// assign switches (managed devices) to blueprint system nodes
+	plan.assignManagedDevices(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -634,11 +643,35 @@ func (o *resourceBlueprint) Read(ctx context.Context, req resource.ReadRequest, 
 	newState.readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx, "vtep_ip4_pool_ids", blueprint, &resp.Diagnostics)
 	newState.readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx, "superspine_spine_ip6_pool_ids", blueprint, &resp.Diagnostics)
 	newState.readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx, "spine_leaf_ip6_pool_ids", blueprint, &resp.Diagnostics)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	newState.Switches = make(map[string]types.Object, len(state.Switches))
+	for switchLabel := range state.Switches {
+		// device_key
+		// interface_map_id			Optional Computed
+		// device_profile_id		Computed
+		// system_node_id			Computed
+
+		si := getSystemNodeInfo(ctx, o.client, goapstra.ObjectId(state.Id.Value), switchLabel, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		newState.Switches[switchLabel] = types.Object{
+			AttrTypes: switchElementSchema(),
+			Attrs:     make(map[string]attr.Value, len(switchElementSchema())),
+		}
+		newState.Switches[switchLabel].Attrs["device_key"] = types.String{Value: si.SystemId}
+		newState.Switches[switchLabel].Attrs["interface_map_id"] = types.String{Value: si.InterfaceMapId}
+		newState.Switches[switchLabel].Attrs["device_profile_id"] = types.String{Value: si.DeviceProfileId}
+		newState.Switches[switchLabel].Attrs["system_node_id"] = types.String{Value: si.NodeId}
+	}
+
+	ns, _ := json.Marshal(&newState.Switches)
+	os, _ := json.Marshal(&state.Switches)
+	resp.Diagnostics.AddWarning("new", string(ns))
+	resp.Diagnostics.AddWarning("old", string(os))
 	//// get switch info
 	//for switchLabel, stateSwitch := range state.Switches {
 	//	// assign details of each known switch (don't add elements to the state.Switches map)
@@ -666,7 +699,7 @@ func (o *resourceBlueprint) Read(ctx context.Context, req resource.ReadRequest, 
 	//}
 
 	// Set state
-	diags = resp.State.Set(ctx, &state)
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -1198,7 +1231,7 @@ func (o *rBlueprint) populateSystemNodeIds(ctx context.Context, client *goapstra
 	}
 }
 
-func (o *rBlueprint) setInterfaceMapAssignments(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *rBlueprint) assignInterfaceMaps(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	assignments := make(goapstra.SystemIdToInterfaceMapAssignment, len(o.Switches))
 	for k, v := range o.Switches {
 		switch {
@@ -1223,6 +1256,37 @@ func (o *rBlueprint) setInterfaceMapAssignments(ctx context.Context, client *goa
 	err := client.SetInterfaceMapAssignments(ctx, assignments)
 	if err != nil {
 		diags.AddError("error assigning interface maps", err.Error())
+	}
+}
+
+func (o *rBlueprint) assignManagedDevices(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	//// having assigned interface maps, link physical assets to graph db 'switch' nodes
+	var patch struct {
+		SystemId string `json:"system_id"`
+	}
+	bpId := goapstra.ObjectId(o.Id.Value)
+	for _, plannedSwitch := range o.Switches {
+		patch.SystemId = plannedSwitch.Attrs["device_key"].(types.String).Value
+		nodeId := goapstra.ObjectId(plannedSwitch.Attrs["system_node_id"].(types.String).Value)
+		err := client.PatchNode(ctx, bpId, nodeId, &patch, nil)
+		if err != nil {
+			diags.AddWarning(fmt.Sprintf("failed to assign switch device for node '%s'", nodeId), err.Error())
+		}
+	}
+}
+
+func (o *rBlueprint) releaseManagedDevice(ctx context.Context, nodeId string, client *goapstra.Client, diags *diag.Diagnostics) {
+	//// having assigned interface maps, link physical assets to graph db 'switch' nodes
+	var patch struct {
+		SystemId interface{} `json:"system_id"`
+	}
+	bpId := goapstra.ObjectId(o.Id.Value)
+	for _, plannedSwitch := range o.Switches {
+		patch.SystemId = plannedSwitch.Attrs["device_key"].(types.String).Value
+		err := client.PatchNode(ctx, bpId, goapstra.ObjectId(nodeId), &patch, nil)
+		if err != nil {
+			diags.AddWarning(fmt.Sprintf("failed to release switch device for node '%s'", nodeId), err.Error())
+		}
 	}
 }
 
@@ -1604,19 +1668,25 @@ func getNodeInterfaceMap(ctx context.Context, client *goapstra.Client, bpId goap
 }
 
 type systemNodeInfo struct {
-	id       string
-	label    string
-	systemId string
+	NodeId          string
+	Label           string
+	SystemId        string
+	DeviceProfileId string
+	InterfaceMapId  string
 }
 
-func getSystemNodeInfo(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string) (*systemNodeInfo, error) {
+func getSystemNodeInfo(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string, diags *diag.Diagnostics) *systemNodeInfo {
 	var systemQR struct {
 		Items []struct {
 			System struct {
-				Id       string `json:"id"`
+				NodeId   string `json:"id"`
 				Label    string `json:"label"`
 				SystemID string `json:"system_id"`
 			} `json:"n_system"`
+			InterfaceMap struct {
+				Id              string `json:"id"`
+				DeviceProfileId string `json:"device_profile_id"`
+			} `json:"n_interface_map"`
 		} `json:"items"`
 	}
 	err := client.NewQuery(bpId).
@@ -1625,18 +1695,29 @@ func getSystemNodeInfo(ctx context.Context, client *goapstra.Client, bpId goapst
 			{"type", goapstra.QEStringVal("system")},
 			{"label", goapstra.QEStringVal(label)},
 			{"name", goapstra.QEStringVal("n_system")},
-		}).Do(&systemQR)
+		}).
+		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("interface_map")},
+			{"name", goapstra.QEStringVal("n_interface_map")},
+		}).
+		Do(&systemQR)
 	if err != nil {
-		return nil, err
+		diags.AddError("error querying blueprint node", err.Error())
+		return nil
 	}
 	if len(systemQR.Items) != 1 {
-		return nil, fmt.Errorf("expected exactly one system node, got %d", len(systemQR.Items))
+		diags.AddError("error querying blueprint node",
+			fmt.Sprintf("expected exactly one system node, got %d", len(systemQR.Items)))
+		return nil
 	}
 	return &systemNodeInfo{
-		id:       systemQR.Items[0].System.Id,
-		label:    systemQR.Items[0].System.Label,
-		systemId: systemQR.Items[0].System.SystemID,
-	}, nil
+		NodeId:          systemQR.Items[0].System.NodeId,
+		Label:           systemQR.Items[0].System.Label,
+		SystemId:        systemQR.Items[0].System.SystemID,
+		InterfaceMapId:  systemQR.Items[0].InterfaceMap.Id,
+		DeviceProfileId: systemQR.Items[0].InterfaceMap.DeviceProfileId,
+	}
 }
 
 type rBlueprint struct {
