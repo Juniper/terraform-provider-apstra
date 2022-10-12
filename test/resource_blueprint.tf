@@ -26,10 +26,16 @@ resource "apstra_blueprint" "bp" {
 
   switches = {
     spine1 = {
-      interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
-#      interface_map_id = "Accton_5712-54X-O_Cumulus__AOS-48x10_6x40-1"
+      interface_map_id = "d63d5d00-4bb1-4d78-b0a8-6dc54d5d5e3a"
       device_key = "525400F872B7"
     }
+#    spine2 = {}
+#    a_esi_001_leaf1 = {}
+#    a_esi_001_leaf2 = {}
+#    a_esi_001_access2 = {}
+#    a_esi_001_access1 = {}
+
   }
+
 
 }
