@@ -19,7 +19,7 @@ type resourceAgentProfile struct {
 }
 
 func (o *resourceAgentProfile) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "apstra_agent_profile"
+	resp.TypeName = req.ProviderTypeName + "_agent_profile"
 }
 
 func (o *resourceAgentProfile) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

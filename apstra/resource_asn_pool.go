@@ -18,7 +18,7 @@ type resourceAsnPool struct {
 }
 
 func (o *resourceAsnPool) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "apstra_asn_pool"
+	resp.TypeName = req.ProviderTypeName + "_asn_pool"
 }
 
 func (o *resourceAsnPool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
