@@ -44,7 +44,7 @@ type providerData struct {
 	client *goapstra.Client
 }
 
-func (p *Provider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "apstra"
 	resp.Version = p.Version + "_" + p.Commit
 }
@@ -186,7 +186,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{}},
 		//func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
 		//func() datasource.DataSource { return &dataSourceTemplateRackBased{}},
-		//func() datasource.DataSource { return &dataSourceTag{} },
+		func() datasource.DataSource { return &dataSourceTag{} },
 	}
 }
 

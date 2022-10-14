@@ -222,6 +222,11 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 }
 
 func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
+		return
+	}
+
 	// Get current state
 	var state rManagedDevice
 	diags := req.State.Get(ctx, &state)
@@ -293,6 +298,11 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 
 // Update resource
 func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
 	// Get current state
 	var state rManagedDevice
 	diags := req.State.Get(ctx, &state)
@@ -315,9 +325,6 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 			SystemAgents: []goapstra.ObjectId{goapstra.ObjectId(state.AgentId.Value)},
 			ProfileId:    goapstra.ObjectId(plan.AgentProfileId.Value),
 		})
-		//err := o.client.UpdateSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value), &goapstra.SystemAgentRequest{
-		//	Profile: goapstra.ObjectId(plan.AgentProfileId.Value),
-		//})
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"error updating managed device agent",
@@ -338,6 +345,11 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 
 // Delete resource
 func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
+		return
+	}
+
 	var state rManagedDevice
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

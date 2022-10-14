@@ -14,12 +14,6 @@ type DataRackType struct {
 	GenericSystems           []DSGenericSystem `tfsdk:"generic_systems"`
 }
 
-type DataTag struct {
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Description types.String `tfsdk:"description"`
-}
-
 type ResourceManagedDevice struct {
 	AgentId        types.String `tfsdk:"agent_id"`
 	SystemId       types.String `tfsdk:"system_id"`
