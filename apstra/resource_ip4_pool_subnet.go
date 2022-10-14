@@ -20,11 +20,11 @@ type resourceIp4PoolSubnet struct {
 	client *goapstra.Client
 }
 
-func (o *resourceIp4PoolSubnet) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o *resourceIp4PoolSubnet) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_ip4_pool_subnet"
 }
 
-func (o *resourceIp4PoolSubnet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceIp4PoolSubnet) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}

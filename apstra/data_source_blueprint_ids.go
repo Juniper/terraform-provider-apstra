@@ -69,14 +69,14 @@ func (o *dataSourceBlueprintIds) GetSchema(_ context.Context) (tfsdk.Schema, dia
 }
 
 func (o *dataSourceBlueprintIds) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	if o.client == nil {
+		return
+	}
+
 	var config dBlueprintIds
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if o.client == nil {
 		return
 	}
 

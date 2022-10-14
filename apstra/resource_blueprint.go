@@ -299,14 +299,14 @@ func (o *resourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Dia
 }
 
 func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	if o.client == nil { // cannot proceed without a client
+		return
+	}
+
 	var config rBlueprint
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if o.client == nil { // cannot proceed without a client
 		return
 	}
 
