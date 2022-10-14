@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -96,18 +97,32 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	var tag *goapstra.DesignTag
 	if config.Name.Null == false {
 		tag, err = o.client.GetTagByLabel(ctx, config.Name.Value)
+		if err != nil {
+			var ace goapstra.ApstraClientErr
+			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("name"),
+					"Tag not found",
+					fmt.Sprintf("Tag with name '%s' not found", config.Name.Value))
+			}
+			return
+		}
 	}
 	if config.Id.Null == false {
 		tag, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
-	}
-	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-			resp.State.RemoveResource(ctx)
+		if err != nil {
+			var ace goapstra.ApstraClientErr
+			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("id"),
+					"Tag not found",
+					fmt.Sprintf("Tag with id '%s' not found", config.Id.Value))
+			}
 			return
 		}
+	}
+	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Tag", err.Error())
-		return
 	}
 
 	// Set state
