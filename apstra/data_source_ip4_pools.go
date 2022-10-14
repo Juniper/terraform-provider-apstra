@@ -16,11 +16,11 @@ type dataSourceIp4Pools struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceIp4Pools) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceIp4Pools) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_ip4_pools"
 }
 
-func (o *dataSourceIp4Pools) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceIp4Pools) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}

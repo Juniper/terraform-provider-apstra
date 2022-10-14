@@ -16,8 +16,8 @@ type dataSourceRackType struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceRackType) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = "apstra_rack_typex"
+func (o *dataSourceRackType) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_rack_typex"
 }
 
 func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {

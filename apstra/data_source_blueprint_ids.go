@@ -27,11 +27,11 @@ type dataSourceBlueprintIds struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceBlueprintIds) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceBlueprintIds) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_blueprint_ids"
 }
 
-func (o *dataSourceBlueprintIds) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintIds) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}

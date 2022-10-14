@@ -18,7 +18,7 @@ type dataSourceLogicalDevice struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceLogicalDevice) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -33,8 +33,8 @@ func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.
 	}
 }
 
-func (o *dataSourceLogicalDevice) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = "apstra_logical_device"
+func (o *dataSourceLogicalDevice) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_logical_device"
 }
 
 func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {

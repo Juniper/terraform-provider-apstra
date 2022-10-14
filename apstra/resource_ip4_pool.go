@@ -17,11 +17,11 @@ type resourceIp4Pool struct {
 	client *goapstra.Client
 }
 
-func (o *resourceIp4Pool) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o *resourceIp4Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "apstra_ip4_pool"
 }
 
-func (o *resourceIp4Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceIp4Pool) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}

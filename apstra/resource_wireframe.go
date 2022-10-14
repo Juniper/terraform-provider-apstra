@@ -11,7 +11,7 @@ import (
 
 type resourceWireframeType struct{}
 
-func (r resourceWireframe) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r resourceWireframe) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = "apstra_wireframe"
 }
 

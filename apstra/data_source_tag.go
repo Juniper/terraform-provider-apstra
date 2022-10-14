@@ -12,16 +12,17 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceTag{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceTag{}
 
 type dataSourceTag struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceTag) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceTag) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_tag"
 }
 
-func (o *dataSourceTag) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceTag) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
