@@ -95,29 +95,24 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	var err error
 	var tag *goapstra.DesignTag
+	var ace goapstra.ApstraClientErr
 	if config.Name.Null == false {
 		tag, err = o.client.GetTagByLabel(ctx, config.Name.Value)
-		if err != nil {
-			var ace goapstra.ApstraClientErr
-			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"Tag not found",
-					fmt.Sprintf("Tag with name '%s' not found", config.Name.Value))
-			}
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"Tag not found",
+				fmt.Sprintf("Tag with name '%s' not found", config.Name.Value))
 			return
 		}
 	}
 	if config.Id.Null == false {
 		tag, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
-		if err != nil {
-			var ace goapstra.ApstraClientErr
-			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"Tag not found",
-					fmt.Sprintf("Tag with id '%s' not found", config.Id.Value))
-			}
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"Tag not found",
+				fmt.Sprintf("Tag with id '%s' not found", config.Id.Value))
 			return
 		}
 	}
