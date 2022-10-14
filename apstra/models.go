@@ -4,32 +4,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type DataAgentProfileId struct {
-	Id    types.String   `tfsdk:"id"`
-	Label types.String   `tfsdk:"label"`
-	Tags  []types.String `tfsdk:"tags"`
-}
-
-type DataAsnPoolId struct {
-	Id   types.String   `tfsdk:"id"`
-	Name types.String   `tfsdk:"name"`
-	Tags []types.String `tfsdk:"tags"`
-}
-
-type DataAsnPoolIds struct {
-	Ids []types.String `tfsdk:"ids"`
-}
-
-type DataIp4PoolId struct {
-	Id   types.String   `tfsdk:"id"`
-	Name types.String   `tfsdk:"name"`
-	Tags []types.String `tfsdk:"tags"`
-}
-
-type DataIp4PoolIds struct {
-	Ids []types.String `tfsdk:"ids"`
-}
-
 type DataRackType struct {
 	Id                       types.String      `tfsdk:"id"`
 	Name                     types.String      `tfsdk:"name"`
@@ -44,41 +18,6 @@ type DataTag struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
-}
-
-type ResourceAsnPool struct {
-	Id   types.String   `tfsdk:"id"`
-	Name types.String   `tfsdk:"name"`
-	Tags []types.String `tfsdk:"tags"`
-}
-
-type ResourceAsnPoolRange struct {
-	PoolId types.String `tfsdk:"pool_id"`
-	First  types.Int64  `tfsdk:"first"`
-	Last   types.Int64  `tfsdk:"last"`
-}
-
-type ResourceBlueprint struct {
-	Id         types.String      `tfsdk:"id"`
-	Name       types.String      `tfsdk:"name"`
-	TemplateId types.String      `tfsdk:"template_id"`
-	LeafAsns   []types.String    `tfsdk:"leaf_asn_pool_ids"`
-	LeafIp4s   []types.String    `tfsdk:"leaf_ip_pool_ids"`
-	LinkIp4s   []types.String    `tfsdk:"link_ip_pool_ids"`
-	SpineAsns  []types.String    `tfsdk:"spine_asn_pool_ids"`
-	SpineIp4s  []types.String    `tfsdk:"spine_ip_pool_ids"`
-	Switches   map[string]Switch `tfsdk:"switches"`
-}
-
-type ResourceIp4Pool struct {
-	Id   types.String   `tfsdk:"id"`
-	Name types.String   `tfsdk:"name"`
-	Tags []types.String `tfsdk:"tags"`
-}
-
-type ResourceIp4PoolSubnet struct {
-	PoolId types.String `tfsdk:"pool_id"`
-	Cidr   types.String `tfsdk:"cidr"`
 }
 
 type ResourceManagedDevice struct {
@@ -99,13 +38,6 @@ type ResourceWireframe struct {
 }
 
 // helper structs used by 'resource' and 'data source' objects follow
-
-type Switch struct {
-	InterfaceMap  types.String `tfsdk:"interface_map"`
-	DeviceKey     types.String `tfsdk:"device_key"`
-	DeviceProfile types.String `tfsdk:"device_profile"`
-	SystemNodeId  types.String `tfsdk:"system_node_id"`
-}
 
 type tagLabels []types.String
 

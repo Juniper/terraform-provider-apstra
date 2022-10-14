@@ -38,15 +38,18 @@ func (o *resourceAsnPool) Configure(ctx context.Context, req resource.ConfigureR
 
 func (o *resourceAsnPool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This resource creates an ASN resource pool",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Type:          types.StringType,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				MarkdownDescription: "Apstra ID number of the resource pool",
+				Type:                types.StringType,
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"name": {
-				Type:     types.StringType,
-				Required: true,
+				MarkdownDescription: "Pool name displayed in the Apstra web UI",
+				Type:                types.StringType,
+				Required:            true,
 			},
 		},
 	}, nil
@@ -100,7 +103,7 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// Get ASN pool from API and then update what is in state from what the API returns
-	asnPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.Value))
+	pool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -115,8 +118,8 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 
 	// Set state
 	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   types.String{Value: string(asnPool.Id)},
-		Name: types.String{Value: asnPool.DisplayName},
+		Id:   types.String{Value: string(pool.Id)},
+		Name: types.String{Value: pool.DisplayName},
 	})
 	resp.Diagnostics.Append(diags...)
 }
@@ -149,14 +152,14 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("API error",
-				fmt.Sprintf("error fetching existing ASN ranges - ASN pool '%s' not found", state.Id.Value),
+			resp.Diagnostics.AddWarning("API error",
+				fmt.Sprintf("error fetching existing ASN pool - pool '%s' not found", state.Id.Value),
 			)
 			return
 		}
 		// some other unknown error
 		resp.Diagnostics.AddError("API error",
-			fmt.Sprintf("error fetching existing ASN ranges for ASN pool '%s' - %s", state.Id.Value, err.Error()),
+			fmt.Sprintf("error fetching ASN pool '%s' - %s", state.Id.Value, err.Error()),
 		)
 		return
 	}

@@ -115,7 +115,7 @@ func (o *resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Set State
-	diags = resp.State.Set(ctx, ResourceAsnPoolRange{
+	diags = resp.State.Set(ctx, rAsnPoolRange{
 		PoolId: types.String{Value: plan.PoolId.Value},
 		First:  types.Int64{Value: plan.First.Value},
 		Last:   types.Int64{Value: plan.Last.Value},
