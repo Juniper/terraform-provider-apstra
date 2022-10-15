@@ -151,47 +151,47 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 							},
 						}),
 					},
-					//"mlag_info": {
-					//	MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
-					//	Computed:            true,
-					//	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					//		"mlag_keepalive_vlan": {
-					//			MarkdownDescription: "MLAG keepalive VLAN ID.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"peer_links": {
-					//			MarkdownDescription: "Number of links between MLAG devices.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"peer_link_speed": {
-					//			MarkdownDescription: "Speed of links between MLAG devices.",
-					//			Computed:            true,
-					//			Type:                types.StringType,
-					//		},
-					//		"peer_link_port_channel_id": {
-					//			MarkdownDescription: "Peer link port-channel ID.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"l3_peer_links": {
-					//			MarkdownDescription: "Number of L3 links between MLAG devices.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"l3_peer_link_speed": {
-					//			MarkdownDescription: "Speed of l3 links between MLAG devices.",
-					//			Computed:            true,
-					//			Type:                types.StringType,
-					//		},
-					//		"l3_peer_link_port_channel_id": {
-					//			MarkdownDescription: "L3 peer link port-channel ID.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//	}),
-					//},
+					"mlag_info": {
+						MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
+						Computed:            true,
+						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+							"mlag_keepalive_vlan": {
+								MarkdownDescription: "MLAG keepalive VLAN ID.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"peer_links": {
+								MarkdownDescription: "Number of links between MLAG devices.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"peer_link_speed": {
+								MarkdownDescription: "Speed of links between MLAG devices.",
+								Computed:            true,
+								Type:                types.StringType,
+							},
+							"peer_link_port_channel_id": {
+								MarkdownDescription: "Peer link port-channel ID.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"l3_peer_links": {
+								MarkdownDescription: "Number of L3 links between MLAG devices.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"l3_peer_link_speed": {
+								MarkdownDescription: "Speed of l3 links between MLAG devices.",
+								Computed:            true,
+								Type:                types.StringType,
+							},
+							"l3_peer_link_port_channel_id": {
+								MarkdownDescription: "L3 peer link port-channel ID.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+						}),
+					},
 				}),
 			},
 			//"access_switches": {
@@ -511,9 +511,9 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	var err error
 	var rt *goapstra.RackType
 	var ace goapstra.ApstraClientErr
-	if config.Name.Null == false {
+	if config.Name.Null == false { // fetch rack type by name
 		rt, err = o.client.GetRackTypeByName(ctx, config.Name.Value)
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Rack Type not found",
@@ -521,9 +521,9 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 	}
-	if config.Id.Null == false {
+	if config.Id.Null == false { // fetch rack type by ID
 		rt, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.Value))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Rack Type not found",
@@ -540,8 +540,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	newState := &dRackType{}
-	newState.parseRackType(rt, &resp.Diagnostics)
+	newState := parseRackType(rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -592,15 +591,17 @@ func validateRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
 	}
 }
 
-func (o *dRackType) parseRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
-	o.Id = types.String{Value: string(rt.Id)}
-	o.Name = types.String{Value: rt.Data.DisplayName}
-	o.Description = types.String{Value: rt.Data.Description}
-	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
-	o.parseRackTypeLeafSwitches(rt, diags)
-	//o.LeafSwitches = goApstraRackTypeToDSLeafSwitches(rt, diags)
+func parseRackType(rt *goapstra.RackType, diags *diag.Diagnostics) *dRackType {
+	result := &dRackType{
+		Id:                       types.String{Value: string(rt.Id)},
+		Name:                     types.String{Value: rt.Data.DisplayName},
+		Description:              types.String{Value: rt.Data.Description},
+		FabricConnectivityDesign: types.String{Value: rt.Data.FabricConnectivityDesign.String()},
+		LeafSwitches:             parseRackTypeLeafSwitches(rt.Data.LeafSwitches, diags),
+	}
 	//o.AccessSwitches =           goApstraRackTypeToDSAccessSwitches(rt, diags)
 	//o.GenericSystems =           goApstraRackTypeToDSGenericSystems(rt, diags)
+	return result
 }
 
 func leafAttrTypes() map[string]attr.Type {
@@ -612,8 +613,9 @@ func leafAttrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
-				AttrTypes: tagAttrTypes(),
-			}},
+				AttrTypes: tagAttrTypes()}},
+		"mlag_info": types.ObjectType{
+			AttrTypes: mlagInfoAttrTypes()},
 	}
 }
 
@@ -636,6 +638,28 @@ func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
 		}
 	}
 	return result
+}
+
+func newMlagInfoObjFromLeafMlagInfo(in *goapstra.LeafMlagInfo) types.Object {
+	if in == nil || (in.LeafLeafLinkCount == 0 && in.LeafLeafL3LinkCount == 0) {
+		return types.Object{
+			Null:      true,
+			AttrTypes: mlagInfoAttrTypes(),
+		}
+	}
+
+	return types.Object{
+		AttrTypes: mlagInfoAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"mlag_keepalive_vlan":          types.Int64{Value: int64(in.MlagVlanId)},
+			"peer_links":                   types.Int64{Value: int64(in.LeafLeafLinkCount)},
+			"peer_link_speed":              types.String{Value: string(in.LeafLeafLinkSpeed)},
+			"peer_link_port_channel_id":    types.Int64{Value: int64(in.LeafLeafLinkPortChannelId)},
+			"l3_peer_links":                types.Int64{Value: int64(in.LeafLeafL3LinkCount)},
+			"l3_peer_link_speed":           types.String{Value: string(in.LeafLeafL3LinkSpeed)},
+			"l3_peer_link_port_channel_id": types.Int64{Value: int64(in.LeafLeafL3LinkPortChannelId)},
+		},
+	}
 }
 
 func newLeafObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwitch) types.Object {
@@ -662,7 +686,20 @@ func newLeafObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwitch) t
 			"spine_link_speed":    spineLinkSpeed,
 			"redundancy_protocol": redundancyProtocol,
 			"tags":                newTagSetFromSliceDesignTagData(rels.Tags),
+			"mlag_info":           newMlagInfoObjFromLeafMlagInfo(rels.MlagInfo),
 		},
+	}
+}
+
+func mlagInfoAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"mlag_keepalive_vlan":          types.Int64Type,
+		"peer_links":                   types.Int64Type,
+		"peer_link_speed":              types.StringType,
+		"peer_link_port_channel_id":    types.Int64Type,
+		"l3_peer_links":                types.Int64Type,
+		"l3_peer_link_speed":           types.StringType,
+		"l3_peer_link_port_channel_id": types.Int64Type,
 	}
 }
 
@@ -680,11 +717,12 @@ func newTagSet(size int) types.Set {
 	}
 }
 
-func (o *dRackType) parseRackTypeLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnostics) {
-	o.LeafSwitches = newLeafSet(len(rt.Data.LeafSwitches))
-	for i, ls := range rt.Data.LeafSwitches {
-		o.LeafSwitches.Elems[i] = newLeafObjFromRackElementLeafSwitch(&ls)
+func parseRackTypeLeafSwitches(in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) types.Set {
+	result := newLeafSet(len(in))
+	for i, ls := range in {
+		result.Elems[i] = newLeafObjFromRackElementLeafSwitch(&ls)
 	}
+	return result
 }
 
 func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnostics) []DSLeafSwitch {
