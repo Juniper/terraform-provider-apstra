@@ -3,21 +3,41 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+var _ datasource.DataSourceWithConfigure = &dataSourceRackType{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceRackType{}
 
 type dataSourceRackType struct {
 	client *goapstra.Client
 }
 
 func (o *dataSourceRackType) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_rack_typex"
+	resp.TypeName = req.ProviderTypeName + "_rack_type"
+}
+
+func (o *dataSourceRackType) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	if pd, ok := req.ProviderData.(*providerData); ok {
+		o.client = pd.client
+	} else {
+		resp.Diagnostics.AddError(
+			errDataSourceConfigureProviderDataDetail,
+			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
+		)
+	}
 }
 
 func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -78,43 +98,43 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Computed:            true,
 						Type:                types.StringType,
 					},
-					"panels": {
-						MarkdownDescription: "Details physical layout of interfaces on the device.",
-						Computed:            true,
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"rows": {
-								MarkdownDescription: "Physical vertical dimension of the panel.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"columns": {
-								MarkdownDescription: "Physical horizontal dimension of the panel.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"port_groups": {
-								MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-								Computed:            true,
-								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-									"port_count": {
-										MarkdownDescription: "Number of ports in the group.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_speed_gbps": {
-										MarkdownDescription: "Port speed in Gbps.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_roles": {
-										MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-										Computed:            true,
-										Type:                types.SetType{ElemType: types.StringType},
-									},
-								}),
-							},
-						}),
-					},
+					//"panels": {
+					//	MarkdownDescription: "Details physical layout of interfaces on the device.",
+					//	Computed:            true,
+					//	Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					//		"rows": {
+					//			MarkdownDescription: "Physical vertical dimension of the panel.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//		"columns": {
+					//			MarkdownDescription: "Physical horizontal dimension of the panel.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//		"port_groups": {
+					//			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+					//			Computed:            true,
+					//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					//				"port_count": {
+					//					MarkdownDescription: "Number of ports in the group.",
+					//					Computed:            true,
+					//					Type:                types.Int64Type,
+					//				},
+					//				"port_speed_gbps": {
+					//					MarkdownDescription: "Port speed in Gbps.",
+					//					Computed:            true,
+					//					Type:                types.Int64Type,
+					//				},
+					//				"port_roles": {
+					//					MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+					//					Computed:            true,
+					//					Type:                types.SetType{ElemType: types.StringType},
+					//				},
+					//			}),
+					//		},
+					//	}),
+					//},
 					"tags": {
 						MarkdownDescription: "Details any tags applied to the Leaf Switch",
 						Computed:            true,
@@ -131,334 +151,348 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 							},
 						}),
 					},
-					"mlag_info": {
-						MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
-						Computed:            true,
-						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"mlag_keepalive_vlan": {
-								MarkdownDescription: "MLAG keepalive VLAN ID.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"peer_links": {
-								MarkdownDescription: "Number of links between MLAG devices.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"peer_link_speed": {
-								MarkdownDescription: "Speed of links between MLAG devices.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"peer_link_port_channel_id": {
-								MarkdownDescription: "Peer link port-channel ID.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"l3_peer_links": {
-								MarkdownDescription: "Number of L3 links between MLAG devices.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"l3_peer_link_speed": {
-								MarkdownDescription: "Speed of l3 links between MLAG devices.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"l3_peer_link_port_channel_id": {
-								MarkdownDescription: "L3 peer link port-channel ID.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-						}),
-					},
+					//"mlag_info": {
+					//	MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
+					//	Computed:            true,
+					//	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+					//		"mlag_keepalive_vlan": {
+					//			MarkdownDescription: "MLAG keepalive VLAN ID.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//		"peer_links": {
+					//			MarkdownDescription: "Number of links between MLAG devices.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//		"peer_link_speed": {
+					//			MarkdownDescription: "Speed of links between MLAG devices.",
+					//			Computed:            true,
+					//			Type:                types.StringType,
+					//		},
+					//		"peer_link_port_channel_id": {
+					//			MarkdownDescription: "Peer link port-channel ID.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//		"l3_peer_links": {
+					//			MarkdownDescription: "Number of L3 links between MLAG devices.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//		"l3_peer_link_speed": {
+					//			MarkdownDescription: "Speed of l3 links between MLAG devices.",
+					//			Computed:            true,
+					//			Type:                types.StringType,
+					//		},
+					//		"l3_peer_link_port_channel_id": {
+					//			MarkdownDescription: "L3 peer link port-channel ID.",
+					//			Computed:            true,
+					//			Type:                types.Int64Type,
+					//		},
+					//	}),
+					//},
 				}),
 			},
-			"access_switches": {
-				MarkdownDescription: "Details of Access Switches in this Rack Type.",
-				Computed:            true,
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Indicates the role of the switch within the rack, also used for targeting in-rack links.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"display_name": {
-						MarkdownDescription: "Name copied from the Logical Device upon which this Leaf Switch was modeled.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"count": {
-						MarkdownDescription: "Count of Access Switches of this type.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"redundancy_protocol": {
-						MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"esi_lag_info": {
-						MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
-						Computed:            true,
-						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"l3_link_count": {
-								MarkdownDescription: "Count of L3 links to ESI peer.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"l3_link_speed": {
-								MarkdownDescription: "Speed of L3 links to ESI peer.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-						}),
-					},
-					"links": {
-						MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
-						Computed:            true,
-						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-							"name": {
-								MarkdownDescription: "Name of this link.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"target_switch_name": {
-								MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"lag_mode": {
-								MarkdownDescription: "LAG negotiation mode of the Link.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"links_per_switch": {
-								MarkdownDescription: "Number of Links to each switch.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"speed": {
-								MarkdownDescription: "Speed of this Link.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"switch_peer": {
-								MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"tags": {
-								MarkdownDescription: "Details any tags applied to the Link",
-								Computed:            true,
-								Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-									"label": {
-										MarkdownDescription: "Tag label (name) field.",
-										Computed:            true,
-										Type:                types.StringType,
-									},
-									"description": {
-										MarkdownDescription: "Tag description field.",
-										Computed:            true,
-										Type:                types.StringType,
-									},
-								}),
-							},
-						}),
-					},
-					"panels": {
-						MarkdownDescription: "Details physical layout of interfaces on the device.",
-						Computed:            true,
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"rows": {
-								MarkdownDescription: "Physical vertical dimension of the panel.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"columns": {
-								MarkdownDescription: "Physical horizontal dimension of the panel.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"port_groups": {
-								MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-								Computed:            true,
-								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-									"port_count": {
-										MarkdownDescription: "Number of ports in the group.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_speed_gbps": {
-										MarkdownDescription: "Port speed in Gbps.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_roles": {
-										MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-										Computed:            true,
-										Type:                types.SetType{ElemType: types.StringType},
-									},
-								}),
-							},
-						}),
-					},
-					"tags": {
-						MarkdownDescription: "Details any tags applied to the Access Switch",
-						Computed:            true,
-						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-							"label": {
-								MarkdownDescription: "Tag label (name) field.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"description": {
-								MarkdownDescription: "Tag description field.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-						}),
-					},
-				}),
-			},
-			"generic_systems": {
-				MarkdownDescription: "Details Generic Systems found in the Rack Type.",
-				Computed:            true,
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Indicates the role of the generic system within the rack.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"display_name": {
-						MarkdownDescription: "Name copied from the Logical Device upon which this Generic System was modeled.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"count": {
-						MarkdownDescription: "Number of Generic Systems of this type.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"port_channel_id_min": {
-						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"port_channel_id_max": {
-						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"panels": {
-						MarkdownDescription: "Details physical layout of interfaces on the device.",
-						Computed:            true,
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"rows": {
-								MarkdownDescription: "Physical vertical dimension of the panel.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"columns": {
-								MarkdownDescription: "Physical horizontal dimension of the panel.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"port_groups": {
-								MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-								Computed:            true,
-								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-									"port_count": {
-										MarkdownDescription: "Number of ports in the group.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_speed_gbps": {
-										MarkdownDescription: "Port speed in Gbps.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_roles": {
-										MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-										Computed:            true,
-										Type:                types.SetType{ElemType: types.StringType},
-									},
-								}),
-							},
-						}),
-					},
-					"tags": {
-						MarkdownDescription: "Details any tags applied to the Generic System",
-						Computed:            true,
-						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-							"label": {
-								MarkdownDescription: "Tag label (name) field.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"description": {
-								MarkdownDescription: "Tag description field.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-						}),
-					},
-					"links": {
-						MarkdownDescription: "Details links from this Generic System to switches in this Rack Type.",
-						Computed:            true,
-						Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-							"name": {
-								MarkdownDescription: "Name of this link.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"target_switch_name": {
-								MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"lag_mode": {
-								MarkdownDescription: "LAG negotiation mode of the Link.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"links_per_switch": {
-								MarkdownDescription: "Number of Links to each switch.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"speed": {
-								MarkdownDescription: "Speed of this Link.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"switch_peer": {
-								MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"tags": {
-								MarkdownDescription: "Details any tags applied to the Link",
-								Computed:            true,
-								Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-									"label": {
-										MarkdownDescription: "Tag label (name) field.",
-										Computed:            true,
-										Type:                types.StringType,
-									},
-									"description": {
-										MarkdownDescription: "Tag description field.",
-										Computed:            true,
-										Type:                types.StringType,
-									},
-								}),
-							},
-						}),
-					},
-				}),
-			},
+			//"access_switches": {
+			//	MarkdownDescription: "Details of Access Switches in this Rack Type.",
+			//	Computed:            true,
+			//	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//		"name": {
+			//			MarkdownDescription: "Indicates the role of the switch within the rack, also used for targeting in-rack links.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//		"display_name": {
+			//			MarkdownDescription: "Name copied from the Logical Device upon which this Leaf Switch was modeled.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//		"count": {
+			//			MarkdownDescription: "Count of Access Switches of this type.",
+			//			Computed:            true,
+			//			Type:                types.Int64Type,
+			//		},
+			//		"redundancy_protocol": {
+			//			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//		"esi_lag_info": {
+			//			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
+			//			Computed:            true,
+			//			Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			//				"l3_link_count": {
+			//					MarkdownDescription: "Count of L3 links to ESI peer.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"l3_link_speed": {
+			//					MarkdownDescription: "Speed of L3 links to ESI peer.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//			}),
+			//		},
+			//		"links": {
+			//			MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
+			//			Computed:            true,
+			//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//				"name": {
+			//					MarkdownDescription: "Name of this link.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"target_switch_name": {
+			//					MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"lag_mode": {
+			//					MarkdownDescription: "LAG negotiation mode of the Link.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"links_per_switch": {
+			//					MarkdownDescription: "Number of Links to each switch.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"speed": {
+			//					MarkdownDescription: "Speed of this Link.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"switch_peer": {
+			//					MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"tags": {
+			//					MarkdownDescription: "Details any tags applied to the Link",
+			//					Computed:            true,
+			//					Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//						"label": {
+			//							MarkdownDescription: "Tag label (name) field.",
+			//							Computed:            true,
+			//							Type:                types.StringType,
+			//						},
+			//						"description": {
+			//							MarkdownDescription: "Tag description field.",
+			//							Computed:            true,
+			//							Type:                types.StringType,
+			//						},
+			//					}),
+			//				},
+			//			}),
+			//		},
+			//		"panels": {
+			//			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			//			Computed:            true,
+			//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			//				"rows": {
+			//					MarkdownDescription: "Physical vertical dimension of the panel.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"columns": {
+			//					MarkdownDescription: "Physical horizontal dimension of the panel.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"port_groups": {
+			//					MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			//					Computed:            true,
+			//					Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			//						"port_count": {
+			//							MarkdownDescription: "Number of ports in the group.",
+			//							Computed:            true,
+			//							Type:                types.Int64Type,
+			//						},
+			//						"port_speed_gbps": {
+			//							MarkdownDescription: "Port speed in Gbps.",
+			//							Computed:            true,
+			//							Type:                types.Int64Type,
+			//						},
+			//						"port_roles": {
+			//							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+			//							Computed:            true,
+			//							Type:                types.SetType{ElemType: types.StringType},
+			//						},
+			//					}),
+			//				},
+			//			}),
+			//		},
+			//		"tags": {
+			//			MarkdownDescription: "Details any tags applied to the Access Switch",
+			//			Computed:            true,
+			//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//				"label": {
+			//					MarkdownDescription: "Tag label (name) field.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"description": {
+			//					MarkdownDescription: "Tag description field.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//			}),
+			//		},
+			//	}),
+			//},
+			//"generic_systems": {
+			//	MarkdownDescription: "Details Generic Systems found in the Rack Type.",
+			//	Computed:            true,
+			//	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//		"name": {
+			//			MarkdownDescription: "Indicates the role of the generic system within the rack.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//		"display_name": {
+			//			MarkdownDescription: "Name copied from the Logical Device upon which this Generic System was modeled.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//		"count": {
+			//			MarkdownDescription: "Number of Generic Systems of this type.",
+			//			Computed:            true,
+			//			Type:                types.Int64Type,
+			//		},
+			//		"port_channel_id_min": {
+			//			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			//			Computed:            true,
+			//			Type:                types.Int64Type,
+			//		},
+			//		"port_channel_id_max": {
+			//			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			//			Computed:            true,
+			//			Type:                types.Int64Type,
+			//		},
+			//		"panels": {
+			//			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			//			Computed:            true,
+			//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			//				"rows": {
+			//					MarkdownDescription: "Physical vertical dimension of the panel.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"columns": {
+			//					MarkdownDescription: "Physical horizontal dimension of the panel.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"port_groups": {
+			//					MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			//					Computed:            true,
+			//					Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			//						"port_count": {
+			//							MarkdownDescription: "Number of ports in the group.",
+			//							Computed:            true,
+			//							Type:                types.Int64Type,
+			//						},
+			//						"port_speed_gbps": {
+			//							MarkdownDescription: "Port speed in Gbps.",
+			//							Computed:            true,
+			//							Type:                types.Int64Type,
+			//						},
+			//						"port_roles": {
+			//							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+			//							Computed:            true,
+			//							Type:                types.SetType{ElemType: types.StringType},
+			//						},
+			//					}),
+			//				},
+			//			}),
+			//		},
+			//		"tags": {
+			//			MarkdownDescription: "Details any tags applied to the Generic System",
+			//			Computed:            true,
+			//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//				"label": {
+			//					MarkdownDescription: "Tag label (name) field.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"description": {
+			//					MarkdownDescription: "Tag description field.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//			}),
+			//		},
+			//		"links": {
+			//			MarkdownDescription: "Details links from this Generic System to switches in this Rack Type.",
+			//			Computed:            true,
+			//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//				"name": {
+			//					MarkdownDescription: "Name of this link.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"target_switch_name": {
+			//					MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"lag_mode": {
+			//					MarkdownDescription: "LAG negotiation mode of the Link.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"links_per_switch": {
+			//					MarkdownDescription: "Number of Links to each switch.",
+			//					Computed:            true,
+			//					Type:                types.Int64Type,
+			//				},
+			//				"speed": {
+			//					MarkdownDescription: "Speed of this Link.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"switch_peer": {
+			//					MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+			//					Computed:            true,
+			//					Type:                types.StringType,
+			//				},
+			//				"tags": {
+			//					MarkdownDescription: "Details any tags applied to the Link",
+			//					Computed:            true,
+			//					Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//						"label": {
+			//							MarkdownDescription: "Tag label (name) field.",
+			//							Computed:            true,
+			//							Type:                types.StringType,
+			//						},
+			//						"description": {
+			//							MarkdownDescription: "Tag description field.",
+			//							Computed:            true,
+			//							Type:                types.StringType,
+			//						},
+			//					}),
+			//				},
+			//			}),
+			//		},
+			//	}),
+			//},
 		},
 	}, nil
+}
+
+func (o *dataSourceRackType) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	var config dRackType
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'name' must be specified")
+		return
+	}
 }
 
 func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -467,7 +501,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	var config DataRackType
+	var config dRackType
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -476,15 +510,29 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 
 	var err error
 	var rt *goapstra.RackType
+	var ace goapstra.ApstraClientErr
 	if config.Name.Null == false {
 		rt, err = o.client.GetRackTypeByName(ctx, config.Name.Value)
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"Rack Type not found",
+				fmt.Sprintf("Rack Type with name '%s' does not exist", config.Name.Value))
+			return
+		}
 	}
 	if config.Id.Null == false {
 		rt, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.Value))
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"Rack Type not found",
+				fmt.Sprintf("Rack Type with id '%s' does not exist", config.Id.Value))
+			return
+		}
 	}
-	if err != nil {
-		resp.Diagnostics.AddError("Error retrieving Tag", err.Error())
-		return
+	if err != nil { // catch errors other than 404 from above
+		resp.Diagnostics.AddError("Error retrieving Rack Type", err.Error())
 	}
 
 	validateRackType(rt, &resp.Diagnostics)
@@ -492,7 +540,8 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	newState := goApstraRackTypeToDataSourceRackType(rt, &resp.Diagnostics)
+	newState := &dRackType{}
+	newState.parseRackType(rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -543,15 +592,98 @@ func validateRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
 	}
 }
 
-func goApstraRackTypeToDataSourceRackType(rt *goapstra.RackType, diags *diag.Diagnostics) *DataRackType {
-	return &DataRackType{
-		Id:                       types.String{Value: string(rt.Id)},
-		Name:                     types.String{Value: rt.Data.DisplayName},
-		Description:              types.String{Value: rt.Data.Description},
-		FabricConnectivityDesign: types.String{Value: rt.Data.FabricConnectivityDesign.String()},
-		LeafSwitches:             goApstraRackTypeToDSLeafSwitches(rt, diags),
-		AccessSwitches:           goApstraRackTypeToDSAccessSwitches(rt, diags),
-		GenericSystems:           goApstraRackTypeToDSGenericSystems(rt, diags),
+func (o *dRackType) parseRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
+	o.Id = types.String{Value: string(rt.Id)}
+	o.Name = types.String{Value: rt.Data.DisplayName}
+	o.Description = types.String{Value: rt.Data.Description}
+	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
+	o.parseRackTypeLeafSwitches(rt, diags)
+	//o.LeafSwitches = goApstraRackTypeToDSLeafSwitches(rt, diags)
+	//o.AccessSwitches =           goApstraRackTypeToDSAccessSwitches(rt, diags)
+	//o.GenericSystems =           goApstraRackTypeToDSGenericSystems(rt, diags)
+}
+
+func leafAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"display_name":        types.StringType,
+		"spine_link_count":    types.Int64Type,
+		"spine_link_speed":    types.StringType,
+		"redundancy_protocol": types.StringType,
+		"tags": types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: tagAttrTypes(),
+			}},
+	}
+}
+
+func newLeafSet(size int) types.Set {
+	return types.Set{
+		Elems:    make([]attr.Value, size),
+		ElemType: types.ObjectType{AttrTypes: leafAttrTypes()},
+	}
+}
+
+func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
+	result := newTagSet(len(tags))
+	for i, tag := range tags {
+		result.Elems[i] = types.Object{
+			AttrTypes: tagAttrTypes(),
+			Attrs: map[string]attr.Value{
+				"label":       types.String{Value: tag.Label},
+				"description": types.String{Value: tag.Description},
+			},
+		}
+	}
+	return result
+}
+
+func newLeafObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwitch) types.Object {
+	var spineLinkSpeed types.String
+	if rels.LinkPerSpineCount == 0 || rels.LinkPerSpineSpeed == "" {
+		spineLinkSpeed = types.String{Null: true}
+	} else {
+		spineLinkSpeed = types.String{Value: string(rels.LinkPerSpineSpeed)}
+	}
+
+	var redundancyProtocol types.String
+	if rels.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
+		redundancyProtocol = types.String{Null: true}
+	} else {
+		redundancyProtocol = types.String{Value: rels.RedundancyProtocol.String()}
+	}
+
+	return types.Object{
+		AttrTypes: leafAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"name":                types.String{Value: rels.Label},
+			"display_name":        types.String{Value: rels.LogicalDevice.DisplayName},
+			"spine_link_count":    types.Int64{Value: int64(rels.LinkPerSpineCount)},
+			"spine_link_speed":    spineLinkSpeed,
+			"redundancy_protocol": redundancyProtocol,
+			"tags":                newTagSetFromSliceDesignTagData(rels.Tags),
+		},
+	}
+}
+
+func tagAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"label":       types.StringType,
+		"description": types.StringType,
+	}
+}
+
+func newTagSet(size int) types.Set {
+	return types.Set{
+		Elems:    make([]attr.Value, size),
+		ElemType: types.ObjectType{AttrTypes: tagAttrTypes()},
+	}
+}
+
+func (o *dRackType) parseRackTypeLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnostics) {
+	o.LeafSwitches = newLeafSet(len(rt.Data.LeafSwitches))
+	for i, ls := range rt.Data.LeafSwitches {
+		o.LeafSwitches.Elems[i] = newLeafObjFromRackElementLeafSwitch(&ls)
 	}
 }
 
@@ -687,4 +819,14 @@ func sliceGoapstraTagDataToSliceTypesObject(in []goapstra.DesignTagData, diags *
 		}
 	}
 	return out
+}
+
+type dRackType struct {
+	Id                       types.String `tfsdk:"id"`
+	Name                     types.String `tfsdk:"name"`
+	Description              types.String `tfsdk:"description"`
+	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
+	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
+	//AccessSwitches           []DSAccessSwitch  `tfsdk:"access_switches"`
+	//GenericSystems           []DSGenericSystem `tfsdk:"generic_systems"`
 }
