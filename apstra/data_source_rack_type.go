@@ -112,27 +112,27 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 								Computed:            true,
 								Type:                types.Int64Type,
 							},
-							//		"port_groups": {
-							//			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-							//			Computed:            true,
-							//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							//				"port_count": {
-							//					MarkdownDescription: "Number of ports in the group.",
-							//					Computed:            true,
-							//					Type:                types.Int64Type,
-							//				},
-							//				"port_speed_gbps": {
-							//					MarkdownDescription: "Port speed in Gbps.",
-							//					Computed:            true,
-							//					Type:                types.Int64Type,
-							//				},
-							//				"port_roles": {
-							//					MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-							//					Computed:            true,
-							//					Type:                types.SetType{ElemType: types.StringType},
-							//				},
-							//			}),
-							//		},
+							"port_groups": {
+								MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+								Computed:            true,
+								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+									"port_count": {
+										MarkdownDescription: "Number of ports in the group.",
+										Computed:            true,
+										Type:                types.Int64Type,
+									},
+									"port_speed_gbps": {
+										MarkdownDescription: "Port speed in Gbps.",
+										Computed:            true,
+										Type:                types.Int64Type,
+									},
+									//"port_roles": {
+									//	MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+									//	Computed:            true,
+									//	Type:                types.SetType{ElemType: types.StringType},
+									//},
+								}),
+							},
 						}),
 					},
 					"tags": {
@@ -630,14 +630,29 @@ func newLeafSet(size int) types.Set {
 	}
 }
 
-func newPanelSetFromSlicePanels(panels []goapstra.LogicalDevicePanel) types.List {
+func newPanelSetFromSliceLogicalDevicePanel(panels []goapstra.LogicalDevicePanel) types.List {
 	result := newPanelList(len(panels))
 	for i, panel := range panels {
 		result.Elems[i] = types.Object{
 			AttrTypes: panelAttrTypes(),
 			Attrs: map[string]attr.Value{
-				"rows":    types.Int64{Value: int64(panel.PanelLayout.RowCount)},
-				"columns": types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
+				"rows":        types.Int64{Value: int64(panel.PanelLayout.RowCount)},
+				"columns":     types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
+				"port_groups": newPortGroupListFromSliceLogicalDevicePortGroup(panel.PortGroups),
+			},
+		}
+	}
+	return result
+}
+
+func newPortGroupListFromSliceLogicalDevicePortGroup(portGroups []goapstra.LogicalDevicePortGroup) types.List {
+	result := newPortGroupList(len(portGroups))
+	for i, portGroup := range portGroups {
+		result.Elems[i] = types.Object{
+			AttrTypes: portGroupAttrTypes(),
+			Attrs: map[string]attr.Value{
+				"port_count":      types.Int64{Value: int64(portGroup.Count)},
+				"port_speed_gbps": types.Int64{Value: portGroup.Speed.BitsPerSecond()},
 			},
 		}
 	}
@@ -705,7 +720,7 @@ func newLeafObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwitch) t
 			"redundancy_protocol": redundancyProtocol,
 			"tags":                newTagSetFromSliceDesignTagData(rels.Tags),
 			"mlag_info":           newMlagInfoObjFromLeafMlagInfo(rels.MlagInfo),
-			"panels":              newPanelSetFromSlicePanels(rels.LogicalDevice.Panels),
+			"panels":              newPanelSetFromSliceLogicalDevicePanel(rels.LogicalDevice.Panels),
 		},
 	}
 }
@@ -714,13 +729,37 @@ func panelAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"rows":    types.Int64Type,
 		"columns": types.Int64Type,
+		"port_groups": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: portGroupAttrTypes(),
+			},
+		},
+	}
+}
+
+func newPortGroupList(size int) types.List {
+	return types.List{
+		Elems: make([]attr.Value, size),
+		ElemType: types.ObjectType{
+			AttrTypes: portGroupAttrTypes(),
+		},
+	}
+}
+
+func portGroupAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"port_count":      types.Int64Type,
+		"port_speed_gbps": types.Int64Type,
+		//"port_roles": types.SetType{ElemType: types.StringType},
 	}
 }
 
 func newPanelList(size int) types.List {
 	return types.List{
-		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: panelAttrTypes()},
+		Elems: make([]attr.Value, size),
+		ElemType: types.ObjectType{
+			AttrTypes: panelAttrTypes(),
+		},
 	}
 }
 
