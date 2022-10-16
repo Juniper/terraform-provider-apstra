@@ -126,11 +126,11 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 										Computed:            true,
 										Type:                types.Int64Type,
 									},
-									//"port_roles": {
-									//	MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-									//	Computed:            true,
-									//	Type:                types.SetType{ElemType: types.StringType},
-									//},
+									"port_roles": {
+										MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+										Computed:            true,
+										Type:                types.SetType{ElemType: types.StringType},
+									},
 								}),
 							},
 						}),
@@ -556,38 +556,53 @@ func validateRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
 		return
 	}
 
-	for _, leaf := range rt.Data.LeafSwitches {
-		if leaf.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag && leaf.MlagInfo == nil {
-			diags.AddError("leaf switch MLAG Info missing",
-				fmt.Sprintf("rack type '%s', leaf switch '%s' has '%s', but EsiLagInfo is nil",
-					rt.Id, leaf.Label, leaf.RedundancyProtocol.String()))
-		}
-		if leaf.LogicalDevice == nil {
-			diags.AddError("leaf switch logical device info missing",
-				fmt.Sprintf("rack type '%s', leaf switch '%s' logical device is nil",
-					rt.Id, leaf.Label))
-		}
+	for i := range rt.Data.LeafSwitches {
+		validateLeafSwitch(rt, i, diags)
 	}
 
-	for _, access := range rt.Data.AccessSwitches {
-		if access.RedundancyProtocol == goapstra.AccessRedundancyProtocolEsi && access.EsiLagInfo == nil {
-			diags.AddError("access switch ESI LAG Info missing",
-				fmt.Sprintf("rack type '%s', access switch '%s' has '%s', but EsiLagInfo is nil",
-					rt.Id, access.Label, access.RedundancyProtocol.String()))
-		}
-		if access.LogicalDevice == nil {
-			diags.AddError("access switch logical device info missing",
-				fmt.Sprintf("rack type '%s', access switch '%s' logical device is nil",
-					rt.Id, access.Label))
-		}
+	for i := range rt.Data.AccessSwitches {
+		validateAccessSwitch(rt, i, diags)
 	}
 
-	for _, generic := range rt.Data.GenericSystems {
-		if generic.LogicalDevice == nil {
-			diags.AddError("generic system logical device info missing",
-				fmt.Sprintf("rack type '%s', generic system '%s' logical device is nil",
-					rt.Id, generic.Label))
-		}
+	for i := range rt.Data.GenericSystems {
+		validateGenericSystem(rt, i, diags)
+	}
+}
+
+func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+	ls := rt.Data.LeafSwitches[i]
+	if ls.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag && ls.MlagInfo == nil {
+		diags.AddError("leaf switch MLAG Info missing",
+			fmt.Sprintf("rack type '%s', leaf switch '%s' has '%s', but EsiLagInfo is nil",
+				rt.Id, ls.Label, ls.RedundancyProtocol.String()))
+	}
+	if ls.LogicalDevice == nil {
+		diags.AddError("leaf switch logical device info missing",
+			fmt.Sprintf("rack type '%s', leaf switch '%s' logical device is nil",
+				rt.Id, ls.Label))
+	}
+}
+
+func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+	as := rt.Data.AccessSwitches[i]
+	if as.RedundancyProtocol == goapstra.AccessRedundancyProtocolEsi && as.EsiLagInfo == nil {
+		diags.AddError("access switch ESI LAG Info missing",
+			fmt.Sprintf("rack type '%s', access switch '%s' has '%s', but EsiLagInfo is nil",
+				rt.Id, as.Label, as.RedundancyProtocol.String()))
+	}
+	if as.LogicalDevice == nil {
+		diags.AddError("access switch logical device info missing",
+			fmt.Sprintf("rack type '%s', access switch '%s' logical device is nil",
+				rt.Id, as.Label))
+	}
+}
+
+func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+	gs := rt.Data.GenericSystems[i]
+	if gs.LogicalDevice == nil {
+		diags.AddError("generic system logical device info missing",
+			fmt.Sprintf("rack type '%s', generic system '%s' logical device is nil",
+				rt.Id, gs.Label))
 	}
 }
 
@@ -623,54 +638,23 @@ func leafAttrTypes() map[string]attr.Type {
 	}
 }
 
+func mlagInfoAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"mlag_keepalive_vlan":          types.Int64Type,
+		"peer_links":                   types.Int64Type,
+		"peer_link_speed":              types.StringType,
+		"peer_link_port_channel_id":    types.Int64Type,
+		"l3_peer_links":                types.Int64Type,
+		"l3_peer_link_speed":           types.StringType,
+		"l3_peer_link_port_channel_id": types.Int64Type,
+	}
+}
+
 func newLeafSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: leafAttrTypes()},
 	}
-}
-
-func newPanelSetFromSliceLogicalDevicePanel(panels []goapstra.LogicalDevicePanel) types.List {
-	result := newPanelList(len(panels))
-	for i, panel := range panels {
-		result.Elems[i] = types.Object{
-			AttrTypes: panelAttrTypes(),
-			Attrs: map[string]attr.Value{
-				"rows":        types.Int64{Value: int64(panel.PanelLayout.RowCount)},
-				"columns":     types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
-				"port_groups": newPortGroupListFromSliceLogicalDevicePortGroup(panel.PortGroups),
-			},
-		}
-	}
-	return result
-}
-
-func newPortGroupListFromSliceLogicalDevicePortGroup(portGroups []goapstra.LogicalDevicePortGroup) types.List {
-	result := newPortGroupList(len(portGroups))
-	for i, portGroup := range portGroups {
-		result.Elems[i] = types.Object{
-			AttrTypes: portGroupAttrTypes(),
-			Attrs: map[string]attr.Value{
-				"port_count":      types.Int64{Value: int64(portGroup.Count)},
-				"port_speed_gbps": types.Int64{Value: portGroup.Speed.BitsPerSecond()},
-			},
-		}
-	}
-	return result
-}
-
-func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
-	result := newTagSet(len(tags))
-	for i, tag := range tags {
-		result.Elems[i] = types.Object{
-			AttrTypes: tagAttrTypes(),
-			Attrs: map[string]attr.Value{
-				"label":       types.String{Value: tag.Label},
-				"description": types.String{Value: tag.Description},
-			},
-		}
-	}
-	return result
 }
 
 func newMlagInfoObjFromLeafMlagInfo(in *goapstra.LeafMlagInfo) types.Object {
@@ -722,70 +706,6 @@ func newLeafObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwitch) t
 			"mlag_info":           newMlagInfoObjFromLeafMlagInfo(rels.MlagInfo),
 			"panels":              newPanelSetFromSliceLogicalDevicePanel(rels.LogicalDevice.Panels),
 		},
-	}
-}
-
-func panelAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"rows":    types.Int64Type,
-		"columns": types.Int64Type,
-		"port_groups": types.ListType{
-			ElemType: types.ObjectType{
-				AttrTypes: portGroupAttrTypes(),
-			},
-		},
-	}
-}
-
-func newPortGroupList(size int) types.List {
-	return types.List{
-		Elems: make([]attr.Value, size),
-		ElemType: types.ObjectType{
-			AttrTypes: portGroupAttrTypes(),
-		},
-	}
-}
-
-func portGroupAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"port_count":      types.Int64Type,
-		"port_speed_gbps": types.Int64Type,
-		//"port_roles": types.SetType{ElemType: types.StringType},
-	}
-}
-
-func newPanelList(size int) types.List {
-	return types.List{
-		Elems: make([]attr.Value, size),
-		ElemType: types.ObjectType{
-			AttrTypes: panelAttrTypes(),
-		},
-	}
-}
-
-func mlagInfoAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"mlag_keepalive_vlan":          types.Int64Type,
-		"peer_links":                   types.Int64Type,
-		"peer_link_speed":              types.StringType,
-		"peer_link_port_channel_id":    types.Int64Type,
-		"l3_peer_links":                types.Int64Type,
-		"l3_peer_link_speed":           types.StringType,
-		"l3_peer_link_port_channel_id": types.Int64Type,
-	}
-}
-
-func tagAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"label":       types.StringType,
-		"description": types.StringType,
-	}
-}
-
-func newTagSet(size int) types.Set {
-	return types.Set{
-		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: tagAttrTypes()},
 	}
 }
 
