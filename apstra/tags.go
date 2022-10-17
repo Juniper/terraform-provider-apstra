@@ -9,7 +9,7 @@ import (
 
 func tagAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"label":       types.StringType,
+		"name":        types.StringType,
 		"description": types.StringType,
 	}
 }
@@ -27,7 +27,7 @@ func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
 		result.Elems[i] = types.Object{
 			AttrTypes: tagAttrTypes(),
 			Attrs: map[string]attr.Value{
-				"label":       types.String{Value: tag.Label},
+				"name":        types.String{Value: tag.Label},
 				"description": types.String{Value: tag.Description},
 			},
 		}
@@ -39,8 +39,8 @@ func tagsSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details any tags applied to the element.",
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-			"label": {
-				MarkdownDescription: "Tag label (name) field.",
+			"name": {
+				MarkdownDescription: "Tag name (label) field.",
 				Computed:            true,
 				Type:                types.StringType,
 			},
