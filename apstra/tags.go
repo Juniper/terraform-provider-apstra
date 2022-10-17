@@ -21,7 +21,7 @@ func newTagSet(size int) types.Set {
 	}
 }
 
-func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
+func sdkTagsDataToTagDataObj(tags []goapstra.DesignTagData) types.Set {
 	result := newTagSet(len(tags))
 	for i, tag := range tags {
 		result.Elems[i] = types.Object{
@@ -35,7 +35,7 @@ func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
 	return result
 }
 
-func tagsSchema() tfsdk.Attribute {
+func tagsAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details any tags applied to the element.",
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{

@@ -377,7 +377,7 @@ In addition to the attributes above, the following attributes are exported:
   * `port_groups` (list[object]) Ordered logical groupings of interfaces by
   speed or purpose within a panel.
     * `port_count` (number) Number of ports in the group.
-    * `port_speed_gbps` (number) Port speed in Gbps
+    * `port_speed_bps` (number) Port speed in bits per second
     * `port_roles` (list[string]) One or more of: `access`, `generic`,
       `l3_server`, `leaf`, `peer`, `server`, `spine`, `superspine` and
       `unused`.

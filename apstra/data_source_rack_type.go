@@ -78,11 +78,11 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Computed:            true,
 						Type:                types.StringType,
 					},
-					"display_name": {
-						MarkdownDescription: "Name copied from the Logical Device upon which this Leaf Switch was modeled.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
+					//"display_name": {
+					//	MarkdownDescription: "Name copied from the Logical Device upon which this Leaf Switch was modeled.",
+					//	Computed:            true,
+					//	Type:                types.StringType,
+					//},
 					"spine_link_count": {
 						MarkdownDescription: "Number of links to each spine switch.",
 						Computed:            true,
@@ -139,8 +139,8 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 							},
 						}),
 					},
-					"panels": panelsSchema(),
-					"tags":   tagsSchema(),
+					"logical_device": logicalDeviceDataAttributeSchema(),
+					"tags":           tagsAttributeSchema(),
 				}),
 			},
 			"access_switches": {
@@ -149,11 +149,6 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
 						MarkdownDescription: "Indicates the role of the switch within the rack, also used for targeting in-rack links.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"display_name": {
-						MarkdownDescription: "Name copied from the Logical Device upon which this Leaf Switch was modeled.",
 						Computed:            true,
 						Type:                types.StringType,
 					},
@@ -183,9 +178,9 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 							},
 						}),
 					},
-					"panels": panelsSchema(),
-					"tags":   tagsSchema(),
-					"links":  linksSchema(),
+					"logical_device": logicalDeviceDataAttributeSchema(),
+					"tags":           tagsAttributeSchema(),
+					"links":          linksAttributeSchema(),
 				}),
 			},
 			"generic_systems": {
@@ -194,11 +189,6 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
 						MarkdownDescription: "Indicates the role of the generic system within the rack.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"display_name": {
-						MarkdownDescription: "Name copied from the Logical Device upon which this Generic System was modeled.",
 						Computed:            true,
 						Type:                types.StringType,
 					},
@@ -217,9 +207,9 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Computed:            true,
 						Type:                types.Int64Type,
 					},
-					"panels": panelsSchema(),
-					"tags":   tagsSchema(),
-					"links":  linksSchema(),
+					"logical_device": logicalDeviceDataAttributeSchema(),
+					"tags":           tagsAttributeSchema(),
+					"links":          linksAttributeSchema(),
 				}),
 			},
 		},
@@ -367,15 +357,13 @@ func parseRackType(rt *goapstra.RackType, diags *diag.Diagnostics) *dRackType {
 func leafSwitchAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
-		"display_name":        types.StringType,
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
 		"mlag_info": types.ObjectType{
 			AttrTypes: mlagInfoAttrTypes()},
-		"panels": types.ListType{
-			ElemType: types.ObjectType{
-				AttrTypes: panelAttrTypes()}},
+		"logical_device": types.ObjectType{
+			AttrTypes: logicalDeviceDataElementAttrTypes()},
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: tagAttrTypes()}},
@@ -385,14 +373,12 @@ func leafSwitchAttrTypes() map[string]attr.Type {
 func accessSwitchAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
-		"display_name":        types.StringType,
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
 		"esi_lag_info": types.ObjectType{
 			AttrTypes: esiLagInfoAttrTypes()},
-		"panels": types.ListType{
-			ElemType: types.ObjectType{
-				AttrTypes: panelAttrTypes()}},
+		"logical_device": types.ObjectType{
+			AttrTypes: logicalDeviceDataElementAttrTypes()},
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: tagAttrTypes()}},
@@ -405,13 +391,11 @@ func accessSwitchAttrTypes() map[string]attr.Type {
 func genericSystemAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
-		"display_name":        types.StringType,
 		"count":               types.Int64Type,
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
-		"panels": types.ListType{
-			ElemType: types.ObjectType{
-				AttrTypes: panelAttrTypes()}},
+		"logical_device": types.ObjectType{
+			AttrTypes: logicalDeviceDataElementAttrTypes()},
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: tagAttrTypes()}},
@@ -480,7 +464,7 @@ func newLinkSet(size int) types.Set {
 	}
 }
 
-func newMlagInfoObjFromMlagInfo(in *goapstra.LeafMlagInfo) types.Object {
+func sdkMlagInfoToMlagInfoObj(in *goapstra.LeafMlagInfo) types.Object {
 	if in == nil || (in.LeafLeafLinkCount == 0 && in.LeafLeafL3LinkCount == 0) {
 		return types.Object{
 			Null:      true,
@@ -538,18 +522,17 @@ func newLeafSwitchObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwi
 		AttrTypes: leafSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"name":                types.String{Value: rels.Label},
-			"display_name":        types.String{Value: rels.LogicalDevice.DisplayName},
 			"spine_link_count":    types.Int64{Value: int64(rels.LinkPerSpineCount)},
 			"spine_link_speed":    spineLinkSpeed,
 			"redundancy_protocol": redundancyProtocol,
-			"mlag_info":           newMlagInfoObjFromMlagInfo(rels.MlagInfo),
-			"panels":              newPanelSetFromSliceLogicalDevicePanel(rels.LogicalDevice.Panels),
-			"tags":                newTagSetFromSliceDesignTagData(rels.Tags),
+			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(rels.LogicalDevice),
+			"mlag_info":           sdkMlagInfoToMlagInfoObj(rels.MlagInfo),
+			"tags":                sdkTagsDataToTagDataObj(rels.Tags),
 		},
 	}
 }
 
-func newAccessSwitchObjFromRackElementLeafSwitch(reas *goapstra.RackElementAccessSwitch) types.Object {
+func newAccessSwitchObjFromRackElementAccessSwitch(reas *goapstra.RackElementAccessSwitch) types.Object {
 	var redundancyProtocol types.String
 	if reas.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
 		redundancyProtocol = types.String{Null: true}
@@ -561,28 +544,26 @@ func newAccessSwitchObjFromRackElementLeafSwitch(reas *goapstra.RackElementAcces
 		AttrTypes: accessSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"name":                types.String{Value: reas.Label},
-			"display_name":        types.String{Value: reas.LogicalDevice.DisplayName},
 			"count":               types.Int64{Value: int64(reas.InstanceCount)},
 			"redundancy_protocol": redundancyProtocol,
 			"esi_lag_info":        newEsiLagInfoObjFromEsiLagInfo(reas.EsiLagInfo),
-			"panels":              newPanelSetFromSliceLogicalDevicePanel(reas.LogicalDevice.Panels),
-			"tags":                newTagSetFromSliceDesignTagData(reas.Tags),
+			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(reas.LogicalDevice),
+			"tags":                sdkTagsDataToTagDataObj(reas.Tags),
 			"links":               newLinkSetFromSliceRackLink(reas.Links),
 		},
 	}
 }
 
-func newGenericSystemObjFromRackElementLeafSwitch(regs *goapstra.RackElementGenericSystem) types.Object {
+func newGenericSystemObjFromRackElementAccessSwitch(regs *goapstra.RackElementGenericSystem) types.Object {
 	return types.Object{
 		AttrTypes: genericSystemAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"name":                types.String{Value: regs.Label},
-			"display_name":        types.String{Value: regs.LogicalDevice.DisplayName},
 			"count":               types.Int64{Value: int64(regs.Count)},
 			"port_channel_id_min": types.Int64{Value: int64(regs.PortChannelIdMin)},
 			"port_channel_id_max": types.Int64{Value: int64(regs.PortChannelIdMax)},
-			"panels":              newPanelSetFromSliceLogicalDevicePanel(regs.LogicalDevice.Panels),
-			"tags":                newTagSetFromSliceDesignTagData(regs.Tags),
+			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(regs.LogicalDevice),
+			"tags":                sdkTagsDataToTagDataObj(regs.Tags),
 			"links":               newLinkSetFromSliceRackLink(regs.Links),
 		},
 	}
@@ -623,7 +604,7 @@ func parseRackTypeLeafSwitches(in []goapstra.RackElementLeafSwitch, _ *diag.Diag
 func parseRackTypeAccessSwitches(in []goapstra.RackElementAccessSwitch, _ *diag.Diagnostics) types.Set {
 	result := newAccessSwitchSet(len(in))
 	for i, as := range in {
-		result.Elems[i] = newAccessSwitchObjFromRackElementLeafSwitch(&as)
+		result.Elems[i] = newAccessSwitchObjFromRackElementAccessSwitch(&as)
 	}
 	return result
 
@@ -632,143 +613,9 @@ func parseRackTypeAccessSwitches(in []goapstra.RackElementAccessSwitch, _ *diag.
 func parseRackTypeGenericSystems(in []goapstra.RackElementGenericSystem, _ *diag.Diagnostics) types.Set {
 	result := newGenericSystemSet(len(in))
 	for i, gs := range in {
-		result.Elems[i] = newGenericSystemObjFromRackElementLeafSwitch(&gs)
+		result.Elems[i] = newGenericSystemObjFromRackElementAccessSwitch(&gs)
 	}
 	return result
-}
-
-func goApstraRackTypeToDSLeafSwitches(rt *goapstra.RackType, diags *diag.Diagnostics) []DSLeafSwitch {
-	leafs := make([]DSLeafSwitch, len(rt.Data.LeafSwitches))
-	for i, leaf := range rt.Data.LeafSwitches {
-		leafs[i] = DSLeafSwitch{
-			Name:               types.String{Value: leaf.Label},
-			LinkPerSpineCount:  types.Int64{Value: int64(leaf.LinkPerSpineCount)},
-			LinkPerSpineSpeed:  types.String{Value: string(leaf.LinkPerSpineSpeed)},
-			RedundancyProtocol: types.String{Value: leaf.RedundancyProtocol.String()},
-			DisplayName:        types.String{Value: leaf.LogicalDevice.DisplayName},
-			TagData:            sliceGoapstraTagDataToSliceTypesObject(leaf.Tags, diags),
-			Panels:             goApstraPanelsToTfPanels(leaf.LogicalDevice.Panels, diags),
-		}
-		if leaf.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
-			leafs[i].MlagInfo = &MlagInfo{
-				VlanId:                      types.Int64{Value: int64(leaf.MlagInfo.MlagVlanId)},
-				LeafLeafLinkCount:           types.Int64{Value: int64(leaf.MlagInfo.LeafLeafLinkCount)},
-				LeafLeafLinkSpeed:           types.String{Value: string(leaf.MlagInfo.LeafLeafLinkSpeed)},
-				LeafLeafLinkPortChannelId:   types.Int64{Value: int64(leaf.MlagInfo.LeafLeafLinkPortChannelId)},
-				LeafLeafL3LinkCount:         types.Int64{Value: int64(leaf.MlagInfo.LeafLeafL3LinkCount)},
-				LeafLeafL3LinkSpeed:         types.String{Value: string(leaf.MlagInfo.LeafLeafL3LinkSpeed)},
-				LeafLeafL3LinkPortChannelId: types.Int64{Value: int64(leaf.MlagInfo.LeafLeafL3LinkPortChannelId)},
-			}
-		}
-	}
-	return leafs
-}
-
-func goApstraRackTypeToDSAccessSwitches(rt *goapstra.RackType, diags *diag.Diagnostics) []DSAccessSwitch {
-	accessSwitches := make([]DSAccessSwitch, len(rt.Data.LeafSwitches))
-	for i, accessSwitch := range rt.Data.AccessSwitches {
-		accessSwitches[i] = DSAccessSwitch{
-			Name:               types.String{Value: accessSwitch.Label},
-			DisplayName:        types.String{Value: accessSwitch.LogicalDevice.DisplayName},
-			Count:              types.Int64{Value: int64(accessSwitch.InstanceCount)},
-			RedundancyProtocol: types.String{Value: accessSwitch.RedundancyProtocol.String()},
-			Links:              goApstraLinksToTfLinks(accessSwitch.Links, diags),
-			Panels:             goApstraPanelsToTfPanels(accessSwitch.LogicalDevice.Panels, diags),
-			Tags:               sliceGoapstraTagDataToSliceTypesObject(accessSwitch.Tags, diags),
-		}
-		if accessSwitch.RedundancyProtocol == goapstra.AccessRedundancyProtocolEsi {
-			if accessSwitch.EsiLagInfo == nil {
-				diags.AddError("access switch ESI LAG Info missing",
-					fmt.Sprintf("rack type '%s', access switch '%s' has '%s', but EsiLagInfo is nil",
-						rt.Id, accessSwitch.Label, accessSwitch.RedundancyProtocol.String()))
-			}
-			accessSwitches[i].EsiLagInfo = &EsiLagInfo{
-				AccessAccessLinkCount: types.Int64{Value: int64(accessSwitch.EsiLagInfo.AccessAccessLinkCount)},
-				AccessAccessLinkSpeed: types.String{Value: string(accessSwitch.EsiLagInfo.AccessAccessLinkSpeed)},
-			}
-		}
-	}
-	return accessSwitches
-}
-
-func goApstraRackTypeToDSGenericSystems(rt *goapstra.RackType, diags *diag.Diagnostics) []DSGenericSystem {
-	genericSystems := make([]DSGenericSystem, len(rt.Data.GenericSystems))
-	for i, genericSystem := range rt.Data.GenericSystems {
-		genericSystems[i] = DSGenericSystem{
-			Name:             types.String{Value: genericSystem.Label},
-			DisplayName:      types.String{Value: genericSystem.LogicalDevice.DisplayName},
-			Count:            types.Int64{Value: int64(genericSystem.Count)},
-			PortChannelIdMin: types.Int64{Value: int64(genericSystem.PortChannelIdMin)},
-			PortChannelIdMax: types.Int64{Value: int64(genericSystem.PortChannelIdMax)},
-			Tags:             sliceGoapstraTagDataToSliceTypesObject(genericSystem.Tags, diags),
-			Panels:           goApstraPanelsToTfPanels(genericSystem.LogicalDevice.Panels, diags),
-			Links:            goApstraLinksToTfLinks(genericSystem.Links, diags),
-		}
-	}
-	return genericSystems
-}
-
-func goApstraLinksToTfLinks(in []goapstra.RackLink, diags *diag.Diagnostics) []RackLink {
-	out := make([]RackLink, len(in))
-	for i, link := range in {
-		out[i] = RackLink{
-			Name:               types.String{Value: link.Label},
-			TargetSwitchLabel:  types.String{Value: link.TargetSwitchLabel},
-			LagMode:            types.String{Value: link.LagMode.String()},
-			LinkPerSwitchCount: types.Int64{Value: int64(link.LinkPerSwitchCount)},
-			Speed:              types.String{Value: string(link.LinkSpeed)},
-			SwitchPeer:         types.String{Value: link.SwitchPeer.String()},
-			TagData:            sliceGoapstraTagDataToSliceTypesObject(link.Tags, diags),
-		}
-	}
-	return out
-}
-
-func goApstraPanelsToTfPanels(in []goapstra.LogicalDevicePanel, diags *diag.Diagnostics) []LogicalDevicePanel {
-	if len(in) == 0 {
-		return nil
-	}
-	out := make([]LogicalDevicePanel, len(in))
-	for i, panel := range in {
-		_ = panel // todo delete
-		out[i] = LogicalDevicePanel{
-			// todo restore
-			Rows: types.Int64{Value: int64(panel.PanelLayout.RowCount)},
-			//Columns: types.Int64{Value: int64(panel.PanelLayout.ColumnCount)},
-			//PortGroups: make([]logicalDevicePortGroup, len(panel.PortGroups)),
-		}
-		//diags.Append(tfsdk.ValueFrom(context.Background(), panel.PanelLayout.RowCount, types.Int64Type, out[i].Rows)...)
-		//diags.Append(tfsdk.ValueFrom(context.Background(), panel.PanelLayout.ColumnCount, types.Int64Type, out[i].Columns)...)
-		// todo restore
-		//for j, pg := range panel.PortGroups {
-		//out[i].PortGroups[j] = logicalDevicePortGroup{
-		//	Count: types.Int64{Value: int64(pg.Count)},
-		//	Speed: types.Int64{Value: pg.Speed.BitsPerSecond()},
-		//	Roles: sliceStringToSliceTfString(pg.Roles.Strings()),
-		//}
-		//}
-	}
-	return out
-}
-
-func sliceGoapstraTagDataToSliceTypesObject(in []goapstra.DesignTagData, diags *diag.Diagnostics) []types.Object {
-	if len(in) == 0 {
-		return nil
-	}
-	out := make([]types.Object, len(in))
-	for i, tag := range in {
-		out[i] = types.Object{
-			Attrs: map[string]attr.Value{
-				"label":       types.String{Value: string(tag.Label)},
-				"description": types.String{Value: string(tag.Description)},
-			},
-			AttrTypes: map[string]attr.Type{
-				"label":       types.StringType,
-				"description": types.StringType,
-			},
-		}
-	}
-	return out
 }
 
 type dRackType struct {
@@ -781,7 +628,7 @@ type dRackType struct {
 	GenericSystems           types.Set    `tfsdk:"generic_systems"`
 }
 
-func linksSchema() tfsdk.Attribute {
+func linksAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
 		Computed:            true,

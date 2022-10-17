@@ -65,7 +65,7 @@ func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, di
 }
 
 func (o *dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config DLogicalDevice
+	var config dLogicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -84,7 +84,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	var config DLogicalDevice
+	var config dLogicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -106,40 +106,39 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	newState := newLogicalDeviceFromApi(ctx, logicalDevice)
+	newState := newLogicalDeviceFromApi(logicalDevice)
 
 	// Set state
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
-type DLogicalDevice struct {
+type dLogicalDevice struct {
 	Id   types.String `tfsdk:"id"`   // optional input
 	Name types.String `tfsdk:"name"` // optional input
 	Data types.Object `tfsdk:"data"`
 }
 
-func newLogicalDeviceFromApi(ctx context.Context, in *goapstra.LogicalDevice) *DLogicalDevice {
-	return &DLogicalDevice{
+func newLogicalDeviceFromApi(in *goapstra.LogicalDevice) *dLogicalDevice {
+	return &dLogicalDevice{
 		Id:   types.String{Value: string(in.Id)},
 		Name: types.String{Value: in.Data.DisplayName},
-		Data: newLogicalDeviceData(ctx, in),
+		Data: sdkLogicalDeviceDataToLogicalDeviceDataObj(in.Data),
 	}
 }
 
-func newLogicalDevicePanelPortGroups(ctx context.Context, in []goapstra.LogicalDevicePortGroup) []attr.Value {
+func newLogicalDevicePanelPortGroups(in []goapstra.LogicalDevicePortGroup) []attr.Value {
 	portGroups := make([]attr.Value, len(in))
 	for i, pg := range in {
 		roles := make([]attr.Value, len(pg.Roles.Strings()))
 		for i, role := range pg.Roles.Strings() {
 			roles[i] = types.String{Value: role}
 		}
-		tfsdk.ValueFrom(ctx, pg.Roles.Strings(), types.StringType, roles)
 		portGroups[i] = types.Object{
 			AttrTypes: logicalDevicePanelPortGroupsListElementAttrTypes(),
 			Attrs: map[string]attr.Value{
-				"port_count":      types.Int64{Value: int64(pg.Count)},
-				"port_speed_gbps": types.Int64{Value: pg.Speed.BitsPerSecond()},
+				"port_count":     types.Int64{Value: int64(pg.Count)},
+				"port_speed_bps": types.Int64{Value: pg.Speed.BitsPerSecond()},
 				"port_roles": types.Set{
 					ElemType: types.StringType,
 					Elems:    roles,
@@ -150,7 +149,7 @@ func newLogicalDevicePanelPortGroups(ctx context.Context, in []goapstra.LogicalD
 	return portGroups
 }
 
-func newLogicalDevicePanel(ctx context.Context, in goapstra.LogicalDevicePanel) types.Object {
+func newLogicalDevicePanel(in goapstra.LogicalDevicePanel) types.Object {
 	return types.Object{
 		AttrTypes: logicalDeviceDataPanelsListElementAttrTypes(),
 		Attrs: map[string]attr.Value{
@@ -158,41 +157,53 @@ func newLogicalDevicePanel(ctx context.Context, in goapstra.LogicalDevicePanel) 
 			"columns": types.Int64{Value: int64(in.PanelLayout.ColumnCount)},
 			"port_groups": types.List{
 				ElemType: logicalDeviceDataPanelPortGroupObjectSchema(),
-				Elems:    newLogicalDevicePanelPortGroups(ctx, in.PortGroups),
+				Elems:    newLogicalDevicePanelPortGroups(in.PortGroups),
 			},
 		},
 	}
 }
 
-func newLogicalDevicePanels(ctx context.Context, in *goapstra.LogicalDevice) []attr.Value {
-	out := make([]attr.Value, len(in.Data.Panels))
-	for i, panel := range in.Data.Panels {
-		out[i] = newLogicalDevicePanel(ctx, panel)
+func newLogicalDevicePanels(in *goapstra.LogicalDeviceData) []attr.Value {
+	out := make([]attr.Value, len(in.Panels))
+	for i, panel := range in.Panels {
+		out[i] = newLogicalDevicePanel(panel)
 	}
 	return out
 }
 
-func newLogicalDeviceData(ctx context.Context, in *goapstra.LogicalDevice) types.Object {
+func sdkLogicalDeviceDataToLogicalDeviceDataObj(in *goapstra.LogicalDeviceData) types.Object {
 	return types.Object{
-		AttrTypes: map[string]attr.Type{
-			"name":   types.StringType,
-			"panels": logicalDevicePanelSchema(),
-		},
+		AttrTypes: logicalDeviceDataElementAttrTypes(),
 		Attrs: map[string]attr.Value{
-			"name": types.String{Value: in.Data.DisplayName},
+			"name": types.String{Value: in.DisplayName},
 			"panels": types.List{
 				ElemType: logicalDeviceDataPanelObjectSchema(),
-				Elems:    newLogicalDevicePanels(ctx, in),
+				Elems:    newLogicalDevicePanels(in),
 			},
 		},
+	}
+}
+
+func logicalDeviceDataElementAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":   types.StringType,
+		"panels": logicalDevicePanelSchema(),
+	}
+}
+
+func logicalDeviceDataPanelsListElementAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"rows":        types.Int64Type,
+		"columns":     types.Int64Type,
+		"port_groups": logicalDeviceDataPanelPortGroupsListSchema(),
 	}
 }
 
 func logicalDevicePanelPortGroupsListElementAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"port_count":      types.Int64Type,
-		"port_speed_gbps": types.Int64Type,
-		"port_roles":      types.SetType{ElemType: types.StringType},
+		"port_count":     types.Int64Type,
+		"port_speed_bps": types.Int64Type,
+		"port_roles":     types.SetType{ElemType: types.StringType},
 	}
 }
 
@@ -208,14 +219,6 @@ func logicalDeviceDataPanelPortGroupsListSchema() types.ListType {
 	}
 }
 
-func logicalDeviceDataPanelsListElementAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"rows":        types.Int64Type,
-		"columns":     types.Int64Type,
-		"port_groups": logicalDeviceDataPanelPortGroupsListSchema(),
-	}
-}
-
 func logicalDeviceDataPanelObjectSchema() types.ObjectType {
 	return types.ObjectType{
 		AttrTypes: logicalDeviceDataPanelsListElementAttrTypes(),
@@ -225,54 +228,5 @@ func logicalDeviceDataPanelObjectSchema() types.ObjectType {
 func logicalDevicePanelSchema() attr.Type {
 	return types.ListType{
 		ElemType: logicalDeviceDataPanelObjectSchema(),
-	}
-}
-
-func logicalDeviceDataAttributeSchema() tfsdk.Attribute {
-	return tfsdk.Attribute{
-		MarkdownDescription: "Logical Device data cloned from Global Catalog into Rack Type objects.",
-		Computed:            true,
-		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			"name": {
-				MarkdownDescription: "Name of the logical device.",
-				Computed:            true,
-				Type:                types.StringType,
-			},
-			"panels": {
-				MarkdownDescription: "Detail connectivity features of the logical device.",
-				Computed:            true,
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"columns": {
-						Computed: true,
-						Type:     types.Int64Type,
-					},
-					"rows": {
-						Computed: true,
-						Type:     types.Int64Type,
-					},
-					"port_groups": {
-						MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-						Computed:            true,
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"port_count": {
-								MarkdownDescription: "Number of ports in the group.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"port_speed_gbps": {
-								MarkdownDescription: "Port speed in Gbps.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"port_roles": {
-								MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-								Computed:            true,
-								Type:                types.SetType{ElemType: types.StringType},
-							},
-						}),
-					},
-				}),
-			},
-		}),
 	}
 }
