@@ -99,60 +99,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Type:                types.StringType,
 					},
 					"panels": panelsSchema(),
-					//"panels": {
-					//	MarkdownDescription: "Details physical layout of interfaces on the device.",
-					//	Computed:            true,
-					//	Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					//		"rows": {
-					//			MarkdownDescription: "Physical vertical dimension of the panel.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"columns": {
-					//			MarkdownDescription: "Physical horizontal dimension of the panel.",
-					//			Computed:            true,
-					//			Type:                types.Int64Type,
-					//		},
-					//		"port_groups": {
-					//			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-					//			Computed:            true,
-					//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					//				"port_count": {
-					//					MarkdownDescription: "Number of ports in the group.",
-					//					Computed:            true,
-					//					Type:                types.Int64Type,
-					//				},
-					//				"port_speed_gbps": {
-					//					MarkdownDescription: "Port speed in Gbps.",
-					//					Computed:            true,
-					//					Type:                types.Int64Type,
-					//				},
-					//				"port_roles": {
-					//					MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-					//					Computed:            true,
-					//					Type:                types.SetType{ElemType: types.StringType},
-					//				},
-					//			}),
-					//		},
-					//	}),
-					//},
-					"tags": tagsSchema(),
-					//"tags": {
-					//	MarkdownDescription: "Details any tags applied to the Leaf Switch",
-					//	Computed:            true,
-					//	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					//		"label": {
-					//			MarkdownDescription: "Tag label (name) field.",
-					//			Computed:            true,
-					//			Type:                types.StringType,
-					//		},
-					//		"description": {
-					//			MarkdownDescription: "Tag description field.",
-					//			Computed:            true,
-					//			Type:                types.StringType,
-					//		},
-					//	}),
-					//},
+					"tags":   tagsSchema(),
 					"mlag_info": {
 						MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
 						Computed:            true,
@@ -220,22 +167,23 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Computed:            true,
 						Type:                types.StringType,
 					},
-					//		"esi_lag_info": {
-					//			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
-					//			Computed:            true,
-					//			Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					//				"l3_link_count": {
-					//					MarkdownDescription: "Count of L3 links to ESI peer.",
-					//					Computed:            true,
-					//					Type:                types.Int64Type,
-					//				},
-					//				"l3_link_speed": {
-					//					MarkdownDescription: "Speed of L3 links to ESI peer.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//			}),
-					//		},
+					"tags": tagsSchema(),
+					"esi_lag_info": {
+						MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
+						Computed:            true,
+						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+							"l3_link_count": {
+								MarkdownDescription: "Count of L3 links to ESI peer.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"l3_link_speed": {
+								MarkdownDescription: "Speed of L3 links to ESI peer.",
+								Computed:            true,
+								Type:                types.StringType,
+							},
+						}),
+					},
 					//		"links": {
 					//			MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
 					//			Computed:            true,
@@ -646,11 +594,11 @@ func accessSwitchAttrTypes() map[string]attr.Type {
 		"display_name":        types.StringType,
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
-		//"tags": types.SetType{
-		//	ElemType: types.ObjectType{
-		//		AttrTypes: tagAttrTypes()}},
-		//"mlag_info": types.ObjectType{
-		//	AttrTypes: mlagInfoAttrTypes()},
+		"tags": types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: tagAttrTypes()}},
+		"esi_lag_info": types.ObjectType{
+			AttrTypes: esiLagInfoAttrTypes()},
 		//"panels": types.ListType{
 		//	ElemType: types.ObjectType{
 		//		AttrTypes: panelAttrTypes(),
@@ -670,6 +618,13 @@ func mlagInfoAttrTypes() map[string]attr.Type {
 	}
 }
 
+func esiLagInfoAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"l3_link_count": types.Int64Type,
+		"l3_link_speed": types.StringType,
+	}
+}
+
 func newLeafSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
@@ -684,7 +639,7 @@ func newAccessSwitchSet(size int) types.Set {
 	}
 }
 
-func newMlagInfoObjFromLeafMlagInfo(in *goapstra.LeafMlagInfo) types.Object {
+func newMlagInfoObjFromMlagInfo(in *goapstra.LeafMlagInfo) types.Object {
 	if in == nil || (in.LeafLeafLinkCount == 0 && in.LeafLeafL3LinkCount == 0) {
 		return types.Object{
 			Null:      true,
@@ -702,6 +657,23 @@ func newMlagInfoObjFromLeafMlagInfo(in *goapstra.LeafMlagInfo) types.Object {
 			"l3_peer_links":                types.Int64{Value: int64(in.LeafLeafL3LinkCount)},
 			"l3_peer_link_speed":           types.String{Value: string(in.LeafLeafL3LinkSpeed)},
 			"l3_peer_link_port_channel_id": types.Int64{Value: int64(in.LeafLeafL3LinkPortChannelId)},
+		},
+	}
+}
+
+func newEsiLagInfoObjFromEsiLagInfo(in *goapstra.EsiLagInfo) types.Object {
+	if in == nil || in.AccessAccessLinkCount == 0 {
+		return types.Object{
+			Null:      true,
+			AttrTypes: esiLagInfoAttrTypes(),
+		}
+	}
+
+	return types.Object{
+		AttrTypes: esiLagInfoAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"l3_link_count": types.Int64{Value: int64(in.AccessAccessLinkCount)},
+			"l3_link_speed": types.String{Value: string(in.AccessAccessLinkSpeed)},
 		},
 	}
 }
@@ -730,7 +702,7 @@ func newLeafSwitchObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwi
 			"spine_link_speed":    spineLinkSpeed,
 			"redundancy_protocol": redundancyProtocol,
 			"tags":                newTagSetFromSliceDesignTagData(rels.Tags),
-			"mlag_info":           newMlagInfoObjFromLeafMlagInfo(rels.MlagInfo),
+			"mlag_info":           newMlagInfoObjFromMlagInfo(rels.MlagInfo),
 			"panels":              newPanelSetFromSliceLogicalDevicePanel(rels.LogicalDevice.Panels),
 		},
 	}
@@ -751,6 +723,8 @@ func newAccessSwitchObjFromRackElementLeafSwitch(reas *goapstra.RackElementAcces
 			"display_name":        types.String{Value: reas.LogicalDevice.DisplayName},
 			"count":               types.Int64{Value: int64(reas.InstanceCount)},
 			"redundancy_protocol": redundancyProtocol,
+			"tags":                newTagSetFromSliceDesignTagData(reas.Tags),
+			"esi_lag_info":        newEsiLagInfoObjFromEsiLagInfo(reas.EsiLagInfo),
 		},
 	}
 }
