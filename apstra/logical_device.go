@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -89,5 +90,45 @@ func newPanelList(size int) types.List {
 		ElemType: types.ObjectType{
 			AttrTypes: panelAttrTypes(),
 		},
+	}
+}
+
+func panelsSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Details physical layout of interfaces on the device.",
+		Computed:            true,
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			"rows": {
+				MarkdownDescription: "Physical vertical dimension of the panel.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"columns": {
+				MarkdownDescription: "Physical horizontal dimension of the panel.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"port_groups": {
+				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+				Computed:            true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"port_count": {
+						MarkdownDescription: "Number of ports in the group.",
+						Computed:            true,
+						Type:                types.Int64Type,
+					},
+					"port_speed_gbps": {
+						MarkdownDescription: "Port speed in Gbps.",
+						Computed:            true,
+						Type:                types.Int64Type,
+					},
+					"port_roles": {
+						MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+						Computed:            true,
+						Type:                types.SetType{ElemType: types.StringType},
+					},
+				}),
+			},
+		}),
 	}
 }

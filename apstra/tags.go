@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -32,4 +33,23 @@ func newTagSetFromSliceDesignTagData(tags []goapstra.DesignTagData) types.Set {
 		}
 	}
 	return result
+}
+
+func tagsSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Details any tags applied to the element.",
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			"label": {
+				MarkdownDescription: "Tag label (name) field.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"description": {
+				MarkdownDescription: "Tag description field.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+		}),
+		Computed: true,
+	}
 }
