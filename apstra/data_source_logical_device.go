@@ -230,7 +230,7 @@ func logicalDevicePanelSchema() attr.Type {
 
 func logicalDeviceDataAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
-		MarkdownDescription: "Logical Device data which can be cloned into rack objects.",
+		MarkdownDescription: "Logical Device data cloned from Global Catalog into Rack Type objects.",
 		Computed:            true,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"name": {
