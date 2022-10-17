@@ -184,111 +184,8 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 							},
 						}),
 					},
-					//		"links": {
-					//			MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
-					//			Computed:            true,
-					//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					//				"name": {
-					//					MarkdownDescription: "Name of this link.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//				"target_switch_name": {
-					//					MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//				"lag_mode": {
-					//					MarkdownDescription: "LAG negotiation mode of the Link.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//				"links_per_switch": {
-					//					MarkdownDescription: "Number of Links to each switch.",
-					//					Computed:            true,
-					//					Type:                types.Int64Type,
-					//				},
-					//				"speed": {
-					//					MarkdownDescription: "Speed of this Link.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//				"switch_peer": {
-					//					MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//				"tags": {
-					//					MarkdownDescription: "Details any tags applied to the Link",
-					//					Computed:            true,
-					//					Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					//						"label": {
-					//							MarkdownDescription: "Tag label (name) field.",
-					//							Computed:            true,
-					//							Type:                types.StringType,
-					//						},
-					//						"description": {
-					//							MarkdownDescription: "Tag description field.",
-					//							Computed:            true,
-					//							Type:                types.StringType,
-					//						},
-					//					}),
-					//				},
-					//			}),
-					//		},
-					//		"panels": {
-					//			MarkdownDescription: "Details physical layout of interfaces on the device.",
-					//			Computed:            true,
-					//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					//				"rows": {
-					//					MarkdownDescription: "Physical vertical dimension of the panel.",
-					//					Computed:            true,
-					//					Type:                types.Int64Type,
-					//				},
-					//				"columns": {
-					//					MarkdownDescription: "Physical horizontal dimension of the panel.",
-					//					Computed:            true,
-					//					Type:                types.Int64Type,
-					//				},
-					//				"port_groups": {
-					//					MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-					//					Computed:            true,
-					//					Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					//						"port_count": {
-					//							MarkdownDescription: "Number of ports in the group.",
-					//							Computed:            true,
-					//							Type:                types.Int64Type,
-					//						},
-					//						"port_speed_gbps": {
-					//							MarkdownDescription: "Port speed in Gbps.",
-					//							Computed:            true,
-					//							Type:                types.Int64Type,
-					//						},
-					//						"port_roles": {
-					//							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-					//							Computed:            true,
-					//							Type:                types.SetType{ElemType: types.StringType},
-					//						},
-					//					}),
-					//				},
-					//			}),
-					//		},
-					//		"tags": {
-					//			MarkdownDescription: "Details any tags applied to the Access Switch",
-					//			Computed:            true,
-					//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					//				"label": {
-					//					MarkdownDescription: "Tag label (name) field.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//				"description": {
-					//					MarkdownDescription: "Tag description field.",
-					//					Computed:            true,
-					//					Type:                types.StringType,
-					//				},
-					//			}),
-					//		},
+					"links":  linksSchema(),
+					"panels": panelsSchema(),
 				}),
 			},
 			//"generic_systems": {
@@ -320,111 +217,9 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 			//			Computed:            true,
 			//			Type:                types.Int64Type,
 			//		},
-			//		"panels": {
-			//			MarkdownDescription: "Details physical layout of interfaces on the device.",
-			//			Computed:            true,
-			//			Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-			//				"rows": {
-			//					MarkdownDescription: "Physical vertical dimension of the panel.",
-			//					Computed:            true,
-			//					Type:                types.Int64Type,
-			//				},
-			//				"columns": {
-			//					MarkdownDescription: "Physical horizontal dimension of the panel.",
-			//					Computed:            true,
-			//					Type:                types.Int64Type,
-			//				},
-			//				"port_groups": {
-			//					MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-			//					Computed:            true,
-			//					Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-			//						"port_count": {
-			//							MarkdownDescription: "Number of ports in the group.",
-			//							Computed:            true,
-			//							Type:                types.Int64Type,
-			//						},
-			//						"port_speed_gbps": {
-			//							MarkdownDescription: "Port speed in Gbps.",
-			//							Computed:            true,
-			//							Type:                types.Int64Type,
-			//						},
-			//						"port_roles": {
-			//							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-			//							Computed:            true,
-			//							Type:                types.SetType{ElemType: types.StringType},
-			//						},
-			//					}),
-			//				},
-			//			}),
-			//		},
-			//		"tags": {
-			//			MarkdownDescription: "Details any tags applied to the Generic System",
-			//			Computed:            true,
-			//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-			//				"label": {
-			//					MarkdownDescription: "Tag label (name) field.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//				"description": {
-			//					MarkdownDescription: "Tag description field.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//			}),
-			//		},
-			//		"links": {
-			//			MarkdownDescription: "Details links from this Generic System to switches in this Rack Type.",
-			//			Computed:            true,
-			//			Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-			//				"name": {
-			//					MarkdownDescription: "Name of this link.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//				"target_switch_name": {
-			//					MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//				"lag_mode": {
-			//					MarkdownDescription: "LAG negotiation mode of the Link.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//				"links_per_switch": {
-			//					MarkdownDescription: "Number of Links to each switch.",
-			//					Computed:            true,
-			//					Type:                types.Int64Type,
-			//				},
-			//				"speed": {
-			//					MarkdownDescription: "Speed of this Link.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//				"switch_peer": {
-			//					MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
-			//					Computed:            true,
-			//					Type:                types.StringType,
-			//				},
-			//				"tags": {
-			//					MarkdownDescription: "Details any tags applied to the Link",
-			//					Computed:            true,
-			//					Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-			//						"label": {
-			//							MarkdownDescription: "Tag label (name) field.",
-			//							Computed:            true,
-			//							Type:                types.StringType,
-			//						},
-			//						"description": {
-			//							MarkdownDescription: "Tag description field.",
-			//							Computed:            true,
-			//							Type:                types.StringType,
-			//						},
-			//					}),
-			//				},
-			//			}),
-			//		},
+			//		"panels": panelsSchema(),
+			//		"tags": tagsSchema(),
+			//		"links": linksSchema(),
 			//	}),
 			//},
 		},
@@ -583,8 +378,7 @@ func leafSwitchAttrTypes() map[string]attr.Type {
 			AttrTypes: mlagInfoAttrTypes()},
 		"panels": types.ListType{
 			ElemType: types.ObjectType{
-				AttrTypes: panelAttrTypes(),
-			}},
+				AttrTypes: panelAttrTypes()}},
 	}
 }
 
@@ -599,10 +393,12 @@ func accessSwitchAttrTypes() map[string]attr.Type {
 				AttrTypes: tagAttrTypes()}},
 		"esi_lag_info": types.ObjectType{
 			AttrTypes: esiLagInfoAttrTypes()},
-		//"panels": types.ListType{
-		//	ElemType: types.ObjectType{
-		//		AttrTypes: panelAttrTypes(),
-		//	}},
+		"panels": types.ListType{
+			ElemType: types.ObjectType{
+				AttrTypes: panelAttrTypes()}},
+		"links": types.SetType{
+			ElemType: types.ObjectType{
+				AttrTypes: linksAttrTypes()}},
 	}
 }
 
@@ -625,6 +421,17 @@ func esiLagInfoAttrTypes() map[string]attr.Type {
 	}
 }
 
+func linksAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":               types.StringType,
+		"target_switch_name": types.StringType,
+		"lag_mode":           types.StringType,
+		"links_per_switch":   types.Int64Type,
+		"speed":              types.StringType,
+		"switch_peer":        types.StringType,
+	}
+}
+
 func newLeafSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
@@ -636,6 +443,14 @@ func newAccessSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: accessSwitchAttrTypes()},
+	}
+}
+
+func newLinkSet(size int) types.Set {
+	return types.Set{
+		Elems: make([]attr.Value, size),
+		ElemType: types.ObjectType{
+			AttrTypes: linksAttrTypes()},
 	}
 }
 
@@ -725,8 +540,34 @@ func newAccessSwitchObjFromRackElementLeafSwitch(reas *goapstra.RackElementAcces
 			"redundancy_protocol": redundancyProtocol,
 			"tags":                newTagSetFromSliceDesignTagData(reas.Tags),
 			"esi_lag_info":        newEsiLagInfoObjFromEsiLagInfo(reas.EsiLagInfo),
+			"panels":              newPanelSetFromSliceLogicalDevicePanel(reas.LogicalDevice.Panels),
+			"links":               newLinkSetFromSliceRackLink(reas.Links),
 		},
 	}
+}
+
+func newLinkSetFromSliceRackLink(links []goapstra.RackLink) types.Set {
+	result := newLinkSet(len(links))
+	for i, link := range links {
+		var switchPeer types.String
+		if link.SwitchPeer == goapstra.RackLinkSwitchPeerNone {
+			switchPeer = types.String{Null: true}
+		} else {
+			switchPeer = types.String{Value: link.SwitchPeer.String()}
+		}
+		result.Elems[i] = types.Object{
+			AttrTypes: linksAttrTypes(),
+			Attrs: map[string]attr.Value{
+				"name":               types.String{Value: link.Label},
+				"target_switch_name": types.String{Value: link.TargetSwitchLabel},
+				"lag_mode":           types.String{Value: link.LagMode.String()},
+				"links_per_switch":   types.Int64{Value: int64(link.LinkPerSwitchCount)},
+				"speed":              types.String{Value: string(link.LinkSpeed)},
+				"switch_peer":        switchPeer,
+			},
+		}
+	}
+	return result
 }
 
 func parseRackTypeLeafSwitches(in []goapstra.RackElementLeafSwitch, _ *diag.Diagnostics) types.Set {
@@ -888,4 +729,59 @@ type dRackType struct {
 	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
 	AccessSwitches           types.Set    `tfsdk:"access_switches"`
 	//GenericSystems           []DSGenericSystem `tfsdk:"generic_systems"`
+}
+
+func linksSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
+		Computed:            true,
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				MarkdownDescription: "Name of this link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"target_switch_name": {
+				MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"lag_mode": {
+				MarkdownDescription: "LAG negotiation mode of the Link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"links_per_switch": {
+				MarkdownDescription: "Number of Links to each switch.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"speed": {
+				MarkdownDescription: "Speed of this Link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"switch_peer": {
+				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			//"tags": {
+			//	MarkdownDescription: "Details any tags applied to the Link",
+			//	Computed:            true,
+			//	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			//		"label": {
+			//			MarkdownDescription: "Tag label (name) field.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//		"description": {
+			//			MarkdownDescription: "Tag description field.",
+			//			Computed:            true,
+			//			Type:                types.StringType,
+			//		},
+			//	}),
+			//},
+		}),
+	}
 }

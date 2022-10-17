@@ -79,8 +79,7 @@ func newPortGroupList(size int) types.List {
 	return types.List{
 		Elems: make([]attr.Value, size),
 		ElemType: types.ObjectType{
-			AttrTypes: portGroupAttrTypes(),
-		},
+			AttrTypes: portGroupAttrTypes()},
 	}
 }
 
@@ -88,8 +87,7 @@ func newPanelList(size int) types.List {
 	return types.List{
 		Elems: make([]attr.Value, size),
 		ElemType: types.ObjectType{
-			AttrTypes: panelAttrTypes(),
-		},
+			AttrTypes: panelAttrTypes()},
 	}
 }
 
