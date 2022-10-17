@@ -59,52 +59,7 @@ func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Computed:            true,
 				Type:                types.StringType,
 			},
-			"data": {
-				MarkdownDescription: "Logical Device data which can be cloned into rack objects.",
-				Computed:            true,
-				Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Name of the logical device.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"panels": {
-						MarkdownDescription: "Detail connectivity features of the logical device.",
-						Computed:            true,
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"columns": {
-								Computed: true,
-								Type:     types.Int64Type,
-							},
-							"rows": {
-								Computed: true,
-								Type:     types.Int64Type,
-							},
-							"port_groups": {
-								MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-								Computed:            true,
-								Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-									"port_count": {
-										MarkdownDescription: "Number of ports in the group.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_speed_gbps": {
-										MarkdownDescription: "Port speed in Gbps.",
-										Computed:            true,
-										Type:                types.Int64Type,
-									},
-									"port_roles": {
-										MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-										Computed:            true,
-										Type:                types.SetType{ElemType: types.StringType},
-									},
-								}),
-							},
-						}),
-					},
-				}),
-			},
+			"data": logicalDeviceDataAttributeSchema(),
 		},
 	}, nil
 }
@@ -270,5 +225,54 @@ func logicalDeviceDataPanelObjectSchema() types.ObjectType {
 func logicalDevicePanelSchema() attr.Type {
 	return types.ListType{
 		ElemType: logicalDeviceDataPanelObjectSchema(),
+	}
+}
+
+func logicalDeviceDataAttributeSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Logical Device data which can be cloned into rack objects.",
+		Computed:            true,
+		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				MarkdownDescription: "Name of the logical device.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"panels": {
+				MarkdownDescription: "Detail connectivity features of the logical device.",
+				Computed:            true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"columns": {
+						Computed: true,
+						Type:     types.Int64Type,
+					},
+					"rows": {
+						Computed: true,
+						Type:     types.Int64Type,
+					},
+					"port_groups": {
+						MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+						Computed:            true,
+						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+							"port_count": {
+								MarkdownDescription: "Number of ports in the group.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"port_speed_gbps": {
+								MarkdownDescription: "Port speed in Gbps.",
+								Computed:            true,
+								Type:                types.Int64Type,
+							},
+							"port_roles": {
+								MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+								Computed:            true,
+								Type:                types.SetType{ElemType: types.StringType},
+							},
+						}),
+					},
+				}),
+			},
+		}),
 	}
 }
