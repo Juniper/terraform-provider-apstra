@@ -226,3 +226,17 @@ func newRga(name goapstra.ResourceGroupName, set *types.Set, diags *diag.Diagnos
 		PoolIds: poolIds,
 	}
 }
+
+func tfSetStringsToSliceStrings(set types.Set) []string {
+	if set.IsNull() {
+		return []string{}
+	}
+	result := make([]string, len(set.Elems))
+	for i, elem := range set.Elems {
+		if elem.IsNull() {
+			continue
+		}
+		result[i] = elem.(types.String).Value
+	}
+	return result
+}

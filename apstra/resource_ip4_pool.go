@@ -18,7 +18,7 @@ type resourceIp4Pool struct {
 }
 
 func (o *resourceIp4Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = "apstra_ip4_pool"
+	resp.TypeName = req.ProviderTypeName + "_ip4_pool"
 }
 
 func (o *resourceIp4Pool) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

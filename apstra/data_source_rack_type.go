@@ -78,11 +78,6 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Computed:            true,
 						Type:                types.StringType,
 					},
-					//"display_name": {
-					//	MarkdownDescription: "Name copied from the Logical Device upon which this Leaf Switch was modeled.",
-					//	Computed:            true,
-					//	Type:                types.StringType,
-					//},
 					"spine_link_count": {
 						MarkdownDescription: "Number of links to each spine switch.",
 						Computed:            true,
@@ -140,7 +135,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						}),
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tags":           tagsAttributeSchema(),
+					"tags":           tagsDataAttributeSchema(),
 				}),
 			},
 			"access_switches": {
@@ -179,7 +174,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						}),
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tags":           tagsAttributeSchema(),
+					"tags":           tagsDataAttributeSchema(),
 					"links":          linksAttributeSchema(),
 				}),
 			},
@@ -208,7 +203,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Type:                types.Int64Type,
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tags":           tagsAttributeSchema(),
+					"tags":           tagsDataAttributeSchema(),
 					"links":          linksAttributeSchema(),
 				}),
 			},
@@ -275,7 +270,8 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	newState := parseRackType(rt, &resp.Diagnostics)
+	newState := &dRackType{}
+	newState.parseApiResponse(rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -341,20 +337,7 @@ func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics
 	}
 }
 
-func parseRackType(rt *goapstra.RackType, diags *diag.Diagnostics) *dRackType {
-	result := &dRackType{
-		Id:                       types.String{Value: string(rt.Id)},
-		Name:                     types.String{Value: rt.Data.DisplayName},
-		Description:              types.String{Value: rt.Data.Description},
-		FabricConnectivityDesign: types.String{Value: rt.Data.FabricConnectivityDesign.String()},
-		LeafSwitches:             parseRackTypeLeafSwitches(rt.Data.LeafSwitches, diags),
-		AccessSwitches:           parseRackTypeAccessSwitches(rt.Data.AccessSwitches, diags),
-		GenericSystems:           parseRackTypeGenericSystems(rt.Data.GenericSystems, diags),
-	}
-	return result
-}
-
-func leafSwitchAttrTypes() map[string]attr.Type {
+func dLeafSwitchAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
 		"spine_link_count":    types.Int64Type,
@@ -370,7 +353,7 @@ func leafSwitchAttrTypes() map[string]attr.Type {
 	}
 }
 
-func accessSwitchAttrTypes() map[string]attr.Type {
+func dAccessSwitchAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
 		"count":               types.Int64Type,
@@ -388,7 +371,7 @@ func accessSwitchAttrTypes() map[string]attr.Type {
 	}
 }
 
-func genericSystemAttrTypes() map[string]attr.Type {
+func dGenericSystemAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
 		"count":               types.Int64Type,
@@ -438,21 +421,21 @@ func linksAttrTypes() map[string]attr.Type {
 func newLeafSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: leafSwitchAttrTypes()},
+		ElemType: types.ObjectType{AttrTypes: dLeafSwitchAttrTypes()},
 	}
 }
 
 func newAccessSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: accessSwitchAttrTypes()},
+		ElemType: types.ObjectType{AttrTypes: dAccessSwitchAttrTypes()},
 	}
 }
 
 func newGenericSystemSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: genericSystemAttrTypes()},
+		ElemType: types.ObjectType{AttrTypes: dGenericSystemAttrTypes()},
 	}
 }
 
@@ -503,72 +486,6 @@ func newEsiLagInfoObjFromEsiLagInfo(in *goapstra.EsiLagInfo) types.Object {
 	}
 }
 
-func newLeafSwitchObjFromRackElementLeafSwitch(rels *goapstra.RackElementLeafSwitch) types.Object {
-	var spineLinkSpeed types.String
-	if rels.LinkPerSpineCount == 0 || rels.LinkPerSpineSpeed == "" {
-		spineLinkSpeed = types.String{Null: true}
-	} else {
-		spineLinkSpeed = types.String{Value: string(rels.LinkPerSpineSpeed)}
-	}
-
-	var redundancyProtocol types.String
-	if rels.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
-		redundancyProtocol = types.String{Null: true}
-	} else {
-		redundancyProtocol = types.String{Value: rels.RedundancyProtocol.String()}
-	}
-
-	return types.Object{
-		AttrTypes: leafSwitchAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: rels.Label},
-			"spine_link_count":    types.Int64{Value: int64(rels.LinkPerSpineCount)},
-			"spine_link_speed":    spineLinkSpeed,
-			"redundancy_protocol": redundancyProtocol,
-			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(rels.LogicalDevice),
-			"mlag_info":           sdkMlagInfoToMlagInfoObj(rels.MlagInfo),
-			"tags":                sdkTagsDataToTagDataObj(rels.Tags),
-		},
-	}
-}
-
-func newAccessSwitchObjFromRackElementAccessSwitch(reas *goapstra.RackElementAccessSwitch) types.Object {
-	var redundancyProtocol types.String
-	if reas.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
-		redundancyProtocol = types.String{Null: true}
-	} else {
-		redundancyProtocol = types.String{Value: reas.RedundancyProtocol.String()}
-	}
-
-	return types.Object{
-		AttrTypes: accessSwitchAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: reas.Label},
-			"count":               types.Int64{Value: int64(reas.InstanceCount)},
-			"redundancy_protocol": redundancyProtocol,
-			"esi_lag_info":        newEsiLagInfoObjFromEsiLagInfo(reas.EsiLagInfo),
-			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(reas.LogicalDevice),
-			"tags":                sdkTagsDataToTagDataObj(reas.Tags),
-			"links":               newLinkSetFromSliceRackLink(reas.Links),
-		},
-	}
-}
-
-func newGenericSystemObjFromRackElementAccessSwitch(regs *goapstra.RackElementGenericSystem) types.Object {
-	return types.Object{
-		AttrTypes: genericSystemAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: regs.Label},
-			"count":               types.Int64{Value: int64(regs.Count)},
-			"port_channel_id_min": types.Int64{Value: int64(regs.PortChannelIdMin)},
-			"port_channel_id_max": types.Int64{Value: int64(regs.PortChannelIdMax)},
-			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(regs.LogicalDevice),
-			"tags":                sdkTagsDataToTagDataObj(regs.Tags),
-			"links":               newLinkSetFromSliceRackLink(regs.Links),
-		},
-	}
-}
-
 func newLinkSetFromSliceRackLink(links []goapstra.RackLink) types.Set {
 	result := newLinkSet(len(links))
 	for i, link := range links {
@@ -593,31 +510,6 @@ func newLinkSetFromSliceRackLink(links []goapstra.RackLink) types.Set {
 	return result
 }
 
-func parseRackTypeLeafSwitches(in []goapstra.RackElementLeafSwitch, _ *diag.Diagnostics) types.Set {
-	result := newLeafSwitchSet(len(in))
-	for i, ls := range in {
-		result.Elems[i] = newLeafSwitchObjFromRackElementLeafSwitch(&ls)
-	}
-	return result
-}
-
-func parseRackTypeAccessSwitches(in []goapstra.RackElementAccessSwitch, _ *diag.Diagnostics) types.Set {
-	result := newAccessSwitchSet(len(in))
-	for i, as := range in {
-		result.Elems[i] = newAccessSwitchObjFromRackElementAccessSwitch(&as)
-	}
-	return result
-
-}
-
-func parseRackTypeGenericSystems(in []goapstra.RackElementGenericSystem, _ *diag.Diagnostics) types.Set {
-	result := newGenericSystemSet(len(in))
-	for i, gs := range in {
-		result.Elems[i] = newGenericSystemObjFromRackElementAccessSwitch(&gs)
-	}
-	return result
-}
-
 type dRackType struct {
 	Id                       types.String `tfsdk:"id"`
 	Name                     types.String `tfsdk:"name"`
@@ -626,6 +518,103 @@ type dRackType struct {
 	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
 	AccessSwitches           types.Set    `tfsdk:"access_switches"`
 	GenericSystems           types.Set    `tfsdk:"generic_systems"`
+}
+
+func (o *dRackType) parseApiResponse(rt *goapstra.RackType, diags *diag.Diagnostics) {
+	o.Id = types.String{Value: string(rt.Id)}
+	o.Name = types.String{Value: rt.Data.DisplayName}
+	o.Description = types.String{Value: rt.Data.Description}
+	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
+	o.parseApiResponseLeafSwitches(rt.Data.LeafSwitches, diags)
+	o.parseApiResponseAccessSwitches(rt.Data.AccessSwitches, diags)
+	o.parseApiResponseGenericSystems(rt.Data.GenericSystems, diags)
+}
+
+func (o *dRackType) parseApiResponseLeafSwitches(in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
+	o.LeafSwitches = newLeafSwitchSet(len(in))
+	for i, ls := range in {
+		o.parseApiResponseLeafSwitch(&ls, i, diags)
+	}
+}
+
+func (o *dRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
+	var spineLinkSpeed types.String
+	if in.LinkPerSpineCount == 0 || in.LinkPerSpineSpeed == "" {
+		spineLinkSpeed = types.String{Null: true}
+	} else {
+		spineLinkSpeed = types.String{Value: string(in.LinkPerSpineSpeed)}
+	}
+
+	var redundancyProtocol types.String
+	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
+		redundancyProtocol = types.String{Null: true}
+	} else {
+		redundancyProtocol = types.String{Value: in.RedundancyProtocol.String()}
+	}
+
+	o.LeafSwitches.Elems[idx] = types.Object{
+		AttrTypes: dLeafSwitchAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"name":                types.String{Value: in.Label},
+			"spine_link_count":    types.Int64{Value: int64(in.LinkPerSpineCount)},
+			"spine_link_speed":    spineLinkSpeed,
+			"redundancy_protocol": redundancyProtocol,
+			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(in.LogicalDevice),
+			"mlag_info":           sdkMlagInfoToMlagInfoObj(in.MlagInfo),
+			"tags":                sdkTagsDataToTagDataObj(in.Tags),
+		},
+	}
+}
+
+func (o *dRackType) parseApiResponseAccessSwitches(in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+	o.AccessSwitches = newAccessSwitchSet(len(in))
+	for i, as := range in {
+		o.parseApiResponseAccessSwitch(&as, i, diags)
+	}
+}
+
+func (o *dRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessSwitch, idx int, diags *diag.Diagnostics) {
+	var redundancyProtocol types.String
+	if in.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
+		redundancyProtocol = types.String{Null: true}
+	} else {
+		redundancyProtocol = types.String{Value: in.RedundancyProtocol.String()}
+	}
+
+	o.AccessSwitches.Elems[idx] = types.Object{
+		AttrTypes: dAccessSwitchAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"name":                types.String{Value: in.Label},
+			"count":               types.Int64{Value: int64(in.InstanceCount)},
+			"redundancy_protocol": redundancyProtocol,
+			"esi_lag_info":        newEsiLagInfoObjFromEsiLagInfo(in.EsiLagInfo),
+			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(in.LogicalDevice),
+			"tags":                sdkTagsDataToTagDataObj(in.Tags),
+			"links":               newLinkSetFromSliceRackLink(in.Links),
+		},
+	}
+}
+
+func (o *dRackType) parseApiResponseGenericSystems(in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+	o.GenericSystems = newGenericSystemSet(len(in))
+	for i, gs := range in {
+		o.parseApiResponseGenericSystem(&gs, i, diags)
+	}
+}
+
+func (o *dRackType) parseApiResponseGenericSystem(in *goapstra.RackElementGenericSystem, idx int, diagnostics *diag.Diagnostics) {
+	o.GenericSystems.Elems[idx] = types.Object{
+		AttrTypes: dGenericSystemAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"name":                types.String{Value: in.Label},
+			"count":               types.Int64{Value: int64(in.Count)},
+			"port_channel_id_min": types.Int64{Value: int64(in.PortChannelIdMin)},
+			"port_channel_id_max": types.Int64{Value: int64(in.PortChannelIdMax)},
+			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(in.LogicalDevice),
+			"tags":                sdkTagsDataToTagDataObj(in.Tags),
+			"links":               newLinkSetFromSliceRackLink(in.Links),
+		},
+	}
 }
 
 func linksAttributeSchema() tfsdk.Attribute {

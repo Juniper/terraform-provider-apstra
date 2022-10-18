@@ -14,7 +14,14 @@ func tagAttrTypes() map[string]attr.Type {
 	}
 }
 
-func newTagSet(size int) types.Set {
+func newTagLabelSet(size int) types.Set {
+	return types.Set{
+		Elems:    make([]attr.Value, size),
+		ElemType: types.StringType,
+	}
+}
+
+func newTagDataSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: tagAttrTypes()},
@@ -22,7 +29,7 @@ func newTagSet(size int) types.Set {
 }
 
 func sdkTagsDataToTagDataObj(tags []goapstra.DesignTagData) types.Set {
-	result := newTagSet(len(tags))
+	result := newTagDataSet(len(tags))
 	for i, tag := range tags {
 		result.Elems[i] = types.Object{
 			AttrTypes: tagAttrTypes(),
@@ -35,7 +42,15 @@ func sdkTagsDataToTagDataObj(tags []goapstra.DesignTagData) types.Set {
 	return result
 }
 
-func tagsAttributeSchema() tfsdk.Attribute {
+func tagLabelsAttributeSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Labels of tags from the global catalog to be applied to this element upon creation.",
+		Optional:            true,
+		Type:                types.SetType{ElemType: types.StringType},
+	}
+}
+
+func tagsDataAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details any tags applied to the element.",
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
@@ -52,4 +67,12 @@ func tagsAttributeSchema() tfsdk.Attribute {
 		}),
 		Computed: true,
 	}
+}
+
+func sliceTagDataToSetString(in []goapstra.DesignTagData) types.Set {
+	result := newTagLabelSet(len(in))
+	for i, tag := range in {
+		result.Elems[i] = types.String{Value: tag.Label}
+	}
+	return result
 }
