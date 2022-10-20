@@ -634,55 +634,18 @@ func (o *rRackType) forceValues(diags *diag.Diagnostics) {
 	}
 
 	// force leaf switch values as needed
-	o.forceLeafSwitchesValues(diags)
+	o.forceValuesLeafSwitches(diags)
+	//o.forceValuesAccessSwitches(diags)
 }
 
-func (o *rRackType) forceLeafSwitchesValues(diags *diag.Diagnostics) {
+func (o *rRackType) forceValuesLeafSwitches(diags *diag.Diagnostics) {
 	for i := range o.LeafSwitches.Elems {
-		o.forceLeafSwitchValues(i, diags)
+		o.forceValuesLeafSwitch(i, diags)
 	}
 }
 
-func (o *rRackType) forceLeafSwitchValues(idx int, _ *diag.Diagnostics) {
-	leafSwitchObj := o.LeafSwitches.Elems[idx].(types.Object)
-	//tagNames := leafSwitchObj.Attrs["tag_names"].(types.Set)
-	//tagData := leafSwitchObj.Attrs["tag_data"].(types.Set)
-
-	// handle "tag_names" omitted from config
-	if leafSwitchObj.Attrs["tag_names"].IsUnknown() {
-		o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_names"] = types.Set{
-			ElemType: types.StringType,
-			Null:     true,
-		}
-		o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_data"] = types.Set{
-			Null:     true,
-			ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
-		}
-	}
-
-	////handle empty "tag_data" from API
-	//if !tagData.Unknown && !tagData.Null && len(tagData.Elems) == 0 {
-	//	o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_data"] = types.Set{
-	//		Null: true,
-	//		ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
-	//	}
-	//}
-
-	//// handle always-empty "tag_names" from API
-	//if o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_data"].IsNull() {
-	//	o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_names"] = types.Set{
-	//		ElemType: types.StringType,
-	//		Null:     true,
-	//	}
-	//} else {
-	//	o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_names"] = types.Set{
-	//		ElemType: types.StringType,
-	//		Elems:
-	//	}
-	//}
-
-	//d, _ := json.Marshal(leafSwitchObj.Attrs["tag_names"])
-	//diags.AddWarning("tag_names", string(d))
+func (o *rRackType) forceValuesLeafSwitch(idx int, _ *diag.Diagnostics) {
+	forceValuesTagNamesAndTagDataOnResourceRackElement(o.LeafSwitches.Elems[idx])
 
 	switch o.FabricConnectivityDesign.Value {
 	case goapstra.FabricConnectivityDesignL3Clos.String():
@@ -691,6 +654,41 @@ func (o *rRackType) forceLeafSwitchValues(idx int, _ *diag.Diagnostics) {
 		// spine link info must be null with collapsed fabric
 		o.LeafSwitches.Elems[idx].(types.Object).Attrs["spine_link_count"] = types.Int64{Null: true}
 		o.LeafSwitches.Elems[idx].(types.Object).Attrs["spine_link_speed"] = types.String{Null: true}
+	}
+}
+
+//func (o *rRackType) forceValuesAccessSwitches(diags *diag.Diagnostics) {
+//	for i := range o.AccessSwitches.Elems {
+//		o.forceValuesAccessSwitch(i, diags)
+//	}
+//}
+//
+//func (o *rRackType) forceValuesAccessSwitch(idx int, _ *diag.Diagnostics) {
+//	accessSwitchObj := o.AccessSwitches.Elems[idx].(types.Object)
+//
+//	// handle "tag_names" omitted from config
+//	if accessSwitchObj.Attrs["tag_names"].IsUnknown() {
+//		o.AccessSwitches.Elems[idx].(types.Object).Attrs["tag_names"] = types.Set{
+//			ElemType: types.StringType,
+//			Null:     true,
+//		}
+//		o.AccessSwitches.Elems[idx].(types.Object).Attrs["tag_data"] = types.Set{
+//			Null:     true,
+//			ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
+//		}
+//	}
+//}
+
+func forceValuesTagNamesAndTagDataOnResourceRackElement(in attr.Value) {
+	if in.(types.Object).Attrs["tag_names"].IsUnknown() {
+		in.(types.Object).Attrs["tag_names"] = types.Set{
+			ElemType: types.StringType,
+			Null:     true,
+		}
+		in.(types.Object).Attrs["tag_data"] = types.Set{
+			Null:     true,
+			ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
+		}
 	}
 }
 
