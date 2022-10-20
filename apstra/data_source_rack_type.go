@@ -418,21 +418,21 @@ func linksAttrTypes() map[string]attr.Type {
 	}
 }
 
-func newLeafSwitchSet(size int) types.Set {
+func newDLeafSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: dLeafSwitchAttrTypes()},
 	}
 }
 
-func newAccessSwitchSet(size int) types.Set {
+func newDAccessSwitchSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: dAccessSwitchAttrTypes()},
 	}
 }
 
-func newGenericSystemSet(size int) types.Set {
+func newDGenericSystemSet(size int) types.Set {
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: dGenericSystemAttrTypes()},
@@ -564,7 +564,7 @@ func (o *dRackType) parseApiResponse(rt *goapstra.RackType, diags *diag.Diagnost
 }
 
 func (o *dRackType) parseApiResponseLeafSwitches(in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
-	o.LeafSwitches = newLeafSwitchSet(len(in))
+	o.LeafSwitches = newDLeafSwitchSet(len(in))
 	for i, ls := range in {
 		o.parseApiResponseLeafSwitch(&ls, i, diags)
 	}
@@ -586,7 +586,7 @@ func (o *dRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 }
 
 func (o *dRackType) parseApiResponseAccessSwitches(in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-	o.AccessSwitches = newAccessSwitchSet(len(in))
+	o.AccessSwitches = newDAccessSwitchSet(len(in))
 	for i, as := range in {
 		o.parseApiResponseAccessSwitch(&as, i, diags)
 	}
@@ -615,7 +615,7 @@ func (o *dRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessS
 }
 
 func (o *dRackType) parseApiResponseGenericSystems(in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
-	o.GenericSystems = newGenericSystemSet(len(in))
+	o.GenericSystems = newDGenericSystemSet(len(in))
 	for i, gs := range in {
 		o.parseApiResponseGenericSystem(&gs, i, diags)
 	}

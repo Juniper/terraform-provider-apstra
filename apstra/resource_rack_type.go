@@ -792,9 +792,32 @@ func rLeafSwitchAttrTypes() map[string]attr.Type {
 	}
 }
 
-func newLeafSwitchList(size int) types.List {
+func rAccessSwitchAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name": types.StringType,
+		//"redundancy_protocol": types.StringType,
+		"logical_device_id": types.StringType,
+		//"logical_device": types.ObjectType{
+		//	AttrTypes: logicalDeviceDataElementAttrTypes()},
+		//"tag_names": types.SetType{ElemType: types.StringType},
+		//"tag_data": types.SetType{
+		//	ElemType: types.ObjectType{
+		//		AttrTypes: tagDataAttrTypes()}},
+		//"mlag_info": types.ObjectType{
+		//	AttrTypes: mlagInfoAttrTypes()},
+	}
+}
+
+func newRLeafSwitchList(size int) types.List {
 	return types.List{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: rLeafSwitchAttrTypes()},
+	}
+}
+
+func newRAccessSwitchList(size int) types.List {
+	return types.List{
+		Elems:    make([]attr.Value, size),
+		ElemType: types.ObjectType{AttrTypes: rAccessSwitchAttrTypes()},
 	}
 }
