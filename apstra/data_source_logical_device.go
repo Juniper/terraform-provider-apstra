@@ -123,7 +123,7 @@ func newLogicalDeviceFromApi(in *goapstra.LogicalDevice) *dLogicalDevice {
 	return &dLogicalDevice{
 		Id:   types.String{Value: string(in.Id)},
 		Name: types.String{Value: in.Data.DisplayName},
-		Data: sdkLogicalDeviceDataToLogicalDeviceDataObj(in.Data),
+		Data: parseApiLogicalDeviceToTypesObject(in.Data),
 	}
 }
 
@@ -171,7 +171,7 @@ func newLogicalDevicePanels(in *goapstra.LogicalDeviceData) []attr.Value {
 	return out
 }
 
-func sdkLogicalDeviceDataToLogicalDeviceDataObj(in *goapstra.LogicalDeviceData) types.Object {
+func parseApiLogicalDeviceToTypesObject(in *goapstra.LogicalDeviceData) types.Object {
 	return types.Object{
 		AttrTypes: logicalDeviceDataElementAttrTypes(),
 		Attrs: map[string]attr.Value{

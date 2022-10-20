@@ -102,7 +102,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 								Computed:            true,
 								Type:                types.Int64Type,
 							},
-							"peer_links": {
+							"peer_link_count": {
 								MarkdownDescription: "Number of links between MLAG devices.",
 								Computed:            true,
 								Type:                types.Int64Type,
@@ -117,7 +117,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 								Computed:            true,
 								Type:                types.Int64Type,
 							},
-							"l3_peer_links": {
+							"l3_peer_link_count": {
 								MarkdownDescription: "Number of L3 links between MLAG devices.",
 								Computed:            true,
 								Type:                types.Int64Type,
@@ -349,7 +349,7 @@ func dLeafSwitchAttrTypes() map[string]attr.Type {
 			AttrTypes: logicalDeviceDataElementAttrTypes()},
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
-				AttrTypes: tagAttrTypes()}},
+				AttrTypes: tagDataAttrTypes()}},
 	}
 }
 
@@ -364,7 +364,7 @@ func dAccessSwitchAttrTypes() map[string]attr.Type {
 			AttrTypes: logicalDeviceDataElementAttrTypes()},
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
-				AttrTypes: tagAttrTypes()}},
+				AttrTypes: tagDataAttrTypes()}},
 		"links": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: linksAttrTypes()}},
@@ -381,7 +381,7 @@ func dGenericSystemAttrTypes() map[string]attr.Type {
 			AttrTypes: logicalDeviceDataElementAttrTypes()},
 		"tags": types.SetType{
 			ElemType: types.ObjectType{
-				AttrTypes: tagAttrTypes()}},
+				AttrTypes: tagDataAttrTypes()}},
 		"links": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: linksAttrTypes()}},
@@ -391,10 +391,10 @@ func dGenericSystemAttrTypes() map[string]attr.Type {
 func mlagInfoAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"mlag_keepalive_vlan":          types.Int64Type,
-		"peer_links":                   types.Int64Type,
+		"peer_link_count":              types.Int64Type,
 		"peer_link_speed":              types.StringType,
 		"peer_link_port_channel_id":    types.Int64Type,
-		"l3_peer_links":                types.Int64Type,
+		"l3_peer_link_count":           types.Int64Type,
 		"l3_peer_link_speed":           types.StringType,
 		"l3_peer_link_port_channel_id": types.Int64Type,
 	}
@@ -447,7 +447,28 @@ func newLinkSet(size int) types.Set {
 	}
 }
 
-func sdkMlagInfoToMlagInfoObj(in *goapstra.LeafMlagInfo) types.Object {
+func parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in *goapstra.RackElementLeafSwitch) types.Int64 {
+	if in.LinkPerSpineCount == 0 {
+		return types.Int64{Null: true}
+	}
+	return types.Int64{Value: int64(in.LinkPerSpineCount)}
+}
+
+func parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in *goapstra.RackElementLeafSwitch) types.String {
+	if in.LinkPerSpineCount == 0 {
+		return types.String{Null: true}
+	}
+	return types.String{Value: string(in.LinkPerSpineSpeed)}
+}
+
+func parseApiLeafRedundancyProtocolToTypesString(in *goapstra.RackElementLeafSwitch) types.String {
+	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
+		return types.String{Null: true}
+	}
+	return types.String{Value: in.RedundancyProtocol.String()}
+}
+
+func parseApiLeafMlagInfoToTypesObject(in *goapstra.LeafMlagInfo) types.Object {
 	if in == nil || (in.LeafLeafLinkCount == 0 && in.LeafLeafL3LinkCount == 0) {
 		return types.Object{
 			Null:      true,
@@ -455,21 +476,33 @@ func sdkMlagInfoToMlagInfoObj(in *goapstra.LeafMlagInfo) types.Object {
 		}
 	}
 
+	var l3PeerLinkCount, l3PeerLinkPortChannelId types.Int64
+	var l3PeerLinkSPeed types.String
+	if in.LeafLeafL3LinkCount == 0 {
+		l3PeerLinkCount.Null = true
+		l3PeerLinkSPeed.Null = true
+		l3PeerLinkPortChannelId.Null = true
+	} else {
+		l3PeerLinkCount.Value = int64(in.LeafLeafL3LinkCount)
+		l3PeerLinkSPeed.Value = string(in.LeafLeafL3LinkSpeed)
+		l3PeerLinkPortChannelId.Value = int64(in.LeafLeafL3LinkPortChannelId)
+	}
+
 	return types.Object{
 		AttrTypes: mlagInfoAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"mlag_keepalive_vlan":          types.Int64{Value: int64(in.MlagVlanId)},
-			"peer_links":                   types.Int64{Value: int64(in.LeafLeafLinkCount)},
+			"peer_link_count":              types.Int64{Value: int64(in.LeafLeafLinkCount)},
 			"peer_link_speed":              types.String{Value: string(in.LeafLeafLinkSpeed)},
 			"peer_link_port_channel_id":    types.Int64{Value: int64(in.LeafLeafLinkPortChannelId)},
-			"l3_peer_links":                types.Int64{Value: int64(in.LeafLeafL3LinkCount)},
-			"l3_peer_link_speed":           types.String{Value: string(in.LeafLeafL3LinkSpeed)},
-			"l3_peer_link_port_channel_id": types.Int64{Value: int64(in.LeafLeafL3LinkPortChannelId)},
+			"l3_peer_link_count":           l3PeerLinkCount,
+			"l3_peer_link_speed":           l3PeerLinkSPeed,
+			"l3_peer_link_port_channel_id": l3PeerLinkPortChannelId,
 		},
 	}
 }
 
-func newEsiLagInfoObjFromEsiLagInfo(in *goapstra.EsiLagInfo) types.Object {
+func parseApiAccessEsiLagInfoToTypesObject(in *goapstra.EsiLagInfo) types.Object {
 	if in == nil || in.AccessAccessLinkCount == 0 {
 		return types.Object{
 			Null:      true,
@@ -486,7 +519,7 @@ func newEsiLagInfoObjFromEsiLagInfo(in *goapstra.EsiLagInfo) types.Object {
 	}
 }
 
-func newLinkSetFromSliceRackLink(links []goapstra.RackLink) types.Set {
+func parseApiSliceRackLinkToTypesSetObject(links []goapstra.RackLink) types.Set {
 	result := newLinkSet(len(links))
 	for i, link := range links {
 		var switchPeer types.String
@@ -538,30 +571,16 @@ func (o *dRackType) parseApiResponseLeafSwitches(in []goapstra.RackElementLeafSw
 }
 
 func (o *dRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
-	var spineLinkSpeed types.String
-	if in.LinkPerSpineCount == 0 || in.LinkPerSpineSpeed == "" {
-		spineLinkSpeed = types.String{Null: true}
-	} else {
-		spineLinkSpeed = types.String{Value: string(in.LinkPerSpineSpeed)}
-	}
-
-	var redundancyProtocol types.String
-	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
-		redundancyProtocol = types.String{Null: true}
-	} else {
-		redundancyProtocol = types.String{Value: in.RedundancyProtocol.String()}
-	}
-
 	o.LeafSwitches.Elems[idx] = types.Object{
 		AttrTypes: dLeafSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"name":                types.String{Value: in.Label},
-			"spine_link_count":    types.Int64{Value: int64(in.LinkPerSpineCount)},
-			"spine_link_speed":    spineLinkSpeed,
-			"redundancy_protocol": redundancyProtocol,
-			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(in.LogicalDevice),
-			"mlag_info":           sdkMlagInfoToMlagInfoObj(in.MlagInfo),
-			"tags":                sdkTagsDataToTagDataObj(in.Tags),
+			"spine_link_count":    parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in),
+			"spine_link_speed":    parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in),
+			"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
+			"tags":                parseApiSliceTagDataToTypesSetObject(in.Tags),
 		},
 	}
 }
@@ -587,10 +606,10 @@ func (o *dRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessS
 			"name":                types.String{Value: in.Label},
 			"count":               types.Int64{Value: int64(in.InstanceCount)},
 			"redundancy_protocol": redundancyProtocol,
-			"esi_lag_info":        newEsiLagInfoObjFromEsiLagInfo(in.EsiLagInfo),
-			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(in.LogicalDevice),
-			"tags":                sdkTagsDataToTagDataObj(in.Tags),
-			"links":               newLinkSetFromSliceRackLink(in.Links),
+			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"tags":                parseApiSliceTagDataToTypesSetObject(in.Tags),
+			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
 		},
 	}
 }
@@ -610,9 +629,9 @@ func (o *dRackType) parseApiResponseGenericSystem(in *goapstra.RackElementGeneri
 			"count":               types.Int64{Value: int64(in.Count)},
 			"port_channel_id_min": types.Int64{Value: int64(in.PortChannelIdMin)},
 			"port_channel_id_max": types.Int64{Value: int64(in.PortChannelIdMax)},
-			"logical_device":      sdkLogicalDeviceDataToLogicalDeviceDataObj(in.LogicalDevice),
-			"tags":                sdkTagsDataToTagDataObj(in.Tags),
-			"links":               newLinkSetFromSliceRackLink(in.Links),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"tags":                parseApiSliceTagDataToTypesSetObject(in.Tags),
+			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
 		},
 	}
 }

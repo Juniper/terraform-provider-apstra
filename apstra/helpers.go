@@ -227,7 +227,7 @@ func newRga(name goapstra.ResourceGroupName, set *types.Set, diags *diag.Diagnos
 	}
 }
 
-func tfSetStringsToSliceStrings(set types.Set) []string {
+func renderSliceStringsFromSetStrings(set types.Set) []string {
 	if set.IsNull() {
 		return []string{}
 	}
