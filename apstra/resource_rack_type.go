@@ -283,10 +283,10 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 
 	newState.copyWriteOnlyElements(&state, &resp.Diagnostics)
 
-	oldJson, _ := json.Marshal(&state)
-	newJson, _ := json.Marshal(&newState)
-	resp.Diagnostics.AddWarning("old", string(oldJson))
-	resp.Diagnostics.AddWarning("new", string(newJson))
+	//oldJson, _ := json.Marshal(&state)
+	//newJson, _ := json.Marshal(&newState)
+	//resp.Diagnostics.AddWarning("old", string(oldJson))
+	//resp.Diagnostics.AddWarning("new", string(newJson))
 
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
@@ -298,7 +298,7 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// Retrieve values from state
+	// Retrieve state
 	var state rRackType
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
@@ -306,19 +306,42 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.Value))
-	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError("error retrieving Rack Type", err.Error())
+	// Retrieve plan
+	var plan rRackType
+	diags = req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_ = rt
-	panic("implement me")
+	// force values as needed
+	plan.forceValues(&resp.Diagnostics)
+	if diags.HasError() {
+		return
+	}
+
+	// populate rack elements (leaf/access/generic) from global catalog
+	plan.populateDataFromGlobalCatalog(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Prepare a goapstra.RackTypeRequest
+	rtReq := plan.goapstraRequest(&resp.Diagnostics)
+	if diags.HasError() {
+		return
+	}
+
+	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.Value), rtReq)
+	if err != nil {
+		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
+	}
+
+	p, _ := json.Marshal(&plan)
+	diags.AddWarning("plan", string(p))
+
+	diags = resp.State.Set(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -569,19 +592,19 @@ func (o *rRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 	}
 }
 
-func (o *rRackType) copyWriteOnlyElements(orig *rRackType, diags *diag.Diagnostics) {
-	o.copyWriteOnlyElementsLeafSwitches(orig, diags)
+func (o *rRackType) copyWriteOnlyElements(src *rRackType, diags *diag.Diagnostics) {
+	o.copyWriteOnlyElementsLeafSwitches(src, diags)
 }
 
-func (o *rRackType) copyWriteOnlyElementsLeafSwitches(orig *rRackType, diags *diag.Diagnostics) {
-	for i, ls := range orig.LeafSwitches.Elems {
-		o.copyWriteOnlyElementsLeafSwitch(ls.(types.Object), i, diags)
+func (o *rRackType) copyWriteOnlyElementsLeafSwitches(src *rRackType, diags *diag.Diagnostics) {
+	for i, srcLeafSwitch := range src.LeafSwitches.Elems {
+		o.copyWriteOnlyElementsLeafSwitch(srcLeafSwitch.(types.Object), i, diags)
 	}
 }
 
-func (o *rRackType) copyWriteOnlyElementsLeafSwitch(orig types.Object, idx int, _ *diag.Diagnostics) {
-	logicalDeviceId := orig.Attrs["logical_device_id"].(types.String).Value
-	o.LeafSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"] = types.String{Value: logicalDeviceId}
+func (o *rRackType) copyWriteOnlyElementsLeafSwitch(src types.Object, idx int, _ *diag.Diagnostics) {
+	logicalDeviceId := src.Attrs["logical_device_id"].(types.String)
+	o.LeafSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"] = logicalDeviceId
 }
 
 func getLogicalDeviceObj(ctx context.Context, client *goapstra.Client, id string, errPath path.Path, diags *diag.Diagnostics) types.Object {
