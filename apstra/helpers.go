@@ -227,12 +227,13 @@ func newRga(name goapstra.ResourceGroupName, set *types.Set, diags *diag.Diagnos
 	}
 }
 
-func renderSliceStringsFromSetStrings(set types.Set) []string {
-	if set.IsNull() {
+func renderTagsToSliceStringsFromRackElement(in types.Object) []string {
+	tagSet := in.Attrs["tag_names"].(types.Set)
+	if tagSet.IsNull() {
 		return []string{}
 	}
-	result := make([]string, len(set.Elems))
-	for i, elem := range set.Elems {
+	result := make([]string, len(tagSet.Elems))
+	for i, elem := range tagSet.Elems {
 		if elem.IsNull() {
 			continue
 		}

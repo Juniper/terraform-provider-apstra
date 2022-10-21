@@ -156,7 +156,7 @@ func newLogicalDevicePanel(in goapstra.LogicalDevicePanel) types.Object {
 			"rows":    types.Int64{Value: int64(in.PanelLayout.RowCount)},
 			"columns": types.Int64{Value: int64(in.PanelLayout.ColumnCount)},
 			"port_groups": types.List{
-				ElemType: logicalDeviceDataPanelPortGroupObjectSchema(),
+				ElemType: logicalDeviceDataPanelPortGroupElemType(),
 				Elems:    newLogicalDevicePanelPortGroups(in.PortGroups),
 			},
 		},
@@ -173,7 +173,7 @@ func newLogicalDevicePanels(in *goapstra.LogicalDeviceData) []attr.Value {
 
 func parseApiLogicalDeviceToTypesObject(in *goapstra.LogicalDeviceData) types.Object {
 	return types.Object{
-		AttrTypes: logicalDeviceDataElementAttrTypes(),
+		AttrTypes: logicalDeviceDataAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"name": types.String{Value: in.DisplayName},
 			"panels": types.List{
@@ -184,7 +184,7 @@ func parseApiLogicalDeviceToTypesObject(in *goapstra.LogicalDeviceData) types.Ob
 	}
 }
 
-func logicalDeviceDataElementAttrTypes() map[string]attr.Type {
+func logicalDeviceDataAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":   types.StringType,
 		"panels": logicalDevicePanelSchema(),
@@ -207,7 +207,7 @@ func logicalDevicePanelPortGroupsListElementAttrTypes() map[string]attr.Type {
 	}
 }
 
-func logicalDeviceDataPanelPortGroupObjectSchema() types.ObjectType {
+func logicalDeviceDataPanelPortGroupElemType() types.ObjectType {
 	return types.ObjectType{
 		AttrTypes: logicalDevicePanelPortGroupsListElementAttrTypes(),
 	}
@@ -215,7 +215,7 @@ func logicalDeviceDataPanelPortGroupObjectSchema() types.ObjectType {
 
 func logicalDeviceDataPanelPortGroupsListSchema() types.ListType {
 	return types.ListType{
-		ElemType: logicalDeviceDataPanelPortGroupObjectSchema(),
+		ElemType: logicalDeviceDataPanelPortGroupElemType(),
 	}
 }
 

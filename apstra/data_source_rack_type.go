@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -135,7 +136,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						}),
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tags":           tagsDataAttributeSchema(),
+					"tag_data":       tagsDataAttributeSchema(),
 				}),
 			},
 			"access_switches": {
@@ -174,8 +175,8 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						}),
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tags":           tagsDataAttributeSchema(),
-					"links":          linksAttributeSchema(),
+					"tag_data":       tagsDataAttributeSchema(),
+					"links":          dLinksAttributeSchema(),
 				}),
 			},
 			"generic_systems": {
@@ -203,8 +204,8 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Type:                types.Int64Type,
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tags":           tagsDataAttributeSchema(),
-					"links":          linksAttributeSchema(),
+					"tag_data":       tagsDataAttributeSchema(),
+					"links":          dLinksAttributeSchema(),
 				}),
 			},
 		},
@@ -346,8 +347,8 @@ func dLeafSwitchAttrTypes() map[string]attr.Type {
 		"mlag_info": types.ObjectType{
 			AttrTypes: mlagInfoAttrTypes()},
 		"logical_device": types.ObjectType{
-			AttrTypes: logicalDeviceDataElementAttrTypes()},
-		"tags": types.SetType{
+			AttrTypes: logicalDeviceDataAttrTypes()},
+		"tag_data": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: tagDataAttrTypes()}},
 	}
@@ -358,11 +359,9 @@ func dAccessSwitchAttrTypes() map[string]attr.Type {
 		"name":                types.StringType,
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
-		"esi_lag_info": types.ObjectType{
-			AttrTypes: esiLagInfoAttrTypes()},
-		"logical_device": types.ObjectType{
-			AttrTypes: logicalDeviceDataElementAttrTypes()},
-		"tags": types.SetType{
+		"esi_lag_info":        esiLagInfoElemType(),
+		"logical_device":      logicalDeviceElemType(),
+		"tag_data": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: tagDataAttrTypes()}},
 		"links": types.SetType{
@@ -378,8 +377,8 @@ func dGenericSystemAttrTypes() map[string]attr.Type {
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
 		"logical_device": types.ObjectType{
-			AttrTypes: logicalDeviceDataElementAttrTypes()},
-		"tags": types.SetType{
+			AttrTypes: logicalDeviceDataAttrTypes()},
+		"tag_data": types.SetType{
 			ElemType: types.ObjectType{
 				AttrTypes: tagDataAttrTypes()}},
 		"links": types.SetType{
@@ -405,6 +404,11 @@ func esiLagInfoAttrTypes() map[string]attr.Type {
 		"l3_link_count": types.Int64Type,
 		"l3_link_speed": types.StringType,
 	}
+}
+
+func esiLagInfoElemType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: esiLagInfoAttrTypes()}
 }
 
 func linksAttrTypes() map[string]attr.Type {
@@ -479,13 +483,28 @@ func parseApiLeafMlagInfoToTypesObject(in *goapstra.LeafMlagInfo) types.Object {
 	var l3PeerLinkCount, l3PeerLinkPortChannelId types.Int64
 	var l3PeerLinkSPeed types.String
 	if in.LeafLeafL3LinkCount == 0 {
+		// link count of zero means all L3 link descriptors should be null
 		l3PeerLinkCount.Null = true
 		l3PeerLinkSPeed.Null = true
 		l3PeerLinkPortChannelId.Null = true
 	} else {
+		// we have links, so populate attributes from API response
 		l3PeerLinkCount.Value = int64(in.LeafLeafL3LinkCount)
 		l3PeerLinkSPeed.Value = string(in.LeafLeafL3LinkSpeed)
-		l3PeerLinkPortChannelId.Value = int64(in.LeafLeafL3LinkPortChannelId)
+		if in.LeafLeafL3LinkPortChannelId == 0 {
+			// Don't save PoId /0/ - use /null/ instead
+			l3PeerLinkPortChannelId.Null = true
+		} else {
+			l3PeerLinkPortChannelId.Value = int64(in.LeafLeafL3LinkPortChannelId)
+		}
+	}
+
+	var peerLinkPortChannelId types.Int64
+	if in.LeafLeafLinkPortChannelId == 0 {
+		// Don't save PoId /0/ - use /null/ instead
+		peerLinkPortChannelId.Null = true
+	} else {
+		peerLinkPortChannelId.Value = int64(in.LeafLeafLinkPortChannelId)
 	}
 
 	return types.Object{
@@ -494,7 +513,7 @@ func parseApiLeafMlagInfoToTypesObject(in *goapstra.LeafMlagInfo) types.Object {
 			"mlag_keepalive_vlan":          types.Int64{Value: int64(in.MlagVlanId)},
 			"peer_link_count":              types.Int64{Value: int64(in.LeafLeafLinkCount)},
 			"peer_link_speed":              types.String{Value: string(in.LeafLeafLinkSpeed)},
-			"peer_link_port_channel_id":    types.Int64{Value: int64(in.LeafLeafLinkPortChannelId)},
+			"peer_link_port_channel_id":    peerLinkPortChannelId,
 			"l3_peer_link_count":           l3PeerLinkCount,
 			"l3_peer_link_speed":           l3PeerLinkSPeed,
 			"l3_peer_link_port_channel_id": l3PeerLinkPortChannelId,
@@ -537,6 +556,7 @@ func parseApiSliceRackLinkToTypesSetObject(links []goapstra.RackLink) types.Set 
 				"links_per_switch":   types.Int64{Value: int64(link.LinkPerSwitchCount)},
 				"speed":              types.String{Value: string(link.LinkSpeed)},
 				"switch_peer":        switchPeer,
+				"tag_data":           parseApiSliceTagDataToTypesSetObject(link.Tags),
 			},
 		}
 	}
@@ -580,7 +600,7 @@ func (o *dRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 			"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
 			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
 			"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
-			"tags":                parseApiSliceTagDataToTypesSetObject(in.Tags),
+			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 		},
 	}
 }
@@ -608,7 +628,7 @@ func (o *dRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessS
 			"redundancy_protocol": redundancyProtocol,
 			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
 			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
-			"tags":                parseApiSliceTagDataToTypesSetObject(in.Tags),
+			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
 		},
 	}
@@ -630,16 +650,17 @@ func (o *dRackType) parseApiResponseGenericSystem(in *goapstra.RackElementGeneri
 			"port_channel_id_min": types.Int64{Value: int64(in.PortChannelIdMin)},
 			"port_channel_id_max": types.Int64{Value: int64(in.PortChannelIdMax)},
 			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
-			"tags":                parseApiSliceTagDataToTypesSetObject(in.Tags),
+			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
 		},
 	}
 }
 
-func linksAttributeSchema() tfsdk.Attribute {
+func dLinksAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
-		MarkdownDescription: "Details links from this Access Switch to other switches in this Rack Type.",
+		MarkdownDescription: "Details links from this Element to switches upstream switches within this Rack Type.",
 		Computed:            true,
+		Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "Name of this link.",
@@ -671,22 +692,7 @@ func linksAttributeSchema() tfsdk.Attribute {
 				Computed:            true,
 				Type:                types.StringType,
 			},
-			//"tags": {
-			//	MarkdownDescription: "Details any tags applied to the Link",
-			//	Computed:            true,
-			//	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-			//		"label": {
-			//			MarkdownDescription: "Tag label (name) field.",
-			//			Computed:            true,
-			//			Type:                types.StringType,
-			//		},
-			//		"description": {
-			//			MarkdownDescription: "Tag description field.",
-			//			Computed:            true,
-			//			Type:                types.StringType,
-			//		},
-			//	}),
-			//},
+			"tag_data": tagsDataAttributeSchema(),
 		}),
 	}
 }

@@ -6,6 +6,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+func logicalDeviceElemType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: logicalDeviceDataAttrTypes()}
+}
+
 func panelAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"rows":    types.Int64Type,

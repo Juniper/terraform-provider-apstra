@@ -22,6 +22,17 @@ func newTagLabelSet(size int) types.Set {
 	}
 }
 
+func tagDataElemType() attr.Type {
+	return types.SetType{
+		ElemType: types.ObjectType{
+			AttrTypes: tagDataAttrTypes()}}
+}
+
+func tagNameElemType() attr.Type {
+	return types.SetType{
+		ElemType: types.StringType}
+}
+
 func newTagDataSet(size int) types.Set {
 	return types.Set{
 		Null:     size == 0,
@@ -42,6 +53,7 @@ func tagLabelsAttributeSchema() tfsdk.Attribute {
 func tagsDataAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details any tags applied to the element.",
+		Computed:            true,
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "Tag name (label) field.",
@@ -54,7 +66,6 @@ func tagsDataAttributeSchema() tfsdk.Attribute {
 				Type:                types.StringType,
 			},
 		}),
-		Computed: true,
 	}
 }
 
