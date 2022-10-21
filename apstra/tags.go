@@ -2,10 +2,16 @@ package apstra
 
 import (
 	"bitbucket.org/apstrktr/goapstra"
+	"context"
+	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 func tagDataAttrTypes() map[string]attr.Type {
@@ -34,8 +40,14 @@ func tagNameElemType() attr.Type {
 }
 
 func newTagDataSet(size int) types.Set {
+	if size == 0 {
+		return types.Set{
+			Null:     true,
+			ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
+		}
+	}
+
 	return types.Set{
-		Null:     size == 0,
 		Elems:    make([]attr.Value, size),
 		ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
 	}
@@ -101,7 +113,7 @@ func parseApiSliceTagDataToTypesSetObject(in []goapstra.DesignTagData) types.Set
 	return result
 }
 
-func sliceTagToSetObject(in []goapstra.DesignTag) types.Set {
+func sliceApiTagToSetTagDataObj(in []goapstra.DesignTag) types.Set {
 	result := newTagDataSet(len(in))
 	if len(in) == 0 {
 		result.Null = true
@@ -118,4 +130,32 @@ func sliceTagToSetObject(in []goapstra.DesignTag) types.Set {
 		}
 	}
 	return result
+}
+
+func setTagNameStringToSetTagDataObj(ctx context.Context, nameSetString types.Set, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) types.Set {
+	// short circuit empty result
+	if nameSetString.IsNull() || len(nameSetString.Elems) == 0 {
+		return newTagDataSet(0)
+	}
+
+	// get a list of tag labels -- this could possibly use nameSetString.As(...)
+	tagLabels := make([]string, len(nameSetString.Elems))
+	for i, tagName := range nameSetString.Elems {
+		tagLabels[i] = tagName.(types.String).Value
+	}
+
+	// get the tag slice from Apstra
+	tags, err := client.GetTagsByLabels(ctx, tagLabels)
+	if err != nil {
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			diags.AddAttributeError(errPath, "named tag not found",
+				fmt.Sprintf("at least one of the requested tags does not exist: '%s'",
+					strings.Join(tagLabels, "', '")),
+			)
+			return newTagDataSet(0)
+		}
+		diags.AddError("error requesting tag data", err.Error())
+	}
+	return sliceApiTagToSetTagDataObj(tags)
 }

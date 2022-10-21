@@ -2,6 +2,7 @@ package apstra
 
 import (
 	"bitbucket.org/apstrktr/goapstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -16,16 +17,11 @@ func linkAttrTypes() map[string]attr.Type {
 		"lag_mode":           types.StringType,
 		"links_per_switch":   types.Int64Type,
 		"speed":              types.StringType,
+		"attachment_type":    types.StringType,
 		"switch_peer":        types.StringType,
 		"tag_names":          tagNameElemType(),
 		"tag_data":           tagDataElemType(),
 	}
-}
-
-func linksElemType() attr.Type {
-	return types.SetType{
-		ElemType: types.ObjectType{
-			AttrTypes: linkAttrTypes()}}
 }
 
 func rRackLinkAttributeSchema() tfsdk.Attribute {
@@ -47,8 +43,9 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				Type:                types.StringType,
 				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
 			},
-			"lag_mode": { // todo validate not supplied for access switches
+			"lag_mode": {
 				MarkdownDescription: "LAG negotiation mode of the Link.",
+				Computed:            true,
 				Optional:            true,
 				Type:                types.StringType,
 				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
@@ -56,19 +53,21 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 					goapstra.RackLinkLagModePassive.String(),
 					goapstra.RackLinkLagModeStatic.String())},
 			},
-			"links_per_switch": { // todo make optional+computed, set to 1 when omitted
+			"links_per_switch": {
 				MarkdownDescription: "Number of Links to each switch.",
 				Computed:            true,
+				Optional:            true,
 				Type:                types.Int64Type,
+				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
 			},
 			"speed": {
 				MarkdownDescription: "Speed of this Link.",
-				Computed:            true,
+				Required:            true,
 				Type:                types.StringType,
 			},
 			"switch_peer": {
 				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
-				Computed:            true,
+				Optional:            true,
 				Type:                types.StringType,
 			},
 			"tag_names": tagLabelsAttributeSchema(),
