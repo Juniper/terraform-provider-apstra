@@ -10,6 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+func linksElemType() attr.Type {
+	return types.SetType{
+		ElemType: types.ObjectType{
+			AttrTypes: linksAttrTypes()}}
+}
+
 func linkAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":               types.StringType,

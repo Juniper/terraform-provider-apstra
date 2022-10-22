@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"os"
 	"strings"
 )
 
@@ -193,15 +194,16 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 							int64validator.AtLeast(1),
 						},
 					},
-					"logical_device_id": {
-						MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
-						Type:                types.StringType,
-						Required:            true,
-					},
 					"redundancy_protocol": {
 						MarkdownDescription: "Indicates whether the switch is a redundant pair.",
 						Type:                types.StringType,
 						Computed:            true,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+					},
+					"logical_device_id": {
+						MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
+						Type:                types.StringType,
+						Required:            true,
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
 					"links":          rRackLinkAttributeSchema(),
@@ -211,13 +213,13 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 						MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
 						Optional:            true,
 						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"peer_link_count": {
+							"l3_peer_link_count": {
 								MarkdownDescription: "Number of L3 links between ESI-LAG devices.",
 								Required:            true,
 								Type:                types.Int64Type,
 								Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
 							},
-							"peer_link_speed": {
+							"l3_peer_link_speed": {
 								MarkdownDescription: "Speed of l3 links between ESI-LAG devices.",
 								Required:            true,
 								Type:                types.StringType,
@@ -260,17 +262,11 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	u, _ := json.Marshal(&plan)
-	resp.Diagnostics.AddWarning("unforced plan", string(u))
-
 	// force values as needed
 	plan.forceValues(&resp.Diagnostics)
 	if diags.HasError() {
 		return
 	}
-
-	//f, _ := json.Marshal(&plan)
-	//resp.Diagnostics.AddWarning("forced", string(f))
 
 	// populate rack elements (leaf/access/generic) from global catalog
 	plan.populateDataFromGlobalCatalog(ctx, o.client, &resp.Diagnostics)
@@ -284,18 +280,12 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	//d, _ := json.Marshal(rtReq)
-	//resp.Diagnostics.AddWarning("rtReq", string(d))
-	//
 	// send the request to Apstra
 	id, err := o.client.CreateRackType(ctx, rtReq)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating rack type", err.Error())
 		return
 	}
-
-	f, _ := json.Marshal(&plan)
-	resp.Diagnostics.AddWarning("final", string(f))
 
 	plan.Id = types.String{Value: string(id)}
 	diags = resp.State.Set(ctx, &plan)
@@ -315,6 +305,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	getJson, _ := json.MarshalIndent(&state, "", "  ")
 
 	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
@@ -346,13 +337,12 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 
 	newState.copyWriteOnlyElements(&state, &resp.Diagnostics)
 
-	//oldJson, _ := json.Marshal(&state)
-	//newJson, _ := json.Marshal(&newState)
-	//resp.Diagnostics.AddWarning("old", string(oldJson))
-	//resp.Diagnostics.AddWarning("new", string(newJson))
-
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
+
+	setJson, _ := json.MarshalIndent(&newState, "", "  ")
+	os.WriteFile("/tmp/get", getJson, 0644)
+	os.WriteFile("/tmp/set", setJson, 0644)
 }
 
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -399,9 +389,6 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	if err != nil {
 		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
 	}
-
-	p, _ := json.Marshal(&plan)
-	diags.AddWarning("plan", string(p))
 
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -703,7 +690,7 @@ func (o *rRackType) parseApiResponse(rt *goapstra.RackType, diags *diag.Diagnost
 	o.Description = types.String{Value: rt.Data.Description}
 	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
 	o.parseApiResponseLeafSwitches(rt.Data.LeafSwitches, diags)
-	//o.parseApiResponseAccessSwitches(rt.Data.AccessSwitches, diags)
+	o.parseApiResponseAccessSwitches(rt.Data.AccessSwitches, diags)
 	//o.GenericSystems =           parseRackTypeGenericSystems(rt.Data.GenericSystems, diags)
 }
 
@@ -730,29 +717,32 @@ func (o *rRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 	}
 }
 
-//func (o *rRackType) parseApiResponseAccessSwitches(in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-//	o.AccessSwitches = newRAccessSwitchList(len(in))
-//	for i, as := range in {
-//		o.parseApiResponseAccessSwitch(&as, i, diags)
-//	}
-//}
-//
-//func (o *rRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessSwitch, idx int, _ *diag.Diagnostics) {
-//	o.AccessSwitches.Elems[idx] = types.Object{
-//		AttrTypes: rLeafSwitchAttrTypes(),
-//		Attrs: map[string]attr.Value{
-//			"name": types.String{Value: in.Label},
-//			//"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
-//			"logical_device": parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
-//			//"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
-//			//"tag_names":           parseSliceApiTagDataToTypesSetString(in.Tags),
-//			//"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
-//		},
-//	}
-//}
+func (o *rRackType) parseApiResponseAccessSwitches(in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+	o.AccessSwitches = newRAccessSwitchList(len(in))
+	for i, as := range in {
+		o.parseApiResponseAccessSwitch(&as, i, diags)
+	}
+}
+
+func (o *rRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessSwitch, idx int, _ *diag.Diagnostics) {
+	o.AccessSwitches.Elems[idx] = types.Object{
+		AttrTypes: rAccessSwitchAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"name":                types.String{Value: in.Label},
+			"count":               types.Int64{Value: int64(in.InstanceCount)},
+			"redundancy_protocol": parseApiAccessRedundancyProtocolToTypesString(in),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"tag_names":           parseSliceApiTagDataToTypesSetString(in.Tags),
+			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
+			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
+			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
+		},
+	}
+}
 
 func (o *rRackType) copyWriteOnlyElements(src *rRackType, diags *diag.Diagnostics) {
 	o.copyWriteOnlyElementsLeafSwitches(src, diags)
+	o.copyWriteOnlyElementsAccessSwitches(src, diags)
 }
 
 func (o *rRackType) copyWriteOnlyElementsLeafSwitches(src *rRackType, diags *diag.Diagnostics) {
@@ -764,6 +754,17 @@ func (o *rRackType) copyWriteOnlyElementsLeafSwitches(src *rRackType, diags *dia
 func (o *rRackType) copyWriteOnlyElementsLeafSwitch(src types.Object, idx int, _ *diag.Diagnostics) {
 	logicalDeviceId := src.Attrs["logical_device_id"].(types.String)
 	o.LeafSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"] = logicalDeviceId
+}
+
+func (o *rRackType) copyWriteOnlyElementsAccessSwitches(src *rRackType, diags *diag.Diagnostics) {
+	for i, srcAccessSwitch := range src.AccessSwitches.Elems {
+		o.copyWriteOnlyElementsAccessSwitch(srcAccessSwitch.(types.Object), i, diags)
+	}
+}
+
+func (o *rRackType) copyWriteOnlyElementsAccessSwitch(src types.Object, idx int, _ *diag.Diagnostics) {
+	logicalDeviceId := src.Attrs["logical_device_id"].(types.String)
+	o.AccessSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"] = logicalDeviceId
 }
 
 func getLogicalDeviceObj(ctx context.Context, client *goapstra.Client, id string, errPath path.Path, diags *diag.Diagnostics) types.Object {
@@ -865,17 +866,6 @@ func (o *rRackType) forceValuesAccessSwitchLink(switchIdx, linkIdx int, diags *d
 
 	// handle "tag_names" omitted from config
 	forceValuesTagNamesAndTagDataOnResourceRackElement(o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx])
-	//if linkObj.Attrs["tag_names"].IsNull() {
-	//	diags.AddWarning("unknown tag names", "in da house")
-	//	o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx].(types.Object).Attrs["tag_names"] = types.Set{
-	//		Null:     true,
-	//		ElemType: types.StringType,
-	//	}
-	//	o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx].(types.Object).Attrs["tag_data"] = types.Set{
-	//		Null:     true,
-	//		ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
-	//	}
-	//}
 }
 
 func forceValuesTagNamesAndTagDataOnResourceRackElement(in attr.Value) {
@@ -1060,8 +1050,8 @@ func renderAccessEsiLagInfo(accessSwitch types.Object) *goapstra.EsiLagInfo {
 	}
 
 	return &goapstra.EsiLagInfo{
-		AccessAccessLinkCount: int(esiLagInfo.Attrs["peer_link_count"].(types.Int64).Value),
-		AccessAccessLinkSpeed: goapstra.LogicalDevicePortSpeed(esiLagInfo.Attrs["peer_link_speed"].(types.String).Value),
+		AccessAccessLinkCount: int(esiLagInfo.Attrs["l3_peer_link_count"].(types.Int64).Value),
+		AccessAccessLinkSpeed: goapstra.LogicalDevicePortSpeed(esiLagInfo.Attrs["l3_peer_link_speed"].(types.String).Value),
 	}
 }
 
@@ -1097,29 +1087,26 @@ func rLeafSwitchAttrTypes() map[string]attr.Type {
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
 		"logical_device_id":   types.StringType,
-		"logical_device": types.ObjectType{
-			AttrTypes: logicalDeviceDataAttrTypes()},
-		"tag_names": types.SetType{ElemType: types.StringType},
-		"tag_data": types.SetType{
-			ElemType: types.ObjectType{
-				AttrTypes: tagDataAttrTypes()}},
-		"mlag_info": types.ObjectType{
-			AttrTypes: mlagInfoAttrTypes()},
+		"logical_device":      logicalDeviceElemType(),
+		"tag_names":           types.SetType{ElemType: types.StringType},
+		"tag_data":            tagDataElemType(),
+		"mlag_info":           mlagInfoElemType(),
 	}
 }
 
-//func rAccessSwitchAttrTypes() map[string]attr.Type {
-//	return map[string]attr.Type{
-//		"name":                types.StringType,
-//		"redundancy_protocol": types.StringType,
-//		"logical_device_id":   types.StringType,
-//		"logical_device":      logicalDeviceElemType(),
-//		"tag_names":           tagNameElemType(),
-//		"tag_data":            tagDataElemType(),
-//		"links":               linksElemType(),
-//		"esi_lag_info":        esiLagInfoElemType(),
-//	}
-//}
+func rAccessSwitchAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"redundancy_protocol": types.StringType,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceElemType(),
+		"tag_names":           tagNameElemType(),
+		"tag_data":            tagDataElemType(),
+		"links":               linksElemType(),
+		"esi_lag_info":        esiLagInfoElemType(),
+	}
+}
 
 func newRLeafSwitchList(size int) types.List {
 	return types.List{
@@ -1128,9 +1115,9 @@ func newRLeafSwitchList(size int) types.List {
 	}
 }
 
-//func newRAccessSwitchList(size int) types.List {
-//	return types.List{
-//		Elems:    make([]attr.Value, size),
-//		ElemType: types.ObjectType{AttrTypes: rAccessSwitchAttrTypes()},
-//	}
-//}
+func newRAccessSwitchList(size int) types.List {
+	return types.List{
+		Elems:    make([]attr.Value, size),
+		ElemType: types.ObjectType{AttrTypes: rAccessSwitchAttrTypes()},
+	}
+}

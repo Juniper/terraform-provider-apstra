@@ -22,6 +22,13 @@ func tagDataAttrTypes() map[string]attr.Type {
 }
 
 func newTagLabelSet(size int) types.Set {
+	if size == 0 {
+		return types.Set{
+			Null:     true,
+			ElemType: types.StringType,
+		}
+	}
+
 	return types.Set{
 		Elems:    make([]attr.Value, size),
 		ElemType: types.StringType,
@@ -83,8 +90,7 @@ func tagsDataAttributeSchema() tfsdk.Attribute {
 
 func parseSliceApiTagDataToTypesSetString(in []goapstra.DesignTagData) types.Set {
 	result := newTagLabelSet(len(in))
-	if len(in) == 0 {
-		result.Null = true
+	if result.IsNull() {
 		return result
 	}
 
@@ -96,8 +102,7 @@ func parseSliceApiTagDataToTypesSetString(in []goapstra.DesignTagData) types.Set
 
 func parseApiSliceTagDataToTypesSetObject(in []goapstra.DesignTagData) types.Set {
 	result := newTagDataSet(len(in))
-	if len(in) == 0 {
-		result.Null = true
+	if result.IsNull() {
 		return result
 	}
 
