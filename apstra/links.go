@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -54,6 +55,7 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				Computed:            true,
 				Optional:            true,
 				Type:                types.StringType,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
 					goapstra.RackLinkLagModeActive.String(),
 					goapstra.RackLinkLagModePassive.String(),
@@ -64,6 +66,7 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				Computed:            true,
 				Optional:            true,
 				Type:                types.Int64Type,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
 			},
 			"speed": {

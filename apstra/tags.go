@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
@@ -66,6 +67,8 @@ func tagLabelsAttributeSchema() tfsdk.Attribute {
 		Optional:            true,
 		Type:                types.SetType{ElemType: types.StringType},
 		Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+		//PlanModifiers:       []tfsdk.AttributePlanModifier{useStateForUnknownNull()},
+		//PlanModifiers: []tfsdk.AttributePlanModifier{resource.UseStateForUnknown()},
 	}
 }
 
@@ -73,16 +76,20 @@ func tagsDataAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details any tags applied to the element.",
 		Computed:            true,
+		PlanModifiers:       tfsdk.AttributePlanModifiers{useStateForUnknownNull()},
+		//PlanModifiers: []tfsdk.AttributePlanModifier{resource.UseStateForUnknown()},
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 			"name": {
 				MarkdownDescription: "Tag name (label) field.",
 				Computed:            true,
 				Type:                types.StringType,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"description": {
 				MarkdownDescription: "Tag description field.",
 				Computed:            true,
 				Type:                types.StringType,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 		}),
 	}

@@ -83,7 +83,6 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 			"leaf_switches": {
 				MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
 				Required:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators:          []tfsdk.AttributeValidator{listvalidator.SizeAtLeast(1)},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
@@ -177,7 +176,6 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 			"access_switches": {
 				MarkdownDescription: "Access switches provide fan-out connectivity from Leaf Switches.",
 				Optional:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators:          []tfsdk.AttributeValidator{listvalidator.SizeAtLeast(1)},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
@@ -198,7 +196,7 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 						MarkdownDescription: "Indicates whether the switch is a redundant pair.",
 						Type:                types.StringType,
 						Computed:            true,
-						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+						PlanModifiers:       tfsdk.AttributePlanModifiers{useStateForUnknownNull()},
 					},
 					"logical_device_id": {
 						MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
@@ -305,6 +303,9 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	resp.State.Set(ctx, &state)
+	return
 	getJson, _ := json.MarshalIndent(&state, "", "  ")
 
 	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.Value))
@@ -366,6 +367,10 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	planJson, _ := json.MarshalIndent(&plan, "", "  ")
+	os.WriteFile("/tmp/plan", planJson, 0644)
+	os.Exit(1)
 
 	// force values as needed
 	plan.forceValues(&resp.Diagnostics)
