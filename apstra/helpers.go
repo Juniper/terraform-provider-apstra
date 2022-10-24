@@ -59,7 +59,6 @@ func mapStringStringToTypesMap(in map[string]string) types.Map {
 		out.Elems[k] = types.String{Value: v}
 	}
 	return out
-
 }
 
 func listOfAttrValuesMatch(a types.List, b types.List) bool {

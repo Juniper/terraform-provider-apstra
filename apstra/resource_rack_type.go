@@ -304,8 +304,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	resp.State.Set(ctx, &state)
-	return
 	getJson, _ := json.MarshalIndent(&state, "", "  ")
 
 	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.Value))
