@@ -111,9 +111,11 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 						MarkdownDescription: fmt.Sprintf("Enabling a redundancy protocol converts a single "+
 							"Leaf Switch into a LAG-capable switch pair. Must be one of '%s'.",
 							strings.Join(leafRedundancyModes(), "', '")),
-						Type:       types.StringType,
-						Optional:   true,
-						Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(leafRedundancyModes()...)},
+						Type:          types.StringType,
+						Optional:      true,
+						Computed:      true,
+						PlanModifiers: []tfsdk.AttributePlanModifier{resource.UseStateForUnknown()},
+						Validators:    []tfsdk.AttributeValidator{stringvalidator.OneOf(leafRedundancyModes()...)},
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
 					"tag_names":      tagLabelsAttributeSchema(),
@@ -368,7 +370,6 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 
 	planJson, _ := json.MarshalIndent(&plan, "", "  ")
 	os.WriteFile("/tmp/plan", planJson, 0644)
-	os.Exit(1)
 
 	// force values as needed
 	plan.forceValues(&resp.Diagnostics)
@@ -808,7 +809,14 @@ func (o *rRackType) forceValuesLeafSwitches(diags *diag.Diagnostics) {
 }
 
 func (o *rRackType) forceValuesLeafSwitch(idx int, diags *diag.Diagnostics) {
-	forceValuesTagNamesAndTagDataOnResourceRackElement(o.LeafSwitches.Elems[idx])
+	leafObj := o.LeafSwitches.Elems[idx].(types.Object)
+
+	// force 'redundancy_protocol' to empty string
+	if leafObj.Attrs["redundancy_protocol"].IsNull() {
+		leafObj.Attrs["redundancy_protocol"] = types.String{}
+	}
+
+	forceValuesTagNamesAndTagDataOnResourceRackElement(o.LeafSwitches.Elems[idx]) // todo try using leafObj here
 
 	switch o.FabricConnectivityDesign.Value {
 	case goapstra.FabricConnectivityDesignL3Clos.String():
