@@ -2,12 +2,12 @@
 page_title: "apstra_agent_profile Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This resource looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).
+  This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).
 ---
 
 # apstra_agent_profile (Data Source)
 
-This resource looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).
+This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).
 
 ## Example Usage
 

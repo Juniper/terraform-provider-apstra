@@ -1,169 +1,179 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"net"
 )
 
-const (
-	systemAgentStateConnected = "connected"
-	sleepMilliSeconds         = 100
-)
+var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
+var _ resource.ResourceWithValidateConfig = &resourceManagedDevice{}
 
-type resourceManagedDeviceType struct{}
+type resourceManagedDevice struct {
+	client *goapstra.Client
+}
 
-func (r resourceManagedDeviceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (o *resourceManagedDevice) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_managed_device"
+}
+
+func (o *resourceManagedDevice) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	if pd, ok := req.ProviderData.(*providerData); ok {
+		o.client = pd.client
+	} else {
+		resp.Diagnostics.AddError(
+			errResourceConfigureProviderDataDetail,
+			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
+		)
+	}
+}
+
+func (o *resourceManagedDevice) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This resource creates/installs an Agent for an Apstra Managed Device." +
+			"Optionally, it will 'Acknolwedge' the discovered system if the `device key` (serial number)" +
+			"reported by the agent matches the optional `device_key` field.",
 		Attributes: map[string]tfsdk.Attribute{
 			"agent_id": {
-				Type:          types.StringType,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				MarkdownDescription: "Apstra ID for the Managed Device Agent.",
+				Type:                types.StringType,
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"system_id": {
-				Type:          types.StringType,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.UseStateForUnknown()},
+				MarkdownDescription: "Apstra ID for the System onboarded by the Managed Device Agent.",
+				Type:                types.StringType,
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
 			"management_ip": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				MarkdownDescription: "Management IP address of the system.",
+				Type:                types.StringType,
+				Required:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
 			"device_key": {
-				Type:          types.StringType,
-				Optional:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				MarkdownDescription: "Key which uniquely identifies a System asset. Possibly a MAC address or serial number.",
+				Type:                types.StringType,
+				Optional:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
 			"agent_profile_id": {
+				MarkdownDescription: "ID of the Agent Profile used when instantiating the Agent. An Agent Profile is" +
+					"required to specify the login credentials and platform type.",
 				Type:     types.StringType,
 				Required: true,
 			},
-			"agent_label": {
-				Type:     types.StringType,
-				Optional: true,
-			},
 			"off_box": {
-				Type:          types.BoolType,
-				Computed:      true,
-				Optional:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace(), tfsdk.UseStateForUnknown()},
-			},
-			"location": {
-				Type:     types.StringType,
-				Optional: true,
+				MarkdownDescription: "Indicates that an 'Offbox' agent should be created (required for Junos devices)",
+				Type:                types.BoolType,
+				Computed:            true,
+				Optional:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.RequiresReplace(), resource.UseStateForUnknown()},
 			},
 		},
 	}, nil
 }
 
-func (r resourceManagedDeviceType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	return resourceManagedDevice{
-		p: *(p.(*provider)),
-	}, nil
-}
+func (o *resourceManagedDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	if o.client == nil { // cannot proceed without a client
+		return
+	}
 
-type resourceManagedDevice struct {
-	p provider
-}
+	var config rManagedDevice
+	diags := req.Config.Get(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-func (r resourceManagedDevice) ValidateConfig(ctx context.Context, req tfsdk.ValidateResourceConfigRequest, resp *tfsdk.ValidateResourceConfigResponse) {
-	var cfg ResourceManagedDevice
-	req.Config.Get(ctx, &cfg)
-	if cfg.DeviceKey.IsNull() && !cfg.Location.IsNull() {
-		resp.Diagnostics.AddError(
-			"invalid configuration",
-			"element 'location' requires setting element 'device_key' - there's API reasons for this, but aside from that... Do you really know where something is, without knowing *what* it is?")
+	if o.client == nil {
+		resp.Diagnostics.AddError("client is nil", "wtf")
+		return
+	}
+
+	ipStr := net.ParseIP(config.ManagementIp.Value)
+	if ipStr == nil {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("management_ip"),
+			"cannot parse management_ip",
+			fmt.Sprintf("is '%s' an IP address?", config.ManagementIp.Value))
+	}
+
+	config.validateAgentProfile(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 }
 
-func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
-		)
+func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
 
 	// Retrieve values from plan
-	var plan ResourceManagedDevice
+	var plan rManagedDevice
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// look up agent profile info
-	agentProfile, err := r.p.client.GetAgentProfile(ctx, goapstra.ObjectId(plan.AgentProfileId.Value))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error creating new Agent",
-			"Could not create, unexpected error: "+err.Error(),
-		)
+	plan.validateAgentProfile(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// require credentials (we can't automate login otherwise)
-	if !agentProfile.HasUsername || !agentProfile.HasPassword {
-		resp.Diagnostics.AddWarning(
-			"Managed Device Agent Profile Credentials",
-			fmt.Sprintf("selected agent_profile_id is '%s' (%s) missing credentials - please fix via Web UI",
-				agentProfile.Label, plan.AgentProfileId.Value),
-		)
-	}
-
 	// Create new Agent for this Managed Device
-	agentId, err := r.p.client.CreateAgent(ctx, &goapstra.SystemAgentRequest{
+	agentId, err := o.client.CreateAgent(ctx, &goapstra.SystemAgentRequest{
 		AgentTypeOffbox: goapstra.AgentTypeOffbox(plan.OffBox.Value),
 		ManagementIp:    plan.ManagementIp.Value,
 		Profile:         goapstra.ObjectId(plan.AgentProfileId.Value),
 		OperationMode:   goapstra.AgentModeFull,
-		Label:           plan.AgentLabel.Value,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent",
-			"Could not create, unexpected error: "+err.Error(),
-		)
+			err.Error())
 		return
 	}
 
 	// Install the new agent
-	_, err = r.p.client.SystemAgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
+	_, err = o.client.SystemAgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error running Install job",
-			fmt.Sprintf("Could not run 'install' job on new agent '%s', unexpected error: %s",
-				agentId, err.Error()),
-		)
+			fmt.Sprintf("Could not run 'install' job on new agent '%s'", agentId),
+			err.Error())
 		return
 	}
 
 	// figure out the new switch system Id
-	agentInfo, err := r.p.client.GetSystemAgent(ctx, agentId)
+	agentInfo, err := o.client.GetSystemAgent(ctx, agentId)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error fetching agent info",
-			fmt.Sprintf("Could not fetch info from new agent '%s', unexpected error: %s",
-				agentId, err.Error()),
-		)
+			"error fetching Agent info",
+			err.Error())
 		return
 	}
 
 	// figure out the new switch serial number (device_key)
-	systemInfo, err := r.p.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
+	systemInfo, err := o.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error fetching system info",
-			fmt.Sprintf("Could not fetch info from new system '%s', unexpected error: %s",
-				agentInfo.Status.SystemId, err.Error()),
-		)
+			err.Error())
 		return
 	}
 
@@ -171,8 +181,9 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	if !plan.DeviceKey.IsNull() && !plan.DeviceKey.IsUnknown() {
 		// mismatched device key is fatal
 		if plan.DeviceKey.Value != systemInfo.DeviceKey {
-			resp.Diagnostics.AddError(
-				"error system mismatch",
+			resp.Diagnostics.AddAttributeError(
+				path.Root("device_key"),
+				"error system device_key mismatch",
 				fmt.Sprintf("config expects switch device_key '%s', device reports '%s'",
 					plan.DeviceKey.Value, systemInfo.DeviceKey),
 			)
@@ -180,10 +191,9 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 		}
 
 		// update with new SystemUserConfig
-		err = r.p.client.UpdateSystem(ctx, agentInfo.Status.SystemId, &goapstra.SystemUserConfig{
+		err = o.client.UpdateSystem(ctx, agentInfo.Status.SystemId, &goapstra.SystemUserConfig{
 			AosHclModel: systemInfo.Facts.AosHclModel,
 			AdminState:  goapstra.SystemAdminStateNormal,
-			Location:    plan.Location.Value,
 		})
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -197,16 +207,28 @@ func (r resourceManagedDevice) Create(ctx context.Context, req tfsdk.CreateResou
 	plan.AgentId = types.String{Value: string(agentId)}
 	plan.SystemId = types.String{Value: string(agentInfo.Status.SystemId)}
 
-	diags = resp.State.Set(ctx, plan)
+	diags = resp.State.Set(ctx, &rManagedDevice{
+		AgentId:        types.String{Value: string(agentId)},
+		SystemId:       types.String{Value: string(agentInfo.Status.SystemId)},
+		ManagementIp:   types.String{Value: agentInfo.Config.ManagementIp},
+		DeviceKey:      types.String{Value: systemInfo.DeviceKey},
+		AgentProfileId: types.String{Value: string(agentInfo.Config.Profile)},
+		OffBox:         types.Bool{Value: bool(agentInfo.Config.AgentTypeOffBox)},
+	})
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
+		return
+	}
+
 	// Get current state
-	var state ResourceManagedDevice
+	var state rManagedDevice
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -214,7 +236,7 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 	}
 
 	// Get AgentInfo from API
-	agentInfo, err := r.p.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
+	agentInfo, err := o.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -230,7 +252,7 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 	}
 
 	// Get SystemInfo from API
-	systemInfo, err := r.p.client.GetSystemInfo(ctx, goapstra.SystemId(state.SystemId.Value))
+	systemInfo, err := o.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -243,38 +265,46 @@ func (r resourceManagedDevice) Read(ctx context.Context, req tfsdk.ReadResourceR
 		}
 	}
 
-	var agentLabel types.String
-	if agentInfo.RunningConfig.Label == "" {
-		agentLabel = types.String{Null: true}
-	} else {
-		agentLabel = types.String{Value: agentInfo.RunningConfig.Label}
-	}
-
-	state.SystemId = types.String{Value: string(systemInfo.Id)}
-	state.ManagementIp = types.String{Value: agentInfo.RunningConfig.ManagementIp}
-	state.AgentProfileId = types.String{Value: string(agentInfo.Config.Profile)}
-	state.AgentLabel = agentLabel
-	state.OffBox = types.Bool{Value: bool(agentInfo.Config.AgentTypeOffBox)}
+	// 	AgentId        types.String `tfsdk:"agent_id"`
+	//	DeviceKey      types.String `tfsdk:"device_key"`
+	//state.SystemId = types.String{Value: string(systemInfo.Id)}
+	//state.ManagementIp = types.String{Value: agentInfo.RunningConfig.ManagementIp}
+	//state.AgentProfileId = types.String{Value: string(agentInfo.Config.Profile)}
+	//state.OffBox = types.Bool{Value: bool(agentInfo.Config.AgentTypeOffBox)}
 
 	// record device key and location if possible
+	var deviceKey types.String
 	if systemInfo != nil {
 		if !state.DeviceKey.IsNull() {
-			state.DeviceKey = types.String{Value: systemInfo.DeviceKey}
+			deviceKey = types.String{Value: systemInfo.DeviceKey}
+		} else {
+			deviceKey = types.String{Null: true}
 		}
-		if !state.Location.IsNull() {
-			state.Location = types.String{Value: systemInfo.UserConfig.Location}
-		}
+	} else {
+		deviceKey = types.String{Null: true}
 	}
 
 	// Set state
-	diags = resp.State.Set(ctx, &state)
+	diags = resp.State.Set(ctx, &rManagedDevice{
+		SystemId:       types.String{Value: string(agentInfo.Status.SystemId)},
+		ManagementIp:   types.String{Value: agentInfo.Config.ManagementIp},
+		AgentProfileId: types.String{Value: string(agentInfo.Config.Profile)},
+		OffBox:         types.Bool{Value: bool(agentInfo.Config.AgentTypeOffBox)},
+		AgentId:        types.String{Value: string(agentInfo.Id)},
+		DeviceKey:      deviceKey,
+	})
 	resp.Diagnostics.Append(diags...)
 }
 
 // Update resource
-func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
 	// Get current state
-	var state ResourceManagedDevice
+	var state rManagedDevice
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -282,7 +312,7 @@ func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResou
 	}
 
 	// Get plan values
-	var plan ResourceManagedDevice
+	var plan rManagedDevice
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -290,44 +320,16 @@ func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResou
 	}
 
 	// update agent as needed
-	if state.AgentProfileId.Value != plan.AgentProfileId.Value || state.AgentLabel.Value != plan.AgentLabel.Value {
-		err := r.p.client.UpdateSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value), &goapstra.SystemAgentRequest{
-			Profile: goapstra.ObjectId(plan.AgentProfileId.Value),
-			Label:   plan.AgentLabel.Value,
+	if state.AgentProfileId.Value != plan.AgentProfileId.Value {
+		err := o.client.AssignAgentProfile(ctx, &goapstra.AssignAgentProfileRequest{
+			SystemAgents: []goapstra.ObjectId{goapstra.ObjectId(state.AgentId.Value)},
+			ProfileId:    goapstra.ObjectId(plan.AgentProfileId.Value),
 		})
 		if err != nil {
 			resp.Diagnostics.AddError(
 				"error updating managed device agent",
 				fmt.Sprintf("error while updating managed device agent '%s' (%s) - %s",
 					state.AgentId.Value, state.ManagementIp.Value, err.Error()),
-			)
-			return
-		}
-	}
-
-	// update system as needed
-	if state.Location.Value != plan.Location.Value {
-		// 'location' is an element of user config, which (swagger says) doesn't support PATCH.
-		// fetch the whole system info, which contains the user config we need
-		systemInfo, err := r.p.client.GetSystemInfo(ctx, goapstra.SystemId(state.SystemId.Value))
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"error fetching managed device info",
-				fmt.Sprintf("error while reading managed device system info '%s' (%s) - %s",
-					state.SystemId.Value, state.ManagementIp.Value, err.Error()),
-			)
-			return
-		}
-
-		// update the user config structure
-		systemInfo.UserConfig.Location = plan.Location.Value
-
-		err = r.p.client.UpdateSystem(ctx, goapstra.SystemId(state.SystemId.Value), &systemInfo.UserConfig)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"error updating managed device user config info",
-				fmt.Sprintf("error while updating managed device user config info '%s' (%s) - %s",
-					state.SystemId.Value, state.ManagementIp.Value, err.Error()),
 			)
 			return
 		}
@@ -342,8 +344,13 @@ func (r resourceManagedDevice) Update(ctx context.Context, req tfsdk.UpdateResou
 }
 
 // Delete resource
-func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	var state ResourceManagedDevice
+func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
+		return
+	}
+
+	var state rManagedDevice
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -352,7 +359,7 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 
 	var agentDoesNotExist, systemDoesNotExist bool
 
-	_, err := r.p.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
+	_, err := o.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
@@ -366,7 +373,7 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 		}
 	}
 
-	_, err = r.p.client.GetSystemInfo(ctx, goapstra.SystemId(state.SystemId.Value))
+	_, err = o.client.GetSystemInfo(ctx, goapstra.SystemId(state.SystemId.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
@@ -381,7 +388,7 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 	}
 
 	if !agentDoesNotExist {
-		err = r.p.client.DeleteSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
+		err = o.client.DeleteSystemAgent(ctx, goapstra.ObjectId(state.AgentId.Value))
 		if err != nil {
 			var ace goapstra.ApstraClientErr
 			if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
@@ -395,7 +402,7 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 	}
 
 	if !systemDoesNotExist {
-		err = r.p.client.DeleteSystem(ctx, goapstra.SystemId(state.SystemId.Value))
+		err = o.client.DeleteSystem(ctx, goapstra.SystemId(state.SystemId.Value))
 		if err != nil {
 			var ace goapstra.ApstraClientErr
 			if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
@@ -406,5 +413,38 @@ func (r resourceManagedDevice) Delete(ctx context.Context, req tfsdk.DeleteResou
 			}
 			return
 		}
+	}
+}
+
+type rManagedDevice struct {
+	AgentId        types.String `tfsdk:"agent_id"`
+	SystemId       types.String `tfsdk:"system_id"`
+	ManagementIp   types.String `tfsdk:"management_ip"`
+	DeviceKey      types.String `tfsdk:"device_key"`
+	AgentProfileId types.String `tfsdk:"agent_profile_id"`
+	OffBox         types.Bool   `tfsdk:"off_box"`
+}
+
+func (o *rManagedDevice) validateAgentProfile(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	agentProfile, err := client.GetAgentProfile(ctx, goapstra.ObjectId(o.AgentProfileId.Value))
+	if err != nil {
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			diags.AddAttributeError(
+				path.Root("agent_profile_id"),
+				"agent profile not found",
+				fmt.Sprintf("agent profile '%s' does not exist", o.AgentProfileId.Value))
+		}
+		diags.AddError("error validating agent profile", err.Error())
+		return
+	}
+
+	// require credentials (we can't automate login otherwise)
+	if !agentProfile.HasUsername || !agentProfile.HasPassword {
+		diags.AddAttributeError(
+			path.Root("agent_profile_id"),
+			"Agent Profile needs credentials",
+			fmt.Sprintf("selected agent_profile_id '%s' (%s) must have credentials - please fix via Web UI",
+				agentProfile.Label, agentProfile.Id))
 	}
 }

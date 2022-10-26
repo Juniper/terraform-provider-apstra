@@ -1,40 +1,90 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type resourceAgentProfileType struct{}
+var _ resource.ResourceWithConfigure = &resourceAgentProfile{}
 
-func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type resourceAgentProfile struct {
+	client *goapstra.Client
+}
+
+func (o *resourceAgentProfile) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_agent_profile"
+}
+
+func (o *resourceAgentProfile) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	if pd, ok := req.ProviderData.(*providerData); ok {
+		o.client = pd.client
+	} else {
+		resp.Diagnostics.AddError(
+			errResourceConfigureProviderDataDetail,
+			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
+		)
+	}
+}
+
+func (o *resourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This resource creates an Agent Profile. Note that credentials (username/password) " +
+			"be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible " +
+			"for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a" +
+			"safe practice.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Type:     types.StringType,
-				Computed: true,
+				MarkdownDescription: "Apstra ID of the Agent Profile.",
+				Type:                types.StringType,
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 			},
-			// todo: validate non-empty
 			"name": {
-				Type:     types.StringType,
-				Required: true,
-				//Validators: []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+				MarkdownDescription: "Apstra name of the Agent Profile.",
+				Type:                types.StringType,
+				Required:            true,
+				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+			},
+			"has_username": {
+				MarkdownDescription: "Indicates whether a username has been set.",
+				Type:                types.BoolType,
+				Computed:            true,
+			},
+			"has_password": {
+				MarkdownDescription: "Indicates whether a password has been set.",
+				Type:                types.BoolType,
+				Computed:            true,
 			},
 			"platform": {
-				Type:     types.StringType,
-				Optional: true,
+				MarkdownDescription: "Device platform.",
+				Type:                types.StringType,
+				Optional:            true,
+				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
+					goapstra.AgentPlatformNXOS.String(),
+					goapstra.AgentPlatformJunos.String(),
+					goapstra.AgentPlatformEOS.String(),
+				)},
 			},
 			"packages": {
+				MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
+					"to be included with agents deployed using this profile.",
 				Optional: true,
 				Type:     types.MapType{ElemType: types.StringType},
 			},
 			"open_options": {
+				MarkdownDescription: "Passes configured parameters to offbox agents. For example, to use HTTPS as the " +
+					"API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.",
 				Type:     types.MapType{ElemType: types.StringType},
 				Optional: true,
 			},
@@ -42,27 +92,14 @@ func (r resourceAgentProfileType) GetSchema(_ context.Context) (tfsdk.Schema, di
 	}, nil
 }
 
-func (r resourceAgentProfileType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	return resourceAgentProfile{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type resourceAgentProfile struct {
-	p provider
-}
-
-func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
-		)
+func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
 
 	// Retrieve values from plan
-	var plan ResourceAgentProfile
+	var plan dAgentProfile
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -70,12 +107,7 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 	}
 
 	// Create new Agent Profile
-	id, err := r.p.client.CreateAgentProfile(ctx, &goapstra.AgentProfileConfig{
-		Label:       plan.Name.Value,
-		Platform:    plan.Platform.Value,
-		Packages:    typeMapStringToMapStringString(plan.Packages),
-		OpenOptions: typeMapStringToMapStringString(plan.OpenOptions),
-	})
+	id, err := o.client.CreateAgentProfile(ctx, plan.AgentProfileConfig())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent Profile",
@@ -84,25 +116,27 @@ func (r resourceAgentProfile) Create(ctx context.Context, req tfsdk.CreateResour
 		return
 	}
 
-	// Generate resource state struct
-	var result = ResourceAgentProfile{
-		Name:        types.String{Value: plan.Name.Value},
+	// Set state
+	diags = resp.State.Set(ctx, &dAgentProfile{
 		Id:          types.String{Value: string(id)},
-		Packages:    plan.Packages,
+		Name:        plan.Name,
 		Platform:    plan.Platform,
+		HasUsername: types.Bool{Value: false},
+		HasPassword: types.Bool{Value: false},
+		Packages:    plan.Packages,
 		OpenOptions: plan.OpenOptions,
-	}
-
-	diags = resp.State.Set(ctx, result)
+	})
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
 
-func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
+		return
+	}
+
 	// Get current state
-	var state ResourceAgentProfile
+	var state dAgentProfile
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -110,7 +144,7 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 	}
 
 	// Get Agent Profile from API and then update what is in state from what the API returns
-	agentProfile, err := r.p.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -126,27 +160,20 @@ func (r resourceAgentProfile) Read(ctx context.Context, req tfsdk.ReadResourceRe
 		}
 	}
 
-	// Map response body to resource schema attribute
-	state.Id = types.String{Value: string(agentProfile.Id)}
-	state.Name = types.String{Value: agentProfile.Label}
-	state.Packages = mapStringStringToTypeMapString(agentProfile.Packages)
-	state.OpenOptions = mapStringStringToTypeMapString(agentProfile.OpenOptions)
-
-	if agentProfile.Platform == "" {
-		state.Platform = types.String{Null: true}
-	} else {
-		state.Platform = types.String{Value: agentProfile.Platform}
-	}
-
 	// Set state
-	diags = resp.State.Set(ctx, &state)
+	diags = resp.State.Set(ctx, parseAgentProfile(agentProfile))
 	resp.Diagnostics.Append(diags...)
 }
 
 // Update resource
-func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
 	// Get current state
-	var state ResourceAgentProfile
+	var state dAgentProfile
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -154,7 +181,7 @@ func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResour
 	}
 
 	// Get plan values
-	var plan ResourceAgentProfile
+	var plan dAgentProfile
 	diags = req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -162,12 +189,7 @@ func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResour
 	}
 
 	// Update new Agent Profile
-	err := r.p.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), &goapstra.AgentProfileConfig{
-		Label:       plan.Name.Value,
-		Platform:    plan.Platform.Value,
-		Packages:    typeMapStringToMapStringString(plan.Packages),
-		OpenOptions: typeMapStringToMapStringString(plan.OpenOptions),
-	})
+	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), plan.AgentProfileConfig())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
@@ -176,23 +198,28 @@ func (r resourceAgentProfile) Update(ctx context.Context, req tfsdk.UpdateResour
 		return
 	}
 
-	// Update state
-	state.Name = plan.Name
-	state.Platform = plan.Platform
-	state.Packages = plan.Packages
-	state.OpenOptions = plan.OpenOptions
-
-	// Set state
-	diags = resp.State.Set(ctx, state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
+	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error updating Agent Profile",
+			fmt.Sprintf("Could not Update '%s' - %s", state.Id.Value, err),
+		)
 		return
 	}
+
+	// Set state
+	diags = resp.State.Set(ctx, parseAgentProfile(agentProfile))
+	resp.Diagnostics.Append(diags...)
 }
 
 // Delete resource
-func (r resourceAgentProfile) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	var state ResourceAgentProfile
+func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
+		return
+	}
+
+	var state dAgentProfile
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -200,36 +227,27 @@ func (r resourceAgentProfile) Delete(ctx context.Context, req tfsdk.DeleteResour
 	}
 
 	// Delete Agent Profile by calling API
-	err := r.p.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	err := o.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"error deleting Agent Profile",
-			fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.Value, err),
-		)
-		return
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+			resp.Diagnostics.AddError(
+				"error deleting Agent Profile",
+				fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.Value, err),
+			)
+			return
+		}
 	}
 }
 
-func typeMapStringToMapStringString(in types.Map) map[string]string {
-	var out map[string]string
-	if len(in.Elems) > 0 {
-		out = make(map[string]string)
+func parseAgentProfile(in *goapstra.AgentProfile) *dAgentProfile {
+	return &dAgentProfile{
+		Id:          types.String{Value: string(in.Id)},
+		Name:        types.String{Value: in.Label},
+		Platform:    platformToTFString(in.Platform),
+		HasUsername: types.Bool{Value: in.HasUsername},
+		HasPassword: types.Bool{Value: in.HasPassword},
+		Packages:    mapStringStringToTypesMap(in.Packages),
+		OpenOptions: mapStringStringToTypesMap(in.OpenOptions),
 	}
-	for k, v := range in.Elems {
-		out[k] = v.(types.String).Value
-	}
-	return out
-}
-
-func mapStringStringToTypeMapString(in map[string]string) types.Map {
-	out := types.Map{
-		Null:     len(in) == 0,
-		ElemType: types.StringType,
-		Elems:    make(map[string]attr.Value),
-	}
-	for k, v := range in {
-		out.Elems[k] = types.String{Value: v}
-	}
-	return out
-
 }

@@ -106,74 +106,6 @@ In addition to the attributes above, the following attributes are exported:
 * `open_options` (map[key]value) Configured parameters for offbox agents.
 
 ---
-### Data Source: apstra_asn_pool
-
-`apstra_asn_pool` provides details of a specific ASN resource pool by ID.
-
-#### Example Usage
-The following example shows outputting a report of free space across all ASN
-resource pools:
-
-```hcl
-data "apstra_asn_pool_ids" "all" {}
-
-data "apstra_asn_pool" "all" {
-   for_each = toset(data.apstra_asn_pool_ids.all.ids)
-   id = each.value
-}
-
-output "asn_report" {
-  value = {for k, v in data.apstra_asn_pool.all : k => {
-    name = v.name
-    free = v.total - v.used
-  }}
-}
-```
-Result:
-```hcl
-asn_report = {
-  "3ddb7a6a-4c84-458f-8632-705764c0f6ca" = {
-    "free" = 100
-    "name" = "spine"
-  }
-  "Private-4200000000-4294967294" = {
-    "free" = 94967293
-    "name" = "Private-4200000000-4294967294"
-  }
-  "Private-64512-65534" = {
-    "free" = 1020
-    "name" = "Private-64512-65534"
-  }
-  "dd0d3b45-2020-4382-9c01-c43e7d474546" = {
-    "free" = 10002
-    "name" = "leaf"
-  }
-}
-```
-
-#### Argument Reference
-The following arguments are required:
-* `id` (string) ID of the desired ASN resource pool.
-
-#### Attributes Reference
-In addition to the attributes above, the following attributes are exported:
-* `name` (string) The name of the ASN resource pool.
-* `status` (string) Status of the ASN resource pool (string reported by Apstra).
-* `tags` (list[string]) Tags applied to the ASN resource pool.
-* `total` (number) Total number of ASNs in the ASN resource pool.
-* `used` (number) Count of used ASNs in the ASN resource pool.
-* `used_percentage` (number) Percent of used ASNs in the ASN resource pool.
-* `created_at` (string) Creation time.
-* `last_modified_at` (string) Last modification time.
-* `ranges` (list[object]) Individual ASN ranges within the pool, consisting of:
-  * `status` (string) Status of the ASN resource pool (string reported by Apstra).
-  * `first` (number) Lowest numbered AS in this ASN range.
-  * `last` (number) Highest numbered AS in this ASN range.
-  * `total` (number) Total number of ASNs in this ASN range.
-  * `used` (number) Count of used ASNs in this ASN range
-  * `used_percentage` (number) Percent of used ASNs in this ASN range
-
----
 ### Data Source: apstra_asn_pool_id
 `apstra_asn_pool_id` returns the pool ID of the ASN resource pool matching the
 supplied criteria. It is incumbent on the user to ensure the criteria matches
@@ -445,7 +377,7 @@ In addition to the attributes above, the following attributes are exported:
   * `port_groups` (list[object]) Ordered logical groupings of interfaces by
   speed or purpose within a panel.
     * `port_count` (number) Number of ports in the group.
-    * `port_speed_gbps` (number) Port speed in Gbps
+    * `port_speed_bps` (number) Port speed in bits per second
     * `port_roles` (list[string]) One or more of: `access`, `generic`,
       `l3_server`, `leaf`, `peer`, `server`, `spine`, `superspine` and
       `unused`.

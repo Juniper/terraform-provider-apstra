@@ -1,77 +1,117 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type dataSourceIp4PoolType struct{}
+var _ datasource.DataSourceWithConfigure = &dataSourceIp4Pool{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceIp4Pool{}
 
-func (r dataSourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type dataSourceIp4Pool struct {
+	client *goapstra.Client
+}
+
+func (o *dataSourceIp4Pool) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_ip4_pool"
+}
+
+func (o *dataSourceIp4Pool) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+
+	if pd, ok := req.ProviderData.(*providerData); ok {
+		o.client = pd.client
+	} else {
+		resp.Diagnostics.AddError(
+			errDataSourceConfigureProviderDataDetail,
+			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
+		)
+	}
+}
+
+func (o *dataSourceIp4Pool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		MarkdownDescription: "This data source provides details of a single IPv4 Resource Pool. It is incumbent upon " +
+			"the user to set enough optional criteria to match exactly one IPv4 Resource Pool. Matching zero or more " +
+			"pools will produce an error.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Required: true,
-				Type:     types.StringType,
+				MarkdownDescription: "ID of the desired IPv4 Resource Pool.",
+				Computed:            true,
+				Optional:            true,
+				Type:                types.StringType,
 			},
 			"name": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "(Non unique) name of the ASN resource pool.",
+				Computed:            true,
+				Optional:            true,
+				Type:                types.StringType,
 			},
 			"status": {
-				Computed: true,
-				Type:     types.StringType,
-			},
-			"tags": {
-				Computed: true,
-				Type:     types.ListType{ElemType: types.StringType},
-			},
-			"used": {
-				Computed: true,
-				Type:     types.Int64Type,
-			},
-			"used_percentage": {
-				Computed: true,
-				Type:     types.Float64Type,
-			},
-			"created_at": {
-				Computed: true,
-				Type:     types.StringType,
-			},
-			"last_modified_at": {
-				Computed: true,
-				Type:     types.StringType,
+				MarkdownDescription: "Status of the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"total": {
-				Computed: true,
-				Type:     types.Int64Type,
+				MarkdownDescription: "Total number of addresses in the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"used": {
+				MarkdownDescription: "Count of used addresses in the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"used_percentage": {
+				MarkdownDescription: "Percent of used addresses in the IPv4 resource pool.",
+				Computed:            true,
+				Type:                types.Float64Type,
+			},
+			"created_at": {
+				MarkdownDescription: "Creation time.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"last_modified_at": {
+				MarkdownDescription: "Last modification time.",
+				Computed:            true,
+				Type:                types.StringType,
 			},
 			"subnets": {
-				Computed: true,
+				MarkdownDescription: "Detailed info about individual IPv4 CIDR allocations within the IPv4 Resource Pool.",
+				Computed:            true,
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"status": {
-						Type:     types.StringType,
-						Computed: true,
+						MarkdownDescription: "Status of the IPv4 resource pool.",
+						Type:                types.StringType,
+						Computed:            true,
 					},
 					"network": {
-						Type:     types.StringType,
-						Required: true,
+						MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
+						Type:                types.StringType,
+						Required:            true,
 					},
 					"total": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Total number of addresses in this IPv4 range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"used": {
-						Type:     types.Int64Type,
-						Computed: true,
+						MarkdownDescription: "Count of used addresses in this IPv4 range.",
+						Type:                types.Int64Type,
+						Computed:            true,
 					},
 					"used_percentage": {
-						Type:     types.Float64Type,
-						Computed: true,
+						MarkdownDescription: "Percent of used addresses in this IPv4 range.",
+						Type:                types.Float64Type,
+						Computed:            true,
 					},
 				}),
 			},
@@ -79,70 +119,93 @@ func (r dataSourceIp4PoolType) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 	}, nil
 }
 
-func (r dataSourceIp4PoolType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
-	return dataSourceIp4Pool{
-		p: *(p.(*provider)),
-	}, nil
-}
-
-type dataSourceIp4Pool struct {
-	p provider
-}
-
-func (r dataSourceIp4Pool) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	var config DataIp4Pool
+func (o *dataSourceIp4Pool) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	var config dIp4Pool
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if config.Id.IsNull() || config.Id.IsUnknown() {
+	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
 		resp.Diagnostics.AddError(
-			"pool id must be known and not null",
-			fmt.Sprintf("pool id known: %t; pool id null: %t", config.Id.IsUnknown(), config.Id.IsNull()),
+			"cannot search for ASN Pool",
+			"exactly one of 'name' or 'id' must be specified",
 		)
 	}
+}
 
-	ip4Pool, err := r.p.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.Value))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error retrieving IPv4 pool",
-			fmt.Sprintf("error retrieving IPv4 pool '%s' - %s", config.Id.Value, err),
-		)
+func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
 
-	// convert pool tags from []string to []types.String
-	tags := sliceStringToSliceTfString(ip4Pool.Tags)
-
-	// convert pool subnets goapstra.AsnRange to AsnRange
-	var subnets []Ip4Subnet
-	for _, s := range ip4Pool.Subnets {
-		subnets = append(subnets, Ip4Subnet{
-			Status:         types.String{Value: s.Status},
-			Network:        types.String{Value: s.Network.String()},
-			Total:          types.Int64{Value: s.Total},
-			Used:           types.Int64{Value: s.Used},
-			UsedPercentage: types.Float64{Value: float64(s.UsedPercentage)},
-		})
-	}
-
-	// Set state
-	diags = resp.State.Set(ctx, &DataIp4Pool{
-		Id:             types.String{Value: string(ip4Pool.Id)},
-		Name:           types.String{Value: ip4Pool.DisplayName},
-		Status:         types.String{Value: ip4Pool.Status},
-		Tags:           tags,
-		Used:           types.Int64{Value: int64(ip4Pool.Used)},
-		UsedPercent:    types.Float64{Value: float64(ip4Pool.UsedPercentage)},
-		CreatedAt:      types.String{Value: ip4Pool.CreatedAt.String()},
-		LastModifiedAt: types.String{Value: ip4Pool.LastModifiedAt.String()},
-		Total:          types.Int64{Value: int64(ip4Pool.Total)},
-		Subnets:        subnets,
-	})
+	var config dIp4Pool
+	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	var err error
+	var ipPool *goapstra.IpPool
+	switch {
+	case !config.Name.Null:
+		ipPool, err = o.client.GetIp4PoolByName(ctx, config.Name.Value)
+	case !config.Id.Null:
+		ipPool, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.Value))
+	default:
+		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("Error retrieving IPv4 pool",
+			fmt.Sprintf("cannot retrieve IPv4 pool - %s", err),
+		)
+		return
+	}
+
+	config.Id = types.String{Value: string(ipPool.Id)}
+	config.Name = types.String{Value: ipPool.DisplayName}
+	config.Status = types.String{Value: ipPool.Status}
+	config.UsedPercent = types.Float64{Value: float64(ipPool.UsedPercentage)}
+	config.CreatedAt = types.String{Value: ipPool.CreatedAt.String()}
+	config.LastModifiedAt = types.String{Value: ipPool.LastModifiedAt.String()}
+	config.Used = types.Number{Value: bigIntToBigFloat(&ipPool.Used)}
+	config.Total = types.Number{Value: bigIntToBigFloat(&ipPool.Total)}
+	config.Subnets = make([]dIp4PoolSubnet, len(ipPool.Subnets))
+
+	for i, subnet := range ipPool.Subnets {
+		config.Subnets[i] = dIp4PoolSubnet{
+			Status:         types.String{Value: subnet.Status},
+			Network:        types.String{Value: subnet.Network.String()},
+			Total:          types.Number{Value: bigIntToBigFloat(&subnet.Total)},
+			Used:           types.Number{Value: bigIntToBigFloat(&subnet.Used)},
+			UsedPercentage: types.Float64{Value: float64(subnet.UsedPercentage)},
+		}
+	}
+
+	// Set state
+	diags = resp.State.Set(ctx, &config)
+	resp.Diagnostics.Append(diags...)
+}
+
+type dIp4Pool struct {
+	Id             types.String     `tfsdk:"id"`
+	Name           types.String     `tfsdk:"name"`
+	Status         types.String     `tfsdk:"status"`
+	Used           types.Number     `tfsdk:"used"`
+	UsedPercent    types.Float64    `tfsdk:"used_percentage"`
+	CreatedAt      types.String     `tfsdk:"created_at"`
+	LastModifiedAt types.String     `tfsdk:"last_modified_at"`
+	Total          types.Number     `tfsdk:"total"`
+	Subnets        []dIp4PoolSubnet `tfsdk:"subnets"`
+}
+
+type dIp4PoolSubnet struct {
+	Status         types.String  `tfsdk:"status"`
+	Network        types.String  `tfsdk:"network"`
+	Total          types.Number  `tfsdk:"total"`
+	Used           types.Number  `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
