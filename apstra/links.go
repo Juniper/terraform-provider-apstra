@@ -5,31 +5,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-func linksElemType() attr.Type {
-	return types.SetType{
-		ElemType: types.ObjectType{
-			AttrTypes: linksAttrTypes()}}
-}
-
-func linkAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":               types.StringType,
-		"target_switch_name": types.StringType,
-		"lag_mode":           types.StringType,
-		"links_per_switch":   types.Int64Type,
-		"speed":              types.StringType,
-		"attachment_type":    types.StringType,
-		"switch_peer":        types.StringType,
-		"tag_names":          tagNameElemType(),
-		"tag_data":           tagDataElemType(),
-	}
-}
 
 func rRackLinkAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
@@ -79,8 +58,8 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				Optional:            true,
 				Type:                types.StringType,
 			},
-			"tag_names": tagLabelsAttributeSchema(),
-			"tag_data":  tagsDataAttributeSchema(),
+			"tag_ids":  tagIdsAttributeSchema(),
+			"tag_data": tagsDataAttributeSchema(),
 		}),
 	}
 }

@@ -3,7 +3,10 @@ package apstra
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+var _ tfsdk.AttributePlanModifier = useStateForUnknownNullModifier{}
 
 // useStateForUnknownNull is a clone of resource/UseStateForUnknown from
 // github.com/hashicorp/terraform-plugin-framework. Where the original ignores
@@ -45,3 +48,50 @@ func (r useStateForUnknownNullModifier) Description(ctx context.Context) string 
 func (r useStateForUnknownNullModifier) MarkdownDescription(ctx context.Context) string {
 	return "Once set, the value of this attribute in state will not change, even if it is Null."
 }
+
+//
+
+var _ tfsdk.AttributePlanModifier = tagDataTrackTagIdsModifier{}
+
+func tagDataTrackTagIds() tfsdk.AttributePlanModifier {
+	return tagDataTrackTagIdsModifier{}
+}
+
+type tagDataTrackTagIdsModifier struct{}
+
+func (r tagDataTrackTagIdsModifier) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
+	if req.AttributeState == nil || resp.AttributePlan == nil || req.AttributeConfig == nil {
+		return
+	}
+
+	tagDataPath := req.AttributePath
+	tagIdsPath := tagDataPath.ParentPath().AtName("tag_ids")
+
+	var planTagIds, stateTagIds types.Set
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, tagIdsPath, &planTagIds)...)
+	resp.Diagnostics.Append(req.State.GetAttribute(ctx, tagIdsPath, &stateTagIds)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if planTagIds.Equal(stateTagIds) {
+		return
+	}
+
+	unknownSet := newTagDataSet(0)
+	unknownSet.Unknown = true
+
+	resp.AttributePlan = unknownSet
+}
+
+// Description returns a human-readable description of the plan modifier.
+func (r tagDataTrackTagIdsModifier) Description(ctx context.Context) string {
+	return "Once set, the value of this attribute in state will not change, even if it is Null."
+}
+
+// MarkdownDescription returns a markdown description of the plan modifier.
+func (r tagDataTrackTagIdsModifier) MarkdownDescription(ctx context.Context) string {
+	return "Once set, the value of this attribute in state will not change, even if it is Null."
+}
+
+//

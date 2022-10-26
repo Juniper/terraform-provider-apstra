@@ -136,7 +136,6 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						}),
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tag_names":      tagLabelsAttributeSchema(),
 					"tag_data":       tagsDataAttributeSchema(),
 				}),
 			},
@@ -176,9 +175,8 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						}),
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tag_names":      tagLabelsAttributeSchema(),
 					"tag_data":       tagsDataAttributeSchema(),
-					"links":          linksAttributeSchema(),
+					"links":          dLinksAttributeSchema(),
 				}),
 			},
 			"generic_systems": {
@@ -206,9 +204,8 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 						Type:                types.Int64Type,
 					},
 					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tag_names":      tagLabelsAttributeSchema(),
 					"tag_data":       tagsDataAttributeSchema(),
-					"links":          linksAttributeSchema(),
+					"links":          dLinksAttributeSchema(),
 				}),
 			},
 		},
@@ -347,9 +344,9 @@ func dLeafSwitchAttrTypes() map[string]attr.Type {
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
-		"mlag_info":           mlagInfoElemType(),
-		"logical_device":      logicalDeviceElemType(),
-		"tag_data":            tagDataElemType(),
+		"mlag_info":           mlagInfoAttrType(),
+		"logical_device":      logicalDeviceAttrType(),
+		"tag_data":            tagDataAttrType(),
 		//"mlag_info": types.ObjectType{
 		//	AttrTypes: mlagInfoAttrTypes()},
 		//"logical_device": types.ObjectType{
@@ -365,16 +362,16 @@ func dAccessSwitchAttrTypes() map[string]attr.Type {
 		"name":                types.StringType,
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
-		"esi_lag_info":        esiLagInfoElemType(),
-		"logical_device":      logicalDeviceElemType(),
-		"tag_data":            tagDataElemType(),
-		"links":               linksElemType(),
+		"esi_lag_info":        esiLagInfoAttrType(),
+		"logical_device":      logicalDeviceAttrType(),
+		"tag_data":            tagDataAttrType(),
+		"links":               dLinksElemType(),
 		//"tag_data": types.SetType{
 		//	ElemType: types.ObjectType{
 		//		AttrTypes: tagDataAttrTypes()}},
 		//"links": types.SetType{
 		//	ElemType: types.ObjectType{
-		//		AttrTypes: linksAttrTypes()}},
+		//		AttrTypes: dLinksAttrTypes()}},
 	}
 }
 
@@ -384,13 +381,13 @@ func dGenericSystemAttrTypes() map[string]attr.Type {
 		"count":               types.Int64Type,
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
-		"logical_device":      logicalDeviceElemType(),
-		"tag_data":            tagDataElemType(),
-		"links":               linksElemType(),
+		"logical_device":      logicalDeviceAttrType(),
+		"tag_data":            tagDataAttrType(),
+		"links":               dLinksElemType(),
 	}
 }
 
-func mlagInfoElemType() attr.Type {
+func mlagInfoAttrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: mlagInfoAttrTypes()}
 }
@@ -414,12 +411,12 @@ func esiLagInfoAttrTypes() map[string]attr.Type {
 	}
 }
 
-func esiLagInfoElemType() attr.Type {
+func esiLagInfoAttrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: esiLagInfoAttrTypes()}
 }
 
-func linksAttrTypes() map[string]attr.Type {
+func dLinksAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":               types.StringType,
 		"target_switch_name": types.StringType,
@@ -427,9 +424,14 @@ func linksAttrTypes() map[string]attr.Type {
 		"links_per_switch":   types.Int64Type,
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
-		"tag_names":          tagNameElemType(),
-		"tag_data":           tagDataElemType(),
+		"tag_data":           tagDataAttrType(),
 	}
+}
+
+func dLinksElemType() attr.Type {
+	return types.SetType{
+		ElemType: types.ObjectType{
+			AttrTypes: dLinksAttrTypes()}}
 }
 
 func newDLeafSwitchSet(size int) types.Set {
@@ -457,7 +459,7 @@ func newLinkSet(size int) types.Set {
 	return types.Set{
 		Elems: make([]attr.Value, size),
 		ElemType: types.ObjectType{
-			AttrTypes: linksAttrTypes()},
+			AttrTypes: dLinksAttrTypes()},
 	}
 }
 
@@ -566,7 +568,7 @@ func parseApiSliceRackLinkToTypesSetObject(links []goapstra.RackLink) types.Set 
 			switchPeer = types.String{Value: link.SwitchPeer.String()}
 		}
 		result.Elems[i] = types.Object{
-			AttrTypes: linksAttrTypes(),
+			AttrTypes: dLinksAttrTypes(),
 			Attrs: map[string]attr.Value{
 				"name":               types.String{Value: link.Label},
 				"target_switch_name": types.String{Value: link.TargetSwitchLabel},
@@ -574,7 +576,6 @@ func parseApiSliceRackLinkToTypesSetObject(links []goapstra.RackLink) types.Set 
 				"links_per_switch":   types.Int64{Value: int64(link.LinkPerSwitchCount)},
 				"speed":              types.String{Value: string(link.LinkSpeed)},
 				"switch_peer":        switchPeer,
-				"tag_names":          parseSliceApiTagDataToTypesSetString(link.Tags),
 				"tag_data":           parseApiSliceTagDataToTypesSetObject(link.Tags),
 			},
 		}
@@ -668,7 +669,7 @@ func (o *dRackType) parseApiResponseGenericSystem(in *goapstra.RackElementGeneri
 	}
 }
 
-func linksAttributeSchema() tfsdk.Attribute {
+func dLinksAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
 		MarkdownDescription: "Details links from this Element to switches upstream switches within this Rack Type.",
 		Computed:            true,
@@ -704,8 +705,7 @@ func linksAttributeSchema() tfsdk.Attribute {
 				Computed:            true,
 				Type:                types.StringType,
 			},
-			"tag_names": tagLabelsAttributeSchema(),
-			"tag_data":  tagsDataAttributeSchema(),
+			"tag_data": tagsDataAttributeSchema(),
 		}),
 	}
 }

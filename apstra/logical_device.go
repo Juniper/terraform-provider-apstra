@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func logicalDeviceElemType() attr.Type {
+func logicalDeviceAttrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: logicalDeviceDataAttrTypes()}
 }
