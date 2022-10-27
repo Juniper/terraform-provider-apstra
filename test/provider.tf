@@ -7,6 +7,6 @@ terraform {
 }
 
 provider "apstra" {
-  url = "https://3.14.12.106:35309"
+  url = "https://3.22.233.96:20609"
   tls_validation_disabled = true
 }

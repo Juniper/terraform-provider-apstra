@@ -34,8 +34,8 @@ resource "apstra_managed_device" "switch" {
 
 ### Optional
 
-- `id` (String) ID of the agent profile. Required when name is omitted.
-- `name` (String) Name of the agent profile. Required when id is omitted.
+- `id` (String) ID of the Agent Profile. Required when `name` is omitted.
+- `name` (String) Name of the Agent Profile. Required when `id` is omitted.
 
 ### Read-Only
 
@@ -43,4 +43,4 @@ resource "apstra_managed_device" "switch" {
 - `has_username` (Boolean) Indicates whether a username has been configured.
 - `open_options` (Map of String) Configured parameters for offbox agents
 - `packages` (Map of String) Admin-provided software packages stored on the Apstra server applied to devices using the profile.
-- `platform` (String) Indicates the platform supported by the agent profile.
+- `platform` (String) Indicates the platform supported by the Agent Profile.
