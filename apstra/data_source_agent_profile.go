@@ -41,19 +41,19 @@ func (o *dataSourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, dia
 		MarkdownDescription: "This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				MarkdownDescription: "ID of the agent profile. Required when name is omitted.",
+				MarkdownDescription: "ID of the Agent Profile. Required when `name` is omitted.",
 				Optional:            true,
 				Computed:            true,
 				Type:                types.StringType,
 			},
 			"name": {
-				MarkdownDescription: "Name of the agent profile. Required when id is omitted.",
+				MarkdownDescription: "Name of the Agent Profile. Required when `id` is omitted.",
 				Optional:            true,
 				Computed:            true,
 				Type:                types.StringType,
 			},
 			"platform": {
-				MarkdownDescription: "Indicates the platform supported by the agent profile.",
+				MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
 				Computed:            true,
 				Type:                types.StringType,
 			},
