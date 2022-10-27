@@ -14,7 +14,7 @@ This data source provides details of a single ASN Resource Pool. It is incumbent
 ```terraform
 # The following example shows outputting a report of free space across all ASN resource pools:
 
-data "apstra_asn_pool_ids" "all" {}
+data "apstra_asn_pools" "all" {}
 
 data "apstra_asn_pool" "all" {
   for_each = toset(data.apstra_asn_pool_ids.all.ids)

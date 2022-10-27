@@ -2,6 +2,10 @@
 
 data "apstra_agent_profiles" "all" {}
 
+data "apstra_agent_profile" "all" {
+  for_each = data.apstra_agent_profiles.all.ids
+}
+
 output "agent_profiles" {
-  value = data.apstra_agent_profiles.all
+  value = data.apstra_agent_profile.all
 }

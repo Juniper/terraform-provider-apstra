@@ -16,12 +16,16 @@ Use the navigation to the left to read about the available resources.
 
 ## Configuration
 
+### Provider configuration stanza
+
 {{ tffile "examples/provider/example.tf" }}
 
+### Environment Variables
+
+Users are encouraged to set the Apstra credentials using environment variables:
+```shell
+APSTRA_USER=admin
+APSTRA_PASS=password
+```
+
 {{ .SchemaMarkdown | trimspace }}
-
-## Environment Variables
-
-```
-something something something
-```
