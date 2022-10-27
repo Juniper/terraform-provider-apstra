@@ -74,7 +74,7 @@ func (o *dataSourceTag) ValidateConfig(ctx context.Context, req datasource.Valid
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'name' must be specified")
 		return
 	}
@@ -96,7 +96,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	var err error
 	var tag *goapstra.DesignTag
 	var ace goapstra.ApstraClientErr
-	if config.Name.Null == false {
+	if !config.Name.IsNull() {
 		tag, err = o.client.GetTagByLabel(ctx, config.Name.Value)
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
@@ -106,7 +106,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 	}
-	if config.Id.Null == false {
+	if !config.Id.IsNull() {
 		tag, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
@@ -118,6 +118,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Tag", err.Error())
+		return
 	}
 
 	// Set state
