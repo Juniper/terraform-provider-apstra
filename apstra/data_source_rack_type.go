@@ -272,7 +272,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	newState := &dRackType{}
-	newState.parseApiResponse(rt, &resp.Diagnostics)
+	newState.parseApiResponse(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -593,24 +593,24 @@ type dRackType struct {
 	GenericSystems           types.Set    `tfsdk:"generic_systems"`
 }
 
-func (o *dRackType) parseApiResponse(rt *goapstra.RackType, diags *diag.Diagnostics) {
+func (o *dRackType) parseApiResponse(ctx context.Context, rt *goapstra.RackType, diags *diag.Diagnostics) {
 	o.Id = types.String{Value: string(rt.Id)}
 	o.Name = types.String{Value: rt.Data.DisplayName}
 	o.Description = types.String{Value: rt.Data.Description}
 	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
-	o.parseApiResponseLeafSwitches(rt.Data.LeafSwitches, diags)
-	o.parseApiResponseAccessSwitches(rt.Data.AccessSwitches, diags)
-	o.parseApiResponseGenericSystems(rt.Data.GenericSystems, diags)
+	o.parseApiResponseLeafSwitches(ctx, rt.Data.LeafSwitches, diags)
+	o.parseApiResponseAccessSwitches(ctx, rt.Data.AccessSwitches, diags)
+	o.parseApiResponseGenericSystems(ctx, rt.Data.GenericSystems, diags)
 }
 
-func (o *dRackType) parseApiResponseLeafSwitches(in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
+func (o *dRackType) parseApiResponseLeafSwitches(ctx context.Context, in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
 	o.LeafSwitches = newDLeafSwitchSet(len(in))
 	for i, ls := range in {
-		o.parseApiResponseLeafSwitch(&ls, i, diags)
+		o.parseApiResponseLeafSwitch(ctx, &ls, i, diags)
 	}
 }
 
-func (o *dRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
+func (o *dRackType) parseApiResponseLeafSwitch(ctx context.Context, in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
 	o.LeafSwitches.Elems[idx] = types.Object{
 		AttrTypes: dLeafSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
@@ -618,21 +618,21 @@ func (o *dRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 			"spine_link_count":    parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in),
 			"spine_link_speed":    parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in),
 			"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
 			"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
 			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 		},
 	}
 }
 
-func (o *dRackType) parseApiResponseAccessSwitches(in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+func (o *dRackType) parseApiResponseAccessSwitches(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
 	o.AccessSwitches = newDAccessSwitchSet(len(in))
 	for i, as := range in {
-		o.parseApiResponseAccessSwitch(&as, i, diags)
+		o.parseApiResponseAccessSwitch(ctx, &as, i, diags)
 	}
 }
 
-func (o *dRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessSwitch, idx int, diags *diag.Diagnostics) {
+func (o *dRackType) parseApiResponseAccessSwitch(ctx context.Context, in *goapstra.RackElementAccessSwitch, idx int, diags *diag.Diagnostics) {
 	o.AccessSwitches.Elems[idx] = types.Object{
 		AttrTypes: dAccessSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
@@ -640,21 +640,21 @@ func (o *dRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessS
 			"count":               types.Int64{Value: int64(in.InstanceCount)},
 			"redundancy_protocol": parseApiAccessRedundancyProtocolToTypesString(in),
 			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
 			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
 		},
 	}
 }
 
-func (o *dRackType) parseApiResponseGenericSystems(in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+func (o *dRackType) parseApiResponseGenericSystems(ctx context.Context, in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
 	o.GenericSystems = newDGenericSystemSet(len(in))
 	for i, gs := range in {
-		o.parseApiResponseGenericSystem(&gs, i, diags)
+		o.parseApiResponseGenericSystem(ctx, &gs, i, diags)
 	}
 }
 
-func (o *dRackType) parseApiResponseGenericSystem(in *goapstra.RackElementGenericSystem, idx int, diagnostics *diag.Diagnostics) {
+func (o *dRackType) parseApiResponseGenericSystem(ctx context.Context, in *goapstra.RackElementGenericSystem, idx int, diags *diag.Diagnostics) {
 	o.GenericSystems.Elems[idx] = types.Object{
 		AttrTypes: dGenericSystemAttrTypes(),
 		Attrs: map[string]attr.Value{
@@ -662,7 +662,7 @@ func (o *dRackType) parseApiResponseGenericSystem(in *goapstra.RackElementGeneri
 			"count":               types.Int64{Value: int64(in.Count)},
 			"port_channel_id_min": types.Int64{Value: int64(in.PortChannelIdMin)},
 			"port_channel_id_max": types.Int64{Value: int64(in.PortChannelIdMax)},
-			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
 			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
 		},

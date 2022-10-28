@@ -4,7 +4,6 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
@@ -106,7 +105,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	newState := newLogicalDeviceFromApi(logicalDevice)
+	newState := newLogicalDeviceFromApi(ctx, logicalDevice, &resp.Diagnostics)
 
 	// Set state
 	diags = resp.State.Set(ctx, &newState)
@@ -119,114 +118,17 @@ type dLogicalDevice struct {
 	Data types.Object `tfsdk:"data"`
 }
 
-func newLogicalDeviceFromApi(in *goapstra.LogicalDevice) *dLogicalDevice {
+func newLogicalDeviceFromApi(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) *dLogicalDevice {
 	return &dLogicalDevice{
 		Id:   types.String{Value: string(in.Id)},
 		Name: types.String{Value: in.Data.DisplayName},
-		Data: parseApiLogicalDeviceToTypesObject(in.Data),
+		Data: parseApiLogicalDeviceToTypesObject(ctx, in.Data, diags),
 	}
 }
 
-func newLogicalDevicePanelPortGroups(in []goapstra.LogicalDevicePortGroup) []attr.Value {
-	portGroups := make([]attr.Value, len(in))
-	for i, pg := range in {
-		roles := make([]attr.Value, len(pg.Roles.Strings()))
-		for i, role := range pg.Roles.Strings() {
-			roles[i] = types.String{Value: role}
-		}
-		portGroups[i] = types.Object{
-			AttrTypes: logicalDevicePanelPortGroupsListElementAttrTypes(),
-			Attrs: map[string]attr.Value{
-				"port_count":     types.Int64{Value: int64(pg.Count)},
-				"port_speed_bps": types.Int64{Value: pg.Speed.BitsPerSecond()},
-				"port_roles": types.Set{
-					ElemType: types.StringType,
-					Elems:    roles,
-				},
-			},
-		}
-	}
-	return portGroups
-}
-
-func newLogicalDevicePanel(in goapstra.LogicalDevicePanel) types.Object {
-	return types.Object{
-		AttrTypes: logicalDeviceDataPanelsListElementAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"rows":    types.Int64{Value: int64(in.PanelLayout.RowCount)},
-			"columns": types.Int64{Value: int64(in.PanelLayout.ColumnCount)},
-			"port_groups": types.List{
-				ElemType: logicalDeviceDataPanelPortGroupElemType(),
-				Elems:    newLogicalDevicePanelPortGroups(in.PortGroups),
-			},
-		},
-	}
-}
-
-func newLogicalDevicePanels(in *goapstra.LogicalDeviceData) []attr.Value {
-	out := make([]attr.Value, len(in.Panels))
-	for i, panel := range in.Panels {
-		out[i] = newLogicalDevicePanel(panel)
-	}
-	return out
-}
-
-func parseApiLogicalDeviceToTypesObject(in *goapstra.LogicalDeviceData) types.Object {
-	return types.Object{
-		AttrTypes: logicalDeviceDataAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name": types.String{Value: in.DisplayName},
-			"panels": types.List{
-				ElemType: logicalDeviceDataPanelObjectSchema(),
-				Elems:    newLogicalDevicePanels(in),
-			},
-		},
-	}
-}
-
-func logicalDeviceDataAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":   types.StringType,
-		"panels": logicalDevicePanelSchema(),
-	}
-}
-
-func logicalDeviceDataPanelsListElementAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"rows":        types.Int64Type,
-		"columns":     types.Int64Type,
-		"port_groups": logicalDeviceDataPanelPortGroupsListSchema(),
-	}
-}
-
-func logicalDevicePanelPortGroupsListElementAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"port_count":     types.Int64Type,
-		"port_speed_bps": types.Int64Type,
-		"port_roles":     types.SetType{ElemType: types.StringType},
-	}
-}
-
-func logicalDeviceDataPanelPortGroupElemType() types.ObjectType {
-	return types.ObjectType{
-		AttrTypes: logicalDevicePanelPortGroupsListElementAttrTypes(),
-	}
-}
-
-func logicalDeviceDataPanelPortGroupsListSchema() types.ListType {
-	return types.ListType{
-		ElemType: logicalDeviceDataPanelPortGroupElemType(),
-	}
-}
-
-func logicalDeviceDataPanelObjectSchema() types.ObjectType {
-	return types.ObjectType{
-		AttrTypes: logicalDeviceDataPanelsListElementAttrTypes(),
-	}
-}
-
-func logicalDevicePanelSchema() attr.Type {
-	return types.ListType{
-		ElemType: logicalDeviceDataPanelObjectSchema(),
-	}
+func parseApiLogicalDeviceToTypesObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
+	structLogicalDeviceData := parseApiLogicalDeviceData(in)
+	result, d := types.ObjectValueFrom(ctx, logicalDeviceDataAttrTypes(), structLogicalDeviceData)
+	diags.Append(d...)
+	return result
 }

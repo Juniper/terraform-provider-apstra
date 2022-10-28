@@ -304,8 +304,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	getJson, _ := json.MarshalIndent(&state, "", "  ")
-
 	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -323,7 +321,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	var newState rRackType
-	newState.parseApiResponse(rt, &resp.Diagnostics)
+	newState.parseApiResponse(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -338,10 +336,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
-
-	setJson, _ := json.MarshalIndent(&newState, "", "  ")
-	os.WriteFile("/tmp/get", getJson, 0644)
-	os.WriteFile("/tmp/set", setJson, 0644)
 }
 
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -686,24 +680,24 @@ func (o *rRackType) leafSwitchByName(name string) *types.Object {
 	return nil
 }
 
-func (o *rRackType) parseApiResponse(rt *goapstra.RackType, diags *diag.Diagnostics) {
+func (o *rRackType) parseApiResponse(ctx context.Context, rt *goapstra.RackType, diags *diag.Diagnostics) {
 	o.Id = types.String{Value: string(rt.Id)}
 	o.Name = types.String{Value: rt.Data.DisplayName}
 	o.Description = types.String{Value: rt.Data.Description}
 	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
-	o.parseApiResponseLeafSwitches(rt.Data.LeafSwitches, diags)
-	o.parseApiResponseAccessSwitches(rt.Data.AccessSwitches, diags)
+	o.parseApiResponseLeafSwitches(ctx, rt.Data.LeafSwitches, diags)
+	o.parseApiResponseAccessSwitches(ctx, rt.Data.AccessSwitches, diags)
 	//o.GenericSystems =           parseRackTypeGenericSystems(rt.Data.GenericSystems, diags)
 }
 
-func (o *rRackType) parseApiResponseLeafSwitches(in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
+func (o *rRackType) parseApiResponseLeafSwitches(ctx context.Context, in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
 	o.LeafSwitches = newRLeafSwitchList(len(in))
 	for i, ls := range in {
-		o.parseApiResponseLeafSwitch(&ls, i, diags)
+		o.parseApiResponseLeafSwitch(ctx, &ls, i, diags)
 	}
 }
 
-func (o *rRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitch, idx int, _ *diag.Diagnostics) {
+func (o *rRackType) parseApiResponseLeafSwitch(ctx context.Context, in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
 	o.LeafSwitches.Elems[idx] = types.Object{
 		AttrTypes: rLeafSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
@@ -711,7 +705,7 @@ func (o *rRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 			"spine_link_count":    parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in),
 			"spine_link_speed":    parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in),
 			"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
 			"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
 			"tag_ids":             parseApiSliceTagDataToTypesSetString(in.Tags),
 			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
@@ -719,21 +713,21 @@ func (o *rRackType) parseApiResponseLeafSwitch(in *goapstra.RackElementLeafSwitc
 	}
 }
 
-func (o *rRackType) parseApiResponseAccessSwitches(in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+func (o *rRackType) parseApiResponseAccessSwitches(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
 	o.AccessSwitches = newRAccessSwitchList(len(in))
 	for i, as := range in {
-		o.parseApiResponseAccessSwitch(&as, i, diags)
+		o.parseApiResponseAccessSwitch(ctx, &as, i, diags)
 	}
 }
 
-func (o *rRackType) parseApiResponseAccessSwitch(in *goapstra.RackElementAccessSwitch, idx int, _ *diag.Diagnostics) {
+func (o *rRackType) parseApiResponseAccessSwitch(ctx context.Context, in *goapstra.RackElementAccessSwitch, idx int, diags *diag.Diagnostics) {
 	o.AccessSwitches.Elems[idx] = types.Object{
 		AttrTypes: rAccessSwitchAttrTypes(),
 		Attrs: map[string]attr.Value{
 			"name":                types.String{Value: in.Label},
 			"count":               types.Int64{Value: int64(in.InstanceCount)},
 			"redundancy_protocol": parseApiAccessRedundancyProtocolToTypesString(in),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(in.LogicalDevice),
+			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
 			"tag_ids":             parseApiSliceTagDataToTypesSetString(in.Tags),
 			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
 			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
@@ -779,7 +773,7 @@ func getLogicalDeviceObj(ctx context.Context, client *goapstra.Client, id string
 		}
 		diags.AddError(fmt.Sprintf("error retrieving logical device '%s'", id), err.Error())
 	}
-	return parseApiLogicalDeviceToTypesObject(logicalDevice.Data)
+	return parseApiLogicalDeviceToTypesObject(ctx, logicalDevice.Data, diags)
 }
 
 // forceValues handles user-optional values and values which are required by
