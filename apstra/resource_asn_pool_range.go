@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -11,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"math"
 )
 
@@ -78,10 +76,10 @@ func (o *resourceAsnPoolRange) ValidateConfig(ctx context.Context, req resource.
 		return
 	}
 
-	if config.First.Value > config.Last.Value {
+	if config.First.ValueInt64() > config.Last.ValueInt64() {
 		resp.Diagnostics.AddError(
 			"swap 'first' and 'last'",
-			fmt.Sprintf("first (%d) cannot be greater than last (%d)", config.First.Value, config.Last.Value),
+			fmt.Sprintf("first (%d) cannot be greater than last (%d)", config.First.ValueInt64(), config.Last.ValueInt64()),
 		)
 	}
 }
@@ -101,9 +99,9 @@ func (o *resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Create new ASN Pool Range
-	err := o.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.Value), &goapstra.IntRangeRequest{
-		First: uint32(plan.First.Value),
-		Last:  uint32(plan.Last.Value),
+	err := o.client.CreateAsnPoolRange(ctx, goapstra.ObjectId(plan.PoolId.ValueString()), &goapstra.IntRangeRequest{
+		First: uint32(plan.First.ValueInt64()),
+		Last:  uint32(plan.Last.ValueInt64()),
 	})
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -116,9 +114,9 @@ func (o *resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRe
 
 	// Set State
 	diags = resp.State.Set(ctx, rAsnPoolRange{
-		PoolId: types.String{Value: plan.PoolId.Value},
-		First:  types.Int64{Value: plan.First.Value},
-		Last:   types.Int64{Value: plan.Last.Value},
+		PoolId: types.StringValue(plan.PoolId.ValueString()),
+		First:  types.Int64Value(plan.First.ValueInt64()),
+		Last:   types.Int64Value(plan.Last.ValueInt64()),
 	})
 	resp.Diagnostics.Append(diags...)
 }
@@ -138,7 +136,7 @@ func (o *resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Get ASN pool info from API and then update what is in state from what the API returns
-	asnPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.PoolId.Value))
+	asnPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.PoolId.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -148,32 +146,32 @@ func (o *resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadReques
 		} else {
 			resp.Diagnostics.AddError(
 				"error reading ASN pool",
-				fmt.Sprintf("error reading parent ASN pool ID '%s' - %s", state.PoolId.Value, err),
+				fmt.Sprintf("error reading parent ASN pool ID '%s' - %s", state.PoolId.ValueString(), err),
 			)
 			return
 		}
 	}
 
 	indexOf := asnPool.Ranges.IndexOf(goapstra.IntRange{
-		First: uint32(state.First.Value),
-		Last:  uint32(state.Last.Value),
+		First: uint32(state.First.ValueInt64()),
+		Last:  uint32(state.Last.ValueInt64()),
 	})
 
 	if indexOf < 0 { // no exact match range in pool - what happened to it?
 		// we assume that any range overlapping our intended range is *this pool*, but edited.
 		// really need range IDs here.
 		for _, testRange := range asnPool.Ranges {
-			if goapstra.IntOverlap(goapstra.IntRange{
-				First: uint32(state.First.Value),
-				Last:  uint32(state.Last.Value),
+			if goapstra.IntRangeOverlap(goapstra.IntRange{
+				First: uint32(state.First.ValueInt64()),
+				Last:  uint32(state.Last.ValueInt64()),
 			}, testRange) {
 				// overlapping pool found!  -- we'll choose to recognize it as the pool we're looking for, but edited.
-				state.First = types.Int64{Value: int64(testRange.First)}
-				state.Last = types.Int64{Value: int64(testRange.Last)}
+				state.First = types.Int64Value(int64(testRange.First))
+				state.Last = types.Int64Value(int64(testRange.Last))
 				diags = resp.State.Set(ctx, &rAsnPoolRange{
-					PoolId: types.String{Value: state.PoolId.Value},
-					First:  types.Int64{Value: int64(testRange.First)},
-					Last:   types.Int64{Value: int64(testRange.Last)},
+					PoolId: types.StringValue(state.PoolId.ValueString()),
+					First:  types.Int64Value(int64(testRange.First)),
+					Last:   types.Int64Value(int64(testRange.Last)),
 				})
 				resp.Diagnostics.Append(diags...)
 				return
@@ -208,7 +206,7 @@ func (o *resourceAsnPoolRange) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// fetch parent pool from API
-	asnPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.PoolId.Value))
+	asnPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.PoolId.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -218,10 +216,20 @@ func (o *resourceAsnPoolRange) Update(ctx context.Context, req resource.UpdateRe
 		} else {
 			resp.Diagnostics.AddError(
 				"error reading ASN pool",
-				fmt.Sprintf("error reading parent ASN pool ID '%s' - %s", state.PoolId.Value, err),
+				fmt.Sprintf("error reading parent ASN pool ID '%s' - %s", state.PoolId.ValueString(), err),
 			)
 			return
 		}
+	}
+
+	plannedRange := goapstra.IntRange{
+		First: uint32(plan.First.ValueInt64()),
+		Last:  uint32(plan.Last.ValueInt64()),
+	}
+
+	stateRange := goapstra.IntRange{
+		First: uint32(state.First.ValueInt64()),
+		Last:  uint32(state.Last.ValueInt64()),
 	}
 
 	// we'll send 'ranges' to Apstra in our update
@@ -229,30 +237,19 @@ func (o *resourceAsnPoolRange) Update(ctx context.Context, req resource.UpdateRe
 
 	// copy current ranges which do not overlap our target
 	for _, r := range asnPool.Ranges {
-		if !goapstra.IntOverlap(r, goapstra.IntRange{
-			First: uint32(plan.First.Value),
-			Last:  uint32(plan.Last.Value),
-		}) {
-			ranges = append(ranges, r)
+		if goapstra.IntRangeOverlap(r, plannedRange) {
+			continue // assume overlapping ranges are config drift
 		}
+		if goapstra.IntRangeEqual(r, stateRange) {
+			continue // same as state? we're making a change here. omit.
+		}
+		ranges = append(ranges, r)
 	}
 
 	// add our intended range to the slice
-	ranges = append(ranges, goapstra.IntRange{
-		First: uint32(plan.First.Value),
-		Last:  uint32(plan.Last.Value),
-	})
+	ranges = append(ranges, plannedRange)
 
-	data, err := json.Marshal(&goapstra.AsnPoolRequest{
-		DisplayName: asnPool.DisplayName,
-		Ranges:      ranges,
-	})
-	if err != nil {
-		resp.Diagnostics.AddError("error in json marshal", err.Error())
-	}
-	tflog.Trace(ctx, string(data))
-
-	err = o.client.UpdateAsnPool(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.AsnPoolRequest{
+	err = o.client.UpdateAsnPool(ctx, goapstra.ObjectId(state.PoolId.ValueString()), &goapstra.AsnPoolRequest{
 		DisplayName: asnPool.DisplayName,
 		Ranges:      ranges,
 	})
@@ -278,9 +275,9 @@ func (o *resourceAsnPoolRange) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	// Delete ASN pool range by calling API
-	err := o.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.Value), &goapstra.IntRangeRequest{
-		First: uint32(state.First.Value),
-		Last:  uint32(state.Last.Value),
+	err := o.client.DeleteAsnPoolRange(ctx, goapstra.ObjectId(state.PoolId.ValueString()), &goapstra.IntRangeRequest{
+		First: uint32(state.First.ValueInt64()),
+		Last:  uint32(state.Last.ValueInt64()),
 	})
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -292,7 +289,7 @@ func (o *resourceAsnPoolRange) Delete(ctx context.Context, req resource.DeleteRe
 			resp.Diagnostics.AddError(
 				"error removing ASN pool range",
 				fmt.Sprintf("could not read ASN pool '%s' while deleting range %d-%d- %s",
-					state.PoolId.Value, state.First.Value, state.Last.Value, err),
+					state.PoolId.ValueString(), state.First.ValueInt64(), state.Last.ValueInt64(), err),
 			)
 			return
 		}
