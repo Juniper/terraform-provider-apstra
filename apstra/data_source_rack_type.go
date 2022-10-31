@@ -242,6 +242,8 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	var err error
 	var rt *goapstra.RackType
 	var ace goapstra.ApstraClientErr
+
+	// maybe the config gave us the rack type name?
 	if config.Name.IsNull() == false { // fetch rack type by name
 		rt, err = o.client.GetRackTypeByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
@@ -252,6 +254,8 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 	}
+
+	// maybe the config gave us the rack type id?
 	if config.Id.IsNull() == false { // fetch rack type by ID
 		rt, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
@@ -262,10 +266,12 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 	}
+
 	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Rack Type", err.Error())
 	}
 
+	// catch problems which would crash the provider
 	validateRackType(rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
