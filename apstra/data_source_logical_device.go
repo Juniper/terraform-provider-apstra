@@ -171,35 +171,42 @@ type logicalDevice struct {
 	Panels types.List   `tfsdk:"panels"`
 }
 
+func (o logicalDevice) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"id":     types.StringType,
+			"name":   types.StringType,
+			"panels": types.ListType{ElemType: logicalDevicePanel{}.attrType()}}}
+}
+
+func (o *logicalDevice) parseApi(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) {
+	panels := make([]logicalDevicePanel, len(in.Data.Panels))
+	for i := range in.Data.Panels {
+		panels[i].parseApi(&in.Data.Panels[i])
+	}
+
+	var d diag.Diagnostics
+
+	o.Id = types.StringValue(string(in.Id))
+	o.Name = types.StringValue(in.Data.DisplayName)
+	o.Panels, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: panelAttrTypes()}, panels)
+
+	diags.Append(d...)
+}
+
 type logicalDevicePanel struct {
 	Rows       int64                         `tfsdk:"rows"`
 	Columns    int64                         `tfsdk:"columns"`
 	PortGroups []logicalDevicePanelPortGroup `tfsdk:"port_groups"`
 }
 
-type logicalDevicePanelPortGroup struct {
-	PortCount    int64    `tfsdk:"port_count"`
-	PortSpeedBps int64    `tfsdk:"port_speed_bps"`
-	PortRoles    []string `tfsdk:"port_roles"`
-}
-
-func (o *logicalDevice) parseApi(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) {
-	var d diag.Diagnostics
-	o.Id = types.StringValue(string(in.Id))
-	o.Name = types.StringValue(in.Data.DisplayName)
-	o.parseApiPanels(ctx, in.Data, diags)
-	diags.Append(d...)
-}
-
-func (o *logicalDevice) parseApiPanels(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
-	panels := make([]logicalDevicePanel, len(in.Panels))
-	for i := range in.Panels {
-		panels[i].parseApi(&in.Panels[i])
-	}
-
-	var d diag.Diagnostics
-	o.Panels, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: panelAttrTypes()}, panels)
-	diags.Append(d...)
+func (o logicalDevicePanel) attrType() attr.Type {
+	var portGroups logicalDevicePanelPortGroup
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"rows":        types.Int64Type,
+			"columns":     types.Int64Type,
+			"port_groups": types.ListType{ElemType: portGroups.attrType()}}}
 }
 
 func (o *logicalDevicePanel) parseApi(in *goapstra.LogicalDevicePanel) {
@@ -212,6 +219,26 @@ func (o *logicalDevicePanel) parseApi(in *goapstra.LogicalDevicePanel) {
 	o.PortGroups = portGroups
 }
 
+type logicalDevicePanelPortGroup struct {
+	PortCount    int64    `tfsdk:"port_count"`
+	PortSpeedBps int64    `tfsdk:"port_speed_bps"`
+	PortRoles    []string `tfsdk:"port_roles"`
+}
+
+func (o *logicalDevicePanelPortGroup) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"port_count":     types.Int64Type,
+			"port_speed_bps": types.Int64Type,
+			"port_roles":     types.SetType{ElemType: types.StringType}}}
+}
+
+func (o *logicalDevicePanelPortGroup) parseApi(in *goapstra.LogicalDevicePortGroup) {
+	o.PortCount = int64(in.Count)
+	o.PortSpeedBps = in.Speed.BitsPerSecond()
+	o.PortRoles = in.Roles.Strings()
+}
+
 func parseApiPanelPortGroup(in goapstra.LogicalDevicePortGroup) *logicalDevicePanelPortGroup {
 	return &logicalDevicePanelPortGroup{
 		PortCount:    int64(in.Count),
@@ -220,18 +247,17 @@ func parseApiPanelPortGroup(in goapstra.LogicalDevicePortGroup) *logicalDevicePa
 	}
 }
 
+func panelPortGroupAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"port_count":     types.Int64Type,
+		"port_speed_bps": types.Int64Type,
+		"port_roles":     types.SetType{ElemType: types.StringType}}
+}
+
 func panelAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"rows":        types.Int64Type,
 		"columns":     types.Int64Type,
 		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}},
-	}
-}
-
-func panelPortGroupAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"port_count":     types.Int64Type,
-		"port_speed_bps": types.Int64Type,
-		"port_roles":     types.SetType{ElemType: types.StringType},
 	}
 }
