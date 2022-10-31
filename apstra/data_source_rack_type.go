@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -14,7 +13,6 @@ import (
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceRackType{}
@@ -273,44 +271,14 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	//x, _ := json.MarshalIndent(rt, "", "  ")
-	//resp.Diagnostics.AddWarning("rt", string(x))
 	newState := &dRackType{}
-	newState.parseApiResponse(ctx, rt, &resp.Diagnostics)
+	newState.parseApi(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	newStyle := &dRackType{}
-	newStyle.parseApi(ctx, rt, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	newStateDump, err := json.MarshalIndent(newState, "", "  ")
-	if err != nil {
-		resp.Diagnostics.AddWarning("newStateDump Error", err.Error())
-	}
-	newStyleDump, err := json.MarshalIndent(newStyle, "", "  ")
-	if err != nil {
-		resp.Diagnostics.AddWarning("newStyleDump Error", err.Error())
-	}
-	os.WriteFile("/tmp/newState", newStateDump, 0644)
-	os.WriteFile("/tmp/newStyle", newStyleDump, 0644)
-
-	resp.Diagnostics.AddWarning("newStyle", newStyle.Id.String())
-	resp.Diagnostics.AddWarning("newState", newState.Id.String())
-	//resp.Diagnostics.AddWarning("description", newStyle.Description.String())
-	//resp.Diagnostics.AddWarning("fcd", newStyle.FabricConnectivityDesign.String())
-	//newState.LeafSwitches = types.SetNull(dRackTypeLeafSwitch{}.attrType())
-	//newState.AccessSwitches = types.SetNull(dRackTypeAccessSwitch{}.attrType())
-	//newState.GenericSystems = types.SetNull(dRackTypeGenericSystem{}.attrType())
-	//
-	//dump, err := json.MarshalIndent(newState, "", "  ")
-	//resp.Diagnostics.AddWarning("dump", string(dump))
 
 	//Set state
-	diags = resp.State.Set(ctx, newStyle)
+	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -911,81 +879,5 @@ func dLinksAttributeSchema() tfsdk.Attribute {
 			},
 			"tag_data": tagsDataAttributeSchema(),
 		}),
-	}
-}
-
-func (o *dRackType) parseApiResponse(ctx context.Context, rt *goapstra.RackType, diags *diag.Diagnostics) {
-	o.Id = types.String{Value: string(rt.Id)}
-	o.Name = types.String{Value: rt.Data.DisplayName}
-	o.Description = types.String{Value: rt.Data.Description}
-	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
-	o.parseApiResponseLeafSwitches(ctx, rt.Data.LeafSwitches, diags)
-	o.parseApiResponseAccessSwitches(ctx, rt.Data.AccessSwitches, diags)
-	o.parseApiResponseGenericSystems(ctx, rt.Data.GenericSystems, diags)
-}
-
-func (o *dRackType) parseApiResponseLeafSwitches(ctx context.Context, in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
-	o.LeafSwitches = newDLeafSwitchSet(len(in))
-	for i, ls := range in {
-		o.parseApiResponseLeafSwitch(ctx, &ls, i, diags)
-	}
-}
-
-func (o *dRackType) parseApiResponseLeafSwitch(ctx context.Context, in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
-	o.LeafSwitches.Elems[idx] = types.Object{
-		AttrTypes: dLeafSwitchAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: in.Label},
-			"spine_link_count":    parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in),
-			"spine_link_speed":    parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in),
-			"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
-			"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
-			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
-		},
-	}
-}
-
-func (o *dRackType) parseApiResponseAccessSwitches(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-	o.AccessSwitches = newDAccessSwitchSet(len(in))
-	for i, as := range in {
-		o.parseApiResponseAccessSwitch(ctx, &as, i, diags)
-	}
-}
-
-func (o *dRackType) parseApiResponseAccessSwitch(ctx context.Context, in *goapstra.RackElementAccessSwitch, idx int, diags *diag.Diagnostics) {
-	o.AccessSwitches.Elems[idx] = types.Object{
-		AttrTypes: dAccessSwitchAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: in.Label},
-			"count":               types.Int64{Value: int64(in.InstanceCount)},
-			"redundancy_protocol": parseApiAccessRedundancyProtocolToTypesString(in),
-			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
-			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
-			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
-		},
-	}
-}
-
-func (o *dRackType) parseApiResponseGenericSystems(ctx context.Context, in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
-	o.GenericSystems = newDGenericSystemSet(len(in))
-	for i, gs := range in {
-		o.parseApiResponseGenericSystem(ctx, &gs, i, diags)
-	}
-}
-
-func (o *dRackType) parseApiResponseGenericSystem(ctx context.Context, in *goapstra.RackElementGenericSystem, idx int, diags *diag.Diagnostics) {
-	o.GenericSystems.Elems[idx] = types.Object{
-		AttrTypes: dGenericSystemAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: in.Label},
-			"count":               types.Int64{Value: int64(in.Count)},
-			"port_channel_id_min": types.Int64{Value: int64(in.PortChannelIdMin)},
-			"port_channel_id_max": types.Int64{Value: int64(in.PortChannelIdMax)},
-			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
-			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
-			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
-		},
 	}
 }
