@@ -614,7 +614,6 @@ func (o *dRackTypeGenericSystem) parseApi(in *goapstra.RackElementGenericSystem)
 	o.PortChannelIdMin = int64(in.PortChannelIdMin)
 	o.PortChannelIdMax = int64(in.PortChannelIdMax)
 	o.LogicalDevice.parseApi(in.LogicalDevice)
-	//o.TagData = make([]tagData, len(in.Tags))
 	o.Links = make([]rackLink, len(in.Links))
 
 	if len(in.Tags) > 0 {
