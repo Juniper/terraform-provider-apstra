@@ -177,7 +177,7 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 		description = plan.Description.Value
 	}
 
-	// Update new Agent Profile
+	// Update Tag
 	err := o.client.UpdateTag(ctx, goapstra.ObjectId(state.Id.Value), &goapstra.DesignTagRequest{
 		Label:       plan.Name.Value,
 		Description: description,
