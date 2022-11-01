@@ -63,3 +63,44 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 		}),
 	}
 }
+
+func dLinksAttributeSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Details links from this Element to switches upstream switches within this Rack Type.",
+		Computed:            true,
+		Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				MarkdownDescription: "Name of this link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"target_switch_name": {
+				MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"lag_mode": {
+				MarkdownDescription: "LAG negotiation mode of the Link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"links_per_switch": {
+				MarkdownDescription: "Number of Links to each switch.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"speed": {
+				MarkdownDescription: "Speed of this Link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"switch_peer": {
+				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"tag_data": tagsDataAttributeSchema(),
+		}),
+	}
+}

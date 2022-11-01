@@ -1143,3 +1143,172 @@ func newRAccessSwitchList(size int) types.List {
 		ElemType: types.ObjectType{AttrTypes: rAccessSwitchAttrTypes()},
 	}
 }
+
+func parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in *goapstra.RackElementLeafSwitch) types.Int64 {
+	if in.LinkPerSpineCount == 0 {
+		return types.Int64{Null: true}
+	}
+	return types.Int64{Value: int64(in.LinkPerSpineCount)}
+}
+
+func parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in *goapstra.RackElementLeafSwitch) types.String {
+	if in.LinkPerSpineCount == 0 {
+		return types.String{Null: true}
+	}
+	return types.String{Value: string(in.LinkPerSpineSpeed)}
+}
+
+func parseApiLeafRedundancyProtocolToTypesString(in *goapstra.RackElementLeafSwitch) types.String {
+	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
+		return types.String{Null: true}
+	}
+	return types.String{Value: in.RedundancyProtocol.String()}
+}
+
+func parseApiLeafMlagInfoToTypesObject(in *goapstra.LeafMlagInfo) types.Object {
+	if in == nil || (in.LeafLeafLinkCount == 0 && in.LeafLeafL3LinkCount == 0) {
+		return types.Object{
+			Null:      true,
+			AttrTypes: mlagInfoAttrTypes(),
+		}
+	}
+
+	var l3PeerLinkCount, l3PeerLinkPortChannelId types.Int64
+	var l3PeerLinkSPeed types.String
+	if in.LeafLeafL3LinkCount == 0 {
+		// link count of zero means all L3 link descriptors should be null
+		l3PeerLinkCount.Null = true
+		l3PeerLinkSPeed.Null = true
+		l3PeerLinkPortChannelId.Null = true
+	} else {
+		// we have links, so populate attributes from API response
+		l3PeerLinkCount.Value = int64(in.LeafLeafL3LinkCount)
+		l3PeerLinkSPeed.Value = string(in.LeafLeafL3LinkSpeed)
+		if in.LeafLeafL3LinkPortChannelId == 0 {
+			// Don't save PoId /0/ - use /null/ instead
+			l3PeerLinkPortChannelId.Null = true
+		} else {
+			l3PeerLinkPortChannelId.Value = int64(in.LeafLeafL3LinkPortChannelId)
+		}
+	}
+
+	var peerLinkPortChannelId types.Int64
+	if in.LeafLeafLinkPortChannelId == 0 {
+		// Don't save PoId /0/ - use /null/ instead
+		peerLinkPortChannelId.Null = true
+	} else {
+		peerLinkPortChannelId.Value = int64(in.LeafLeafLinkPortChannelId)
+	}
+
+	return types.Object{
+		AttrTypes: mlagInfoAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"mlag_keepalive_vlan":          types.Int64{Value: int64(in.MlagVlanId)},
+			"peer_link_count":              types.Int64{Value: int64(in.LeafLeafLinkCount)},
+			"peer_link_speed":              types.String{Value: string(in.LeafLeafLinkSpeed)},
+			"peer_link_port_channel_id":    peerLinkPortChannelId,
+			"l3_peer_link_count":           l3PeerLinkCount,
+			"l3_peer_link_speed":           l3PeerLinkSPeed,
+			"l3_peer_link_port_channel_id": l3PeerLinkPortChannelId,
+		},
+	}
+}
+
+func parseApiAccessRedundancyProtocolToTypesString(in *goapstra.RackElementAccessSwitch) types.String {
+	if in.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
+		return types.String{Null: true}
+	} else {
+		return types.String{Value: in.RedundancyProtocol.String()}
+	}
+}
+
+func parseApiAccessEsiLagInfoToTypesObject(in *goapstra.EsiLagInfo) types.Object {
+	if in == nil || in.AccessAccessLinkCount == 0 {
+		return types.Object{
+			Null:      true,
+			AttrTypes: esiLagInfoAttrTypes(),
+		}
+	}
+
+	return types.Object{
+		AttrTypes: esiLagInfoAttrTypes(),
+		Attrs: map[string]attr.Value{
+			"l3_peer_link_count": types.Int64{Value: int64(in.AccessAccessLinkCount)},
+			"l3_peer_link_speed": types.String{Value: string(in.AccessAccessLinkSpeed)},
+		},
+	}
+}
+
+func parseApiSliceRackLinkToTypesSetObject(links []goapstra.RackLink) types.Set {
+	result := newLinkSet(len(links))
+	for i, link := range links {
+		var switchPeer types.String
+		if link.SwitchPeer == goapstra.RackLinkSwitchPeerNone {
+			switchPeer = types.String{Null: true}
+		} else {
+			switchPeer = types.String{Value: link.SwitchPeer.String()}
+		}
+		result.Elems[i] = types.Object{
+			AttrTypes: dLinksAttrTypes(),
+			Attrs: map[string]attr.Value{
+				"name":               types.String{Value: link.Label},
+				"target_switch_name": types.String{Value: link.TargetSwitchLabel},
+				"lag_mode":           types.String{Value: link.LagMode.String()},
+				"links_per_switch":   types.Int64{Value: int64(link.LinkPerSwitchCount)},
+				"speed":              types.String{Value: string(link.LinkSpeed)},
+				"switch_peer":        switchPeer,
+				"tag_data":           parseApiSliceTagDataToTypesSetObject(link.Tags),
+			},
+		}
+	}
+	return result
+}
+
+func mlagInfoAttrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: mlagInfoAttrTypes()}
+}
+
+func mlagInfoAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"mlag_keepalive_vlan":          types.Int64Type,
+		"peer_link_count":              types.Int64Type,
+		"peer_link_speed":              types.StringType,
+		"peer_link_port_channel_id":    types.Int64Type,
+		"l3_peer_link_count":           types.Int64Type,
+		"l3_peer_link_speed":           types.StringType,
+		"l3_peer_link_port_channel_id": types.Int64Type,
+	}
+}
+
+func esiLagInfoAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"l3_peer_link_count": types.Int64Type,
+		"l3_peer_link_speed": types.StringType,
+	}
+}
+
+func esiLagInfoAttrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: esiLagInfoAttrTypes()}
+}
+
+func dLinksAttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":               types.StringType,
+		"target_switch_name": types.StringType,
+		"lag_mode":           types.StringType,
+		"links_per_switch":   types.Int64Type,
+		"speed":              types.StringType,
+		"switch_peer":        types.StringType,
+		"tag_data":           tagDataAttrType(),
+	}
+}
+
+func newLinkSet(size int) types.Set {
+	return types.Set{
+		Elems: make([]attr.Value, size),
+		ElemType: types.ObjectType{
+			AttrTypes: dLinksAttrTypes()},
+	}
+}
