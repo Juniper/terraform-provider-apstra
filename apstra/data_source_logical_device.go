@@ -258,6 +258,5 @@ func panelAttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"rows":        types.Int64Type,
 		"columns":     types.Int64Type,
-		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}},
-	}
+		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}}}
 }

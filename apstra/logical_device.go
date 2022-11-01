@@ -20,23 +20,20 @@ type logicalDeviceData struct {
 	Panels []logicalDevicePanel `tfsdk:"panels"'`
 }
 
+func (o logicalDeviceData) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name": types.StringType,
+			"panels": types.ListType{
+				ElemType: logicalDevicePanel{}.attrType()}}}
+}
+
 func (o *logicalDeviceData) parseApi(in *goapstra.LogicalDeviceData) {
 	o.Name = in.DisplayName
 	o.Panels = make([]logicalDevicePanel, len(in.Panels))
 
 	for i := range o.Panels {
 		o.Panels[i].parseApi(&in.Panels[i])
-	}
-}
-
-func (o logicalDeviceData) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name": types.StringType,
-			"panels": types.ListType{
-				ElemType: logicalDevicePanel{}.attrType(),
-			},
-		},
 	}
 }
 
