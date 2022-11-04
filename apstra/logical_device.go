@@ -44,10 +44,16 @@ func (o *logicalDevice) parseApi(ctx context.Context, in *goapstra.LogicalDevice
 }
 
 func (o *logicalDevice) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDeviceData {
-	var elements []logicalDevicePanel
-	o.Panels.ElementsAs(ctx, &elements, false)
-	panels := make([]goapstra.LogicalDevicePanel, len(elements))
-	for i, panel := range elements {
+	var d diag.Diagnostics
+	var panelElements []logicalDevicePanel
+	d = o.Panels.ElementsAs(ctx, &panelElements, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	panels := make([]goapstra.LogicalDevicePanel, len(panelElements))
+	for i, panel := range panelElements {
 		panels[i] = *panel.request(diags)
 	}
 	return &goapstra.LogicalDeviceData{

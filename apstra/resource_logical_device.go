@@ -117,9 +117,6 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	var panels []logicalDevicePanel
-	plan.Panels.ElementsAs(ctx, &panels, false)
-
 	logicalDeviceRequest := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

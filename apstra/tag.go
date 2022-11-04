@@ -11,16 +11,14 @@ type tagData struct {
 	Description string `tfsdk:"description"`
 }
 
-func (o *tagData) parseApi(in *goapstra.DesignTagData) {
-	o.Name = in.Label
-	o.Description = in.Description
-}
-
 func (o tagData) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"name":        types.StringType,
-			"description": types.StringType,
-		},
-	}
+			"description": types.StringType}}
+}
+
+func (o *tagData) parseApi(in *goapstra.DesignTagData) {
+	o.Name = in.Label
+	o.Description = in.Description
 }
