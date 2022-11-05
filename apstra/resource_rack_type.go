@@ -346,6 +346,8 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 }
 
+// todo: tag lists should be come sets
+// todo: errpath with AtListIndex() are probably mostly wrong
 func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
