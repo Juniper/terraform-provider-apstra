@@ -89,7 +89,7 @@ func (o *dataSourceAgentProfile) ValidateConfig(ctx context.Context, req datasou
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError(
 			"cannot search for Agent Profile",
 			"exactly one of 'name' or 'id' must be specified",
@@ -113,10 +113,10 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 	var err error
 	var agentProfile *goapstra.AgentProfile
 	switch {
-	case !config.Name.Null:
-		agentProfile, err = o.client.GetAgentProfileByLabel(ctx, config.Name.Value)
-	case !config.Id.Null:
-		agentProfile, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.Value))
+	case !config.Name.IsNull():
+		agentProfile, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
+	case !config.Id.IsNull():
+		agentProfile, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.ValueString()))
 	default:
 		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
 
@@ -130,11 +130,11 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 
 	// Set state
 	diags = resp.State.Set(ctx, &dAgentProfile{
-		Id:          types.String{Value: string(agentProfile.Id)},
-		Name:        types.String{Value: agentProfile.Label},
+		Id:          types.StringValue(string(agentProfile.Id)),
+		Name:        types.StringValue(agentProfile.Label),
 		Platform:    platformToTFString(agentProfile.Platform),
-		HasUsername: types.Bool{Value: agentProfile.HasUsername},
-		HasPassword: types.Bool{Value: agentProfile.HasPassword},
+		HasUsername: types.BoolValue(agentProfile.HasUsername),
+		HasPassword: types.BoolValue(agentProfile.HasPassword),
 		Packages:    mapStringStringToTypesMap(agentProfile.Packages),
 		OpenOptions: mapStringStringToTypesMap(agentProfile.OpenOptions),
 	})
@@ -156,10 +156,10 @@ func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
 	if o.Platform.IsNull() || o.Platform.IsUnknown() {
 		platform = ""
 	} else {
-		platform = o.Platform.Value
+		platform = o.Platform.ValueString()
 	}
 	return &goapstra.AgentProfileConfig{
-		Label:       o.Name.Value,
+		Label:       o.Name.ValueString(),
 		Platform:    platform,
 		Packages:    typesMapToMapStringString(o.Packages),
 		OpenOptions: typesMapToMapStringString(o.OpenOptions),
@@ -169,9 +169,9 @@ func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
 func platformToTFString(platform string) types.String {
 	var result types.String
 	if platform == "" {
-		result = types.String{Null: true}
+		result = types.StringNull()
 	} else {
-		result = types.String{Value: platform}
+		result = types.StringValue(platform)
 	}
 	return result
 }
