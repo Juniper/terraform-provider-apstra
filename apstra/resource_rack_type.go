@@ -701,18 +701,21 @@ type rRackTypeLeafSwitch struct {
 	MlagInfo           *mlagInfo         `tfsdk:"mlag_info""`
 }
 
+func (o rRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"logical_device_id":   types.StringType,
+		"spine_link_count":    types.Int64Type,
+		"spine_link_speed":    types.StringType,
+		"redundancy_protocol": types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"mlag_info":           mlagInfo{}.attrType()}
+}
+
 func (o rRackTypeLeafSwitch) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":                types.StringType,
-			"logical_device_id":   types.StringType,
-			"spine_link_count":    types.Int64Type,
-			"spine_link_speed":    types.StringType,
-			"redundancy_protocol": types.StringType,
-			"logical_device":      logicalDeviceData{}.attrType(),
-			"tag_ids":             types.SetType{ElemType: types.StringType},
-			"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-			"mlag_info":           mlagInfo{}.attrType()}}
+	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
 func (o *rRackTypeLeafSwitch) request(path path.Path, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
@@ -755,7 +758,7 @@ func (o *rRackTypeLeafSwitch) request(path path.Path, diags *diag.Diagnostics) *
 	}
 }
 
-func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, idx int, errPath path.Path, rack *rRackType, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) validateConfig(errPath path.Path, rack *rRackType, diags *diag.Diagnostics) {
 	fcd, err := rack.fabricConnectivityDesign()
 	if err != nil {
 		diags.AddAttributeError(errPath.AtMapKey("fabric_connectivity_design"), "parse error", err.Error())
@@ -764,9 +767,9 @@ func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, idx int, errPa
 
 	switch *fcd {
 	case goapstra.FabricConnectivityDesignL3Clos:
-		o.validateForL3Clos(errPath.AtListIndex(idx), diags)
+		o.validateForL3Clos(errPath, diags) // todo: figure out how to use AtSetValue()
 	case goapstra.FabricConnectivityDesignL3Collapsed:
-		o.validateForL3Collapsed(errPath.AtListIndex(idx), diags)
+		o.validateForL3Collapsed(errPath, diags)
 	default:
 		diags.AddAttributeError(errPath, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
 	}
@@ -919,18 +922,21 @@ type rRackTypeAccessSwitch struct {
 	EsiLagInfo         *esiLagInfo       `tfsdk:"esi_lag_info""`
 }
 
+func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"redundancy_protocol": types.StringType,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"links":               types.SetType{ElemType: rRackLink{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"esi_lag_info":        esiLagInfo{}.attrType()}
+}
+
 func (o rRackTypeAccessSwitch) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":                types.StringType,
-			"count":               types.Int64Type,
-			"redundancy_protocol": types.StringType,
-			"logical_device_id":   types.StringType,
-			"logical_device":      logicalDeviceData{}.attrType(),
-			"links":               types.SetType{ElemType: rRackLink{}.attrType()},
-			"tag_ids":             types.SetType{ElemType: types.StringType},
-			"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-			"esi_lag_info":        esiLagInfo{}.attrType()}}
+	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
 func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
@@ -1059,18 +1065,22 @@ type rRackTypeGenericSystem struct {
 	TagData          []tagData         `tfsdk:"tag_data"`
 }
 
+func (o rRackTypeGenericSystem) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"port_channel_id_min": types.Int64Type,
+		"port_channel_id_max": types.Int64Type,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"links":               types.SetType{ElemType: rRackLink{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+	}
+}
+
 func (o rRackTypeGenericSystem) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":                types.StringType,
-			"count":               types.Int64Type,
-			"port_channel_id_min": types.Int64Type,
-			"port_channel_id_max": types.Int64Type,
-			"logical_device_id":   types.StringType,
-			"logical_device":      logicalDeviceData{}.attrType(),
-			"links":               types.SetType{ElemType: rRackLink{}.attrType()},
-			"tag_ids":             types.SetType{ElemType: types.StringType},
-			"tag_data":            types.SetType{ElemType: tagData{}.attrType()}}}
+	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
 func (o *rRackTypeGenericSystem) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementGenericSystemRequest {
@@ -1407,8 +1417,13 @@ func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, errPath path
 		return
 	}
 
-	for i, leafSwitch := range leafSwitches {
-		leafSwitch.validateConfig(ctx, i, errPath.AtListIndex(i), o, diags)
+	for _, leafSwitch := range leafSwitches {
+		setVal, d := types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+		leafSwitch.validateConfig(errPath.AtSetValue(setVal), o, diags)
 	}
 }
 
@@ -1420,8 +1435,14 @@ func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, errPath pa
 		return
 	}
 
-	for i, accessSwitch := range accessSwitches {
-		accessSwitch.validateConfig(ctx, errPath.AtListIndex(i), o, diags)
+	for _, accessSwitch := range accessSwitches {
+		setVal, d := types.ObjectValueFrom(ctx, accessSwitch.attrTypes(), &accessSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+
+		accessSwitch.validateConfig(ctx, errPath.AtSetValue(setVal), o, diags)
 	}
 }
 
@@ -1433,10 +1454,14 @@ func (o *rRackType) validateConfigGenericSystems(ctx context.Context, errPath pa
 		return
 	}
 
-	for i, genericSystem := range genericSystems {
-		genericSystem.validateConfig(ctx, errPath.AtListIndex(i), o, diags)
+	for _, genericSystem := range genericSystems {
+		setVal, d := types.ObjectValueFrom(ctx, genericSystem.attrTypes(), &genericSystem)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+		genericSystem.validateConfig(ctx, errPath.AtSetValue(setVal), o, diags)
 	}
-
 }
 
 func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.RackTypeRequest {
@@ -1457,17 +1482,32 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 
 	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
 	for i, leafSwitch := range leafSwitches {
-		leafSwitchRequests[i] = *leafSwitch.request(path.Root("leaf_switches").AtListIndex(i), diags)
+		setVal, d := types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		leafSwitchRequests[i] = *leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
 	}
 
 	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
 	for i, accessSwitch := range accessSwitches {
-		accessSwitchRequests[i] = *accessSwitch.request(ctx, path.Root("access_switches").AtListIndex(i), o, diags)
+		setVal, d := types.ObjectValueFrom(ctx, accessSwitch.attrTypes(), &accessSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		accessSwitchRequests[i] = *accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
 	}
 
 	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
 	for i, genericSystem := range genericSystems {
-		genericSystemsRequests[i] = *genericSystem.request(ctx, path.Root("generic_systems").AtListIndex(i), o, diags)
+		setVal, d := types.ObjectValueFrom(ctx, genericSystem.attrTypes(), &genericSystem)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		genericSystemsRequests[i] = *genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
 	}
 
 	return &goapstra.RackTypeRequest{
