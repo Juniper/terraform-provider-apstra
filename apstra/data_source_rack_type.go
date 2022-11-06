@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -601,6 +602,47 @@ func (o esiLagInfo) attrType() attr.Type {
 func (o *esiLagInfo) parseApi(in *goapstra.EsiLagInfo) {
 	o.L3PeerLinkCount = int64(in.AccessAccessLinkCount)
 	o.L3PeerLinkSpeed = string(in.AccessAccessLinkSpeed)
+}
+
+func dLinksAttributeSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Details links from this Element to switches upstream switches within this Rack Type.",
+		Computed:            true,
+		Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				MarkdownDescription: "Name of this link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"target_switch_name": {
+				MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"lag_mode": {
+				MarkdownDescription: "LAG negotiation mode of the Link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"links_per_switch": {
+				MarkdownDescription: "Number of Links to each switch.",
+				Computed:            true,
+				Type:                types.Int64Type,
+			},
+			"speed": {
+				MarkdownDescription: "Speed of this Link.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"switch_peer": {
+				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+				Computed:            true,
+				Type:                types.StringType,
+			},
+			"tag_data": tagsDataAttributeSchema(),
+		}),
+	}
 }
 
 type dRackLink struct {

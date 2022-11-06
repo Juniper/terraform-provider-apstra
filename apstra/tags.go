@@ -1,33 +1,13 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-func tagDataAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":        types.StringType,
-		"description": types.StringType,
-	}
-}
-
-func newTagDataSet(size int) types.Set {
-	if size == 0 {
-		return types.Set{
-			Null:     true,
-			ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
-		}
-	}
-
-	return types.Set{
-		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
-	}
-}
 
 func tagIdsAttributeSchema() tfsdk.Attribute {
 	return tfsdk.Attribute{
@@ -64,4 +44,21 @@ func tagsDataAttributeSchema() tfsdk.Attribute {
 			},
 		}),
 	}
+}
+
+type tagData struct {
+	Name        string `tfsdk:"name"`
+	Description string `tfsdk:"description"`
+}
+
+func (o tagData) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name":        types.StringType,
+			"description": types.StringType}}
+}
+
+func (o *tagData) parseApi(in *goapstra.DesignTagData) {
+	o.Name = in.Label
+	o.Description = in.Description
 }

@@ -78,8 +78,7 @@ func (r tagDataTrackTagIdsModifier) Modify(ctx context.Context, req tfsdk.Modify
 		return
 	}
 
-	unknownSet := newTagDataSet(0)
-	unknownSet.Unknown = true
+	unknownSet := types.SetUnknown(tagData{}.attrType())
 
 	resp.AttributePlan = unknownSet
 }
