@@ -285,7 +285,6 @@ func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
-	// todo: >1 links per switch means lag is required
 	config.validateConfigLeafSwitches(ctx, path.Root("leaf_switches"), &resp.Diagnostics)
 	config.validateConfigAccessSwitches(ctx, path.Root("access_switches"), &resp.Diagnostics)
 	config.validateConfigGenericSystems(ctx, path.Root("generic_systems"), &resp.Diagnostics)
@@ -992,7 +991,7 @@ func (o *rRackTypeAccessSwitch) validateConfig(ctx context.Context, path path.Pa
 	}
 
 	for i, link := range o.Links {
-		link.validateConfigForAccessSwitch(ctx, arp, rack, path.AtListIndex(i), diags)
+		link.validateConfigForAccessSwitch(ctx, arp, rack, path.AtListIndex(i), diags) // todo: Need AtSetValue() here
 	}
 }
 
@@ -1134,7 +1133,7 @@ func (o *rRackTypeGenericSystem) validateConfig(ctx context.Context, path path.P
 	}
 
 	for i, link := range o.Links {
-		link.validateConfigForGenericSystem(ctx, rack, path.AtListIndex(i), diags)
+		link.validateConfigForGenericSystem(ctx, rack, path.AtListIndex(i), diags) // todo need AtSetValue() here
 	}
 }
 
