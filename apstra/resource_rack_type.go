@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -345,7 +344,6 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(diags...)
 }
 
-// todo: tag lists should be come sets
 // todo: errpath with AtListIndex() are probably mostly wrong
 func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
@@ -389,12 +387,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	// copy nested object IDs (those not available from the API) from the previous state into the new state
 	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
-	old, _ := json.MarshalIndent(&state, "", "  ")
-	new, _ := json.MarshalIndent(newState, "", "  ")
-
-	os.WriteFile("/tmp/old", old, 0644)
-	os.WriteFile("/tmp/new", new, 0644)
-
 	// Set state
 	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
@@ -422,30 +414,47 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	//// force values as needed
-	//plan.forceValues(&resp.Diagnostics)
-	//if diags.HasError() {
-	//	return
-	//}
+	// create a RackTypeRequest
+	rtRequest := plan.request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	//// populate rack elements (leaf/access/generic) from global catalog
-	//plan.populateDataFromGlobalCatalog(ctx, o.client, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
+	// send the request to Apstra
+	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.ValueString()), rtRequest)
+	if err != nil {
+		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
+	}
 
-	//// Prepare a goapstra.RackTypeRequest
-	//rtReq := plan.goapstraRequest(&resp.Diagnostics)
-	//if diags.HasError() {
-	//	return
-	//}
+	// retrieve the RackType object with fully-enumerated embedded objects
+	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving rack type info after creation", err.Error())
+		return
+	}
 
-	//err := o.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.Value), rtReq)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
-	//}
+	// validate API response to catch problems which might crash the provider
+	validateRackType(rt, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	diags = resp.State.Set(ctx, &plan)
+	// parse the API response into a state object
+	newState := &rRackType{}
+	newState.parseApi(ctx, rt, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// copy nested object IDs (those not available from the API) from the (old) into newState
+	newState.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+
+	p := plan.LeafSwitches.String()
+	s := newState.LeafSwitches.String()
+	os.WriteFile("/tmp/u_plan", []byte(p), 0644)
+	os.WriteFile("/tmp/u_state", []byte(s), 0644)
+
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
