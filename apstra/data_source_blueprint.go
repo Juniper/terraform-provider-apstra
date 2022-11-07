@@ -102,7 +102,7 @@ func (o *dataSourceBlueprint) ValidateConfig(ctx context.Context, req datasource
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError(
 			"cannot search for Blueprint",
 			"exactly one of 'name' or 'id' must be specified",
@@ -127,13 +127,13 @@ func (o *dataSourceBlueprint) Read(ctx context.Context, req datasource.ReadReque
 	var err error
 	switch {
 	case !config.Name.IsNull():
-		status, err = o.client.GetBlueprintStatusByName(ctx, config.Name.Value)
+		status, err = o.client.GetBlueprintStatusByName(ctx, config.Name.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("error getting blueprint status by name", err.Error())
 			return
 		}
 	case !config.Id.IsNull():
-		status, err = o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(config.Id.Value))
+		status, err = o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil {
 			resp.Diagnostics.AddError("error getting blueprint status by name", err.Error())
 			return
@@ -145,15 +145,15 @@ func (o *dataSourceBlueprint) Read(ctx context.Context, req datasource.ReadReque
 
 	// Set state
 	diags = resp.State.Set(ctx, &dBlueprint{
-		Id:              types.String{Value: string(status.Id)},
-		Name:            types.String{Value: status.Label},
-		Status:          types.String{Value: status.Status},
-		SuperspineCount: types.Int64{Value: int64(status.SuperspineCount)},
-		SpineCount:      types.Int64{Value: int64(status.SpineCount)},
-		LeafCount:       types.Int64{Value: int64(status.LeafCount)},
-		AccessCount:     types.Int64{Value: int64(status.AccessCount)},
-		GenericCount:    types.Int64{Value: int64(status.GenericCount)},
-		ExternalCount:   types.Int64{Value: int64(status.ExternalRouterCount)},
+		Id:              types.StringValue(string(status.Id)),
+		Name:            types.StringValue(status.Label),
+		Status:          types.StringValue(status.Status),
+		SuperspineCount: types.Int64Value(int64(status.SuperspineCount)),
+		SpineCount:      types.Int64Value(int64(status.SpineCount)),
+		LeafCount:       types.Int64Value(int64(status.LeafCount)),
+		AccessCount:     types.Int64Value(int64(status.AccessCount)),
+		GenericCount:    types.Int64Value(int64(status.GenericCount)),
+		ExternalCount:   types.Int64Value(int64(status.ExternalRouterCount)),
 	})
 	resp.Diagnostics.Append(diags...)
 }
