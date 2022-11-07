@@ -97,22 +97,22 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	var tag *goapstra.DesignTag
 	var ace goapstra.ApstraClientErr
 	if !config.Name.IsNull() {
-		tag, err = o.client.GetTagByLabel(ctx, config.Name.Value)
+		tag, err = o.client.GetTagByLabel(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Tag not found",
-				fmt.Sprintf("Tag with name '%s' not found", config.Name.Value))
+				fmt.Sprintf("Tag with name '%s' not found", config.Name.ValueString()))
 			return
 		}
 	}
 	if !config.Id.IsNull() {
-		tag, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.Value))
+		tag, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Tag not found",
-				fmt.Sprintf("Tag with id '%s' not found", config.Id.Value))
+				fmt.Sprintf("Tag with id '%s' not found", config.Id.ValueString()))
 			return
 		}
 	}
@@ -123,9 +123,9 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	// Set state
 	diags = resp.State.Set(ctx, &dTag{
-		Id:          types.String{Value: string(tag.Id)},
-		Name:        types.String{Value: tag.Data.Label},
-		Description: types.String{Value: tag.Data.Description},
+		Id:          types.StringValue(string(tag.Id)),
+		Name:        types.StringValue(tag.Data.Label),
+		Description: types.StringValue(tag.Data.Description),
 	})
 	resp.Diagnostics.Append(diags...)
 }
