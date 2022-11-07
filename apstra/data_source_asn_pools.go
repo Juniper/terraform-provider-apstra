@@ -75,7 +75,7 @@ func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadReques
 	// map response body to resource schema
 	config.Ids = make([]types.String, len(poolIds))
 	for i, id := range poolIds {
-		config.Ids[i] = types.String{Value: string(id)}
+		config.Ids[i] = types.StringValue(string(id))
 	}
 
 	// Set state
