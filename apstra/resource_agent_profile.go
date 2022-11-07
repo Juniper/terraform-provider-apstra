@@ -118,11 +118,11 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 
 	// Set state
 	diags = resp.State.Set(ctx, &dAgentProfile{
-		Id:          types.String{Value: string(id)},
+		Id:          types.StringValue(string(id)),
 		Name:        plan.Name,
 		Platform:    plan.Platform,
-		HasUsername: types.Bool{Value: false},
-		HasPassword: types.Bool{Value: false},
+		HasUsername: types.BoolValue(false),
+		HasPassword: types.BoolValue(false),
 		Packages:    plan.Packages,
 		OpenOptions: plan.OpenOptions,
 	})
@@ -144,7 +144,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Get Agent Profile from API and then update what is in state from what the API returns
-	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -154,7 +154,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 		} else {
 			resp.Diagnostics.AddError(
 				"error reading Agent Profile",
-				fmt.Sprintf("Could not Read '%s' - %s", state.Id.Value, err),
+				fmt.Sprintf("Could not Read '%s' - %s", state.Id.ValueString(), err),
 			)
 			return
 		}
@@ -189,20 +189,20 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Update new Agent Profile
-	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.Value), plan.AgentProfileConfig())
+	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.AgentProfileConfig())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
-			fmt.Sprintf("Could not Update '%s' - %s", state.Id.Value, err),
+			fmt.Sprintf("Could not Update '%s' - %s", state.Id.ValueString(), err),
 		)
 		return
 	}
 
-	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
-			fmt.Sprintf("Could not Update '%s' - %s", state.Id.Value, err),
+			fmt.Sprintf("Could not Update '%s' - %s", state.Id.ValueString(), err),
 		)
 		return
 	}
@@ -227,13 +227,13 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	// Delete Agent Profile by calling API
-	err := o.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.Value))
+	err := o.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError(
 				"error deleting Agent Profile",
-				fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.Value, err),
+				fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.ValueString(), err),
 			)
 			return
 		}
@@ -242,11 +242,11 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 
 func parseAgentProfile(in *goapstra.AgentProfile) *dAgentProfile {
 	return &dAgentProfile{
-		Id:          types.String{Value: string(in.Id)},
-		Name:        types.String{Value: in.Label},
+		Id:          types.StringValue(string(in.Id)),
+		Name:        types.StringValue(in.Label),
 		Platform:    platformToTFString(in.Platform),
-		HasUsername: types.Bool{Value: in.HasUsername},
-		HasPassword: types.Bool{Value: in.HasPassword},
+		HasUsername: types.BoolValue(in.HasUsername),
+		HasPassword: types.BoolValue(in.HasPassword),
 		Packages:    mapStringStringToTypesMap(in.Packages),
 		OpenOptions: mapStringStringToTypesMap(in.OpenOptions),
 	}
