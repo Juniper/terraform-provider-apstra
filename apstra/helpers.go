@@ -11,18 +11,9 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 )
-
-// todo use sliceAttrValueToSliceObjectId instead?
-func sliceTfStringToSliceString(in []types.String) []string {
-	//goland:noinspection GoPreferNilSlice
-	out := []string{}
-	for _, t := range in {
-		out = append(out, t.Value)
-	}
-	return out
-}
 
 func newKeyLogWriter(fileName string) (*os.File, error) {
 	// expand ~ style home directory
@@ -59,10 +50,6 @@ func mapStringStringToTypesMap(in map[string]string) types.Map {
 		out.Elems[k] = types.String{Value: v}
 	}
 	return out
-}
-
-func listOfAttrValuesMatch(a types.List, b types.List) bool {
-	return sliceOfAttrValuesMatch(a.Elems, b.Elems)
 }
 
 func setOfAttrValuesMatch(a types.Set, b types.Set) bool {
@@ -152,14 +139,6 @@ func sliceAttrValueToSliceString(in []attr.Value) []string {
 	return result
 }
 
-func sliceStringerToSliceAttrValue(in []fmt.Stringer) []attr.Value {
-	result := make([]attr.Value, len(in))
-	for i, s := range in {
-		result[i] = types.String{Value: s.String()}
-	}
-	return result
-}
-
 func sliceAttrValueToSliceObjectId(in []attr.Value) []goapstra.ObjectId {
 	result := make([]goapstra.ObjectId, len(in))
 	stringSlice := sliceAttrValueToSliceString(in)
@@ -169,39 +148,10 @@ func sliceAttrValueToSliceObjectId(in []attr.Value) []goapstra.ObjectId {
 	return result
 }
 
-func resourceGroupAllocationToTypesSet(in *goapstra.ResourceGroupAllocation) types.Set {
-	result := types.Set{
-		ElemType: types.StringType,
-	}
-	if in == nil || len(in.PoolIds) == 0 {
-		result.Null = true
-		return result
-	}
-
-	result.Elems = make([]attr.Value, len(in.PoolIds))
-	for i, pool := range in.PoolIds {
-		result.Elems[i] = types.String{Value: string(pool)}
-	}
-	return result
-}
-
 func bigIntToBigFloat(in *big.Int) *big.Float {
 	bigval := new(big.Float)
 	bigval.SetInt(in)
 	return bigval
-}
-
-func addressingScheme(in string, diags *diag.Diagnostics) goapstra.AddressingScheme {
-	switch in {
-	case goapstra.AddressingSchemeIp4.String():
-		return goapstra.AddressingSchemeIp4
-	case goapstra.AddressingSchemeIp46.String():
-		return goapstra.AddressingSchemeIp46
-	case goapstra.AddressingSchemeIp6.String():
-		return goapstra.AddressingSchemeIp6
-	}
-	diags.AddError(errProviderBug, "attempt to parse unknown addressing scheme")
-	return goapstra.AddressingSchemeIp4
 }
 
 func getTfsdkTag(i interface{}, f string, diags *diag.Diagnostics) string {
@@ -226,17 +176,20 @@ func newRga(name goapstra.ResourceGroupName, set *types.Set, diags *diag.Diagnos
 	}
 }
 
-func renderTagIdsToSliceStringsFromRackElement(in types.Object) []goapstra.ObjectId {
-	tagSet := in.Attrs["tag_ids"].(types.Set)
-	if tagSet.IsNull() {
-		return []goapstra.ObjectId{}
+func setStringEqual(a, b []string) bool {
+	sort.Strings(a)
+	sort.Strings(b)
+	return sliceStringEqual(a, b)
+}
+
+func sliceStringEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
 	}
-	result := make([]goapstra.ObjectId, len(tagSet.Elems))
-	for i, elem := range tagSet.Elems {
-		if elem.IsNull() {
-			continue
+	for i := range a {
+		if a[i] != b[i] {
+			return false
 		}
-		result[i] = goapstra.ObjectId(elem.(types.String).Value)
 	}
-	return result
+	return true
 }
