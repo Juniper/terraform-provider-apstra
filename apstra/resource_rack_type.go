@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
 	"strings"
 )
 
@@ -449,11 +448,6 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	// copy nested object IDs (those not available from the API) from the (old) into newState
 	newState.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
-	p := plan.LeafSwitches.String()
-	s := newState.LeafSwitches.String()
-	os.WriteFile("/tmp/u_plan", []byte(p), 0644)
-	os.WriteFile("/tmp/u_state", []byte(s), 0644)
-
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
@@ -766,50 +760,54 @@ func (o *rRackTypeLeafSwitch) request(path path.Path, diags *diag.Diagnostics) *
 	}
 }
 
-func (o *rRackTypeLeafSwitch) validateConfig(errPath path.Path, rack *rRackType, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) validateConfig(path path.Path, rack *rRackType, diags *diag.Diagnostics) {
 	fcd, err := rack.fabricConnectivityDesign()
 	if err != nil {
-		diags.AddAttributeError(errPath.AtMapKey("fabric_connectivity_design"), "parse error", err.Error())
+		diags.AddAttributeError(path.AtMapKey("fabric_connectivity_design"), "parse error", err.Error())
 		return
+	}
+
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
 	}
 
 	switch *fcd {
 	case goapstra.FabricConnectivityDesignL3Clos:
-		o.validateForL3Clos(errPath, diags) // todo: figure out how to use AtSetValue()
+		o.validateForL3Clos(path, diags) // todo: figure out how to use AtSetValue()
 	case goapstra.FabricConnectivityDesignL3Collapsed:
-		o.validateForL3Collapsed(errPath, diags)
+		o.validateForL3Collapsed(path, diags)
 	default:
-		diags.AddAttributeError(errPath, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
+		diags.AddAttributeError(path, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
 	}
 
 	if o.RedundancyProtocol != nil && *o.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag.String() {
-		o.validateMlagInfo(errPath, diags)
+		o.validateMlagInfo(path, diags)
 	}
 }
 
-func (o *rRackTypeLeafSwitch) validateForL3Clos(errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) validateForL3Clos(path path.Path, diags *diag.Diagnostics) {
 	if o.SpineLinkCount == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_count' must be specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Clos))
 	}
 
 	if o.SpineLinkSpeed == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_speed' must be specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Clos))
 	}
 }
 
-func (o *rRackTypeLeafSwitch) validateForL3Collapsed(errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) validateForL3Collapsed(path path.Path, diags *diag.Diagnostics) {
 	if o.SpineLinkCount != nil {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_count' must not be specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Collapsed))
 	}
 
 	if o.SpineLinkSpeed != nil {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_speed' must bnot e specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Collapsed))
 	}
@@ -818,27 +816,27 @@ func (o *rRackTypeLeafSwitch) validateForL3Collapsed(errPath path.Path, diags *d
 		var redundancyProtocol goapstra.LeafRedundancyProtocol
 		err := redundancyProtocol.FromString(*o.RedundancyProtocol)
 		if err != nil {
-			diags.AddAttributeError(errPath.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
+			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
 			return
 		}
 		if redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
-			diags.AddAttributeError(errPath, errInvalidConfig,
+			diags.AddAttributeError(path, errInvalidConfig,
 				fmt.Sprintf("'redundancy_protocol' = '%s' is not allowed when 'fabric_connectivity_design' = '%s'",
 					goapstra.LeafRedundancyProtocolMlag, goapstra.FabricConnectivityDesignL3Collapsed))
 		}
 	}
 }
 
-func (o *rRackTypeLeafSwitch) validateMlagInfo(errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) validateMlagInfo(path path.Path, diags *diag.Diagnostics) {
 	var redundancyProtocol goapstra.LeafRedundancyProtocol
 	err := redundancyProtocol.FromString(*o.RedundancyProtocol)
 	if err != nil {
-		diags.AddAttributeError(errPath.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
+		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
 		return
 	}
 
 	if o.MlagInfo == nil && redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'mlag_info' required with 'redundancy_protocol' = '%s'", redundancyProtocol.String()))
 	}
 
@@ -847,30 +845,30 @@ func (o *rRackTypeLeafSwitch) validateMlagInfo(errPath path.Path, diags *diag.Di
 	}
 
 	if redundancyProtocol != goapstra.LeafRedundancyProtocolMlag {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'mlag_info' incompatible with 'redundancy_protocol of '%s'", redundancyProtocol.String()))
 	}
 
 	if o.MlagInfo.PeerLinkPortChannelId != nil &&
 		o.MlagInfo.L3PeerLinkPortChannelId != nil &&
 		*o.MlagInfo.PeerLinkPortChannelId == *o.MlagInfo.L3PeerLinkPortChannelId {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'peer_link_port_channel_id' and 'l3_peer_link_port_channel_id' cannot both use value %d",
 				*o.MlagInfo.PeerLinkPortChannelId))
 	}
 
 	if o.MlagInfo.L3PeerLinkCount != nil && o.MlagInfo.L3PeerLinkSpeed == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
 	}
 	if o.MlagInfo.L3PeerLinkSpeed != nil && o.MlagInfo.L3PeerLinkCount == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
 	}
 
 	if o.MlagInfo.L3PeerLinkPortChannelId != nil && o.MlagInfo.L3PeerLinkCount == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
 	}
 	if o.MlagInfo.L3PeerLinkCount != nil && o.MlagInfo.L3PeerLinkPortChannelId == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
 	}
 }
 
@@ -997,6 +995,10 @@ func (o *rRackTypeAccessSwitch) validateConfig(ctx context.Context, path path.Pa
 		if err != nil {
 			diags.AddAttributeError(path, "error parsing redundancy protocol", err.Error())
 		}
+	}
+
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
 	}
 
 	for i, link := range o.Links {
@@ -1139,6 +1141,10 @@ func (o *rRackTypeGenericSystem) validateConfig(ctx context.Context, path path.P
 
 	if o.PortChannelIdMin != nil && o.PortChannelIdMax != nil && *o.PortChannelIdMin > *o.PortChannelIdMax {
 		diags.AddAttributeError(path, errInvalidConfig, "port_channel_id_min > port_channel_id_max")
+	}
+
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
 	}
 
 	for i, link := range o.Links {
@@ -1352,15 +1358,19 @@ func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goap
 	return goapstra.RackLinkAttachmentTypeSingle
 }
 
-func (o *rRackLink) validateConfigForAccessSwitch(ctx context.Context, arp goapstra.AccessRedundancyProtocol, rack *rRackType, errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackLink) validateConfigForAccessSwitch(ctx context.Context, arp goapstra.AccessRedundancyProtocol, rack *rRackType, path path.Path, diags *diag.Diagnostics) {
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
+	}
+
 	if o.LagMode != nil {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'lag_mode' not permitted on Access Switch links")
+		diags.AddAttributeError(path, errInvalidConfig, "'lag_mode' not permitted on Access Switch links")
 		return
 	}
 
 	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
 	if leaf == nil {
-		diags.AddAttributeError(errPath, "leaf switch not found",
+		diags.AddAttributeError(path, "leaf switch not found",
 			fmt.Sprintf("leaf switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
 		return
 	}
@@ -1372,7 +1382,7 @@ func (o *rRackLink) validateConfigForAccessSwitch(ctx context.Context, arp goaps
 	if leaf.RedundancyProtocol != nil {
 		err := lrp.FromString(*leaf.RedundancyProtocol)
 		if err != nil {
-			diags.AddAttributeError(errPath,
+			diags.AddAttributeError(path,
 				fmt.Sprintf("error parsing leaf switch redundancy protocol '%s'", *leaf.RedundancyProtocol),
 				err.Error())
 		}
@@ -1380,24 +1390,28 @@ func (o *rRackLink) validateConfigForAccessSwitch(ctx context.Context, arp goaps
 
 	if arp == goapstra.AccessRedundancyProtocolEsi &&
 		lrp != goapstra.LeafRedundancyProtocolEsi {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			"ESI access switches only support connection to ESI leafs")
 		return
 	}
 
 	if o.SwitchPeer != nil && // primary/secondary has been selected ...and...
 		lrp == goapstra.LeafRedundancyProtocolNone { // upstream is not ESI/MLAG
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			"'switch_peer' must not be set when upstream switch is non-redundant")
 	}
 }
 
-func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rRackType, errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rRackType, path path.Path, diags *diag.Diagnostics) {
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
+	}
+
 	lagMode := goapstra.RackLinkLagModeNone
 	if o.LagMode != nil {
 		err := lagMode.FromString(*o.LagMode)
 		if err != nil {
-			diags.AddAttributeError(errPath, "error parsing lag mode", err.Error())
+			diags.AddAttributeError(path, "error parsing lag mode", err.Error())
 		}
 	}
 
@@ -1406,13 +1420,13 @@ func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rR
 		linksPerSwitch = *o.LinksPerSwitch
 	}
 	if lagMode == goapstra.RackLinkLagModeNone && linksPerSwitch > 1 {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'lag_mode' must be set when 'links_per_switch' is set")
+		diags.AddAttributeError(path, errInvalidConfig, "'lag_mode' must be set when 'links_per_switch' is set")
 	}
 
 	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
 	access := rack.getAccessSwitchByName(ctx, o.TargetSwitchName, diags)
 	if leaf == nil && access == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("target switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
 		return
 	}
@@ -1430,12 +1444,12 @@ func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rR
 	}
 
 	if !targetSwitchIsRedundant && o.SwitchPeer != nil {
-		diags.AddAttributeError(errPath.AtMapKey("switch_peer"), errInvalidConfig,
+		diags.AddAttributeError(path.AtMapKey("switch_peer"), errInvalidConfig,
 			"links to non-redundant switches must not specify 'switch_peer'")
 	}
 
 	if targetSwitchIsRedundant && (o.SwitchPeer == nil && o.LagMode == nil) {
-		diags.AddAttributeError(errPath.AtMapKey("switch_peer"), errInvalidConfig,
+		diags.AddAttributeError(path.AtMapKey("switch_peer"), errInvalidConfig,
 			"links to redundant switches must specify 'switch_peer' or 'lag_mode'")
 	}
 }
@@ -1470,7 +1484,7 @@ func (o *rRackLink) copyWriteOnlyElements(src *rRackLink, diags *diag.Diagnostic
 	o.TagIds = src.TagIds
 }
 
-func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
 	var leafSwitches []rRackTypeLeafSwitch
 	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, true)
 	diags.Append(d...)
@@ -1484,11 +1498,11 @@ func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, errPath path
 		if diags.HasError() {
 			return
 		}
-		leafSwitch.validateConfig(errPath.AtSetValue(setVal), o, diags)
+		leafSwitch.validateConfig(path.AtSetValue(setVal), o, diags)
 	}
 }
 
-func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
 	var accessSwitches []rRackTypeAccessSwitch
 	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, true)
 	diags.Append(d...)
@@ -1503,11 +1517,11 @@ func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, errPath pa
 			return
 		}
 
-		accessSwitch.validateConfig(ctx, errPath.AtSetValue(setVal), o, diags)
+		accessSwitch.validateConfig(ctx, path.AtSetValue(setVal), o, diags)
 	}
 }
 
-func (o *rRackType) validateConfigGenericSystems(ctx context.Context, errPath path.Path, diags *diag.Diagnostics) {
+func (o *rRackType) validateConfigGenericSystems(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
 	var genericSystems []rRackTypeGenericSystem
 	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
@@ -1521,7 +1535,7 @@ func (o *rRackType) validateConfigGenericSystems(ctx context.Context, errPath pa
 		if diags.HasError() {
 			return
 		}
-		genericSystem.validateConfig(ctx, errPath.AtSetValue(setVal), o, diags)
+		genericSystem.validateConfig(ctx, path.AtSetValue(setVal), o, diags)
 	}
 }
 
