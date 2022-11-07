@@ -244,7 +244,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	var ace goapstra.ApstraClientErr
 
 	// maybe the config gave us the rack type name?
-	if config.Name.IsNull() == false { // fetch rack type by name
+	if !config.Name.IsNull() { // fetch rack type by name
 		rt, err = o.client.GetRackTypeByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
@@ -256,7 +256,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	// maybe the config gave us the rack type id?
-	if config.Id.IsNull() == false { // fetch rack type by ID
+	if !config.Id.IsNull() { // fetch rack type by ID
 		rt, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
