@@ -75,7 +75,7 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 	// map response body to resource schema
 	config.Ids = make([]types.String, len(ids))
 	for i, Id := range ids {
-		config.Ids[i] = types.String{Value: string(Id)}
+		config.Ids[i] = types.StringValue(string(Id))
 	}
 
 	// Set state
