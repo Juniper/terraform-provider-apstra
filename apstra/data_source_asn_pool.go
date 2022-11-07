@@ -133,7 +133,7 @@ func (o *dataSourceAsnPool) ValidateConfig(ctx context.Context, req datasource.V
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError(
 			"cannot search for ASN Pool",
 			"exactly one of 'name' or 'id' must be specified",
@@ -157,10 +157,10 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 	var err error
 	var asnPool *goapstra.AsnPool
 	switch {
-	case !config.Name.Null:
-		asnPool, err = o.client.GetAsnPoolByName(ctx, config.Name.Value)
-	case !config.Id.Null:
-		asnPool, err = o.client.GetAsnPool(ctx, goapstra.ObjectId(config.Id.Value))
+	case !config.Name.IsNull():
+		asnPool, err = o.client.GetAsnPoolByName(ctx, config.Name.ValueString())
+	case !config.Id.IsNull():
+		asnPool, err = o.client.GetAsnPool(ctx, goapstra.ObjectId(config.Id.ValueString()))
 	default:
 		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
 	}
@@ -171,24 +171,24 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	config.Id = types.String{Value: string(asnPool.Id)}
-	config.Name = types.String{Value: asnPool.DisplayName}
-	config.Status = types.String{Value: asnPool.Status}
-	config.Used = types.Int64{Value: int64(asnPool.Used)}
-	config.UsedPercent = types.Float64{Value: float64(asnPool.UsedPercentage)}
-	config.CreatedAt = types.String{Value: asnPool.CreatedAt.String()}
-	config.LastModifiedAt = types.String{Value: asnPool.LastModifiedAt.String()}
-	config.Total = types.Int64{Value: int64(asnPool.Total)}
+	config.Id = types.StringValue(string(asnPool.Id))
+	config.Name = types.StringValue(asnPool.DisplayName)
+	config.Status = types.StringValue(asnPool.Status)
+	config.Used = types.Int64Value(int64(asnPool.Used))
+	config.UsedPercent = types.Float64Value(float64(asnPool.UsedPercentage))
+	config.CreatedAt = types.StringValue(asnPool.CreatedAt.String())
+	config.LastModifiedAt = types.StringValue(asnPool.LastModifiedAt.String())
+	config.Total = types.Int64Value(int64(asnPool.Total))
 	config.Ranges = make([]dAsnRange, len(asnPool.Ranges))
 
 	for i, r := range asnPool.Ranges {
 		config.Ranges[i] = dAsnRange{
-			Status:         types.String{Value: r.Status},
-			First:          types.Int64{Value: int64(r.First)},
-			Last:           types.Int64{Value: int64(r.Last)},
-			Total:          types.Int64{Value: int64(r.Total)},
-			Used:           types.Int64{Value: int64(r.Used)},
-			UsedPercentage: types.Float64{Value: float64(r.UsedPercentage)},
+			Status:         types.StringValue(r.Status),
+			First:          types.Int64Value(int64(r.First)),
+			Last:           types.Int64Value(int64(r.Last)),
+			Total:          types.Int64Value(int64(r.Total)),
+			Used:           types.Int64Value(int64(r.Used)),
+			UsedPercentage: types.Float64Value(float64(r.UsedPercentage)),
 		}
 	}
 
