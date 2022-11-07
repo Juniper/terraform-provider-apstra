@@ -71,7 +71,7 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 
 	// Create new ASN Pool
 	id, err := o.client.CreateAsnPool(ctx, &goapstra.AsnPoolRequest{
-		DisplayName: plan.Name.Value,
+		DisplayName: plan.Name.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("error creating new ASN Pool", err.Error())
@@ -79,7 +79,7 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   types.String{Value: string(id)},
+		Id:   types.StringValue(string(id)),
 		Name: plan.Name,
 	})
 	resp.Diagnostics.Append(diags...)
@@ -103,7 +103,7 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// Get ASN pool from API and then update what is in state from what the API returns
-	pool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.Value))
+	pool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -118,8 +118,8 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 
 	// Set state
 	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   types.String{Value: string(pool.Id)},
-		Name: types.String{Value: pool.DisplayName},
+		Id:   types.StringValue(string(pool.Id)),
+		Name: types.StringValue(pool.DisplayName),
 	})
 	resp.Diagnostics.Append(diags...)
 }
@@ -147,26 +147,26 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	currentPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.Value))
+	currentPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
 			resp.Diagnostics.AddWarning("API error",
-				fmt.Sprintf("error fetching existing ASN pool - pool '%s' not found", state.Id.Value),
+				fmt.Sprintf("error fetching existing ASN pool - pool '%s' not found", state.Id.ValueString()),
 			)
 			return
 		}
 		// some other unknown error
 		resp.Diagnostics.AddError("API error",
-			fmt.Sprintf("error fetching ASN pool '%s' - %s", state.Id.Value, err.Error()),
+			fmt.Sprintf("error fetching ASN pool '%s' - %s", state.Id.ValueString(), err.Error()),
 		)
 		return
 	}
 
 	// Generate API request body from plan
 	send := &goapstra.AsnPoolRequest{
-		DisplayName: plan.Name.Value,
+		DisplayName: plan.Name.ValueString(),
 		Ranges:      make([]goapstra.IntfIntRange, len(currentPool.Ranges)),
 	}
 	for i, r := range currentPool.Ranges {
@@ -174,7 +174,7 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Create/Update ASN pool
-	err = o.client.UpdateAsnPool(ctx, goapstra.ObjectId(state.Id.Value), send)
+	err = o.client.UpdateAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()), send)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating ASN pool", err.Error())
 		return
@@ -182,8 +182,8 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Set new state
 	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   types.String{Value: state.Id.Value},
-		Name: types.String{Value: plan.Name.Value},
+		Id:   state.Id,
+		Name: plan.Name,
 	})
 	resp.Diagnostics.Append(diags...)
 }
@@ -203,7 +203,7 @@ func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	// Delete ASN pool by calling API
-	err := o.client.DeleteAsnPool(ctx, goapstra.ObjectId(state.Id.Value))
+	err := o.client.DeleteAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
