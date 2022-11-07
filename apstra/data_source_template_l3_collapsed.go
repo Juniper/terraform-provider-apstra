@@ -124,7 +124,8 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	var templateId goapstra.ObjectId
 	var templateType goapstra.TemplateType
 
-	if !config.Id.IsNull() {
+	// maybe the config gave us the template name?
+	if !config.Id.IsNull() { // fetch template by id
 		templateId = goapstra.ObjectId(config.Id.ValueString())
 		templateType, err = o.client.GetTemplateType(ctx, templateId)
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -133,7 +134,7 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 		}
 	}
 
-	if !config.Name.IsNull() {
+	if !config.Name.IsNull() { // fetch template by name
 		templateId, templateType, err = o.client.GetTemplateIdTypeByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(path.Root("name"), "Not found", err.Error())
@@ -141,9 +142,9 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 		}
 	}
 
-	if templateType.String() != "l3_collapsed" {
+	if templateType != goapstra.TemplateTypeL3Collapsed {
 		resp.Diagnostics.AddError("wrong template type",
-			fmt.Sprintf("selected template has type '%s', not 'l3_collapsed'", templateType))
+			fmt.Sprintf("selected template has type '%s', not '%s'", templateType, goapstra.TemplateTypeL3Collapsed.String()))
 		return
 	}
 
@@ -154,7 +155,7 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	}
 
 	var state dTemplateL3Collapsed
-	state.parseApiResponse(template, &resp.Diagnostics)
+	state.parseApi(template, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -172,7 +173,7 @@ type dTemplateL3Collapsed struct {
 	RackType      types.Object `tfsdk:"rack_type"`
 }
 
-func (o *dTemplateL3Collapsed) parseApiResponse(in *goapstra.TemplateL3Collapsed, diags *diag.Diagnostics) {
+func (o *dTemplateL3Collapsed) parseApi(in *goapstra.TemplateL3Collapsed, diags *diag.Diagnostics) {
 	var d diag.Diagnostics
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
