@@ -3,11 +3,10 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -15,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
 	"strings"
 )
 
@@ -83,8 +81,8 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 			"leaf_switches": {
 				MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
 				Required:            true,
-				Validators:          []tfsdk.AttributeValidator{listvalidator.SizeAtLeast(1)},
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+				Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
 						MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
 						Type:                types.StringType,
@@ -176,8 +174,8 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 			"access_switches": {
 				MarkdownDescription: "Access switches provide fan-out connectivity from Leaf Switches.",
 				Optional:            true,
-				Validators:          []tfsdk.AttributeValidator{listvalidator.SizeAtLeast(1)},
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+				Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 					"name": {
 						MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
 						Type:                types.StringType,
@@ -226,6 +224,49 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 					},
 				}),
 			},
+			"generic_systems": {
+				MarkdownDescription: "Generic Systems are rack elements not" +
+					"managed by Apstra: Servers, routers, firewalls, etc...",
+				Optional:   true,
+				Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+					"name": {
+						MarkdownDescription: "Generic name, must be unique within the rack-type.",
+						Type:                types.StringType,
+						Required:            true,
+						Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+					},
+					"count": {
+						MarkdownDescription: "Number of Generic Systems of this type.",
+						Type:                types.Int64Type,
+						Required:            true,
+						Validators: []tfsdk.AttributeValidator{
+							int64validator.AtLeast(1),
+						},
+					},
+					"port_channel_id_min": {
+						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+						Optional:            true,
+						Computed:            true,
+						Type:                types.Int64Type,
+					},
+					"port_channel_id_max": {
+						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+						Optional:            true,
+						Computed:            true,
+						Type:                types.Int64Type,
+					},
+					"logical_device_id": {
+						MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
+						Type:                types.StringType,
+						Required:            true,
+					},
+					"logical_device": logicalDeviceDataAttributeSchema(),
+					"links":          rRackLinkAttributeSchema(),
+					"tag_ids":        tagIdsAttributeSchema(),
+					"tag_data":       tagsDataAttributeSchema(),
+				}),
+			},
 		},
 	}, nil
 }
@@ -244,6 +285,7 @@ func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.Vali
 
 	config.validateConfigLeafSwitches(ctx, path.Root("leaf_switches"), &resp.Diagnostics)
 	config.validateConfigAccessSwitches(ctx, path.Root("access_switches"), &resp.Diagnostics)
+	config.validateConfigGenericSystems(ctx, path.Root("generic_systems"), &resp.Diagnostics)
 }
 
 func (o *resourceRackType) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -260,36 +302,48 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// force values as needed
-	plan.forceValues(&resp.Diagnostics)
-	if diags.HasError() {
-		return
-	}
-
-	// populate rack elements (leaf/access/generic) from global catalog
-	plan.populateDataFromGlobalCatalog(ctx, o.client, &resp.Diagnostics)
+	// create a RackTypeRequest
+	rtRequest := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Prepare a goapstra.RackTypeRequest
-	rtReq := plan.goapstraRequest(&resp.Diagnostics)
-	if diags.HasError() {
-		return
-	}
-
-	// send the request to Apstra
-	id, err := o.client.CreateRackType(ctx, rtReq)
+	// create the RackType object (nested objects are referenced by ID)
+	id, err := o.client.CreateRackType(ctx, rtRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating rack type", err.Error())
 		return
 	}
 
-	plan.Id = types.String{Value: string(id)}
-	diags = resp.State.Set(ctx, &plan)
+	// retrieve the RackType object with fully-enumerated embedded objects
+	rt, err := o.client.GetRackType(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving rack type info after creation", err.Error())
+		return
+	}
+
+	// validate API response to catch problems which might crash the provider
+	validateRackType(rt, &resp.Diagnostics) // todo: chase this down for places HasError() should be checked
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// parse the API response into a state object
+	state := &rRackType{}
+	state.parseApi(ctx, rt, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// copy nested object IDs (those not available from the API) from the plan into the state
+	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+
+	// Set state
+	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }
 
+// todo: errpath with AtListIndex() are probably mostly wrong
 func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
@@ -304,6 +358,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
+	// fetch the rack type detail from the API
 	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.Value))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -315,26 +370,24 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
+	// validate API response to catch problems which might crash the provider
 	validateRackType(rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var newState rRackType
-	newState.parseApiResponse(ctx, rt, &resp.Diagnostics)
+	// parse the API response into a new state object
+	newState := &rRackType{}
+	newState.parseApi(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// force values as needed
-	newState.forceValues(&resp.Diagnostics)
-	if diags.HasError() {
-		return
-	}
+	// copy nested object IDs (those not available from the API) from the previous state into the new state
+	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
-	newState.copyWriteOnlyElements(&state, &resp.Diagnostics)
-
-	diags = resp.State.Set(ctx, &newState)
+	// Set state
+	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -360,33 +413,42 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	planJson, _ := json.MarshalIndent(&plan, "", "  ")
-	os.WriteFile("/tmp/plan", planJson, 0644)
-
-	// force values as needed
-	plan.forceValues(&resp.Diagnostics)
-	if diags.HasError() {
-		return
-	}
-
-	// populate rack elements (leaf/access/generic) from global catalog
-	plan.populateDataFromGlobalCatalog(ctx, o.client, &resp.Diagnostics)
+	// create a RackTypeRequest
+	rtRequest := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Prepare a goapstra.RackTypeRequest
-	rtReq := plan.goapstraRequest(&resp.Diagnostics)
-	if diags.HasError() {
-		return
-	}
-
-	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.Value), rtReq)
+	// send the request to Apstra
+	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.ValueString()), rtRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
 	}
 
-	diags = resp.State.Set(ctx, &plan)
+	// retrieve the RackType object with fully-enumerated embedded objects
+	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving rack type info after creation", err.Error())
+		return
+	}
+
+	// validate API response to catch problems which might crash the provider
+	validateRackType(rt, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// parse the API response into a state object
+	newState := &rRackType{}
+	newState.parseApi(ctx, rt, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// copy nested object IDs (those not available from the API) from the (old) into newState
+	newState.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -404,7 +466,7 @@ func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	err := o.client.DeleteRackType(ctx, goapstra.ObjectId(state.Id.Value))
+	err := o.client.DeleteRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -419,597 +481,873 @@ type rRackType struct {
 	Name                     types.String `tfsdk:"name"`
 	Description              types.String `tfsdk:"description"`
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             types.List   `tfsdk:"leaf_switches"`
-	AccessSwitches           types.List   `tfsdk:"access_switches"`
+	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
+	AccessSwitches           types.Set    `tfsdk:"access_switches"`
+	GenericSystems           types.Set    `tfsdk:"generic_systems"`
 }
 
-func (o *rRackType) populateDataFromGlobalCatalog(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	o.populateLeafSwitchesDataFromGlobalCatalog(ctx, client, path.Root("leaf_switches"), diags)
-	o.populateAccessSwitchesDataFromGlobalCatalog(ctx, client, path.Root("access_switches"), diags)
+func (o *rRackType) fabricConnectivityDesign() (*goapstra.FabricConnectivityDesign, error) {
+	var fcd goapstra.FabricConnectivityDesign
+	return &fcd, fcd.FromString(o.FabricConnectivityDesign.ValueString())
 }
 
-func (o *rRackType) populateLeafSwitchesDataFromGlobalCatalog(ctx context.Context, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	for i := range o.LeafSwitches.Elems {
-		o.populateLeafSwitchDataFromGlobalCatalog(ctx, i, client, errPath.AtListIndex(i), diags)
+func (o *rRackType) getLeafSwitchByName(ctx context.Context, name string, diags *diag.Diagnostics) *rRackTypeLeafSwitch {
+	var leafSwitches []rRackTypeLeafSwitch
+	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	for _, leafSwitch := range leafSwitches {
+		if leafSwitch.Name == name {
+			return &leafSwitch
+		}
+	}
+	return nil
+}
+
+func (o *rRackType) getAccessSwitchByName(ctx context.Context, name string, diags *diag.Diagnostics) *rRackTypeAccessSwitch {
+	var accessSwitches []rRackTypeAccessSwitch
+	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	for _, accessSwitch := range accessSwitches {
+		if accessSwitch.Name == name {
+			return &accessSwitch
+		}
+	}
+	return nil
+}
+
+func (o *rRackType) getSwitchRedundancyProtocolByName(ctx context.Context, name string, path path.Path, diags *diag.Diagnostics) fmt.Stringer {
+	leaf := o.getLeafSwitchByName(ctx, name, diags)
+	access := o.getAccessSwitchByName(ctx, name, diags)
+	if leaf == nil && access == nil {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("target switch '%s' not found in rack type '%s'", name, o.Id))
+		return nil
+	}
+	if leaf != nil && access != nil {
+		diags.AddError(errProviderBug, "link seems to be attached to both leaf and access switches")
+		return nil
+	}
+
+	var leafRedundancyProtocol goapstra.LeafRedundancyProtocol
+	if leaf != nil {
+		if leaf.RedundancyProtocol == nil {
+			return goapstra.LeafRedundancyProtocolNone
+		}
+		err := leafRedundancyProtocol.FromString(*leaf.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing leaf switch redundancy protocol", err.Error())
+			return nil
+		}
+		return leafRedundancyProtocol
+	}
+
+	var accessRedundancyProtocol goapstra.AccessRedundancyProtocol
+	if access != nil {
+		if access.RedundancyProtocol == nil {
+			return goapstra.AccessRedundancyProtocolNone
+		}
+		err := accessRedundancyProtocol.FromString(*access.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing access switch redundancy protocol", err.Error())
+			return nil
+		}
+		return accessRedundancyProtocol
+	}
+	diags.AddError(errProviderBug, "somehow we've reached the end of getSwitchRedundancyProtocolByName without finding a solution")
+	return nil
+}
+
+func (o *rRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+	var d diag.Diagnostics
+
+	var leafSwitchSet types.Set
+	if len(in.Data.LeafSwitches) > 0 {
+		leafSwitches := make([]rRackTypeLeafSwitch, len(in.Data.LeafSwitches))
+		for i := range in.Data.LeafSwitches {
+			leafSwitches[i].parseApi(&in.Data.LeafSwitches[i], in.Data.FabricConnectivityDesign)
+		}
+		leafSwitchSet, d = types.SetValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), leafSwitches)
+		diags.Append(d...)
+	} else {
+		leafSwitchSet = types.SetNull(rRackTypeLeafSwitch{}.attrType())
+	}
+
+	var accessSwitchSet types.Set
+	if len(in.Data.AccessSwitches) > 0 {
+		accessSwitches := make([]rRackTypeAccessSwitch, len(in.Data.AccessSwitches))
+		for i := range in.Data.AccessSwitches {
+			accessSwitches[i].parseApi(&in.Data.AccessSwitches[i])
+		}
+		accessSwitchSet, d = types.SetValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), accessSwitches)
+		diags.Append(d...)
+	} else {
+		accessSwitchSet = types.SetNull(rRackTypeAccessSwitch{}.attrType())
+	}
+
+	var genericSystemSet types.Set
+	if len(in.Data.GenericSystems) > 0 {
+		genericSystems := make([]rRackTypeGenericSystem, len(in.Data.GenericSystems))
+		for i := range in.Data.GenericSystems {
+			genericSystems[i].parseApi(&in.Data.GenericSystems[i])
+		}
+		genericSystemSet, d = types.SetValueFrom(ctx, rRackTypeGenericSystem{}.attrType(), genericSystems)
+		diags.Append(d...)
+	} else {
+		genericSystemSet = types.SetNull(rRackTypeGenericSystem{}.attrType())
+	}
+
+	o.Id = types.StringValue(string(in.Id))
+	o.Name = types.StringValue(in.Data.DisplayName)
+	o.Description = types.StringValue(in.Data.Description)
+	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
+	o.LeafSwitches = leafSwitchSet
+	o.AccessSwitches = accessSwitchSet
+	o.GenericSystems = genericSystemSet
+}
+
+// copyWriteOnlyElements copies elements (IDs of nested design API objects)
+// from 'src' (plan or state - something which knows these facts) into 'o' a
+// rRackType to be used as state.
+func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, diags *diag.Diagnostics) {
+	// first extract native go structs from the TF set of objects
+	leafSwitches := o.leafSwitches(ctx, diags)
+	accessSwitches := o.accessSwitches(ctx, diags)
+	genericSystems := o.genericSystems(ctx, diags)
+
+	// invoke the copyWriteOnlyElements on every leaf switch object
+	for i, leafSwitch := range leafSwitches {
+		srcLeafSwitch := src.leafSwitchByName(ctx, leafSwitch.Name, diags)
+		if diags.HasError() {
+			return
+		}
+		leafSwitches[i].copyWriteOnlyElements(srcLeafSwitch, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	// invoke the copyWriteOnlyElements on every access switch object
+	for _, accessSwitch := range accessSwitches {
+		srcAccessSwitch := src.accessSwitchByName(ctx, accessSwitch.Name, diags)
+		if diags.HasError() {
+			return
+		}
+		accessSwitch.copyWriteOnlyElements(srcAccessSwitch, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	// invoke the copyWriteOnlyElements on every generic system object
+	for _, genericSystem := range genericSystems {
+		srcGenericSystem := src.genericSystemByName(ctx, genericSystem.Name, diags)
+		if diags.HasError() {
+			return
+		}
+		genericSystem.copyWriteOnlyElements(srcGenericSystem, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	var d diag.Diagnostics
+	var leafSwitchSet, accessSwitchSet, genericSystemSet types.Set
+
+	// transform the native go objects (with copied object IDs) back to TF set
+	if len(leafSwitches) > 0 {
+		leafSwitchSet, d = types.SetValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), leafSwitches)
+		diags.Append(d...)
+	} else {
+		leafSwitchSet = types.SetNull(rRackTypeLeafSwitch{}.attrType())
+	}
+
+	// transform the native go objects (with copied object IDs) back to TF set
+	if len(accessSwitches) > 0 {
+		accessSwitchSet, d = types.SetValueFrom(ctx, rRackTypeAccessSwitch{}.attrType(), accessSwitches)
+		diags.Append(d...)
+	} else {
+		accessSwitchSet = types.SetNull(rRackTypeAccessSwitch{}.attrType())
+	}
+
+	// transform the native go objects (with copied object IDs) back to TF set
+	if len(genericSystems) > 0 {
+		genericSystemSet, d = types.SetValueFrom(ctx, rRackTypeGenericSystem{}.attrType(), genericSystems)
+		diags.Append(d...)
+	} else {
+		genericSystemSet = types.SetNull(rRackTypeGenericSystem{}.attrType())
+	}
+
+	// save the TF sets into rRackType
+	o.LeafSwitches = leafSwitchSet
+	o.AccessSwitches = accessSwitchSet
+	o.GenericSystems = genericSystemSet
+}
+
+type rRackTypeLeafSwitch struct {
+	Name               string            `tfsdk:"name"`
+	LogicalDeviceId    string            `tfsdk:"logical_device_id"`
+	SpineLinkCount     *int64            `tfsdk:"spine_link_count"`
+	SpineLinkSpeed     *string           `tfsdk:"spine_link_speed"`
+	RedundancyProtocol *string           `tfsdk:"redundancy_protocol"`
+	LogicalDevice      logicalDeviceData `tfsdk:"logical_device"`
+	TagIds             []string          `tfsdk:"tag_ids"`
+	TagData            []tagData         `tfsdk:"tag_data"`
+	MlagInfo           *mlagInfo         `tfsdk:"mlag_info""`
+}
+
+func (o rRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"logical_device_id":   types.StringType,
+		"spine_link_count":    types.Int64Type,
+		"spine_link_speed":    types.StringType,
+		"redundancy_protocol": types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"mlag_info":           mlagInfo{}.attrType()}
+}
+
+func (o rRackTypeLeafSwitch) attrType() attr.Type {
+	return types.ObjectType{AttrTypes: o.attrTypes()}
+}
+
+func (o *rRackTypeLeafSwitch) request(path path.Path, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
+	var linkPerSpineCount int
+	if o.SpineLinkCount != nil {
+		linkPerSpineCount = int(*o.SpineLinkCount)
+	}
+
+	var linkPerSpineSpeed goapstra.LogicalDevicePortSpeed
+	if o.SpineLinkSpeed != nil {
+		linkPerSpineSpeed = goapstra.LogicalDevicePortSpeed(*o.SpineLinkSpeed)
+	}
+
+	redundancyProtocol := goapstra.LeafRedundancyProtocolNone
+	if o.RedundancyProtocol != nil {
+		err := redundancyProtocol.FromString(*o.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"),
+				"error parsing redundancy_protocol", err.Error())
+			return nil
+		}
+	}
+
+	var tagIds []goapstra.ObjectId
+	if o.TagIds != nil {
+		tagIds = make([]goapstra.ObjectId, len(o.TagIds))
+		for i, tagId := range o.TagIds {
+			tagIds[i] = goapstra.ObjectId(tagId)
+		}
+	}
+
+	return &goapstra.RackElementLeafSwitchRequest{
+		Label:              o.Name,
+		MlagInfo:           o.MlagInfo.request(),
+		LinkPerSpineCount:  linkPerSpineCount,
+		LinkPerSpineSpeed:  linkPerSpineSpeed,
+		RedundancyProtocol: redundancyProtocol,
+		Tags:               tagIds,
+		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId),
 	}
 }
 
-func (o *rRackType) populateLeafSwitchDataFromGlobalCatalog(ctx context.Context, idx int, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	o.populateLeafSwitchLogicalDeviceFromGlobalCatalog(ctx, idx, client, errPath.AtMapKey("logical_device"), diags)
-	o.populateLeafSwitchTagsDataFromGlobalCatalog(ctx, idx, client, errPath.AtMapKey("tag_ids"), diags)
-}
-
-func (o *rRackType) populateLeafSwitchLogicalDeviceFromGlobalCatalog(ctx context.Context, idx int, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	id := o.LeafSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"].(types.String).Value
-	o.LeafSwitches.Elems[idx].(types.Object).Attrs["logical_device"] = getLogicalDeviceObj(ctx, client, id, errPath, diags)
-	if diags.HasError() {
+func (o *rRackTypeLeafSwitch) validateConfig(path path.Path, rack *rRackType, diags *diag.Diagnostics) {
+	fcd, err := rack.fabricConnectivityDesign()
+	if err != nil {
+		diags.AddAttributeError(path.AtMapKey("fabric_connectivity_design"), "parse error", err.Error())
 		return
 	}
-}
 
-func (o *rRackType) populateLeafSwitchTagsDataFromGlobalCatalog(ctx context.Context, idx int, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	tagIdSet := o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_ids"].(types.Set)
-	tagData := setTagIdStringToSetTagDataObj(ctx, tagIdSet, client, errPath.AtMapKey("tag_ids"), diags)
-	if diags.HasError() {
-		return
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
 	}
 
-	o.LeafSwitches.Elems[idx].(types.Object).Attrs["tag_data"] = tagData
-}
-
-func (o *rRackType) populateAccessSwitchesDataFromGlobalCatalog(ctx context.Context, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	for i := range o.AccessSwitches.Elems {
-		o.populateAccessSwitchDataFromGlobalCatalog(ctx, i, client, errPath.AtListIndex(i), diags)
-	}
-}
-
-func (o *rRackType) populateAccessSwitchDataFromGlobalCatalog(ctx context.Context, idx int, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	o.populateAccessSwitchLogicalDeviceFromGlobalCatalog(ctx, idx, client, errPath, diags)
-	o.populateAccessSwitchTagsDataFromGlobalCatalog(ctx, idx, client, errPath, diags)
-}
-
-func (o *rRackType) populateAccessSwitchLogicalDeviceFromGlobalCatalog(ctx context.Context, idx int, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	id := o.AccessSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"].(types.String).Value
-	o.AccessSwitches.Elems[idx].(types.Object).Attrs["logical_device"] = getLogicalDeviceObj(ctx, client, id, errPath, diags)
-	if diags.HasError() {
-		return
-	}
-}
-
-func (o *rRackType) populateAccessSwitchTagsDataFromGlobalCatalog(ctx context.Context, idx int, client *goapstra.Client, errPath path.Path, diags *diag.Diagnostics) {
-	tagIdSet := o.AccessSwitches.Elems[idx].(types.Object).Attrs["tag_ids"].(types.Set)
-	tagData := setTagIdStringToSetTagDataObj(ctx, tagIdSet, client, errPath.AtMapKey("tag_ids"), diags)
-	if diags.HasError() {
-		return
-	}
-
-	o.AccessSwitches.Elems[idx].(types.Object).Attrs["tag_data"] = tagData
-}
-
-func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, errPath path.Path, diags *diag.Diagnostics) {
-	for i := range o.LeafSwitches.Elems {
-		o.validateConfigLeafSwitch(ctx, i, errPath.AtListIndex(i), diags)
-	}
-}
-
-func (o *rRackType) validateConfigLeafSwitch(ctx context.Context, idx int, errPath path.Path, diags *diag.Diagnostics) {
-	o.validateLeafForFabricConnectivityDesign(ctx, idx, errPath, diags)
-	if diags.HasError() {
-		return
-	}
-
-	o.validateLeafMlagInfo(ctx, idx, errPath.AtMapKey("mlag_info"), diags)
-	if diags.HasError() {
-		return
-	}
-}
-
-func (o *rRackType) validateLeafForFabricConnectivityDesign(_ context.Context, idx int, errPath path.Path, diags *diag.Diagnostics) {
-	// check leaf switch for compatibility with fabric connectivity design
-	switch o.FabricConnectivityDesign.Value {
-	case goapstra.FabricConnectivityDesignL3Clos.String():
-		o.validateLeafForL3Clos(idx, errPath, diags)
-	case goapstra.FabricConnectivityDesignL3Collapsed.String():
-		o.validateLeafForL3Collapsed(idx, errPath, diags)
+	switch *fcd {
+	case goapstra.FabricConnectivityDesignL3Clos:
+		o.validateForL3Clos(path, diags) // todo: figure out how to use AtSetValue()
+	case goapstra.FabricConnectivityDesignL3Collapsed:
+		o.validateForL3Collapsed(path, diags)
 	default:
-		diags.AddAttributeError(errPath, errProviderBug,
-			fmt.Sprintf("unknown fabric connectivity design '%s'", o.FabricConnectivityDesign))
+		diags.AddAttributeError(path, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
+	}
+
+	if o.RedundancyProtocol != nil && *o.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag.String() {
+		o.validateMlagInfo(path, diags)
 	}
 }
 
-func (o *rRackType) validateLeafForL3Clos(idx int, errPath path.Path, diags *diag.Diagnostics) {
-	leafObj := o.LeafSwitches.Elems[idx].(types.Object)
-
-	if leafObj.Attrs["spine_link_count"].IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+func (o *rRackTypeLeafSwitch) validateForL3Clos(path path.Path, diags *diag.Diagnostics) {
+	if o.SpineLinkCount == nil {
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_count' must be specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Clos))
 	}
 
-	if leafObj.Attrs["spine_link_speed"].IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+	if o.SpineLinkSpeed == nil {
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_speed' must be specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Clos))
 	}
 }
 
-func (o *rRackType) validateLeafForL3Collapsed(idx int, errPath path.Path, diags *diag.Diagnostics) {
-	leafObj := o.LeafSwitches.Elems[idx].(types.Object)
-
-	if !leafObj.Attrs["spine_link_count"].IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+func (o *rRackTypeLeafSwitch) validateForL3Collapsed(path path.Path, diags *diag.Diagnostics) {
+	if o.SpineLinkCount != nil {
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_count' must not be specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Collapsed))
 	}
 
-	if !leafObj.Attrs["spine_link_speed"].IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
+	if o.SpineLinkSpeed != nil {
+		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_speed' must bnot e specified when 'fabric_connectivity_design' is '%s'",
 				goapstra.FabricConnectivityDesignL3Collapsed))
 	}
 
-	if leafObj.Attrs["redundancy_protocol"].(types.String).Value == goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			fmt.Sprintf("'redundancy_protocol' = '%s' is not allowed when 'fabric_connectivity_design' = '%s'",
-				goapstra.LeafRedundancyProtocolMlag, goapstra.FabricConnectivityDesignL3Collapsed))
-	}
-}
-
-func (o *rRackType) validateLeafMlagInfo(_ context.Context, idx int, errPath path.Path, diags *diag.Diagnostics) {
-	leafObj := o.LeafSwitches.Elems[idx].(types.Object)
-	mlagInfo := leafObj.Attrs["mlag_info"].(types.Object)
-	redundancyProtocol := leafObj.Attrs["redundancy_protocol"].(types.String)
-
-	if mlagInfo.IsNull() &&
-		redundancyProtocol.Value == goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			fmt.Sprintf("'mlag_info' required with 'redundancy_protocol' = '%s'", redundancyProtocol.Value))
-	}
-
-	if mlagInfo.IsNull() {
-		return
-	}
-
-	if redundancyProtocol.Value != goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			fmt.Sprintf("'mlag_info' incompatible with 'redundancy_protocol of '%s'", redundancyProtocol.Value))
-	}
-
-	l2LinkPoId := mlagInfo.Attrs["peer_link_port_channel_id"].(types.Int64)
-	l3LinkPoId := mlagInfo.Attrs["l3_peer_link_port_channel_id"].(types.Int64)
-
-	if !l2LinkPoId.IsNull() && !l3LinkPoId.IsNull() &&
-		l2LinkPoId.Value == l3LinkPoId.Value {
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			fmt.Sprintf("'peer_link_port_channel_id' and 'l3_peer_link_port_channel_id' cannot both use value %d",
-				l2LinkPoId.Value))
-	}
-
-	l3LinkCount := mlagInfo.Attrs["l3_peer_link_count"].(types.Int64)
-	l3LinkSpeed := mlagInfo.Attrs["l3_peer_link_speed"].(types.String)
-
-	if l3LinkCount.IsNull() && !l3LinkSpeed.IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
-	}
-
-	if l3LinkCount.IsNull() && !l3LinkPoId.IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
-	}
-
-	if !l3LinkCount.IsNull() && l3LinkSpeed.IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
-	}
-
-	if !l3LinkCount.IsNull() && l3LinkPoId.IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
-	}
-}
-
-func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, errPath path.Path, diags *diag.Diagnostics) {
-	for i := range o.AccessSwitches.Elems {
-		o.validateConfigAccessSwitch(ctx, i, errPath.AtListIndex(i), diags)
-	}
-}
-
-func (o *rRackType) validateConfigAccessSwitch(ctx context.Context, idx int, errPath path.Path, diags *diag.Diagnostics) {
-	accessSwitchObj := o.AccessSwitches.Elems[idx].(types.Object)
-	linkSet := accessSwitchObj.Attrs["links"].(types.Set)
-	for i := range linkSet.Elems {
-		o.validateConfigAccessSwitchLink(ctx, idx, i, errPath.AtMapKey("links").AtListIndex(i), diags)
-	}
-}
-
-func (o *rRackType) validateConfigAccessSwitchLink(ctx context.Context, accessIdx int, linkIdx int, errPath path.Path, diags *diag.Diagnostics) {
-	accessSwitch := o.AccessSwitches.Elems[accessIdx].(types.Object)
-	links := accessSwitch.Attrs["links"].(types.Set)
-	link := links.Elems[linkIdx].(types.Object)
-
-	if !link.Attrs["lag_mode"].IsNull() {
-		diags.AddAttributeError(errPath, errInvalidConfig, "'lag_mode' not permitted on Access Switch links")
-		return
-	}
-
-	linkTargetName := link.Attrs["target_switch_name"].(types.String).Value
-	linkTarget := o.leafSwitchByName(linkTargetName)
-	if linkTarget == nil {
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			fmt.Sprintf("no leaf switch named '%s'", linkTarget))
-		return
-	}
-
-	leafRedundancyProtocol := renderLeafRedundancyProtocol(*linkTarget)
-	accessRedundancyProtocol := renderAccessRedundancyProtocol(accessSwitch)
-
-	if accessRedundancyProtocol == goapstra.AccessRedundancyProtocolEsi &&
-		leafRedundancyProtocol != goapstra.LeafRedundancyProtocolEsi {
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			"ESI access switches only support connection to ESI leafs")
-		return
-	}
-
-	switchPeer := link.Attrs["switch_peer"].(types.String)
-	if !switchPeer.IsNull() && // primary/secondary has been selected ...and...
-		leafRedundancyProtocol == goapstra.LeafRedundancyProtocolNone { // upstream is not ESI/MLAG
-		diags.AddAttributeError(errPath, errInvalidConfig,
-			"'switch_peer' must not be set when upstream switch is non-redundant")
-	}
-}
-
-func (o *rRackType) switchByName(name string) *types.Object {
-	leaf := o.leafSwitchByName(name)
-	if leaf != nil {
-		return leaf
-	}
-	return nil
-}
-
-func (o *rRackType) leafSwitchByName(name string) *types.Object {
-	for _, leafSwitchAttrValue := range o.LeafSwitches.Elems {
-		if leafSwitchAttrValue.IsNull() || leafSwitchAttrValue.IsUnknown() {
-			continue
+	if o.RedundancyProtocol != nil {
+		var redundancyProtocol goapstra.LeafRedundancyProtocol
+		err := redundancyProtocol.FromString(*o.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
+			return
 		}
-		leafSwitchObj := leafSwitchAttrValue.(types.Object)
-		nameString := leafSwitchObj.Attrs["name"].(types.String)
-		if nameString.IsNull() || nameString.IsUnknown() {
-			continue
-		}
-		if nameString.Value == name {
-			return &leafSwitchObj
+		if redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
+			diags.AddAttributeError(path, errInvalidConfig,
+				fmt.Sprintf("'redundancy_protocol' = '%s' is not allowed when 'fabric_connectivity_design' = '%s'",
+					goapstra.LeafRedundancyProtocolMlag, goapstra.FabricConnectivityDesignL3Collapsed))
 		}
 	}
-	return nil
 }
 
-func (o *rRackType) parseApiResponse(ctx context.Context, rt *goapstra.RackType, diags *diag.Diagnostics) {
-	o.Id = types.String{Value: string(rt.Id)}
-	o.Name = types.String{Value: rt.Data.DisplayName}
-	o.Description = types.String{Value: rt.Data.Description}
-	o.FabricConnectivityDesign = types.String{Value: rt.Data.FabricConnectivityDesign.String()}
-	o.parseApiResponseLeafSwitches(ctx, rt.Data.LeafSwitches, diags)
-	o.parseApiResponseAccessSwitches(ctx, rt.Data.AccessSwitches, diags)
-	//o.GenericSystems =           parseRackTypeGenericSystems(rt.Data.GenericSystems, diags)
-}
-
-func (o *rRackType) parseApiResponseLeafSwitches(ctx context.Context, in []goapstra.RackElementLeafSwitch, diags *diag.Diagnostics) {
-	o.LeafSwitches = newRLeafSwitchList(len(in))
-	for i, ls := range in {
-		o.parseApiResponseLeafSwitch(ctx, &ls, i, diags)
-	}
-}
-
-func (o *rRackType) parseApiResponseLeafSwitch(ctx context.Context, in *goapstra.RackElementLeafSwitch, idx int, diags *diag.Diagnostics) {
-	o.LeafSwitches.Elems[idx] = types.Object{
-		AttrTypes: rLeafSwitchAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: in.Label},
-			"spine_link_count":    parseApiLeafSwitchLinkPerSpineCountToTypesInt64(in),
-			"spine_link_speed":    parseApiLeafSwitchLinkPerSpineSpeedToTypesString(in),
-			"redundancy_protocol": parseApiLeafRedundancyProtocolToTypesString(in),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
-			"mlag_info":           parseApiLeafMlagInfoToTypesObject(in.MlagInfo),
-			"tag_ids":             parseApiSliceTagDataToTypesSetString(in.Tags),
-			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
-		},
-	}
-}
-
-func (o *rRackType) parseApiResponseAccessSwitches(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-	o.AccessSwitches = newRAccessSwitchList(len(in))
-	for i, as := range in {
-		o.parseApiResponseAccessSwitch(ctx, &as, i, diags)
-	}
-}
-
-func (o *rRackType) parseApiResponseAccessSwitch(ctx context.Context, in *goapstra.RackElementAccessSwitch, idx int, diags *diag.Diagnostics) {
-	o.AccessSwitches.Elems[idx] = types.Object{
-		AttrTypes: rAccessSwitchAttrTypes(),
-		Attrs: map[string]attr.Value{
-			"name":                types.String{Value: in.Label},
-			"count":               types.Int64{Value: int64(in.InstanceCount)},
-			"redundancy_protocol": parseApiAccessRedundancyProtocolToTypesString(in),
-			"logical_device":      parseApiLogicalDeviceToTypesObject(ctx, in.LogicalDevice, diags),
-			"tag_ids":             parseApiSliceTagDataToTypesSetString(in.Tags),
-			"tag_data":            parseApiSliceTagDataToTypesSetObject(in.Tags),
-			"esi_lag_info":        parseApiAccessEsiLagInfoToTypesObject(in.EsiLagInfo),
-			"links":               parseApiSliceRackLinkToTypesSetObject(in.Links),
-		},
-	}
-}
-
-func (o *rRackType) copyWriteOnlyElements(src *rRackType, diags *diag.Diagnostics) {
-	o.copyWriteOnlyElementsLeafSwitches(src, diags)
-	o.copyWriteOnlyElementsAccessSwitches(src, diags)
-}
-
-func (o *rRackType) copyWriteOnlyElementsLeafSwitches(src *rRackType, diags *diag.Diagnostics) {
-	for i, srcLeafSwitch := range src.LeafSwitches.Elems {
-		o.copyWriteOnlyElementsLeafSwitch(srcLeafSwitch.(types.Object), i, diags)
-	}
-}
-
-func (o *rRackType) copyWriteOnlyElementsLeafSwitch(src types.Object, idx int, _ *diag.Diagnostics) {
-	logicalDeviceId := src.Attrs["logical_device_id"].(types.String)
-	o.LeafSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"] = logicalDeviceId
-}
-
-func (o *rRackType) copyWriteOnlyElementsAccessSwitches(src *rRackType, diags *diag.Diagnostics) {
-	for i, srcAccessSwitch := range src.AccessSwitches.Elems {
-		o.copyWriteOnlyElementsAccessSwitch(srcAccessSwitch.(types.Object), i, diags)
-	}
-}
-
-func (o *rRackType) copyWriteOnlyElementsAccessSwitch(src types.Object, idx int, _ *diag.Diagnostics) {
-	logicalDeviceId := src.Attrs["logical_device_id"].(types.String)
-	o.AccessSwitches.Elems[idx].(types.Object).Attrs["logical_device_id"] = logicalDeviceId
-}
-
-func getLogicalDeviceObj(ctx context.Context, client *goapstra.Client, id string, errPath path.Path, diags *diag.Diagnostics) types.Object {
-	logicalDevice, err := client.GetLogicalDevice(ctx, goapstra.ObjectId(id))
+func (o *rRackTypeLeafSwitch) validateMlagInfo(path path.Path, diags *diag.Diagnostics) {
+	var redundancyProtocol goapstra.LeafRedundancyProtocol
+	err := redundancyProtocol.FromString(*o.RedundancyProtocol)
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if ace.Type() == goapstra.ErrNotfound {
-			diags.AddAttributeError(errPath, "logical device not found",
-				fmt.Sprintf("logical device '%s' does not exist", id))
-		}
-		diags.AddError(fmt.Sprintf("error retrieving logical device '%s'", id), err.Error())
-	}
-	return parseApiLogicalDeviceToTypesObject(ctx, logicalDevice.Data, diags)
-}
-
-// forceValues handles user-optional values and values which are required by
-// Apstra, but which we can predict so we don't want to bother the user.
-func (o *rRackType) forceValues(diags *diag.Diagnostics) {
-	//// handle "description" omitted from config
-	//if o.Description.Unknown {
-	//	o.Description = types.String{Null: true}
-	//}
-
-	// handle empty "description" from API
-	if !o.Description.IsUnknown() && !o.Description.IsNull() && o.Description.Value == "" {
-		o.Description = types.String{Null: true}
+		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
+		return
 	}
 
-	// force leaf switch values as needed
-	o.forceValuesLeafSwitches(diags)
-	o.forceValuesAccessSwitches(diags)
-}
-
-func (o *rRackType) forceValuesLeafSwitches(diags *diag.Diagnostics) {
-	for i := range o.LeafSwitches.Elems {
-		o.forceValuesLeafSwitch(i, diags)
+	if o.MlagInfo == nil && redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'mlag_info' required with 'redundancy_protocol' = '%s'", redundancyProtocol.String()))
 	}
-}
 
-func (o *rRackType) forceValuesLeafSwitch(idx int, diags *diag.Diagnostics) {
-	//leafObj := o.LeafSwitches.Elems[idx].(types.Object)
-	//if leafObj.Attrs["redundancy_protocol"].IsNull() {
-	//	leafObj.Attrs["redundancy_protocol"] = types.String{}
-	//}
+	if o.MlagInfo == nil {
+		return
+	}
 
-	forceValuesTagIdsAndTagDataOnResourceRackElement(o.LeafSwitches.Elems[idx]) // todo try using leafObj here
+	if redundancyProtocol != goapstra.LeafRedundancyProtocolMlag {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'mlag_info' incompatible with 'redundancy_protocol of '%s'", redundancyProtocol.String()))
+	}
 
-	switch o.FabricConnectivityDesign.Value {
-	case goapstra.FabricConnectivityDesignL3Clos.String():
-		// nothing yet
-	case goapstra.FabricConnectivityDesignL3Collapsed.String():
-		// spine link info must be null with collapsed fabric
-		o.LeafSwitches.Elems[idx].(types.Object).Attrs["spine_link_count"] = types.Int64{Null: true}
-		o.LeafSwitches.Elems[idx].(types.Object).Attrs["spine_link_speed"] = types.String{Null: true}
+	if o.MlagInfo.PeerLinkPortChannelId != nil &&
+		o.MlagInfo.L3PeerLinkPortChannelId != nil &&
+		*o.MlagInfo.PeerLinkPortChannelId == *o.MlagInfo.L3PeerLinkPortChannelId {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'peer_link_port_channel_id' and 'l3_peer_link_port_channel_id' cannot both use value %d",
+				*o.MlagInfo.PeerLinkPortChannelId))
+	}
+
+	if o.MlagInfo.L3PeerLinkCount != nil && o.MlagInfo.L3PeerLinkSpeed == nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
+	}
+	if o.MlagInfo.L3PeerLinkSpeed != nil && o.MlagInfo.L3PeerLinkCount == nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
+	}
+
+	if o.MlagInfo.L3PeerLinkPortChannelId != nil && o.MlagInfo.L3PeerLinkCount == nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
+	}
+	if o.MlagInfo.L3PeerLinkCount != nil && o.MlagInfo.L3PeerLinkPortChannelId == nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
 	}
 }
 
-func (o *rRackType) forceValuesAccessSwitches(diags *diag.Diagnostics) {
-	for i := range o.AccessSwitches.Elems {
-		o.forceValuesAccessSwitch(i, diags)
+func (o *rRackTypeLeafSwitch) isRedundant() bool {
+	if o.RedundancyProtocol == nil {
+		return false
 	}
+	return true
 }
 
-func (o *rRackType) forceValuesAccessSwitch(idx int, diags *diag.Diagnostics) {
-	forceValuesTagIdsAndTagDataOnResourceRackElement(o.AccessSwitches.Elems[idx])
-	accessSwitchObj := o.AccessSwitches.Elems[idx].(types.Object)
-
-	if !accessSwitchObj.Attrs["esi_lag_info"].IsNull() {
-		redundancyProtocol := types.String{Value: goapstra.AccessRedundancyProtocolEsi.String()}
-		o.AccessSwitches.Elems[idx].(types.Object).Attrs["redundancy_protocol"] = redundancyProtocol
-	} else {
-		redundancyProtocol := types.String{Null: true}
-		o.AccessSwitches.Elems[idx].(types.Object).Attrs["redundancy_protocol"] = redundancyProtocol
+func (o *rRackTypeLeafSwitch) parseApi(in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign) {
+	o.Name = in.Label
+	if fcd != goapstra.FabricConnectivityDesignL3Collapsed {
+		count := int64(in.LinkPerSpineCount)
+		speed := string(in.LinkPerSpineSpeed)
+		o.SpineLinkCount = &count
+		o.SpineLinkSpeed = &speed
 	}
 
-	// todo forcevalues link (tag names and lacp mode) -- done?
-	for i := range accessSwitchObj.Attrs["links"].(types.Set).Elems {
-		o.forceValuesAccessSwitchLink(idx, i, diags)
-	}
-}
-
-func (o *rRackType) forceValuesAccessSwitchLink(switchIdx, linkIdx int, diags *diag.Diagnostics) {
-	accessSwitchObj := o.AccessSwitches.Elems[switchIdx].(types.Object)
-	linkSet := accessSwitchObj.Attrs["links"].(types.Set)
-	linkObj := linkSet.Elems[linkIdx].(types.Object)
-	linksPerSwitch := linkObj.Attrs["links_per_switch"].(types.Int64)
-	switchPeer := linkObj.Attrs["switch_peer"].(types.String)
-
-	// access switches always use lacp active mode
-	lagMode := types.String{Value: goapstra.RackLinkLagModeActive.String()}
-	o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx].(types.Object).Attrs["lag_mode"] = lagMode
-
-	// unknown link per switch count gets set to 1
-	if linksPerSwitch.IsUnknown() {
-		linksPerSwitch = types.Int64{Value: 1}
-		o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx].(types.Object).Attrs["links_per_switch"] = linksPerSwitch
+	if in.RedundancyProtocol != goapstra.LeafRedundancyProtocolNone {
+		redundancyProtocol := in.RedundancyProtocol.String()
+		o.RedundancyProtocol = &redundancyProtocol
 	}
 
-	// unknown switch peer gets set to none
-	if switchPeer.IsUnknown() {
-		switchPeer = types.String{Value: goapstra.RackLinkSwitchPeerNone.String()}
-		o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx].(types.Object).Attrs["switch_peer"] = switchPeer
+	if in.MlagInfo != nil && in.MlagInfo.LeafLeafLinkCount > 0 {
+		o.MlagInfo = &mlagInfo{}
+		o.MlagInfo.parseApi(in.MlagInfo)
 	}
 
-	// handle "tag_ids" omitted from config
-	forceValuesTagIdsAndTagDataOnResourceRackElement(o.AccessSwitches.Elems[switchIdx].(types.Object).Attrs["links"].(types.Set).Elems[linkIdx])
-}
+	o.LogicalDevice.parseApi(in.LogicalDevice)
 
-func forceValuesTagIdsAndTagDataOnResourceRackElement(in attr.Value) {
-	if in.(types.Object).Attrs["tag_ids"].IsNull() {
-		in.(types.Object).Attrs["tag_ids"] = types.Set{
-			Null:     true,
-			ElemType: types.StringType,
-		}
-		in.(types.Object).Attrs["tag_data"] = types.Set{
-			Null:     true,
-			ElemType: types.ObjectType{AttrTypes: tagDataAttrTypes()},
+	if len(in.Tags) > 0 {
+		o.TagData = make([]tagData, len(in.Tags)) // populated below
+		for i := range in.Tags {
+			o.TagData[i].parseApi(&in.Tags[i])
 		}
 	}
 }
 
-func (o *rRackType) renderFabricConnectivityDesign() goapstra.FabricConnectivityDesign {
-	switch o.FabricConnectivityDesign.Value {
-	case goapstra.FabricConnectivityDesignL3Collapsed.String():
-		return goapstra.FabricConnectivityDesignL3Collapsed
-	default:
-		return goapstra.FabricConnectivityDesignL3Clos
+func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddWarning(errProviderBug, "rRackTypeLeafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
 	}
+	o.LogicalDeviceId = src.LogicalDeviceId
+	o.TagIds = src.TagIds
 }
 
-func (o *rRackType) goapstraRequest(diags *diag.Diagnostics) *goapstra.RackTypeRequest {
-	return &goapstra.RackTypeRequest{
-		DisplayName:              o.Name.Value,
-		Description:              o.Description.Value,
-		FabricConnectivityDesign: o.renderFabricConnectivityDesign(),
-		LeafSwitches:             o.leafSwitchRequests(diags),
-		AccessSwitches:           o.accessSwitchRequests(diags),
-		//GenericSystems:           o.genericSystemRequests(diags),
-	}
+type rRackTypeAccessSwitch struct {
+	Name               string            `tfsdk:"name"`
+	Count              int64             `tfsdk:"count"`
+	RedundancyProtocol *string           `tfsdk:"redundancy_protocol"`
+	LogicalDeviceId    string            `tfsdk:"logical_device_id"`
+	LogicalDevice      logicalDeviceData `tfsdk:"logical_device"`
+	Links              []rRackLink       `tfsdk:"links"`
+	TagIds             []string          `tfsdk:"tag_ids"`
+	TagData            []tagData         `tfsdk:"tag_data"`
+	EsiLagInfo         *esiLagInfo       `tfsdk:"esi_lag_info""`
 }
 
-// fcdModes returns permitted fabric_connectivity_design mode strings
-func fcdModes() []string {
-	return []string{
-		goapstra.FabricConnectivityDesignL3Clos.String(),
-		goapstra.FabricConnectivityDesignL3Collapsed.String()}
+func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"redundancy_protocol": types.StringType,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"links":               types.SetType{ElemType: rRackLink{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"esi_lag_info":        esiLagInfo{}.attrType()}
 }
 
-func (o *rRackType) leafSwitchRequests(_ *diag.Diagnostics) []goapstra.RackElementLeafSwitchRequest {
-	result := make([]goapstra.RackElementLeafSwitchRequest, len(o.LeafSwitches.Elems))
-	for i, leafSwitchListElem := range o.LeafSwitches.Elems {
-		leafSwitchObj := leafSwitchListElem.(types.Object)
-		result[i] = goapstra.RackElementLeafSwitchRequest{
-			Label:              leafSwitchObj.Attrs["name"].(types.String).Value,
-			LogicalDeviceId:    goapstra.ObjectId(leafSwitchObj.Attrs["logical_device_id"].(types.String).Value),
-			LinkPerSpineCount:  int(leafSwitchObj.Attrs["spine_link_count"].(types.Int64).Value),
-			LinkPerSpineSpeed:  goapstra.LogicalDevicePortSpeed(leafSwitchObj.Attrs["spine_link_speed"].(types.String).Value),
-			RedundancyProtocol: renderLeafRedundancyProtocol(leafSwitchObj),
-			Tags:               renderTagIdsToSliceStringsFromRackElement(leafSwitchObj),
-			MlagInfo:           renderLeafMlagInfo(leafSwitchObj),
+func (o rRackTypeAccessSwitch) attrType() attr.Type {
+	return types.ObjectType{AttrTypes: o.attrTypes()}
+}
+
+func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
+	redundancyProtocol := goapstra.AccessRedundancyProtocolNone
+	if o.RedundancyProtocol != nil {
+		err := redundancyProtocol.FromString(*o.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"),
+				"error parsing redundancy_protocol", err.Error())
+			return nil
 		}
 	}
-	return result
-}
 
-func (o *rRackType) accessSwitchRequests(_ *diag.Diagnostics) []goapstra.RackElementAccessSwitchRequest {
-	result := make([]goapstra.RackElementAccessSwitchRequest, len(o.AccessSwitches.Elems))
-	for i, accessSwitchListElem := range o.AccessSwitches.Elems {
-		accessSwitchObj := accessSwitchListElem.(types.Object)
-		result[i] = goapstra.RackElementAccessSwitchRequest{
-			Label:              accessSwitchObj.Attrs["name"].(types.String).Value,
-			InstanceCount:      int(accessSwitchObj.Attrs["count"].(types.Int64).Value),
-			LogicalDeviceId:    goapstra.ObjectId(accessSwitchObj.Attrs["logical_device_id"].(types.String).Value),
-			RedundancyProtocol: renderAccessRedundancyProtocol(accessSwitchObj),
-			Tags:               renderTagIdsToSliceStringsFromRackElement(accessSwitchObj),
-			EsiLagInfo:         renderAccessEsiLagInfo(accessSwitchObj),
-			Links:              o.renderLinkRequests(accessSwitchObj),
+	lacpActive := goapstra.RackLinkLagModeActive.String()
+	links := make([]goapstra.RackLinkRequest, len(o.Links))
+	for i, link := range o.Links {
+		link.LagMode = &lacpActive
+		links[i] = *link.request(ctx, path.AtListIndex(i), rack, diags)
+	}
+
+	var tagIds []goapstra.ObjectId
+	if o.TagIds != nil {
+		tagIds = make([]goapstra.ObjectId, len(o.TagIds))
+		for i, tagId := range o.TagIds {
+			tagIds[i] = goapstra.ObjectId(tagId)
 		}
 	}
-	return result
-}
 
-// leafRedundancyModes returns permitted fabric_connectivity_design mode strings
-func leafRedundancyModes() []string {
-	return []string{
-		goapstra.LeafRedundancyProtocolEsi.String(),
-		goapstra.LeafRedundancyProtocolMlag.String()}
-}
-
-func renderLeafRedundancyProtocol(leafSwitch types.Object) goapstra.LeafRedundancyProtocol {
-	redundancyProtocol := leafSwitch.Attrs["redundancy_protocol"].(types.String)
-
-	if redundancyProtocol.IsNull() {
-		return goapstra.LeafRedundancyProtocolNone
+	var esiLagInfo *goapstra.EsiLagInfo
+	if o.EsiLagInfo != nil {
+		esiLagInfo.AccessAccessLinkCount = int(o.EsiLagInfo.L3PeerLinkCount)
+		esiLagInfo.AccessAccessLinkSpeed = goapstra.LogicalDevicePortSpeed(o.EsiLagInfo.L3PeerLinkSpeed)
 	}
 
-	switch redundancyProtocol.Value {
-	case goapstra.LeafRedundancyProtocolEsi.String():
-		return goapstra.LeafRedundancyProtocolEsi
-	case goapstra.LeafRedundancyProtocolMlag.String():
-		return goapstra.LeafRedundancyProtocolMlag
+	return &goapstra.RackElementAccessSwitchRequest{
+		InstanceCount:      int(o.Count),
+		RedundancyProtocol: redundancyProtocol,
+		Links:              links,
+		Label:              o.Name,
+		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId),
+		Tags:               tagIds,
+		EsiLagInfo:         esiLagInfo,
 	}
-	return goapstra.LeafRedundancyProtocolNone
 }
 
-func renderLeafMlagInfo(leafSwitch types.Object) *goapstra.LeafMlagInfo {
-	mlagInfo := leafSwitch.Attrs["mlag_info"].(types.Object)
-	if mlagInfo.IsNull() {
+func (o *rRackTypeAccessSwitch) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
+	arp := goapstra.AccessRedundancyProtocolNone
+	if o.RedundancyProtocol != nil {
+		err := arp.FromString(*o.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing redundancy protocol", err.Error())
+		}
+	}
+
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
+	}
+
+	for i, link := range o.Links {
+		link.validateConfigForAccessSwitch(ctx, arp, rack, path.AtListIndex(i), diags) // todo: Need AtSetValue() here
+	}
+}
+
+func (o *rRackTypeAccessSwitch) isRedundant() bool {
+	if o.RedundancyProtocol == nil {
+		return false
+	}
+	return true
+}
+
+func (o *rRackTypeAccessSwitch) parseApi(in *goapstra.RackElementAccessSwitch) {
+	o.Name = in.Label
+	o.Count = int64(in.InstanceCount)
+	if in.RedundancyProtocol != goapstra.AccessRedundancyProtocolNone {
+		redundancyProtocol := in.RedundancyProtocol.String()
+		o.RedundancyProtocol = &redundancyProtocol
+	}
+	if in.EsiLagInfo != nil {
+		o.EsiLagInfo = &esiLagInfo{}
+		o.EsiLagInfo.parseApi(in.EsiLagInfo)
+	}
+	o.LogicalDevice.parseApi(in.LogicalDevice)
+
+	if len(in.Tags) > 0 {
+		o.TagData = make([]tagData, len(in.Tags)) // populated below
+		for i := range in.Tags {
+			o.TagData[i].parseApi(&in.Tags[i])
+		}
+	}
+
+	o.Links = make([]rRackLink, len(in.Links))
+	for i := range in.Links {
+		o.Links[i].parseApi(&in.Links[i])
+	}
+}
+
+func (o *rRackTypeAccessSwitch) getLinkByName(desired string) *rRackLink {
+	for _, link := range o.Links {
+		if link.Name == desired {
+			return &link
+		}
+	}
+	return nil
+}
+
+func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddWarning(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+	}
+	o.LogicalDeviceId = src.LogicalDeviceId
+	o.TagIds = src.TagIds
+
+	for i, link := range o.Links {
+		o.Links[i].copyWriteOnlyElements(src.getLinkByName(link.Name), diags)
+		if diags.HasError() {
+			return
+		}
+	}
+}
+
+type rRackTypeGenericSystem struct {
+	Name             string            `tfsdk:"name"`
+	Count            int64             `tfsdk:"count"`
+	PortChannelIdMin *int64            `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax *int64            `tfsdk:"port_channel_id_max"`
+	LogicalDeviceId  string            `tfsdk:"logical_device_id"`
+	LogicalDevice    logicalDeviceData `tfsdk:"logical_device"`
+	Links            []rRackLink       `tfsdk:"links"`
+	TagIds           []string          `tfsdk:"tag_ids"`
+	TagData          []tagData         `tfsdk:"tag_data"`
+}
+
+func (o rRackTypeGenericSystem) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"port_channel_id_min": types.Int64Type,
+		"port_channel_id_max": types.Int64Type,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"links":               types.SetType{ElemType: rRackLink{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+	}
+}
+
+func (o rRackTypeGenericSystem) attrType() attr.Type {
+	return types.ObjectType{AttrTypes: o.attrTypes()}
+}
+
+func (o *rRackTypeGenericSystem) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementGenericSystemRequest {
+	var poIdMinVal, poIdMaxVal int
+	if o.PortChannelIdMin != nil {
+		poIdMinVal = int(*o.PortChannelIdMin)
+	}
+	if o.PortChannelIdMax != nil {
+		poIdMaxVal = int(*o.PortChannelIdMax)
+	}
+
+	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
+	for i, link := range o.Links {
+		lagMode := goapstra.RackLinkLagModeActive.String()
+		link.LagMode = &lagMode
+		linkRequests[i] = *link.request(ctx, path.AtListIndex(i), rack, diags)
+	}
+
+	var tagIds []goapstra.ObjectId
+	if o.TagIds != nil {
+		tagIds = make([]goapstra.ObjectId, len(o.TagIds))
+		for i, tagId := range o.TagIds {
+			tagIds[i] = goapstra.ObjectId(tagId)
+		}
+	}
+
+	return &goapstra.RackElementGenericSystemRequest{
+		Count:            int(o.Count),
+		AsnDomain:        goapstra.FeatureSwitchDisabled,
+		ManagementLevel:  goapstra.GenericSystemUnmanaged,
+		PortChannelIdMin: poIdMinVal,
+		PortChannelIdMax: poIdMaxVal,
+		Loopback:         goapstra.FeatureSwitchDisabled,
+		Tags:             tagIds,
+		Label:            o.Name,
+		Links:            linkRequests,
+		LogicalDeviceId:  goapstra.ObjectId(o.LogicalDeviceId),
+	}
+}
+
+func (o *rRackTypeGenericSystem) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
+	if o.PortChannelIdMin != nil && o.PortChannelIdMax == nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'port_channel_id_min' requires 'port_channel_id_max'")
+	}
+	if o.PortChannelIdMax != nil && o.PortChannelIdMin == nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'port_channel_id_max' requires 'port_channel_id_min'")
+	}
+
+	if o.PortChannelIdMin != nil && o.PortChannelIdMax != nil && *o.PortChannelIdMin > *o.PortChannelIdMax {
+		diags.AddAttributeError(path, errInvalidConfig, "port_channel_id_min > port_channel_id_max")
+	}
+
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
+	}
+
+	for i, link := range o.Links {
+		link.validateConfigForGenericSystem(ctx, rack, path.AtListIndex(i), diags) // todo need AtSetValue() here
+	}
+}
+
+func (o *rRackTypeGenericSystem) parseApi(in *goapstra.RackElementGenericSystem) {
+	o.Name = in.Label
+	o.Count = int64(in.Count)
+	portChannelIdMin := int64(in.PortChannelIdMin)
+	portChannelIdMax := int64(in.PortChannelIdMax)
+	o.PortChannelIdMin = &portChannelIdMin
+	o.PortChannelIdMax = &portChannelIdMax
+	o.LogicalDevice.parseApi(in.LogicalDevice)
+	o.Links = make([]rRackLink, len(in.Links))
+
+	if len(in.Tags) > 0 {
+		o.TagData = make([]tagData, len(in.Tags)) // populated below
+		for i := range in.Tags {
+			o.TagData[i].parseApi(&in.Tags[i])
+		}
+	}
+
+	for i := range in.Links {
+		o.Links[i].parseApi(&in.Links[i])
+	}
+}
+
+func (o *rRackTypeGenericSystem) getLinkByName(desired string) *rRackLink {
+	for _, link := range o.Links {
+		if link.Name == desired {
+			return &link
+		}
+	}
+	return nil
+}
+
+func (o *rRackTypeGenericSystem) copyWriteOnlyElements(src *rRackTypeGenericSystem, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddWarning(errProviderBug, "rRackTypeGenericSystem.copyWriteOnlyElements: attempt to copy from nil source")
+	}
+	o.LogicalDeviceId = src.LogicalDeviceId
+	o.TagIds = src.TagIds
+
+	for i, link := range o.Links {
+		o.Links[i].copyWriteOnlyElements(src.getLinkByName(link.Name), diags)
+		if diags.HasError() {
+			return
+		}
+	}
+}
+
+func rRackLinkAttributeSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Link details for any connection from a Rack Type element " +
+			"(Access Switch or Generic System) to the upstream switch providing connectivity to that element.",
+		Required:   true,
+		Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
+		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
+			"name": {
+				MarkdownDescription: "Name of this link.",
+				Required:            true,
+				Type:                types.StringType,
+				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+			},
+			"target_switch_name": {
+				MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+				Required:            true,
+				Type:                types.StringType,
+				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+			},
+			"lag_mode": {
+				MarkdownDescription: "LAG negotiation mode of the Link.",
+				Computed:            true,
+				Optional:            true,
+				Type:                types.StringType,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
+					goapstra.RackLinkLagModeActive.String(),
+					goapstra.RackLinkLagModePassive.String(),
+					goapstra.RackLinkLagModeStatic.String())},
+			},
+			"links_per_switch": {
+				MarkdownDescription: "Number of Links to each switch.",
+				Optional:            true,
+				Type:                types.Int64Type,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(2)},
+			},
+			"speed": {
+				MarkdownDescription: "Speed of this Link.",
+				Required:            true,
+				Type:                types.StringType,
+			},
+			"switch_peer": {
+				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+				Optional:            true,
+				Type:                types.StringType,
+			},
+			"tag_ids":  tagIdsAttributeSchema(),
+			"tag_data": tagsDataAttributeSchema(),
+		}),
+	}
+}
+
+type rRackLink struct {
+	Name             string    `tfsdk:"name"`
+	TargetSwitchName string    `tfsdk:"target_switch_name"`
+	LagMode          *string   `tfsdk:"lag_mode"`
+	LinksPerSwitch   *int64    `tfsdk:"links_per_switch"`
+	Speed            string    `tfsdk:"speed"`
+	SwitchPeer       *string   `tfsdk:"switch_peer"`
+	TagIds           []string  `tfsdk:"tag_ids"`
+	TagData          []tagData `tfsdk:"tag_data"`
+}
+
+func (o rRackLink) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"name":               types.StringType,
+			"target_switch_name": types.StringType,
+			"lag_mode":           types.StringType,
+			"links_per_switch":   types.Int64Type,
+			"speed":              types.StringType,
+			"switch_peer":        types.StringType,
+			"tag_ids":            types.SetType{ElemType: types.StringType},
+			"tag_data":           types.SetType{ElemType: tagData{}.attrType()}}}
+}
+
+func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
+	var err error
+
+	tags := make([]goapstra.ObjectId, len(o.TagIds))
+	for i, tag := range o.TagIds {
+		tags[i] = goapstra.ObjectId(tag)
+	}
+
+	lagMode := goapstra.RackLinkLagModeNone
+	if o.LagMode != nil {
+		err = lagMode.FromString(*o.LagMode)
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing lag_mode", err.Error())
+			return nil
+		}
+	}
+
+	switchPeer := goapstra.RackLinkSwitchPeerNone
+	if o.SwitchPeer != nil {
+		err = switchPeer.FromString(*o.SwitchPeer)
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing switch_peer", err.Error())
+			return nil
+		}
+	}
+
+	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
+	access := rack.getAccessSwitchByName(ctx, o.TargetSwitchName, diags)
+	if leaf == nil && access == nil {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("target switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
+		return nil
+	}
+	if leaf != nil && access != nil {
+		diags.AddError(errProviderBug, "link seems to be attached to both leaf and access switches")
 		return nil
 	}
 
-	var LeafLeafLinkPortChannelId int
-	if !mlagInfo.Attrs["peer_link_port_channel_id"].IsNull() {
-		value := mlagInfo.Attrs["peer_link_port_channel_id"].(types.Int64).Value
-		LeafLeafLinkPortChannelId = int(value)
+	upstreamRedundancyProtocol := rack.getSwitchRedundancyProtocolByName(ctx, o.TargetSwitchName, path, diags)
+	if diags.HasError() {
+		return nil
 	}
 
-	var LeafLeafL3LinkPortChannelId int
-	if !mlagInfo.Attrs["l3_peer_link_port_channel_id"].IsNull() {
-		value := mlagInfo.Attrs["l3_peer_link_port_channel_id"].(types.Int64).Value
-		LeafLeafL3LinkPortChannelId = int(value)
+	linksPerSwitch := 1
+	if o.LinksPerSwitch != nil {
+		linksPerSwitch = int(*o.LinksPerSwitch)
 	}
 
-	return &goapstra.LeafMlagInfo{
-		MlagVlanId:                  int(mlagInfo.Attrs["mlag_keepalive_vlan"].(types.Int64).Value),
-		LeafLeafLinkCount:           int(mlagInfo.Attrs["peer_link_count"].(types.Int64).Value),
-		LeafLeafLinkSpeed:           goapstra.LogicalDevicePortSpeed(mlagInfo.Attrs["peer_link_speed"].(types.String).Value),
-		LeafLeafLinkPortChannelId:   LeafLeafLinkPortChannelId,
-		LeafLeafL3LinkCount:         int(mlagInfo.Attrs["l3_peer_link_count"].(types.Int64).Value),
-		LeafLeafL3LinkSpeed:         goapstra.LogicalDevicePortSpeed(mlagInfo.Attrs["l3_peer_link_speed"].(types.String).Value),
-		LeafLeafL3LinkPortChannelId: LeafLeafL3LinkPortChannelId,
+	return &goapstra.RackLinkRequest{
+		Label:              o.Name,
+		Tags:               tags,
+		LinkPerSwitchCount: linksPerSwitch,
+		LinkSpeed:          goapstra.LogicalDevicePortSpeed(o.Speed),
+		TargetSwitchLabel:  o.TargetSwitchName,
+		AttachmentType:     o.linkAttachmentType(upstreamRedundancyProtocol),
+		LagMode:            lagMode,
+		SwitchPeer:         switchPeer,
 	}
 }
 
-func renderAccessRedundancyProtocol(accessSwitch types.Object) goapstra.AccessRedundancyProtocol {
-	if accessSwitch.Attrs["esi_lag_info"].IsNull() {
-		return goapstra.AccessRedundancyProtocolNone
-	}
-	return goapstra.AccessRedundancyProtocolEsi
-}
-
-func renderLinkAttachmentType(link types.Object, targetSwitch types.Object) goapstra.RackLinkAttachmentType {
-	targetSwitchRedundancyProtocol := targetSwitch.Attrs["redundancy_protocol"].(types.String)
-	if targetSwitchRedundancyProtocol.IsNull() {
+func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goapstra.RackLinkAttachmentType {
+	switch upstreamRedundancyMode.String() {
+	case goapstra.LeafRedundancyProtocolNone.String():
+		return goapstra.RackLinkAttachmentTypeSingle
+	case goapstra.AccessRedundancyProtocolNone.String():
 		return goapstra.RackLinkAttachmentTypeSingle
 	}
 
-	lagMode := link.Attrs["lag_mode"].(types.String)
-	switch lagMode.Value {
+	if o.LagMode == nil {
+		return goapstra.RackLinkAttachmentTypeSingle
+	}
+
+	switch *o.LagMode {
 	case goapstra.RackLinkLagModeActive.String():
 		return goapstra.RackLinkAttachmentTypeDual
 	case goapstra.RackLinkLagModePassive.String():
@@ -1020,126 +1358,313 @@ func renderLinkAttachmentType(link types.Object, targetSwitch types.Object) goap
 	return goapstra.RackLinkAttachmentTypeSingle
 }
 
-func renderLinkLagMode(link types.Object) goapstra.RackLinkLagMode {
-	lagMode := link.Attrs["lag_mode"].(types.String)
-	switch lagMode.Value {
-	case goapstra.RackLinkLagModeActive.String():
-		return goapstra.RackLinkLagModeActive
-	case goapstra.RackLinkLagModePassive.String():
-		return goapstra.RackLinkLagModePassive
-	case goapstra.RackLinkLagModeStatic.String():
-		return goapstra.RackLinkLagModeStatic
+func (o *rRackLink) validateConfigForAccessSwitch(ctx context.Context, arp goapstra.AccessRedundancyProtocol, rack *rRackType, path path.Path, diags *diag.Diagnostics) {
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
 	}
-	return goapstra.RackLinkLagModeNone
+
+	if o.LagMode != nil {
+		diags.AddAttributeError(path, errInvalidConfig, "'lag_mode' not permitted on Access Switch links")
+		return
+	}
+
+	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
+	if leaf == nil {
+		diags.AddAttributeError(path, "leaf switch not found",
+			fmt.Sprintf("leaf switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
+		return
+	}
+	if diags.HasError() {
+		return
+	}
+
+	lrp := goapstra.LeafRedundancyProtocolNone
+	if leaf.RedundancyProtocol != nil {
+		err := lrp.FromString(*leaf.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path,
+				fmt.Sprintf("error parsing leaf switch redundancy protocol '%s'", *leaf.RedundancyProtocol),
+				err.Error())
+		}
+	}
+
+	if arp == goapstra.AccessRedundancyProtocolEsi &&
+		lrp != goapstra.LeafRedundancyProtocolEsi {
+		diags.AddAttributeError(path, errInvalidConfig,
+			"ESI access switches only support connection to ESI leafs")
+		return
+	}
+
+	if o.SwitchPeer != nil && // primary/secondary has been selected ...and...
+		lrp == goapstra.LeafRedundancyProtocolNone { // upstream is not ESI/MLAG
+		diags.AddAttributeError(path, errInvalidConfig,
+			"'switch_peer' must not be set when upstream switch is non-redundant")
+	}
 }
 
-func renderLinkSwitchPeer(link types.Object) goapstra.RackLinkSwitchPeer {
-	switchPeer := link.Attrs["switch_peer"].(types.String)
-	switch switchPeer.Value {
-	case goapstra.RackLinkSwitchPeerFirst.String():
-		return goapstra.RackLinkSwitchPeerFirst
-	case goapstra.RackLinkSwitchPeerSecond.String():
-		return goapstra.RackLinkSwitchPeerSecond
+func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rRackType, path path.Path, diags *diag.Diagnostics) {
+	if len(o.TagIds) != 0 {
+		diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
 	}
-	return goapstra.RackLinkSwitchPeerNone
+
+	lagMode := goapstra.RackLinkLagModeNone
+	if o.LagMode != nil {
+		err := lagMode.FromString(*o.LagMode)
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing lag mode", err.Error())
+		}
+	}
+
+	linksPerSwitch := int64(1)
+	if o.LinksPerSwitch != nil {
+		linksPerSwitch = *o.LinksPerSwitch
+	}
+	if lagMode == goapstra.RackLinkLagModeNone && linksPerSwitch > 1 {
+		diags.AddAttributeError(path, errInvalidConfig, "'lag_mode' must be set when 'links_per_switch' is set")
+	}
+
+	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
+	access := rack.getAccessSwitchByName(ctx, o.TargetSwitchName, diags)
+	if leaf == nil && access == nil {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("target switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
+		return
+	}
+	if leaf != nil && access != nil {
+		diags.AddError(errProviderBug, "link seems to be attached to both leaf and access switches")
+		return
+	}
+
+	var targetSwitchIsRedundant bool
+	if leaf != nil {
+		targetSwitchIsRedundant = leaf.isRedundant()
+	}
+	if access != nil {
+		targetSwitchIsRedundant = access.isRedundant()
+	}
+
+	if !targetSwitchIsRedundant && o.SwitchPeer != nil {
+		diags.AddAttributeError(path.AtMapKey("switch_peer"), errInvalidConfig,
+			"links to non-redundant switches must not specify 'switch_peer'")
+	}
+
+	if targetSwitchIsRedundant && (o.SwitchPeer == nil && o.LagMode == nil) {
+		diags.AddAttributeError(path.AtMapKey("switch_peer"), errInvalidConfig,
+			"links to redundant switches must specify 'switch_peer' or 'lag_mode'")
+	}
 }
 
-func renderAccessEsiLagInfo(accessSwitch types.Object) *goapstra.EsiLagInfo {
-	esiLagInfo := accessSwitch.Attrs["esi_lag_info"].(types.Object)
-	if esiLagInfo.IsNull() {
+func (o *rRackLink) parseApi(in *goapstra.RackLink) {
+	o.Name = in.Label
+	o.TargetSwitchName = in.TargetSwitchLabel
+	if in.LagMode != goapstra.RackLinkLagModeNone {
+		lagMode := in.LagMode.String()
+		o.LagMode = &lagMode
+	}
+	linksPerSwitchCount := int64(in.LinkPerSwitchCount)
+	o.LinksPerSwitch = &linksPerSwitchCount
+	o.Speed = string(in.LinkSpeed)
+	if in.SwitchPeer != goapstra.RackLinkSwitchPeerNone {
+		switchPeer := in.SwitchPeer.String()
+		o.SwitchPeer = &switchPeer
+	}
+
+	if len(in.Tags) > 0 {
+		o.TagData = make([]tagData, len(in.Tags)) // populated below
+		for i := range in.Tags {
+			o.TagData[i].parseApi(&in.Tags[i])
+		}
+	}
+}
+
+func (o *rRackLink) copyWriteOnlyElements(src *rRackLink, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddWarning(errProviderBug, "rRackLink.copyWriteOnlyElements: attempt to copy from nil source")
+	}
+	o.TagIds = src.TagIds
+}
+
+func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
+	var leafSwitches []rRackTypeLeafSwitch
+	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	for _, leafSwitch := range leafSwitches {
+		setVal, d := types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+		leafSwitch.validateConfig(path.AtSetValue(setVal), o, diags)
+	}
+}
+
+func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
+	var accessSwitches []rRackTypeAccessSwitch
+	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	for _, accessSwitch := range accessSwitches {
+		setVal, d := types.ObjectValueFrom(ctx, accessSwitch.attrTypes(), &accessSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+
+		accessSwitch.validateConfig(ctx, path.AtSetValue(setVal), o, diags)
+	}
+}
+
+func (o *rRackType) validateConfigGenericSystems(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
+	var genericSystems []rRackTypeGenericSystem
+	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	for _, genericSystem := range genericSystems {
+		setVal, d := types.ObjectValueFrom(ctx, genericSystem.attrTypes(), &genericSystem)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+		genericSystem.validateConfig(ctx, path.AtSetValue(setVal), o, diags)
+	}
+}
+
+func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.RackTypeRequest {
+	var fcd goapstra.FabricConnectivityDesign
+	err := fcd.FromString(o.FabricConnectivityDesign.ValueString())
+	if err != nil {
+		diags.AddAttributeError(path.Root("fabric_connectivity_design"),
+			"error parsing fabric_connectivity_design", err.Error())
 		return nil
 	}
 
-	return &goapstra.EsiLagInfo{
-		AccessAccessLinkCount: int(esiLagInfo.Attrs["l3_peer_link_count"].(types.Int64).Value),
-		AccessAccessLinkSpeed: goapstra.LogicalDevicePortSpeed(esiLagInfo.Attrs["l3_peer_link_speed"].(types.String).Value),
+	leafSwitches := o.leafSwitches(ctx, diags)
+	accessSwitches := o.accessSwitches(ctx, diags)
+	genericSystems := o.genericSystems(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
+	for i, leafSwitch := range leafSwitches {
+		setVal, d := types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		leafSwitchRequests[i] = *leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
+	}
+
+	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
+	for i, accessSwitch := range accessSwitches {
+		setVal, d := types.ObjectValueFrom(ctx, accessSwitch.attrTypes(), &accessSwitch)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		accessSwitchRequests[i] = *accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
+	}
+
+	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
+	for i, genericSystem := range genericSystems {
+		setVal, d := types.ObjectValueFrom(ctx, genericSystem.attrTypes(), &genericSystem)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		genericSystemsRequests[i] = *genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
+	}
+
+	return &goapstra.RackTypeRequest{
+		DisplayName:              o.Name.ValueString(),
+		Description:              o.Description.ValueString(),
+		FabricConnectivityDesign: fcd,
+		LeafSwitches:             leafSwitchRequests,
+		AccessSwitches:           accessSwitchRequests,
+		GenericSystems:           genericSystemsRequests,
 	}
 }
 
-func (o *rRackType) renderLinkRequests(rackElement types.Object) []goapstra.RackLinkRequest {
-	links := rackElement.Attrs["links"].(types.Set)
-	result := make([]goapstra.RackLinkRequest, len(links.Elems))
-	for i, linkAttrValue := range links.Elems {
-		result[i] = *o.renderLinkRequest(linkAttrValue.(types.Object))
-	}
-	return result
+func (o *rRackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) []rRackTypeLeafSwitch {
+	var leafSwitches []rRackTypeLeafSwitch
+	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, true)
+	diags.Append(d...)
+	return leafSwitches
 }
 
-func (o *rRackType) renderLinkRequest(link types.Object) *goapstra.RackLinkRequest {
-	targetSwitchName := link.Attrs["target_switch_name"].(types.String).Value
-	targetSwitchObj := o.switchByName(targetSwitchName)
-
-	return &goapstra.RackLinkRequest{
-		Label:              link.Attrs["name"].(types.String).Value,
-		Tags:               renderTagIdsToSliceStringsFromRackElement(link),
-		LinkPerSwitchCount: int(link.Attrs["links_per_switch"].(types.Int64).Value),
-		LinkSpeed:          goapstra.LogicalDevicePortSpeed(link.Attrs["speed"].(types.String).Value),
-		TargetSwitchLabel:  targetSwitchName,
-		AttachmentType:     renderLinkAttachmentType(link, *targetSwitchObj),
-		LagMode:            renderLinkLagMode(link),
-		SwitchPeer:         renderLinkSwitchPeer(link),
+func (o *rRackType) leafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeLeafSwitch {
+	leafSwitches := o.leafSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
 	}
+	for _, leafSwitch := range leafSwitches {
+		if leafSwitch.Name == requested {
+			return &leafSwitch
+		}
+	}
+	return nil
 }
 
-func rLeafSwitchAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":                types.StringType,
-		"spine_link_count":    types.Int64Type,
-		"spine_link_speed":    types.StringType,
-		"redundancy_protocol": types.StringType,
-		"logical_device_id":   types.StringType,
-		"logical_device":      logicalDeviceAttrType(),
-		"tag_ids":             tagIdsAttrType(),
-		"tag_data":            tagDataAttrType(),
-		"mlag_info":           mlagInfoAttrType(),
-	}
+func (o *rRackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) []rRackTypeAccessSwitch {
+	var accessSwitches []rRackTypeAccessSwitch
+	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, true)
+	diags.Append(d...)
+	return accessSwitches
 }
 
-func rAccessSwitchAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":                types.StringType,
-		"count":               types.Int64Type,
-		"redundancy_protocol": types.StringType,
-		"logical_device_id":   types.StringType,
-		"logical_device":      logicalDeviceAttrType(),
-		"tag_ids":             tagIdsAttrType(),
-		"tag_data":            tagDataAttrType(),
-		"links":               rLinksAttrType(),
-		"esi_lag_info":        esiLagInfoAttrType(),
+func (o *rRackType) accessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeAccessSwitch {
+	accessSwitches := o.accessSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
 	}
+	for _, accessSwitch := range accessSwitches {
+		if accessSwitch.Name == requested {
+			return &accessSwitch
+		}
+	}
+	return nil
 }
 
-func rLinksAttrType() attr.Type {
-	return types.SetType{
-		ElemType: types.ObjectType{
-			AttrTypes: rLinksAttrTypes()}}
+func (o *rRackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) []rRackTypeGenericSystem {
+	var genericSystems []rRackTypeGenericSystem
+	d := o.AccessSwitches.ElementsAs(ctx, &genericSystems, true)
+	diags.Append(d...)
+	return genericSystems
 }
 
-func rLinksAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":               types.StringType,
-		"target_switch_name": types.StringType,
-		"lag_mode":           types.StringType,
-		"links_per_switch":   types.Int64Type,
-		"speed":              types.StringType,
-		"switch_peer":        types.StringType,
-		"tag_data":           tagDataAttrType(),
-		"tag_ids":            tagIdsAttrType(),
+func (o *rRackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeGenericSystem {
+	genericSystems := o.genericSystems(ctx, diags)
+	if diags.HasError() {
+		return nil
 	}
+	for _, genericSystem := range genericSystems {
+		if genericSystem.Name == requested {
+			return &genericSystem
+		}
+	}
+	return nil
 }
 
-func newRLeafSwitchList(size int) types.List {
-	return types.List{
-		Null:     size == 0,
-		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: rLeafSwitchAttrTypes()},
-	}
+// fcdModes returns permitted fabric_connectivity_design mode strings
+func fcdModes() []string {
+	return []string{
+		goapstra.FabricConnectivityDesignL3Clos.String(),
+		goapstra.FabricConnectivityDesignL3Collapsed.String()}
 }
 
-func newRAccessSwitchList(size int) types.List {
-	return types.List{
-		Null:     size == 0,
-		Elems:    make([]attr.Value, size),
-		ElemType: types.ObjectType{AttrTypes: rAccessSwitchAttrTypes()},
-	}
+// leafRedundancyModes returns permitted fabric_connectivity_design mode strings
+func leafRedundancyModes() []string {
+	return []string{
+		goapstra.LeafRedundancyProtocolEsi.String(),
+		goapstra.LeafRedundancyProtocolMlag.String()}
 }

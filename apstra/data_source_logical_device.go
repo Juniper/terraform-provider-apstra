@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -58,20 +59,20 @@ func (o *dataSourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, di
 				Computed:            true,
 				Type:                types.StringType,
 			},
-			"data": logicalDeviceDataAttributeSchema(),
+			"panels": dPanelsAttributeSchema(),
 		},
 	}, nil
 }
 
 func (o *dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config dLogicalDevice
+	var config logicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'name' must be specified")
 		return
 	}
@@ -83,7 +84,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	var config dLogicalDevice
+	var config logicalDevice
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -91,12 +92,12 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	var err error
-	var logicalDevice *goapstra.LogicalDevice
+	var apiResponse *goapstra.LogicalDevice
 	switch {
-	case !config.Name.Null:
-		logicalDevice, err = o.client.GetLogicalDeviceByName(ctx, config.Name.Value)
-	case !config.Id.Null:
-		logicalDevice, err = o.client.GetLogicalDevice(ctx, goapstra.ObjectId(config.Id.Value))
+	case !config.Name.IsNull():
+		apiResponse, err = o.client.GetLogicalDeviceByName(ctx, config.Name.ValueString())
+	case !config.Id.IsNull():
+		apiResponse, err = o.client.GetLogicalDevice(ctx, goapstra.ObjectId(config.Id.ValueString()))
 	default:
 		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
 	}
@@ -105,30 +106,60 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	newState := newLogicalDeviceFromApi(ctx, logicalDevice, &resp.Diagnostics)
+	var newState logicalDevice
+	newState.parseApi(ctx, apiResponse, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
-type dLogicalDevice struct {
-	Id   types.String `tfsdk:"id"`   // optional input
-	Name types.String `tfsdk:"name"` // optional input
-	Data types.Object `tfsdk:"data"`
-}
-
-func newLogicalDeviceFromApi(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) *dLogicalDevice {
-	return &dLogicalDevice{
-		Id:   types.String{Value: string(in.Id)},
-		Name: types.String{Value: in.Data.DisplayName},
-		Data: parseApiLogicalDeviceToTypesObject(ctx, in.Data, diags),
+func dPanelsAttributeSchema() tfsdk.Attribute {
+	return tfsdk.Attribute{
+		MarkdownDescription: "Details physical layout of interfaces on the device.",
+		Computed:            true,
+		PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+		Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+			"rows": {
+				MarkdownDescription: "Physical vertical dimension of the panel.",
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				Type:                types.Int64Type,
+			},
+			"columns": {
+				MarkdownDescription: "Physical horizontal dimension of the panel.",
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				Type:                types.Int64Type,
+			},
+			"port_groups": {
+				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+				Computed:            true,
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"port_count": {
+						MarkdownDescription: "Number of ports in the group.",
+						Computed:            true,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+						Type:                types.Int64Type,
+					},
+					"port_speed": {
+						MarkdownDescription: "Port speed.",
+						Computed:            true,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+						Type:                types.StringType,
+					},
+					"port_roles": {
+						MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+						Computed:            true,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+						Type:                types.SetType{ElemType: types.StringType},
+					},
+				}),
+			},
+		}),
 	}
-}
-
-func parseApiLogicalDeviceToTypesObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
-	structLogicalDeviceData := parseApiLogicalDeviceData(in)
-	result, d := types.ObjectValueFrom(ctx, logicalDeviceDataAttrTypes(), structLogicalDeviceData)
-	diags.Append(d...)
-	return result
 }

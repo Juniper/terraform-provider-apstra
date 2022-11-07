@@ -3,7 +3,7 @@ module terraform-provider-apstra
 go 1.18
 
 require (
-	bitbucket.org/apstrktr/goapstra v0.0.0-20221028204231-e8b7c36d1b34
+	bitbucket.org/apstrktr/goapstra v0.0.0-20221102183417-7e7740f9a323
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-framework v0.15.0
@@ -11,7 +11,7 @@ require (
 )
 
 //                                                                                        HHMMSS
-//replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20221028202810-75a7c65de3d5
+replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20221103220641-72680e68c959
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
