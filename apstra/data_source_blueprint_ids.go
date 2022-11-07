@@ -80,7 +80,7 @@ func (o *dataSourceBlueprintIds) ValidateConfig(ctx context.Context, req datasou
 		return
 	}
 
-	if !config.RefDesign.IsNull() && config.RefDesign.Value == goapstra.RefDesignFreeform.String() {
+	if !config.RefDesign.IsNull() && config.RefDesign.ValueString() == goapstra.RefDesignFreeform.String() {
 		minVer, err := version.NewVersion(minimumFreeFormVersion)
 		if err != nil {
 			resp.Diagnostics.AddError("error parsing minimum freeform version", err.Error())
@@ -124,11 +124,11 @@ func (o *dataSourceBlueprintIds) Read(ctx context.Context, req datasource.ReadRe
 	} else {
 		var refDesign string
 		// substitute UI name for API name
-		switch config.RefDesign.Value {
+		switch config.RefDesign.ValueString() {
 		case twoStageL3ClosRefDesignUiName:
 			refDesign = goapstra.RefDesignDatacenter.String()
 		default:
-			refDesign = config.RefDesign.Value
+			refDesign = config.RefDesign.ValueString()
 		}
 
 		bpStatuses, err := o.client.GetAllBlueprintStatus(ctx)
@@ -143,15 +143,20 @@ func (o *dataSourceBlueprintIds) Read(ctx context.Context, req datasource.ReadRe
 		}
 	}
 
-	elems := make([]attr.Value, len(objectIds))
+	ids := make([]attr.Value, len(objectIds))
 	for i, id := range objectIds {
-		elems[i] = types.String{Value: string(id)}
+		ids[i] = types.StringValue(string(id))
+	}
+	idList, diags := types.ListValueFrom(ctx, types.StringType, &ids)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Set state
 	diags = resp.State.Set(ctx, &dBlueprintIds{
 		RefDesign: config.RefDesign,
-		Ids:       types.List{ElemType: types.StringType, Elems: elems},
+		Ids:       idList,
 	})
 	resp.Diagnostics.Append(diags...)
 }
