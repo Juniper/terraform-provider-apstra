@@ -82,6 +82,7 @@ func (r tagDataTrackTagIdsModifier) Modify(ctx context.Context, req tfsdk.Modify
 	if req.AttributeState == nil || resp.AttributePlan == nil || req.AttributeConfig == nil {
 		return
 	}
+	return
 
 	plan := &rRackType{}
 	resp.Diagnostics.Append(req.Plan.Get(ctx, plan)...)
@@ -95,25 +96,25 @@ func (r tagDataTrackTagIdsModifier) Modify(ctx context.Context, req tfsdk.Modify
 		return
 	}
 
-	tagDataPath := req.AttributePath
-	parentPath := tagDataPath.ParentPath()
-	tagIdsPath := parentPath.AtName("tag_ids")
-	resp.Diagnostics.AddWarning("tag data path", tagDataPath.String())
-	resp.Diagnostics.AddWarning("parent path", parentPath.String())
-	resp.Diagnostics.AddWarning("tag ids path", tagIdsPath.String())
-	resp.Diagnostics.AddWarning("state leaf_switches", state.LeafSwitches.String())
-	resp.Diagnostics.AddWarning("plan leaf_switches", plan.LeafSwitches.String())
+	//tagDataPath := req.AttributePath
+	//parentPath := tagDataPath.ParentPath()
+	//tagIdsPath := parentPath.AtName("tag_ids")
+	//resp.Diagnostics.AddWarning("tag data path", tagDataPath.String())
+	//resp.Diagnostics.AddWarning("parent path", parentPath.String())
+	//resp.Diagnostics.AddWarning("tag ids path", tagIdsPath.String())
+	//resp.Diagnostics.AddWarning("state leaf_switches", state.LeafSwitches.String())
+	//resp.Diagnostics.AddWarning("plan leaf_switches", plan.LeafSwitches.String())
 
-	thisObjByPath := types.Set{}
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, tagDataPath, &thisObjByPath)...)
-	resp.Diagnostics.AddWarning("this object by path", thisObjByPath.String())
+	//thisObjByPath := types.Set{}
+	//resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, tagDataPath, &thisObjByPath)...)
+	//resp.Diagnostics.AddWarning("this object by path", thisObjByPath.String())
 
-	planParent := types.Object{}
-	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, parentPath, &planParent)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	resp.Diagnostics.AddWarning("parent", planParent.String())
+	//planParent := types.Object{}
+	//resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, parentPath, &planParent)...)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+	//resp.Diagnostics.AddWarning("parent", planParent.String())
 
 	return
 	var lsp, lss types.Set
@@ -132,7 +133,7 @@ func (r tagDataTrackTagIdsModifier) Modify(ctx context.Context, req tfsdk.Modify
 	}
 	//dump, _ := json.MarshalIndent(ls, "", "  ")
 	//resp.Diagnostics.AddWarning("ls", string(dump))
-	resp.Diagnostics.AddWarning("pah", parentPath.String())
+	//resp.Diagnostics.AddWarning("pah", parentPath.String())
 
 	// set tagData to "unknown"
 	resp.AttributePlan = types.SetUnknown(tagData{}.attrType())

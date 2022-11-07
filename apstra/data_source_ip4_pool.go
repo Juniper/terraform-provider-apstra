@@ -127,7 +127,7 @@ func (o *dataSourceIp4Pool) ValidateConfig(ctx context.Context, req datasource.V
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError(
 			"cannot search for ASN Pool",
 			"exactly one of 'name' or 'id' must be specified",
@@ -151,10 +151,10 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	var err error
 	var ipPool *goapstra.IpPool
 	switch {
-	case !config.Name.Null:
-		ipPool, err = o.client.GetIp4PoolByName(ctx, config.Name.Value)
-	case !config.Id.Null:
-		ipPool, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.Value))
+	case !config.Name.IsNull():
+		ipPool, err = o.client.GetIp4PoolByName(ctx, config.Name.ValueString())
+	case !config.Id.IsNull():
+		ipPool, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.ValueString()))
 	default:
 		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
 	}
@@ -165,23 +165,23 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	config.Id = types.String{Value: string(ipPool.Id)}
-	config.Name = types.String{Value: ipPool.DisplayName}
-	config.Status = types.String{Value: ipPool.Status}
-	config.UsedPercent = types.Float64{Value: float64(ipPool.UsedPercentage)}
-	config.CreatedAt = types.String{Value: ipPool.CreatedAt.String()}
-	config.LastModifiedAt = types.String{Value: ipPool.LastModifiedAt.String()}
-	config.Used = types.Number{Value: bigIntToBigFloat(&ipPool.Used)}
-	config.Total = types.Number{Value: bigIntToBigFloat(&ipPool.Total)}
+	config.Id = types.StringValue(string(ipPool.Id))
+	config.Name = types.StringValue(ipPool.DisplayName)
+	config.Status = types.StringValue(ipPool.Status)
+	config.UsedPercent = types.Float64Value(float64(ipPool.UsedPercentage))
+	config.CreatedAt = types.StringValue(ipPool.CreatedAt.String())
+	config.LastModifiedAt = types.StringValue(ipPool.LastModifiedAt.String())
+	config.Used = types.NumberValue(bigIntToBigFloat(&ipPool.Used))
+	config.Total = types.NumberValue(bigIntToBigFloat(&ipPool.Total))
 	config.Subnets = make([]dIp4PoolSubnet, len(ipPool.Subnets))
 
 	for i, subnet := range ipPool.Subnets {
 		config.Subnets[i] = dIp4PoolSubnet{
-			Status:         types.String{Value: subnet.Status},
-			Network:        types.String{Value: subnet.Network.String()},
-			Total:          types.Number{Value: bigIntToBigFloat(&subnet.Total)},
-			Used:           types.Number{Value: bigIntToBigFloat(&subnet.Used)},
-			UsedPercentage: types.Float64{Value: float64(subnet.UsedPercentage)},
+			Status:         types.StringValue(subnet.Status),
+			Network:        types.StringValue(subnet.Network.String()),
+			Total:          types.NumberValue(bigIntToBigFloat(&subnet.Total)),
+			Used:           types.NumberValue(bigIntToBigFloat(&subnet.Used)),
+			UsedPercentage: types.Float64Value(float64(subnet.UsedPercentage)),
 		}
 	}
 

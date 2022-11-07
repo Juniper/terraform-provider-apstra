@@ -338,10 +338,10 @@ func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.Val
 
 	// ensure ASN pools from the plan exist on Apstra
 	var asnPools []attr.Value
-	asnPools = append(asnPools, config.SuperspineAsnPoolIds.Elems...)
-	asnPools = append(asnPools, config.SpineAsnPoolIds.Elems...)
-	asnPools = append(asnPools, config.LeafAsnPoolIds.Elems...)
-	asnPools = append(asnPools, config.AccessAsnPoolIds.Elems...)
+	asnPools = append(asnPools, config.SuperspineAsnPoolIds.Elements()...)
+	asnPools = append(asnPools, config.SpineAsnPoolIds.Elements()...)
+	asnPools = append(asnPools, config.LeafAsnPoolIds.Elements()...)
+	asnPools = append(asnPools, config.AccessAsnPoolIds.Elements()...)
 	missing := findMissingAsnPools(ctx, asnPools, o.client, &resp.Diagnostics)
 	if len(missing) > 0 {
 		resp.Diagnostics.AddError("cannot assign ASN pool",
@@ -350,16 +350,16 @@ func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.Val
 
 	// ensure Ip4 pools from the plan exist on Apstra
 	var ip4Pools []attr.Value
-	ip4Pools = append(ip4Pools, config.SuperspineIp4PoolIds.Elems...)   // superspine loopback
-	ip4Pools = append(ip4Pools, config.SpineIp4PoolIds.Elems...)        // spine loopback
-	ip4Pools = append(ip4Pools, config.LeafIp4PoolIds.Elems...)         // leaf loopback
-	ip4Pools = append(ip4Pools, config.AccessIp4PoolIds.Elems...)       // access loopback
-	ip4Pools = append(ip4Pools, config.SuperspineSpinePoolIp4.Elems...) // superspine fabric
-	ip4Pools = append(ip4Pools, config.SpineLeafPoolIp4.Elems...)       // spine fabric
-	ip4Pools = append(ip4Pools, config.LeafLeafPoolIp4.Elems...)        // leaf-only fabric
-	ip4Pools = append(ip4Pools, config.LeafMlagPeerIp4.Elems...)        // leaf peer link
-	ip4Pools = append(ip4Pools, config.AccessEsiPeerIp4.Elems...)       // access peer link
-	ip4Pools = append(ip4Pools, config.VtepIps.Elems...)                // vtep
+	ip4Pools = append(ip4Pools, config.SuperspineIp4PoolIds.Elements()...)   // superspine loopback
+	ip4Pools = append(ip4Pools, config.SpineIp4PoolIds.Elements()...)        // spine loopback
+	ip4Pools = append(ip4Pools, config.LeafIp4PoolIds.Elements()...)         // leaf loopback
+	ip4Pools = append(ip4Pools, config.AccessIp4PoolIds.Elements()...)       // access loopback
+	ip4Pools = append(ip4Pools, config.SuperspineSpinePoolIp4.Elements()...) // superspine fabric
+	ip4Pools = append(ip4Pools, config.SpineLeafPoolIp4.Elements()...)       // spine fabric
+	ip4Pools = append(ip4Pools, config.LeafLeafPoolIp4.Elements()...)        // leaf-only fabric
+	ip4Pools = append(ip4Pools, config.LeafMlagPeerIp4.Elements()...)        // leaf peer link
+	ip4Pools = append(ip4Pools, config.AccessEsiPeerIp4.Elements()...)       // access peer link
+	ip4Pools = append(ip4Pools, config.VtepIps.Elements()...)                // vtep
 	missing = findMissingIp4Pools(ctx, ip4Pools, o.client, &resp.Diagnostics)
 	if len(missing) > 0 {
 		resp.Diagnostics.AddError("cannot assign IPv4 pool",
@@ -368,8 +368,8 @@ func (o *resourceBlueprint) ValidateConfig(ctx context.Context, req resource.Val
 
 	// ensure Ip6 pools from the plan exist on Apstra
 	var ip6Pools []attr.Value
-	ip6Pools = append(ip6Pools, config.SuperspineSpinePoolIp6.Elems...) // superspine fabric
-	ip6Pools = append(ip6Pools, config.SpineLeafPoolIp6.Elems...)       // spine fabric
+	ip6Pools = append(ip6Pools, config.SuperspineSpinePoolIp6.Elements()...) // superspine fabric
+	ip6Pools = append(ip6Pools, config.SpineLeafPoolIp6.Elements()...)       // spine fabric
 	missing = findMissingIp6Pools(ctx, ip6Pools, o.client, &resp.Diagnostics)
 	if len(missing) > 0 {
 		resp.Diagnostics.AddError("cannot assign IPv6 pool",
@@ -1788,7 +1788,7 @@ func (o *rBlueprint) setApstraPoolAllocationByTfsdkTag(ctx context.Context, tag 
 		}
 	}
 
-	if poolSet.IsUnknown() && len(poolSet.Elems) != 0 {
+	if poolSet.IsUnknown() && len(poolSet.Elements()) != 0 {
 		diags.AddError("oh snap", "an unknown, but non-empty poolSet")
 	}
 

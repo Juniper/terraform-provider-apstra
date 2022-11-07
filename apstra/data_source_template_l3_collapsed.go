@@ -100,7 +100,7 @@ func (o *dataSourceTemplateL3Collapsed) ValidateConfig(ctx context.Context, req 
 		return
 	}
 
-	if (config.Name.Null && config.Id.Null) || (!config.Name.Null && !config.Id.Null) { // XOR
+	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'name' must be specified")
 		return
 	}
@@ -125,7 +125,7 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	var templateType goapstra.TemplateType
 
 	if !config.Id.IsNull() {
-		templateId = goapstra.ObjectId(config.Id.Value)
+		templateId = goapstra.ObjectId(config.Id.ValueString())
 		templateType, err = o.client.GetTemplateType(ctx, templateId)
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(path.Root("id"), "Not found", err.Error())
@@ -134,7 +134,7 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	}
 
 	if !config.Name.IsNull() {
-		templateId, templateType, err = o.client.GetTemplateIdTypeByName(ctx, config.Name.Value)
+		templateId, templateType, err = o.client.GetTemplateIdTypeByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(path.Root("name"), "Not found", err.Error())
 			return
@@ -179,8 +179,8 @@ func (o *dTemplateL3Collapsed) parseApiResponse(in *goapstra.TemplateL3Collapsed
 	o.MeshLinkCount = types.Int64Value(int64(in.Data.MeshLinkCount))
 	o.MeshLinkSpeed = types.StringValue(string(in.Data.MeshLinkSpeed))
 	o.RackType, d = types.ObjectValue(dTemplateLogicalDeviceAttrTypes(), map[string]attr.Value{
-		"name":        types.String{Value: in.Data.RackTypes[0].Data.DisplayName},
-		"description": types.String{Value: in.Data.RackTypes[0].Data.Description},
+		"name":        types.StringValue(in.Data.RackTypes[0].Data.DisplayName),
+		"description": types.StringValue(in.Data.RackTypes[0].Data.Description),
 	})
 	diags.Append(d...)
 }

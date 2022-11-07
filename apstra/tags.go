@@ -25,8 +25,8 @@ func tagsDataAttributeSchema() tfsdk.Attribute {
 		MarkdownDescription: "Details any tags applied to the element.",
 		Computed:            true,
 		PlanModifiers: tfsdk.AttributePlanModifiers{
+			useStateForUnknownNull(),
 			tagDataTrackTagIds(),
-			//useStateForUnknownNull(),
 		},
 		Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
 			"name": {
