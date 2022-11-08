@@ -46,7 +46,7 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 		MarkdownDescription: "This data source provides details of a specific Rack Type.\n\n" +
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one Rack Type. " +
-			"Matching zero Rack Type or more than one Rack Type will produce an error.",
+			"Matching zero Rack Types or more than one Rack Type will produce an error.",
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
 				MarkdownDescription: "Rack Type id.  Required when the Rack Type name is omitted.",
