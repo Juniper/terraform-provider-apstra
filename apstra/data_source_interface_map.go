@@ -121,7 +121,7 @@ func (o *dataSourceInterfaceMap) GetSchema(_ context.Context) (tfsdk.Schema, dia
 								Type:                types.Int64Type,
 								Computed:            true,
 							},
-							"logical_device_port": {
+							"logical_device_panel_port": {
 								MarkdownDescription: "Port number (first port is 1) of the Logical Device port which corresponds to this interface.",
 								Type:                types.Int64Type,
 								Computed:            true,
@@ -271,7 +271,7 @@ type interfaceMapMapping struct {
 	DPTransform int64 `tfsdk:"device_profile_transformation_id"`
 	DPInterface int64 `tfsdk:"device_profile_interface_id"`
 	LDPanel     int64 `tfsdk:"logical_device_panel"`
-	LDPort      int64 `tfsdk:"logical_device_port"`
+	LDPort      int64 `tfsdk:"logical_device_panel_port"`
 }
 
 func (o interfaceMapMapping) attrTypes() map[string]attr.Type {
@@ -280,7 +280,7 @@ func (o interfaceMapMapping) attrTypes() map[string]attr.Type {
 		"device_profile_transformation_id": types.Int64Type,
 		"device_profile_interface_id":      types.Int64Type,
 		"logical_device_panel":             types.Int64Type,
-		"logical_device_port":              types.Int64Type,
+		"logical_device_panel_port":        types.Int64Type,
 	}
 }
 
