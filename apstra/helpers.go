@@ -193,3 +193,18 @@ func sliceStringEqual(a, b []string) bool {
 	}
 	return true
 }
+
+// sliceWithoutString returns a copy of in with all occurrences of t removed.
+// the returned int indicates the number of occurrences removed.
+func sliceWithoutString(in []string, t string) ([]string, int) {
+	result := make([]string, len(in))
+	var resultIdx int
+	for inIdx := range in {
+		if in[inIdx] == t {
+			continue
+		}
+		result[resultIdx] = in[inIdx]
+		resultIdx++
+	}
+	return result[:resultIdx], len(in) - resultIdx
+}
