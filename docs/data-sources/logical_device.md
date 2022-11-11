@@ -42,30 +42,22 @@ resource "apstra_rack_type" "my_rack" {
 
 ### Read-Only
 
-- `data` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--data))
+- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--panels))
 
-<a id="nestedatt--data"></a>
-### Nested Schema for `data`
-
-Read-Only:
-
-- `name` (String) Logical device display name.
-- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--data--panels))
-
-<a id="nestedatt--data--panels"></a>
-### Nested Schema for `data.panels`
+<a id="nestedatt--panels"></a>
+### Nested Schema for `panels`
 
 Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
-- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--data--panels--port_groups))
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--panels--port_groups))
 - `rows` (Number) Physical vertical dimension of the panel.
 
-<a id="nestedatt--data--panels--port_groups"></a>
-### Nested Schema for `data.panels.port_groups`
+<a id="nestedatt--panels--port_groups"></a>
+### Nested Schema for `panels.port_groups`
 
 Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
 - `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
-- `port_speed_bps` (Number) Port speed in Gbps.
+- `port_speed` (String) Port speed.

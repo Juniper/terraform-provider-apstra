@@ -33,13 +33,14 @@ resource "apstra_rack_type" "rt" {
 ### Required
 
 - `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed'.
-- `leaf_switches` (Attributes List) Each Rack Type is required to have at least one Leaf Switch. (see [below for nested schema](#nestedatt--leaf_switches))
+- `leaf_switches` (Attributes Set) Each Rack Type is required to have at least one Leaf Switch. (see [below for nested schema](#nestedatt--leaf_switches))
 - `name` (String) Rack Type name, displayed in the Apstra web UI.
 
 ### Optional
 
-- `access_switches` (Attributes List) Access switches provide fan-out connectivity from Leaf Switches. (see [below for nested schema](#nestedatt--access_switches))
+- `access_switches` (Attributes Set) Access switches provide fan-out connectivity from Leaf Switches. (see [below for nested schema](#nestedatt--access_switches))
 - `description` (String) Rack Type description, displayed in the Apstra web UI.
+- `generic_systems` (Attributes Set) Generic Systems are rack elements notmanaged by Apstra: Servers, routers, firewalls, etc... (see [below for nested schema](#nestedatt--generic_systems))
 
 ### Read-Only
 
@@ -107,7 +108,7 @@ Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
 - `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
-- `port_speed_bps` (Number) Port speed in Gbps.
+- `port_speed` (String) Port speed.
 
 
 
@@ -206,13 +207,103 @@ Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
 - `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
-- `port_speed_bps` (Number) Port speed in Gbps.
+- `port_speed` (String) Port speed.
 
 
 
 
 <a id="nestedatt--access_switches--tag_data"></a>
 ### Nested Schema for `access_switches.tag_data`
+
+Read-Only:
+
+- `description` (String) Tag description field.
+- `name` (String) Tag name (label) field.
+
+
+
+<a id="nestedatt--generic_systems"></a>
+### Nested Schema for `generic_systems`
+
+Required:
+
+- `count` (Number) Number of Generic Systems of this type.
+- `links` (Attributes Set) Link details for any connection from a Rack Type element (Access Switch or Generic System) to the upstream switch providing connectivity to that element. (see [below for nested schema](#nestedatt--generic_systems--links))
+- `logical_device_id` (String) Apstra Object ID of the Logical Device used to model this switch.
+- `name` (String) Generic name, must be unique within the rack-type.
+
+Optional:
+
+- `port_channel_id_max` (Number) Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.
+- `port_channel_id_min` (Number) Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.
+- `tag_ids` (Set of String) IDs of tags from the global catalog to be applied to this element upon creation.
+
+Read-Only:
+
+- `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--generic_systems--logical_device))
+- `tag_data` (Attributes Set) Details any tags applied to the element. (see [below for nested schema](#nestedatt--generic_systems--tag_data))
+
+<a id="nestedatt--generic_systems--links"></a>
+### Nested Schema for `generic_systems.links`
+
+Required:
+
+- `name` (String) Name of this link.
+- `speed` (String) Speed of this Link.
+- `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
+
+Optional:
+
+- `lag_mode` (String) LAG negotiation mode of the Link.
+- `links_per_switch` (Number) Number of Links to each switch.
+- `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
+- `tag_ids` (Set of String) IDs of tags from the global catalog to be applied to this element upon creation.
+
+Read-Only:
+
+- `tag_data` (Attributes Set) Details any tags applied to the element. (see [below for nested schema](#nestedatt--generic_systems--links--tag_data))
+
+<a id="nestedatt--generic_systems--links--tag_data"></a>
+### Nested Schema for `generic_systems.links.tag_data`
+
+Read-Only:
+
+- `description` (String) Tag description field.
+- `name` (String) Tag name (label) field.
+
+
+
+<a id="nestedatt--generic_systems--logical_device"></a>
+### Nested Schema for `generic_systems.logical_device`
+
+Read-Only:
+
+- `name` (String) Logical device display name.
+- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--generic_systems--logical_device--panels))
+
+<a id="nestedatt--generic_systems--logical_device--panels"></a>
+### Nested Schema for `generic_systems.logical_device.panels`
+
+Read-Only:
+
+- `columns` (Number) Physical horizontal dimension of the panel.
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--generic_systems--logical_device--panels--port_groups))
+- `rows` (Number) Physical vertical dimension of the panel.
+
+<a id="nestedatt--generic_systems--logical_device--panels--port_groups"></a>
+### Nested Schema for `generic_systems.logical_device.panels.rows`
+
+Read-Only:
+
+- `port_count` (Number) Number of ports in the group.
+- `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
+- `port_speed` (String) Port speed.
+
+
+
+
+<a id="nestedatt--generic_systems--tag_data"></a>
+### Nested Schema for `generic_systems.tag_data`
 
 Read-Only:
 

@@ -3,14 +3,14 @@ page_title: "apstra_rack_type Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific Rack Type.
-  At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Type. Matching zero Rack Type or more than one Rack Type will produce an error.
+  At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Type. Matching zero Rack Types or more than one Rack Type will produce an error.
 ---
 
 # apstra_rack_type (Data Source)
 
 This data source provides details of a specific Rack Type.
 
-At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Type. Matching zero Rack Type or more than one Rack Type will produce an error.
+At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Type. Matching zero Rack Types or more than one Rack Type will produce an error.
 
 ## Example Usage
 
@@ -43,7 +43,7 @@ Read-Only:
 - `esi_lag_info` (Attributes) Interconnect information for Access Switches in ESI-LAG redundancy mode. (see [below for nested schema](#nestedatt--access_switches--esi_lag_info))
 - `links` (Attributes Set) Details links from this Element to switches upstream switches within this Rack Type. (see [below for nested schema](#nestedatt--access_switches--links))
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--access_switches--logical_device))
-- `name` (String) Indicates the role of the switch within the rack, also used for targeting in-rack links.
+- `name` (String) Switch name, used when creating intra-rack links targeting this switch.
 - `redundancy_protocol` (String) Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.
 - `tag_data` (Attributes Set) Details any tags applied to the element. (see [below for nested schema](#nestedatt--access_switches--tag_data))
 
@@ -103,7 +103,7 @@ Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
 - `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
-- `port_speed_bps` (Number) Port speed in Gbps.
+- `port_speed` (String) Port speed.
 
 
 
@@ -126,7 +126,7 @@ Read-Only:
 - `count` (Number) Number of Generic Systems of this type.
 - `links` (Attributes Set) Details links from this Element to switches upstream switches within this Rack Type. (see [below for nested schema](#nestedatt--generic_systems--links))
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--generic_systems--logical_device))
-- `name` (String) Indicates the role of the generic system within the rack.
+- `name` (String) Generic name, must be unique within the rack-type.
 - `port_channel_id_max` (Number) Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.
 - `port_channel_id_min` (Number) Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.
 - `tag_data` (Attributes Set) Details any tags applied to the element. (see [below for nested schema](#nestedatt--generic_systems--tag_data))
@@ -178,7 +178,7 @@ Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
 - `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
-- `port_speed_bps` (Number) Port speed in Gbps.
+- `port_speed` (String) Port speed.
 
 
 
@@ -200,7 +200,7 @@ Read-Only:
 
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--leaf_switches--logical_device))
 - `mlag_info` (Attributes) Details settings when the Leaf Switch is an MLAG-capable pair. (see [below for nested schema](#nestedatt--leaf_switches--mlag_info))
-- `name` (String) Indicates the role of the switch within the rack, also used for targeting in-rack links.
+- `name` (String) Switch name, used when creating intra-rack links targeting this switch.
 - `redundancy_protocol` (String) Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.
 - `spine_link_count` (Number) Number of links to each spine switch.
 - `spine_link_speed` (String) Speed of links to spine switches.
@@ -230,7 +230,7 @@ Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
 - `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
-- `port_speed_bps` (Number) Port speed in Gbps.
+- `port_speed` (String) Port speed.
 
 
 
