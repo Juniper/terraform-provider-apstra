@@ -225,15 +225,15 @@ func (o *dInterfaceMap) parseApi(ctx context.Context, in *goapstra.InterfaceMap,
 	o.LogicalDevice = types.StringValue(string(in.Data.LogicalDeviceId))
 	o.DeviceProfile = types.StringValue(string(in.Data.DeviceProfileId))
 
-	interfaces := make([]interfaceMapInterface, len(in.Data.Interfaces))
+	interfaces := make([]dInterfaceMapInterface, len(in.Data.Interfaces))
 	for i := range in.Data.Interfaces {
 		interfaces[i].parseApi(&in.Data.Interfaces[i])
 	}
-	o.Interfaces, d = types.SetValueFrom(ctx, interfaceMapInterface{}.attrType(), interfaces)
+	o.Interfaces, d = types.SetValueFrom(ctx, dInterfaceMapInterface{}.attrType(), interfaces)
 	diags.Append(d...)
 }
 
-type interfaceMapInterface struct {
+type dInterfaceMapInterface struct {
 	Name     string              `tfsdk:"name"`
 	Roles    []string            `tfsdk:"roles"`
 	Mapping  interfaceMapMapping `tfsdk:"mapping"`
@@ -243,7 +243,7 @@ type interfaceMapInterface struct {
 	Setting  string              `tfsdk:"setting"`
 }
 
-func (o interfaceMapInterface) attrType() attr.Type {
+func (o dInterfaceMapInterface) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"name":     types.StringType,
@@ -256,7 +256,7 @@ func (o interfaceMapInterface) attrType() attr.Type {
 		}}
 }
 
-func (o *interfaceMapInterface) parseApi(in *goapstra.InterfaceMapInterface) {
+func (o *dInterfaceMapInterface) parseApi(in *goapstra.InterfaceMapInterface) {
 	o.Name = in.Name
 	o.Roles = in.Roles.Strings()
 	o.Mapping.parseApi(&in.Mapping)

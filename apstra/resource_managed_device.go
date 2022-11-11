@@ -98,11 +98,6 @@ func (o *resourceManagedDevice) ValidateConfig(ctx context.Context, req resource
 		return
 	}
 
-	if o.client == nil {
-		resp.Diagnostics.AddError("client is nil", "wtf")
-		return
-	}
-
 	ipStr := net.ParseIP(config.ManagementIp.Value)
 	if ipStr == nil {
 		resp.Diagnostics.AddAttributeError(

@@ -1,7 +1,7 @@
-bitbucket.org/apstrktr/goapstra v0.0.0-20221108025205-49f0fb77a3ed h1:2HAxU5GpJXr8eorAIfv2T/hpDIie9om7erkpdAQhGGU=
-bitbucket.org/apstrktr/goapstra v0.0.0-20221108025205-49f0fb77a3ed/go.mod h1:UKPH0u8jUmEXEhZz5g+n5oWLKBrKHnhZ5CqhkUZQvsM=
-bitbucket.org/apstrktr/goapstra v0.0.0-20221108180020-085b191db528 h1:zwCzZPzaXtENrAw6armmiIEVKa9PhvUP3f0FEz68f6I=
-bitbucket.org/apstrktr/goapstra v0.0.0-20221108180020-085b191db528/go.mod h1:UKPH0u8jUmEXEhZz5g+n5oWLKBrKHnhZ5CqhkUZQvsM=
+bitbucket.org/apstrktr/goapstra v0.0.0-20221111013551-590d3db981d4 h1:gGdt3k7suOxmJExdINAVzYsGryHm/OCu0H7oTt343aY=
+bitbucket.org/apstrktr/goapstra v0.0.0-20221111013551-590d3db981d4/go.mod h1:UKPH0u8jUmEXEhZz5g+n5oWLKBrKHnhZ5CqhkUZQvsM=
+bitbucket.org/apstrktr/goapstra v0.0.0-20221111014057-fd66d06a8339 h1:UG0nQ10VD8sWs+Qr518Ynwu4ICTIzflYPWJHBrJfICU=
+bitbucket.org/apstrktr/goapstra v0.0.0-20221111014057-fd66d06a8339/go.mod h1:UKPH0u8jUmEXEhZz5g+n5oWLKBrKHnhZ5CqhkUZQvsM=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
