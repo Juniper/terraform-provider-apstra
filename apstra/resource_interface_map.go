@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -87,8 +88,7 @@ func (o *resourceInterfaceMap) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 			},
 			"interfaces": {
 				MarkdownDescription: "Ordered list of interface mapping info.",
-				Computed:            true,
-				Optional:            true,
+				Required:            true,
 				Validators:          []tfsdk.AttributeValidator{listvalidator.SizeAtLeast(1)},
 				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
 					"physical_interface_name": {
@@ -115,6 +115,30 @@ func (o *resourceInterfaceMap) GetSchema(_ context.Context) (tfsdk.Schema, diag.
 						Optional:   true,
 						Computed:   true,
 						Validators: []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
+					},
+				}),
+			},
+			"unused_interfaces": {
+				MarkdownDescription: "Ordered list of interface mapping info for unused interfaces.",
+				Computed:            true,
+				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
+					"physical_interface_name": {
+						MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",
+						Type:                types.StringType,
+						Computed:            true,
+					},
+					"logical_device_port": {
+						MarkdownDescription: "Panel and Port number of logical device expressed in the form \"" +
+							ldInterfaceSynax + "\". Both numbers are 1-indexed, so the 2nd port on the 1st panel " +
+							"would be \"" + ldInterfaceExample + "\".",
+						Type:     types.StringType,
+						Computed: true,
+					},
+					"transformation_id": {
+						MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
+							"in the Device Profile.",
+						Type:     types.Int64Type,
+						Computed: true,
 					},
 				}),
 			},
@@ -181,7 +205,7 @@ func (o *resourceInterfaceMap) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	plan.validateLdPorts(ctx, ld, &resp.Diagnostics)
+	plan.validatePortSelections(ctx, ld, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -196,16 +220,19 @@ func (o *resourceInterfaceMap) Create(ctx context.Context, req resource.CreateRe
 		resp.Diagnostics.AddError("error creating Interface Map", err.Error())
 		return
 	}
-	_ = id
 
-	//diags = resp.State.Set(ctx, &rAsnPool{
-	//	Id:   types.StringValue(string(id)),
-	//	Name: plan.Name,
-	//})
-	//resp.Diagnostics.Append(diags...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
+	var state rInterfaceMap
+
+	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
+	state.Id = types.StringValue(string(id))
+
+	state.parseApi(ctx, request, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -215,15 +242,15 @@ func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Get current state
-	var state rAsnPool
+	var state rInterfaceMap
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get ASN pool from API and then update what is in state from what the API returns
-	pool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	// Get Interface Map from API and then update what is in state from what the API returns
+	iMap, err := o.client.GetInterfaceMap(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -231,16 +258,17 @@ func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadReques
 			resp.State.RemoveResource(ctx)
 			return
 		} else {
-			resp.Diagnostics.AddError("error reading ASN pool", err.Error())
+			resp.Diagnostics.AddError("error reading Interface Map", err.Error())
 			return
 		}
 	}
 
+	var newState rInterfaceMap
+	newState.Id = types.StringValue(string(iMap.Id))
+	newState.parseApi(ctx, iMap.Data, &resp.Diagnostics)
+
 	// Set state
-	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   types.StringValue(string(pool.Id)),
-		Name: types.StringValue(pool.DisplayName),
-	})
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -315,31 +343,32 @@ func (o *resourceInterfaceMap) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
-	var state rAsnPool
+	var state rInterfaceMap
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Delete ASN pool by calling API
-	err := o.client.DeleteAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	// Delete Interface Map by calling API
+	err := o.client.DeleteInterfaceMap(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
 			resp.Diagnostics.AddError(
-				"error deleting ASN pool", err.Error())
+				"error deleting Interface Map", err.Error())
 		}
 		return
 	}
 }
 
 type rInterfaceMap struct {
-	Id              types.String `tfsdk:"id"`
-	Name            types.String `tfsdk:"name"`
-	DeviceProfileId types.String `tfsdk:"device_profile_id"`
-	LogicalDeviceId types.String `tfsdk:"logical_device_id"`
-	Interfaces      types.List   `tfsdk:"interfaces"`
+	Id               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	DeviceProfileId  types.String `tfsdk:"device_profile_id"`
+	LogicalDeviceId  types.String `tfsdk:"logical_device_id"`
+	Interfaces       types.List   `tfsdk:"interfaces"`
+	UnusedInterfaces types.List   `tfsdk:"unused_interfaces"`
 }
 
 func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) (*goapstra.LogicalDevice, *goapstra.DeviceProfile) {
@@ -386,9 +415,9 @@ func (o *rInterfaceMap) ldPortNames(ctx context.Context, diags *diag.Diagnostics
 	return result
 }
 
-// validateLdPorts ensures that (a) all logical device ports in o appear in ld
+// validatePortSelections ensures that (a) all logical device ports in o appear in ld
 // and (b) no ports defined in ld are missing from o
-func (o *rInterfaceMap) validateLdPorts(ctx context.Context, ld *goapstra.LogicalDevice, diags *diag.Diagnostics) {
+func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *goapstra.LogicalDevice, diags *diag.Diagnostics) {
 	plannedPortNames := o.ldPortNames(ctx, diags)
 	if diags.HasError() {
 		return
@@ -559,10 +588,64 @@ func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice,
 	}
 }
 
+func (o *rInterfaceMap) parseApi(ctx context.Context, in *goapstra.InterfaceMapData, diags *diag.Diagnostics) {
+	// create two slices. Data from elements of in.Interfaces will filter into one of these depending
+	// on whether the element represents an "in use" interface. both receiving slices are oversize.
+	a := make([]rInterfaceMapInterface, len(in.Interfaces))
+	b := make([]rInterfaceMapInterface, len(in.Interfaces))
+
+	var aIdx, bIdx int              // aIdx and bIdx keep track of our location in the "a" and "b" slices...
+	var intf rInterfaceMapInterface // used to parse each element of in.Interfaces
+
+	for i := range in.Interfaces { // i keeps track of our location in the in.Interfaces slice...
+		// parse the interface object
+		intf.parseApi(&in.Interfaces[i])
+
+		// logical device port -1/-1 indicates bogus assignment of physical port (unused)
+		if intf.LogicalDevicePort != "-1/-1" {
+			a[aIdx] = intf
+			aIdx++
+		} else {
+			b[bIdx] = intf
+			bIdx++
+		}
+	}
+
+	a = a[:aIdx] // trim the slice of allocated ports to size
+	b = b[:bIdx] // trim the slice of unallocated ports to size
+
+	aList, d := types.ListValueFrom(ctx, rInterfaceMapInterface{}.attrType(), a)
+	diags.Append(d...)
+
+	bList, d := types.ListValueFrom(ctx, rInterfaceMapInterface{}.attrType(), b)
+	diags.Append(d...)
+
+	o.Name = types.StringValue(in.Label)
+	o.DeviceProfileId = types.StringValue(string(in.DeviceProfileId))
+	o.LogicalDeviceId = types.StringValue(string(in.LogicalDeviceId))
+	o.Interfaces = aList
+	o.UnusedInterfaces = bList
+}
+
 type rInterfaceMapInterface struct {
 	PhysicalInterfaceName string `tfsdk:"physical_interface_name"`
 	LogicalDevicePort     string `tfsdk:"logical_device_port"`
 	TransformationId      *int64 `tfsdk:"transformation_id"`
+}
+
+func (o rInterfaceMapInterface) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: map[string]attr.Type{
+			"physical_interface_name": types.StringType,
+			"logical_device_port":     types.StringType,
+			"transformation_id":       types.Int64Type}}
+}
+
+func (o *rInterfaceMapInterface) parseApi(in *goapstra.InterfaceMapInterface) {
+	transformId := int64(in.Mapping.DPTransformId)
+	o.TransformationId = &transformId
+	o.LogicalDevicePort = fmt.Sprintf("%d%s%d", in.Mapping.LDPanel, ldInterfaceSep, in.Mapping.LDPort)
+	o.PhysicalInterfaceName = in.Name
 }
 
 func ldPanelAndPortFromString(in string, diags *diag.Diagnostics) (int, int) {
