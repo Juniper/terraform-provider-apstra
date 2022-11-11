@@ -280,7 +280,7 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Get plan values
-	var plan rAsnPool
+	var plan rInterfaceMap
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -288,51 +288,37 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Get current state
-	var state rAsnPool
+	var state rInterfaceMap
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	currentPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
-	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddError("API error",
-				fmt.Sprintf("error fetching existing ASN pool - pool '%s' not found", state.Id.ValueString()),
-			)
-			return
-		}
-		// some other unknown error
-		resp.Diagnostics.AddError("API error",
-			fmt.Sprintf("error fetching ASN pool '%s' - %s", state.Id.ValueString(), err.Error()),
-		)
+	id := goapstra.ObjectId(state.Id.ValueString())
+	ld, dp := plan.fetchEmbeddedObjects(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Generate API request body from plan
-	send := &goapstra.AsnPoolRequest{
-		DisplayName: plan.Name.ValueString(),
-		Ranges:      make([]goapstra.IntfIntRange, len(currentPool.Ranges)),
-	}
-	for i, r := range currentPool.Ranges {
-		send.Ranges[i] = r
-	}
-
-	// Create/Update ASN pool
-	err = o.client.UpdateAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()), send)
+	request := plan.request(ctx, ld, dp, &resp.Diagnostics)
+	err := o.client.UpdateInterfaceMap(ctx, id, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating ASN pool", err.Error())
+		resp.Diagnostics.AddError("error updating Interface Map", err.Error())
 		return
 	}
 
-	// Set new state
-	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   state.Id,
-		Name: plan.Name,
-	})
+	var newState rInterfaceMap
+
+	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
+	newState.Id = types.StringValue(string(id))
+
+	newState.parseApi(ctx, request, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -511,7 +497,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 						planInterface.PhysicalInterfaceName))
 				return nil
 			}
-		} else { // plan does not include a transform #
+		} else {                           // plan does not include a transform #
 			if len(transformations) == 1 { // we got exactly one candidate -- use it!
 				for k, _ := range transformations { // loop runs once, copies the only map key
 					transformId = k
