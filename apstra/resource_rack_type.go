@@ -1269,17 +1269,22 @@ type rRackLink struct {
 	TagData          []tagData `tfsdk:"tag_data"`
 }
 
+func (o rRackLink) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":               types.StringType,
+		"target_switch_name": types.StringType,
+		"lag_mode":           types.StringType,
+		"links_per_switch":   types.Int64Type,
+		"speed":              types.StringType,
+		"switch_peer":        types.StringType,
+		"tag_ids":            types.SetType{ElemType: types.StringType},
+		"tag_data":           types.SetType{ElemType: tagData{}.attrType()}}
+}
+
 func (o rRackLink) attrType() attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":               types.StringType,
-			"target_switch_name": types.StringType,
-			"lag_mode":           types.StringType,
-			"links_per_switch":   types.Int64Type,
-			"speed":              types.StringType,
-			"switch_peer":        types.StringType,
-			"tag_ids":            types.SetType{ElemType: types.StringType},
-			"tag_data":           types.SetType{ElemType: tagData{}.attrType()}}}
+		AttrTypes: o.attrTypes(),
+	}
 }
 
 func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
