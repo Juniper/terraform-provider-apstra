@@ -249,12 +249,14 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 						Optional:            true,
 						Computed:            true,
 						Type:                types.Int64Type,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 					},
 					"port_channel_id_max": {
 						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
 						Optional:            true,
 						Computed:            true,
 						Type:                types.Int64Type,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 					},
 					"logical_device_id": {
 						MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
@@ -377,7 +379,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// parse the API response into a new state object
-	newState := &rRackType{}
+	newState := rRackType{}
 	newState.parseApi(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -387,10 +389,11 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
 	// Set state
-	diags = resp.State.Set(ctx, newState)
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
+// todo: bug: copyWriteOnlyElements needs to check whether the destination is known, not overwrite when, e.g. logical device ID changes
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
@@ -642,24 +645,24 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	}
 
 	// invoke the copyWriteOnlyElements on every access switch object
-	for _, accessSwitch := range accessSwitches {
+	for i, accessSwitch := range accessSwitches {
 		srcAccessSwitch := src.accessSwitchByName(ctx, accessSwitch.Name, diags)
 		if diags.HasError() {
 			return
 		}
-		accessSwitch.copyWriteOnlyElements(srcAccessSwitch, diags)
+		accessSwitches[i].copyWriteOnlyElements(srcAccessSwitch, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 
 	// invoke the copyWriteOnlyElements on every generic system object
-	for _, genericSystem := range genericSystems {
+	for i, genericSystem := range genericSystems {
 		srcGenericSystem := src.genericSystemByName(ctx, genericSystem.Name, diags)
 		if diags.HasError() {
 			return
 		}
-		genericSystem.copyWriteOnlyElements(srcGenericSystem, diags)
+		genericSystems[i].copyWriteOnlyElements(srcGenericSystem, diags)
 		if diags.HasError() {
 			return
 		}
@@ -964,10 +967,23 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	}
 
 	lacpActive := goapstra.RackLinkLagModeActive.String()
-	links := make([]goapstra.RackLinkRequest, len(o.Links))
+
+	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
 	for i, link := range o.Links {
 		link.LagMode = &lacpActive
-		links[i] = *link.request(ctx, path.AtListIndex(i), rack, diags)
+
+		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkReq := link.request(ctx, path.AtSetValue(setVal), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *linkReq
 	}
 
 	var tagIds []goapstra.ObjectId
@@ -987,7 +1003,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	return &goapstra.RackElementAccessSwitchRequest{
 		InstanceCount:      int(o.Count),
 		RedundancyProtocol: redundancyProtocol,
-		Links:              links,
+		Links:              linkRequests,
 		Label:              o.Name,
 		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId),
 		Tags:               tagIds,
@@ -1111,9 +1127,18 @@ func (o *rRackTypeGenericSystem) request(ctx context.Context, path path.Path, ra
 
 	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
 	for i, link := range o.Links {
-		lagMode := goapstra.RackLinkLagModeActive.String()
-		link.LagMode = &lagMode
-		linkRequests[i] = *link.request(ctx, path.AtListIndex(i), rack, diags)
+		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkReq := link.request(ctx, path.AtSetValue(setVal), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *linkReq
 	}
 
 	var tagIds []goapstra.ObjectId
@@ -1238,6 +1263,7 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 			"links_per_switch": {
 				MarkdownDescription: "Number of Links to each switch.",
 				Optional:            true,
+				Computed:            true,
 				Type:                types.Int64Type,
 				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(2)},
@@ -1251,6 +1277,10 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
 				Optional:            true,
 				Type:                types.StringType,
+				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
+					goapstra.RackLinkSwitchPeerFirst.String(),
+					goapstra.RackLinkSwitchPeerSecond.String(),
+				)},
 			},
 			"tag_ids":  tagIdsAttributeSchema(),
 			"tag_data": tagsDataAttributeSchema(),
@@ -1269,17 +1299,22 @@ type rRackLink struct {
 	TagData          []tagData `tfsdk:"tag_data"`
 }
 
+func (o rRackLink) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":               types.StringType,
+		"target_switch_name": types.StringType,
+		"lag_mode":           types.StringType,
+		"links_per_switch":   types.Int64Type,
+		"speed":              types.StringType,
+		"switch_peer":        types.StringType,
+		"tag_ids":            types.SetType{ElemType: types.StringType},
+		"tag_data":           types.SetType{ElemType: tagData{}.attrType()}}
+}
+
 func (o rRackLink) attrType() attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":               types.StringType,
-			"target_switch_name": types.StringType,
-			"lag_mode":           types.StringType,
-			"links_per_switch":   types.Int64Type,
-			"speed":              types.StringType,
-			"switch_peer":        types.StringType,
-			"tag_ids":            types.SetType{ElemType: types.StringType},
-			"tag_data":           types.SetType{ElemType: tagData{}.attrType()}}}
+		AttrTypes: o.attrTypes(),
+	}
 }
 
 func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
@@ -1351,6 +1386,10 @@ func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goap
 	}
 
 	if o.LagMode == nil {
+		return goapstra.RackLinkAttachmentTypeSingle
+	}
+
+	if o.SwitchPeer != nil {
 		return goapstra.RackLinkAttachmentTypeSingle
 	}
 
@@ -1464,10 +1503,10 @@ func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rR
 func (o *rRackLink) parseApi(in *goapstra.RackLink) {
 	o.Name = in.Label
 	o.TargetSwitchName = in.TargetSwitchLabel
-	if in.LagMode != goapstra.RackLinkLagModeNone {
-		lagMode := in.LagMode.String()
-		o.LagMode = &lagMode
-	}
+
+	lagMode := in.LagMode.String()
+	o.LagMode = &lagMode
+
 	linksPerSwitchCount := int64(in.LinkPerSwitchCount)
 	o.LinksPerSwitch = &linksPerSwitchCount
 	o.Speed = string(in.LinkSpeed)
@@ -1569,7 +1608,13 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		if diags.HasError() {
 			return nil
 		}
-		leafSwitchRequests[i] = *leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
+
+		lsr := leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		leafSwitchRequests[i] = *lsr
 	}
 
 	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
@@ -1579,7 +1624,13 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		if diags.HasError() {
 			return nil
 		}
-		accessSwitchRequests[i] = *accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
+
+		asr := accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		accessSwitchRequests[i] = *asr
 	}
 
 	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
@@ -1589,7 +1640,13 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		if diags.HasError() {
 			return nil
 		}
-		genericSystemsRequests[i] = *genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
+
+		gsr := genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		genericSystemsRequests[i] = *gsr
 	}
 
 	return &goapstra.RackTypeRequest{
@@ -1644,7 +1701,7 @@ func (o *rRackType) accessSwitchByName(ctx context.Context, requested string, di
 
 func (o *rRackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) []rRackTypeGenericSystem {
 	var genericSystems []rRackTypeGenericSystem
-	d := o.AccessSwitches.ElementsAs(ctx, &genericSystems, true)
+	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
 	return genericSystems
 }
