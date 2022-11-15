@@ -1503,10 +1503,10 @@ func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rR
 func (o *rRackLink) parseApi(in *goapstra.RackLink) {
 	o.Name = in.Label
 	o.TargetSwitchName = in.TargetSwitchLabel
-	if in.LagMode != goapstra.RackLinkLagModeNone {
-		lagMode := in.LagMode.String()
-		o.LagMode = &lagMode
-	}
+
+	lagMode := in.LagMode.String()
+	o.LagMode = &lagMode
+
 	linksPerSwitchCount := int64(in.LinkPerSwitchCount)
 	o.LinksPerSwitch = &linksPerSwitchCount
 	o.Speed = string(in.LinkSpeed)
