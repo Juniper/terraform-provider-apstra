@@ -1644,7 +1644,7 @@ func (o *rRackType) accessSwitchByName(ctx context.Context, requested string, di
 
 func (o *rRackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) []rRackTypeGenericSystem {
 	var genericSystems []rRackTypeGenericSystem
-	d := o.AccessSwitches.ElementsAs(ctx, &genericSystems, true)
+	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
 	return genericSystems
 }
