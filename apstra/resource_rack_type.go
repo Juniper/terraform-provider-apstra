@@ -1274,6 +1274,10 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
 				Optional:            true,
 				Type:                types.StringType,
+				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
+					goapstra.RackLinkSwitchPeerFirst.String(),
+					goapstra.RackLinkSwitchPeerSecond.String(),
+				)},
 			},
 			"tag_ids":  tagIdsAttributeSchema(),
 			"tag_data": tagsDataAttributeSchema(),
