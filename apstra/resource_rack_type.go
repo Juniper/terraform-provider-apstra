@@ -249,12 +249,14 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 						Optional:            true,
 						Computed:            true,
 						Type:                types.Int64Type,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 					},
 					"port_channel_id_max": {
 						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
 						Optional:            true,
 						Computed:            true,
 						Type:                types.Int64Type,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 					},
 					"logical_device_id": {
 						MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
@@ -1263,7 +1265,7 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				Optional:            true,
 				Computed:            true,
 				Type:                types.Int64Type,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{useStateForUnknownNull()},
+				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(2)},
 			},
 			"speed": {
