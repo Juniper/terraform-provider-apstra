@@ -964,10 +964,23 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	}
 
 	lacpActive := goapstra.RackLinkLagModeActive.String()
-	links := make([]goapstra.RackLinkRequest, len(o.Links))
+
+	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
 	for i, link := range o.Links {
 		link.LagMode = &lacpActive
-		links[i] = *link.request(ctx, path.AtListIndex(i), rack, diags)
+
+		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkReq := link.request(ctx, path.AtSetValue(setVal), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *linkReq
 	}
 
 	var tagIds []goapstra.ObjectId
@@ -987,7 +1000,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	return &goapstra.RackElementAccessSwitchRequest{
 		InstanceCount:      int(o.Count),
 		RedundancyProtocol: redundancyProtocol,
-		Links:              links,
+		Links:              linkRequests,
 		Label:              o.Name,
 		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId),
 		Tags:               tagIds,
@@ -1111,9 +1124,18 @@ func (o *rRackTypeGenericSystem) request(ctx context.Context, path path.Path, ra
 
 	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
 	for i, link := range o.Links {
-		lagMode := goapstra.RackLinkLagModeActive.String()
-		link.LagMode = &lagMode
-		linkRequests[i] = *link.request(ctx, path.AtListIndex(i), rack, diags)
+		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkReq := link.request(ctx, path.AtSetValue(setVal), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *linkReq
 	}
 
 	var tagIds []goapstra.ObjectId
