@@ -642,24 +642,24 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	}
 
 	// invoke the copyWriteOnlyElements on every access switch object
-	for _, accessSwitch := range accessSwitches {
+	for i, accessSwitch := range accessSwitches {
 		srcAccessSwitch := src.accessSwitchByName(ctx, accessSwitch.Name, diags)
 		if diags.HasError() {
 			return
 		}
-		accessSwitch.copyWriteOnlyElements(srcAccessSwitch, diags)
+		accessSwitches[i].copyWriteOnlyElements(srcAccessSwitch, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 
 	// invoke the copyWriteOnlyElements on every generic system object
-	for _, genericSystem := range genericSystems {
+	for i, genericSystem := range genericSystems {
 		srcGenericSystem := src.genericSystemByName(ctx, genericSystem.Name, diags)
 		if diags.HasError() {
 			return
 		}
-		genericSystem.copyWriteOnlyElements(srcGenericSystem, diags)
+		genericSystems[i].copyWriteOnlyElements(srcGenericSystem, diags)
 		if diags.HasError() {
 			return
 		}
