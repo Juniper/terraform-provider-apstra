@@ -1260,6 +1260,7 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 			"links_per_switch": {
 				MarkdownDescription: "Number of Links to each switch.",
 				Optional:            true,
+				Computed:            true,
 				Type:                types.Int64Type,
 				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(2)},
