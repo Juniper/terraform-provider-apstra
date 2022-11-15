@@ -377,7 +377,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// parse the API response into a new state object
-	newState := &rRackType{}
+	newState := rRackType{}
 	newState.parseApi(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -387,10 +387,11 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
 	// Set state
-	diags = resp.State.Set(ctx, newState)
+	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }
 
+// todo: bug: copyWriteOnlyElements needs to check whether the destination is known, not overwrite when, e.g. logical device ID changes
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
@@ -1262,7 +1263,7 @@ func rRackLinkAttributeSchema() tfsdk.Attribute {
 				Optional:            true,
 				Computed:            true,
 				Type:                types.Int64Type,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				PlanModifiers:       tfsdk.AttributePlanModifiers{useStateForUnknownNull()},
 				Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(2)},
 			},
 			"speed": {
@@ -1383,6 +1384,10 @@ func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goap
 	}
 
 	if o.LagMode == nil {
+		return goapstra.RackLinkAttachmentTypeSingle
+	}
+
+	if o.SwitchPeer != nil {
 		return goapstra.RackLinkAttachmentTypeSingle
 	}
 
