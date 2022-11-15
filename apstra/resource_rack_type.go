@@ -604,9 +604,16 @@ func (o *rRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		genericSystemSet = types.SetNull(rRackTypeGenericSystem{}.attrType())
 	}
 
+	var description types.String
+	if in.Data.Description == "" {
+		description = types.StringNull()
+	} else {
+		description = types.StringValue(in.Data.Description)
+	}
+
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
-	o.Description = types.StringValue(in.Data.Description)
+	o.Description = description
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
 	o.LeafSwitches = leafSwitchSet
 	o.AccessSwitches = accessSwitchSet
