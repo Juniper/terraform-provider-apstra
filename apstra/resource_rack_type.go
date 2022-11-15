@@ -1574,7 +1574,13 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		if diags.HasError() {
 			return nil
 		}
-		leafSwitchRequests[i] = *leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
+
+		lsr := leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		leafSwitchRequests[i] = *lsr
 	}
 
 	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
@@ -1584,7 +1590,13 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		if diags.HasError() {
 			return nil
 		}
-		accessSwitchRequests[i] = *accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
+
+		asr := accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		accessSwitchRequests[i] = *asr
 	}
 
 	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
@@ -1594,7 +1606,13 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		if diags.HasError() {
 			return nil
 		}
-		genericSystemsRequests[i] = *genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
+
+		gsr := genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		genericSystemsRequests[i] = *gsr
 	}
 
 	return &goapstra.RackTypeRequest{
