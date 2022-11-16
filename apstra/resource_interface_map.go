@@ -565,7 +565,15 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 
 func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) *goapstra.InterfaceMapData {
 	allocatedInterfaces := o.iMapInterfaces(ctx, ld, dp, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	unallocatedInterfaces := iMapUnallocaedInterfaces(allocatedInterfaces, dp, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	return &goapstra.InterfaceMapData{
 		LogicalDeviceId: ld.Id,
 		DeviceProfileId: dp.Id,
