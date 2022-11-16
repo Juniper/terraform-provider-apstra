@@ -497,7 +497,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 						planInterface.PhysicalInterfaceName))
 				return nil
 			}
-		} else {                           // plan does not include a transform #
+		} else { // plan does not include a transform #
 			if len(transformations) == 1 { // we got exactly one candidate -- use it!
 				for k, _ := range transformations { // loop runs once, copies the only map key
 					transformId = k
@@ -724,7 +724,9 @@ func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, d
 		allocatedPortIds[ap.Mapping.DPPortId] = struct{}{}
 	}
 
-	result := make([]goapstra.InterfaceMapInterface, len(dp.Data.Ports)-allocatedPortCount)
+	missingAllocationCount := len(dp.Data.Ports) - len(allocatedPortIds) // device profile ports - used port IDs (ignore breakout ports)
+
+	result := make([]goapstra.InterfaceMapInterface, missingAllocationCount)
 	var i int
 	for _, dpPort := range dp.Data.Ports {
 		if _, ok := allocatedPortIds[dpPort.PortId]; ok {
