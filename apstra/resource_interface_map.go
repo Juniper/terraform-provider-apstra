@@ -531,13 +531,16 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 		}
 
 		transformation := transformations[transformId]
-
-		var interfaceIdx int
+		interfaceIdx := -1
 		for j, intf := range transformation.Interfaces {
-			if intf.Name == planInterface.PhysicalInterfaceName {
+			if planInterface.PhysicalInterfaceName == intf.Name {
 				interfaceIdx = j
+				break
 			}
-			break
+		}
+		if interfaceIdx == -1 {
+			diags.AddError(errProviderBug, "failed to set interfaceIdx")
+			return nil
 		}
 
 		transformInterface := transformation.Interfaces[interfaceIdx]
