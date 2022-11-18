@@ -494,41 +494,9 @@ func (o *rRackType) fabricConnectivityDesign() (*goapstra.FabricConnectivityDesi
 	return &fcd, fcd.FromString(o.FabricConnectivityDesign.ValueString())
 }
 
-func (o *rRackType) getLeafSwitchByName(ctx context.Context, name string, diags *diag.Diagnostics) *rRackTypeLeafSwitch {
-	var leafSwitches []rRackTypeLeafSwitch
-	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, true)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-
-	for _, leafSwitch := range leafSwitches {
-		if leafSwitch.Name == name {
-			return &leafSwitch
-		}
-	}
-	return nil
-}
-
-func (o *rRackType) getAccessSwitchByName(ctx context.Context, name string, diags *diag.Diagnostics) *rRackTypeAccessSwitch {
-	var accessSwitches []rRackTypeAccessSwitch
-	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, true)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-
-	for _, accessSwitch := range accessSwitches {
-		if accessSwitch.Name == name {
-			return &accessSwitch
-		}
-	}
-	return nil
-}
-
 func (o *rRackType) getSwitchRedundancyProtocolByName(ctx context.Context, name string, path path.Path, diags *diag.Diagnostics) fmt.Stringer {
-	leaf := o.getLeafSwitchByName(ctx, name, diags)
-	access := o.getAccessSwitchByName(ctx, name, diags)
+	leaf := o.leafSwitchByName(ctx, name, diags)
+	access := o.accessSwitchByName(ctx, name, diags)
 	if leaf == nil && access == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("target switch '%s' not found in rack type '%s'", name, o.Id))
@@ -1062,7 +1030,7 @@ func (o *rRackTypeAccessSwitch) parseApi(in *goapstra.RackElementAccessSwitch) {
 	}
 }
 
-func (o *rRackTypeAccessSwitch) getLinkByName(desired string) *rRackLink {
+func (o *rRackTypeAccessSwitch) linkByName(desired string) *rRackLink {
 	for _, link := range o.Links {
 		if link.Name == desired {
 			return &link
@@ -1074,12 +1042,17 @@ func (o *rRackTypeAccessSwitch) getLinkByName(desired string) *rRackLink {
 func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddWarning(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		return
 	}
 	o.LogicalDeviceId = src.LogicalDeviceId
 	o.TagIds = src.TagIds
 
 	for i, link := range o.Links {
-		o.Links[i].copyWriteOnlyElements(src.getLinkByName(link.Name), diags)
+		srcLink := src.linkByName(link.Name)
+		if srcLink == nil {
+			continue
+		}
+		o.Links[i].copyWriteOnlyElements(srcLink, diags)
 		if diags.HasError() {
 			return
 		}
@@ -1206,7 +1179,7 @@ func (o *rRackTypeGenericSystem) parseApi(in *goapstra.RackElementGenericSystem)
 	}
 }
 
-func (o *rRackTypeGenericSystem) getLinkByName(desired string) *rRackLink {
+func (o *rRackTypeGenericSystem) linkByName(desired string) *rRackLink {
 	for _, link := range o.Links {
 		if link.Name == desired {
 			return &link
@@ -1218,12 +1191,17 @@ func (o *rRackTypeGenericSystem) getLinkByName(desired string) *rRackLink {
 func (o *rRackTypeGenericSystem) copyWriteOnlyElements(src *rRackTypeGenericSystem, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddWarning(errProviderBug, "rRackTypeGenericSystem.copyWriteOnlyElements: attempt to copy from nil source")
+		return
 	}
 	o.LogicalDeviceId = src.LogicalDeviceId
 	o.TagIds = src.TagIds
 
 	for i, link := range o.Links {
-		o.Links[i].copyWriteOnlyElements(src.getLinkByName(link.Name), diags)
+		srcLink := src.linkByName(link.Name)
+		if srcLink == nil {
+			continue
+		}
+		o.Links[i].copyWriteOnlyElements(srcLink, diags)
 		if diags.HasError() {
 			return
 		}
@@ -1343,8 +1321,8 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 		}
 	}
 
-	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
-	access := rack.getAccessSwitchByName(ctx, o.TargetSwitchName, diags)
+	leaf := rack.leafSwitchByName(ctx, o.TargetSwitchName, diags)
+	access := rack.accessSwitchByName(ctx, o.TargetSwitchName, diags)
 	if leaf == nil && access == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("target switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
@@ -1414,7 +1392,7 @@ func (o *rRackLink) validateConfigForAccessSwitch(ctx context.Context, arp goaps
 		return
 	}
 
-	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
+	leaf := rack.leafSwitchByName(ctx, o.TargetSwitchName, diags)
 	if leaf == nil {
 		diags.AddAttributeError(path, "leaf switch not found",
 			fmt.Sprintf("leaf switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
@@ -1469,8 +1447,8 @@ func (o *rRackLink) validateConfigForGenericSystem(ctx context.Context, rack *rR
 		diags.AddAttributeError(path, errInvalidConfig, "'lag_mode' must be set when 'links_per_switch' is set")
 	}
 
-	leaf := rack.getLeafSwitchByName(ctx, o.TargetSwitchName, diags)
-	access := rack.getAccessSwitchByName(ctx, o.TargetSwitchName, diags)
+	leaf := rack.leafSwitchByName(ctx, o.TargetSwitchName, diags)
+	access := rack.accessSwitchByName(ctx, o.TargetSwitchName, diags)
 	if leaf == nil && access == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("target switch '%s' not found in rack type '%s'", o.TargetSwitchName, rack.Id))
