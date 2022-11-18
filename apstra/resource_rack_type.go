@@ -589,7 +589,7 @@ func (o *rRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		for i := range in.Data.AccessSwitches {
 			accessSwitches[i].parseApi(&in.Data.AccessSwitches[i])
 		}
-		accessSwitchSet, d = types.SetValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), accessSwitches)
+		accessSwitchSet, d = types.SetValueFrom(ctx, rRackTypeAccessSwitch{}.attrType(), accessSwitches)
 		diags.Append(d...)
 	} else {
 		accessSwitchSet = types.SetNull(rRackTypeAccessSwitch{}.attrType())
