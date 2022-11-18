@@ -897,7 +897,8 @@ func (o *rRackTypeLeafSwitch) parseApi(in *goapstra.RackElementLeafSwitch, fcd g
 
 func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
 	if src == nil {
-		diags.AddWarning(errProviderBug, "rRackTypeLeafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		diags.AddError(errProviderBug, "rRackTypeLeafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		return
 	}
 	o.LogicalDeviceId = src.LogicalDeviceId
 	o.TagIds = src.TagIds
@@ -1050,7 +1051,7 @@ func (o *rRackTypeAccessSwitch) linkByName(desired string) *rRackLink {
 
 func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
 	if src == nil {
-		diags.AddWarning(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		diags.AddError(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
 	o.LogicalDeviceId = src.LogicalDeviceId
@@ -1199,7 +1200,7 @@ func (o *rRackTypeGenericSystem) linkByName(desired string) *rRackLink {
 
 func (o *rRackTypeGenericSystem) copyWriteOnlyElements(src *rRackTypeGenericSystem, diags *diag.Diagnostics) {
 	if src == nil {
-		diags.AddWarning(errProviderBug, "rRackTypeGenericSystem.copyWriteOnlyElements: attempt to copy from nil source")
+		diags.AddError(errProviderBug, "rRackTypeGenericSystem.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
 	o.LogicalDeviceId = src.LogicalDeviceId
@@ -1512,7 +1513,8 @@ func (o *rRackLink) parseApi(in *goapstra.RackLink) {
 
 func (o *rRackLink) copyWriteOnlyElements(src *rRackLink, diags *diag.Diagnostics) {
 	if src == nil {
-		diags.AddWarning(errProviderBug, "rRackLink.copyWriteOnlyElements: attempt to copy from nil source")
+		diags.AddError(errProviderBug, "rRackLink.copyWriteOnlyElements: attempt to copy from nil source")
+		return
 	}
 	o.TagIds = src.TagIds
 }
