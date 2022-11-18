@@ -444,10 +444,12 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *goapstra
 	}
 }
 
-// iMapInterfaces returns a []InterfaceMap representing interfaces allocated from dp
-// to ld according to the rules specified in o. It also returns a map[portId]unusedInterfaces
-// which can be used to satisfy Apstra's requirements that all interfaces within a transform
-// (members interfaces of a breakout transceiver) be allocated together.
+// iMapInterfaces returns a []InterfaceMapInterface representing interfaces
+// allocated from dp to ld according to the rules specified in o. The returned
+// []InterfaceMapInterface also includes unallocated interfaces (marked as
+// unused) belonging to the same transformation as any allocated interfaces.
+// This satisfies Apstra's requirement that all interfaces belonging to a
+// transformation be mapped together.
 func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) []goapstra.InterfaceMapInterface {
 	// extract interface list from plan
 	var planInterfaces []rInterfaceMapInterface
@@ -455,6 +457,13 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 	if diags.HasError() {
 		return nil
 	}
+
+	// portIdToUnusedInterfaces is a map of per-transform interface IDs
+	// keyed by port ID (physical switch interface). We use it to track unused
+	// interfaces within a transformation because the Apstra API requires that
+	// all interfaces within a transformation be mapped together, even those
+	// which are not used.
+	portIdToUnusedInterfaces := make(map[int]unusedInterfaces)
 
 	ldpiMap := getLogicalDevicePortInfo(ld)
 	if len(ldpiMap) != len(planInterfaces) {
@@ -549,6 +558,30 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 
 		transformInterface := transformation.Interfaces[interfaceIdx]
 
+		// at this point we have selected a transformation and an interface within it.
+
+		// the portIdToUnusedInterfaces map's entry for this port must
+		// have our selected per-transform interface ID removed. Either that's
+		// an edit to the current map entry, or it's a new map entry.
+		if transformInterfacesUnused, found := portIdToUnusedInterfaces[portId]; found {
+			// we've already been tracking this port+transform interfaces
+			// remove this interface ID from the per-transform list of unused interfaces
+			unused, _ := sliceWithoutInt(transformInterfacesUnused.interfaces, transformInterface.InterfaceId)
+			portIdToUnusedInterfaces[portId] = unusedInterfaces{
+				transformId: transformId,
+				interfaces:  unused,
+			}
+			//sliceWithoutInt(transformInterfacesUnused, transformInterface.InterfaceId)
+		} else {
+			// New port+transform.
+			// Add it to the tracking map with this interface ID removed from the list
+			unused, _ := sliceWithoutInt(transformation.InterfaceIds(), transformInterface.InterfaceId)
+			portIdToUnusedInterfaces[portId] = unusedInterfaces{
+				transformId: transformId,
+				interfaces:  unused,
+			}
+		}
+
 		result[i] = goapstra.InterfaceMapInterface{
 			Name:  planInterface.PhysicalInterfaceName,
 			Roles: ldpiMap[planInterface.LogicalDevicePort].Roles,
@@ -567,7 +600,56 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 			},
 		}
 	}
+
+	// now loop over any interfaces languishing in portIdToUnusedInterfaces.
+	// These likely unused members of breakout ports. Apstra requires them to be
+	// included in the interface map.
+	positionIdx := len(planInterfaces) + 1
+	for portId, unused := range portIdToUnusedInterfaces {
+		for _, unusedInterfaceId := range unused.interfaces {
+			portInfo, err := dp.Data.PortById(portId)
+			if err != nil {
+				diags.AddError("error getting unused port by ID", err.Error())
+				return nil
+			}
+			transformation, err := portInfo.Transformation(unused.transformId)
+			if err != nil {
+				diags.AddError("error getting transformation by ID", err.Error())
+				return nil
+			}
+			intf, err := transformation.Interface(unusedInterfaceId)
+			if err != nil {
+				dump, _ := json.MarshalIndent(&portInfo, "", "  ")
+				diags.AddWarning(fmt.Sprintf("transform %d, port %d", unused.transformId, unusedInterfaceId), string(dump))
+				diags.AddError("error getting transformation interface by ID", err.Error())
+				return nil
+			}
+			result = append(result, goapstra.InterfaceMapInterface{
+				Name:  intf.Name,
+				Roles: goapstra.LogicalDevicePortRoleUnused,
+				Mapping: goapstra.InterfaceMapMapping{
+					DPPortId:      portId,
+					DPTransformId: unused.transformId,
+					DPInterfaceId: unusedInterfaceId,
+					LDPanel:       -1,
+					LDPort:        -1,
+				},
+				ActiveState: true,
+				Position:    positionIdx,
+				Speed:       intf.Speed,
+				Setting: goapstra.InterfaceMapInterfaceSetting{
+					Param: intf.Setting,
+				},
+			})
+			positionIdx++
+		}
+	}
 	return result
+}
+
+type unusedInterfaces struct {
+	transformId int
+	interfaces  []int
 }
 
 func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) *goapstra.InterfaceMapData {
@@ -700,7 +782,7 @@ func getLogicalDevicePortInfo(ld *goapstra.LogicalDevice) map[string]ldPortInfo 
 // are returned.
 func getPortIdAndTransformations(dp *goapstra.DeviceProfile, speed goapstra.LogicalDevicePortSpeed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]goapstra.Transformation) {
 	// find the device profile "port info" by physical port name (expecting exactly one match from DP)
-	dpPort, err := dp.PortByInterfaceName(phyIntfName)
+	dpPort, err := dp.Data.PortByInterfaceName(phyIntfName)
 	if err != nil {
 		diags.AddError(errInvalidConfig,
 			fmt.Sprintf("device profile '%s' has no ports which use name '%s'",
