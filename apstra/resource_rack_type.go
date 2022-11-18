@@ -606,6 +606,9 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 		if diags.HasError() {
 			return
 		}
+		if srcLeafSwitch == nil {
+			continue
+		}
 		leafSwitches[i].copyWriteOnlyElements(srcLeafSwitch, diags)
 		if diags.HasError() {
 			return
@@ -618,6 +621,9 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 		if diags.HasError() {
 			return
 		}
+		if srcAccessSwitch == nil {
+			continue
+		}
 		accessSwitches[i].copyWriteOnlyElements(srcAccessSwitch, diags)
 		if diags.HasError() {
 			return
@@ -629,6 +635,9 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 		srcGenericSystem := src.genericSystemByName(ctx, genericSystem.Name, diags)
 		if diags.HasError() {
 			return
+		}
+		if srcGenericSystem == nil {
+			continue
 		}
 		genericSystems[i].copyWriteOnlyElements(srcGenericSystem, diags)
 		if diags.HasError() {
