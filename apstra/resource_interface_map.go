@@ -444,6 +444,10 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *goapstra
 	}
 }
 
+// iMapInterfaces returns a []InterfaceMap representing interfaces allocated from dp
+// to ld according to the rules specified in o. It also returns a map[portId]unusedInterfaces
+// which can be used to satisfy Apstra's requirements that all interfaces within a transform
+// (members interfaces of a breakout transceiver) be allocated together.
 func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) []goapstra.InterfaceMapInterface {
 	// extract interface list from plan
 	var planInterfaces []rInterfaceMapInterface
