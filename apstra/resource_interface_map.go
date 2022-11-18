@@ -497,7 +497,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 						planInterface.PhysicalInterfaceName))
 				return nil
 			}
-		} else {                           // plan does not include a transform #
+		} else { // plan does not include a transform #
 			if len(transformations) == 1 { // we got exactly one candidate -- use it!
 				for k, _ := range transformations { // loop runs once, copies the only map key
 					transformId = k
@@ -531,13 +531,16 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 		}
 
 		transformation := transformations[transformId]
-
-		var interfaceIdx int
+		interfaceIdx := -1
 		for j, intf := range transformation.Interfaces {
-			if intf.Name == planInterface.PhysicalInterfaceName {
+			if planInterface.PhysicalInterfaceName == intf.Name {
 				interfaceIdx = j
+				break
 			}
-			break
+		}
+		if interfaceIdx == -1 {
+			diags.AddError(errProviderBug, "failed to set interfaceIdx")
+			return nil
 		}
 
 		transformInterface := transformation.Interfaces[interfaceIdx]
@@ -565,7 +568,15 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 
 func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) *goapstra.InterfaceMapData {
 	allocatedInterfaces := o.iMapInterfaces(ctx, ld, dp, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	unallocatedInterfaces := iMapUnallocaedInterfaces(allocatedInterfaces, dp, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	return &goapstra.InterfaceMapData{
 		LogicalDeviceId: ld.Id,
 		DeviceProfileId: dp.Id,
@@ -713,7 +724,9 @@ func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, d
 		allocatedPortIds[ap.Mapping.DPPortId] = struct{}{}
 	}
 
-	result := make([]goapstra.InterfaceMapInterface, len(dp.Data.Ports)-allocatedPortCount)
+	missingAllocationCount := len(dp.Data.Ports) - len(allocatedPortIds) // device profile ports - used port IDs (ignore breakout ports)
+
+	result := make([]goapstra.InterfaceMapInterface, missingAllocationCount)
 	var i int
 	for _, dpPort := range dp.Data.Ports {
 		if _, ok := allocatedPortIds[dpPort.PortId]; ok {
