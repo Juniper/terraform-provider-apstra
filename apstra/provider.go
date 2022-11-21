@@ -25,6 +25,7 @@ const (
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
 	envApstraLogfile  = "APSTRA_LOG"
+	envApstraUrl      = "APSTRA_URL"
 )
 
 var _ provider.ProviderWithMetadata = &Provider{}
@@ -54,10 +55,11 @@ func (p *Provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 		Attributes: map[string]tfsdk.Attribute{
 			"url": {
 				Type:     types.StringType,
-				Required: true,
+				Optional: true,
 				MarkdownDescription: "URL of the apstra server, e.g. `http://<user>:<password>@apstra.juniper.net:443/`\n" +
-					"If username or password are omitted environment variables `" + envApstraUsername + "` and `" +
-					envApstraPassword + "` will be used.",
+					"If username or password are omitted from URL string, environment variables `" + envApstraUsername +
+					"` and `" + envApstraPassword + "` will be used.  If `url` is omitted, environment variable " +
+					envApstraUrl + " will be used.",
 			},
 			"tls_validation_disabled": {
 				Type:                types.BoolType,
@@ -83,9 +85,28 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	parsedUrl, err := url.Parse(config.Url.Value)
+	// populate raw URL string from config or environment
+	var apstraUrl string
+	var ok bool
+	if config.Url.IsNull() {
+		if apstraUrl, ok = os.LookupEnv(envApstraUrl); !ok {
+			resp.Diagnostics.AddError(errInvalidConfig, "missing Apstra URL")
+			return
+		}
+	} else {
+		apstraUrl = config.Url.ValueString()
+	}
+
+	// either config or env could have sent us an empty string
+	if apstraUrl == "" {
+		resp.Diagnostics.AddError(errInvalidConfig, "Apstra URL: empty string")
+		return
+	}
+
+	// parse the URL
+	parsedUrl, err := url.Parse(apstraUrl)
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("error parsing URL '%s'", config.Url.Value), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("error parsing URL '%s'", config.Url.ValueString()), err.Error())
 		return
 	}
 
