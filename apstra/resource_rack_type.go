@@ -99,6 +99,8 @@ func (o *resourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 						Type:                types.Int64Type,
 						Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
 						Optional:            true,
+						Computed:            true,
+						PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 					},
 					"spine_link_speed": {
 						MarkdownDescription: "Speed of spine-facing links, something like '10G'",
@@ -707,9 +709,22 @@ func (o rRackTypeLeafSwitch) attrType() attr.Type {
 	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
-func (o *rRackTypeLeafSwitch) request(path path.Path, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
+func (o *rRackTypeLeafSwitch) request(path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
+	fcd, err := rack.fabricConnectivityDesign()
+	if err != nil {
+		diags.AddAttributeError(path.AtMapKey("fabric_connectivity_design"), "parse error", err.Error())
+		return nil
+	}
+
 	var linkPerSpineCount int
-	if o.SpineLinkCount != nil {
+	if o.SpineLinkCount == nil {
+		// config omits 'spine_link_count' set default value (1) for fabric designs which require it
+		switch *fcd {
+		case goapstra.FabricConnectivityDesignL3Clos:
+			linkPerSpineCount = 1
+		}
+	} else {
+		// config includes 'spine_link_count' -- use the configured value
 		linkPerSpineCount = int(*o.SpineLinkCount)
 	}
 
@@ -773,12 +788,6 @@ func (o *rRackTypeLeafSwitch) validateConfig(path path.Path, rack *rRackType, di
 }
 
 func (o *rRackTypeLeafSwitch) validateForL3Clos(path path.Path, diags *diag.Diagnostics) {
-	if o.SpineLinkCount == nil {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_count' must be specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Clos))
-	}
-
 	if o.SpineLinkSpeed == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("'spine_link_speed' must be specified when 'fabric_connectivity_design' is '%s'",
@@ -1598,7 +1607,7 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 			return nil
 		}
 
-		lsr := leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), diags)
+		lsr := leafSwitch.request(path.Root("leaf_switches").AtSetValue(setVal), o, diags)
 		if diags.HasError() {
 			return nil
 		}
