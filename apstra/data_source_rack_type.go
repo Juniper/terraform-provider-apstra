@@ -73,140 +73,17 @@ func (o *dataSourceRackType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 			"leaf_switches": {
 				MarkdownDescription: "Details of Leaf Switches in this Rack Type.",
 				Computed:            true,
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"spine_link_count": {
-						MarkdownDescription: "Number of links to each spine switch.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"spine_link_speed": {
-						MarkdownDescription: "Speed of links to spine switches.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"redundancy_protocol": {
-						MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"mlag_info": {
-						MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
-						Computed:            true,
-						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"mlag_keepalive_vlan": {
-								MarkdownDescription: "MLAG keepalive VLAN ID.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"peer_link_count": {
-								MarkdownDescription: "Number of links between MLAG devices.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"peer_link_speed": {
-								MarkdownDescription: "Speed of links between MLAG devices.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"peer_link_port_channel_id": {
-								MarkdownDescription: "Peer link port-channel ID.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"l3_peer_link_count": {
-								MarkdownDescription: "Number of L3 links between MLAG devices.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"l3_peer_link_speed": {
-								MarkdownDescription: "Speed of l3 links between MLAG devices.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-							"l3_peer_link_port_channel_id": {
-								MarkdownDescription: "L3 peer link port-channel ID.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-						}),
-					},
-					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tag_data":       tagsDataAttributeSchema(),
-				}),
+				Attributes:          tfsdk.SetNestedAttributes(leafSwitchAttributes()),
 			},
 			"access_switches": {
 				MarkdownDescription: "Details of Access Switches in this Rack Type.",
 				Computed:            true,
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"count": {
-						MarkdownDescription: "Count of Access Switches of this type.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"redundancy_protocol": {
-						MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"esi_lag_info": {
-						MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
-						Computed:            true,
-						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"l3_peer_link_count": {
-								MarkdownDescription: "Count of L3 links to ESI peer.",
-								Computed:            true,
-								Type:                types.Int64Type,
-							},
-							"l3_peer_link_speed": {
-								MarkdownDescription: "Speed of L3 links to ESI peer.",
-								Computed:            true,
-								Type:                types.StringType,
-							},
-						}),
-					},
-					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tag_data":       tagsDataAttributeSchema(),
-					"links":          dLinksAttributeSchema(),
-				}),
+				Attributes:          tfsdk.SetNestedAttributes(accessSwitchAttributes()),
 			},
 			"generic_systems": {
-				MarkdownDescription: "Details Generic Systems found in the Rack Type.",
+				MarkdownDescription: "Details of Generic Systems in the Rack Type.",
 				Computed:            true,
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Generic name, must be unique within the rack-type.",
-						Computed:            true,
-						Type:                types.StringType,
-					},
-					"count": {
-						MarkdownDescription: "Number of Generic Systems of this type.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"port_channel_id_min": {
-						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"port_channel_id_max": {
-						MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"logical_device": logicalDeviceDataAttributeSchema(),
-					"tag_data":       tagsDataAttributeSchema(),
-					"links":          dLinksAttributeSchema(),
-				}),
+				Attributes:          tfsdk.SetNestedAttributes(genericSystemAttributes()),
 			},
 		},
 	}, nil
@@ -406,16 +283,21 @@ type dRackTypeLeafSwitch struct {
 	TagData            []tagData         `tfsdk:"tag_data"`
 }
 
+func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"spine_link_count":    types.Int64Type,
+		"spine_link_speed":    types.StringType,
+		"redundancy_protocol": types.StringType,
+		"mlag_info":           mlagInfo{}.attrType(),
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()}}
+}
+
 func (o dRackTypeLeafSwitch) attrType() attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":                types.StringType,
-			"spine_link_count":    types.Int64Type,
-			"spine_link_speed":    types.StringType,
-			"redundancy_protocol": types.StringType,
-			"mlag_info":           mlagInfo{}.attrType(),
-			"logical_device":      logicalDeviceData{}.attrType(),
-			"tag_data":            types.SetType{ElemType: tagData{}.attrType()}}}
+		AttrTypes: o.attrTypes(),
+	}
 }
 
 func (o *dRackTypeLeafSwitch) parseApi(in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign) {
@@ -728,5 +610,140 @@ func (o *dRackTypeGenericSystem) parseApi(in *goapstra.RackElementGenericSystem)
 
 	for i := range in.Links {
 		o.Links[i].parseApi(&in.Links[i])
+	}
+}
+
+func leafSwitchAttributes() map[string]tfsdk.Attribute {
+	return map[string]tfsdk.Attribute{
+		"name": {
+			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			Computed:            true,
+			Type:                types.StringType,
+		},
+		"spine_link_count": {
+			MarkdownDescription: "Number of links to each spine switch.",
+			Computed:            true,
+			Type:                types.Int64Type,
+		},
+		"spine_link_speed": {
+			MarkdownDescription: "Speed of links to spine switches.",
+			Computed:            true,
+			Type:                types.StringType,
+		},
+		"redundancy_protocol": {
+			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
+			Computed:            true,
+			Type:                types.StringType,
+		},
+		"mlag_info": {
+			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
+			Computed:            true,
+			Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+				"mlag_keepalive_vlan": {
+					MarkdownDescription: "MLAG keepalive VLAN ID.",
+					Computed:            true,
+					Type:                types.Int64Type,
+				},
+				"peer_link_count": {
+					MarkdownDescription: "Number of links between MLAG devices.",
+					Computed:            true,
+					Type:                types.Int64Type,
+				},
+				"peer_link_speed": {
+					MarkdownDescription: "Speed of links between MLAG devices.",
+					Computed:            true,
+					Type:                types.StringType,
+				},
+				"peer_link_port_channel_id": {
+					MarkdownDescription: "Peer link port-channel ID.",
+					Computed:            true,
+					Type:                types.Int64Type,
+				},
+				"l3_peer_link_count": {
+					MarkdownDescription: "Number of L3 links between MLAG devices.",
+					Computed:            true,
+					Type:                types.Int64Type,
+				},
+				"l3_peer_link_speed": {
+					MarkdownDescription: "Speed of l3 links between MLAG devices.",
+					Computed:            true,
+					Type:                types.StringType,
+				},
+				"l3_peer_link_port_channel_id": {
+					MarkdownDescription: "L3 peer link port-channel ID.",
+					Computed:            true,
+					Type:                types.Int64Type,
+				},
+			}),
+		},
+		"logical_device": logicalDeviceDataAttributeSchema(),
+		"tag_data":       tagsDataAttributeSchema(),
+	}
+}
+
+func accessSwitchAttributes() map[string]tfsdk.Attribute {
+	return map[string]tfsdk.Attribute{
+		"name": {
+			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			Computed:            true,
+			Type:                types.StringType,
+		},
+		"count": {
+			MarkdownDescription: "Count of Access Switches of this type.",
+			Computed:            true,
+			Type:                types.Int64Type,
+		},
+		"redundancy_protocol": {
+			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
+			Computed:            true,
+			Type:                types.StringType,
+		},
+		"esi_lag_info": {
+			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
+			Computed:            true,
+			Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+				"l3_peer_link_count": {
+					MarkdownDescription: "Count of L3 links to ESI peer.",
+					Computed:            true,
+					Type:                types.Int64Type,
+				},
+				"l3_peer_link_speed": {
+					MarkdownDescription: "Speed of L3 links to ESI peer.",
+					Computed:            true,
+					Type:                types.StringType,
+				},
+			}),
+		},
+		"logical_device": logicalDeviceDataAttributeSchema(),
+		"tag_data":       tagsDataAttributeSchema(),
+		"links":          dLinksAttributeSchema(),
+	}
+}
+
+func genericSystemAttributes() map[string]tfsdk.Attribute {
+	return map[string]tfsdk.Attribute{
+		"name": {
+			MarkdownDescription: "Generic name, must be unique within the rack-type.",
+			Computed:            true,
+			Type:                types.StringType,
+		},
+		"count": {
+			MarkdownDescription: "Number of Generic Systems of this type.",
+			Computed:            true,
+			Type:                types.Int64Type,
+		},
+		"port_channel_id_min": {
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Computed:            true,
+			Type:                types.Int64Type,
+		},
+		"port_channel_id_max": {
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Computed:            true,
+			Type:                types.Int64Type,
+		},
+		"logical_device": logicalDeviceDataAttributeSchema(),
+		"tag_data":       tagsDataAttributeSchema(),
+		"links":          dLinksAttributeSchema(),
 	}
 }
