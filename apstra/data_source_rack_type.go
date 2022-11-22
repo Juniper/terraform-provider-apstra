@@ -352,6 +352,10 @@ func (o mlagInfo) attrType() attr.Type {
 }
 
 func (o *mlagInfo) parseApi(in *goapstra.LeafMlagInfo) {
+	if in == nil {
+		return
+	}
+
 	var peerLinkPortChannelId *int64
 	if in.LeafLeafLinkPortChannelId > 0 {
 		x := int64(in.LeafLeafLinkPortChannelId)
