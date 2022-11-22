@@ -31,7 +31,7 @@ At least one optional attribute is required. It is incumbent on the user to ensu
 - `access_switches` (Attributes Set) Details of Access Switches in this Rack Type. (see [below for nested schema](#nestedatt--access_switches))
 - `description` (String) Rack Type description displayed in the Apstra web UI.
 - `fabric_connectivity_design` (String) Indicates designs for which this Rack Type is intended.
-- `generic_systems` (Attributes Set) Details Generic Systems found in the Rack Type. (see [below for nested schema](#nestedatt--generic_systems))
+- `generic_systems` (Attributes Set) Details of Generic Systems in the Rack Type. (see [below for nested schema](#nestedatt--generic_systems))
 - `leaf_switches` (Attributes Set) Details of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--leaf_switches))
 
 <a id="nestedatt--access_switches"></a>

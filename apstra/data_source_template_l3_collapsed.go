@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -86,6 +85,21 @@ func (o *dataSourceTemplateL3Collapsed) GetSchema(_ context.Context) (tfsdk.Sche
 						Computed:            true,
 						Type:                types.StringType,
 					},
+					"leaf_switch": {
+						MarkdownDescription: "Details Leaf Switch found in this Rack Type.",
+						Computed:            true,
+						Attributes:          tfsdk.SingleNestedAttributes(leafSwitchAttributes()),
+					},
+					"access_switches": {
+						MarkdownDescription: "Details of Access Switches in this Rack Type.",
+						Computed:            true,
+						Attributes:          tfsdk.SetNestedAttributes(accessSwitchAttributes()),
+					},
+					"generic_systems": {
+						MarkdownDescription: "Details of Generic Systems in this Rack Type.",
+						Computed:            true,
+						Attributes:          tfsdk.SetNestedAttributes(genericSystemAttributes()),
+					},
 				}),
 			},
 		},
@@ -155,10 +169,16 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	}
 
 	var state dTemplateL3Collapsed
-	state.parseApi(template, &resp.Diagnostics)
+	state.parseApi(ctx, template, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	//resp.Diagnostics.AddWarning("Id", state.Id.String())
+	//resp.Diagnostics.AddWarning("Name", state.Name.String())
+	//resp.Diagnostics.AddWarning("MeshLinkCount", state.MeshLinkCount.String())
+	//resp.Diagnostics.AddWarning("MeshLinkSpeed", state.MeshLinkSpeed.String())
+	//dump, _ := json.MarshalIndent(state.RackType, "", "  ")
+	//resp.Diagnostics.AddWarning("rack", string(dump))
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)
@@ -166,29 +186,75 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 }
 
 type dTemplateL3Collapsed struct {
-	Id            types.String `tfsdk:"id"`
-	Name          types.String `tfsdk:"name"`
-	MeshLinkCount types.Int64  `tfsdk:"mesh_link_count"`
-	MeshLinkSpeed types.String `tfsdk:"mesh_link_speed"`
-	RackType      types.Object `tfsdk:"rack_type"`
+	Id            types.String                  `tfsdk:"id"`
+	Name          types.String                  `tfsdk:"name"`
+	MeshLinkCount types.Int64                   `tfsdk:"mesh_link_count"`
+	MeshLinkSpeed types.String                  `tfsdk:"mesh_link_speed"`
+	RackType      *dTemplateL3CollapsedRackType `tfsdk:"rack_type"`
 }
 
-func (o *dTemplateL3Collapsed) parseApi(in *goapstra.TemplateL3Collapsed, diags *diag.Diagnostics) {
-	var d diag.Diagnostics
+func (o *dTemplateL3Collapsed) parseApi(ctx context.Context, in *goapstra.TemplateL3Collapsed, diags *diag.Diagnostics) {
+	var rackType dTemplateL3CollapsedRackType
+	rackType.parseApi(ctx, &in.Data.RackTypes[0], diags)
+	if diags.HasError() {
+		return
+	}
+
+	//var d diag.Diagnostics
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
 	o.MeshLinkCount = types.Int64Value(int64(in.Data.MeshLinkCount))
 	o.MeshLinkSpeed = types.StringValue(string(in.Data.MeshLinkSpeed))
-	o.RackType, d = types.ObjectValue(dTemplateLogicalDeviceAttrTypes(), map[string]attr.Value{
-		"name":        types.StringValue(in.Data.RackTypes[0].Data.DisplayName),
-		"description": types.StringValue(in.Data.RackTypes[0].Data.Description),
-	})
-	diags.Append(d...)
+	o.RackType = &dTemplateL3CollapsedRackType{}
+
+	o.RackType.parseApi(ctx, &in.Data.RackTypes[0], diags)
 }
 
-func dTemplateLogicalDeviceAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"name":        types.StringType,
-		"description": types.StringType,
+type dTemplateL3CollapsedRackType struct {
+	Name           types.String `tfsdk:"name"`
+	Description    types.String `tfsdk:"description"`
+	LeafSwitch     types.Object `tfsdk:"leaf_switch"`
+	AccessSwitches types.Set    `tfsdk:"access_switches"`
+	GenericSystems types.Set    `tfsdk:"generic_systems"`
+}
+
+func (o *dTemplateL3CollapsedRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+	var d diag.Diagnostics
+
+	o.Name = types.StringValue(in.Data.DisplayName)
+	o.Description = types.StringValue(in.Data.Description)
+
+	if len(in.Data.LeafSwitches) != 1 {
+		diags.AddError("rack type has unexpected leaf switch count",
+			fmt.Sprintf("rack type '%s' has %d leaf switches, expected 1", in.Id, len(in.Data.LeafSwitches)))
+		return
+	}
+
+	var leafSwitch dRackTypeLeafSwitch
+	leafSwitch.parseApi(&in.Data.LeafSwitches[0], goapstra.FabricConnectivityDesignL3Collapsed)
+	o.LeafSwitch, d = types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	accessSwitches := make([]dRackTypeAccessSwitch, len(in.Data.AccessSwitches))
+	for i := range in.Data.AccessSwitches {
+		accessSwitches[i].parseApi(&in.Data.AccessSwitches[i])
+	}
+	o.AccessSwitches, d = types.SetValueFrom(ctx, dRackTypeAccessSwitch{}.attrType(), accessSwitches)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	genericSystems := make([]dRackTypeGenericSystem, len(in.Data.GenericSystems))
+	for i := range in.Data.GenericSystems {
+		genericSystems[i].parseApi(&in.Data.GenericSystems[i])
+	}
+	o.GenericSystems, d = types.SetValueFrom(ctx, dRackTypeGenericSystem{}.attrType(), genericSystems)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
 	}
 }
