@@ -13,7 +13,10 @@ require (
 //                                                                                        HHMMSS
 //replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230126180327-a99c81fda2c2
 
-require github.com/mitchellh/go-homedir v1.1.0
+require (
+	github.com/hashicorp/terraform-plugin-framework-validators v0.9.0
+	github.com/mitchellh/go-homedir v1.1.0
+)
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect

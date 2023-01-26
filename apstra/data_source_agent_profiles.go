@@ -68,6 +68,7 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
+	// create new state object
 	var state struct {
 		Ids types.Set `tfsdk:"ids"`
 	}
