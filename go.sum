@@ -2,6 +2,8 @@ bitbucket.org/apstrktr/goapstra v0.0.0-20221116172531-e3438a4735a9 h1:SqH5ZgHr7c
 bitbucket.org/apstrktr/goapstra v0.0.0-20221116172531-e3438a4735a9/go.mod h1:UKPH0u8jUmEXEhZz5g+n5oWLKBrKHnhZ5CqhkUZQvsM=
 bitbucket.org/apstrktr/goapstra v0.0.0-20230126180327-a99c81fda2c2 h1:+EVcJQkBnSuUrsHG3Q+2FO/kv7OmmwnUfKP7VBgfwZc=
 bitbucket.org/apstrktr/goapstra v0.0.0-20230126180327-a99c81fda2c2/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
+bitbucket.org/apstrktr/goapstra v0.0.0-20230126184146-8132b8941309 h1:VHO9/+BfwIuCroq6OiqC3xYZO5C8ClqZ0WZOGYkB4aU=
+bitbucket.org/apstrktr/goapstra v0.0.0-20230126184146-8132b8941309/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
