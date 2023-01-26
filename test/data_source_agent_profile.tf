@@ -1,3 +1,11 @@
+data "apstra_agent_profile" "t" {
+  name = "profile_vqfx"
+}
+
+output "apstra_agent_profile" {
+  value = data.apstra_agent_profile.t
+}
+
 ##The following example shows outputting all agent profile IDs.
 #
 #resource "apstra_agent_profile" "for_junos" {   // create an agent profile for

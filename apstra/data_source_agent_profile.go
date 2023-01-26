@@ -3,11 +3,12 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"log"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfile{}
@@ -36,49 +37,44 @@ func (o *dataSourceAgentProfile) Configure(_ context.Context, req datasource.Con
 	}
 }
 
-func (o *dataSourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceAgentProfile) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "ID of the Agent Profile. Required when `name` is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the Agent Profile. Required when `id` is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"platform": {
+			"platform": schema.StringAttribute{
 				MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"has_username": {
+			"has_username": schema.BoolAttribute{
 				MarkdownDescription: "Indicates whether a username has been configured.",
 				Computed:            true,
-				Type:                types.BoolType,
 			},
-			"has_password": {
+			"has_password": schema.BoolAttribute{
 				MarkdownDescription: "Indicates whether a password has been configured.",
 				Computed:            true,
-				Type:                types.BoolType,
 			},
-			"packages": {
+			"packages": schema.MapAttribute{
 				MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
 				Computed:            true,
-				Type:                types.MapType{ElemType: types.StringType},
+				ElementType:         types.StringType,
 			},
-			"open_options": {
+			"open_options": schema.MapAttribute{
 				MarkdownDescription: "Configured parameters for offbox agents",
 				Computed:            true,
-				Type:                types.MapType{ElemType: types.StringType},
+				ElementType:         types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceAgentProfile) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
@@ -128,6 +124,24 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
+	dump, err := json.MarshalIndent(&agentProfile, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	resp.Diagnostics.AddWarning("dump", string(dump))
+
+	packages, d := types.MapValueFrom(ctx, types.StringType, agentProfile.Packages)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	openOptions, d := types.MapValueFrom(ctx, types.StringType, agentProfile.OpenOptions)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
 	// Set state
 	diags = resp.State.Set(ctx, &dAgentProfile{
 		Id:          types.StringValue(string(agentProfile.Id)),
@@ -135,8 +149,8 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		Platform:    platformToTFString(agentProfile.Platform),
 		HasUsername: types.BoolValue(agentProfile.HasUsername),
 		HasPassword: types.BoolValue(agentProfile.HasPassword),
-		Packages:    mapStringStringToTypesMap(agentProfile.Packages),
-		OpenOptions: mapStringStringToTypesMap(agentProfile.OpenOptions),
+		Packages:    packages,
+		OpenOptions: openOptions,
 	})
 	resp.Diagnostics.Append(diags...)
 }
@@ -151,20 +165,20 @@ type dAgentProfile struct {
 	OpenOptions types.Map    `tfsdk:"open_options"`
 }
 
-func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
-	var platform string
-	if o.Platform.IsNull() || o.Platform.IsUnknown() {
-		platform = ""
-	} else {
-		platform = o.Platform.ValueString()
-	}
-	return &goapstra.AgentProfileConfig{
-		Label:       o.Name.ValueString(),
-		Platform:    platform,
-		Packages:    typesMapToMapStringString(o.Packages),
-		OpenOptions: typesMapToMapStringString(o.OpenOptions),
-	}
-}
+//func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
+//	var platform string
+//	if o.Platform.IsNull() || o.Platform.IsUnknown() {
+//		platform = ""
+//	} else {
+//		platform = o.Platform.ValueString()
+//	}
+//	return &goapstra.AgentProfileConfig{
+//		Label:       o.Name.ValueString(),
+//		Platform:    platform,
+//		Packages:    typesMapToMapStringString(o.Packages),
+//		OpenOptions: typesMapToMapStringString(o.OpenOptions),
+//	}
+//}
 
 func platformToTFString(platform string) types.String {
 	var result types.String

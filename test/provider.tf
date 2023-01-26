@@ -7,6 +7,6 @@ terraform {
 }
 
 provider "apstra" {
-  url = "https://3.22.233.96:20609"
+  url = "https://admin:TrustworthyKite5_@18.116.164.244:29609"
   tls_validation_disabled = true
 }
