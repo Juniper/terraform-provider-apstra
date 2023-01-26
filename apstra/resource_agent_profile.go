@@ -5,10 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -37,59 +40,56 @@ func (o *resourceAgentProfile) Configure(_ context.Context, req resource.Configu
 	}
 }
 
-func (o *resourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *resourceAgentProfile) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an Agent Profile. Note that credentials (username/password) " +
 			"be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible " +
 			"for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a" +
 			"safe practice.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "Apstra ID of the Agent Profile.",
-				Type:                types.StringType,
 				Computed:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Apstra name of the Agent Profile.",
-				Type:                types.StringType,
 				Required:            true,
-				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"has_username": {
+			"has_username": schema.BoolAttribute{
 				MarkdownDescription: "Indicates whether a username has been set.",
-				Type:                types.BoolType,
 				Computed:            true,
 			},
-			"has_password": {
+			"has_password": schema.BoolAttribute{
 				MarkdownDescription: "Indicates whether a password has been set.",
-				Type:                types.BoolType,
 				Computed:            true,
 			},
-			"platform": {
+			"platform": schema.StringAttribute{
 				MarkdownDescription: "Device platform.",
-				Type:                types.StringType,
 				Optional:            true,
-				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
+				Validators: []validator.String{stringvalidator.OneOf(
 					goapstra.AgentPlatformNXOS.String(),
 					goapstra.AgentPlatformJunos.String(),
 					goapstra.AgentPlatformEOS.String(),
 				)},
 			},
-			"packages": {
+			"packages": schema.MapAttribute{
 				MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
 					"to be included with agents deployed using this profile.",
-				Optional: true,
-				Type:     types.MapType{ElemType: types.StringType},
+				Optional:    true,
+				ElementType: types.StringType,
+				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
 			},
-			"open_options": {
+			"open_options": schema.MapAttribute{
 				MarkdownDescription: "Passes configured parameters to offbox agents. For example, to use HTTPS as the " +
 					"API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.",
-				Type:     types.MapType{ElemType: types.StringType},
-				Optional: true,
+				Optional:    true,
+				ElementType: types.StringType,
+				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -107,12 +107,15 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Create new Agent Profile
-	id, err := o.client.CreateAgentProfile(ctx, plan.AgentProfileConfig())
+	id, err := o.client.CreateAgentProfile(ctx, plan.AgentProfileConfig(ctx, &resp.Diagnostics))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent Profile",
 			"Could not create, unexpected error: "+err.Error(),
 		)
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -160,8 +163,14 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 		}
 	}
 
+	// Create new state object
+	newState := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state
-	diags = resp.State.Set(ctx, parseAgentProfile(agentProfile))
+	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -189,7 +198,7 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Update new Agent Profile
-	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.AgentProfileConfig())
+	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.AgentProfileConfig(ctx, &resp.Diagnostics))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
@@ -207,8 +216,14 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
+	// Create new state object
+	newState := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state
-	diags = resp.State.Set(ctx, parseAgentProfile(agentProfile))
+	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -237,17 +252,5 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 			)
 			return
 		}
-	}
-}
-
-func parseAgentProfile(in *goapstra.AgentProfile) *dAgentProfile {
-	return &dAgentProfile{
-		Id:          types.StringValue(string(in.Id)),
-		Name:        types.StringValue(in.Label),
-		Platform:    platformToTFString(in.Platform),
-		HasUsername: types.BoolValue(in.HasUsername),
-		HasPassword: types.BoolValue(in.HasPassword),
-		Packages:    mapStringStringToTypesMap(in.Packages),
-		OpenOptions: mapStringStringToTypesMap(in.OpenOptions),
 	}
 }

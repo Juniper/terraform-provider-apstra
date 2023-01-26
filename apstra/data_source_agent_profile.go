@@ -3,12 +3,11 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"log"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfile{}
@@ -124,34 +123,13 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	dump, err := json.MarshalIndent(&agentProfile, "", "  ")
-	if err != nil {
-		log.Fatal(err)
-	}
-	resp.Diagnostics.AddWarning("dump", string(dump))
-
-	packages, d := types.MapValueFrom(ctx, types.StringType, agentProfile.Packages)
-	diags.Append(d...)
-	if diags.HasError() {
-		return
-	}
-
-	openOptions, d := types.MapValueFrom(ctx, types.StringType, agentProfile.OpenOptions)
-	diags.Append(d...)
-	if diags.HasError() {
+	state := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Set state
-	diags = resp.State.Set(ctx, &dAgentProfile{
-		Id:          types.StringValue(string(agentProfile.Id)),
-		Name:        types.StringValue(agentProfile.Label),
-		Platform:    platformToTFString(agentProfile.Platform),
-		HasUsername: types.BoolValue(agentProfile.HasUsername),
-		HasPassword: types.BoolValue(agentProfile.HasPassword),
-		Packages:    packages,
-		OpenOptions: openOptions,
-	})
+	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -165,20 +143,33 @@ type dAgentProfile struct {
 	OpenOptions types.Map    `tfsdk:"open_options"`
 }
 
-//func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
-//	var platform string
-//	if o.Platform.IsNull() || o.Platform.IsUnknown() {
-//		platform = ""
-//	} else {
-//		platform = o.Platform.ValueString()
-//	}
-//	return &goapstra.AgentProfileConfig{
-//		Label:       o.Name.ValueString(),
-//		Platform:    platform,
-//		Packages:    typesMapToMapStringString(o.Packages),
-//		OpenOptions: typesMapToMapStringString(o.OpenOptions),
-//	}
-//}
+func (o *dAgentProfile) AgentProfileConfig(ctx context.Context, diags *diag.Diagnostics) *goapstra.AgentProfileConfig {
+	var platform string
+	if o.Platform.IsNull() || o.Platform.IsUnknown() {
+		platform = ""
+	} else {
+		platform = o.Platform.ValueString()
+	}
+
+	packages := make(goapstra.AgentPackages)
+	diags.Append(o.Packages.ElementsAs(ctx, &packages, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	options := make(map[string]string)
+	diags.Append(o.Packages.ElementsAs(ctx, &options, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &goapstra.AgentProfileConfig{
+		Label:       o.Name.ValueString(),
+		Platform:    platform,
+		Packages:    packages,
+		OpenOptions: options,
+	}
+}
 
 func platformToTFString(platform string) types.String {
 	var result types.String
@@ -188,4 +179,39 @@ func platformToTFString(platform string) types.String {
 		result = types.StringValue(platform)
 	}
 	return result
+}
+
+func parseAgentProfile(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) *dAgentProfile {
+	var d diag.Diagnostics
+	var openOptions, packages types.Map
+
+	if len(in.OpenOptions) == 0 {
+		openOptions = types.MapNull(types.StringType)
+	} else {
+		openOptions, d = types.MapValueFrom(ctx, types.StringType, in.OpenOptions)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
+	if len(in.Packages) == 0 {
+		packages = types.MapNull(types.StringType)
+	} else {
+		packages, d = types.MapValueFrom(ctx, types.StringType, in.Packages)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
+	return &dAgentProfile{
+		Id:          types.StringValue(string(in.Id)),
+		Name:        types.StringValue(in.Label),
+		Platform:    platformToTFString(in.Platform),
+		HasUsername: types.BoolValue(in.HasUsername),
+		HasPassword: types.BoolValue(in.HasPassword),
+		Packages:    packages,
+		OpenOptions: openOptions,
+	}
 }
