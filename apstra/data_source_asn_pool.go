@@ -37,7 +37,7 @@ func (o *dataSourceAsnPool) Configure(_ context.Context, req datasource.Configur
 	}
 }
 
-func (o *dataSourceAsnPool) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a single ASN Resource Pool. It is incumbent upon " +
 			"the user to set enough optional criteria to match exactly one ASN Resource Pool. Matching zero or more " +
