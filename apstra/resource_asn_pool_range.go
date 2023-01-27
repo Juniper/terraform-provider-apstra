@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math"
 )
@@ -44,28 +46,23 @@ func (o *resourceAsnPoolRange) Configure(_ context.Context, req resource.Configu
 	}
 }
 
-func (o *resourceAsnPoolRange) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"pool_id": {
-				Type:          types.StringType,
+func (o *resourceAsnPoolRange) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"pool_id": schema.StringAttribute{
 				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"first": {
-				Type:     types.Int64Type,
-				Required: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
-				Validators: []tfsdk.AttributeValidator{int64validator.Between(minAsn-1, maxAsn+1)},
+			"first": schema.Int64Attribute{
+				Required:   true,
+				Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
 			},
-			"last": {
-				Type:     types.Int64Type,
-				Required: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
-				Validators: []tfsdk.AttributeValidator{int64validator.Between(minAsn-1, maxAsn+1)},
+			"last": schema.Int64Attribute{
+				Required:   true,
+				Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *resourceAsnPoolRange) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
