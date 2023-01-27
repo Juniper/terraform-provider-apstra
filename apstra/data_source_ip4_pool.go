@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -161,9 +160,6 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	dump, _ := json.MarshalIndent(&state, "", "  ")
-	resp.Diagnostics.AddWarning("dump", string(dump))
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)
