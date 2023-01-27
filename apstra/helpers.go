@@ -3,6 +3,7 @@ package apstra
 import (
 	"fmt"
 	"github.com/mitchellh/go-homedir"
+	"math/big"
 	"os"
 	"path/filepath"
 )
@@ -147,11 +148,11 @@ func newKeyLogWriter(fileName string) (*os.File, error) {
 //	return result
 //}
 
-//func bigIntToBigFloat(in *big.Int) *big.Float {
-//	bigval := new(big.Float)
-//	bigval.SetInt(in)
-//	return bigval
-//}
+func bigIntToBigFloat(in *big.Int) *big.Float {
+	bigval := new(big.Float)
+	bigval.SetInt(in)
+	return bigval
+}
 
 //func getTfsdkTag(i interface{}, f string, diags *diag.Diagnostics) string {
 //	field, ok := reflect.TypeOf(i).Elem().FieldByName(f)

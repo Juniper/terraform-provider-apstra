@@ -115,7 +115,8 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	dPool := parseAsnPool(ctx, pool, &resp.Diagnostics)
+	var dPool dAsnPool
+	dPool.loadApiResponse(ctx, pool, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

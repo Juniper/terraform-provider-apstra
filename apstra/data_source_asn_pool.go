@@ -159,10 +159,9 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	state := parseAsnPool(ctx, asnPool, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// create new state object
+	var state dAsnPool
+	state.loadApiResponse(ctx, asnPool, &resp.Diagnostics)
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)
@@ -181,16 +180,7 @@ type dAsnPool struct {
 	Ranges         []dAsnRange   `tfsdk:"ranges"`
 }
 
-type dAsnRange struct {
-	Status         types.String  `tfsdk:"status"`
-	First          types.Int64   `tfsdk:"first"`
-	Last           types.Int64   `tfsdk:"last"`
-	Total          types.Int64   `tfsdk:"total"`
-	Used           types.Int64   `tfsdk:"used"`
-	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
-}
-
-func parseAsnPool(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) *dAsnPool {
+func (o *dAsnPool) loadApiResponse(_ context.Context, in *goapstra.AsnPool, _ *diag.Diagnostics) {
 	ranges := make([]dAsnRange, len(in.Ranges))
 	for i, r := range in.Ranges {
 		ranges[i] = dAsnRange{
@@ -203,15 +193,22 @@ func parseAsnPool(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnos
 		}
 	}
 
-	return &dAsnPool{
-		Id:             types.StringValue(string(in.Id)),
-		Name:           types.StringValue(in.DisplayName),
-		Status:         types.StringValue(in.Status),
-		Used:           types.Int64Value(int64(in.Used)),
-		UsedPercent:    types.Float64Value(float64(in.UsedPercentage)),
-		CreatedAt:      types.StringValue(in.CreatedAt.String()),
-		LastModifiedAt: types.StringValue(in.LastModifiedAt.String()),
-		Total:          types.Int64Value(int64(in.Total)),
-		Ranges:         ranges,
-	}
+	o.Id = types.StringValue(string(in.Id))
+	o.Name = types.StringValue(in.DisplayName)
+	o.Status = types.StringValue(in.Status)
+	o.Used = types.Int64Value(int64(in.Used))
+	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
+	o.CreatedAt = types.StringValue(in.CreatedAt.String())
+	o.LastModifiedAt = types.StringValue(in.LastModifiedAt.String())
+	o.Total = types.Int64Value(int64(in.Total))
+	o.Ranges = ranges
+}
+
+type dAsnRange struct {
+	Status         types.String  `tfsdk:"status"`
+	First          types.Int64   `tfsdk:"first"`
+	Last           types.Int64   `tfsdk:"last"`
+	Total          types.Int64   `tfsdk:"total"`
+	Used           types.Int64   `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
