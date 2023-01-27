@@ -40,7 +40,7 @@ func (o *resourceAgentProfile) Configure(_ context.Context, req resource.Configu
 	}
 }
 
-func (o *resourceAgentProfile) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an Agent Profile. Note that credentials (username/password) " +
 			"be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible " +

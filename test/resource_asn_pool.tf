@@ -1,3 +1,3 @@
-#resource "apstra_asn_pool" "asn_pool" {
-#  name = "POOL"
-#}
+resource "apstra_asn_pool" "t" {
+  name = "t"
+}

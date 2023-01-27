@@ -213,7 +213,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		func() resource.Resource { return &resourceAgentProfile{} },
-		//func() resource.Resource { return &resourceAsnPool{} },
+		func() resource.Resource { return &resourceAsnPool{} },
 		//func() resource.Resource { return &resourceAsnPoolRange{} },
 		//func() resource.Resource { return &resourceBlueprint{} },
 		//func() resource.Resource { return &resourceInterfaceMap{} },
