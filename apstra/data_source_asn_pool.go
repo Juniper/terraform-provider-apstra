@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -37,92 +37,80 @@ func (o *dataSourceAsnPool) Configure(_ context.Context, req datasource.Configur
 	}
 }
 
-func (o *dataSourceAsnPool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceAsnPool) Schema(ctx context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a single ASN Resource Pool. It is incumbent upon " +
 			"the user to set enough optional criteria to match exactly one ASN Resource Pool. Matching zero or more " +
 			"pools will produce an error.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "ID of the desired ASN Resource Pool.",
 				Computed:            true,
 				Optional:            true,
-				Type:                types.StringType,
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Display name of the ASN Resource Pool.",
 				Computed:            true,
 				Optional:            true,
-				Type:                types.StringType,
 			},
-			"status": {
+			"status": schema.StringAttribute{
 				MarkdownDescription: "Status of the ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"total": {
+			"total": schema.Int64Attribute{
 				MarkdownDescription: "Total number of ASNs in the ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"used": {
+			"used": schema.Int64Attribute{
 				MarkdownDescription: "Count of used ASNs in the ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"used_percentage": {
+			"used_percentage": schema.Float64Attribute{
 				MarkdownDescription: "Percent of used ASNs in the ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.Float64Type,
 			},
-			"created_at": {
+			"created_at": schema.StringAttribute{
 				MarkdownDescription: "Creation time of the ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"last_modified_at": {
+			"last_modified_at": schema.StringAttribute{
 				MarkdownDescription: "Modification time of the ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"ranges": {
+			"ranges": schema.ListNestedAttribute{
 				MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
 				Computed:            true,
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"status": {
-						MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",
-						Computed:            true,
-						Type:                types.StringType,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"status": schema.StringAttribute{
+							MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",
+							Computed:            true,
+						},
+						"first": schema.Int64Attribute{
+							MarkdownDescription: "Lowest numbered AS in this ASN Pool Range.",
+							Computed:            true,
+						},
+						"last": schema.Int64Attribute{
+							MarkdownDescription: "Highest numbered AS in this ASN Pool Range.",
+							Computed:            true,
+						},
+						"total": schema.Int64Attribute{
+							MarkdownDescription: "Total number of ASNs in the ASN Pool Range.",
+							Computed:            true,
+						},
+						"used": schema.Int64Attribute{
+							MarkdownDescription: "Count of used ASNs in the ASN Pool Range.",
+							Computed:            true,
+						},
+						"used_percentage": schema.Float64Attribute{
+							MarkdownDescription: "Percent of used ASNs in the ASN Pool Range.",
+							Computed:            true,
+						},
 					},
-					"first": {
-						MarkdownDescription: "Lowest numbered AS in this ASN Pool Range.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"last": {
-						MarkdownDescription: "Highest numbered AS in this ASN Pool Range.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"total": {
-						MarkdownDescription: "Total number of ASNs in the ASN Pool Range.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"used": {
-						MarkdownDescription: "Count of used ASNs in the ASN Pool Range.",
-						Computed:            true,
-						Type:                types.Int64Type,
-					},
-					"used_percentage": {
-						MarkdownDescription: "Percent of used ASNs in the ASN Pool Range.",
-						Computed:            true,
-						Type:                types.Float64Type,
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceAsnPool) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
@@ -135,7 +123,7 @@ func (o *dataSourceAsnPool) ValidateConfig(ctx context.Context, req datasource.V
 
 	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
 		resp.Diagnostics.AddError(
-			"cannot search for ASN Pool",
+			errInvalidConfig,
 			"exactly one of 'name' or 'id' must be specified",
 		)
 	}
@@ -171,29 +159,13 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	config.Id = types.StringValue(string(asnPool.Id))
-	config.Name = types.StringValue(asnPool.DisplayName)
-	config.Status = types.StringValue(asnPool.Status)
-	config.Used = types.Int64Value(int64(asnPool.Used))
-	config.UsedPercent = types.Float64Value(float64(asnPool.UsedPercentage))
-	config.CreatedAt = types.StringValue(asnPool.CreatedAt.String())
-	config.LastModifiedAt = types.StringValue(asnPool.LastModifiedAt.String())
-	config.Total = types.Int64Value(int64(asnPool.Total))
-	config.Ranges = make([]dAsnRange, len(asnPool.Ranges))
-
-	for i, r := range asnPool.Ranges {
-		config.Ranges[i] = dAsnRange{
-			Status:         types.StringValue(r.Status),
-			First:          types.Int64Value(int64(r.First)),
-			Last:           types.Int64Value(int64(r.Last)),
-			Total:          types.Int64Value(int64(r.Total)),
-			Used:           types.Int64Value(int64(r.Used)),
-			UsedPercentage: types.Float64Value(float64(r.UsedPercentage)),
-		}
+	state := parseAsnPool(ctx, asnPool, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// Set state
-	diags = resp.State.Set(ctx, &config)
+	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -216,4 +188,30 @@ type dAsnRange struct {
 	Total          types.Int64   `tfsdk:"total"`
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+func parseAsnPool(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) *dAsnPool {
+	ranges := make([]dAsnRange, len(in.Ranges))
+	for i, r := range in.Ranges {
+		ranges[i] = dAsnRange{
+			Status:         types.StringValue(r.Status),
+			First:          types.Int64Value(int64(r.First)),
+			Last:           types.Int64Value(int64(r.Last)),
+			Total:          types.Int64Value(int64(r.Total)),
+			Used:           types.Int64Value(int64(r.Used)),
+			UsedPercentage: types.Float64Value(float64(r.UsedPercentage)),
+		}
+	}
+
+	return &dAsnPool{
+		Id:             types.StringValue(string(in.Id)),
+		Name:           types.StringValue(in.DisplayName),
+		Status:         types.StringValue(in.Status),
+		Used:           types.Int64Value(int64(in.Used)),
+		UsedPercent:    types.Float64Value(float64(in.UsedPercentage)),
+		CreatedAt:      types.StringValue(in.CreatedAt.String()),
+		LastModifiedAt: types.StringValue(in.LastModifiedAt.String()),
+		Total:          types.Int64Value(int64(in.Total)),
+		Ranges:         ranges,
+	}
 }
