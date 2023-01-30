@@ -178,16 +178,10 @@ type dIp4Pool struct {
 	Subnets        []dIp4PoolSubnet `tfsdk:"subnets"`
 }
 
-func (o *dIp4Pool) loadApiResponse(_ context.Context, in *goapstra.IpPool, _ *diag.Diagnostics) {
+func (o *dIp4Pool) loadApiResponse(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
 	subnets := make([]dIp4PoolSubnet, len(in.Subnets))
-	for i, s := range in.Subnets {
-		subnets[i] = dIp4PoolSubnet{
-			Status:         types.StringValue(s.Status),
-			Network:        types.StringValue(s.Network.String()),
-			Total:          types.NumberValue(bigIntToBigFloat(&s.Total)),
-			Used:           types.NumberValue(bigIntToBigFloat(&s.Used)),
-			UsedPercentage: types.Float64Value(float64(s.UsedPercentage)),
-		}
+	for i, subnet := range in.Subnets {
+		subnets[i].loadApiResponse(ctx, &subnet, diags)
 	}
 
 	o.Id = types.StringValue(string(in.Id))
@@ -198,7 +192,7 @@ func (o *dIp4Pool) loadApiResponse(_ context.Context, in *goapstra.IpPool, _ *di
 	o.LastModifiedAt = types.StringValue(in.LastModifiedAt.String())
 	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
-	o.Subnets = make([]dIp4PoolSubnet, len(in.Subnets))
+	o.Subnets = subnets
 }
 
 type dIp4PoolSubnet struct {
@@ -207,4 +201,12 @@ type dIp4PoolSubnet struct {
 	Total          types.Number  `tfsdk:"total"`
 	Used           types.Number  `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+func (o *dIp4PoolSubnet) loadApiResponse(_ context.Context, in *goapstra.IpSubnet, _ *diag.Diagnostics) {
+	o.Status = types.StringValue(in.Status)
+	o.Network = types.StringValue(in.Network.String())
+	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
+	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
+	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }
