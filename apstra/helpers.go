@@ -1,11 +1,14 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"fmt"
 	"github.com/mitchellh/go-homedir"
+	"math"
 	"math/big"
 	"os"
 	"path/filepath"
+	"reflect"
 )
 
 func newKeyLogWriter(fileName string) (*os.File, error) {
@@ -152,6 +155,17 @@ func bigIntToBigFloat(in *big.Int) *big.Float {
 	bigval := new(big.Float)
 	bigval.SetInt(in)
 	return bigval
+}
+
+func allPortRoleStrings() []string {
+	var allOnes goapstra.LogicalDevicePortRoleFlags
+
+	// turn on every bit flag
+	for i := 0; i < int(reflect.TypeOf(allOnes).Size()); i++ {
+		allOnes = allOnes<<8 | math.MaxUint8
+	}
+
+	return allOnes.Strings()
 }
 
 //func getTfsdkTag(i interface{}, f string, diags *diag.Diagnostics) string {
