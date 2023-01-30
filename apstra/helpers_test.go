@@ -1,14 +1,5 @@
 package apstra
 
-import (
-	"strings"
-	"testing"
-)
-
-func TestAllPortRoleStrings(t *testing.T) {
-	t.Logf("all port role strings: %s\n", strings.Join(allPortRoleStrings(), ", "))
-}
-
 //func TestSliceAttrValueToSliceString(t *testing.T) {
 //	test := []attr.Value{
 //		types.String{Value: "foo"},
