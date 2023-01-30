@@ -100,14 +100,13 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 
 	// Retrieve values from plan
 	var plan dAgentProfile
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create new Agent Profile
-	id, err := o.client.CreateAgentProfile(ctx, plan.AgentProfileConfig(ctx, &resp.Diagnostics))
+	id, err := o.client.CreateAgentProfile(ctx, plan.request(ctx, &resp.Diagnostics))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent Profile",
@@ -119,8 +118,8 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	// set state
-	diags = resp.State.Set(ctx, &dAgentProfile{
+	// create state object
+	state := dAgentProfile{
 		Id:          types.StringValue(string(id)),
 		Name:        plan.Name,
 		Platform:    plan.Platform,
@@ -128,8 +127,10 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 		HasPassword: types.BoolValue(false),
 		Packages:    plan.Packages,
 		OpenOptions: plan.OpenOptions,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -140,8 +141,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 
 	// Get current state
 	var state dAgentProfile
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -170,8 +170,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, newState)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Update resource
@@ -183,22 +182,20 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 
 	// Get current state
 	var state dAgentProfile
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get plan values
 	var plan dAgentProfile
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Update new Agent Profile
-	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.AgentProfileConfig(ctx, &resp.Diagnostics))
+	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.request(ctx, &resp.Diagnostics))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
@@ -223,8 +220,7 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, newState)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Delete resource
@@ -235,8 +231,7 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	var state dAgentProfile
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

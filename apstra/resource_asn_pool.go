@@ -62,8 +62,7 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 
 	// Retrieve values from plan
 	var plan rAsnPool
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -77,11 +76,14 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	diags = resp.State.Set(ctx, &rAsnPool{
+	// create state object
+	state := rAsnPool{
 		Id:   types.StringValue(string(id)),
 		Name: plan.Name,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -95,8 +97,7 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 
 	// Get current state
 	var state rAsnPool
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -121,12 +122,14 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	// set state
-	diags = resp.State.Set(ctx, &rAsnPool{
+	// create state object
+	newState := rAsnPool{
 		Id:   dPool.Id,
 		Name: dPool.Name,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Update resource
@@ -138,16 +141,14 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Get plan values
 	var plan rAsnPool
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get current state
 	var state rAsnPool
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -187,12 +188,14 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Set new state
-	diags = resp.State.Set(ctx, &rAsnPool{
+	// create new state object
+	newState := rAsnPool{
 		Id:   state.Id,
 		Name: plan.Name,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Delete resource
@@ -203,8 +206,7 @@ func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	var state rAsnPool
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

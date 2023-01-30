@@ -143,7 +143,7 @@ type dAgentProfile struct {
 	OpenOptions types.Map    `tfsdk:"open_options"`
 }
 
-func (o *dAgentProfile) AgentProfileConfig(ctx context.Context, diags *diag.Diagnostics) *goapstra.AgentProfileConfig {
+func (o *dAgentProfile) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AgentProfileConfig {
 	var platform string
 	if o.Platform.IsNull() || o.Platform.IsUnknown() {
 		platform = ""
