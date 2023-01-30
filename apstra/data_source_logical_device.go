@@ -4,8 +4,10 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -49,11 +51,13 @@ func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaR
 				MarkdownDescription: "ID of the logical device. Required when name is omitted.",
 				Optional:            true,
 				Computed:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the logical device. Required when id is omitted.",
 				Optional:            true,
 				Computed:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"panels": dPanelAttributeSchema(),
 		},
