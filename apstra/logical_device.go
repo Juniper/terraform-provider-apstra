@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 )
@@ -141,6 +142,28 @@ func (o *logicalDevicePanel) request(ctx context.Context, diags *diag.Diagnostic
 			Schema:     goapstra.PortIndexingSchemaAbsolute,
 		},
 		PortGroups: reqPortGroups,
+	}
+}
+
+func (o *logicalDevicePanel) validate(ctx context.Context, i int, diags *diag.Diagnostics) {
+	var panelPortsByDimensions, panelPortsByPortGroup int64
+	panelPortsByDimensions = o.Rows.ValueInt64() * o.Columns.ValueInt64()
+
+	portGroups := make([]logicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
+	diags.Append(o.PortGroups.ElementsAs(ctx, &portGroups, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	for _, portGroup := range portGroups {
+		panelPortsByPortGroup = panelPortsByPortGroup + portGroup.PortCount.ValueInt64()
+	}
+	if panelPortsByDimensions != panelPortsByPortGroup {
+		diags.AddAttributeError(path.Root("panels").AtListIndex(i),
+			errInvalidConfig,
+			fmt.Sprintf("panel %d (%d by %d ports) has %d ports by dimensions, but the total by port group is %d",
+				i, o.Rows.ValueInt64(), o.Columns.ValueInt64(), panelPortsByDimensions, panelPortsByPortGroup))
+		return
 	}
 }
 
