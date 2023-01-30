@@ -162,6 +162,9 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 	// create new state object
 	var state dAsnPool
 	state.loadApiResponse(ctx, asnPool, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state
 	diags = resp.State.Set(ctx, &state)
