@@ -128,7 +128,7 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }

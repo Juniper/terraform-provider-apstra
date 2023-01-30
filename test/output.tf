@@ -26,6 +26,10 @@
 #  value = data.apstra_ip4_pool.t
 #}
 
-output "apstra_logical_device" {
-  value = data.apstra_logical_device.t
+#output "apstra_logical_device" {
+#  value = data.apstra_logical_device.t
+#}
+
+output "apstra_datacenter_blueprint" {
+  value = data.apstra_datacenter_blueprint.t
 }

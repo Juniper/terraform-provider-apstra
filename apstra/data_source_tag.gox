@@ -121,7 +121,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &dTag{
 		Id:          types.StringValue(string(tag.Id)),
 		Name:        types.StringValue(tag.Data.Label),

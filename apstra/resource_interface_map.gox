@@ -267,7 +267,7 @@ func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadReques
 	newState.Id = types.StringValue(string(iMap.Id))
 	newState.parseApi(ctx, iMap.Data, &resp.Diagnostics)
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }

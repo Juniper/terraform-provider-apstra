@@ -119,7 +119,7 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &dAgentProfile{
 		Id:          types.StringValue(string(id)),
 		Name:        plan.Name,
@@ -169,7 +169,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }
@@ -222,7 +222,7 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }

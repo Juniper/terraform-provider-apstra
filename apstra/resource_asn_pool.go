@@ -121,7 +121,7 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &rAsnPool{
 		Id:   dPool.Id,
 		Name: dPool.Name,

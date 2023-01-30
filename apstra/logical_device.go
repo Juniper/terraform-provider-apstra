@@ -264,16 +264,16 @@ func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *g
 //	return result
 //}
 
-func panelPortGroupAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"port_count": types.Int64Type,
-		"port_speed": types.StringType,
-		"port_roles": types.SetType{ElemType: types.StringType}}
-}
+//func panelPortGroupAttrTypes() map[string]attr.Type {
+//	return map[string]attr.Type{
+//		"port_count": types.Int64Type,
+//		"port_speed": types.StringType,
+//		"port_roles": types.SetType{ElemType: types.StringType}}
+//}
 
-func panelAttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"rows":        types.Int64Type,
-		"columns":     types.Int64Type,
-		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}}}
-}
+//func panelAttrTypes() map[string]attr.Type {
+//	return map[string]attr.Type{
+//		"rows":        types.Int64Type,
+//		"columns":     types.Int64Type,
+//		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}}}
+//}

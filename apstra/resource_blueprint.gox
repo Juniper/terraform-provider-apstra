@@ -640,7 +640,7 @@ func (o *resourceBlueprint) Read(ctx context.Context, req resource.ReadRequest, 
 		}
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }

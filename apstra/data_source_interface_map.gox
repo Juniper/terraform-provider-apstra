@@ -205,7 +205,7 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	//Set state
+	// set state
 	diags = resp.State.Set(ctx, newState)
 	resp.Diagnostics.Append(diags...)
 }

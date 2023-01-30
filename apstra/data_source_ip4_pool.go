@@ -161,7 +161,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }

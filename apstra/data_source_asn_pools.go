@@ -74,7 +74,7 @@ func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadReques
 	}
 	state.Ids = idSet
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }

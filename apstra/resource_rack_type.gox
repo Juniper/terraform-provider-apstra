@@ -342,7 +342,7 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	// copy nested object IDs (those not available from the API) from the plan into the state
 	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }
@@ -390,7 +390,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	// copy nested object IDs (those not available from the API) from the previous state into the new state
 	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &newState)
 	resp.Diagnostics.Append(diags...)
 }

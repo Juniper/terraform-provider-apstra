@@ -151,7 +151,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &dBlueprintIds{
 		RefDesign: config.RefDesign,
 		Ids:       idSet,

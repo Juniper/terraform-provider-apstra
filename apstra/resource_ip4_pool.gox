@@ -116,7 +116,7 @@ func (o *resourceIp4Pool) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &rIp4Pool{
 		Id:   types.String{Value: string(pool.Id)},
 		Name: types.String{Value: pool.DisplayName},
