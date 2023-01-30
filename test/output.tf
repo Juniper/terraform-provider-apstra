@@ -52,6 +52,6 @@
 #  value = apstra_asn_pool_range.r
 #}
 
-output "apstra_logical_device" {
-  value = apstra_logical_device.r
-}
+#output "apstra_logical_device" {
+#  value = apstra_logical_device.r
+#}
