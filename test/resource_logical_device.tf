@@ -1,14 +1,14 @@
-resource "apstra_logical_device" "t" {
+resource "apstra_logical_device" "r" {
   name = "foo"
   panels = [
     {
-      rows = 2
+      rows = 3
       columns = 3
       port_groups = [
         {
-          port_count = 6
+          port_count = 9
           port_speed = "10G"
-          port_roles = ["spine", "leaf"]
+          port_roles = ["spine", "leaf", "peer"]
         }
       ]
     }

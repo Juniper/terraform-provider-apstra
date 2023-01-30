@@ -1,1 +1,1 @@
-data "apstra_asn_pools" "t" {}
+data "apstra_asn_pools" "d" {}

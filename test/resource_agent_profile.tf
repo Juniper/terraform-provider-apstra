@@ -1,4 +1,4 @@
-resource "apstra_agent_profile" "t" {
-  name = "t"
+resource "apstra_agent_profile" "r" {
+  name = "r"
   platform = "junos"
 }

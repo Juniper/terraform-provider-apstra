@@ -1,1 +1,1 @@
-data "apstra_ip4_pools" "t" {}
+data "apstra_ip4_pools" "d" {}

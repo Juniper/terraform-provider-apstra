@@ -37,3 +37,21 @@
 #output "apstra_datacenter_blueprint" {
 #  value = data.apstra_datacenter_blueprint.t
 #}
+
+################################################################################
+
+#output "apstra_agent_profile" {
+#  value = apstra_agent_profile.r
+#}
+
+#output "apstra_asn_pool" {
+#  value = apstra_asn_pool.r
+#}
+
+#output "apstra_asn_pool_range" {
+#  value = apstra_asn_pool_range.r
+#}
+
+output "apstra_logical_device" {
+  value = apstra_logical_device.r
+}
