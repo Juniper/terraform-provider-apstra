@@ -3,9 +3,11 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 type logicalDevice struct {
@@ -28,7 +30,10 @@ func (o *logicalDevice) loadApiResponse(ctx context.Context, in *goapstra.Logica
 	if len(in.Data.Panels) != 0 {
 		panels = make([]logicalDevicePanel, len(in.Data.Panels))
 		for i := range in.Data.Panels {
-			panels[i].loadApiResponse(&in.Data.Panels[i])
+			panels[i].loadApiResponse(ctx, &in.Data.Panels[i], diags)
+			if diags.HasError() {
+				return
+			}
 		}
 	}
 
@@ -40,29 +45,29 @@ func (o *logicalDevice) loadApiResponse(ctx context.Context, in *goapstra.Logica
 	diags.Append(d...)
 }
 
-//func (o *logicalDevice) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDeviceData {
-//	var d diag.Diagnostics
-//	var panelElements []logicalDevicePanel
-//	d = o.Panels.ElementsAs(ctx, &panelElements, false)
-//	diags.Append(d...)
-//	if diags.HasError() {
-//		return nil
-//	}
-//
-//	panels := make([]goapstra.LogicalDevicePanel, len(panelElements))
-//	for i, panel := range panelElements {
-//		panels[i] = *panel.request(diags)
-//	}
-//	return &goapstra.LogicalDeviceData{
-//		DisplayName: o.Name.ValueString(),
-//		Panels:      panels,
-//	}
-//}
+func (o *logicalDevice) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDeviceData {
+	var d diag.Diagnostics
+	var panelElements []logicalDevicePanel
+	d = o.Panels.ElementsAs(ctx, &panelElements, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	panels := make([]goapstra.LogicalDevicePanel, len(panelElements))
+	for i, panel := range panelElements {
+		panels[i] = *panel.request(ctx, diags)
+	}
+	return &goapstra.LogicalDeviceData{
+		DisplayName: o.Name.ValueString(),
+		Panels:      panels,
+	}
+}
 
 type logicalDevicePanel struct {
-	Rows       int64                         `tfsdk:"rows"`
-	Columns    int64                         `tfsdk:"columns"`
-	PortGroups []logicalDevicePanelPortGroup `tfsdk:"port_groups"`
+	Rows       types.Int64 `tfsdk:"rows"`
+	Columns    types.Int64 `tfsdk:"columns"`
+	PortGroups types.List  `tfsdk:"port_groups"`
 }
 
 func (o logicalDevicePanel) attrType() attr.Type {
@@ -76,55 +81,73 @@ func (o logicalDevicePanel) attrType() attr.Type {
 	}
 }
 
-func (o *logicalDevicePanel) loadApiResponse(in *goapstra.LogicalDevicePanel) {
+func (o *logicalDevicePanel) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevicePanel, diags *diag.Diagnostics) {
 	var portGroups []logicalDevicePanelPortGroup
 
-	if len(in.PortGroups) != 0 {
-		portGroups = make([]logicalDevicePanelPortGroup, len(in.PortGroups))
-		for i := range in.PortGroups {
-			portGroups[i].parseApi(&in.PortGroups[i])
+	portGroups = make([]logicalDevicePanelPortGroup, len(in.PortGroups))
+	for i := range in.PortGroups {
+		portGroups[i].loadApiResponse(ctx, &in.PortGroups[i], diags)
+		if diags.HasError() {
+			return
 		}
 	}
 
-	o.Rows = int64(in.PanelLayout.RowCount)
-	o.Columns = int64(in.PanelLayout.ColumnCount)
-	o.PortGroups = portGroups
+	var bogusPG logicalDevicePanelPortGroup
+	portGroupList, d := types.ListValueFrom(ctx, bogusPG.attrType(), portGroups)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	o.Rows = types.Int64Value(int64(in.PanelLayout.RowCount))
+	o.Columns = types.Int64Value(int64(in.PanelLayout.ColumnCount))
+	o.PortGroups = portGroupList
 }
 
-//func (o *logicalDevicePanel) request(diags *diag.Diagnostics) *goapstra.LogicalDevicePanel {
-//	portGroups := make([]goapstra.LogicalDevicePortGroup, len(o.PortGroups))
-//	for i, pg := range o.PortGroups {
-//		var roles goapstra.LogicalDevicePortRoleFlags
-//		err := roles.FromStrings(pg.PortRoles)
-//		if err != nil {
-//			diags.AddError("error parsing port roles", err.Error())
-//		}
-//
-//		portGroups[i] = goapstra.LogicalDevicePortGroup{
-//			Count: int(pg.PortCount),
-//			Speed: goapstra.LogicalDevicePortSpeed(pg.PortSpeed),
-//			Roles: roles,
-//		}
-//	}
-//
-//	return &goapstra.LogicalDevicePanel{
-//		PanelLayout: goapstra.LogicalDevicePanelLayout{
-//			RowCount:    int(o.Rows),
-//			ColumnCount: int(o.Columns),
-//		},
-//		PortIndexing: goapstra.LogicalDevicePortIndexing{
-//			Order:      goapstra.PortIndexingHorizontalFirst,
-//			StartIndex: 1,
-//			Schema:     goapstra.PortIndexingSchemaAbsolute,
-//		},
-//		PortGroups: portGroups,
-//	}
-//}
+func (o *logicalDevicePanel) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDevicePanel {
+	tfPortGroups := make([]logicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
+	diags.Append(o.PortGroups.ElementsAs(ctx, &tfPortGroups, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	reqPortGroups := make([]goapstra.LogicalDevicePortGroup, len(tfPortGroups))
+	for i, pg := range tfPortGroups {
+		roleStrings := make([]string, len(pg.PortRoles.Elements()))
+		diags.Append(pg.PortRoles.ElementsAs(ctx, &roleStrings, false)...)
+		if diags.HasError() {
+			return nil
+		}
+		var reqRoles goapstra.LogicalDevicePortRoleFlags
+		err := reqRoles.FromStrings(roleStrings)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing port roles: '%s'", strings.Join(roleStrings, "','")), err.Error())
+		}
+		reqPortGroups[i] = goapstra.LogicalDevicePortGroup{
+			Count: int(pg.PortCount.ValueInt64()),
+			Speed: goapstra.LogicalDevicePortSpeed(pg.PortSpeed.ValueString()),
+			Roles: reqRoles,
+		}
+	}
+
+	return &goapstra.LogicalDevicePanel{
+		PanelLayout: goapstra.LogicalDevicePanelLayout{
+			RowCount:    int(o.Rows.ValueInt64()),
+			ColumnCount: int(o.Columns.ValueInt64()),
+		},
+		PortIndexing: goapstra.LogicalDevicePortIndexing{
+			Order:      goapstra.PortIndexingHorizontalFirst,
+			StartIndex: 1,
+			Schema:     goapstra.PortIndexingSchemaAbsolute,
+		},
+		PortGroups: reqPortGroups,
+	}
+}
 
 type logicalDevicePanelPortGroup struct {
-	PortCount int64    `tfsdk:"port_count"`
-	PortSpeed string   `tfsdk:"port_speed"`
-	PortRoles []string `tfsdk:"port_roles"`
+	PortCount types.Int64  `tfsdk:"port_count"`
+	PortSpeed types.String `tfsdk:"port_speed"`
+	PortRoles types.Set    `tfsdk:"port_roles"`
 }
 
 func (o *logicalDevicePanelPortGroup) attrType() attr.Type {
@@ -135,10 +158,16 @@ func (o *logicalDevicePanelPortGroup) attrType() attr.Type {
 			"port_roles": types.SetType{ElemType: types.StringType}}}
 }
 
-func (o *logicalDevicePanelPortGroup) parseApi(in *goapstra.LogicalDevicePortGroup) {
-	o.PortCount = int64(in.Count)
-	o.PortSpeed = string(in.Speed)
-	o.PortRoles = in.Roles.Strings()
+func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
+	portRoles, d := types.SetValueFrom(ctx, types.StringType, in.Roles.Strings())
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	o.PortCount = types.Int64Value(int64(in.Count))
+	o.PortSpeed = types.StringValue(string(in.Speed))
+	o.PortRoles = portRoles
 }
 
 // everything below here is suspect...
@@ -161,7 +190,7 @@ func (o *logicalDevicePanelPortGroup) parseApi(in *goapstra.LogicalDevicePortGro
 //				ElemType: logicalDevicePanel{}.attrType()}}}
 //}
 
-//func (o *logicalDeviceData) parseApi(in *goapstra.LogicalDeviceData) {
+//func (o *logicalDeviceData) loadApiResponse(in *goapstra.LogicalDeviceData) {
 //	o.Name = in.DisplayName
 //	o.Panels = make([]logicalDevicePanel, len(in.Panels))
 //
