@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -37,31 +39,29 @@ func (o *resourceTag) Configure(_ context.Context, req resource.ConfigureRequest
 	}
 }
 
-func (o *resourceTag) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *resourceTag) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Tag in the Apstra Design tab.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "Apstra ID of the Tag.",
-				Type:                types.StringType,
 				Computed:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the Tag as seen in the web UI.",
-				Type:                types.StringType,
 				Required:            true,
-				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()}, // {"errors":{"label":"Tag label cannot be changed"}}
+
 			},
-			"description": {
+			"description": schema.StringAttribute{
 				MarkdownDescription: "Indicates whether a username has been set.",
-				Type:                types.StringType,
 				Optional:            true,
-				Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(1)},
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -72,22 +72,19 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 
 	// Retrieve values from plan
 	var plan dTag
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var description string
-	if plan.Description.IsNull() {
-		description = ""
-	} else {
-		description = plan.Description.Value
+	if !plan.Description.IsNull() {
+		description = plan.Description.ValueString()
 	}
 
 	// Create new Tag
 	id, err := o.client.CreateTag(ctx, &goapstra.DesignTagRequest{
-		Label:       plan.Name.Value,
+		Label:       plan.Name.ValueString(),
 		Description: description,
 	})
 	if err != nil {
@@ -95,13 +92,15 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	// set state
-	diags = resp.State.Set(ctx, &dTag{
-		Id:          types.String{Value: string(id)},
+	// create new state object
+	state := dTag{
+		Id:          types.StringValue(string(id)),
 		Name:        plan.Name,
 		Description: plan.Description,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -112,13 +111,12 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	// Get current state
 	var state dTag
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tag, err := o.client.GetTag(ctx, goapstra.ObjectId(state.Id.Value))
+	tag, err := o.client.GetTag(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -133,18 +131,20 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	var description types.String
 	if tag.Data.Description == "" {
-		description = types.String{Null: true}
+		description = types.StringNull()
 	} else {
-		description = types.String{Value: tag.Data.Description}
+		description = types.StringValue(tag.Data.Description)
+	}
+
+	// create new state object
+	newState := dTag{
+		Id:          types.StringValue(string(tag.Id)),
+		Name:        types.StringValue(tag.Data.Label),
+		Description: description,
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, &dTag{
-		Id:          types.String{Value: string(tag.Id)},
-		Name:        types.String{Value: tag.Data.Label},
-		Description: description,
-	})
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Update resource
@@ -156,16 +156,14 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 
 	// Get current state
 	var state dTag
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get plan values
 	var plan dTag
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -174,12 +172,12 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 	if plan.Description.IsNull() {
 		description = ""
 	} else {
-		description = plan.Description.Value
+		description = plan.Description.ValueString()
 	}
 
 	// Update Tag
-	err := o.client.UpdateTag(ctx, goapstra.ObjectId(state.Id.Value), &goapstra.DesignTagRequest{
-		Label:       plan.Name.Value,
+	err := o.client.UpdateTag(ctx, goapstra.ObjectId(state.Id.ValueString()), &goapstra.DesignTagRequest{
+		Label:       plan.Name.ValueString(),
 		Description: description,
 	})
 	if err != nil {
@@ -187,13 +185,15 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	// set state
-	diags = resp.State.Set(ctx, &dTag{
+	// create new state object
+	newState := dTag{
 		Id:          plan.Id,
 		Name:        plan.Name,
 		Description: plan.Description,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Delete resource
@@ -204,14 +204,13 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 	}
 
 	var state dTag
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Delete Tag by calling API
-	err := o.client.DeleteTag(ctx, goapstra.ObjectId(state.Id.Value))
+	err := o.client.DeleteTag(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective

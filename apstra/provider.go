@@ -226,7 +226,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		////func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
 		////func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		////func() resource.Resource { return &resourceSourceTemplateRackBased{} },
-		//func() resource.Resource { return &resourceTag{} },
+		func() resource.Resource { return &resourceTag{} },
 		////func() resource.Resource { return &resourceWireframe{} },
 	}
 }
