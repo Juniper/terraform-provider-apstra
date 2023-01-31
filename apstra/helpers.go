@@ -194,32 +194,32 @@ func bigIntToBigFloat(in *big.Int) *big.Float {
 //	return true
 //}
 
-//// sliceWithoutString returns a copy of in with all occurrences of t removed.
-//// the returned int indicates the number of occurrences removed.
-//func sliceWithoutString(in []string, t string) ([]string, int) {
-//	result := make([]string, len(in))
-//	var resultIdx int
-//	for inIdx := range in {
-//		if in[inIdx] == t {
-//			continue
-//		}
-//		result[resultIdx] = in[inIdx]
-//		resultIdx++
-//	}
-//	return result[:resultIdx], len(in) - resultIdx
-//}
+// sliceWithoutString returns a copy of in with all occurrences of t removed.
+// the returned int indicates the number of occurrences removed.
+func sliceWithoutString(in []string, t string) ([]string, int) {
+	result := make([]string, len(in))
+	var resultIdx int
+	for inIdx := range in {
+		if in[inIdx] == t {
+			continue
+		}
+		result[resultIdx] = in[inIdx]
+		resultIdx++
+	}
+	return result[:resultIdx], len(in) - resultIdx
+}
 
-//// sliceWithoutInt returns a copy of in with all occurences of t removed.
-//// the returned int indicates the number of occurences removed.
-//func sliceWithoutInt(in []int, t int) ([]int, int) {
-//	result := make([]int, len(in))
-//	var resultIdx int
-//	for inIdx := range in {
-//		if in[inIdx] == t {
-//			continue
-//		}
-//		result[resultIdx] = in[inIdx]
-//		resultIdx++
-//	}
-//	return result[:resultIdx], len(in) - resultIdx
-//}
+// sliceWithoutInt returns a copy of in with all instances of t removed.
+// the returned int indicates the number of instances removed.
+func sliceWithoutInt(in []int, t int) ([]int, int) {
+	result := make([]int, len(in))
+	var resultIdx int
+	for inIdx := range in {
+		if in[inIdx] == t {
+			continue
+		}
+		result[resultIdx] = in[inIdx]
+		resultIdx++
+	}
+	return result[:resultIdx], len(in) - resultIdx
+}
