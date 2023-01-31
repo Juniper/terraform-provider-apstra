@@ -4,9 +4,11 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -46,11 +48,13 @@ func (o *dataSourceIp4Pool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "ID of the desired IPv4 Resource Pool.",
 				Computed:            true,
 				Optional:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "(Non unique) name of the ASN resource pool.",
 				Computed:            true,
 				Optional:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"status": schema.StringAttribute{
 				MarkdownDescription: "Status of the IPv4 resource pool.",

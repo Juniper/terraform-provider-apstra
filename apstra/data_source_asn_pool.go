@@ -4,10 +4,12 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -47,11 +49,13 @@ func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "ID of the desired ASN Resource Pool.",
 				Computed:            true,
 				Optional:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Display name of the ASN Resource Pool.",
 				Computed:            true,
 				Optional:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"status": schema.StringAttribute{
 				MarkdownDescription: "Status of the ASN Resource Pool.",
