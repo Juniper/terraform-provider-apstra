@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -113,9 +114,10 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 							MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
 								"in the Device Profile. Required only when multiple transformation candidates are found for " +
 								"a given physical_interface_name and speed (as determined by the Logical Device and logical_device_port.",
-							Optional:   true,
-							Computed:   true,
-							Validators: []validator.Int64{int64validator.AtLeast(1)},
+							Optional:      true,
+							Computed:      true,
+							Validators:    []validator.Int64{int64validator.AtLeast(1)},
+							PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 						},
 					},
 				},
@@ -211,12 +213,6 @@ func (o *resourceInterfaceMap) Create(ctx context.Context, req resource.CreateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	a, err := plan.Interfaces.ToTerraformValue(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("error doing ToTerraformValue", err.Error())
-	}
-	resp.Diagnostics.AddWarning("a", a.String())
 
 	request := plan.request(ctx, ld, dp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -483,12 +479,6 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 	result := make([]goapstra.InterfaceMapInterface, len(planInterfaces))
 	portIdToSelectedTransformId := make(map[int]int) // to ensure we don't double-dip transform IDs
 
-	diags.AddWarning("first", fmt.Sprintf("physical: %s, logical: %s, transformId unk: %t",
-		planInterfaces[0].PhysicalInterfaceName.String(),
-		planInterfaces[0].LogicalDevicePort.String(),
-		planInterfaces[0].TransformationId.IsUnknown(),
-	))
-
 	for i, planInterface := range planInterfaces {
 		// extract the logical device panel and port number (1 indexed)
 		ldPanel, ldPort := ldPanelAndPortFromString(planInterface.LogicalDevicePort.ValueString(), diags)
@@ -508,7 +498,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 		}
 
 		var transformId int
-		if planInterface.TransformationId.IsNull() { // plan does not include a transform id
+		if planInterface.TransformationId.IsUnknown() { // plan does not include a transform id
 			if len(transformations) == 1 { // we got exactly one candidate -- use it!
 				for k := range transformations { // loop runs once, copies the only map key
 					transformId = k
@@ -529,8 +519,10 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 				transformId = transformation.TransformationId
 			} else {
 				diags.AddError(errInvalidConfig,
-					fmt.Sprintf("planned transform %d for logical device interface "+
-						"'%s' not available using device profile '%s' and interface '%s'",
+					fmt.Sprintf("planned transform %d for logical device"+
+						" interface at index %d ('%s') not available using device"+
+						" profile '%s' and interface '%s'",
+						i,
 						planInterface.TransformationId.ValueInt64(),
 						planInterface.LogicalDevicePort.ValueString(),
 						o.LogicalDeviceId.ValueString(),

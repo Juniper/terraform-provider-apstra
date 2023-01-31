@@ -63,3 +63,7 @@
 #output "apstra_logical_device" {
 #  value = apstra_logical_device.r
 #}
+
+#output "apstra_tag" {
+#  value = apstra_tag.r
+#}
