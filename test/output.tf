@@ -42,6 +42,10 @@
 #  value = data.apstra_interface_map.d
 #}
 
+#output "apstra_tag" {
+#  value = data.apstra_tag.d
+#}
+
 ################################################################################
 
 #output "apstra_agent_profile" {
