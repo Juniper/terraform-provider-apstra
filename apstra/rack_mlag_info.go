@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -16,6 +17,43 @@ type mlagInfo struct {
 	L3PeerLinkCount         types.Int64  `tfsdk:"l3_peer_link_count"`
 	L3PeerLinkSpeed         types.String `tfsdk:"l3_peer_link_speed"`
 	L3PeerLinkPortChannelId types.Int64  `tfsdk:"l3_peer_link_port_channel_id"`
+}
+
+func (o mlagInfo) schema() schema.SingleNestedAttribute {
+	return schema.SingleNestedAttribute{
+		MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
+		Computed:            true,
+		Attributes: map[string]schema.Attribute{
+			"mlag_keepalive_vlan": schema.Int64Attribute{
+				MarkdownDescription: "MLAG keepalive VLAN ID.",
+				Computed:            true,
+			},
+			"peer_link_count": schema.Int64Attribute{
+				MarkdownDescription: "Number of links between MLAG devices.",
+				Computed:            true,
+			},
+			"peer_link_speed": schema.StringAttribute{
+				MarkdownDescription: "Speed of links between MLAG devices.",
+				Computed:            true,
+			},
+			"peer_link_port_channel_id": schema.Int64Attribute{
+				MarkdownDescription: "Peer link port-channel ID.",
+				Computed:            true,
+			},
+			"l3_peer_link_count": schema.Int64Attribute{
+				MarkdownDescription: "Number of L3 links between MLAG devices.",
+				Computed:            true,
+			},
+			"l3_peer_link_speed": schema.StringAttribute{
+				MarkdownDescription: "Speed of l3 links between MLAG devices.",
+				Computed:            true,
+			},
+			"l3_peer_link_port_channel_id": schema.Int64Attribute{
+				MarkdownDescription: "L3 peer link port-channel ID.",
+				Computed:            true,
+			},
+		},
+	}
 }
 
 func (o mlagInfo) attrTypes() map[string]attr.Type {
@@ -96,3 +134,23 @@ func (o *mlagInfo) loadApiResponse(_ context.Context, in *goapstra.LeafMlagInfo,
 //		MlagVlanId:                  int(o.MlagKeepaliveVLan),
 //	}
 //}
+
+func newMlagInfoObject(ctx context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) types.Object {
+	if in == nil || in.LeafLeafLinkCount > 0 {
+		return types.ObjectNull(mlagInfo{}.attrTypes())
+	}
+
+	var mi mlagInfo
+	mi.loadApiResponse(ctx, in, diags)
+	if diags.HasError() {
+		return types.ObjectNull(mlagInfo{}.attrTypes())
+	}
+
+	result, d := types.ObjectValueFrom(ctx, mi.attrTypes(), &mi)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ObjectNull(mlagInfo{}.attrTypes())
+	}
+
+	return result
+}

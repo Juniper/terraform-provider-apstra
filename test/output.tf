@@ -46,9 +46,9 @@
 #  value = data.apstra_tag.d
 #}
 
-#output "d_apstra_rack_type" {
-#  value = data.apstra_rack_type.d
-#}
+output "d_apstra_rack_type" {
+  value = data.apstra_rack_type.d
+}
 
 ################################################################################
 

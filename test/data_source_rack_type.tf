@@ -1,3 +1,3 @@
 data "apstra_rack_type" "d" {
-  id = "L2_MLAG_1x_access"
+  id = "L2_ESI_Access_dual"
 }

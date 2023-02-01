@@ -5,9 +5,34 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+func leafSwitchAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			Computed:            true,
+		},
+		"spine_link_count": schema.Int64Attribute{
+			MarkdownDescription: "Number of links to each spine switch.",
+			Computed:            true,
+		},
+		"spine_link_speed": schema.StringAttribute{
+			MarkdownDescription: "Speed of links to spine switches.",
+			Computed:            true,
+		},
+		"redundancy_protocol": schema.StringAttribute{
+			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
+			Computed:            true,
+		},
+		"mlag_info":      mlagInfo{}.schema(),
+		"logical_device": logicalDeviceData{}.schema(),
+		"tag_data":       tagsDataAttributeSchema(),
+	}
+}
 
 func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	ls := rt.Data.LeafSwitches[i]
@@ -52,9 +77,8 @@ func (o dRackTypeLeafSwitch) attrType() attr.Type {
 }
 
 func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
-	var d diag.Diagnostics
-
 	o.Name = types.StringValue(in.Label)
+
 	switch fcd {
 	case goapstra.FabricConnectivityDesignL3Collapsed:
 		o.SpineLinkCount = types.Int64Null()
@@ -62,6 +86,9 @@ func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 	case goapstra.FabricConnectivityDesignL3Clos:
 		o.SpineLinkCount = types.Int64Value(int64(in.LinkPerSpineCount))
 		o.SpineLinkSpeed = types.StringValue(string(in.LinkPerSpineSpeed))
+	default:
+		diags.AddError(errProviderBug, fmt.Sprintf("unknown FCD type '%s' (%d)",
+			fcd.String(), fcd))
 	}
 
 	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
@@ -70,19 +97,9 @@ func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
 	}
 
-	if in.MlagInfo != nil && in.MlagInfo.LeafLeafLinkCount > 0 {
-		var mlagInfo mlagInfo
-		mlagInfo.loadApiResponse(ctx, in.MlagInfo, diags)
-		if diags.HasError() {
-			return
-		}
-		o.MlagInfo, d = types.ObjectValueFrom(ctx, mlagInfo.attrTypes(), &mlagInfo)
-		diags.Append(d...)
-		if diags.HasError() {
-			return
-		}
-	} else {
-		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
+	o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
+	if diags.HasError() {
+		return
 	}
 
 	o.TagData = newTagSet(ctx, in.Tags, diags)
@@ -90,10 +107,8 @@ func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		return
 	}
 
-	var logicalDevice logicalDeviceData
-	logicalDevice.loadApiResponse(ctx, in.LogicalDevice, diags)
+	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}
-	o.LogicalDevice, d = types.ObjectValueFrom(ctx, logicalDevice.attrTypes(), &logicalDevice)
 }

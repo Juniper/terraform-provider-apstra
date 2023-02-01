@@ -71,13 +71,13 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 					Attributes: leafSwitchAttributes(),
 				},
 			},
-			//"access_switches": schema.SetNestedAttribute{
-			//	MarkdownDescription: "Details of Access Switches in this Rack Type.",
-			//	Computed:            true,
-			//	NestedObject: schema.NestedAttributeObject{
-			//		Attributes: accessSwitchAttributes(),
-			//	},
-			//},
+			"access_switches": schema.SetNestedAttribute{
+				MarkdownDescription: "Details of Access Switches in this Rack Type.",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: accessSwitchAttributes(),
+				},
+			},
 			//"generic_systems": schema.SetNestedAttribute{
 			//	MarkdownDescription: "Details of Generic Systems in the Rack Type.",
 			//	Computed:            true,
@@ -181,30 +181,21 @@ func validateRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
 	}
 }
 
-func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
-	gs := rt.Data.GenericSystems[i]
-	if gs.LogicalDevice == nil {
-		diags.AddError("generic system logical device info missing",
-			fmt.Sprintf("rack type '%s', generic system '%s' logical device is nil",
-				rt.Id, gs.Label))
-	}
-}
-
 type dRackType struct {
 	Id                       types.String `tfsdk:"id"`
 	Name                     types.String `tfsdk:"name"`
 	Description              types.String `tfsdk:"description"`
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
 	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
-	//AccessSwitches           types.Set    `tfsdk:"access_switches"` // todo re-enable this
+	AccessSwitches           types.Set    `tfsdk:"access_switches"`
 	//GenericSystems           types.Set    `tfsdk:"generic_systems"` // todo re-enable this
 }
 
 func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
 	switch in.Data.FabricConnectivityDesign {
-	case goapstra.FabricConnectivityDesignL3Collapsed: // supported FCD
-	case goapstra.FabricConnectivityDesignL3Clos: // supported FCD
-	default: // unsupported FCD
+	case goapstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case goapstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	default: // this FCD is unsupported
 		diags.AddError(
 			"unsupported fabric connectivity design",
 			fmt.Sprintf("Rack Type '%s' has unsupported Fabric Connectivity Design '%s'",
@@ -228,22 +219,21 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		}
 	}
 
-	// todo re-enable this
-	//accessSwitchSet := types.SetNull(dRackTypeAccessSwitch{}.attrType())
-	//if len(in.Data.AccessSwitches) > 0 {
-	//	accessSwitches := make([]dRackTypeAccessSwitch, len(in.Data.AccessSwitches))
-	//	for i := range in.Data.AccessSwitches {
-	//		accessSwitches[i].loadApiResponse(&in.Data.AccessSwitches[i])
-	//if diags.HasError() {
-	//	return
-	//}
-	//	}
-	//	accessSwitchSet, d = types.SetValueFrom(ctx, dRackTypeAccessSwitch{}.attrType(), accessSwitches)
-	//	diags.Append(d...)
-	//if diags.HasError() {
-	//	return
-	//}
-	//}
+	accessSwitchSet := types.SetNull(dRackTypeAccessSwitch{}.attrType())
+	if len(in.Data.AccessSwitches) > 0 {
+		accessSwitches := make([]dRackTypeAccessSwitch, len(in.Data.AccessSwitches))
+		for i := range in.Data.AccessSwitches {
+			accessSwitches[i].loadApiResponse(ctx, &in.Data.AccessSwitches[i], diags)
+			if diags.HasError() {
+				return
+			}
+		}
+		accessSwitchSet, d = types.SetValueFrom(ctx, dRackTypeAccessSwitch{}.attrType(), accessSwitches)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+	}
 
 	// todo re-enable this
 	//genericSystemSet := types.SetNull(dRackTypeGenericSystem{}.attrType())
@@ -266,157 +256,14 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 	o.Name = types.StringValue(in.Data.DisplayName)
 	o.Description = types.StringValue(in.Data.Description)
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
-	o.LeafSwitches = leafSwitchSet // todo re-enable this
-	//o.AccessSwitches = accessSwitchSet // todo re-enable this
+	o.LeafSwitches = leafSwitchSet
+	o.AccessSwitches = accessSwitchSet
 	//o.GenericSystems = genericSystemSet // todo re-enable this
 }
 
-//type dRackTypeAccessSwitch struct {
-//	Name               types.String `tfsdk:"name"`
-//	Count              types.Int64  `tfsdk:"count"`
-//	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
-//	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
-//	LogicalDevice      types.Object `tfsdk:"logical_device"`
-//	TagData            types.Set    `tfsdk:"tag_data"`
-//	Links              types.Set    `tfsdk:"links"`
-//}
 //
-//func (o dRackTypeAccessSwitch) attrType() attr.Type {
-//	return types.ObjectType{
-//		AttrTypes: map[string]attr.Type{
-//			"name":                types.StringType,
-//			"count":               types.Int64Type,
-//			"redundancy_protocol": types.StringType,
-//			"esi_lag_info":        esiLagInfo{}.attrType(),
-//			"logical_device":      logicalDeviceData{}.attrType(),
-//			"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-//			"links":               types.SetType{ElemType: dRackLink{}.attrType()}}}
-//}
 //
-//func (o *dRackTypeAccessSwitch) loadApiResponse(in *goapstra.RackElementAccessSwitch) {
-//	o.Name = in.Label
-//	o.Count = int64(in.InstanceCount)
-//	if in.RedundancyProtocol != goapstra.AccessRedundancyProtocolNone {
-//		redundancyProtocol := in.RedundancyProtocol.String()
-//		o.RedundancyProtocol = &redundancyProtocol
-//	}
-//	if in.EsiLagInfo != nil {
-//		o.EsiLagInfo = &esiLagInfo{}
-//		o.EsiLagInfo.loadApiResponse(in.EsiLagInfo)
-//	}
-//	o.LogicalDevice.loadApiResponse(in.LogicalDevice)
-//
-//	if len(in.Tags) > 0 {
-//		o.TagData = make([]tagData, len(in.Tags)) // populated below
-//		for i := range in.Tags {
-//			o.TagData[i].loadApiResponse(&in.Tags[i])
-//		}
-//	}
-//
-//	o.Links = make([]dRackLink, len(in.Links))
-//	for i := range in.Links {
-//		o.Links[i].loadApiResponse(&in.Links[i])
-//	}
-//}
-//
-//type esiLagInfo struct {
-//	L3PeerLinkCount int64  `tfsdk:"l3_peer_link_count"`
-//	L3PeerLinkSpeed string `tfsdk:"l3_peer_link_speed"`
-//}
-//
-//func (o esiLagInfo) attrType() attr.Type {
-//	return types.ObjectType{
-//		AttrTypes: map[string]attr.Type{
-//			"l3_peer_link_count": types.Int64Type,
-//			"l3_peer_link_speed": types.StringType}}
-//}
-//
-//func (o *esiLagInfo) loadApiResponse(in *goapstra.EsiLagInfo) {
-//	o.L3PeerLinkCount = int64(in.AccessAccessLinkCount)
-//	o.L3PeerLinkSpeed = string(in.AccessAccessLinkSpeed)
-//}
-//
-//func dLinksAttributeSchema() schema.SetNestedAttribute {
-//	return schema.SetNestedAttribute{
-//		MarkdownDescription: "Details links from this Element to switches upstream switches within this Rack Type.",
-//		Computed:            true,
-//		Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-//		NestedObject: schema.NestedAttributeObject{
-//			Attributes: map[string]schema.Attribute{
-//				"name": schema.StringAttribute{
-//					MarkdownDescription: "Name of this link.",
-//					Computed:            true,
-//				},
-//				"target_switch_name": schema.StringAttribute{
-//					MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
-//					Computed:            true,
-//				},
-//				"lag_mode": schema.StringAttribute{
-//					MarkdownDescription: "LAG negotiation mode of the Link.",
-//					Computed:            true,
-//				},
-//				"links_per_switch": schema.Int64Attribute{
-//					MarkdownDescription: "Number of Links to each switch.",
-//					Computed:            true,
-//				},
-//				"speed": schema.StringAttribute{
-//					MarkdownDescription: "Speed of this Link.",
-//					Computed:            true,
-//				},
-//				"switch_peer": schema.StringAttribute{
-//					MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
-//					Computed:            true,
-//				},
-//				"tag_data": tagsDataAttributeSchema(),
-//			},
-//		},
-//	}
-//}
 
-//type dRackLink struct {
-//	Name             string    `tfsdk:"name"`
-//	TargetSwitchName string    `tfsdk:"target_switch_name"`
-//	LagMode          *string   `tfsdk:"lag_mode"`
-//	LinksPerSwitch   int64     `tfsdk:"links_per_switch"`
-//	Speed            string    `tfsdk:"speed"`
-//	SwitchPeer       *string   `tfsdk:"switch_peer"`
-//	TagData          []tagData `tfsdk:"tag_data"`
-//}
-//
-//func (o dRackLink) attrType() attr.Type {
-//	return types.ObjectType{
-//		AttrTypes: map[string]attr.Type{
-//			"name":               types.StringType,
-//			"target_switch_name": types.StringType,
-//			"lag_mode":           types.StringType,
-//			"links_per_switch":   types.Int64Type,
-//			"speed":              types.StringType,
-//			"switch_peer":        types.StringType,
-//			"tag_data":           types.SetType{ElemType: tagData{}.attrType()}}}
-//}
-//
-//func (o *dRackLink) loadApiResponse(in *goapstra.RackLink) {
-//	o.Name = in.Label
-//	o.TargetSwitchName = in.TargetSwitchLabel
-//	if in.LagMode != goapstra.RackLinkLagModeNone {
-//		lagMode := in.LagMode.String()
-//		o.LagMode = &lagMode
-//	}
-//	o.LinksPerSwitch = int64(in.LinkPerSwitchCount)
-//	o.Speed = string(in.LinkSpeed)
-//	if in.SwitchPeer != goapstra.RackLinkSwitchPeerNone {
-//		switchPeer := in.SwitchPeer.String()
-//		o.SwitchPeer = &switchPeer
-//	}
-//
-//	if len(in.Tags) > 0 {
-//		o.TagData = make([]tagData, len(in.Tags)) // populated below
-//		for i := range in.Tags {
-//			o.TagData[i].loadApiResponse(&in.Tags[i])
-//		}
-//	}
-//}
-//
 //type dRackTypeGenericSystem struct {
 //	Name             string            `tfsdk:"name"`
 //	Count            int64             `tfsdk:"count"`
@@ -456,120 +303,5 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 //
 //	for i := range in.Links {
 //		o.Links[i].loadApiResponse(&in.Links[i])
-//	}
-//}
-
-func leafSwitchAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
-			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-			Computed:            true,
-		},
-		"spine_link_count": schema.Int64Attribute{
-			MarkdownDescription: "Number of links to each spine switch.",
-			Computed:            true,
-		},
-		"spine_link_speed": schema.StringAttribute{
-			MarkdownDescription: "Speed of links to spine switches.",
-			Computed:            true,
-		},
-		"redundancy_protocol": schema.StringAttribute{
-			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
-			Computed:            true,
-		},
-		"mlag_info": schema.SingleNestedAttribute{
-			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
-			Computed:            true,
-			Attributes: map[string]schema.Attribute{
-				"mlag_keepalive_vlan": schema.Int64Attribute{
-					MarkdownDescription: "MLAG keepalive VLAN ID.",
-					Computed:            true,
-				},
-				"peer_link_count": schema.Int64Attribute{
-					MarkdownDescription: "Number of links between MLAG devices.",
-					Computed:            true,
-				},
-				"peer_link_speed": schema.StringAttribute{
-					MarkdownDescription: "Speed of links between MLAG devices.",
-					Computed:            true,
-				},
-				"peer_link_port_channel_id": schema.Int64Attribute{
-					MarkdownDescription: "Peer link port-channel ID.",
-					Computed:            true,
-				},
-				"l3_peer_link_count": schema.Int64Attribute{
-					MarkdownDescription: "Number of L3 links between MLAG devices.",
-					Computed:            true,
-				},
-				"l3_peer_link_speed": schema.StringAttribute{
-					MarkdownDescription: "Speed of l3 links between MLAG devices.",
-					Computed:            true,
-				},
-				"l3_peer_link_port_channel_id": schema.Int64Attribute{
-					MarkdownDescription: "L3 peer link port-channel ID.",
-					Computed:            true,
-				},
-			},
-		},
-		"logical_device": logicalDeviceDataAttributeSchema(),
-		"tag_data":       tagsDataAttributeSchema(),
-	}
-}
-
-//func accessSwitchAttributes() map[string]schema.Attribute {
-//	return map[string]schema.Attribute{
-//		"name": schema.StringAttribute{
-//			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-//			Computed:            true,
-//		},
-//		"count": schema.Int64Attribute{
-//			MarkdownDescription: "Count of Access Switches of this type.",
-//			Computed:            true,
-//		},
-//		"redundancy_protocol": schema.StringAttribute{
-//			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
-//			Computed:            true,
-//		},
-//		"esi_lag_info": schema.SingleNestedAttribute{
-//			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
-//			Computed:            true,
-//			Attributes: map[string]schema.Attribute{
-//				"l3_peer_link_count": schema.Int64Attribute{
-//					MarkdownDescription: "Count of L3 links to ESI peer.",
-//					Computed:            true,
-//				},
-//				"l3_peer_link_speed": schema.StringAttribute{
-//					MarkdownDescription: "Speed of L3 links to ESI peer.",
-//					Computed:            true,
-//				},
-//			},
-//		},
-//		"logical_device": logicalDeviceDataAttributeSchema(),
-//		"tag_data":       tagsDataAttributeSchema(),
-//		"links":          dLinksAttributeSchema(),
-//	}
-//}
-
-//func genericSystemAttributes() map[string]schema.Attribute {
-//	return map[string]schema.Attribute{
-//		"name": schema.StringAttribute{
-//			MarkdownDescription: "Generic name, must be unique within the rack-type.",
-//			Computed:            true,
-//		},
-//		"count": schema.Int64Attribute{
-//			MarkdownDescription: "Number of Generic Systems of this type.",
-//			Computed:            true,
-//		},
-//		"port_channel_id_min": schema.Int64Attribute{
-//			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
-//			Computed:            true,
-//		},
-//		"port_channel_id_max": schema.Int64Attribute{
-//			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
-//			Computed:            true,
-//		},
-//		"logical_device": logicalDeviceDataAttributeSchema(),
-//		"tag_data":       tagsDataAttributeSchema(),
-//		"links":          dLinksAttributeSchema(),
 //	}
 //}

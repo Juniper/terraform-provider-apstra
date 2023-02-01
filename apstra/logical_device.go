@@ -18,12 +18,18 @@ type logicalDevice struct {
 	Panels types.List   `tfsdk:"panels"`
 }
 
+func (o logicalDevice) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id":     types.StringType,
+		"name":   types.StringType,
+		"panels": types.ListType{ElemType: o.attrType()},
+	}
+}
+
 func (o logicalDevice) attrType() attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"id":     types.StringType,
-			"name":   types.StringType,
-			"panels": types.ListType{ElemType: logicalDevicePanel{}.attrType()}}}
+		AttrTypes: o.attrTypes(),
+	}
 }
 
 func (o *logicalDevice) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) {
@@ -201,11 +207,6 @@ func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *g
 //		AttrTypes: logicalDeviceDataAttrTypes()}
 //}
 
-//type logicalDeviceData struct {
-//	Name   string               `tfsdk:"name"`
-//	Panels []logicalDevicePanel `tfsdk:"panels"'`
-//}
-
 //func (o logicalDeviceData) attrType() attr.Type {
 //	return types.ObjectType{
 //		AttrTypes: map[string]attr.Type{
@@ -241,20 +242,6 @@ func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *g
 //	}
 //}
 
-func logicalDeviceDataAttributeSchema() schema.SingleNestedAttribute {
-	return schema.SingleNestedAttribute{
-		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
-		Computed:            true,
-		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Logical device display name.",
-				Computed:            true,
-			},
-			"panels": dPanelAttributeSchema(),
-		},
-	}
-}
-
 //func parseApiLogicalDeviceToTypesObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
 //	structLogicalDeviceData := parseApiLogicalDeviceData(in)
 //	result, d := types.ObjectValueFrom(ctx, logicalDeviceDataAttrTypes(), structLogicalDeviceData)
@@ -279,6 +266,20 @@ func logicalDeviceDataAttributeSchema() schema.SingleNestedAttribute {
 type logicalDeviceData struct {
 	Name   types.String `tfsdk:"name"`
 	Panels types.List   `tfsdk:"panels"`
+}
+
+func (o logicalDeviceData) schema() schema.SingleNestedAttribute {
+	return schema.SingleNestedAttribute{
+		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+		Computed:            true,
+		Attributes: map[string]schema.Attribute{
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Logical device display name.",
+				Computed:            true,
+			},
+			"panels": dPanelAttributeSchema(),
+		},
+	}
 }
 
 func (o logicalDeviceData) attrTypes() map[string]attr.Type {
@@ -312,4 +313,24 @@ func (o *logicalDeviceData) loadApiResponse(ctx context.Context, in *goapstra.Lo
 	} else {
 		o.Panels = types.ListNull(logicalDevicePanel{}.attrType())
 	}
+}
+
+func newLogicalDeviceObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
+	if in == nil {
+		return types.ObjectNull(logicalDevice{}.attrTypes())
+	}
+
+	var ld logicalDeviceData
+	ld.loadApiResponse(ctx, in, diags)
+	if diags.HasError() {
+		return types.ObjectNull(logicalDevice{}.attrTypes())
+	}
+
+	result, d := types.ObjectValueFrom(ctx, ld.attrTypes(), &ld)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ObjectNull(logicalDevice{}.attrTypes())
+	}
+
+	return result
 }
