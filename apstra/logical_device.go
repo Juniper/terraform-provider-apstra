@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -240,22 +241,19 @@ func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *g
 //	}
 //}
 
-//func logicalDeviceDataAttributeSchema() tfsdk.Attribute {
-//	return tfsdk.Attribute{
-//		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
-//		Computed:            true,
-//		PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
-//		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-//			"panels": dPanelAttributeSchema(),
-//			"name": {
-//				MarkdownDescription: "Logical device display name.",
-//				Computed:            true,
-//				Type:                types.StringType,
-//				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
-//			},
-//		}),
-//	}
-//}
+func logicalDeviceDataAttributeSchema() schema.SingleNestedAttribute {
+	return schema.SingleNestedAttribute{
+		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+		Computed:            true,
+		Attributes: map[string]schema.Attribute{
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Logical device display name.",
+				Computed:            true,
+			},
+			"panels": dPanelAttributeSchema(),
+		},
+	}
+}
 
 //func parseApiLogicalDeviceToTypesObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
 //	structLogicalDeviceData := parseApiLogicalDeviceData(in)
