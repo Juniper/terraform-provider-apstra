@@ -306,8 +306,8 @@ type dRackTypeLeafSwitch struct {
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
-	//LogicalDevice      types.Object `tfsdk:"logical_device"`
-	TagData types.Set `tfsdk:"tag_data"`
+	LogicalDevice      types.Object `tfsdk:"logical_device"`
+	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
 func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
@@ -317,8 +317,8 @@ func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
 		"mlag_info":           mlagInfo{}.attrType(),
-		//"logical_device":      logicalDeviceData{}.attrType(),
-		"tag_data": types.SetType{ElemType: tagData{}.attrType()},
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
 	}
 }
 
@@ -367,14 +367,12 @@ func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		return
 	}
 
-	// o.LogicalDevice.loadApiResponse(in.LogicalDevice)
-	//
-	//	if len(in.Tags) > 0 {
-	//		o.TagData = make([]tagData, len(in.Tags)) // populated below
-	//		for i := range in.Tags {
-	//			o.TagData[i].loadApiResponse(&in.Tags[i])
-	//		}
-	//	}
+	var logicalDevice logicalDeviceData
+	logicalDevice.loadApiResponse(ctx, in.LogicalDevice, diags)
+	if diags.HasError() {
+		return
+	}
+	o.LogicalDevice, d = types.ObjectValueFrom(ctx, logicalDevice.attrTypes(), &logicalDevice)
 }
 
 type mlagInfo struct {
@@ -404,7 +402,7 @@ func (o mlagInfo) attrType() attr.Type {
 	}
 }
 
-func (o *mlagInfo) loadApiResponse(ctx context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) {
+func (o *mlagInfo) loadApiResponse(_ context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load mlagInfo from nil pointer")
 	}
@@ -706,8 +704,8 @@ func leafSwitchAttributes() map[string]schema.Attribute {
 				},
 			},
 		},
-		//"logical_device": logicalDeviceDataAttributeSchema(),
-		"tag_data": tagsDataAttributeSchema(),
+		"logical_device": logicalDeviceDataAttributeSchema(),
+		"tag_data":       tagsDataAttributeSchema(),
 	}
 }
 

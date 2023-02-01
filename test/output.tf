@@ -46,6 +46,10 @@
 #  value = data.apstra_tag.d
 #}
 
+#output "d_apstra_rack_type" {
+#  value = data.apstra_rack_type.d
+#}
+
 ################################################################################
 
 #output "r_apstra_agent_profile" {

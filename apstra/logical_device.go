@@ -27,24 +27,24 @@ func (o logicalDevice) attrType() attr.Type {
 }
 
 func (o *logicalDevice) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) {
-	var panels []logicalDevicePanel
-
-	if len(in.Data.Panels) != 0 {
-		panels = make([]logicalDevicePanel, len(in.Data.Panels))
-		for i := range in.Data.Panels {
-			panels[i].loadApiResponse(ctx, &in.Data.Panels[i], diags)
-			if diags.HasError() {
-				return
-			}
+	panels := make([]logicalDevicePanel, len(in.Data.Panels))
+	for i, panel := range in.Data.Panels {
+		panels[i].loadApiResponse(ctx, &panel, diags)
+		if diags.HasError() {
+			return
 		}
 	}
 
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
 
-	var d diag.Diagnostics
-	o.Panels, d = types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), panels)
-	diags.Append(d...)
+	if len(panels) > 0 {
+		var d diag.Diagnostics
+		o.Panels, d = types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), panels)
+		diags.Append(d...)
+	} else {
+		o.Panels = types.ListNull(logicalDevicePanel{}.attrType())
+	}
 }
 
 func (o *logicalDevice) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDeviceData {
@@ -275,3 +275,41 @@ func logicalDeviceDataAttributeSchema() schema.SingleNestedAttribute {
 //		"columns":     types.Int64Type,
 //		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}}}
 //}
+
+type logicalDeviceData struct {
+	Name   types.String `tfsdk:"name"`
+	Panels types.List   `tfsdk:"panels"`
+}
+
+func (o logicalDeviceData) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":   types.StringType,
+		"panels": types.ListType{ElemType: logicalDevicePanel{}.attrType()},
+	}
+}
+
+func (o logicalDeviceData) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: o.attrTypes(),
+	}
+}
+
+func (o *logicalDeviceData) loadApiResponse(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
+	panels := make([]logicalDevicePanel, len(in.Panels))
+	for i, panel := range in.Panels {
+		panels[i].loadApiResponse(ctx, &panel, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	o.Name = types.StringValue(in.DisplayName)
+
+	if len(panels) > 0 {
+		var d diag.Diagnostics
+		o.Panels, d = types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), panels)
+		diags.Append(d...)
+	} else {
+		o.Panels = types.ListNull(logicalDevicePanel{}.attrType())
+	}
+}
