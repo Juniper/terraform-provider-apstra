@@ -1,7 +1,10 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/mitchellh/go-homedir"
 	"math/big"
 	"os"
@@ -19,6 +22,18 @@ func newKeyLogWriter(fileName string) (*os.File, error) {
 		return nil, err
 	}
 	return os.OpenFile(absPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+}
+
+func validateFcdSupport(ctx context.Context, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+	switch fcd {
+	case goapstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case goapstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	default: // this FCD is unsupported
+		diags.AddError(
+			errProviderBug,
+			fmt.Sprintf("Unsupported Fabric Connectivity Design '%s'",
+				fcd.String()))
+	}
 }
 
 //func typesMapToMapStringString(in types.Map) map[string]string {

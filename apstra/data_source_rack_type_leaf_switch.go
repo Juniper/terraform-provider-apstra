@@ -25,12 +25,12 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 }
 
 type dRackTypeLeafSwitch struct {
+	LogicalDevice      types.Object `tfsdk:"logical_device"`
+	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	Name               types.String `tfsdk:"name"`
+	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
-	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
-	MlagInfo           types.Object `tfsdk:"mlag_info"`
-	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
@@ -52,8 +52,8 @@ func (o dRackTypeLeafSwitch) schema() map[string]schema.Attribute {
 			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
 			Computed:            true,
 		},
-		"mlag_info":      mlagInfo{}.schema(),
-		"logical_device": logicalDeviceData{}.schema(),
+		"mlag_info":      mlagInfo{}.schemaAsDataSource(),
+		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
 		"tag_data": schema.SetNestedAttribute{
 			NestedObject:        tagData{}.schema(),
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
@@ -83,16 +83,12 @@ func (o dRackTypeLeafSwitch) attrType() attr.Type {
 func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 
-	switch fcd {
-	case goapstra.FabricConnectivityDesignL3Collapsed:
+	if fcd == goapstra.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Null()
 		o.SpineLinkSpeed = types.StringNull()
-	case goapstra.FabricConnectivityDesignL3Clos:
+	} else {
 		o.SpineLinkCount = types.Int64Value(int64(in.LinkPerSpineCount))
 		o.SpineLinkSpeed = types.StringValue(string(in.LinkPerSpineSpeed))
-	default:
-		diags.AddError(errProviderBug, fmt.Sprintf("unknown FCD type '%s' (%d)",
-			fcd.String(), fcd))
 	}
 
 	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {

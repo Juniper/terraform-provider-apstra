@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type rackLink struct {
+type dRackLink struct {
 	Name             types.String `tfsdk:"name"`
 	TargetSwitchName types.String `tfsdk:"target_switch_name"`
 	LagMode          types.String `tfsdk:"lag_mode"`
@@ -19,7 +19,7 @@ type rackLink struct {
 	TagData          types.Set    `tfsdk:"tag_data"`
 }
 
-func (o rackLink) schema() schema.NestedAttributeObject {
+func (o dRackLink) schema() schema.NestedAttributeObject {
 	return schema.NestedAttributeObject{
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
@@ -55,7 +55,7 @@ func (o rackLink) schema() schema.NestedAttributeObject {
 	}
 }
 
-func (o rackLink) attrTypes() map[string]attr.Type {
+func (o dRackLink) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":               types.StringType,
 		"target_switch_name": types.StringType,
@@ -67,13 +67,13 @@ func (o rackLink) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o rackLink) attrType() attr.Type {
+func (o dRackLink) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: o.attrTypes(),
 	}
 }
 
-func (o *rackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, diags *diag.Diagnostics) {
+func (o *dRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
 	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
@@ -97,20 +97,20 @@ func (o *rackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, d
 	}
 }
 
-func newLinkSet(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Set {
+func newDataSourceLinkSet(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Set {
 	if len(in) == 0 {
-		return types.SetNull(rackLink{}.attrType())
+		return types.SetNull(dRackLink{}.attrType())
 	}
 
-	links := make([]rackLink, len(in))
+	links := make([]dRackLink, len(in))
 	for i, link := range in {
 		links[i].loadApiResponse(ctx, &link, diags)
 		if diags.HasError() {
-			return types.SetNull(rackLink{}.attrType())
+			return types.SetNull(dRackLink{}.attrType())
 		}
 	}
 
-	result, d := types.SetValueFrom(ctx, rackLink{}.attrType(), &links)
+	result, d := types.SetValueFrom(ctx, dRackLink{}.attrType(), &links)
 	diags.Append(d...)
 
 	return result

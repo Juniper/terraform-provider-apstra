@@ -51,7 +51,7 @@ func (o dRackTypeAccessSwitch) schema() map[string]schema.Attribute {
 			Computed:            true,
 		},
 		"esi_lag_info":   esiLagInfo{}.schema(),
-		"logical_device": logicalDeviceData{}.schema(),
+		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
 		"tag_data": schema.SetNestedAttribute{
 			NestedObject:        tagData{}.schema(),
 			MarkdownDescription: "Details any tags applied to this Access Switch.",
@@ -61,7 +61,7 @@ func (o dRackTypeAccessSwitch) schema() map[string]schema.Attribute {
 			MarkdownDescription: "Details links from this Access Switch to upstream switches within this Rack Type.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-			NestedObject:        rackLink{}.schema(),
+			NestedObject:        dRackLink{}.schema(),
 		},
 	}
 }
@@ -74,7 +74,7 @@ func (o dRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 		"esi_lag_info":        esiLagInfo{}.attrType(),
 		"logical_device":      logicalDeviceData{}.attrType(),
 		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-		"links":               types.SetType{ElemType: rackLink{}.attrType()},
+		"links":               types.SetType{ElemType: dRackLink{}.attrType()},
 	}
 }
 
@@ -109,7 +109,7 @@ func (o *dRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstr
 		return
 	}
 
-	o.Links = newLinkSet(ctx, in.Links, diags)
+	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
 	if diags.HasError() {
 		return
 	}

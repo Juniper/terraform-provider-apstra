@@ -147,13 +147,13 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	// catch problems which would crash the provider
-	validateRackType(rt, &resp.Diagnostics)
+	validateRackType(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	newState := &dRackType{}
-	newState.parseApi(ctx, rt, &resp.Diagnostics)
+	newState.loadApiResponse(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -162,22 +162,27 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
-func validateRackType(rt *goapstra.RackType, diags *diag.Diagnostics) {
-	if rt.Data == nil {
-		diags.AddError("rack type has no data", fmt.Sprintf("rack type '%s' data object is nil", rt.Id))
+func validateRackType(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+	if in.Data == nil {
+		diags.AddError("rack type has no data", fmt.Sprintf("rack type '%s' data object is nil", in.Id))
 		return
 	}
 
-	for i := range rt.Data.LeafSwitches {
-		validateLeafSwitch(rt, i, diags)
+	validateFcdSupport(ctx, in.Data.FabricConnectivityDesign, diags)
+	if diags.HasError() {
+		return
 	}
 
-	for i := range rt.Data.AccessSwitches {
-		validateAccessSwitch(rt, i, diags)
+	for i := range in.Data.LeafSwitches {
+		validateLeafSwitch(in, i, diags)
 	}
 
-	for i := range rt.Data.GenericSystems {
-		validateGenericSystem(rt, i, diags)
+	for i := range in.Data.AccessSwitches {
+		validateAccessSwitch(in, i, diags)
+	}
+
+	for i := range in.Data.GenericSystems {
+		validateGenericSystem(in, i, diags)
 	}
 }
 
@@ -191,20 +196,23 @@ type dRackType struct {
 	GenericSystems           types.Set    `tfsdk:"generic_systems"`
 }
 
-func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+func (o *dRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
 	switch in.Data.FabricConnectivityDesign {
 	case goapstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
 	case goapstra.FabricConnectivityDesignL3Clos: // this FCD is supported
 	default: // this FCD is unsupported
 		diags.AddError(
-			"unsupported fabric connectivity design",
+			errProviderBug,
 			fmt.Sprintf("Rack Type '%s' has unsupported Fabric Connectivity Design '%s'",
 				in.Id, in.Data.FabricConnectivityDesign.String()))
 	}
 	var d diag.Diagnostics
 
-	leafSwitchSet := types.SetNull(dRackTypeLeafSwitch{}.attrType())
-	if len(in.Data.LeafSwitches) > 0 {
+	var leafSwitchSet, accessSwitchSet, genericSystemSet types.Set
+
+	if len(in.Data.LeafSwitches) == 0 {
+		leafSwitchSet = types.SetNull(dRackTypeLeafSwitch{}.attrType())
+	} else {
 		leafSwitches := make([]dRackTypeLeafSwitch, len(in.Data.LeafSwitches))
 		for i := range in.Data.LeafSwitches {
 			leafSwitches[i].loadApiResponse(ctx, &in.Data.LeafSwitches[i], in.Data.FabricConnectivityDesign, diags)
@@ -219,8 +227,9 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		}
 	}
 
-	accessSwitchSet := types.SetNull(dRackTypeAccessSwitch{}.attrType())
-	if len(in.Data.AccessSwitches) > 0 {
+	if len(in.Data.AccessSwitches) == 0 {
+		accessSwitchSet = types.SetNull(dRackTypeAccessSwitch{}.attrType())
+	} else {
 		accessSwitches := make([]dRackTypeAccessSwitch, len(in.Data.AccessSwitches))
 		for i := range in.Data.AccessSwitches {
 			accessSwitches[i].loadApiResponse(ctx, &in.Data.AccessSwitches[i], diags)
@@ -235,8 +244,9 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		}
 	}
 
-	genericSystemSet := types.SetNull(dRackTypeGenericSystem{}.attrType())
-	if len(in.Data.GenericSystems) > 0 {
+	if len(in.Data.GenericSystems) == 0 {
+		genericSystemSet = types.SetNull(dRackTypeGenericSystem{}.attrType())
+	} else {
 		genericSystems := make([]dRackTypeGenericSystem, len(in.Data.GenericSystems))
 		for i := range in.Data.GenericSystems {
 			genericSystems[i].loadApiResponse(ctx, &in.Data.GenericSystems[i], diags)
@@ -251,9 +261,16 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		}
 	}
 
+	var description types.String
+	if in.Data.Description == "" {
+		description = types.StringNull()
+	} else {
+		description = types.StringValue(in.Data.Description)
+	}
+
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
-	o.Description = types.StringValue(in.Data.Description)
+	o.Description = description
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
 	o.LeafSwitches = leafSwitchSet
 	o.AccessSwitches = accessSwitchSet

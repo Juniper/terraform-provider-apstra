@@ -49,7 +49,7 @@ func (o dRackTypeGenericSystem) schema() map[string]schema.Attribute {
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
 			Computed:            true,
 		},
-		"logical_device": logicalDeviceData{}.schema(),
+		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
 		"tag_data": schema.SetNestedAttribute{
 			NestedObject:        tagData{}.schema(),
 			MarkdownDescription: "Details any tags applied to this Generic System.",
@@ -59,7 +59,7 @@ func (o dRackTypeGenericSystem) schema() map[string]schema.Attribute {
 			MarkdownDescription: "Details links from this Generic System to upstream switches within this Rack Type.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-			NestedObject:        rackLink{}.schema(),
+			NestedObject:        dRackLink{}.schema(),
 		},
 	}
 }
@@ -72,7 +72,7 @@ func (o dRackTypeGenericSystem) attrTypes() map[string]attr.Type {
 		"port_channel_id_max": types.Int64Type,
 		"logical_device":      logicalDeviceData{}.attrType(),
 		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-		"links":               types.SetType{ElemType: rackLink{}.attrType()},
+		"links":               types.SetType{ElemType: dRackLink{}.attrType()},
 	}
 }
 
@@ -93,7 +93,7 @@ func (o *dRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapst
 		return
 	}
 
-	o.Links = newLinkSet(ctx, in.Links, diags)
+	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
 	if diags.HasError() {
 		return
 	}

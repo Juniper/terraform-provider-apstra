@@ -5,9 +5,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 )
@@ -78,14 +79,99 @@ type logicalDevicePanel struct {
 	PortGroups types.List  `tfsdk:"port_groups"`
 }
 
-func (o logicalDevicePanel) attrType() attr.Type {
-	var portGroup logicalDevicePanelPortGroup
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"rows":        types.Int64Type,
-			"columns":     types.Int64Type,
-			"port_groups": types.ListType{ElemType: portGroup.attrType()},
+func (o logicalDevicePanel) schemaAsDataSource() dataSourceSchema.NestedAttributeObject {
+	return dataSourceSchema.NestedAttributeObject{
+		Attributes: map[string]dataSourceSchema.Attribute{
+			"rows": dataSourceSchema.Int64Attribute{
+				MarkdownDescription: "Physical vertical dimension of the panel.",
+				Computed:            true,
+			},
+			"columns": dataSourceSchema.Int64Attribute{
+				MarkdownDescription: "Physical horizontal dimension of the panel.",
+				Computed:            true,
+			},
+			"port_groups": dataSourceSchema.ListNestedAttribute{
+				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+				Computed:            true,
+				NestedObject: dataSourceSchema.NestedAttributeObject{
+					Attributes: map[string]dataSourceSchema.Attribute{
+						"port_count": dataSourceSchema.Int64Attribute{
+							MarkdownDescription: "Number of ports in the group.",
+							Computed:            true,
+						},
+						"port_speed": dataSourceSchema.StringAttribute{
+							MarkdownDescription: "Port speed.",
+							Computed:            true,
+						},
+						"port_roles": dataSourceSchema.SetAttribute{
+							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+							Computed:            true,
+							ElementType:         types.StringType,
+						},
+					},
+				},
+			},
 		},
+	}
+}
+
+func (o logicalDevicePanel) schemaAsResource() resourceSchema.NestedAttributeObject {
+	return resourceSchema.NestedAttributeObject{
+		Attributes: map[string]resourceSchema.Attribute{
+			"rows": resourceSchema.Int64Attribute{
+				MarkdownDescription: "Physical vertical dimension of the panel.",
+				Computed:            true,
+				//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			},
+			"columns": resourceSchema.Int64Attribute{
+				MarkdownDescription: "Physical horizontal dimension of the panel.",
+				Computed:            true,
+				//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			},
+			"port_groups": resourceSchema.ListNestedAttribute{
+				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+				Computed:            true,
+				NestedObject: resourceSchema.NestedAttributeObject{
+					Attributes: map[string]resourceSchema.Attribute{
+						"port_count": resourceSchema.Int64Attribute{
+							MarkdownDescription: "Number of ports in the group.",
+							Computed:            true,
+							//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+						},
+						"port_speed": resourceSchema.StringAttribute{
+							MarkdownDescription: "Port speed.",
+							Computed:            true,
+							//PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+						},
+						"port_roles": resourceSchema.SetAttribute{
+							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+							Computed:            true,
+							ElementType:         types.StringType,
+							//PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (o logicalDevicePanel) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"rows":        types.Int64Type,
+		"columns":     types.Int64Type,
+		"port_groups": types.ListType{ElemType: logicalDevicePanelPortGroup{}.attrType()},
+	}
+}
+
+func (o logicalDevicePanel) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: o.attrTypes(),
+		//AttrTypes: map[string]attr.Type{
+		//	"rows":        types.Int64Type,
+		//	"columns":     types.Int64Type,
+		//	"port_groups": types.ListType{ElemType: portGroup.attrType()},
+		//},
 	}
 }
 
@@ -180,12 +266,18 @@ type logicalDevicePanelPortGroup struct {
 	PortRoles types.Set    `tfsdk:"port_roles"`
 }
 
-func (o *logicalDevicePanelPortGroup) attrType() attr.Type {
+func (o logicalDevicePanelPortGroup) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"port_count": types.Int64Type,
+		"port_speed": types.StringType,
+		"port_roles": types.SetType{ElemType: types.StringType},
+	}
+}
+
+func (o logicalDevicePanelPortGroup) attrType() attr.Type {
 	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"port_count": types.Int64Type,
-			"port_speed": types.StringType,
-			"port_roles": types.SetType{ElemType: types.StringType}}}
+		AttrTypes: o.attrTypes(),
+	}
 }
 
 func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
@@ -268,16 +360,41 @@ type logicalDeviceData struct {
 	Panels types.List   `tfsdk:"panels"`
 }
 
-func (o logicalDeviceData) schema() schema.SingleNestedAttribute {
-	return schema.SingleNestedAttribute{
+func (o logicalDeviceData) schemaAsDataSource() dataSourceSchema.SingleNestedAttribute {
+	return dataSourceSchema.SingleNestedAttribute{
 		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 		Computed:            true,
-		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
+		Attributes: map[string]dataSourceSchema.Attribute{
+			"name": dataSourceSchema.StringAttribute{
 				MarkdownDescription: "Logical device display name.",
 				Computed:            true,
 			},
-			"panels": dPanelAttributeSchema(),
+			"panels": dataSourceSchema.ListNestedAttribute{
+				MarkdownDescription: "Details physical layout of interfaces on the device.",
+				Computed:            true,
+				NestedObject:        logicalDevicePanel{}.schemaAsDataSource(),
+			},
+		},
+	}
+}
+
+func (o logicalDeviceData) schemaAsResource() resourceSchema.SingleNestedAttribute {
+	return resourceSchema.SingleNestedAttribute{
+		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+		Computed:            true,
+		//PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+		Attributes: map[string]resourceSchema.Attribute{
+			"name": resourceSchema.StringAttribute{
+				MarkdownDescription: "Logical device display name.",
+				Computed:            true,
+				//PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			"panels": resourceSchema.ListNestedAttribute{
+				MarkdownDescription: "Details physical layout of interfaces on the device.",
+				Computed:            true,
+				NestedObject:        logicalDevicePanel{}.schemaAsResource(),
+				//PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
+			},
 		},
 	}
 }

@@ -59,7 +59,11 @@ func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaR
 				Computed:            true,
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"panels": dPanelAttributeSchema(),
+			"panels": schema.ListNestedAttribute{
+				MarkdownDescription: "Details physical layout of interfaces on the device.",
+				Computed:            true,
+				NestedObject:        logicalDevicePanel{}.schemaAsDataSource(),
+			},
 		},
 	}
 }

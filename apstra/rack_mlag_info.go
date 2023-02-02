@@ -3,9 +3,14 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -19,38 +24,83 @@ type mlagInfo struct {
 	L3PeerLinkPortChannelId types.Int64  `tfsdk:"l3_peer_link_port_channel_id"`
 }
 
-func (o mlagInfo) schema() schema.SingleNestedAttribute {
-	return schema.SingleNestedAttribute{
+func (o mlagInfo) schemaAsDataSource() dataSourceSchema.SingleNestedAttribute {
+	return dataSourceSchema.SingleNestedAttribute{
 		MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
 		Computed:            true,
-		Attributes: map[string]schema.Attribute{
-			"mlag_keepalive_vlan": schema.Int64Attribute{
+		Attributes: map[string]dataSourceSchema.Attribute{
+			"mlag_keepalive_vlan": dataSourceSchema.Int64Attribute{
 				MarkdownDescription: "MLAG keepalive VLAN ID.",
 				Computed:            true,
 			},
-			"peer_link_count": schema.Int64Attribute{
+			"peer_link_count": dataSourceSchema.Int64Attribute{
 				MarkdownDescription: "Number of links between MLAG devices.",
 				Computed:            true,
 			},
-			"peer_link_speed": schema.StringAttribute{
+			"peer_link_speed": dataSourceSchema.StringAttribute{
 				MarkdownDescription: "Speed of links between MLAG devices.",
 				Computed:            true,
 			},
-			"peer_link_port_channel_id": schema.Int64Attribute{
+			"peer_link_port_channel_id": dataSourceSchema.Int64Attribute{
 				MarkdownDescription: "Peer link port-channel ID.",
 				Computed:            true,
 			},
-			"l3_peer_link_count": schema.Int64Attribute{
+			"l3_peer_link_count": dataSourceSchema.Int64Attribute{
 				MarkdownDescription: "Number of L3 links between MLAG devices.",
 				Computed:            true,
 			},
-			"l3_peer_link_speed": schema.StringAttribute{
+			"l3_peer_link_speed": dataSourceSchema.StringAttribute{
 				MarkdownDescription: "Speed of l3 links between MLAG devices.",
 				Computed:            true,
 			},
-			"l3_peer_link_port_channel_id": schema.Int64Attribute{
+			"l3_peer_link_port_channel_id": dataSourceSchema.Int64Attribute{
 				MarkdownDescription: "L3 peer link port-channel ID.",
 				Computed:            true,
+			},
+		},
+	}
+}
+
+func (o mlagInfo) schemaAsResource() resourceSchema.SingleNestedAttribute {
+	return resourceSchema.SingleNestedAttribute{
+		MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
+			"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
+		Optional: true,
+		Attributes: map[string]resourceSchema.Attribute{
+			"mlag_keepalive_vlan": resourceSchema.Int64Attribute{
+				MarkdownDescription: "MLAG keepalive VLAN ID.",
+				Required:            true,
+				Validators:          []validator.Int64{int64validator.Between(vlanMin, vlanMax)},
+			},
+			"peer_link_count": resourceSchema.Int64Attribute{
+				MarkdownDescription: "Number of links between MLAG devices.",
+				Required:            true,
+				Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			},
+			"peer_link_speed": resourceSchema.StringAttribute{
+				MarkdownDescription: "Speed of links between MLAG devices.",
+				Required:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
+			"peer_link_port_channel_id": resourceSchema.Int64Attribute{
+				MarkdownDescription: "Port channel number used for L2 Peer Link. Omit to allow Apstra to choose.",
+				Optional:            true,
+				Validators:          []validator.Int64{int64validator.Between(poIdMin, poIdMax)},
+			},
+			"l3_peer_link_count": resourceSchema.Int64Attribute{
+				MarkdownDescription: "Number of L3 links between MLAG devices.",
+				Optional:            true,
+				Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			},
+			"l3_peer_link_speed": resourceSchema.StringAttribute{
+				MarkdownDescription: "Speed of l3 links between MLAG devices.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
+			"l3_peer_link_port_channel_id": resourceSchema.Int64Attribute{
+				MarkdownDescription: "Port channel number used for L3 Peer Link. Omit to allow Apstra to choose.",
+				Optional:            true,
+				Validators:          []validator.Int64{int64validator.Between(poIdMin, poIdMax)},
 			},
 		},
 	}

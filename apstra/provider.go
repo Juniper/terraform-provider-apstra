@@ -222,7 +222,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		//func() resource.Resource { return &resourceIp4PoolSubnet{} },
 		func() resource.Resource { return &resourceLogicalDevice{} },
 		//func() resource.Resource { return &resourceManagedDevice{} },
-		//func() resource.Resource { return &resourceRackType{} },
+		func() resource.Resource { return &resourceRackType{} },
 		////func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
 		////func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		////func() resource.Resource { return &resourceSourceTemplateRackBased{} },
