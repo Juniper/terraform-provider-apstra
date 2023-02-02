@@ -78,13 +78,13 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 					Attributes: dRackTypeAccessSwitch{}.schema(),
 				},
 			},
-			//"generic_systems": schema.SetNestedAttribute{
-			//	MarkdownDescription: "Details of Generic Systems in the Rack Type.",
-			//	Computed:            true,
-			//	NestedObject: schema.NestedAttributeObject{
-			//		Attributes: genericSystemAttributes(),
-			//	},
-			//},
+			"generic_systems": schema.SetNestedAttribute{
+				MarkdownDescription: "Details of Generic Systems in the Rack Type.",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: dRackTypeGenericSystem{}.schema(),
+				},
+			},
 		},
 	}
 }
@@ -188,7 +188,7 @@ type dRackType struct {
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
 	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
 	AccessSwitches           types.Set    `tfsdk:"access_switches"`
-	//GenericSystems           types.Set    `tfsdk:"generic_systems"` // todo re-enable this
+	GenericSystems           types.Set    `tfsdk:"generic_systems"`
 }
 
 func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
@@ -235,22 +235,21 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 		}
 	}
 
-	// todo re-enable this
-	//genericSystemSet := types.SetNull(dRackTypeGenericSystem{}.attrType())
-	//if len(in.Data.GenericSystems) > 0 {
-	//	genericSystems := make([]dRackTypeGenericSystem, len(in.Data.GenericSystems))
-	//	for i := range in.Data.GenericSystems {
-	//		genericSystems[i].loadApiResponse(&in.Data.GenericSystems[i])
-	//if diags.HasError() {
-	//	return
-	//}
-	//	}
-	//	genericSystemSet, d = types.SetValueFrom(ctx, dRackTypeGenericSystem{}.attrType(), genericSystems)
-	//	diags.Append(d...)
-	//if diags.HasError() {
-	//	return
-	//}
-	//}
+	genericSystemSet := types.SetNull(dRackTypeGenericSystem{}.attrType())
+	if len(in.Data.GenericSystems) > 0 {
+		genericSystems := make([]dRackTypeGenericSystem, len(in.Data.GenericSystems))
+		for i := range in.Data.GenericSystems {
+			genericSystems[i].loadApiResponse(ctx, &in.Data.GenericSystems[i], diags)
+			if diags.HasError() {
+				return
+			}
+		}
+		genericSystemSet, d = types.SetValueFrom(ctx, dRackTypeGenericSystem{}.attrType(), genericSystems)
+		diags.Append(d...)
+		if diags.HasError() {
+			return
+		}
+	}
 
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
@@ -258,50 +257,5 @@ func (o *dRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
 	o.LeafSwitches = leafSwitchSet
 	o.AccessSwitches = accessSwitchSet
-	//o.GenericSystems = genericSystemSet // todo re-enable this
+	o.GenericSystems = genericSystemSet
 }
-
-//
-//
-
-//type dRackTypeGenericSystem struct {
-//	Name             string            `tfsdk:"name"`
-//	Count            int64             `tfsdk:"count"`
-//	PortChannelIdMin int64             `tfsdk:"port_channel_id_min"`
-//	PortChannelIdMax int64             `tfsdk:"port_channel_id_max"`
-//	LogicalDevice    logicalDeviceData `tfsdk:"logical_device"`
-//	TagData          []tagData         `tfsdk:"tag_data"`
-//	Links            []dRackLink       `tfsdk:"links"`
-//}
-//
-//func (o dRackTypeGenericSystem) attrType() attr.Type {
-//	return types.ObjectType{
-//		AttrTypes: map[string]attr.Type{
-//			"name":                types.StringType,
-//			"count":               types.Int64Type,
-//			"port_channel_id_min": types.Int64Type,
-//			"port_channel_id_max": types.Int64Type,
-//			"logical_device":      logicalDeviceData{}.attrType(),
-//			"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-//			"links":               types.SetType{ElemType: dRackLink{}.attrType()}}}
-//}
-//
-//func (o *dRackTypeGenericSystem) loadApiResponse(in *goapstra.RackElementGenericSystem) {
-//	o.Name = in.Label
-//	o.Count = int64(in.Count)
-//	o.PortChannelIdMin = int64(in.PortChannelIdMin)
-//	o.PortChannelIdMax = int64(in.PortChannelIdMax)
-//	o.LogicalDevice.loadApiResponse(in.LogicalDevice)
-//	o.Links = make([]dRackLink, len(in.Links))
-//
-//	if len(in.Tags) > 0 {
-//		o.TagData = make([]tagData, len(in.Tags)) // populated below
-//		for i := range in.Tags {
-//			o.TagData[i].loadApiResponse(&in.Tags[i])
-//		}
-//	}
-//
-//	for i := range in.Links {
-//		o.Links[i].loadApiResponse(&in.Links[i])
-//	}
-//}
