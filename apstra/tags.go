@@ -20,28 +20,43 @@ import (
 //	}
 //}
 
-func tagsDataAttributeSchema() schema.SetNestedAttribute {
-	return schema.SetNestedAttribute{
-		MarkdownDescription: "Details any tags applied to the element.",
-		Computed:            true,
-		NestedObject: schema.NestedAttributeObject{
-			Attributes: map[string]schema.Attribute{
-				"name": schema.StringAttribute{
-					MarkdownDescription: "Tag name (label) field.",
-					Computed:            true,
-				},
-				"description": schema.StringAttribute{
-					MarkdownDescription: "Tag description field.",
-					Computed:            true,
-				},
-			},
-		},
-	}
-}
+//func tagsDataAttributeSchema() schema.SetNestedAttribute {
+//	return schema.SetNestedAttribute{
+//		MarkdownDescription: "Details any tags applied to the element.",
+//		Computed:            true,
+//		NestedObject: schema.NestedAttributeObject{
+//			Attributes: map[string]schema.Attribute{
+//				"name": schema.StringAttribute{
+//					MarkdownDescription: "Tag name (label) field.",
+//					Computed:            true,
+//				},
+//				"description": schema.StringAttribute{
+//					MarkdownDescription: "Tag description field.",
+//					Computed:            true,
+//				},
+//			},
+//		},
+//	}
+//}
 
 type tagData struct {
 	Name        string `tfsdk:"name"`
 	Description string `tfsdk:"description"`
+}
+
+func (o tagData) schema() schema.NestedAttributeObject {
+	return schema.NestedAttributeObject{
+		Attributes: map[string]schema.Attribute{
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Tag name (label) field.",
+				Computed:            true,
+			},
+			"description": schema.StringAttribute{
+				MarkdownDescription: "Tag description field.",
+				Computed:            true,
+			},
+		},
+	}
 }
 
 func (o tagData) attrTypes() map[string]attr.Type {
@@ -63,6 +78,10 @@ func (o *tagData) parseApi(in *goapstra.DesignTagData) {
 }
 
 func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Diagnostics) types.Set {
+	if len(in) == 0 {
+		return types.SetNull(tagData{}.attrType())
+	}
+
 	tags := make([]tagData, len(in))
 	for i, tag := range in {
 		tags[i] = tagData{

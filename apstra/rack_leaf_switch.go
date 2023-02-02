@@ -10,30 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func leafSwitchAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
-			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-			Computed:            true,
-		},
-		"spine_link_count": schema.Int64Attribute{
-			MarkdownDescription: "Number of links to each spine switch.",
-			Computed:            true,
-		},
-		"spine_link_speed": schema.StringAttribute{
-			MarkdownDescription: "Speed of links to spine switches.",
-			Computed:            true,
-		},
-		"redundancy_protocol": schema.StringAttribute{
-			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
-			Computed:            true,
-		},
-		"mlag_info":      mlagInfo{}.schema(),
-		"logical_device": logicalDeviceData{}.schema(),
-		"tag_data":       tagsDataAttributeSchema(),
-	}
-}
-
 func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	ls := rt.Data.LeafSwitches[i]
 	if ls.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag && ls.MlagInfo == nil {
@@ -56,6 +32,34 @@ type dRackTypeLeafSwitch struct {
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	TagData            types.Set    `tfsdk:"tag_data"`
+}
+
+func (o dRackTypeLeafSwitch) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			Computed:            true,
+		},
+		"spine_link_count": schema.Int64Attribute{
+			MarkdownDescription: "Number of links to each spine switch.",
+			Computed:            true,
+		},
+		"spine_link_speed": schema.StringAttribute{
+			MarkdownDescription: "Speed of links to spine switches.",
+			Computed:            true,
+		},
+		"redundancy_protocol": schema.StringAttribute{
+			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
+			Computed:            true,
+		},
+		"mlag_info":      mlagInfo{}.schema(),
+		"logical_device": logicalDeviceData{}.schema(),
+		"tag_data": schema.SetNestedAttribute{
+			NestedObject:        tagData{}.schema(),
+			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
+			Computed:            true,
+		},
+	}
 }
 
 func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
