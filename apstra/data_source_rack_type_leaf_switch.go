@@ -25,7 +25,7 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 }
 
 type dRackTypeLeafSwitch struct {
-	LogicalDevice      types.Object `tfsdk:"logical_device"`
+	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
@@ -107,7 +107,7 @@ func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		return
 	}
 
-	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
+	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}

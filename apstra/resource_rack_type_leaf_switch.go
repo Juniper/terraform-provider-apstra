@@ -18,8 +18,8 @@ import (
 )
 
 type rRackTypeLeafSwitch struct {
-	LogicalDevice   types.Object `tfsdk:"logical_device"`
-	LogicalDeviceId types.String `tfsdk:"logical_device_id"`
+	LogicalDeviceData types.Object `tfsdk:"logical_device"`
+	LogicalDeviceId   types.String `tfsdk:"logical_device_id"`
 	//MlagInfo           types.Object `tfsdk:"mlag_info""` // todo re-enable
 	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
@@ -273,7 +273,7 @@ func (o *rRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 	//	return
 	//}
 
-	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
+	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}

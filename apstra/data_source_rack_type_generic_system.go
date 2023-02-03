@@ -22,13 +22,13 @@ func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics
 }
 
 type dRackTypeGenericSystem struct {
-	Name             types.String `tfsdk:"name"`
-	Count            types.Int64  `tfsdk:"count"`
-	PortChannelIdMin types.Int64  `tfsdk:"port_channel_id_min"`
-	PortChannelIdMax types.Int64  `tfsdk:"port_channel_id_max"`
-	LogicalDevice    types.Object `tfsdk:"logical_device"`
-	TagData          types.Set    `tfsdk:"tag_data"`
-	Links            types.Set    `tfsdk:"links"`
+	Name              types.String `tfsdk:"name"`
+	Count             types.Int64  `tfsdk:"count"`
+	PortChannelIdMin  types.Int64  `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax  types.Int64  `tfsdk:"port_channel_id_max"`
+	LogicalDeviceData types.Object `tfsdk:"logical_device"`
+	TagData           types.Set    `tfsdk:"tag_data"`
+	Links             types.Set    `tfsdk:"links"`
 }
 
 func (o dRackTypeGenericSystem) schema() map[string]schema.Attribute {
@@ -88,7 +88,7 @@ func (o *dRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapst
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
 
-	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
+	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}

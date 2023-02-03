@@ -410,7 +410,7 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *goapstra
 		return
 	}
 
-	// prepare a slice of port names required by the goapstra.LogicalDevice []string{"1/1", "1/2", ...etc...}
+	// prepare a slice of port names required by the goapstra.LogicalDeviceData []string{"1/1", "1/2", ...etc...}
 	ldii := getLogicalDevicePortInfo(ld)
 	requiredPortNames := make([]string, len(ldii))
 	var i int

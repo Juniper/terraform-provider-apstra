@@ -31,7 +31,7 @@ type dRackTypeAccessSwitch struct {
 	Count              types.Int64  `tfsdk:"count"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
-	LogicalDevice      types.Object `tfsdk:"logical_device"`
+	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	TagData            types.Set    `tfsdk:"tag_data"`
 	Links              types.Set    `tfsdk:"links"`
 }
@@ -104,7 +104,7 @@ func (o *dRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstr
 		return
 	}
 
-	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
+	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}

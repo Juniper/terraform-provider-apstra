@@ -439,7 +439,7 @@ func (o *logicalDeviceData) loadApiResponse(ctx context.Context, in *goapstra.Lo
 	}
 }
 
-func newLogicalDeviceObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
+func newLogicalDeviceDataObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		return types.ObjectNull(logicalDevice{}.attrTypes())
 	}
