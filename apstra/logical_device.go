@@ -174,11 +174,6 @@ func (o logicalDevicePanel) attrTypes() map[string]attr.Type {
 func (o logicalDevicePanel) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: o.attrTypes(),
-		//AttrTypes: map[string]attr.Type{
-		//	"rows":        types.Int64Type,
-		//	"columns":     types.Int64Type,
-		//	"port_groups": types.ListType{ElemType: portGroup.attrType()},
-		//},
 	}
 }
 
