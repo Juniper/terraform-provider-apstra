@@ -75,3 +75,7 @@
 #output "r_apstra_interface_map" {
 #  value = apstra_interface_map.r
 #}
+
+output "r_rack_type" {
+  value = apstra_rack_type.r
+}

@@ -6,14 +6,14 @@
 #  name = "leaf b"
 #}
 
-resource "apstra_rack_type" "test" {
+resource "apstra_rack_type" "r" {
   name                       = "aaa terraform"
   description                = "For type 2 servers"
   fabric_connectivity_design = "l3clos"
   leaf_switches              = [
     {
       name                       = "leaf"
-      logical_device_id = "AOS-4x40_8x10-1"
+      logical_device_id = "slicer-7x10-1"
 #      tag_ids = ["hypervisor", "bare_metal"]
       spine_link_count = 1
       spine_link_speed = "10G"

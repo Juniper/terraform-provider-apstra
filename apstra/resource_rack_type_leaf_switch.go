@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
@@ -44,7 +46,7 @@ func (o rRackTypeLeafSwitch) schema() map[string]schema.Attribute {
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 			Optional:            true,
 			Computed:            true,
-			//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()}, // todo: restore this
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 		},
 		"spine_link_speed": schema.StringAttribute{
 			MarkdownDescription: "Speed of spine-facing links, something like '10G'",

@@ -9,6 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 )
@@ -121,33 +127,34 @@ func (o logicalDevicePanel) schemaAsResource() resourceSchema.NestedAttributeObj
 			"rows": resourceSchema.Int64Attribute{
 				MarkdownDescription: "Physical vertical dimension of the panel.",
 				Computed:            true,
-				//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 			},
 			"columns": resourceSchema.Int64Attribute{
 				MarkdownDescription: "Physical horizontal dimension of the panel.",
 				Computed:            true,
-				//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 			},
 			"port_groups": resourceSchema.ListNestedAttribute{
 				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
 				Computed:            true,
+				PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 				NestedObject: resourceSchema.NestedAttributeObject{
 					Attributes: map[string]resourceSchema.Attribute{
 						"port_count": resourceSchema.Int64Attribute{
 							MarkdownDescription: "Number of ports in the group.",
 							Computed:            true,
-							//PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+							PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 						},
 						"port_speed": resourceSchema.StringAttribute{
 							MarkdownDescription: "Port speed.",
 							Computed:            true,
-							//PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+							PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 						},
 						"port_roles": resourceSchema.SetAttribute{
 							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
 							Computed:            true,
 							ElementType:         types.StringType,
-							//PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+							PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 						},
 					},
 				},
@@ -382,18 +389,18 @@ func (o logicalDeviceData) schemaAsResource() resourceSchema.SingleNestedAttribu
 	return resourceSchema.SingleNestedAttribute{
 		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 		Computed:            true,
-		//PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+		PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 		Attributes: map[string]resourceSchema.Attribute{
 			"name": resourceSchema.StringAttribute{
 				MarkdownDescription: "Logical device display name.",
 				Computed:            true,
-				//PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"panels": resourceSchema.ListNestedAttribute{
 				MarkdownDescription: "Details physical layout of interfaces on the device.",
 				Computed:            true,
 				NestedObject:        logicalDevicePanel{}.schemaAsResource(),
-				//PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
