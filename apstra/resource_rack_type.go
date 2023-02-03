@@ -106,8 +106,7 @@ func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.Vali
 	}
 
 	var config rRackType
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -157,7 +156,7 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// parse the API response into a state object
-	state := &rRackType{}
+	state := rRackType{}
 	state.loadApiResponse(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -167,7 +166,7 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // todo: errpath with AtListIndex() are probably mostly wrong
