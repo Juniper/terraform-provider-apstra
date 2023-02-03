@@ -420,22 +420,10 @@ func (o logicalDeviceData) attrType() attr.Type {
 }
 
 func (o *logicalDeviceData) loadApiResponse(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
-	panels := make([]logicalDevicePanel, len(in.Panels))
-	for i, panel := range in.Panels {
-		panels[i].loadApiResponse(ctx, &panel, diags)
-		if diags.HasError() {
-			return
-		}
-	}
-
 	o.Name = types.StringValue(in.DisplayName)
-
-	if len(panels) > 0 {
-		var d diag.Diagnostics
-		o.Panels, d = types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), panels)
-		diags.Append(d...)
-	} else {
-		o.Panels = types.ListNull(logicalDevicePanel{}.attrType())
+	o.Panels = newLogicalDevicePanelList(ctx, in.Panels, diags)
+	if diags.HasError() {
+		return
 	}
 }
 
@@ -456,5 +444,58 @@ func newLogicalDeviceDataObject(ctx context.Context, in *goapstra.LogicalDeviceD
 		return types.ObjectNull(logicalDevice{}.attrTypes())
 	}
 
+	return result
+}
+
+func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
+	if len(in) == 0 {
+		return types.ListNull(logicalDevicePanel{}.attrType())
+	}
+
+	panels := make([]logicalDevicePanel, len(in))
+	for i, panel := range in {
+		panels[i] = logicalDevicePanel{
+			Rows:       types.Int64Value(int64(panel.PanelLayout.RowCount)),
+			Columns:    types.Int64Value(int64(panel.PanelLayout.ColumnCount)),
+			PortGroups: newLogicalDevicePortGroupList(ctx, panel.PortGroups, diags),
+		}
+		if diags.HasError() {
+			return types.ListNull(logicalDevicePanel{}.attrType())
+		}
+	}
+
+	result, d := types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), &panels)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ListNull(logicalDevicePanel{}.attrType())
+	}
+
+	return result
+}
+
+func newLogicalDevicePortGroupList(ctx context.Context, in []goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) types.List {
+	if len(in) == 0 {
+		return types.ListNull(logicalDevicePanelPortGroup{}.attrType())
+	}
+
+	portGroups := make([]logicalDevicePanelPortGroup, len(in))
+	for i, portGroup := range in {
+		portRoles, d := types.SetValueFrom(ctx, types.StringType, portGroup.Roles.Strings())
+		diags.Append(d...)
+		if diags.HasError() {
+			return types.ListNull(logicalDevicePanelPortGroup{}.attrType())
+		}
+		portGroups[i] = logicalDevicePanelPortGroup{
+			PortCount: types.Int64Value(int64(portGroup.Count)),
+			PortSpeed: types.StringValue(string(portGroup.Speed)),
+			PortRoles: portRoles,
+		}
+	}
+
+	result, d := types.ListValueFrom(ctx, logicalDevicePanelPortGroup{}.attrType(), portGroups)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ListNull(logicalDevicePanelPortGroup{}.attrType())
+	}
 	return result
 }

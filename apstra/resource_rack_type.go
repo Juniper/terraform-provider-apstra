@@ -526,11 +526,10 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	//var leafSwitchSet, accessSwitchSet, genericSystemSet types.Set
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	if len(leafSwitches) > 0 {
-		leafSwitchSet, d = types.SetValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), leafSwitches)
-		diags.Append(d...)
-	} else {
-		leafSwitchSet = types.SetNull(rRackTypeLeafSwitch{}.attrType())
+	leafSwitchSet, d = types.SetValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), leafSwitches)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
 	}
 
 	//// transform the native go objects (with copied object IDs) back to TF set
