@@ -183,16 +183,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	return
-
-	//stateDump, err := state.LeafSwitches.ToTerraformValue(ctx)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error dumping state", err.Error())
-	//	return
-	//}
-	//resp.Diagnostics.AddWarning("Read() state", stateDump.String())
-
 	// fetch the rack type detail from the API
 	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
@@ -220,13 +210,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// copy nested object IDs (those not available from the API) from the previous state into the new state
 	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
-
-	//newStateDump, err := newState.LeafSwitches.ToTerraformValue(ctx)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error dumping state", err.Error())
-	//	return
-	//}
-	//resp.Diagnostics.AddWarning("Read() new state", newStateDump.String())
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -259,13 +242,6 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	//planDump, err := plan.LeafSwitches.ToTerraformValue(ctx)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error dumping plan", err.Error())
-	//	return
-	//}
-	//resp.Diagnostics.AddWarning("Update() plan", planDump.String())
 
 	// create a RackTypeRequest
 	rtRequest := plan.request(ctx, &resp.Diagnostics)
