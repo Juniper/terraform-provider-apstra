@@ -4,12 +4,8 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfile{}
@@ -41,47 +37,12 @@ func (o *dataSourceAgentProfile) Configure(_ context.Context, req datasource.Con
 func (o *dataSourceAgentProfile) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "ID of the Agent Profile. Required when `name` is omitted.",
-				Optional:            true,
-				Computed:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Name of the Agent Profile. Required when `id` is omitted.",
-				Optional:            true,
-				Computed:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"platform": schema.StringAttribute{
-				MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
-				Computed:            true,
-			},
-			"has_username": schema.BoolAttribute{
-				MarkdownDescription: "Indicates whether a username has been configured.",
-				Computed:            true,
-			},
-			"has_password": schema.BoolAttribute{
-				MarkdownDescription: "Indicates whether a password has been configured.",
-				Computed:            true,
-			},
-			"packages": schema.MapAttribute{
-				MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
-				Computed:            true,
-				ElementType:         types.StringType,
-			},
-			"open_options": schema.MapAttribute{
-				MarkdownDescription: "Configured parameters for offbox agents",
-				Computed:            true,
-				ElementType:         types.StringType,
-			},
-		},
+		Attributes:          agentProfile{}.datasourceSchema(),
 	}
 }
 
 func (o *dataSourceAgentProfile) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config dAgentProfile
+	var config agentProfile
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -101,19 +62,19 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	var config dAgentProfile
+	var config agentProfile
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var err error
-	var agentProfile *goapstra.AgentProfile
+	var ap *goapstra.AgentProfile
 	switch {
 	case !config.Name.IsNull():
-		agentProfile, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
+		ap, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
 	case !config.Id.IsNull():
-		agentProfile, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		ap, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.ValueString()))
 	default:
 		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
 
@@ -125,61 +86,12 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	state := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	var state agentProfile
+	state.loadApiResponse(ctx, ap, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-type dAgentProfile struct {
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Platform    types.String `tfsdk:"platform"`
-	HasUsername types.Bool   `tfsdk:"has_username"`
-	HasPassword types.Bool   `tfsdk:"has_password"`
-	Packages    types.Map    `tfsdk:"packages"`
-	OpenOptions types.Map    `tfsdk:"open_options"`
-}
-
-func (o *dAgentProfile) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AgentProfileConfig {
-	var platform string
-	if o.Platform.IsNull() || o.Platform.IsUnknown() {
-		platform = ""
-	} else {
-		platform = o.Platform.ValueString()
-	}
-
-	packages := make(goapstra.AgentPackages)
-	diags.Append(o.Packages.ElementsAs(ctx, &packages, false)...)
-	if diags.HasError() {
-		return nil
-	}
-
-	options := make(map[string]string)
-	diags.Append(o.Packages.ElementsAs(ctx, &options, false)...)
-	if diags.HasError() {
-		return nil
-	}
-
-	return &goapstra.AgentProfileConfig{
-		Label:       o.Name.ValueString(),
-		Platform:    platform,
-		Packages:    packages,
-		OpenOptions: options,
-	}
-}
-
-func parseAgentProfile(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) *dAgentProfile {
-	return &dAgentProfile{
-		Id:          types.StringValue(string(in.Id)),
-		Name:        types.StringValue(in.Label),
-		Platform:    stringValueOrNull(ctx, in.Platform, diags),
-		HasUsername: types.BoolValue(in.HasUsername),
-		HasPassword: types.BoolValue(in.HasPassword),
-		Packages:    mapValueOrNull(ctx, types.StringType, in.Packages, diags),
-		OpenOptions: mapValueOrNull(ctx, types.StringType, in.OpenOptions, diags),
-	}
 }
