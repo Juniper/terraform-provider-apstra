@@ -74,8 +74,7 @@ func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaReque
 
 func (o *dataSourceConfiglet) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config dConfiglet
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

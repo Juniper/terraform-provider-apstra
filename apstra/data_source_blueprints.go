@@ -72,8 +72,7 @@ func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasourc
 	}
 
 	var config dBlueprintIds
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -104,8 +103,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	var config dBlueprintIds
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -152,11 +150,11 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, &dBlueprintIds{
+	state := dBlueprintIds{
 		RefDesign: config.RefDesign,
 		Ids:       idSet,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type dBlueprintIds struct {

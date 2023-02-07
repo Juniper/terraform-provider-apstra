@@ -133,8 +133,7 @@ func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRe
 
 func (o *dataSourceInterfaceMap) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config dInterfaceMap
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
