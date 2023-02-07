@@ -43,16 +43,16 @@ func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaReque
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific configlet.\n\n" +
 			"At least one optional attribute is required. " +
-			"It is incumbent on the user to ensure the criteria matches exactly one tag. " +
-			"Matching zero tags or more than one tag will produce an error.",
+			"It is incumbent on the user to ensure the criteria matches exactly one configlet. " +
+			"Matching zero configlet or more than one configlet will produce an error.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Configlet id. Required when the tag name is omitted.",
+				MarkdownDescription: "Configlet id. Required when the configlet name is omitted.",
 				Optional:            true,
 				Computed:            true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Configlet display name. Required when tag id is omitted.",
+				MarkdownDescription: "Configlet display name. Required when configlet id is omitted.",
 				Optional:            true,
 				Computed:            true,
 			},
