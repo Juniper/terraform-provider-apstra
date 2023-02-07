@@ -172,16 +172,6 @@ func (o *dAgentProfile) request(ctx context.Context, diags *diag.Diagnostics) *g
 	}
 }
 
-func platformToTFString(platform string) types.String {
-	var result types.String
-	if platform == "" {
-		result = types.StringNull()
-	} else {
-		result = types.StringValue(platform)
-	}
-	return result
-}
-
 func parseAgentProfile(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) *dAgentProfile {
 	var d diag.Diagnostics
 	var openOptions, packages types.Map
@@ -209,7 +199,7 @@ func parseAgentProfile(ctx context.Context, in *goapstra.AgentProfile, diags *di
 	return &dAgentProfile{
 		Id:          types.StringValue(string(in.Id)),
 		Name:        types.StringValue(in.Label),
-		Platform:    platformToTFString(in.Platform),
+		Platform:    stringValueOrNull(ctx, in.Platform, diags),
 		HasUsername: types.BoolValue(in.HasUsername),
 		HasPassword: types.BoolValue(in.HasPassword),
 		Packages:    packages,
