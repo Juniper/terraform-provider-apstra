@@ -114,8 +114,7 @@ func (o *dataSourceIp4Pool) Schema(_ context.Context, _ datasource.SchemaRequest
 
 func (o *dataSourceIp4Pool) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config dIp4Pool
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -135,8 +134,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	var config dIp4Pool
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -166,8 +164,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type dIp4Pool struct {

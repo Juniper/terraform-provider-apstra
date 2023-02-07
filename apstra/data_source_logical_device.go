@@ -70,8 +70,7 @@ func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaR
 
 func (o *dataSourceLogicalDevice) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config logicalDevice
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -89,8 +88,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	var config logicalDevice
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -117,8 +115,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // read-only schema for logical device panels is a stand-alone function because

@@ -82,8 +82,7 @@ func (o *dataSourceAgentProfile) Schema(_ context.Context, _ datasource.SchemaRe
 
 func (o *dataSourceAgentProfile) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config dAgentProfile
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -103,8 +102,7 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var config dAgentProfile
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -133,8 +131,7 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	// set state
-	diags = resp.State.Set(ctx, state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type dAgentProfile struct {
