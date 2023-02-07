@@ -22,6 +22,10 @@
 #  value = data.apstra_datacenter_blueprint.d
 #}
 
+#output "d_apstra_configlet" {
+#  value = data.apstra_configlet.d
+#}
+
 #output "d_apstra_ip4_pool" {
 #  value = data.apstra_ip4_pool.d
 #}
@@ -76,6 +80,6 @@
 #  value = apstra_interface_map.r
 #}
 
-output "r_rack_type" {
-  value = apstra_rack_type.r
-}
+#output "r_rack_type" {
+#  value = apstra_rack_type.r
+#}
