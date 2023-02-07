@@ -238,3 +238,26 @@ func sliceWithoutInt(in []int, t int) ([]int, int) {
 	}
 	return result[:resultIdx], len(in) - resultIdx
 }
+
+// stringValueOrNull returns a types.String based on the supplied string. If the
+// supplied string is empty, the returned types.String will be flagged as null.
+func stringValueOrNull(_ context.Context, in string, diags *diag.Diagnostics) types.String {
+	var result types.String
+	if in == "" {
+		result = types.StringNull()
+	} else {
+		result = types.StringValue(in)
+	}
+	return result
+}
+
+// mapValueOrNull
+func mapValueOrNull[T any](ctx context.Context, elementType attr.Type, elements map[string]T, diags *diag.Diagnostics) types.Map {
+	if len(elements) == 0 {
+		return types.MapNull(elementType)
+	} else {
+		result, d := types.MapValueFrom(ctx, elementType, elements)
+		diags.Append(d...)
+		return result
+	}
+}
