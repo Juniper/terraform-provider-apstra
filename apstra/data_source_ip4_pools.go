@@ -5,8 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -35,17 +34,17 @@ func (o *dataSourceIp4Pools) Configure(_ context.Context, req datasource.Configu
 	}
 }
 
-func (o *dataSourceIp4Pools) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceIp4Pools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns the IDs all IPv4 resource pools",
-		Attributes: map[string]tfsdk.Attribute{
-			"ids": {
+		Attributes: map[string]schema.Attribute{
+			"ids": schema.SetAttribute{
 				MarkdownDescription: "Pool IDs of all IPv4 resource pools.",
 				Computed:            true,
-				Type:                types.SetType{ElemType: types.StringType},
+				ElementType:         types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceIp4Pools) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -54,16 +53,7 @@ func (o *dataSourceIp4Pools) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	var config struct {
-		Ids []types.String `tfsdk:"ids"`
-	}
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	poolIds, err := o.client.ListIp4PoolIds(ctx)
+	ids, err := o.client.ListIp4PoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error retrieving IPv4 pool IDs",
@@ -72,13 +62,19 @@ func (o *dataSourceIp4Pools) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// map response body to resource schema
-	config.Ids = make([]types.String, len(poolIds))
-	for i, id := range poolIds {
-		config.Ids[i] = types.StringValue(string(id))
+	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Set state
-	diags = resp.State.Set(ctx, &config)
+	// create new state object
+	var state struct {
+		Ids types.Set `tfsdk:"ids"`
+	}
+	state.Ids = idSet
+
+	// set state
+	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }

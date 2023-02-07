@@ -4,25 +4,26 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	_ "github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprint{}
-var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprint{}
+var _ datasource.DataSourceWithConfigure = &dataSourceTwoStageL3ClosBlueprint{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceTwoStageL3ClosBlueprint{}
 
-type dataSourceBlueprint struct {
+type dataSourceTwoStageL3ClosBlueprint struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceBlueprint) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceTwoStageL3ClosBlueprint) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint"
 }
 
-func (o *dataSourceBlueprint) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceTwoStageL3ClosBlueprint) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -37,67 +38,59 @@ func (o *dataSourceBlueprint) Configure(_ context.Context, req datasource.Config
 	}
 }
 
-func (o *dataSourceBlueprint) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceTwoStageL3ClosBlueprint) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides high-level details of a single Datacenter Blueprint. It is " +
 			"incumbent upon the user to set enough optional criteria to match exactly one Blueprint. Matching zero " +
 			"Blueprints or more than one Blueprint will produce an error.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "ID of the Blueprint: Either as a result of a lookup, or user-specified.",
 				Computed:            true,
 				Optional:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the Blueprint: Either as a result of a lookup, or user-specified.",
 				Computed:            true,
 				Optional:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"status": {
+			"status": schema.StringAttribute{
 				MarkdownDescription: "Deployment status of the blueprint",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"superspine_count": {
+			"superspine_count": schema.Int64Attribute{
 				MarkdownDescription: "For 5-stage topologies, the count of superspine devices",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"spine_count": {
+			"spine_count": schema.Int64Attribute{
 				MarkdownDescription: "The count of spine devices in the topology.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"leaf_switch_count": {
+			"leaf_switch_count": schema.Int64Attribute{
 				MarkdownDescription: "The count of leaf switches in the topology.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"access_switch_count": {
+			"access_switch_count": schema.Int64Attribute{
 				MarkdownDescription: "The count of access switches in the topology.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"generic_system_count": {
+			"generic_system_count": schema.Int64Attribute{
 				MarkdownDescription: "The count of generic systems in the topology.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
-			"external_router_count": {
+			"external_router_count": schema.Int64Attribute{
 				MarkdownDescription: "The count of external routers attached to the topology.",
 				Computed:            true,
-				Type:                types.Int64Type,
 			},
 		},
-	}, nil
+	}
 }
 
-func (o *dataSourceBlueprint) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+func (o *dataSourceTwoStageL3ClosBlueprint) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config dBlueprint
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -110,15 +103,14 @@ func (o *dataSourceBlueprint) ValidateConfig(ctx context.Context, req datasource
 	}
 }
 
-func (o *dataSourceBlueprint) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceTwoStageL3ClosBlueprint) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
 
 	var config dBlueprint
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -143,19 +135,15 @@ func (o *dataSourceBlueprint) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	// Set state
-	diags = resp.State.Set(ctx, &dBlueprint{
-		Id:              types.StringValue(string(status.Id)),
-		Name:            types.StringValue(status.Label),
-		Status:          types.StringValue(status.Status),
-		SuperspineCount: types.Int64Value(int64(status.SuperspineCount)),
-		SpineCount:      types.Int64Value(int64(status.SpineCount)),
-		LeafCount:       types.Int64Value(int64(status.LeafCount)),
-		AccessCount:     types.Int64Value(int64(status.AccessCount)),
-		GenericCount:    types.Int64Value(int64(status.GenericCount)),
-		ExternalCount:   types.Int64Value(int64(status.ExternalRouterCount)),
-	})
-	resp.Diagnostics.Append(diags...)
+	// create new state object
+	var state dBlueprint
+	state.loadApiResponse(ctx, status, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type dBlueprint struct {
@@ -168,4 +156,16 @@ type dBlueprint struct {
 	AccessCount     types.Int64  `tfsdk:"access_switch_count"`
 	GenericCount    types.Int64  `tfsdk:"generic_system_count"`
 	ExternalCount   types.Int64  `tfsdk:"external_router_count"`
+}
+
+func (o *dBlueprint) loadApiResponse(ctx context.Context, in *goapstra.BlueprintStatus, diags *diag.Diagnostics) {
+	o.Id = types.StringValue(in.Id.String())
+	o.Name = types.StringValue(in.Label)
+	o.Status = types.StringValue(in.Status)
+	o.SuperspineCount = types.Int64Value(int64(in.SuperspineCount))
+	o.SpineCount = types.Int64Value(int64(in.SpineCount))
+	o.LeafCount = types.Int64Value(int64(in.LeafCount))
+	o.AccessCount = types.Int64Value(int64(in.AccessCount))
+	o.GenericCount = types.Int64Value(int64(in.GenericCount))
+	o.ExternalCount = types.Int64Value(int64(in.ExternalRouterCount))
 }

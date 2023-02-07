@@ -1,0 +1,218 @@
+package apstra
+
+import (
+	"bitbucket.org/apstrktr/goapstra"
+	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+type rRackTypeAccessSwitch struct {
+	Name               types.String `tfsdk:"name"`
+	Count              types.Int64  `tfsdk:"count"`
+	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
+	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
+	LogicalDevice      types.Object `tfsdk:"logical_device"`
+	Links              types.Set    `tfsdk:"links"`
+	TagIds             types.Set    `tfsdk:"tag_ids"`
+	TagData            types.Set    `tfsdk:"tag_data"`
+	EsiLagInfo         types.Object `tfsdk:"esi_lag_info""`
+}
+
+func (o rRackTypeAccessSwitch) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"count": schema.Int64Attribute{
+			MarkdownDescription: "Number of Access Switches of this type.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"redundancy_protocol": schema.StringAttribute{
+			MarkdownDescription: "Indicates whether the switch is a redundant pair.",
+			Computed:            true,
+			//PlanModifiers:       []planmodifier.String{stringUseStateForUnknownNull()},
+		},
+		"logical_device_id": schema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		//"logical_device": logicalDeviceDataAttributeSchema(),
+		//"links":          rRackLinkAttributeSchema(),
+		//"tag_ids":        tagIdsAttributeSchema(),
+		//"tag_data":       tagsDataAttributeSchema(),
+		//"esi_lag_info": {
+		//	MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
+		//	Optional:            true,
+		//	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+		//		"l3_peer_link_count": {
+		//			MarkdownDescription: "Number of L3 links between ESI-LAG devices.",
+		//			Required:            true,
+		//			Type:                types.Int64Type,
+		//			Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
+		//		},
+		//		"l3_peer_link_speed": {
+		//			MarkdownDescription: "Speed of l3 links between ESI-LAG devices.",
+		//			Required:            true,
+		//			Type:                types.StringType,
+		//		},
+		//	}),
+		//},
+	}
+}
+
+func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"redundancy_protocol": types.StringType,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"links":               types.SetType{ElemType: dRackLink{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"esi_lag_info":        esiLagInfo{}.attrType()}
+}
+
+func (o rRackTypeAccessSwitch) attrType() attr.Type {
+	return types.ObjectType{AttrTypes: o.attrTypes()}
+}
+
+func (o *rRackTypeAccessSwitch) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
+	arp := goapstra.AccessRedundancyProtocolNone
+	if !o.RedundancyProtocol.IsNull() {
+		err := arp.FromString(o.RedundancyProtocol.ValueString())
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing redundancy protocol", err.Error())
+		}
+	}
+
+	//if len(o.TagIds) != 0 {
+	//	diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
+	//}
+
+	//for i, link := range o.Links {
+	//	link.validateConfigForAccessSwitch(ctx, arp, rack, path.AtListIndex(i), diags) // todo: Need AtSetValue() here
+	//}
+}
+
+func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		return
+	}
+	o.LogicalDeviceId = src.LogicalDeviceId
+	o.TagIds = src.TagIds
+
+	for i, link := range o.Links {
+		srcLink := src.linkByName(link.Name)
+		if srcLink == nil {
+			continue
+		}
+		o.Links[i].copyWriteOnlyElements(srcLink, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+}
+
+func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
+	redundancyProtocol := goapstra.AccessRedundancyProtocolNone
+	if o.RedundancyProtocol != nil {
+		err := redundancyProtocol.FromString(*o.RedundancyProtocol)
+		if err != nil {
+			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"),
+				"error parsing redundancy_protocol", err.Error())
+			return nil
+		}
+	}
+
+	lacpActive := goapstra.RackLinkLagModeActive.String()
+
+	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
+	for i, link := range o.Links {
+		link.LagMode = &lacpActive
+
+		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkReq := link.request(ctx, path.AtSetValue(setVal), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *linkReq
+	}
+
+	var tagIds []goapstra.ObjectId
+	if o.TagIds != nil {
+		tagIds = make([]goapstra.ObjectId, len(o.TagIds))
+		for i, tagId := range o.TagIds {
+			tagIds[i] = goapstra.ObjectId(tagId)
+		}
+	}
+
+	var esiLagInfo *goapstra.EsiLagInfo
+	if o.EsiLagInfo != nil {
+		esiLagInfo.AccessAccessLinkCount = int(o.EsiLagInfo.L3PeerLinkCount)
+		esiLagInfo.AccessAccessLinkSpeed = goapstra.LogicalDevicePortSpeed(o.EsiLagInfo.L3PeerLinkSpeed)
+	}
+
+	return &goapstra.RackElementAccessSwitchRequest{
+		InstanceCount:      int(o.Count),
+		RedundancyProtocol: redundancyProtocol,
+		Links:              linkRequests,
+		Label:              o.Name,
+		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId),
+		Tags:               tagIds,
+		EsiLagInfo:         esiLagInfo,
+	}
+}
+
+func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+	o.Name = in.Label
+	o.Count = int64(in.InstanceCount)
+	if in.RedundancyProtocol != goapstra.AccessRedundancyProtocolNone {
+		redundancyProtocol := in.RedundancyProtocol.String()
+		o.RedundancyProtocol = &redundancyProtocol
+	}
+	if in.EsiLagInfo != nil {
+		o.EsiLagInfo = &esiLagInfo{}
+		o.EsiLagInfo.parseApi(in.EsiLagInfo)
+	}
+	o.LogicalDevice.parseApi(in.LogicalDevice)
+
+	if len(in.Tags) > 0 {
+		o.TagData = make([]tagData, len(in.Tags)) // populated below
+		for i := range in.Tags {
+			o.TagData[i].parseApi(&in.Tags[i])
+		}
+	}
+
+	o.Links = make([]dRackLink, len(in.Links))
+	for i := range in.Links {
+		o.Links[i].parseApi(&in.Links[i])
+	}
+}
+
+func (o *rRackTypeAccessSwitch) linkByName(desired string) *dRackLink {
+	for _, link := range o.Links {
+		if link.Name == desired {
+			return &link
+		}
+	}
+	return nil
+}

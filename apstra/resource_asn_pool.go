@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,23 +37,21 @@ func (o *resourceAsnPool) Configure(_ context.Context, req resource.ConfigureReq
 	}
 }
 
-func (o *resourceAsnPool) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *resourceAsnPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an ASN resource pool",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "Apstra ID number of the resource pool",
-				Type:                types.StringType,
 				Computed:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Pool name displayed in the Apstra web UI",
-				Type:                types.StringType,
 				Required:            true,
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -63,8 +62,7 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 
 	// Retrieve values from plan
 	var plan rAsnPool
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -78,11 +76,14 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	diags = resp.State.Set(ctx, &rAsnPool{
+	// create state object
+	state := rAsnPool{
 		Id:   types.StringValue(string(id)),
 		Name: plan.Name,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -96,8 +97,7 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 
 	// Get current state
 	var state rAsnPool
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -116,12 +116,20 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	// Set state
-	diags = resp.State.Set(ctx, &rAsnPool{
-		Id:   types.StringValue(string(pool.Id)),
-		Name: types.StringValue(pool.DisplayName),
-	})
-	resp.Diagnostics.Append(diags...)
+	var dPool dAsnPool
+	dPool.loadApiResponse(ctx, pool, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create state object
+	newState := rAsnPool{
+		Id:   dPool.Id,
+		Name: dPool.Name,
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Update resource
@@ -133,16 +141,14 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Get plan values
 	var plan rAsnPool
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get current state
 	var state rAsnPool
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -164,11 +170,13 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Generate API request body from plan
+	// Generate API request body from plan (only the DisplayName can be changed here)
 	send := &goapstra.AsnPoolRequest{
 		DisplayName: plan.Name.ValueString(),
 		Ranges:      make([]goapstra.IntfIntRange, len(currentPool.Ranges)),
 	}
+
+	// ranges are independent resources, so whatever was found via GET must be re-applied here.
 	for i, r := range currentPool.Ranges {
 		send.Ranges[i] = r
 	}
@@ -180,12 +188,14 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Set new state
-	diags = resp.State.Set(ctx, &rAsnPool{
+	// create new state object
+	newState := rAsnPool{
 		Id:   state.Id,
 		Name: plan.Name,
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 // Delete resource
@@ -196,8 +206,7 @@ func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	var state rAsnPool
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}

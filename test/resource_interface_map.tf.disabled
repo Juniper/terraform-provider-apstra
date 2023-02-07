@@ -1,0 +1,40 @@
+locals {
+  if_map = [
+    { // map ld 1/1 - 1/2 to et-0/0/48 - et-0/0/49
+      ld_prefix      = "1/"
+      ld_first_port  = 1
+      phy_prefix     = "et-0/0/"
+      phy_first_port = 48
+      count          = 2
+    },
+    { // map ld 1/3 - 1/4 to et-0/0/50 - et-0/0/50
+      ld_prefix      = "1/"
+      ld_first_port  = 3
+      phy_prefix     = "et-0/0/"
+      phy_first_port = 52
+      count          = 2
+    },
+    { // map ld 2/1 - 2/8 to xe-0/0/0 - xe-0/0/7
+      ld_prefix      = "2/"
+      ld_first_port  = 1
+      phy_prefix     = "xe-0/0/"
+      phy_first_port = 8
+      count          = 8
+    },
+  ]
+  interfaces = flatten([
+    for map in local.if_map : [
+      for i in range(map.count) : {
+        logical_device_port     = format("%s%d", map.ld_prefix, map.ld_first_port + i)
+        physical_interface_name = format("%s%d", map.phy_prefix, map.phy_first_port + i)
+      }
+    ]
+  ])
+}
+
+resource "apstra_interface_map" "r" {
+  name              = "t"
+  logical_device_id = "AOS-4x40_8x10-1"
+  device_profile_id = "Juniper_QFX5120-48T_Junos"
+  interfaces        = local.interfaces
+}

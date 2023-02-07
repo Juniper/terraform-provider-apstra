@@ -5,11 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -39,104 +41,94 @@ func (o *dataSourceInterfaceMap) Configure(_ context.Context, req datasource.Con
 	}
 }
 
-func (o *dataSourceInterfaceMap) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Interface Map.\n\n" +
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one Interface Map. " +
 			"Matching zero Interface Maps or more than one Interface Map will produce an error.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "Interface Map ID.  Required when the Interface Map name is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Interface Map name displayed in the Apstra web UI.  Required when Interface Map ID is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"logical_device_id": {
+			"logical_device_id": schema.StringAttribute{
 				MarkdownDescription: "ID of Logical Device referenced by this interface map.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"device_profile_id": {
+			"device_profile_id": schema.StringAttribute{
 				MarkdownDescription: "ID of Device Profile referenced by this interface map.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"interfaces": {
+			"interfaces": schema.SetNestedAttribute{
 				MarkdownDescription: "Detailed mapping of each physical interface to its role in the logical device",
 				Computed:            true,
-				Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-					"name": {
-						MarkdownDescription: "Physical device interface name",
-						Type:                types.StringType,
-						Computed:            true,
-					},
-					"roles": {
-						MarkdownDescription: "Logical Device role (\"connected to\") of the interface.",
-						Type:                types.SetType{ElemType: types.StringType},
-						Computed:            true,
-					},
-					"position": {
-						MarkdownDescription: "todo - need to find out what this is", // todo
-						Type:                types.Int64Type,
-						Computed:            true,
-					},
-					"active": {
-						MarkdownDescription: "Indicates whether the interface is used by the Interface Map",
-						Type:                types.BoolType,
-						Computed:            true,
-					},
-					"speed": {
-						MarkdownDescription: "Interface speed",
-						Type:                types.StringType,
-						Computed:            true,
-					},
-					"mapping": {
-						MarkdownDescription: "Mapping info for each physical interface",
-						Computed:            true,
-						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-							"device_profile_port_id": {
-								MarkdownDescription: "Port number(ID) from the Device Profile.",
-								Type:                types.Int64Type,
-								Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							MarkdownDescription: "Physical device interface name",
+							Computed:            true,
+						},
+						"roles": schema.SetAttribute{
+							MarkdownDescription: "Logical Device role (\"connected to\") of the interface.",
+							Computed:            true,
+							ElementType:         types.StringType,
+						},
+						"position": schema.Int64Attribute{
+							MarkdownDescription: "todo - need to find out what this is", // todo
+							Computed:            true,
+						},
+						"active": schema.BoolAttribute{
+							MarkdownDescription: "Indicates whether the interface is used by the Interface Map",
+							Computed:            true,
+						},
+						"speed": schema.StringAttribute{
+							MarkdownDescription: "Interface speed",
+							Computed:            true,
+						},
+						"mapping": schema.SingleNestedAttribute{
+							MarkdownDescription: "Mapping info for each physical interface",
+							Computed:            true,
+							Attributes: map[string]schema.Attribute{
+								"device_profile_port_id": schema.Int64Attribute{
+									MarkdownDescription: "Port number(ID) from the Device Profile.",
+									Computed:            true,
+								},
+								"device_profile_transformation_id": schema.Int64Attribute{
+									MarkdownDescription: "Port-specific transform ID from the Device Profile.",
+									Computed:            true,
+								},
+								"device_profile_interface_id": schema.Int64Attribute{
+									MarkdownDescription: "Port-specific interface ID from the device profile (used to identify interfaces in breakout scenarios.)",
+									Computed:            true,
+								},
+								"logical_device_panel": schema.Int64Attribute{
+									MarkdownDescription: "Panel number (first panel is 1) of the Logical Device port which corresponds to this interface.",
+									Computed:            true,
+								},
+								"logical_device_panel_port": schema.Int64Attribute{
+									MarkdownDescription: "Port number (first port is 1) of the Logical Device port which corresponds to this interface.",
+									Computed:            true,
+								},
 							},
-							"device_profile_transformation_id": {
-								MarkdownDescription: "Port-specific transform ID from the Device Profile.",
-								Type:                types.Int64Type,
-								Computed:            true,
-							},
-							"device_profile_interface_id": {
-								MarkdownDescription: "Port-specific interface ID from the device profile (used to identify interfaces in breakout scenarios.)",
-								Type:                types.Int64Type,
-								Computed:            true,
-							},
-							"logical_device_panel": {
-								MarkdownDescription: "Panel number (first panel is 1) of the Logical Device port which corresponds to this interface.",
-								Type:                types.Int64Type,
-								Computed:            true,
-							},
-							"logical_device_panel_port": {
-								MarkdownDescription: "Port number (first port is 1) of the Logical Device port which corresponds to this interface.",
-								Type:                types.Int64Type,
-								Computed:            true,
-							},
-						}),
+						},
+						"setting": schema.StringAttribute{
+							MarkdownDescription: "Vendor specific commands needed to configure the interface, from the device profile.",
+							Computed:            true,
+						},
 					},
-					"setting": {
-						MarkdownDescription: "Vendor specific commands needed to configure the interface, from the device profile.",
-						Type:                types.StringType,
-						Computed:            true,
-					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceInterfaceMap) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
@@ -160,8 +152,7 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var config dInterfaceMap
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -199,15 +190,15 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	newState := &dInterfaceMap{}
-	newState.parseApi(ctx, interfaceMap, &resp.Diagnostics)
+	// create new state object
+	newState := dInterfaceMap{}
+	newState.loadApiResponse(ctx, interfaceMap, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	//Set state
-	diags = resp.State.Set(ctx, newState)
-	resp.Diagnostics.Append(diags...)
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 type dInterfaceMap struct {
@@ -218,7 +209,7 @@ type dInterfaceMap struct {
 	Interfaces    types.Set    `tfsdk:"interfaces"`
 }
 
-func (o *dInterfaceMap) parseApi(ctx context.Context, in *goapstra.InterfaceMap, diags *diag.Diagnostics) {
+func (o *dInterfaceMap) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMap, diags *diag.Diagnostics) {
 	var d diag.Diagnostics
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.Label)
@@ -227,20 +218,20 @@ func (o *dInterfaceMap) parseApi(ctx context.Context, in *goapstra.InterfaceMap,
 
 	interfaces := make([]dInterfaceMapInterface, len(in.Data.Interfaces))
 	for i := range in.Data.Interfaces {
-		interfaces[i].parseApi(&in.Data.Interfaces[i])
+		interfaces[i].loadApiResponse(ctx, &in.Data.Interfaces[i], diags)
 	}
 	o.Interfaces, d = types.SetValueFrom(ctx, dInterfaceMapInterface{}.attrType(), interfaces)
 	diags.Append(d...)
 }
 
 type dInterfaceMapInterface struct {
-	Name     string              `tfsdk:"name"`
-	Roles    []string            `tfsdk:"roles"`
+	Name     types.String        `tfsdk:"name"`
+	Roles    types.Set           `tfsdk:"roles"`
 	Mapping  interfaceMapMapping `tfsdk:"mapping"`
-	Active   bool                `tfsdk:"active"`
-	Position int                 `tfsdk:"position"`
-	Speed    string              `tfsdk:"speed"`
-	Setting  string              `tfsdk:"setting"`
+	Active   types.Bool          `tfsdk:"active"`
+	Position types.Int64         `tfsdk:"position"`
+	Speed    types.String        `tfsdk:"speed"`
+	Setting  types.String        `tfsdk:"setting"`
 }
 
 func (o dInterfaceMapInterface) attrType() attr.Type {
@@ -256,22 +247,28 @@ func (o dInterfaceMapInterface) attrType() attr.Type {
 		}}
 }
 
-func (o *dInterfaceMapInterface) parseApi(in *goapstra.InterfaceMapInterface) {
-	o.Name = in.Name
-	o.Roles = in.Roles.Strings()
-	o.Mapping.parseApi(&in.Mapping)
-	o.Active = bool(in.ActiveState)
-	o.Position = in.Position
-	o.Speed = string(in.Speed)
-	o.Setting = in.Setting.Param
+func (o *dInterfaceMapInterface) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
+	roles, d := types.SetValueFrom(ctx, types.StringType, in.Roles.Strings())
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	o.Name = types.StringValue(in.Name)
+	o.Roles = roles
+	o.Mapping.loadApiResponse(&in.Mapping)
+	o.Active = types.BoolValue(bool(in.ActiveState))
+	o.Position = types.Int64Value(int64(in.Position))
+	o.Speed = types.StringValue(string(in.Speed))
+	o.Setting = types.StringValue(in.Setting.Param)
 }
 
 type interfaceMapMapping struct {
-	DPPort      int64 `tfsdk:"device_profile_port_id"`
-	DPTransform int64 `tfsdk:"device_profile_transformation_id"`
-	DPInterface int64 `tfsdk:"device_profile_interface_id"`
-	LDPanel     int64 `tfsdk:"logical_device_panel"`
-	LDPort      int64 `tfsdk:"logical_device_panel_port"`
+	DPPort      types.Int64 `tfsdk:"device_profile_port_id"`
+	DPTransform types.Int64 `tfsdk:"device_profile_transformation_id"`
+	DPInterface types.Int64 `tfsdk:"device_profile_interface_id"`
+	LDPanel     types.Int64 `tfsdk:"logical_device_panel"`
+	LDPort      types.Int64 `tfsdk:"logical_device_panel_port"`
 }
 
 func (o interfaceMapMapping) attrTypes() map[string]attr.Type {
@@ -289,10 +286,18 @@ func (o interfaceMapMapping) attrType() attr.Type {
 		AttrTypes: o.attrTypes()}
 }
 
-func (o *interfaceMapMapping) parseApi(in *goapstra.InterfaceMapMapping) {
-	o.DPPort = int64(in.DPPortId)
-	o.DPTransform = int64(in.DPTransformId)
-	o.DPInterface = int64(in.DPInterfaceId)
-	o.LDPanel = int64(in.LDPanel)
-	o.LDPort = int64(in.LDPort)
+func (o *interfaceMapMapping) loadApiResponse(in *goapstra.InterfaceMapMapping) {
+	o.DPPort = types.Int64Value(int64(in.DPPortId))
+	o.DPTransform = types.Int64Value(int64(in.DPTransformId))
+	o.DPInterface = types.Int64Value(int64(in.DPInterfaceId))
+	o.LDPanel = types.Int64Value(int64(in.LDPanel))
+	o.LDPort = types.Int64Value(int64(in.LDPort))
+
+	if o.LDPanel.ValueInt64() == -1 {
+		o.LDPanel = types.Int64Null()
+	}
+
+	if o.LDPort.ValueInt64() == -1 {
+		o.LDPort = types.Int64Null()
+	}
 }

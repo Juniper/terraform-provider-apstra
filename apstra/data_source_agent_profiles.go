@@ -5,8 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -35,31 +34,22 @@ func (o *dataSourceAgentProfiles) Configure(_ context.Context, req datasource.Co
 	}
 }
 
-func (o *dataSourceAgentProfiles) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource returns the ID numbers of each Agent Profile.",
-		Attributes: map[string]tfsdk.Attribute{
-			"ids": {
+		Attributes: map[string]schema.Attribute{
+			"ids": schema.SetAttribute{
 				Computed:            true,
-				Type:                types.SetType{ElemType: types.StringType},
 				MarkdownDescription: "A set of Apstra ID numbers of each Agent Profile.",
+				ElementType:         types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
-	var config struct {
-		Ids []types.String `tfsdk:"ids"`
-	}
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -72,13 +62,19 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	// map response body to resource schema
-	config.Ids = make([]types.String, len(ids))
-	for i, Id := range ids {
-		config.Ids[i] = types.StringValue(string(Id))
+	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Set state
-	diags = resp.State.Set(ctx, &config)
+	// create new state object
+	var state struct {
+		Ids types.Set `tfsdk:"ids"`
+	}
+	state.Ids = idSet
+
+	// set state
+	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }

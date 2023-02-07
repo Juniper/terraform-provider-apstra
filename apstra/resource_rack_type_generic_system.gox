@@ -1,0 +1,202 @@
+package apstra
+
+import (
+	"bitbucket.org/apstrktr/goapstra"
+	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+type rRackTypeGenericSystem struct {
+	Name             types.String      `tfsdk:"name"`
+	Count            types.Int64       `tfsdk:"count"`
+	PortChannelIdMin types.Int64       `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64       `tfsdk:"port_channel_id_max"`
+	LogicalDeviceId  types.String      `tfsdk:"logical_device_id"`
+	LogicalDevice    logicalDeviceData `tfsdk:"logical_device"`
+	Links            types.Set         `tfsdk:"links"`
+	TagIds           types.Set         `tfsdk:"tag_ids"`
+	TagData          types.Set         `tfsdk:"tag_data"`
+}
+
+func (o rRackTypeGenericSystem) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Generic name, must be unique within the rack-type.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"count": schema.Int64Attribute{
+			MarkdownDescription: "Number of Generic Systems of this type.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"port_channel_id_min": schema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Optional:            true,
+			Computed:            true,
+			Validators:          []validator.Int64{int64validator.Between(poIdMin, poIdMax)},
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"port_channel_id_max": schema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Optional:            true,
+			Computed:            true,
+			Validators:          []validator.Int64{int64validator.Between(poIdMin, poIdMax)},
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"logical_device_id": schema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
+			Required:            true,
+		},
+		//"logical_device": logicalDeviceDataAttributeSchema(),
+		//"links":          rRackLinkAttributeSchema(),
+		//"tag_ids":        tagIdsAttributeSchema(),
+		//"tag_data":       tagsDataAttributeSchema(),
+	}
+}
+
+func (o rRackTypeGenericSystem) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":                types.StringType,
+		"count":               types.Int64Type,
+		"port_channel_id_min": types.Int64Type,
+		"port_channel_id_max": types.Int64Type,
+		"logical_device_id":   types.StringType,
+		"logical_device":      logicalDeviceData{}.attrType(),
+		"links":               types.SetType{ElemType: dRackLink{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+	}
+}
+
+func (o rRackTypeGenericSystem) attrType() attr.Type {
+	return types.ObjectType{AttrTypes: o.attrTypes()}
+}
+
+func (o *rRackTypeGenericSystem) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
+	if !o.PortChannelIdMin.IsNull() && o.PortChannelIdMax.IsNull() {
+		diags.AddAttributeError(path, errInvalidConfig, "'port_channel_id_min' requires 'port_channel_id_max'")
+	}
+	if !o.PortChannelIdMax.IsNull() && o.PortChannelIdMin.IsNull() {
+		diags.AddAttributeError(path, errInvalidConfig, "'port_channel_id_max' requires 'port_channel_id_min'")
+	}
+
+	if !o.PortChannelIdMin.IsNull() && !o.PortChannelIdMax.IsNull() && o.PortChannelIdMin.ValueInt64() > o.PortChannelIdMax.ValueInt64() {
+		diags.AddAttributeError(path, errInvalidConfig, "port_channel_id_min > port_channel_id_max")
+	}
+
+	//if len(o.TagIds) != 0 {
+	//	diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
+	//}
+	//
+	//for i, link := range o.Links {
+	//	link.validateConfigForGenericSystem(ctx, rack, path.AtListIndex(i), diags) // todo need AtSetValue() here
+	//}
+}
+
+func (o *rRackTypeGenericSystem) copyWriteOnlyElements(src *rRackTypeGenericSystem, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "rRackTypeGenericSystem.copyWriteOnlyElements: attempt to copy from nil source")
+		return
+	}
+	o.LogicalDeviceId = src.LogicalDeviceId
+	o.TagIds = src.TagIds
+
+	for i, link := range o.Links {
+		srcLink := src.linkByName(link.Name)
+		if srcLink == nil {
+			continue
+		}
+		o.Links[i].copyWriteOnlyElements(srcLink, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+}
+
+func (o *rRackTypeGenericSystem) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementGenericSystemRequest {
+	var poIdMinVal, poIdMaxVal int
+	if o.PortChannelIdMin != nil {
+		poIdMinVal = int(*o.PortChannelIdMin)
+	}
+	if o.PortChannelIdMax != nil {
+		poIdMaxVal = int(*o.PortChannelIdMax)
+	}
+
+	linkRequests := make([]goapstra.RackLinkRequest, len(o.Links))
+	for i, link := range o.Links {
+		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkReq := link.request(ctx, path.AtSetValue(setVal), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *linkReq
+	}
+
+	var tagIds []goapstra.ObjectId
+	if o.TagIds != nil {
+		tagIds = make([]goapstra.ObjectId, len(o.TagIds))
+		for i, tagId := range o.TagIds {
+			tagIds[i] = goapstra.ObjectId(tagId)
+		}
+	}
+
+	return &goapstra.RackElementGenericSystemRequest{
+		Count:            int(o.Count),
+		AsnDomain:        goapstra.FeatureSwitchDisabled,
+		ManagementLevel:  goapstra.GenericSystemUnmanaged,
+		PortChannelIdMin: poIdMinVal,
+		PortChannelIdMax: poIdMaxVal,
+		Loopback:         goapstra.FeatureSwitchDisabled,
+		Tags:             tagIds,
+		Label:            o.Name,
+		Links:            linkRequests,
+		LogicalDeviceId:  goapstra.ObjectId(o.LogicalDeviceId),
+	}
+}
+
+func (o *rRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+	o.Name = in.Label
+	o.Count = int64(in.Count)
+	portChannelIdMin := int64(in.PortChannelIdMin)
+	portChannelIdMax := int64(in.PortChannelIdMax)
+	o.PortChannelIdMin = &portChannelIdMin
+	o.PortChannelIdMax = &portChannelIdMax
+	o.LogicalDevice.parseApi(in.LogicalDevice)
+	o.Links = make([]dRackLink, len(in.Links))
+
+	if len(in.Tags) > 0 {
+		o.TagData = make([]tagData, len(in.Tags)) // populated below
+		for i := range in.Tags {
+			o.TagData[i].parseApi(&in.Tags[i])
+		}
+	}
+
+	for i := range in.Links {
+		o.Links[i].parseApi(&in.Links[i])
+	}
+}
+
+func (o *rRackTypeGenericSystem) linkByName(desired string) *dRackLink {
+	for _, link := range o.Links {
+		if link.Name == desired {
+			return &link
+		}
+	}
+	return nil
+}

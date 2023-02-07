@@ -1,7 +1,3 @@
-#data "apstra_rack_type" "test" {
-#  id = "L3_collapsed_acs"
-#}
-#
-#output "rack" {
-#  value = data.apstra_rack_type.test
+#data "apstra_rack_type" "d" {
+#  id = "L2_ESI_Access_dual"
 #}

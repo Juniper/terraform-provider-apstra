@@ -1,0 +1,85 @@
+#output "d_apstra_agent_profile" {
+#  value = data.apstra_agent_profile.d
+#}
+
+#output "d_apstra_agent_profiles" {
+#  value = data.apstra_agent_profiles.d
+#}
+
+#output "d_apstra_asn_pool" {
+#  value = data.apstra_asn_pool.d
+#}
+
+#output "d_apstra_asn_pools" {
+#  value = data.apstra_asn_pools.d
+#}
+
+#output "d_apstra_blueprints" {
+#  value = data.apstra_blueprints.d
+#}
+
+#output "d_apstra_datacenter_blueprint" {
+#  value = data.apstra_datacenter_blueprint.d
+#}
+
+#output "d_apstra_configlet" {
+#  value = data.apstra_configlet.d
+#}
+
+#output "d_apstra_ip4_pool" {
+#  value = data.apstra_ip4_pool.d
+#}
+
+#output "d_apstra_ip4_pools" {
+#  value = data.apstra_ip4_pools.d
+#}
+
+#output "d_apstra_logical_device" {
+#  value = data.apstra_logical_device.d
+#}
+
+#output "d_apstra_datacenter_blueprint" {
+#  value = data.apstra_datacenter_blueprint.d
+#}
+
+#output "d_apstra_interface_map" {
+#  value = data.apstra_interface_map.d
+#}
+
+#output "d_apstra_tag" {
+#  value = data.apstra_tag.d
+#}
+
+#output "d_apstra_rack_type" {
+#  value = data.apstra_rack_type.d
+#}
+
+################################################################################
+
+#output "r_apstra_agent_profile" {
+#  value = apstra_agent_profile.r
+#}
+
+#output "r_apstra_asn_pool" {
+#  value = apstra_asn_pool.r
+#}
+
+#output "r_apstra_asn_pool_range" {
+#  value = apstra_asn_pool_range.r
+#}
+
+#output "r_apstra_logical_device" {
+#  value = apstra_logical_device.r
+#}
+
+#output "r_apstra_tag" {
+#  value = apstra_tag.r
+#}
+
+#output "r_apstra_interface_map" {
+#  value = apstra_interface_map.r
+#}
+
+#output "r_rack_type" {
+#  value = apstra_rack_type.r
+#}

@@ -4,9 +4,11 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,49 +38,46 @@ func (o *dataSourceAgentProfile) Configure(_ context.Context, req datasource.Con
 	}
 }
 
-func (o *dataSourceAgentProfile) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceAgentProfile) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "ID of the Agent Profile. Required when `name` is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Name of the Agent Profile. Required when `id` is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"platform": {
+			"platform": schema.StringAttribute{
 				MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
-			"has_username": {
+			"has_username": schema.BoolAttribute{
 				MarkdownDescription: "Indicates whether a username has been configured.",
 				Computed:            true,
-				Type:                types.BoolType,
 			},
-			"has_password": {
+			"has_password": schema.BoolAttribute{
 				MarkdownDescription: "Indicates whether a password has been configured.",
 				Computed:            true,
-				Type:                types.BoolType,
 			},
-			"packages": {
+			"packages": schema.MapAttribute{
 				MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
 				Computed:            true,
-				Type:                types.MapType{ElemType: types.StringType},
+				ElementType:         types.StringType,
 			},
-			"open_options": {
+			"open_options": schema.MapAttribute{
 				MarkdownDescription: "Configured parameters for offbox agents",
 				Computed:            true,
-				Type:                types.MapType{ElemType: types.StringType},
+				ElementType:         types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceAgentProfile) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
@@ -128,16 +127,13 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	// Set state
-	diags = resp.State.Set(ctx, &dAgentProfile{
-		Id:          types.StringValue(string(agentProfile.Id)),
-		Name:        types.StringValue(agentProfile.Label),
-		Platform:    platformToTFString(agentProfile.Platform),
-		HasUsername: types.BoolValue(agentProfile.HasUsername),
-		HasPassword: types.BoolValue(agentProfile.HasPassword),
-		Packages:    mapStringStringToTypesMap(agentProfile.Packages),
-		OpenOptions: mapStringStringToTypesMap(agentProfile.OpenOptions),
-	})
+	state := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set state
+	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 }
 
@@ -151,18 +147,31 @@ type dAgentProfile struct {
 	OpenOptions types.Map    `tfsdk:"open_options"`
 }
 
-func (o *dAgentProfile) AgentProfileConfig() *goapstra.AgentProfileConfig {
+func (o *dAgentProfile) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AgentProfileConfig {
 	var platform string
 	if o.Platform.IsNull() || o.Platform.IsUnknown() {
 		platform = ""
 	} else {
 		platform = o.Platform.ValueString()
 	}
+
+	packages := make(goapstra.AgentPackages)
+	diags.Append(o.Packages.ElementsAs(ctx, &packages, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	options := make(map[string]string)
+	diags.Append(o.Packages.ElementsAs(ctx, &options, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
 	return &goapstra.AgentProfileConfig{
 		Label:       o.Name.ValueString(),
 		Platform:    platform,
-		Packages:    typesMapToMapStringString(o.Packages),
-		OpenOptions: typesMapToMapStringString(o.OpenOptions),
+		Packages:    packages,
+		OpenOptions: options,
 	}
 }
 
@@ -174,4 +183,39 @@ func platformToTFString(platform string) types.String {
 		result = types.StringValue(platform)
 	}
 	return result
+}
+
+func parseAgentProfile(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) *dAgentProfile {
+	var d diag.Diagnostics
+	var openOptions, packages types.Map
+
+	if len(in.OpenOptions) == 0 {
+		openOptions = types.MapNull(types.StringType)
+	} else {
+		openOptions, d = types.MapValueFrom(ctx, types.StringType, in.OpenOptions)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
+	if len(in.Packages) == 0 {
+		packages = types.MapNull(types.StringType)
+	} else {
+		packages, d = types.MapValueFrom(ctx, types.StringType, in.Packages)
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
+	return &dAgentProfile{
+		Id:          types.StringValue(string(in.Id)),
+		Name:        types.StringValue(in.Label),
+		Platform:    platformToTFString(in.Platform),
+		HasUsername: types.BoolValue(in.HasUsername),
+		HasPassword: types.BoolValue(in.HasPassword),
+		Packages:    packages,
+		OpenOptions: openOptions,
+	}
 }

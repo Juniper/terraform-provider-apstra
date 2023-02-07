@@ -8,11 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strconv"
 )
 
 const (
@@ -20,18 +19,18 @@ const (
 	twoStageL3ClosRefDesignUiName = "datacenter"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIds{}
-var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprintIds{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprints{}
 
-type dataSourceBlueprintIds struct {
+type dataSourceBlueprints struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceBlueprintIds) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_blueprint_ids"
+func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprints"
 }
 
-func (o *dataSourceBlueprintIds) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprints) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -46,29 +45,28 @@ func (o *dataSourceBlueprintIds) Configure(_ context.Context, req datasource.Con
 	}
 }
 
-func (o *dataSourceBlueprintIds) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns a list of blueprint IDs configured on Apstra.",
-		Attributes: map[string]tfsdk.Attribute{
-			"ids": {
+		Attributes: map[string]schema.Attribute{
+			"ids": schema.SetAttribute{
 				MarkdownDescription: "ID of the desired ASN Resource Pool.",
 				Computed:            true,
-				Type:                types.ListType{ElemType: types.StringType},
+				ElementType:         types.StringType,
 			},
-			"reference_design": {
-				MarkdownDescription: "Optional filter for bluepirnts of the specified reference design.",
+			"reference_design": schema.StringAttribute{
+				MarkdownDescription: "Optional filter for blueprints of the specified reference design.",
 				Optional:            true,
-				Type:                types.StringType,
-				Validators: []tfsdk.AttributeValidator{stringvalidator.OneOf(
+				Validators: []validator.String{stringvalidator.OneOf(
 					twoStageL3ClosRefDesignUiName,
 					goapstra.RefDesignFreeform.String(),
 				)},
 			},
 		},
-	}, nil
+	}
 }
 
-func (o *dataSourceBlueprintIds) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	if o.client == nil {
 		return
 	}
@@ -99,7 +97,7 @@ func (o *dataSourceBlueprintIds) ValidateConfig(ctx context.Context, req datasou
 	}
 }
 
-func (o *dataSourceBlueprintIds) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
@@ -120,7 +118,6 @@ func (o *dataSourceBlueprintIds) Read(ctx context.Context, req datasource.ReadRe
 			resp.Diagnostics.AddError("error listing blueprint IDs", err.Error())
 			return
 		}
-		resp.Diagnostics.AddWarning("got some blueprints", strconv.Itoa(len(objectIds)))
 	} else {
 		var refDesign string
 		// substitute UI name for API name
@@ -147,21 +144,22 @@ func (o *dataSourceBlueprintIds) Read(ctx context.Context, req datasource.ReadRe
 	for i, id := range objectIds {
 		ids[i] = types.StringValue(string(id))
 	}
-	idList, diags := types.ListValueFrom(ctx, types.StringType, &ids)
+
+	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &dBlueprintIds{
 		RefDesign: config.RefDesign,
-		Ids:       idList,
+		Ids:       idSet,
 	})
 	resp.Diagnostics.Append(diags...)
 }
 
 type dBlueprintIds struct {
-	Ids       types.List   `tfsdk:"ids"`
+	Ids       types.Set    `tfsdk:"ids"`
 	RefDesign types.String `tfsdk:"reference_design"`
 }

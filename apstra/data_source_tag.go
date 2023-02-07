@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -38,38 +39,36 @@ func (o *dataSourceTag) Configure(_ context.Context, req datasource.ConfigureReq
 	}
 }
 
-func (o *dataSourceTag) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *dataSourceTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific tag.\n\n" +
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one tag. " +
 			"Matching zero tags or more than one tag will produce an error.",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "Tag id. Required when the tag name is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Tag name. Required when tag id is omitted.",
 				Optional:            true,
 				Computed:            true,
-				Type:                types.StringType,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"description": {
+			"description": schema.StringAttribute{
 				MarkdownDescription: "The description of the returned tag.",
 				Computed:            true,
-				Type:                types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *dataSourceTag) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	var config dTag
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -87,8 +86,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	var config dTag
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -121,13 +119,15 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
-	// Set state
-	diags = resp.State.Set(ctx, &dTag{
+	// create new state object
+	state := dTag{
 		Id:          types.StringValue(string(tag.Id)),
 		Name:        types.StringValue(tag.Data.Label),
 		Description: types.StringValue(tag.Data.Description),
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 type dTag struct {

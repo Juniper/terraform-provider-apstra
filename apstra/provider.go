@@ -6,10 +6,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"log"
 	"net/http"
@@ -28,7 +27,7 @@ const (
 	envApstraUrl      = "APSTRA_URL"
 )
 
-var _ provider.ProviderWithMetadata = &Provider{}
+var _ provider.Provider = &Provider{}
 
 // Provider fulfils the provider.Provider interface
 type Provider struct {
@@ -50,24 +49,22 @@ func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp 
 	resp.Version = p.Version + "_" + p.Commit
 }
 
-func (p *Provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"url": {
-				Type:     types.StringType,
+func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"url": schema.StringAttribute{
 				Optional: true,
 				MarkdownDescription: "URL of the apstra server, e.g. `http://<user>:<password>@apstra.juniper.net:443/`\n" +
 					"If username or password are omitted from URL string, environment variables `" + envApstraUsername +
 					"` and `" + envApstraPassword + "` will be used.  If `url` is omitted, environment variable " +
 					envApstraUrl + " will be used.",
 			},
-			"tls_validation_disabled": {
-				Type:                types.BoolType,
+			"tls_validation_disabled": schema.BoolAttribute{
 				Optional:            true,
 				MarkdownDescription: "Set 'true' to disable TLS certificate validation.",
 			},
 		},
-	}, diag.Diagnostics{}
+	}
 }
 
 // Provider configuration struct. Matches GetSchema() output.
@@ -156,7 +153,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	clientCfg.HttpClient = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: config.TlsNoVerify.Value,
+				InsecureSkipVerify: config.TlsNoVerify.ValueBool(),
 			}}}
 
 	// TLS key log
@@ -199,15 +196,17 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceAgentProfiles{} },
 		func() datasource.DataSource { return &dataSourceAsnPool{} },
 		func() datasource.DataSource { return &dataSourceAsnPools{} },
-		func() datasource.DataSource { return &dataSourceBlueprintIds{} },
+		func() datasource.DataSource { return &dataSourceBlueprints{} },
+		func() datasource.DataSource { return &dataSourceConfiglet{} },
 		func() datasource.DataSource { return &dataSourceInterfaceMap{} },
-		func() datasource.DataSource { return &dataSourceIp4Pools{} },
 		func() datasource.DataSource { return &dataSourceIp4Pool{} },
+		func() datasource.DataSource { return &dataSourceIp4Pools{} },
 		func() datasource.DataSource { return &dataSourceLogicalDevice{} },
 		func() datasource.DataSource { return &dataSourceRackType{} },
-		func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
-		//func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
-		//func() datasource.DataSource { return &dataSourceTemplateRackBased{}},
+		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
+		////func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
+		////func() datasource.DataSource { return &dataSourceTemplateRackBased{}},
+		func() datasource.DataSource { return &dataSourceTwoStageL3ClosBlueprint{} },
 		func() datasource.DataSource { return &dataSourceTag{} },
 	}
 }
@@ -218,17 +217,17 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceAgentProfile{} },
 		func() resource.Resource { return &resourceAsnPool{} },
 		func() resource.Resource { return &resourceAsnPoolRange{} },
-		func() resource.Resource { return &resourceBlueprint{} },
+		//func() resource.Resource { return &resourceBlueprint{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },
-		func() resource.Resource { return &resourceIp4Pool{} },
-		func() resource.Resource { return &resourceIp4PoolSubnet{} },
+		//func() resource.Resource { return &resourceIp4Pool{} },
+		//func() resource.Resource { return &resourceIp4PoolSubnet{} },
 		func() resource.Resource { return &resourceLogicalDevice{} },
-		func() resource.Resource { return &resourceManagedDevice{} },
+		//func() resource.Resource { return &resourceManagedDevice{} },
 		func() resource.Resource { return &resourceRackType{} },
-		//func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
-		//func() resource.Resource { return &resourceSourceTemplatePodBased{} },
-		//func() resource.Resource { return &resourceSourceTemplateRackBased{} },
+		////func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
+		////func() resource.Resource { return &resourceSourceTemplatePodBased{} },
+		////func() resource.Resource { return &resourceSourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceTag{} },
-		//func() resource.Resource { return &resourceWireframe{} },
+		////func() resource.Resource { return &resourceWireframe{} },
 	}
 }

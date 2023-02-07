@@ -9,13 +9,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var _ resource.ResourceWithConfigure = &resourceLogicalDevice{}
+var _ resource.ResourceWithValidateConfig = &resourceLogicalDevice{}
 
 type resourceLogicalDevice struct {
 	client *goapstra.Client
@@ -40,67 +44,97 @@ func (o *resourceLogicalDevice) Configure(_ context.Context, req resource.Config
 	}
 }
 
-func (o *resourceLogicalDevice) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	var allRoleFlagsSet goapstra.LogicalDevicePortRoleFlags
+	allRoleFlagsSet.SetAll()
+
+	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IPv4 resource pool",
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				MarkdownDescription: "Apstra ID number of the resource pool",
-				Type:                types.StringType,
 				Computed:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				MarkdownDescription: "Pool name displayed in the Apstra web UI",
-				Type:                types.StringType,
 				Required:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"panels": {
+			"panels": schema.ListNestedAttribute{
 				MarkdownDescription: "Details physical layout of interfaces on the device.",
 				Required:            true,
-				PlanModifiers:       tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
-				Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-					"rows": {
-						MarkdownDescription: "Physical vertical dimension of the panel.",
-						Required:            true,
-						Type:                types.Int64Type,
-						Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
-					},
-					"columns": {
-						MarkdownDescription: "Physical horizontal dimension of the panel.",
-						Required:            true,
-						Type:                types.Int64Type,
-						Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
-					},
-					"port_groups": {
-						MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-						Required:            true,
-						Validators:          []tfsdk.AttributeValidator{listvalidator.SizeAtLeast(1)},
-						Attributes: tfsdk.ListNestedAttributes(map[string]tfsdk.Attribute{
-							"port_count": {
-								MarkdownDescription: "Number of ports in the group.",
-								Required:            true,
-								Type:                types.Int64Type,
-								Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
+				Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"rows": schema.Int64Attribute{
+							MarkdownDescription: "Physical vertical dimension of the panel.",
+							Required:            true,
+							Validators:          []validator.Int64{int64validator.AtLeast(1)},
+						},
+						"columns": schema.Int64Attribute{
+							MarkdownDescription: "Physical horizontal dimension of the panel.",
+							Required:            true,
+							Validators:          []validator.Int64{int64validator.AtLeast(1)},
+						},
+						"port_groups": schema.ListNestedAttribute{
+							Required:            true,
+							MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+							Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"port_count": schema.Int64Attribute{
+										Required:            true,
+										MarkdownDescription: "Number of ports in the group.",
+										Validators:          []validator.Int64{int64validator.AtLeast(1)},
+									},
+									"port_speed": schema.StringAttribute{
+										Required:            true,
+										MarkdownDescription: "Port speed.",
+										Validators: []validator.String{
+											stringvalidator.LengthAtLeast(2),
+										},
+									},
+									"port_roles": schema.SetAttribute{
+										ElementType:         types.StringType,
+										Required:            true,
+										MarkdownDescription: fmt.Sprintf("One or more of: '%s'", strings.Join(allRoleFlagsSet.Strings(), "', '")),
+										Validators: []validator.Set{
+											setvalidator.SizeAtLeast(1),
+											setvalidator.ValueStringsAre(stringvalidator.OneOf(allRoleFlagsSet.Strings()...)),
+										},
+									},
+								},
 							},
-							"port_speed": {
-								MarkdownDescription: "Port speed.",
-								Required:            true,
-								Type:                types.StringType,
-								Validators:          []tfsdk.AttributeValidator{stringvalidator.LengthAtLeast(2)}, // todo: regex validator?
-							},
-							"port_roles": {
-								MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-								Required:            true,
-								Type:                types.SetType{ElemType: types.StringType},
-								Validators:          []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)}, // todo: validate the strings as well?
-							},
-						}),
+						},
 					},
-				}),
+				},
 			},
 		},
-	}, nil
+	}
+}
+
+func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config logicalDevice
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// extract []logicalDevicePanel from the resourceLogicalDevice
+	panels := make([]logicalDevicePanel, len(config.Panels.Elements()))
+	resp.Diagnostics.Append(config.Panels.ElementsAs(ctx, &panels, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// validate each panel
+	for i, panel := range panels {
+		panel.validate(ctx, i, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
 }
 
 func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -111,8 +145,7 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 
 	// Retrieve values from plan
 	var plan logicalDevice
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -128,8 +161,7 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 	}
 
 	plan.Id = types.StringValue(string(id))
-	diags = resp.State.Set(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -140,8 +172,7 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 
 	// Get current state
 	var state logicalDevice
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -162,14 +193,13 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 		}
 	}
 
-	var apiState logicalDevice
-	apiState.parseApi(ctx, ld, &resp.Diagnostics)
+	var newState logicalDevice
+	newState.loadApiResponse(ctx, ld, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	diags = resp.State.Set(ctx, &apiState)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -180,16 +210,14 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 
 	// Get current state
 	var state logicalDevice
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get plan values
 	var plan logicalDevice
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -205,8 +233,7 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 		resp.Diagnostics.AddError("error updating Logical Device", err.Error())
 	}
 
-	diags = resp.State.Set(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -216,8 +243,7 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	var state logicalDevice
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -229,7 +255,7 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError(
 				"error deleting Logical Device",
-				fmt.Sprintf("could not delete Logical Device '%s' - %s", state.Id.Value, err),
+				fmt.Sprintf("could not delete Logical Device '%s' - %s", state.Id.ValueString(), err),
 			)
 			return
 		}

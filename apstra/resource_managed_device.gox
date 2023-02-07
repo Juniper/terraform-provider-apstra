@@ -279,7 +279,7 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 		deviceKey = types.String{Null: true}
 	}
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &rManagedDevice{
 		SystemId:       types.String{Value: string(agentInfo.Status.SystemId)},
 		ManagementIp:   types.String{Value: agentInfo.Config.ManagementIp},
@@ -330,7 +330,7 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 		}
 	}
 
-	// Set state to match plan
+	// set state to match plan
 	diags = resp.State.Set(ctx, plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {

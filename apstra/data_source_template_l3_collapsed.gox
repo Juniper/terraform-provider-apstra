@@ -180,7 +180,7 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	//dump, _ := json.MarshalIndent(state.RackType, "", "  ")
 	//resp.Diagnostics.AddWarning("rack", string(dump))
 
-	// Set state
+	// set state
 	diags = resp.State.Set(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 }

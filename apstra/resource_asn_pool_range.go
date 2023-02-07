@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math"
 )
@@ -44,34 +46,28 @@ func (o *resourceAsnPoolRange) Configure(_ context.Context, req resource.Configu
 	}
 }
 
-func (o *resourceAsnPoolRange) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
-		Attributes: map[string]tfsdk.Attribute{
-			"pool_id": {
-				Type:          types.StringType,
+func (o *resourceAsnPoolRange) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"pool_id": schema.StringAttribute{
 				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"first": {
-				Type:     types.Int64Type,
-				Required: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
-				Validators: []tfsdk.AttributeValidator{int64validator.Between(minAsn-1, maxAsn+1)},
+			"first": schema.Int64Attribute{
+				Required:   true,
+				Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
 			},
-			"last": {
-				Type:     types.Int64Type,
-				Required: true,
-				//PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
-				Validators: []tfsdk.AttributeValidator{int64validator.Between(minAsn-1, maxAsn+1)},
+			"last": schema.Int64Attribute{
+				Required:   true,
+				Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
 			},
 		},
-	}, nil
+	}
 }
 
 func (o *resourceAsnPoolRange) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	var config rAsnPoolRange
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -92,8 +88,7 @@ func (o *resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRe
 
 	// Retrieve values from plan
 	var plan rAsnPoolRange
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -112,13 +107,15 @@ func (o *resourceAsnPoolRange) Create(ctx context.Context, req resource.CreateRe
 		}
 	}
 
-	// Set State
-	diags = resp.State.Set(ctx, rAsnPoolRange{
+	// create state object
+	state := rAsnPoolRange{
 		PoolId: types.StringValue(plan.PoolId.ValueString()),
 		First:  types.Int64Value(plan.First.ValueInt64()),
 		Last:   types.Int64Value(plan.Last.ValueInt64()),
-	})
-	resp.Diagnostics.Append(diags...)
+	}
+
+	// set State
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -129,8 +126,7 @@ func (o *resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadReques
 
 	// Get current state
 	var state rAsnPoolRange
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -168,20 +164,18 @@ func (o *resourceAsnPoolRange) Read(ctx context.Context, req resource.ReadReques
 				// overlapping pool found!  -- we'll choose to recognize it as the pool we're looking for, but edited.
 				state.First = types.Int64Value(int64(testRange.First))
 				state.Last = types.Int64Value(int64(testRange.Last))
-				diags = resp.State.Set(ctx, &rAsnPoolRange{
+				resp.Diagnostics.Append(resp.State.Set(ctx, &rAsnPoolRange{
 					PoolId: types.StringValue(state.PoolId.ValueString()),
 					First:  types.Int64Value(int64(testRange.First)),
 					Last:   types.Int64Value(int64(testRange.Last)),
-				})
-				resp.Diagnostics.Append(diags...)
+				})...)
 				return
 			}
 		}
 	}
 
 	// Reset state using old data
-	diags = resp.State.Set(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 	return
 }
 
@@ -192,15 +186,13 @@ func (o *resourceAsnPoolRange) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	var plan rAsnPoolRange
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var state rAsnPoolRange
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -257,8 +249,7 @@ func (o *resourceAsnPoolRange) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("error updating ASN pool range", err.Error())
 	}
 
-	diags = resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceAsnPoolRange) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -268,8 +259,7 @@ func (o *resourceAsnPoolRange) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	var state rAsnPoolRange
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
