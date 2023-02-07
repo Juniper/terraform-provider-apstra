@@ -173,36 +173,13 @@ func (o *dAgentProfile) request(ctx context.Context, diags *diag.Diagnostics) *g
 }
 
 func parseAgentProfile(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) *dAgentProfile {
-	var d diag.Diagnostics
-	var openOptions, packages types.Map
-
-	if len(in.OpenOptions) == 0 {
-		openOptions = types.MapNull(types.StringType)
-	} else {
-		openOptions, d = types.MapValueFrom(ctx, types.StringType, in.OpenOptions)
-		diags.Append(d...)
-		if diags.HasError() {
-			return nil
-		}
-	}
-
-	if len(in.Packages) == 0 {
-		packages = types.MapNull(types.StringType)
-	} else {
-		packages, d = types.MapValueFrom(ctx, types.StringType, in.Packages)
-		diags.Append(d...)
-		if diags.HasError() {
-			return nil
-		}
-	}
-
 	return &dAgentProfile{
 		Id:          types.StringValue(string(in.Id)),
 		Name:        types.StringValue(in.Label),
 		Platform:    stringValueOrNull(ctx, in.Platform, diags),
 		HasUsername: types.BoolValue(in.HasUsername),
 		HasPassword: types.BoolValue(in.HasPassword),
-		Packages:    packages,
-		OpenOptions: openOptions,
+		Packages:    mapValueOrNull(ctx, types.StringType, in.Packages, diags),
+		OpenOptions: mapValueOrNull(ctx, types.StringType, in.OpenOptions, diags),
 	}
 }
