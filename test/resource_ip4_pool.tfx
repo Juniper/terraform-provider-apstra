@@ -1,8 +1,7 @@
-#resource "apstra_ip4_pool" "pool4" {
+#resource "apstra_ip4_pool" "r" {
 #  name = "tf_pool"
-#}
-#
-#resource "apstra_ip4_pool_subnet" "subnet" {
-#  pool_id = apstra_ip4_pool.pool4.id
-#  cidr = "192.168.1.0/24"
+#  subnets = [
+#    "1.0.0.0/8",
+#    "2.0.0.0/8",
+#  ]
 #}
