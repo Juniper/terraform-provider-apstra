@@ -84,7 +84,7 @@ func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rRackTypeLeafSwitch{}.schema(),
+					Attributes: rRackTypeLeafSwitch{}.attributes(),
 				},
 			},
 

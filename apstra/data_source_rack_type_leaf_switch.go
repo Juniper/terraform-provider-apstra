@@ -34,7 +34,7 @@ type dRackTypeLeafSwitch struct {
 	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
-func (o dRackTypeLeafSwitch) schema() map[string]schema.Attribute {
+func (o dRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
@@ -52,12 +52,22 @@ func (o dRackTypeLeafSwitch) schema() map[string]schema.Attribute {
 			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
 			Computed:            true,
 		},
-		"mlag_info":      mlagInfo{}.schemaAsDataSource(),
-		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
+		"mlag_info": schema.SingleNestedAttribute{
+			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
+			Computed:            true,
+			Attributes:          mlagInfo{}.dataSourceAttributes(),
+		},
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+		},
 		"tag_data": schema.SetNestedAttribute{
-			NestedObject:        tagData{}.schema(),
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
 			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.dataSourceAttributes(),
+			},
 		},
 	}
 }

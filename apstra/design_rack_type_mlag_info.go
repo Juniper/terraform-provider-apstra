@@ -24,39 +24,35 @@ type mlagInfo struct {
 	L3PeerLinkPortChannelId types.Int64  `tfsdk:"l3_peer_link_port_channel_id"`
 }
 
-func (o mlagInfo) schemaAsDataSource() dataSourceSchema.SingleNestedAttribute {
-	return dataSourceSchema.SingleNestedAttribute{
-		MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
-		Computed:            true,
-		Attributes: map[string]dataSourceSchema.Attribute{
-			"mlag_keepalive_vlan": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "MLAG keepalive VLAN ID.",
-				Computed:            true,
-			},
-			"peer_link_count": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "Number of links between MLAG devices.",
-				Computed:            true,
-			},
-			"peer_link_speed": dataSourceSchema.StringAttribute{
-				MarkdownDescription: "Speed of links between MLAG devices.",
-				Computed:            true,
-			},
-			"peer_link_port_channel_id": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "Peer link port-channel ID.",
-				Computed:            true,
-			},
-			"l3_peer_link_count": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "Number of L3 links between MLAG devices.",
-				Computed:            true,
-			},
-			"l3_peer_link_speed": dataSourceSchema.StringAttribute{
-				MarkdownDescription: "Speed of l3 links between MLAG devices.",
-				Computed:            true,
-			},
-			"l3_peer_link_port_channel_id": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "L3 peer link port-channel ID.",
-				Computed:            true,
-			},
+func (o mlagInfo) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"mlag_keepalive_vlan": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "MLAG keepalive VLAN ID.",
+			Computed:            true,
+		},
+		"peer_link_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of links between MLAG devices.",
+			Computed:            true,
+		},
+		"peer_link_speed": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of links between MLAG devices.",
+			Computed:            true,
+		},
+		"peer_link_port_channel_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Peer link port-channel ID.",
+			Computed:            true,
+		},
+		"l3_peer_link_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of L3 links between MLAG devices.",
+			Computed:            true,
+		},
+		"l3_peer_link_speed": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of l3 links between MLAG devices.",
+			Computed:            true,
+		},
+		"l3_peer_link_port_channel_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "L3 peer link port-channel ID.",
+			Computed:            true,
 		},
 	}
 }

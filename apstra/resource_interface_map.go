@@ -85,14 +85,14 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				Required:            true,
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rInterfaceMapInterface{}.schema(&resp.Diagnostics),
+					Attributes: rInterfaceMapInterface{}.attributes(&resp.Diagnostics),
 				},
 			},
 			"unused_interfaces": schema.SetNestedAttribute{
 				MarkdownDescription: "Ordered list of interface mapping info for unused interfaces.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rInterfaceMapInterface{}.schemaUnused(),
+					Attributes: rInterfaceMapInterface{}.unusedAttributes(),
 				},
 			},
 		},
@@ -669,7 +669,7 @@ type rInterfaceMapInterface struct {
 	TransformationId      types.Int64  `tfsdk:"transformation_id"`
 }
 
-func (o rInterfaceMapInterface) schema(diags *diag.Diagnostics) map[string]schema.Attribute {
+func (o rInterfaceMapInterface) attributes(diags *diag.Diagnostics) map[string]schema.Attribute {
 	ldpValidator, err := regexp.Compile("^[1-9][0-9]*" + ldInterfaceSep + "[1-9][0-9]*$")
 	if err != nil {
 		diags.AddError(
@@ -707,7 +707,7 @@ func (o rInterfaceMapInterface) schema(diags *diag.Diagnostics) map[string]schem
 	}
 }
 
-func (o rInterfaceMapInterface) schemaUnused() map[string]schema.Attribute {
+func (o rInterfaceMapInterface) unusedAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"physical_interface_name": schema.StringAttribute{
 			MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",

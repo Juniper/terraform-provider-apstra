@@ -90,7 +90,7 @@ type logicalDevicePanel struct {
 	PortGroups types.List  `tfsdk:"port_groups"`
 }
 
-func (o logicalDevicePanel) schemaAsDataSource() map[string]dataSourceSchema.Attribute {
+func (o logicalDevicePanel) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"rows": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -104,13 +104,13 @@ func (o logicalDevicePanel) schemaAsDataSource() map[string]dataSourceSchema.Att
 			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: logicalDevicePanelPortGroup{}.schemaAsDataSource(),
+				Attributes: logicalDevicePanelPortGroup{}.dataSourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o logicalDevicePanel) schemaAsResource() map[string]resourceSchema.Attribute {
+func (o logicalDevicePanel) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"rows": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -133,7 +133,7 @@ func (o logicalDevicePanel) schemaAsResource() map[string]resourceSchema.Attribu
 	}
 }
 
-func (o logicalDevicePanel) schemaAsResourceReadOnly() map[string]resourceSchema.Attribute {
+func (o logicalDevicePanel) resourceAttributesReadOnly() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"rows": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -150,7 +150,7 @@ func (o logicalDevicePanel) schemaAsResourceReadOnly() map[string]resourceSchema
 			Computed:            true,
 			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: logicalDevicePanelPortGroup{}.schemaAsResourceReadOnly(),
+				Attributes: logicalDevicePanelPortGroup{}.resourceAttributesReadOnly(),
 			},
 		},
 	}
@@ -261,7 +261,7 @@ type logicalDevicePanelPortGroup struct {
 	PortRoles types.Set    `tfsdk:"port_roles"`
 }
 
-func (o logicalDevicePanelPortGroup) schemaAsDataSource() map[string]dataSourceSchema.Attribute {
+func (o logicalDevicePanelPortGroup) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"port_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of ports in the group.",
@@ -308,7 +308,7 @@ func (o logicalDevicePanelPortGroup) schemaAsResource() map[string]resourceSchem
 	}
 }
 
-func (o logicalDevicePanelPortGroup) schemaAsResourceReadOnly() map[string]resourceSchema.Attribute {
+func (o logicalDevicePanelPortGroup) resourceAttributesReadOnly() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"port_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of ports in the group.",
@@ -423,21 +423,17 @@ type logicalDeviceData struct {
 	Panels types.List   `tfsdk:"panels"`
 }
 
-func (o logicalDeviceData) schemaAsDataSource() dataSourceSchema.SingleNestedAttribute {
-	return dataSourceSchema.SingleNestedAttribute{
-		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
-		Computed:            true,
-		Attributes: map[string]dataSourceSchema.Attribute{
-			"name": dataSourceSchema.StringAttribute{
-				MarkdownDescription: "Logical device display name.",
-				Computed:            true,
-			},
-			"panels": dataSourceSchema.ListNestedAttribute{
-				MarkdownDescription: "Details physical layout of interfaces on the device.",
-				Computed:            true,
-				NestedObject: dataSourceSchema.NestedAttributeObject{
-					Attributes: logicalDevicePanel{}.schemaAsDataSource(),
-				},
+func (o logicalDeviceData) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Logical device display name.",
+			Computed:            true,
+		},
+		"panels": dataSourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanel{}.dataSourceAttributes(),
 			},
 		},
 	}
@@ -454,7 +450,7 @@ func (o logicalDeviceData) schemaAsResourceReadOnly() map[string]resourceSchema.
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: logicalDevicePanel{}.schemaAsResourceReadOnly(),
+				Attributes: logicalDevicePanel{}.resourceAttributesReadOnly(),
 			},
 			PlanModifiers: []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 		},

@@ -31,7 +31,7 @@ type dRackTypeGenericSystem struct {
 	Links             types.Set    `tfsdk:"links"`
 }
 
-func (o dRackTypeGenericSystem) schema() map[string]schema.Attribute {
+func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Generic name, must be unique within the rack-type.",
@@ -49,17 +49,25 @@ func (o dRackTypeGenericSystem) schema() map[string]schema.Attribute {
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
 			Computed:            true,
 		},
-		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+		},
 		"tag_data": schema.SetNestedAttribute{
-			NestedObject:        tagData{}.schema(),
 			MarkdownDescription: "Details any tags applied to this Generic System.",
 			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.dataSourceAttributes(),
+			},
 		},
 		"links": schema.SetNestedAttribute{
 			MarkdownDescription: "Details links from this Generic System to upstream switches within this Rack Type.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-			NestedObject:        dRackLink{}.schema(),
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: dRackLink{}.attributes(),
+			},
 		},
 	}
 }

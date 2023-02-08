@@ -30,7 +30,7 @@ type rRackTypeLeafSwitch struct {
 	//TagData            types.Set    `tfsdk:"tag_data"` // todo re-enable
 }
 
-func (o rRackTypeLeafSwitch) schema() map[string]schema.Attribute {
+func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
@@ -69,7 +69,7 @@ func (o rRackTypeLeafSwitch) schema() map[string]schema.Attribute {
 		},
 		//"tag_ids":        tagIdsAttributeSchema(), // todo re-enable
 		//"tag_data":       tagsDataAttributeSchema(), // todo re-enable
-		//"mlag_info": mlagInfo{}.schemaAsResource(), // todo re-enable
+		//"mlag_info": mlagInfo{}.resourceAttributes(), // todo re-enable
 	}
 }
 

@@ -86,7 +86,7 @@ func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dAsnPoolRange{}.schema(),
+					Attributes: dAsnPoolRange{}.attributes(),
 				},
 			},
 		},
@@ -203,7 +203,7 @@ func (o dAsnPoolRange) attrType() attr.Type {
 	}
 }
 
-func (o dAsnPoolRange) schema() map[string]schema.Attribute {
+func (o dAsnPoolRange) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"status": schema.StringAttribute{
 			MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",

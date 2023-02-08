@@ -56,7 +56,7 @@ type dConfigletGenerator struct {
 	FileName             types.String `tfsdk:"filename"`
 }
 
-func (o dConfigletGenerator) schema() map[string]datasourceSchema.Attribute {
+func (o dConfigletGenerator) attributes() map[string]datasourceSchema.Attribute {
 	return map[string]datasourceSchema.Attribute{
 		"config_style": datasourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(""),
