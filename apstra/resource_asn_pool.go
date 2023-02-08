@@ -70,7 +70,7 @@ func (o *resourceAsnPool) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Required:            true,
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rAsnPoolRange{}.schema(),
+					Attributes: rAsnPoolRange{}.attributes(),
 				},
 			},
 		},
@@ -313,7 +313,7 @@ func (o rAsnPoolRange) attrType() attr.Type {
 	}
 }
 
-func (o rAsnPoolRange) schema() map[string]schema.Attribute {
+func (o rAsnPoolRange) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"first": schema.Int64Attribute{
 			Required:   true,

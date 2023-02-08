@@ -72,7 +72,7 @@ func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRe
 				MarkdownDescription: "Detailed mapping of each physical interface to its role in the logical device",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dInterfaceMapInterface{}.schema(),
+					Attributes: dInterfaceMapInterface{}.attributes(),
 				},
 			},
 		},
@@ -181,7 +181,7 @@ type dInterfaceMapInterface struct {
 	Setting  types.String        `tfsdk:"setting"`
 }
 
-func (o dInterfaceMapInterface) schema() map[string]schema.Attribute {
+func (o dInterfaceMapInterface) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Physical device interface name",
@@ -207,7 +207,7 @@ func (o dInterfaceMapInterface) schema() map[string]schema.Attribute {
 		"mapping": schema.SingleNestedAttribute{
 			MarkdownDescription: "Mapping info for each physical interface",
 			Computed:            true,
-			Attributes:          interfaceMapMapping{}.schema(),
+			Attributes:          interfaceMapMapping{}.attributes(),
 		},
 		"setting": schema.StringAttribute{
 			MarkdownDescription: "Vendor specific commands needed to configure the interface, from the device profile.",
@@ -253,7 +253,7 @@ type interfaceMapMapping struct {
 	LDPort      types.Int64 `tfsdk:"logical_device_panel_port"`
 }
 
-func (o interfaceMapMapping) schema() map[string]schema.Attribute {
+func (o interfaceMapMapping) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"device_profile_port_id": schema.Int64Attribute{
 			MarkdownDescription: "Port number(ID) from the Device Profile.",

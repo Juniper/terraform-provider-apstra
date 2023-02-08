@@ -63,7 +63,7 @@ func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaReque
 				MarkdownDescription: "Generators organized by Network OS",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dConfigletGenerator{}.schema(),
+					Attributes: dConfigletGenerator{}.attributes(),
 				},
 			},
 		},
