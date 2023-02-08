@@ -66,7 +66,7 @@ func (o dRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: tagData{}.attributes(),
+				Attributes: tagData{}.dataSourceAttributes(),
 			},
 		},
 	}

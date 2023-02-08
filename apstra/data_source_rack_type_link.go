@@ -49,7 +49,7 @@ func (o dRackLink) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Details any tags applied to this Link.",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: tagData{}.attributes(),
+				Attributes: tagData{}.dataSourceAttributes(),
 			},
 		},
 	}

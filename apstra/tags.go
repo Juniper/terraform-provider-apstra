@@ -4,8 +4,9 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -44,13 +45,26 @@ type tagData struct {
 	Description string `tfsdk:"description"`
 }
 
-func (o tagData) attributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
+func (o tagData) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Tag name (label) field.",
 			Computed:            true,
 		},
-		"description": schema.StringAttribute{
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Tag description field.",
+			Computed:            true,
+		},
+	}
+}
+
+func (o tagData) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Tag name (label) field.",
+			Computed:            true,
+		},
+		"description": resourceSchema.StringAttribute{
 			MarkdownDescription: "Tag description field.",
 			Computed:            true,
 		},
