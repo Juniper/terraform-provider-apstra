@@ -27,7 +27,6 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 type dRackTypeLeafSwitch struct {
 	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
-	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
@@ -36,10 +35,6 @@ type dRackTypeLeafSwitch struct {
 
 func (o dRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
-			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-			Computed:            true,
-		},
 		"spine_link_count": schema.Int64Attribute{
 			MarkdownDescription: "Number of links to each spine switch.",
 			Computed:            true,
@@ -74,7 +69,6 @@ func (o dRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 
 func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":                types.StringType,
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
@@ -91,8 +85,6 @@ func (o dRackTypeLeafSwitch) attrType() attr.Type {
 }
 
 func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
-	o.Name = types.StringValue(in.Label)
-
 	if fcd == goapstra.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Null()
 		o.SpineLinkSpeed = types.StringNull()
@@ -101,15 +93,16 @@ func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		o.SpineLinkSpeed = types.StringValue(string(in.LinkPerSpineSpeed))
 	}
 
-	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
-		o.RedundancyProtocol = types.StringNull()
-	} else {
+	switch in.RedundancyProtocol {
+	case goapstra.LeafRedundancyProtocolMlag:
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
-	}
-
-	o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
-	if diags.HasError() {
-		return
+		o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
+	case goapstra.LeafRedundancyProtocolEsi:
+		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
+		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
+	default:
+		o.RedundancyProtocol = types.StringNull()
+		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
 	}
 
 	o.TagData = newTagSet(ctx, in.Tags, diags)

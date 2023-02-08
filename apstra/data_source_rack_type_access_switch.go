@@ -27,7 +27,6 @@ func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics)
 }
 
 type dRackTypeAccessSwitch struct {
-	Name               types.String `tfsdk:"name"`
 	Count              types.Int64  `tfsdk:"count"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
@@ -38,10 +37,6 @@ type dRackTypeAccessSwitch struct {
 
 func (o dRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
-			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-			Computed:            true,
-		},
 		"count": schema.Int64Attribute{
 			MarkdownDescription: "Count of Access Switches of this type.",
 			Computed:            true,
@@ -76,7 +71,6 @@ func (o dRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 
 func (o dRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":                types.StringType,
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
 		"esi_lag_info":        esiLagInfo{}.attrType(),
@@ -93,7 +87,6 @@ func (o dRackTypeAccessSwitch) attrType() attr.Type {
 }
 
 func (o *dRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-	o.Name = types.StringValue(in.Label)
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 
 	if in.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
