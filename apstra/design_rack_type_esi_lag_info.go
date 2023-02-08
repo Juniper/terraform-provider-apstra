@@ -4,7 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -14,16 +14,16 @@ type esiLagInfo struct {
 	L3PeerLinkSpeed string `tfsdk:"l3_peer_link_speed"`
 }
 
-func (o esiLagInfo) schema() schema.SingleNestedAttribute {
-	return schema.SingleNestedAttribute{
+func (o esiLagInfo) schemaAsDataSource() dataSourceSchema.SingleNestedAttribute {
+	return dataSourceSchema.SingleNestedAttribute{
 		MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
 		Computed:            true,
-		Attributes: map[string]schema.Attribute{
-			"l3_peer_link_count": schema.Int64Attribute{
+		Attributes: map[string]dataSourceSchema.Attribute{
+			"l3_peer_link_count": dataSourceSchema.Int64Attribute{
 				MarkdownDescription: "Count of L3 links to ESI peer.",
 				Computed:            true,
 			},
-			"l3_peer_link_speed": schema.StringAttribute{
+			"l3_peer_link_speed": dataSourceSchema.StringAttribute{
 				MarkdownDescription: "Speed of L3 links to ESI peer.",
 				Computed:            true,
 			},

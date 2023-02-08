@@ -50,7 +50,7 @@ func (o dRackTypeAccessSwitch) schema() map[string]schema.Attribute {
 			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
 			Computed:            true,
 		},
-		"esi_lag_info":   esiLagInfo{}.schema(),
+		"esi_lag_info":   esiLagInfo{}.schemaAsDataSource(),
 		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
 		"tag_data": schema.SetNestedAttribute{
 			NestedObject:        tagData{}.schema(),
