@@ -5,8 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -41,7 +46,49 @@ func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaReques
 			"be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible " +
 			"for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a" +
 			"safe practice.",
-		Attributes: agentProfile{}.reourceSchema(),
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				MarkdownDescription: "Apstra ID of the Agent Profile.",
+				Computed:            true,
+				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			"name": schema.StringAttribute{
+				MarkdownDescription: "Apstra name of the Agent Profile.",
+				Required:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
+			"has_username": schema.BoolAttribute{
+				MarkdownDescription: "Indicates whether a username has been set.",
+				Computed:            true,
+			},
+			"has_password": schema.BoolAttribute{
+				MarkdownDescription: "Indicates whether a password has been set.",
+				Computed:            true,
+			},
+			"platform": schema.StringAttribute{
+				MarkdownDescription: "Device platform.",
+				Optional:            true,
+				Validators: []validator.String{stringvalidator.OneOf(
+					goapstra.AgentPlatformNXOS.String(),
+					goapstra.AgentPlatformJunos.String(),
+					goapstra.AgentPlatformEOS.String(),
+				)},
+			},
+			"packages": schema.MapAttribute{
+				MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
+					"to be included with agents deployed using this profile.",
+				Optional:    true,
+				ElementType: types.StringType,
+				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
+			},
+			"open_options": schema.MapAttribute{
+				MarkdownDescription: "Passes configured parameters to offbox agents. For example, to use HTTPS as the " +
+					"API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.",
+				Optional:    true,
+				ElementType: types.StringType,
+				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
+			},
+		},
 	}
 }
 
