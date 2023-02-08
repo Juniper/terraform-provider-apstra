@@ -84,28 +84,7 @@ func (o *dataSourceIp4Pool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "Detailed info about individual IPv4 CIDR allocations within the IPv4 Resource Pool.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"status": schema.StringAttribute{
-							MarkdownDescription: "Status of the IPv4 resource pool.",
-							Computed:            true,
-						},
-						"network": schema.StringAttribute{
-							MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
-							Required:            true,
-						},
-						"total": schema.Int64Attribute{
-							MarkdownDescription: "Total number of addresses in this IPv4 range.",
-							Computed:            true,
-						},
-						"used": schema.Int64Attribute{
-							MarkdownDescription: "Count of used addresses in this IPv4 range.",
-							Computed:            true,
-						},
-						"used_percentage": schema.Float64Attribute{
-							MarkdownDescription: "Percent of used addresses in this IPv4 range.",
-							Computed:            true,
-						},
-					},
+					Attributes: dIp4PoolSubnet{}.attributes(),
 				},
 			},
 		},
@@ -202,6 +181,33 @@ type dIp4PoolSubnet struct {
 	Total          types.Number  `tfsdk:"total"`
 	Used           types.Number  `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+func (dIp4PoolSubnet) attributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+
+		"status": schema.StringAttribute{
+			MarkdownDescription: "Status of the IPv4 resource pool.",
+			Computed:            true,
+		},
+		"network": schema.StringAttribute{
+			MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
+			Required:            true,
+		},
+		"total": schema.Int64Attribute{
+			MarkdownDescription: "Total number of addresses in this IPv4 range.",
+			Computed:            true,
+		},
+		"used": schema.Int64Attribute{
+			MarkdownDescription: "Count of used addresses in this IPv4 range.",
+			Computed:            true,
+		},
+		"used_percentage": schema.Float64Attribute{
+			MarkdownDescription: "Percent of used addresses in this IPv4 range.",
+			Computed:            true,
+		},
+	}
+
 }
 
 func (o *dIp4PoolSubnet) loadApiResponse(_ context.Context, in *goapstra.IpSubnet, _ *diag.Diagnostics) {
