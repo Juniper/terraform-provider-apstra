@@ -85,32 +85,7 @@ func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"status": schema.StringAttribute{
-							MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",
-							Computed:            true,
-						},
-						"first": schema.Int64Attribute{
-							MarkdownDescription: "Lowest numbered AS in this ASN Pool Range.",
-							Computed:            true,
-						},
-						"last": schema.Int64Attribute{
-							MarkdownDescription: "Highest numbered AS in this ASN Pool Range.",
-							Computed:            true,
-						},
-						"total": schema.Int64Attribute{
-							MarkdownDescription: "Total number of ASNs in the ASN Pool Range.",
-							Computed:            true,
-						},
-						"used": schema.Int64Attribute{
-							MarkdownDescription: "Count of used ASNs in the ASN Pool Range.",
-							Computed:            true,
-						},
-						"used_percentage": schema.Float64Attribute{
-							MarkdownDescription: "Percent of used ASNs in the ASN Pool Range.",
-							Computed:            true,
-						},
-					},
+					Attributes: dAsnRange{}.schema(),
 				},
 			},
 		},
@@ -215,4 +190,33 @@ type dAsnRange struct {
 	Total          types.Int64   `tfsdk:"total"`
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+func (o dAsnRange) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"status": schema.StringAttribute{
+			MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",
+			Computed:            true,
+		},
+		"first": schema.Int64Attribute{
+			MarkdownDescription: "Lowest numbered AS in this ASN Pool Range.",
+			Computed:            true,
+		},
+		"last": schema.Int64Attribute{
+			MarkdownDescription: "Highest numbered AS in this ASN Pool Range.",
+			Computed:            true,
+		},
+		"total": schema.Int64Attribute{
+			MarkdownDescription: "Total number of ASNs in the ASN Pool Range.",
+			Computed:            true,
+		},
+		"used": schema.Int64Attribute{
+			MarkdownDescription: "Count of used ASNs in the ASN Pool Range.",
+			Computed:            true,
+		},
+		"used_percentage": schema.Float64Attribute{
+			MarkdownDescription: "Percent of used ASNs in the ASN Pool Range.",
+			Computed:            true,
+		},
+	}
 }
