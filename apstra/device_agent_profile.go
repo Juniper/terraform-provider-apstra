@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	datasourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -22,45 +21,6 @@ type agentProfile struct {
 	HasPassword types.Bool   `tfsdk:"has_password"`
 	Packages    types.Map    `tfsdk:"packages"`
 	OpenOptions types.Map    `tfsdk:"open_options"`
-}
-
-func (o agentProfile) datasourceSchema() map[string]datasourceSchema.Attribute {
-	return map[string]datasourceSchema.Attribute{
-		"id": datasourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Agent Profile. Required when `name` is omitted.",
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"name": datasourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the Agent Profile. Required when `id` is omitted.",
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"platform": datasourceSchema.StringAttribute{
-			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
-			Computed:            true,
-		},
-		"has_username": datasourceSchema.BoolAttribute{
-			MarkdownDescription: "Indicates whether a username has been configured.",
-			Computed:            true,
-		},
-		"has_password": datasourceSchema.BoolAttribute{
-			MarkdownDescription: "Indicates whether a password has been configured.",
-			Computed:            true,
-		},
-		"packages": datasourceSchema.MapAttribute{
-			MarkdownDescription: "Admin-provided software packages stored on the Apstra server applied to devices using the profile.",
-			Computed:            true,
-			ElementType:         types.StringType,
-		},
-		"open_options": datasourceSchema.MapAttribute{
-			MarkdownDescription: "Configured parameters for offbox agents",
-			Computed:            true,
-			ElementType:         types.StringType,
-		},
-	}
 }
 
 func (o agentProfile) reourceSchema() map[string]resourceSchema.Attribute {
