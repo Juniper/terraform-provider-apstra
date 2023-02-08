@@ -85,7 +85,7 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				Required:            true,
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rInterfaceMapInterface{}.schema(&resp.Diagnostics),
+					Attributes: rInterfaceMapInterface{}.attributes(&resp.Diagnostics),
 				},
 			},
 			"unused_interfaces": schema.SetNestedAttribute{
@@ -669,7 +669,7 @@ type rInterfaceMapInterface struct {
 	TransformationId      types.Int64  `tfsdk:"transformation_id"`
 }
 
-func (o rInterfaceMapInterface) schema(diags *diag.Diagnostics) map[string]schema.Attribute {
+func (o rInterfaceMapInterface) attributes(diags *diag.Diagnostics) map[string]schema.Attribute {
 	ldpValidator, err := regexp.Compile("^[1-9][0-9]*" + ldInterfaceSep + "[1-9][0-9]*$")
 	if err != nil {
 		diags.AddError(
