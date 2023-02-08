@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -81,7 +82,7 @@ func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "Modification time of the ASN Resource Pool.",
 				Computed:            true,
 			},
-			"ranges": schema.ListNestedAttribute{
+			"ranges": schema.SetNestedAttribute{
 				MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
@@ -156,10 +157,10 @@ type dAsnPool struct {
 	CreatedAt      types.String  `tfsdk:"created_at"`
 	LastModifiedAt types.String  `tfsdk:"last_modified_at"`
 	Total          types.Int64   `tfsdk:"total"`
-	Ranges         []dAsnRange   `tfsdk:"ranges"`
+	Ranges         types.Set     `tfsdk:"ranges"`
 }
 
-func (o *dAsnPool) loadApiResponse(_ context.Context, in *goapstra.AsnPool, _ *diag.Diagnostics) {
+func (o *dAsnPool) loadApiResponse(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) {
 	ranges := make([]dAsnRange, len(in.Ranges))
 	for i, r := range in.Ranges {
 		ranges[i] = dAsnRange{
@@ -180,7 +181,7 @@ func (o *dAsnPool) loadApiResponse(_ context.Context, in *goapstra.AsnPool, _ *d
 	o.CreatedAt = types.StringValue(in.CreatedAt.String())
 	o.LastModifiedAt = types.StringValue(in.LastModifiedAt.String())
 	o.Total = types.Int64Value(int64(in.Total))
-	o.Ranges = ranges
+	o.Ranges = setValueOrNull(ctx, dAsnRange{}.attrType(), ranges, diags)
 }
 
 type dAsnRange struct {
@@ -190,6 +191,23 @@ type dAsnRange struct {
 	Total          types.Int64   `tfsdk:"total"`
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+func (o dAsnRange) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"status":          types.StringType,
+		"first":           types.Int64Type,
+		"last":            types.Int64Type,
+		"total":           types.Int64Type,
+		"used":            types.Int64Type,
+		"used_percentage": types.Float64Type,
+	}
+}
+
+func (o dAsnRange) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: o.attrTypes(),
+	}
 }
 
 func (o dAsnRange) schema() map[string]schema.Attribute {
