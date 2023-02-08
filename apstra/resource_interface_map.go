@@ -92,7 +92,7 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				MarkdownDescription: "Ordered list of interface mapping info for unused interfaces.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rInterfaceMapInterface{}.schemaUnused(),
+					Attributes: rInterfaceMapInterface{}.unusedAttributes(),
 				},
 			},
 		},
@@ -707,7 +707,7 @@ func (o rInterfaceMapInterface) attributes(diags *diag.Diagnostics) map[string]s
 	}
 }
 
-func (o rInterfaceMapInterface) schemaUnused() map[string]schema.Attribute {
+func (o rInterfaceMapInterface) unusedAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"physical_interface_name": schema.StringAttribute{
 			MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",
