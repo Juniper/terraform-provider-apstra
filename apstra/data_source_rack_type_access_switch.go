@@ -36,7 +36,7 @@ type dRackTypeAccessSwitch struct {
 	Links              types.Set    `tfsdk:"links"`
 }
 
-func (o dRackTypeAccessSwitch) schema() map[string]schema.Attribute {
+func (o dRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
@@ -50,18 +50,26 @@ func (o dRackTypeAccessSwitch) schema() map[string]schema.Attribute {
 			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
 			Computed:            true,
 		},
-		"esi_lag_info":   esiLagInfo{}.schemaAsDataSource(),
-		"logical_device": logicalDeviceData{}.schemaAsDataSource(),
+		"esi_lag_info": esiLagInfo{}.schemaAsDataSource(),
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+		},
 		"tag_data": schema.SetNestedAttribute{
-			NestedObject:        tagData{}.schema(),
 			MarkdownDescription: "Details any tags applied to this Access Switch.",
 			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.attributes(),
+			},
 		},
 		"links": schema.SetNestedAttribute{
 			MarkdownDescription: "Details links from this Access Switch to upstream switches within this Rack Type.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-			NestedObject:        dRackLink{}.schema(),
+			NestedObject:        schema.NestedAttributeObject{
+				Attributes: dRackLink{}.attributes(),
+			}
 		},
 	}
 }

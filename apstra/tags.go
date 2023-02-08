@@ -44,17 +44,15 @@ type tagData struct {
 	Description string `tfsdk:"description"`
 }
 
-func (o tagData) schema() schema.NestedAttributeObject {
-	return schema.NestedAttributeObject{
-		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Tag name (label) field.",
-				Computed:            true,
-			},
-			"description": schema.StringAttribute{
-				MarkdownDescription: "Tag description field.",
-				Computed:            true,
-			},
+func (o tagData) attributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Tag name (label) field.",
+			Computed:            true,
+		},
+		"description": schema.StringAttribute{
+			MarkdownDescription: "Tag description field.",
+			Computed:            true,
 		},
 	}
 }

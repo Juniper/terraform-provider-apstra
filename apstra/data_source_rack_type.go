@@ -67,21 +67,21 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 				MarkdownDescription: "Details of Leaf Switches in this Rack Type.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dRackTypeLeafSwitch{}.schema(),
+					Attributes: dRackTypeLeafSwitch{}.attributes(),
 				},
 			},
 			"access_switches": schema.SetNestedAttribute{
 				MarkdownDescription: "Details of Access Switches in this Rack Type.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dRackTypeAccessSwitch{}.schema(),
+					Attributes: dRackTypeAccessSwitch{}.attributes(),
 				},
 			},
 			"generic_systems": schema.SetNestedAttribute{
 				MarkdownDescription: "Details of Generic Systems in the Rack Type.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dRackTypeGenericSystem{}.schema(),
+					Attributes: dRackTypeGenericSystem{}.attributes(),
 				},
 			},
 		},

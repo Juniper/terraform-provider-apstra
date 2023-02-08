@@ -19,37 +19,37 @@ type dRackLink struct {
 	TagData          types.Set    `tfsdk:"tag_data"`
 }
 
-func (o dRackLink) schema() schema.NestedAttributeObject {
-	return schema.NestedAttributeObject{
-		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Name of this link.",
-				Computed:            true,
-			},
-			"target_switch_name": schema.StringAttribute{
-				MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
-				Computed:            true,
-			},
-			"lag_mode": schema.StringAttribute{
-				MarkdownDescription: "LAG negotiation mode of the Link.",
-				Computed:            true,
-			},
-			"links_per_switch": schema.Int64Attribute{
-				MarkdownDescription: "Number of Links to each switch.",
-				Computed:            true,
-			},
-			"speed": schema.StringAttribute{
-				MarkdownDescription: "Speed of this Link.",
-				Computed:            true,
-			},
-			"switch_peer": schema.StringAttribute{
-				MarkdownDescription: "For non-LAG connections to redundant switch pairs, this field selects the target switch.",
-				Computed:            true,
-			},
-			"tag_data": schema.SetNestedAttribute{
-				NestedObject:        tagData{}.schema(),
-				MarkdownDescription: "Details any tags applied to this Link.",
-				Computed:            true,
+func (o dRackLink) attributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Name of this link.",
+			Computed:            true,
+		},
+		"target_switch_name": schema.StringAttribute{
+			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+			Computed:            true,
+		},
+		"lag_mode": schema.StringAttribute{
+			MarkdownDescription: "LAG negotiation mode of the Link.",
+			Computed:            true,
+		},
+		"links_per_switch": schema.Int64Attribute{
+			MarkdownDescription: "Number of Links to each switch.",
+			Computed:            true,
+		},
+		"speed": schema.StringAttribute{
+			MarkdownDescription: "Speed of this Link.",
+			Computed:            true,
+		},
+		"switch_peer": schema.StringAttribute{
+			MarkdownDescription: "For non-LAG connections to redundant switch pairs, this field selects the target switch.",
+			Computed:            true,
+		},
+		"tag_data": schema.SetNestedAttribute{
+			MarkdownDescription: "Details any tags applied to this Link.",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.attributes(),
 			},
 		},
 	}

@@ -60,7 +60,7 @@ func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaReque
 				Required:            true,
 				Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: logicalDevicePanel{}.schemaAsResource(),
+					Attributes: logicalDevicePanel{}.resourceAttributes(),
 				},
 			},
 		},

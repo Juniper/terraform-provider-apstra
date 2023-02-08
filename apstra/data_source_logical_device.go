@@ -63,7 +63,7 @@ func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaR
 				MarkdownDescription: "Details physical layout of interfaces on the device.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: logicalDevicePanel{}.schemaAsDataSource(),
+					Attributes: logicalDevicePanel{}.dataSourceAttributes(),
 				},
 			},
 		},
