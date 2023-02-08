@@ -5,13 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -46,49 +41,7 @@ func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaReques
 			"be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible " +
 			"for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a" +
 			"safe practice.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Apstra ID of the Agent Profile.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Apstra name of the Agent Profile.",
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"has_username": schema.BoolAttribute{
-				MarkdownDescription: "Indicates whether a username has been set.",
-				Computed:            true,
-			},
-			"has_password": schema.BoolAttribute{
-				MarkdownDescription: "Indicates whether a password has been set.",
-				Computed:            true,
-			},
-			"platform": schema.StringAttribute{
-				MarkdownDescription: "Device platform.",
-				Optional:            true,
-				Validators: []validator.String{stringvalidator.OneOf(
-					goapstra.AgentPlatformNXOS.String(),
-					goapstra.AgentPlatformJunos.String(),
-					goapstra.AgentPlatformEOS.String(),
-				)},
-			},
-			"packages": schema.MapAttribute{
-				MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
-					"to be included with agents deployed using this profile.",
-				Optional:    true,
-				ElementType: types.StringType,
-				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
-			},
-			"open_options": schema.MapAttribute{
-				MarkdownDescription: "Passes configured parameters to offbox agents. For example, to use HTTPS as the " +
-					"API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.",
-				Optional:    true,
-				ElementType: types.StringType,
-				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
-			},
-		},
+		Attributes: agentProfile{}.reourceSchema(),
 	}
 }
 
@@ -99,7 +52,7 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Retrieve values from plan
-	var plan dAgentProfile
+	var plan agentProfile
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -119,7 +72,7 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// create state object
-	state := dAgentProfile{
+	state := agentProfile{
 		Id:          types.StringValue(string(id)),
 		Name:        plan.Name,
 		Platform:    plan.Platform,
@@ -140,14 +93,14 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Get current state
-	var state dAgentProfile
+	var state agentProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get Agent Profile from API and then update what is in state from what the API returns
-	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -164,7 +117,8 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Create new state object
-	newState := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	var newState agentProfile
+	newState.loadApiResponse(ctx, ap, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -181,14 +135,14 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Get current state
-	var state dAgentProfile
+	var state agentProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get plan values
-	var plan dAgentProfile
+	var plan agentProfile
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -204,7 +158,7 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	agentProfile, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Agent Profile",
@@ -214,7 +168,8 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Create new state object
-	newState := parseAgentProfile(ctx, agentProfile, &resp.Diagnostics)
+	var newState agentProfile
+	newState.loadApiResponse(ctx, ap, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -230,7 +185,7 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
-	var state dAgentProfile
+	var state agentProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
