@@ -57,14 +57,6 @@ func (o *resourceInterfaceMap) Configure(_ context.Context, req resource.Configu
 }
 
 func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	ldpValidator, err := regexp.Compile("^[1-9][0-9]*" + ldInterfaceSep + "[1-9][0-9]*$")
-	if err != nil {
-		resp.Diagnostics.AddError(
-			errProviderBug,
-			"error compiling regular expression for resource_interface_map logical_device_port string validation")
-		return
-	}
-
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an Interface Map",
 		Attributes: map[string]schema.Attribute{
@@ -93,56 +85,14 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				Required:            true,
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"physical_interface_name": schema.StringAttribute{
-							MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",
-							Required:            true,
-							Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-						},
-						"logical_device_port": schema.StringAttribute{
-							MarkdownDescription: "Panel and Port number of logical device expressed in the form \"" +
-								ldInterfaceSynax + "\". Both numbers are 1-indexed, so the 2nd port on the 1st panel " +
-								"would be \"" + ldInterfaceExample + "\".",
-							Required: true,
-							Validators: []validator.String{
-								stringvalidator.RegexMatches(ldpValidator, "must be of the form \""+
-									ldInterfaceSynax+"\", where both values are 1-indexed. "+
-									"2nd port on 1st panel would be: \""+ldInterfaceExample+"\"."),
-							},
-						},
-						"transformation_id": schema.Int64Attribute{
-							MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
-								"in the Device Profile. Required only when multiple transformation candidates are found for " +
-								"a given physical_interface_name and speed (as determined by the Logical Device and logical_device_port.",
-							Optional:      true,
-							Computed:      true,
-							Validators:    []validator.Int64{int64validator.AtLeast(1)},
-							PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-						},
-					},
+					Attributes: rInterfaceMapInterface{}.schema(&resp.Diagnostics),
 				},
 			},
 			"unused_interfaces": schema.SetNestedAttribute{
 				MarkdownDescription: "Ordered list of interface mapping info for unused interfaces.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"physical_interface_name": schema.StringAttribute{
-							MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",
-							Computed:            true,
-						},
-						"logical_device_port": schema.StringAttribute{
-							MarkdownDescription: "Panel and Port number of logical device expressed in the form \"" +
-								ldInterfaceSynax + "\". Both numbers are 1-indexed, so the 2nd port on the 1st panel " +
-								"would be \"" + ldInterfaceExample + "\".",
-							Computed: true,
-						},
-						"transformation_id": schema.Int64Attribute{
-							MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
-								"in the Device Profile.",
-							Computed: true,
-						},
-					},
+					Attributes: rInterfaceMapInterface{}.schemaUnused(),
 				},
 			},
 		},
@@ -685,7 +635,7 @@ func (o *rInterfaceMap) loadApiResponse(ctx context.Context, in *goapstra.Interf
 
 	for i := range in.Interfaces { // i keeps track of our location in the in.Interfaces slice...
 		// parse the interface object
-		intf.parseApi(&in.Interfaces[i])
+		intf.loadApiResponse(ctx, &in.Interfaces[i], diags)
 
 		// add interface to the used or un-used map according to whether the logical device port ID is null
 		if intf.LogicalDevicePort.IsNull() {
@@ -719,6 +669,64 @@ type rInterfaceMapInterface struct {
 	TransformationId      types.Int64  `tfsdk:"transformation_id"`
 }
 
+func (o rInterfaceMapInterface) schema(diags *diag.Diagnostics) map[string]schema.Attribute {
+	ldpValidator, err := regexp.Compile("^[1-9][0-9]*" + ldInterfaceSep + "[1-9][0-9]*$")
+	if err != nil {
+		diags.AddError(
+			errProviderBug,
+			"error compiling regular expression for resource_interface_map logical_device_port string validation")
+		return nil
+	}
+
+	return map[string]schema.Attribute{
+		"physical_interface_name": schema.StringAttribute{
+			MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"logical_device_port": schema.StringAttribute{
+			MarkdownDescription: "Panel and Port number of logical device expressed in the form \"" +
+				ldInterfaceSynax + "\". Both numbers are 1-indexed, so the 2nd port on the 1st panel " +
+				"would be \"" + ldInterfaceExample + "\".",
+			Required: true,
+			Validators: []validator.String{
+				stringvalidator.RegexMatches(ldpValidator, "must be of the form \""+
+					ldInterfaceSynax+"\", where both values are 1-indexed. "+
+					"2nd port on 1st panel would be: \""+ldInterfaceExample+"\"."),
+			},
+		},
+		"transformation_id": schema.Int64Attribute{
+			MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
+				"in the Device Profile. Required only when multiple transformation candidates are found for " +
+				"a given physical_interface_name and speed (as determined by the Logical Device and logical_device_port.",
+			Optional:      true,
+			Computed:      true,
+			Validators:    []validator.Int64{int64validator.AtLeast(1)},
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+	}
+}
+
+func (o rInterfaceMapInterface) schemaUnused() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"physical_interface_name": schema.StringAttribute{
+			MarkdownDescription: "Interface name found in the Device Profile, e.g. \"et-0/0/1:2\"",
+			Computed:            true,
+		},
+		"logical_device_port": schema.StringAttribute{
+			MarkdownDescription: "Panel and Port number of logical device expressed in the form \"" +
+				ldInterfaceSynax + "\". Both numbers are 1-indexed, so the 2nd port on the 1st panel " +
+				"would be \"" + ldInterfaceExample + "\".",
+			Computed: true,
+		},
+		"transformation_id": schema.Int64Attribute{
+			MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
+				"in the Device Profile.",
+			Computed: true,
+		},
+	}
+}
+
 func (o rInterfaceMapInterface) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
@@ -727,7 +735,7 @@ func (o rInterfaceMapInterface) attrType() attr.Type {
 			"transformation_id":       types.Int64Type}}
 }
 
-func (o *rInterfaceMapInterface) parseApi(in *goapstra.InterfaceMapInterface) {
+func (o *rInterfaceMapInterface) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
 	o.PhysicalInterfaceName = types.StringValue(in.Name)
 	o.TransformationId = types.Int64Value(int64(in.Mapping.DPTransformId))
 
@@ -736,7 +744,6 @@ func (o *rInterfaceMapInterface) parseApi(in *goapstra.InterfaceMapInterface) {
 	} else {
 		o.LogicalDevicePort = types.StringValue(fmt.Sprintf("%d%s%d", in.Mapping.LDPanel, ldInterfaceSep, in.Mapping.LDPort))
 	}
-
 }
 
 func ldPanelAndPortFromString(in string, diags *diag.Diagnostics) (int, int) {
@@ -811,6 +818,10 @@ func getPortIdAndTransformations(dp *goapstra.DeviceProfile, speed goapstra.Logi
 	return dpPort.PortId, transformations
 }
 
+// iMapUnallocatedInterfaces takes []goapstra.InterfaceMapInterface and
+// *goapstra.DeviceProfile, returns []goapstra.InterfaceMapInterface
+// representing all interfaces from the *goapstra.DeviceProfile which did
+// not appear in the supplied slice.
 func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) []goapstra.InterfaceMapInterface {
 	// make a map[portId]struct{} so we can quickly determine whether
 	// a port ID has been previously allocated.

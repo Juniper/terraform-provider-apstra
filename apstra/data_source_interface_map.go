@@ -72,59 +72,7 @@ func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRe
 				MarkdownDescription: "Detailed mapping of each physical interface to its role in the logical device",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							MarkdownDescription: "Physical device interface name",
-							Computed:            true,
-						},
-						"roles": schema.SetAttribute{
-							MarkdownDescription: "Logical Device role (\"connected to\") of the interface.",
-							Computed:            true,
-							ElementType:         types.StringType,
-						},
-						"position": schema.Int64Attribute{
-							MarkdownDescription: "todo - need to find out what this is", // todo
-							Computed:            true,
-						},
-						"active": schema.BoolAttribute{
-							MarkdownDescription: "Indicates whether the interface is used by the Interface Map",
-							Computed:            true,
-						},
-						"speed": schema.StringAttribute{
-							MarkdownDescription: "Interface speed",
-							Computed:            true,
-						},
-						"mapping": schema.SingleNestedAttribute{
-							MarkdownDescription: "Mapping info for each physical interface",
-							Computed:            true,
-							Attributes: map[string]schema.Attribute{
-								"device_profile_port_id": schema.Int64Attribute{
-									MarkdownDescription: "Port number(ID) from the Device Profile.",
-									Computed:            true,
-								},
-								"device_profile_transformation_id": schema.Int64Attribute{
-									MarkdownDescription: "Port-specific transform ID from the Device Profile.",
-									Computed:            true,
-								},
-								"device_profile_interface_id": schema.Int64Attribute{
-									MarkdownDescription: "Port-specific interface ID from the device profile (used to identify interfaces in breakout scenarios.)",
-									Computed:            true,
-								},
-								"logical_device_panel": schema.Int64Attribute{
-									MarkdownDescription: "Panel number (first panel is 1) of the Logical Device port which corresponds to this interface.",
-									Computed:            true,
-								},
-								"logical_device_panel_port": schema.Int64Attribute{
-									MarkdownDescription: "Port number (first port is 1) of the Logical Device port which corresponds to this interface.",
-									Computed:            true,
-								},
-							},
-						},
-						"setting": schema.StringAttribute{
-							MarkdownDescription: "Vendor specific commands needed to configure the interface, from the device profile.",
-							Computed:            true,
-						},
-					},
+					Attributes: dInterfaceMapInterface{}.schema(),
 				},
 			},
 		},
@@ -233,6 +181,41 @@ type dInterfaceMapInterface struct {
 	Setting  types.String        `tfsdk:"setting"`
 }
 
+func (o dInterfaceMapInterface) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"name": schema.StringAttribute{
+			MarkdownDescription: "Physical device interface name",
+			Computed:            true,
+		},
+		"roles": schema.SetAttribute{
+			MarkdownDescription: "Logical Device role (\"connected to\") of the interface.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"position": schema.Int64Attribute{
+			MarkdownDescription: "todo - need to find out what this is", // todo
+			Computed:            true,
+		},
+		"active": schema.BoolAttribute{
+			MarkdownDescription: "Indicates whether the interface is used by the Interface Map",
+			Computed:            true,
+		},
+		"speed": schema.StringAttribute{
+			MarkdownDescription: "Interface speed",
+			Computed:            true,
+		},
+		"mapping": schema.SingleNestedAttribute{
+			MarkdownDescription: "Mapping info for each physical interface",
+			Computed:            true,
+			Attributes:          interfaceMapMapping{}.schema(),
+		},
+		"setting": schema.StringAttribute{
+			MarkdownDescription: "Vendor specific commands needed to configure the interface, from the device profile.",
+			Computed:            true,
+		},
+	}
+}
+
 func (o dInterfaceMapInterface) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: map[string]attr.Type{
@@ -268,6 +251,31 @@ type interfaceMapMapping struct {
 	DPInterface types.Int64 `tfsdk:"device_profile_interface_id"`
 	LDPanel     types.Int64 `tfsdk:"logical_device_panel"`
 	LDPort      types.Int64 `tfsdk:"logical_device_panel_port"`
+}
+
+func (o interfaceMapMapping) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"device_profile_port_id": schema.Int64Attribute{
+			MarkdownDescription: "Port number(ID) from the Device Profile.",
+			Computed:            true,
+		},
+		"device_profile_transformation_id": schema.Int64Attribute{
+			MarkdownDescription: "Port-specific transform ID from the Device Profile.",
+			Computed:            true,
+		},
+		"device_profile_interface_id": schema.Int64Attribute{
+			MarkdownDescription: "Port-specific interface ID from the device profile (used to identify interfaces in breakout scenarios.)",
+			Computed:            true,
+		},
+		"logical_device_panel": schema.Int64Attribute{
+			MarkdownDescription: "Panel number (first panel is 1) of the Logical Device port which corresponds to this interface.",
+			Computed:            true,
+		},
+		"logical_device_panel_port": schema.Int64Attribute{
+			MarkdownDescription: "Port number (first port is 1) of the Logical Device port which corresponds to this interface.",
+			Computed:            true,
+		},
+	}
 }
 
 func (o interfaceMapMapping) attrTypes() map[string]attr.Type {
