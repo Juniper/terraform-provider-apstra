@@ -65,9 +65,9 @@ func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Details links from this Generic System to upstream switches within this Rack Type.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-			NestedObject:        schema.NestedAttributeObject{
+			NestedObject: schema.NestedAttributeObject{
 				Attributes: dRackLink{}.attributes(),
-			}
+			},
 		},
 	}
 }
