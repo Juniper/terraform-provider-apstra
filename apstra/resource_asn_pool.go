@@ -5,14 +5,28 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
+)
+
+const (
+	minAsn = 1              // rfc4893 says 0 is okay, but apstra says "Must be between 1 and 4294967295"
+	maxAsn = math.MaxUint32 // 4294967295 rfc4893
 )
 
 var _ resource.ResourceWithConfigure = &resourceAsnPool{}
+var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
 
 type resourceAsnPool struct {
 	client *goapstra.Client
@@ -48,10 +62,72 @@ func (o *resourceAsnPool) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Pool name displayed in the Apstra web UI",
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 				Required:            true,
+			},
+			"ranges": schema.SetNestedAttribute{
+				MarkdownDescription: "Ranges mark the begin/end AS numbers available from the pool",
+				Required:            true,
+				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: rAsnPoolRange{}.schema(),
+				},
 			},
 		},
 	}
+}
+
+func (o *resourceAsnPool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config rAsnPool
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	poolRanges := make([]rAsnPoolRange, len(config.Ranges.Elements()))
+	d := config.Ranges.ElementsAs(ctx, &poolRanges, false)
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var okayRanges goapstra.IntRanges
+	for _, poolRange := range poolRanges {
+		setVal, d := types.ObjectValueFrom(ctx, poolRange.attrTypes(), &poolRange)
+		resp.Diagnostics.Append(d...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// validate this range configuration
+		poolRange.validateConfig(ctx, path.Root("ranges").AtSetValue(setVal), &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		first := uint32(poolRange.First.ValueInt64())
+		last := uint32(poolRange.Last.ValueInt64())
+
+		// check whether this range overlaps previous ranges
+		if okayRanges.Overlaps(goapstra.IntRangeRequest{
+			First: first,
+			Last:  last,
+		}) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("ranges").AtSetValue(setVal),
+				"ASN range collision",
+				fmt.Sprintf("ASN range %d - %d overlaps with a another range in this pool", first, last),
+			)
+			return
+		}
+
+		// no overlap, append this range to the list for future overlap checks
+		okayRanges = append(okayRanges, goapstra.IntRange{
+			First: first,
+			Last:  last,
+		})
+	}
+
 }
 
 func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -68,22 +144,20 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Create new ASN Pool
-	id, err := o.client.CreateAsnPool(ctx, &goapstra.AsnPoolRequest{
-		DisplayName: plan.Name.ValueString(),
-	})
+	request := plan.request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	id, err := o.client.CreateAsnPool(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating new ASN Pool", err.Error())
 		return
 	}
 
-	// create state object
-	state := rAsnPool{
-		Id:   types.StringValue(string(id)),
-		Name: plan.Name,
-	}
+	plan.Id = types.StringValue(string(id))
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -116,16 +190,11 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}
 
-	var dPool dAsnPool
-	dPool.loadApiResponse(ctx, pool, &resp.Diagnostics)
+	// create state object
+	var newState rAsnPool
+	newState.loadApiResponse(ctx, pool, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// create state object
-	newState := rAsnPool{
-		Id:   dPool.Id,
-		Name: dPool.Name,
 	}
 
 	// set state
@@ -146,56 +215,19 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Get current state
-	var state rAsnPool
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	// Update new ASN Pool
+	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	currentPool, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.UpdateAsnPool(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddWarning("API error",
-				fmt.Sprintf("error fetching existing ASN pool - pool '%s' not found", state.Id.ValueString()),
-			)
-			return
-		}
-		// some other unknown error
-		resp.Diagnostics.AddError("API error",
-			fmt.Sprintf("error fetching ASN pool '%s' - %s", state.Id.ValueString(), err.Error()),
-		)
+		resp.Diagnostics.AddError("error creating new ASN Pool", err.Error())
 		return
-	}
-
-	// Generate API request body from plan (only the DisplayName can be changed here)
-	send := &goapstra.AsnPoolRequest{
-		DisplayName: plan.Name.ValueString(),
-		Ranges:      make([]goapstra.IntfIntRange, len(currentPool.Ranges)),
-	}
-
-	// ranges are independent resources, so whatever was found via GET must be re-applied here.
-	for i, r := range currentPool.Ranges {
-		send.Ranges[i] = r
-	}
-
-	// Create/Update ASN pool
-	err = o.client.UpdateAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()), send)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating ASN pool", err.Error())
-		return
-	}
-
-	// create new state object
-	newState := rAsnPool{
-		Id:   state.Id,
-		Name: plan.Name,
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete resource
@@ -224,6 +256,94 @@ func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest
 }
 
 type rAsnPool struct {
-	Id   types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
+	Id     types.String `tfsdk:"id"`
+	Name   types.String `tfsdk:"name"`
+	Ranges types.Set    `tfsdk:"ranges"`
+}
+
+func (o *rAsnPool) loadApiResponse(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) {
+	ranges := make([]rAsnPoolRange, len(in.Ranges))
+	for i, poolRange := range in.Ranges {
+		ranges[i].loadApiResponse(ctx, &poolRange, diags)
+	}
+	if diags.HasError() {
+		return
+	}
+
+	o.Id = types.StringValue(string(in.Id))
+	o.Name = types.StringValue(in.DisplayName)
+	o.Ranges = setValueOrNull(ctx, rAsnPoolRange{}.attrType(), ranges, diags)
+}
+
+func (o *rAsnPool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AsnPoolRequest {
+	response := goapstra.AsnPoolRequest{
+		DisplayName: o.Name.ValueString(),
+		Ranges:      make([]goapstra.IntfIntRange, len(o.Ranges.Elements())),
+	}
+
+	poolRanges := make([]rAsnPoolRange, len(o.Ranges.Elements()))
+	d := o.Ranges.ElementsAs(ctx, &poolRanges, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	for i, poolRange := range poolRanges {
+		response.Ranges[i] = poolRange.request(ctx, diags)
+	}
+
+	return &response
+}
+
+type rAsnPoolRange struct {
+	First types.Int64 `tfsdk:"first"`
+	Last  types.Int64 `tfsdk:"last"`
+}
+
+func (o rAsnPoolRange) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"first": types.Int64Type,
+		"last":  types.Int64Type,
+	}
+}
+
+func (o rAsnPoolRange) attrType() attr.Type {
+	return types.ObjectType{
+		AttrTypes: o.attrTypes(),
+	}
+}
+
+func (o rAsnPoolRange) schema() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"first": schema.Int64Attribute{
+			Required:   true,
+			Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
+		},
+		"last": schema.Int64Attribute{
+			Required:   true,
+			Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
+		},
+	}
+}
+
+func (o *rAsnPoolRange) validateConfig(_ context.Context, path path.Path, diags *diag.Diagnostics) {
+	if o.First.ValueInt64() > o.Last.ValueInt64() {
+		diags.AddAttributeError(
+			path,
+			"swap 'first' and 'last'",
+			fmt.Sprintf("first (%d) cannot be greater than last (%d)", o.First.ValueInt64(), o.Last.ValueInt64()),
+		)
+	}
+}
+
+func (o *rAsnPoolRange) loadApiResponse(_ context.Context, in *goapstra.IntRange, _ *diag.Diagnostics) {
+	o.First = types.Int64Value(int64(in.First))
+	o.Last = types.Int64Value(int64(in.Last))
+}
+
+func (o *rAsnPoolRange) request(_ context.Context, _ *diag.Diagnostics) goapstra.IntfIntRange {
+	return &goapstra.IntRangeRequest{
+		First: uint32(o.First.ValueInt64()),
+		Last:  uint32(o.Last.ValueInt64()),
+	}
 }

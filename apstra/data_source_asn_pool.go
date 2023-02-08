@@ -86,7 +86,7 @@ func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest
 				MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: dAsnRange{}.schema(),
+					Attributes: dAsnPoolRange{}.schema(),
 				},
 			},
 		},
@@ -161,16 +161,9 @@ type dAsnPool struct {
 }
 
 func (o *dAsnPool) loadApiResponse(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) {
-	ranges := make([]dAsnRange, len(in.Ranges))
+	ranges := make([]dAsnPoolRange, len(in.Ranges))
 	for i, r := range in.Ranges {
-		ranges[i] = dAsnRange{
-			Status:         types.StringValue(r.Status),
-			First:          types.Int64Value(int64(r.First)),
-			Last:           types.Int64Value(int64(r.Last)),
-			Total:          types.Int64Value(int64(r.Total)),
-			Used:           types.Int64Value(int64(r.Used)),
-			UsedPercentage: types.Float64Value(float64(r.UsedPercentage)),
-		}
+		ranges[i].loadApiResponse(ctx, &r, diags)
 	}
 
 	o.Id = types.StringValue(string(in.Id))
@@ -181,10 +174,10 @@ func (o *dAsnPool) loadApiResponse(ctx context.Context, in *goapstra.AsnPool, di
 	o.CreatedAt = types.StringValue(in.CreatedAt.String())
 	o.LastModifiedAt = types.StringValue(in.LastModifiedAt.String())
 	o.Total = types.Int64Value(int64(in.Total))
-	o.Ranges = setValueOrNull(ctx, dAsnRange{}.attrType(), ranges, diags)
+	o.Ranges = setValueOrNull(ctx, dAsnPoolRange{}.attrType(), ranges, diags)
 }
 
-type dAsnRange struct {
+type dAsnPoolRange struct {
 	Status         types.String  `tfsdk:"status"`
 	First          types.Int64   `tfsdk:"first"`
 	Last           types.Int64   `tfsdk:"last"`
@@ -193,7 +186,7 @@ type dAsnRange struct {
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
 
-func (o dAsnRange) attrTypes() map[string]attr.Type {
+func (o dAsnPoolRange) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"status":          types.StringType,
 		"first":           types.Int64Type,
@@ -204,13 +197,13 @@ func (o dAsnRange) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o dAsnRange) attrType() attr.Type {
+func (o dAsnPoolRange) attrType() attr.Type {
 	return types.ObjectType{
 		AttrTypes: o.attrTypes(),
 	}
 }
 
-func (o dAsnRange) schema() map[string]schema.Attribute {
+func (o dAsnPoolRange) schema() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"status": schema.StringAttribute{
 			MarkdownDescription: "Status of the ASN Pool Range, as reported by Apstra.",
@@ -237,4 +230,13 @@ func (o dAsnRange) schema() map[string]schema.Attribute {
 			Computed:            true,
 		},
 	}
+}
+
+func (o *dAsnPoolRange) loadApiResponse(_ context.Context, in *goapstra.IntRange, _ *diag.Diagnostics) {
+	o.Status = types.StringValue(in.Status)
+	o.First = types.Int64Value(int64(in.First))
+	o.Last = types.Int64Value(int64(in.Last))
+	o.Total = types.Int64Value(int64(in.Total))
+	o.Used = types.Int64Value(int64(in.Used))
+	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }
