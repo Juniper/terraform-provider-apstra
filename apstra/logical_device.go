@@ -4,17 +4,22 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 )
@@ -85,79 +90,67 @@ type logicalDevicePanel struct {
 	PortGroups types.List  `tfsdk:"port_groups"`
 }
 
-func (o logicalDevicePanel) schemaAsDataSource() dataSourceSchema.NestedAttributeObject {
-	return dataSourceSchema.NestedAttributeObject{
-		Attributes: map[string]dataSourceSchema.Attribute{
-			"rows": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "Physical vertical dimension of the panel.",
-				Computed:            true,
-			},
-			"columns": dataSourceSchema.Int64Attribute{
-				MarkdownDescription: "Physical horizontal dimension of the panel.",
-				Computed:            true,
-			},
-			"port_groups": dataSourceSchema.ListNestedAttribute{
-				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-				Computed:            true,
-				NestedObject: dataSourceSchema.NestedAttributeObject{
-					Attributes: map[string]dataSourceSchema.Attribute{
-						"port_count": dataSourceSchema.Int64Attribute{
-							MarkdownDescription: "Number of ports in the group.",
-							Computed:            true,
-						},
-						"port_speed": dataSourceSchema.StringAttribute{
-							MarkdownDescription: "Port speed.",
-							Computed:            true,
-						},
-						"port_roles": dataSourceSchema.SetAttribute{
-							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-							Computed:            true,
-							ElementType:         types.StringType,
-						},
-					},
-				},
+func (o logicalDevicePanel) schemaAsDataSource() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"rows": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical vertical dimension of the panel.",
+			Computed:            true,
+		},
+		"columns": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical horizontal dimension of the panel.",
+			Computed:            true,
+		},
+		"port_groups": dataSourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanelPortGroup{}.schemaAsDataSource(),
 			},
 		},
 	}
 }
 
-func (o logicalDevicePanel) schemaAsResource() resourceSchema.NestedAttributeObject {
-	return resourceSchema.NestedAttributeObject{
-		Attributes: map[string]resourceSchema.Attribute{
-			"rows": resourceSchema.Int64Attribute{
-				MarkdownDescription: "Physical vertical dimension of the panel.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+func (o logicalDevicePanel) schemaAsResource() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"rows": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical vertical dimension of the panel.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"columns": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical horizontal dimension of the panel.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"port_groups": resourceSchema.ListNestedAttribute{
+			Required:            true,
+			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanelPortGroup{}.schemaAsResource(),
 			},
-			"columns": resourceSchema.Int64Attribute{
-				MarkdownDescription: "Physical horizontal dimension of the panel.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-			},
-			"port_groups": resourceSchema.ListNestedAttribute{
-				MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
-				NestedObject: resourceSchema.NestedAttributeObject{
-					Attributes: map[string]resourceSchema.Attribute{
-						"port_count": resourceSchema.Int64Attribute{
-							MarkdownDescription: "Number of ports in the group.",
-							Computed:            true,
-							PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
-						},
-						"port_speed": resourceSchema.StringAttribute{
-							MarkdownDescription: "Port speed.",
-							Computed:            true,
-							PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-						},
-						"port_roles": resourceSchema.SetAttribute{
-							MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-							Computed:            true,
-							ElementType:         types.StringType,
-							PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
-						},
-					},
-				},
+		},
+	}
+}
+
+func (o logicalDevicePanel) schemaAsResourceReadOnly() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"rows": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical vertical dimension of the panel.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"columns": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical horizontal dimension of the panel.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"port_groups": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanelPortGroup{}.schemaAsResourceReadOnly(),
 			},
 		},
 	}
@@ -268,6 +261,74 @@ type logicalDevicePanelPortGroup struct {
 	PortRoles types.Set    `tfsdk:"port_roles"`
 }
 
+func (o logicalDevicePanelPortGroup) schemaAsDataSource() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"port_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of ports in the group.",
+			Computed:            true,
+		},
+		"port_speed": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Port speed.",
+			Computed:            true,
+		},
+		"port_roles": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+	}
+}
+
+func (o logicalDevicePanelPortGroup) schemaAsResource() map[string]resourceSchema.Attribute {
+	var allRoleFlagsSet goapstra.LogicalDevicePortRoleFlags
+	allRoleFlagsSet.SetAll()
+
+	return map[string]resourceSchema.Attribute{
+		"port_count": schema.Int64Attribute{
+			Required:            true,
+			MarkdownDescription: "Number of ports in the group.",
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"port_speed": schema.StringAttribute{
+			Required:            true,
+			MarkdownDescription: "Port speed.",
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(2),
+			},
+		},
+		"port_roles": schema.SetAttribute{
+			ElementType:         types.StringType,
+			Required:            true,
+			MarkdownDescription: fmt.Sprintf("One or more of: '%s'", strings.Join(allRoleFlagsSet.Strings(), "', '")),
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.OneOf(allRoleFlagsSet.Strings()...)),
+			},
+		},
+	}
+}
+
+func (o logicalDevicePanelPortGroup) schemaAsResourceReadOnly() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"port_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of ports in the group.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"port_speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Port speed.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"port_roles": resourceSchema.SetAttribute{
+			MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+			Computed:            true,
+			ElementType:         types.StringType,
+			PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+		},
+	}
+}
+
 func (o logicalDevicePanelPortGroup) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"port_count": types.Int64Type,
@@ -374,29 +435,28 @@ func (o logicalDeviceData) schemaAsDataSource() dataSourceSchema.SingleNestedAtt
 			"panels": dataSourceSchema.ListNestedAttribute{
 				MarkdownDescription: "Details physical layout of interfaces on the device.",
 				Computed:            true,
-				NestedObject:        logicalDevicePanel{}.schemaAsDataSource(),
+				NestedObject: dataSourceSchema.NestedAttributeObject{
+					Attributes: logicalDevicePanel{}.schemaAsDataSource(),
+				},
 			},
 		},
 	}
 }
 
-func (o logicalDeviceData) schemaAsResource() resourceSchema.SingleNestedAttribute {
-	return resourceSchema.SingleNestedAttribute{
-		MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
-		Computed:            true,
-		PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
-		Attributes: map[string]resourceSchema.Attribute{
-			"name": resourceSchema.StringAttribute{
-				MarkdownDescription: "Logical device display name.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+func (o logicalDeviceData) schemaAsResourceReadOnly() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Logical device display name.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"panels": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanel{}.schemaAsResourceReadOnly(),
 			},
-			"panels": resourceSchema.ListNestedAttribute{
-				MarkdownDescription: "Details physical layout of interfaces on the device.",
-				Computed:            true,
-				NestedObject:        logicalDevicePanel{}.schemaAsResource(),
-				PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
-			},
+			PlanModifiers: []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 		},
 	}
 }
