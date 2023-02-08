@@ -5,9 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -15,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 var _ resource.ResourceWithConfigure = &resourceLogicalDevice{}
@@ -45,9 +42,6 @@ func (o *resourceLogicalDevice) Configure(_ context.Context, req resource.Config
 }
 
 func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	var allRoleFlagsSet goapstra.LogicalDevicePortRoleFlags
-	allRoleFlagsSet.SetAll()
-
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IPv4 resource pool",
 		Attributes: map[string]schema.Attribute{
@@ -66,48 +60,7 @@ func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaReque
 				Required:            true,
 				Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"rows": schema.Int64Attribute{
-							MarkdownDescription: "Physical vertical dimension of the panel.",
-							Required:            true,
-							Validators:          []validator.Int64{int64validator.AtLeast(1)},
-						},
-						"columns": schema.Int64Attribute{
-							MarkdownDescription: "Physical horizontal dimension of the panel.",
-							Required:            true,
-							Validators:          []validator.Int64{int64validator.AtLeast(1)},
-						},
-						"port_groups": schema.ListNestedAttribute{
-							Required:            true,
-							MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-							Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
-							NestedObject: schema.NestedAttributeObject{
-								Attributes: map[string]schema.Attribute{
-									"port_count": schema.Int64Attribute{
-										Required:            true,
-										MarkdownDescription: "Number of ports in the group.",
-										Validators:          []validator.Int64{int64validator.AtLeast(1)},
-									},
-									"port_speed": schema.StringAttribute{
-										Required:            true,
-										MarkdownDescription: "Port speed.",
-										Validators: []validator.String{
-											stringvalidator.LengthAtLeast(2),
-										},
-									},
-									"port_roles": schema.SetAttribute{
-										ElementType:         types.StringType,
-										Required:            true,
-										MarkdownDescription: fmt.Sprintf("One or more of: '%s'", strings.Join(allRoleFlagsSet.Strings(), "', '")),
-										Validators: []validator.Set{
-											setvalidator.SizeAtLeast(1),
-											setvalidator.ValueStringsAre(stringvalidator.OneOf(allRoleFlagsSet.Strings()...)),
-										},
-									},
-								},
-							},
-						},
-					},
+					Attributes: logicalDevicePanel{}.schemaAsResource(),
 				},
 			},
 		},

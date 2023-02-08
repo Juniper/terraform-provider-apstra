@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -60,7 +61,12 @@ func (o rRackTypeLeafSwitch) schema() map[string]schema.Attribute {
 			Optional:   true,
 			Validators: []validator.String{stringvalidator.OneOf(leafRedundancyModes()...)},
 		},
-		"logical_device": logicalDeviceData{}.schemaAsResource(),
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
+		},
 		//"tag_ids":        tagIdsAttributeSchema(), // todo re-enable
 		//"tag_data":       tagsDataAttributeSchema(), // todo re-enable
 		//"mlag_info": mlagInfo{}.schemaAsResource(), // todo re-enable
