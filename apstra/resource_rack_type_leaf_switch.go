@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -13,20 +14,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
 )
 
 type rRackTypeLeafSwitch struct {
-	LogicalDeviceData types.Object `tfsdk:"logical_device"`
-	LogicalDeviceId   types.String `tfsdk:"logical_device_id"`
-	//MlagInfo           types.Object `tfsdk:"mlag_info""` // todo re-enable
+	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
+	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
+	MlagInfo           types.Object `tfsdk:"mlag_info""`
 	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
-	//TagIds             types.Set    `tfsdk:"tag_ids"` // todo re-enable
+	TagIds             types.Set    `tfsdk:"tag_ids"`
 	//TagData            types.Set    `tfsdk:"tag_data"` // todo re-enable
 }
 
@@ -34,8 +37,9 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
-			Required:            true,
+			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"logical_device_id": schema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
@@ -67,9 +71,14 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
 		},
-		//"tag_ids":        tagIdsAttributeSchema(), // todo re-enable
+		"tag_ids": schema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "List of Tag IDs to be applied to this Leaf Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
 		//"tag_data":       tagsDataAttributeSchema(), // todo re-enable
-		//"mlag_info": mlagInfo{}.resourceAttributes(), // todo re-enable
+		"mlag_info": mlagInfo{}.resourceAttributes(),
 	}
 }
 
@@ -81,9 +90,9 @@ func (o rRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
 		"logical_device":      logicalDeviceData{}.attrType(),
-		//"tag_ids":             types.SetType{ElemType: types.StringType}, // todo re-enable
+		"tag_ids":             types.SetType{ElemType: types.StringType},
 		//"tag_data":            types.SetType{ElemType: tagData{}.attrType()}, // todo re-enable
-		//"mlag_info":           mlagInfo{}.attrType(), // todo re-enable
+		"mlag_info": mlagInfo{}.attrType(),
 	}
 }
 
@@ -97,10 +106,6 @@ func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, path path.Path
 		return
 	}
 
-	//if len(o.TagIds) != 0 {
-	//	diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
-	//}
-
 	switch fcd {
 	case goapstra.FabricConnectivityDesignL3Clos:
 		o.validateForL3Clos(ctx, path, diags) // todo: figure out how to use AtSetValue()
@@ -110,10 +115,21 @@ func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, path path.Path
 		diags.AddAttributeError(path, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
 	}
 
-	// todo re-enable this
-	//if !o.RedundancyProtocol.IsNull() && o.RedundancyProtocol.ValueString() == goapstra.LeafRedundancyProtocolMlag.String() {
-	//	o.validateMlagInfo(path, diags)
-	//}
+	if !o.RedundancyProtocol.IsNull() && o.RedundancyProtocol.ValueString() == goapstra.LeafRedundancyProtocolMlag.String() {
+		o.validateMlagInfo(ctx, path, diags)
+	}
+
+	if o.MlagInfo.IsNull() && o.RedundancyProtocol.ValueString() == goapstra.LeafRedundancyProtocolMlag.String() {
+		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), errInvalidConfig,
+			fmt.Sprintf("'redundancy_protocol = \"%s\"' requires setting 'mlag_info",
+				o.RedundancyProtocol.ValueString()))
+	}
+
+	if !o.MlagInfo.IsNull() && o.RedundancyProtocol.ValueString() != goapstra.LeafRedundancyProtocolMlag.String() {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'mlag_info' requires 'redundancy_protocol = \"%s\"",
+				o.RedundancyProtocol.ValueString()))
+	}
 }
 
 func (o *rRackTypeLeafSwitch) validateForL3Clos(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
@@ -152,59 +168,71 @@ func (o *rRackTypeLeafSwitch) validateForL3Collapsed(ctx context.Context, path p
 	}
 }
 
-//func (o *rRackTypeLeafSwitch) validateMlagInfo(path path.Path, diags *diag.Diagnostics) {
-//	var redundancyProtocol goapstra.LeafRedundancyProtocol
-//	err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
-//	if err != nil {
-//		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
-//		return
-//	}
-//
-//	if o.MlagInfo == nil && redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
-//		diags.AddAttributeError(path, errInvalidConfig,
-//			fmt.Sprintf("'mlag_info' required with 'redundancy_protocol' = '%s'", redundancyProtocol.String()))
-//	}
-//
-//	if o.MlagInfo == nil {
-//		return
-//	}
-//
-//	if redundancyProtocol != goapstra.LeafRedundancyProtocolMlag {
-//		diags.AddAttributeError(path, errInvalidConfig,
-//			fmt.Sprintf("'mlag_info' incompatible with 'redundancy_protocol of '%s'", redundancyProtocol.String()))
-//	}
-//
-//	if o.MlagInfo.PeerLinkPortChannelId != nil &&
-//		o.MlagInfo.L3PeerLinkPortChannelId != nil &&
-//		*o.MlagInfo.PeerLinkPortChannelId == *o.MlagInfo.L3PeerLinkPortChannelId {
-//		diags.AddAttributeError(path, errInvalidConfig,
-//			fmt.Sprintf("'peer_link_port_channel_id' and 'l3_peer_link_port_channel_id' cannot both use value %d",
-//				*o.MlagInfo.PeerLinkPortChannelId))
-//	}
-//
-//	if o.MlagInfo.L3PeerLinkCount != nil && o.MlagInfo.L3PeerLinkSpeed == nil {
-//		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
-//	}
-//	if o.MlagInfo.L3PeerLinkSpeed != nil && o.MlagInfo.L3PeerLinkCount == nil {
-//		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
-//	}
-//
-//	if o.MlagInfo.L3PeerLinkPortChannelId != nil && o.MlagInfo.L3PeerLinkCount == nil {
-//		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
-//	}
-//	if o.MlagInfo.L3PeerLinkCount != nil && o.MlagInfo.L3PeerLinkPortChannelId == nil {
-//		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
-//	}
-//}
+func (o *rRackTypeLeafSwitch) validateMlagInfo(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
+	var redundancyProtocol goapstra.LeafRedundancyProtocol
+	err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
+	if err != nil {
+		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
+		return
+	}
+
+	if o.MlagInfo.IsNull() && redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'mlag_info' required with 'redundancy_protocol' = '%s'", redundancyProtocol.String()))
+	}
+
+	if o.MlagInfo.IsNull() {
+		return
+	}
+
+	if redundancyProtocol != goapstra.LeafRedundancyProtocolMlag {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'mlag_info' incompatible with 'redundancy_protocol of '%s'", redundancyProtocol.String()))
+	}
+
+	var mi *mlagInfo
+	o.MlagInfo.As(ctx, mi, basetypes.ObjectAsOptions{})
+
+	if !mi.PeerLinkPortChannelId.IsNull() &&
+		!mi.L3PeerLinkPortChannelId.IsNull() &&
+		mi.PeerLinkPortChannelId.ValueInt64() == mi.L3PeerLinkPortChannelId.ValueInt64() {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("'peer_link_port_channel_id' and 'l3_peer_link_port_channel_id' cannot both use value %d",
+				mi.PeerLinkPortChannelId.ValueInt64()))
+	}
+
+	if !mi.L3PeerLinkCount.IsNull() && mi.L3PeerLinkSpeed.IsNull() {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
+	}
+	if !mi.L3PeerLinkSpeed.IsNull() && mi.L3PeerLinkCount.IsNull() {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
+	}
+
+	if !mi.L3PeerLinkPortChannelId.IsNull() && mi.L3PeerLinkCount.IsNull() {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
+	}
+	if !mi.L3PeerLinkCount.IsNull() && mi.L3PeerLinkPortChannelId.IsNull() {
+		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
+	}
+}
 
 func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddError(errProviderBug, "rRackTypeLeafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
-	// todo: these might not be safe, consider extracting / recreating the data
-	o.LogicalDeviceId = src.LogicalDeviceId
-	//o.TagIds = src.TagIds // todo re-enable
+
+	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
+	o.TagIds = types.SetValueMust(types.StringType, src.TagIds.Elements())
+
+	//tagIds := make([]string, len(src.TagIds.Elements()))
+	//src.TagIds.ElementsAs(ctx, &tagIds, false)
+	//tagIdSet, d := types.SetValueFrom(ctx, types.StringType, tagIds)
+	//diags.Append(d...)
+	//if diags.HasError() {
+	//	return
+	//}
+	//o.TagIds = tagIdSet
 }
 
 func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
@@ -236,44 +264,55 @@ func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, rack 
 		}
 	}
 
-	// todo fix tags
-	//var tagIds []goapstra.ObjectId
-	//if o.TagIds != nil {
-	//	tagIds = make([]goapstra.ObjectId, len(o.TagIds))
-	//	for i, tagId := range o.TagIds {
-	//		tagIds[i] = goapstra.ObjectId(tagId)
-	//	}
-	//}
+	var mi *mlagInfo
+	o.MlagInfo.As(ctx, mi, basetypes.ObjectAsOptions{})
+	mlagRequest := mi.request(ctx, diags)
+
+	var tagIds []goapstra.ObjectId
+	if !o.TagIds.IsNull() {
+		tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+		o.TagIds.ElementsAs(ctx, &tagIds, false)
+		//for i, tagId := range o.TagIds {
+		//	tagIds[i] = goapstra.ObjectId(tagId)
+		//}
+	}
 
 	return &goapstra.RackElementLeafSwitchRequest{
-		Label: o.Name.ValueString(),
-		//MlagInfo:           o.MlagInfo.request(),
+		Label:              o.Name.ValueString(),
+		MlagInfo:           mlagRequest,
 		LinkPerSpineCount:  linkPerSpineCount,
 		LinkPerSpineSpeed:  linkPerSpineSpeed,
 		RedundancyProtocol: redundancyProtocol,
-		//Tags:               tagIds,
-		LogicalDeviceId: goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		Tags:               tagIds,
 	}
 }
 
 func (o *rRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
-	o.Name = types.StringValue(in.Label)
 	if fcd != goapstra.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Value(int64(in.LinkPerSpineCount))
 		o.SpineLinkSpeed = types.StringValue(string(in.LinkPerSpineSpeed))
 	}
 
-	if in.RedundancyProtocol == goapstra.LeafRedundancyProtocolNone {
+	switch in.RedundancyProtocol {
+	case goapstra.LeafRedundancyProtocolNone:
 		o.RedundancyProtocol = types.StringNull()
-	} else {
+		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
+	case goapstra.LeafRedundancyProtocolEsi:
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
+		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
+	case goapstra.LeafRedundancyProtocolMlag:
+		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
+		o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
+	}
+	if diags.HasError() {
+		return
 	}
 
-	//o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
-	//if diags.HasError() {
-	//	return
-	//}
-	//
+	// empty set for now to avoid nil pointer dereference error because the API
+	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
+	o.TagIds = types.SetNull(types.StringType)
+
 	//o.TagData = newTagSet(ctx, in.Tags, diags)
 	//if diags.HasError() {
 	//	return
@@ -290,4 +329,11 @@ func (o *rRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 	//		o.TagData[i].parseApi(&in.Tags[i])
 	//	}
 	//}
+}
+
+// leafRedundancyModes returns permitted fabric_connectivity_design mode strings
+func leafRedundancyModes() []string {
+	return []string{
+		goapstra.LeafRedundancyProtocolEsi.String(),
+		goapstra.LeafRedundancyProtocolMlag.String()}
 }

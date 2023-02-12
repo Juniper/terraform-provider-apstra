@@ -57,7 +57,7 @@ func (o mlagInfo) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o mlagInfo) schemaAsResource() resourceSchema.SingleNestedAttribute {
+func (o mlagInfo) resourceAttributes() resourceSchema.SingleNestedAttribute {
 	return resourceSchema.SingleNestedAttribute{
 		MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
 			"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
@@ -145,41 +145,75 @@ func (o *mlagInfo) loadApiResponse(_ context.Context, in *goapstra.LeafMlagInfo,
 	o.L3PeerLinkPortChannelId = l3PeerLinkPortChannelId
 }
 
-//func (o *mlagInfo) request() *goapstra.LeafMlagInfo {
-//	if o == nil {
-//		return nil
-//	}
-//
-//	var leafLeafL3LinkCount int
-//	if o.L3PeerLinkCount != nil {
-//		leafLeafL3LinkCount = int(*o.L3PeerLinkCount)
-//	}
-//
-//	var leafLeafL3LinkPortChannelId int
-//	if o.L3PeerLinkPortChannelId != nil {
-//		leafLeafL3LinkPortChannelId = int(*o.L3PeerLinkPortChannelId)
-//	}
-//
-//	var leafLeafLinkPortChannelId int
-//	if o.PeerLinkPortChannelId != nil {
-//		leafLeafLinkPortChannelId = int(*o.PeerLinkPortChannelId)
-//	}
-//
-//	var leafLeafL3LinkSpeed goapstra.LogicalDevicePortSpeed
-//	if o.L3PeerLinkSpeed != nil {
-//		leafLeafL3LinkSpeed = goapstra.LogicalDevicePortSpeed(*o.L3PeerLinkSpeed)
-//	}
-//
-//	return &goapstra.LeafMlagInfo{
-//		LeafLeafL3LinkCount:         leafLeafL3LinkCount,
-//		LeafLeafL3LinkPortChannelId: leafLeafL3LinkPortChannelId,
-//		LeafLeafL3LinkSpeed:         leafLeafL3LinkSpeed,
-//		LeafLeafLinkCount:           int(o.PeerLinkCount),
-//		LeafLeafLinkPortChannelId:   leafLeafLinkPortChannelId,
-//		LeafLeafLinkSpeed:           goapstra.LogicalDevicePortSpeed(o.PeerLinkSpeed),
-//		MlagVlanId:                  int(o.MlagKeepaliveVLan),
-//	}
-//}
+func (o *mlagInfo) request(_ context.Context, diags *diag.Diagnostics) *goapstra.LeafMlagInfo {
+	if o == nil {
+		return nil
+	}
+
+	var leafLeafLinkCount int
+	if !o.PeerLinkCount.IsNull() {
+		leafLeafLinkCount = int(o.PeerLinkCount.ValueInt64())
+	} else {
+		diags.AddError(errProviderBug, "attempt to generate LeafMlagInfo with null PeerLinkCount")
+		return nil
+	}
+
+	var leafLeafLinkPortChannelId int
+	if !o.PeerLinkPortChannelId.IsNull() {
+		leafLeafLinkPortChannelId = int(o.PeerLinkPortChannelId.ValueInt64())
+	} else {
+		diags.AddError(errProviderBug, "attempt to generate LeafMlagInfo with null PeerLinkPortChannelId")
+		return nil
+	}
+
+	var leafLeafLinkSpeed goapstra.LogicalDevicePortSpeed
+	if !o.PeerLinkSpeed.IsNull() {
+		leafLeafLinkSpeed = goapstra.LogicalDevicePortSpeed(o.PeerLinkSpeed.ValueString())
+	} else {
+		diags.AddError(errProviderBug, "attempt to generated LeafMlagInfo with null PeerLinkSpeed")
+		return nil
+	}
+
+	var mlagVlanId int
+	if !o.MlagKeepaliveVLan.IsNull() {
+		mlagVlanId = int(o.MlagKeepaliveVLan.ValueInt64())
+	} else {
+		diags.AddError(errProviderBug, "attempt to generated LeafMlagInfo with null MlagKeepaliveVLan")
+		return nil
+	}
+
+	anyL3ValueNull := o.L3PeerLinkCount.IsNull() || o.L3PeerLinkSpeed.IsNull() || o.L3PeerLinkPortChannelId.IsNull()
+	allL3ValuesNull := o.L3PeerLinkCount.IsNull() && o.L3PeerLinkSpeed.IsNull() && o.L3PeerLinkPortChannelId.IsNull()
+	if anyL3ValueNull && !allL3ValuesNull {
+		diags.AddError(errProviderBug, "some, but not all of L3PeerLinkCount, L3PeerLinkSpeed, and "+
+			"L3PeerLinkPortChannelId are null. This is not expected.")
+	}
+
+	var leafLeafL3LinkCount int
+	if !o.L3PeerLinkCount.IsNull() {
+		leafLeafL3LinkCount = int(o.L3PeerLinkCount.ValueInt64())
+	}
+
+	var leafLeafL3LinkPortChannelId int
+	if !o.L3PeerLinkPortChannelId.IsNull() {
+		leafLeafL3LinkPortChannelId = int(o.L3PeerLinkPortChannelId.ValueInt64())
+	}
+
+	var leafLeafL3LinkSpeed goapstra.LogicalDevicePortSpeed
+	if !o.L3PeerLinkSpeed.IsNull() {
+		leafLeafL3LinkSpeed = goapstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString())
+	}
+
+	return &goapstra.LeafMlagInfo{
+		LeafLeafL3LinkCount:         leafLeafL3LinkCount,
+		LeafLeafL3LinkPortChannelId: leafLeafL3LinkPortChannelId,
+		LeafLeafL3LinkSpeed:         leafLeafL3LinkSpeed,
+		LeafLeafLinkCount:           leafLeafLinkCount,
+		LeafLeafLinkPortChannelId:   leafLeafLinkPortChannelId,
+		LeafLeafLinkSpeed:           leafLeafLinkSpeed,
+		MlagVlanId:                  mlagVlanId,
+	}
+}
 
 func newMlagInfoObject(ctx context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) types.Object {
 	if in == nil || in.LeafLeafLinkCount > 0 {
