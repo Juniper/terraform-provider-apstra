@@ -224,15 +224,6 @@ func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rR
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
 	o.TagIds = types.SetValueMust(types.StringType, src.TagIds.Elements())
-
-	//tagIds := make([]string, len(src.TagIds.Elements()))
-	//src.TagIds.ElementsAs(ctx, &tagIds, false)
-	//tagIdSet, d := types.SetValueFrom(ctx, types.StringType, tagIds)
-	//diags.Append(d...)
-	//if diags.HasError() {
-	//	return
-	//}
-	//o.TagIds = tagIdSet
 }
 
 func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
@@ -269,13 +260,8 @@ func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, rack 
 	mlagRequest := mi.request(ctx, diags)
 
 	var tagIds []goapstra.ObjectId
-	if !o.TagIds.IsNull() {
-		tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
-		o.TagIds.ElementsAs(ctx, &tagIds, false)
-		//for i, tagId := range o.TagIds {
-		//	tagIds[i] = goapstra.ObjectId(tagId)
-		//}
-	}
+	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	return &goapstra.RackElementLeafSwitchRequest{
 		Label:              o.Name.ValueString(),
