@@ -220,20 +220,6 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// Retrieve state
-	var state rRackType
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	//stateDump, err := state.LeafSwitches.ToTerraformValue(ctx)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error dumping state", err.Error())
-	//	return
-	//}
-	//resp.Diagnostics.AddWarning("Update() state", stateDump.String())
-
 	// Retrieve plan
 	var plan rRackType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -248,13 +234,13 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// send the request to Apstra
-	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(state.Id.ValueString()), rtRequest)
+	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(plan.Id.ValueString()), rtRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
 	}
 
 	// retrieve the RackType object with fully-enumerated embedded objects
-	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving rack type info after creation", err.Error())
 		return
@@ -267,17 +253,17 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// parse the API response into a state object
-	newState := &rRackType{}
-	newState.loadApiResponse(ctx, rt, &resp.Diagnostics)
+	state := &rRackType{}
+	state.loadApiResponse(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// copy nested object IDs (those not available from the API) from the (old) into newState
-	newState.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+	// copy nested object IDs (those not available from the API) from the (old) into state
+	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
