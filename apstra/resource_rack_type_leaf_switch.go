@@ -226,9 +226,7 @@ func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rR
 	o.TagIds = types.SetValueMust(types.StringType, src.TagIds.Elements())
 }
 
-func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
-	fcd := rack.fabricConnectivityDesign(ctx, diags)
-
+func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
 	var linkPerSpineCount int
 	if o.SpineLinkCount.IsUnknown() && fcd == goapstra.FabricConnectivityDesignL3Clos {
 		// config omits 'spine_link_count' set default value (1) for fabric designs which require it

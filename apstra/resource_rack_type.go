@@ -743,11 +743,8 @@ func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, path path.Pa
 //}
 
 func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.RackTypeRequest {
-	var fcd goapstra.FabricConnectivityDesign
-	err := fcd.FromString(o.FabricConnectivityDesign.ValueString())
-	if err != nil {
-		diags.AddAttributeError(path.Root("fabric_connectivity_design"),
-			"error parsing fabric_connectivity_design", err.Error())
+	fcd := o.fabricConnectivityDesign(ctx, diags)
+	if diags.HasError() {
 		return nil
 	}
 
@@ -769,7 +766,7 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
 	var i int
 	for name, leafSwitch := range leafSwitches {
-		lsr := leafSwitch.request(ctx, path.Root("leaf_switches").AtMapKey(name), o, diags)
+		lsr := leafSwitch.request(ctx, path.Root("leaf_switches").AtMapKey(name), fcd, diags)
 		if diags.HasError() {
 			return nil
 		}
