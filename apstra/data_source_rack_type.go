@@ -63,22 +63,22 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 				MarkdownDescription: "Indicates designs for which this Rack Type is intended.",
 				Computed:            true,
 			},
-			"leaf_switches": schema.SetNestedAttribute{
-				MarkdownDescription: "Details of Leaf Switches in this Rack Type.",
+			"leaf_switches": schema.MapNestedAttribute{
+				MarkdownDescription: "A map of Leaf Switches in this Rack Type, keyed by name.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: dRackTypeLeafSwitch{}.attributes(),
 				},
 			},
-			"access_switches": schema.SetNestedAttribute{
-				MarkdownDescription: "Details of Access Switches in this Rack Type.",
+			"access_switches": schema.MapNestedAttribute{
+				MarkdownDescription: "A map of Access Switches in this Rack Type, keyed by name.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: dRackTypeAccessSwitch{}.attributes(),
 				},
 			},
-			"generic_systems": schema.SetNestedAttribute{
-				MarkdownDescription: "Details of Generic Systems in the Rack Type.",
+			"generic_systems": schema.MapNestedAttribute{
+				MarkdownDescription: "A map of Generic Systems in the Rack Type, keyed by name.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: dRackTypeGenericSystem{}.attributes(),
@@ -161,38 +161,14 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
-func validateRackType(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
-	if in.Data == nil {
-		diags.AddError("rack type has no data", fmt.Sprintf("rack type '%s' data object is nil", in.Id))
-		return
-	}
-
-	validateFcdSupport(ctx, in.Data.FabricConnectivityDesign, diags)
-	if diags.HasError() {
-		return
-	}
-
-	for i := range in.Data.LeafSwitches {
-		validateLeafSwitch(in, i, diags)
-	}
-
-	for i := range in.Data.AccessSwitches {
-		validateAccessSwitch(in, i, diags)
-	}
-
-	for i := range in.Data.GenericSystems {
-		validateGenericSystem(in, i, diags)
-	}
-}
-
 type dRackType struct {
 	Id                       types.String `tfsdk:"id"`
 	Name                     types.String `tfsdk:"name"`
 	Description              types.String `tfsdk:"description"`
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
-	AccessSwitches           types.Set    `tfsdk:"access_switches"`
-	GenericSystems           types.Set    `tfsdk:"generic_systems"`
+	LeafSwitches             types.Map    `tfsdk:"leaf_switches"`
+	AccessSwitches           types.Map    `tfsdk:"access_switches"`
+	GenericSystems           types.Map    `tfsdk:"generic_systems"`
 }
 
 func (o *dRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
@@ -205,73 +181,42 @@ func (o *dRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 			fmt.Sprintf("Rack Type '%s' has unsupported Fabric Connectivity Design '%s'",
 				in.Id, in.Data.FabricConnectivityDesign.String()))
 	}
-	var d diag.Diagnostics
 
-	var leafSwitchSet, accessSwitchSet, genericSystemSet types.Set
-
-	if len(in.Data.LeafSwitches) == 0 {
-		leafSwitchSet = types.SetNull(dRackTypeLeafSwitch{}.attrType())
-	} else {
-		leafSwitches := make([]dRackTypeLeafSwitch, len(in.Data.LeafSwitches))
-		for i := range in.Data.LeafSwitches {
-			leafSwitches[i].loadApiResponse(ctx, &in.Data.LeafSwitches[i], in.Data.FabricConnectivityDesign, diags)
-			if diags.HasError() {
-				return
-			}
-		}
-		leafSwitchSet, d = types.SetValueFrom(ctx, dRackTypeLeafSwitch{}.attrType(), leafSwitches)
-		diags.Append(d...)
+	leafSwitches := make(map[string]dRackTypeLeafSwitch, len(in.Data.LeafSwitches))
+	for _, leafIn := range in.Data.LeafSwitches {
+		var leafSwitch dRackTypeLeafSwitch
+		leafSwitch.loadApiResponse(ctx, &leafIn, in.Data.FabricConnectivityDesign, diags)
+		leafSwitches[leafIn.Label] = leafSwitch
 		if diags.HasError() {
 			return
 		}
 	}
 
-	if len(in.Data.AccessSwitches) == 0 {
-		accessSwitchSet = types.SetNull(dRackTypeAccessSwitch{}.attrType())
-	} else {
-		accessSwitches := make([]dRackTypeAccessSwitch, len(in.Data.AccessSwitches))
-		for i := range in.Data.AccessSwitches {
-			accessSwitches[i].loadApiResponse(ctx, &in.Data.AccessSwitches[i], diags)
-			if diags.HasError() {
-				return
-			}
-		}
-		accessSwitchSet, d = types.SetValueFrom(ctx, dRackTypeAccessSwitch{}.attrType(), accessSwitches)
-		diags.Append(d...)
+	accessSwitches := make(map[string]dRackTypeAccessSwitch, len(in.Data.AccessSwitches))
+	for _, accessIn := range in.Data.AccessSwitches {
+		var accessSwitch dRackTypeAccessSwitch
+		accessSwitch.loadApiResponse(ctx, &accessIn, diags)
+		accessSwitches[accessIn.Label] = accessSwitch
 		if diags.HasError() {
 			return
 		}
 	}
 
-	if len(in.Data.GenericSystems) == 0 {
-		genericSystemSet = types.SetNull(dRackTypeGenericSystem{}.attrType())
-	} else {
-		genericSystems := make([]dRackTypeGenericSystem, len(in.Data.GenericSystems))
-		for i := range in.Data.GenericSystems {
-			genericSystems[i].loadApiResponse(ctx, &in.Data.GenericSystems[i], diags)
-			if diags.HasError() {
-				return
-			}
-		}
-		genericSystemSet, d = types.SetValueFrom(ctx, dRackTypeGenericSystem{}.attrType(), genericSystems)
-		diags.Append(d...)
+	genericSystems := make(map[string]dRackTypeGenericSystem, len(in.Data.GenericSystems))
+	for _, genericIn := range in.Data.GenericSystems {
+		var genericSystem dRackTypeGenericSystem
+		genericSystem.loadApiResponse(ctx, &genericIn, diags)
+		genericSystems[genericIn.Label] = genericSystem
 		if diags.HasError() {
 			return
 		}
-	}
-
-	var description types.String
-	if in.Data.Description == "" {
-		description = types.StringNull()
-	} else {
-		description = types.StringValue(in.Data.Description)
 	}
 
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
-	o.Description = description
+	o.Description = stringValueOrNull(ctx, in.Data.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
-	o.LeafSwitches = leafSwitchSet
-	o.AccessSwitches = accessSwitchSet
-	o.GenericSystems = genericSystemSet
+	o.LeafSwitches = mapValueOrNull(ctx, dRackTypeLeafSwitch{}.attrType(), leafSwitches, diags)
+	o.AccessSwitches = mapValueOrNull(ctx, dRackTypeAccessSwitch{}.attrType(), accessSwitches, diags)
+	o.GenericSystems = mapValueOrNull(ctx, dRackTypeGenericSystem{}.attrType(), genericSystems, diags)
 }

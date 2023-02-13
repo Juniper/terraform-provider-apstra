@@ -449,10 +449,10 @@ func (o logicalDeviceData) schemaAsResourceReadOnly() map[string]resourceSchema.
 		"panels": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: logicalDevicePanel{}.resourceAttributesReadOnly(),
 			},
-			PlanModifiers: []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 		},
 	}
 }

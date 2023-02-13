@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"log"
@@ -31,8 +32,14 @@ func NewApstraProvider() provider.Provider {
 }
 
 func main() {
+	var debug bool
+
+	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.Parse()
+
 	err := providerserver.Serve(context.Background(), NewApstraProvider, providerserver.ServeOpts{
 		Address: "example.com/apstrktr/apstra",
+		Debug:   debug,
 	})
 	if err != nil {
 		log.Fatal(err)

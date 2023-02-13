@@ -22,7 +22,6 @@ func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics
 }
 
 type dRackTypeGenericSystem struct {
-	Name              types.String `tfsdk:"name"`
 	Count             types.Int64  `tfsdk:"count"`
 	PortChannelIdMin  types.Int64  `tfsdk:"port_channel_id_min"`
 	PortChannelIdMax  types.Int64  `tfsdk:"port_channel_id_max"`
@@ -33,10 +32,6 @@ type dRackTypeGenericSystem struct {
 
 func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
-			MarkdownDescription: "Generic name, must be unique within the rack-type.",
-			Computed:            true,
-		},
 		"count": schema.Int64Attribute{
 			MarkdownDescription: "Number of Generic Systems of this type.",
 			Computed:            true,
@@ -74,7 +69,6 @@ func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 
 func (o dRackTypeGenericSystem) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":                types.StringType,
 		"count":               types.Int64Type,
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
@@ -91,7 +85,6 @@ func (o dRackTypeGenericSystem) attrType() attr.Type {
 }
 
 func (o *dRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
-	o.Name = types.StringValue(in.Label)
 	o.Count = types.Int64Value(int64(in.Count))
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
