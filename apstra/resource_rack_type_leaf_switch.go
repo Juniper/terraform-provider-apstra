@@ -62,8 +62,11 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			MarkdownDescription: fmt.Sprintf("Enabling a redundancy protocol converts a single "+
 				"Leaf Switch into a LAG-capable switch pair. Must be one of '%s'.",
 				strings.Join(leafRedundancyModes(), "', '")),
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(leafRedundancyModes()...)},
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(leafRedundancyModes()...),
+				validateLeafSwitchRedundancyMode(),
+			},
 		},
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
@@ -83,6 +86,7 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 				"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
 			Optional:   true,
 			Attributes: mlagInfo{}.resourceAttributes(),
+			Validators: []validator.Object{validateSwitchLagInfo(goapstra.LeafRedundancyProtocolMlag.String())},
 		},
 	}
 }
@@ -118,33 +122,6 @@ func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, path path.Path
 		o.validateForL3Collapsed(ctx, path, diags)
 	default:
 		diags.AddAttributeError(path, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
-	}
-
-	if o.MlagInfo.IsNull() && o.RedundancyProtocol.ValueString() == goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), errInvalidConfig,
-			fmt.Sprintf("'redundancy_protocol = \"%s\"' requires setting 'mlag_info'",
-				o.RedundancyProtocol.ValueString()))
-	}
-
-	if !o.MlagInfo.IsNull() && o.RedundancyProtocol.ValueString() != goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'mlag_info' requires 'redundancy_protocol = \"%s\"",
-				o.RedundancyProtocol.ValueString()))
-	}
-	if diags.HasError() {
-		return
-	}
-
-	if !o.MlagInfo.IsNull() {
-		mi := mlagInfo{}
-		d := o.MlagInfo.As(ctx, &mi, basetypes.ObjectAsOptions{})
-		diags.Append(d...)
-		if diags.HasError() {
-			return
-		}
-		mi.validateConfig(ctx, path.AtName("mlag_info"), diags)
-	}
-	if diags.HasError() {
 		return
 	}
 }
