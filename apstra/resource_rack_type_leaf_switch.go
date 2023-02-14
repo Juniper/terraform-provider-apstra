@@ -30,7 +30,7 @@ type rRackTypeLeafSwitch struct {
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
 	TagIds             types.Set    `tfsdk:"tag_ids"`
-	//TagData            types.Set    `tfsdk:"tag_data"` // todo re-enable
+	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
 func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
@@ -83,19 +83,25 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
 		},
-		"tag_ids": schema.SetAttribute{
-			ElementType:         types.StringType,
-			Optional:            true,
-			MarkdownDescription: "List of Tag IDs to be applied to this Leaf Switch",
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-		},
-		//"tag_data":       tagsDataAttributeSchema(), // todo re-enable
 		"mlag_info": schema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
 				"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
 			Optional:   true,
 			Attributes: mlagInfo{}.resourceAttributes(),
 			Validators: []validator.Object{validateSwitchLagInfo(goapstra.LeafRedundancyProtocolMlag.String())},
+		},
+		"tag_ids": schema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Leaf Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tag_data": schema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Leaf Switch",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.resourceAttributes(),
+			},
 		},
 	}
 }
@@ -109,8 +115,8 @@ func (o rRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"logical_device":      logicalDeviceData{}.attrType(),
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		//"tag_data":            types.SetType{ElemType: tagData{}.attrType()}, // todo re-enable
-		"mlag_info": mlagInfo{}.attrType(),
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"mlag_info":           mlagInfo{}.attrType(),
 	}
 }
 
@@ -206,22 +212,15 @@ func (o *rRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
 	o.TagIds = types.SetNull(types.StringType)
 
-	//o.TagData = newTagSet(ctx, in.Tags, diags)
-	//if diags.HasError() {
-	//	return
-	//}
+	o.TagData = newTagSet(ctx, in.Tags, diags)
+	if diags.HasError() {
+		return
+	}
 
 	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}
-
-	//if len(in.Tags) > 0 {
-	//	o.TagData = make([]tagData, len(in.Tags)) // populated below
-	//	for i := range in.Tags {
-	//		o.TagData[i].parseApi(&in.Tags[i])
-	//	}
-	//}
 }
 
 // leafRedundancyModes returns permitted fabric_connectivity_design mode strings
