@@ -109,7 +109,6 @@ func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
-	config.validateConfigLeafSwitches(ctx, path.Root("leaf_switches"), &resp.Diagnostics)
 	//config.validateConfigAccessSwitches(ctx, path.Root("access_switches"), &resp.Diagnostics)
 	//config.validateConfigGenericSystems(ctx, path.Root("generic_systems"), &resp.Diagnostics)
 }
@@ -684,26 +683,6 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 //	}
 //	o.TagIds = src.TagIds
 //}
-
-func (o *rRackType) validateConfigLeafSwitches(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
-	leafSwitches := make(map[string]rRackTypeLeafSwitch, len(o.LeafSwitches.Elements()))
-	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return
-	}
-
-	for _, leafSwitch := range leafSwitches {
-		// setVal here is collected so that this specific set
-		// instance can be presented via diagnostics output
-		setVal, d := types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
-		diags.Append(d...)
-		if diags.HasError() {
-			return
-		}
-		leafSwitch.validateConfig(ctx, path.AtSetValue(setVal), o, diags)
-	}
-}
 
 //func (o *rRackType) validateConfigAccessSwitches(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
 //	accessSwitches := make(map[string]rRackTypeAccessSwitch, len(o.AccessSwitches.Elements())

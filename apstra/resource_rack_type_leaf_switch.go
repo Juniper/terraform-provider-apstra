@@ -24,7 +24,7 @@ import (
 type rRackTypeLeafSwitch struct {
 	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
-	MlagInfo           types.Object `tfsdk:"mlag_info""`
+	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
@@ -48,15 +48,23 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 		},
 		"spine_link_count": schema.Int64Attribute{
 			MarkdownDescription: "Links per spine.",
-			Validators:          []validator.Int64{int64validator.AtLeast(1)},
-			Optional:            true,
-			Computed:            true,
-			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
+				int64FabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
+				int64FabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+			},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 		},
 		"spine_link_speed": schema.StringAttribute{
 			MarkdownDescription: "Speed of spine-facing links, something like '10G'",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringFabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
+				stringFabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+			},
 		},
 		"redundancy_protocol": schema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Enabling a redundancy protocol converts a single "+
@@ -66,6 +74,7 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			Validators: []validator.String{
 				stringvalidator.OneOf(leafRedundancyModes()...),
 				validateLeafSwitchRedundancyMode(),
+				stringFabricConnectivityDesignMustBeWhenValue(goapstra.FabricConnectivityDesignL3Clos, "mlag"),
 			},
 		},
 		"logical_device": schema.SingleNestedAttribute{
@@ -109,60 +118,7 @@ func (o rRackTypeLeafSwitch) attrType() attr.Type {
 	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
-func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
-	fcd := rack.fabricConnectivityDesign(ctx, diags)
-	if diags.HasError() {
-		return
-	}
-
-	switch fcd {
-	case goapstra.FabricConnectivityDesignL3Clos:
-		o.validateForL3Clos(ctx, path, diags) // todo: figure out how to use AtSetValue()
-	case goapstra.FabricConnectivityDesignL3Collapsed:
-		o.validateForL3Collapsed(ctx, path, diags)
-	default:
-		diags.AddAttributeError(path, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
-		return
-	}
-}
-
-func (o *rRackTypeLeafSwitch) validateForL3Clos(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
-	if o.SpineLinkSpeed.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_speed' must be specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Clos))
-	}
-}
-
-func (o *rRackTypeLeafSwitch) validateForL3Collapsed(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
-	if !o.SpineLinkCount.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_count' must not be specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Collapsed))
-	}
-
-	if !o.SpineLinkSpeed.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_speed' must bnot e specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Collapsed))
-	}
-
-	if !o.RedundancyProtocol.IsNull() {
-		var redundancyProtocol goapstra.LeafRedundancyProtocol
-		err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
-		if err != nil {
-			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
-			return
-		}
-		if redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
-			diags.AddAttributeError(path, errInvalidConfig,
-				fmt.Sprintf("'redundancy_protocol' = '%s' is not allowed when 'fabric_connectivity_design' = '%s'",
-					goapstra.LeafRedundancyProtocolMlag, goapstra.FabricConnectivityDesignL3Collapsed))
-		}
-	}
-}
-
-func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(_ context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddError(errProviderBug, "rRackTypeLeafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
 		return
