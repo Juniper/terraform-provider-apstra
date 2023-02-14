@@ -402,7 +402,7 @@ func (o *rRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, diags *diag.Diagnostics) {
 	// first extract native go structs from the TF set of objects
 	dstLeafSwitches := o.leafSwitches(ctx, diags)
-	//dstAccessSwitches := o.accessSwitches(ctx, diags)
+	dstAccessSwitches := o.accessSwitches(ctx, diags)
 	//dstGenericSystems := o.genericSystems(ctx, diags)
 
 	// invoke the copyWriteOnlyElements on every leaf switch object
@@ -422,20 +422,22 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 		dstLeafSwitches[name] = dstLeafSwitch
 	}
 
-	//// invoke the copyWriteOnlyElements on every access switch object
-	//for i, accessSwitch := range accessSwitches {
-	//	srcAccessSwitch := src.accessSwitchByName(ctx, accessSwitch.Name.ValueString(), diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//	if srcAccessSwitch == nil {
-	//		continue
-	//	}
-	//	accessSwitches[i].copyWriteOnlyElements(ctx, srcAccessSwitch, diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
+	// invoke the copyWriteOnlyElements on every access switch object
+	for name, dstAccessSwitch := range dstAccessSwitches {
+		srcAccessSwitch, ok := src.accessSwitches(ctx, diags)[name]
+		if !ok {
+			continue
+		}
+		if diags.HasError() {
+			return
+		}
+
+		dstAccessSwitch.copyWriteOnlyElements(&srcAccessSwitch, diags)
+		if diags.HasError() {
+			return
+		}
+		dstAccessSwitches[name] = dstAccessSwitch
+	}
 
 	//// invoke the copyWriteOnlyElements on every generic system object
 	//for i, genericSystem := range genericSystems {
@@ -459,32 +461,15 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 
 	// transform the native go objects (with copied object IDs) back to TF set
 	leafSwitchMap := mapValueOrNull(ctx, rRackTypeLeafSwitch{}.attrType(), dstLeafSwitches, diags)
-	//leafSwitchMap, d = types.MapValueFrom(ctx, rRackTypeLeafSwitch{}.attrType(), dstLeafSwitches)
-	//diags.Append(d...)
+	accessSwitchMap := mapValueOrNull(ctx, rRackTypeAccessSwitch{}.attrType(), dstAccessSwitches, diags)
 	if diags.HasError() {
 		return
 	}
 
-	//// transform the native go objects (with copied object IDs) back to TF set
-	//if len(accessSwitches) > 0 {
-	//	accessSwitchSet, d = types.SetValueFrom(ctx, rRackTypeAccessSwitch{}.attrType(), accessSwitches)
-	//	diags.Append(d...)
-	//} else {
-	//	accessSwitchSet = types.SetNull(rRackTypeAccessSwitch{}.attrType())
-	//}
-
-	//// transform the native go objects (with copied object IDs) back to TF set
-	//if len(genericSystems) > 0 {
-	//	genericSystemSet, d = types.SetValueFrom(ctx, rRackTypeGenericSystem{}.attrType(), genericSystems)
-	//	diags.Append(d...)
-	//} else {
-	//	genericSystemSet = types.SetNull(rRackTypeGenericSystem{}.attrType())
-	//}
-
 	// save the TF sets into rRackType
 	o.LeafSwitches = leafSwitchMap
-	//o.AccessSwitches = accessSwitchSet
-	//o.GenericSystems = genericSystemSet
+	o.AccessSwitches = accessSwitchMap
+	//o.GenericSystems = genericSystemMap
 }
 
 func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goapstra.RackLinkAttachmentType {
@@ -689,18 +674,21 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		return nil
 	}
 
-	//accessSwitches := o.accessSwitches(ctx, diags) // todo re-enable
-	//if diags.HasError() {
-	//	return nil
-	//}
+	accessSwitches := o.accessSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
 
 	//genericSystems := o.genericSystems(ctx, diags) // todo re-enable
 	//if diags.HasError() {
 	//	return nil
 	//}
 
-	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
 	var i int
+
+	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
+
+	i = 0
 	for name, leafSwitch := range leafSwitches {
 		lsr := leafSwitch.request(ctx, path.Root("leaf_switches").AtMapKey(name), fcd, diags)
 		if diags.HasError() {
@@ -710,21 +698,17 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		i++
 	}
 
-	//accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
-	//for i, accessSwitch := range accessSwitches {
-	//	setVal, d := types.ObjectValueFrom(ctx, accessSwitch.attrTypes(), &accessSwitch)
-	//	diags.Append(d...)
-	//	if diags.HasError() {
-	//		return nil
-	//	}
-	//
-	//	asr := accessSwitch.request(ctx, path.Root("access_switches").AtSetValue(setVal), o, diags)
-	//	if diags.HasError() {
-	//		return nil
-	//	}
-	//
-	//	accessSwitchRequests[i] = *asr
-	//}
+	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
+
+	i = 0
+	for name, accessSwitch := range accessSwitches {
+		asr := accessSwitch.request(ctx, path.Root("access_switches").AtMapKey(name), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+		accessSwitchRequests[i] = *asr
+		i++
+	}
 
 	//genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
 	//for i, genericSystem := range genericSystems {
@@ -747,7 +731,7 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		Description:              o.Description.ValueString(),
 		FabricConnectivityDesign: fcd,
 		LeafSwitches:             leafSwitchRequests,
-		//AccessSwitches:           accessSwitchRequests,
+		AccessSwitches:           accessSwitchRequests,
 		//GenericSystems:           genericSystemsRequests,
 	}
 }

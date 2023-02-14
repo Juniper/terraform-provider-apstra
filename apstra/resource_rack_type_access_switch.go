@@ -129,7 +129,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 
 	lacpActive := goapstra.RackLinkLagModeActive.String()
 
-	links := make([]rRackLink, len(o.Links.Elements()))
+	links := make(map[string]rRackLink, len(o.Links.Elements()))
 	d := o.Links.ElementsAs(ctx, &links, false)
 	diags.Append(d...)
 	if diags.HasError() {
@@ -137,7 +137,8 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	}
 
 	linkRequests := make([]goapstra.RackLinkRequest, len(links))
-	for i, link := range links {
+	var i int
+	for _, link := range links {
 		link.LagMode = types.StringValue(lacpActive)
 
 		setVal, d := types.ObjectValueFrom(ctx, link.attrTypes(), &link)
@@ -152,6 +153,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 		}
 
 		linkRequests[i] = *linkReq
+		i++
 	}
 
 	//var tagIds []goapstra.ObjectId
