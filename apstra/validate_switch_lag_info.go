@@ -17,8 +17,8 @@ func (o switchLagInfoValidator) Description(_ context.Context) string {
 	return fmt.Sprintf("Ensures the sibling attribute 'redundancy_protocol' is set to '%s'.", o.redundancyProtocol)
 }
 
-func (o switchLagInfoValidator) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("Ensures the sibling attribute 'redundancy_protocol' is set to '%s'.", o.redundancyProtocol)
+func (o switchLagInfoValidator) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
 }
 
 func (o switchLagInfoValidator) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {

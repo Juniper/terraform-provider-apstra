@@ -16,8 +16,8 @@ func (o leafSwitchMlagInfoValidator) Description(_ context.Context) string {
 	return fmt.Sprintf("Validates sibling attributes 'mlag_info' and 'redundancy_mode' are aligned.")
 }
 
-func (o leafSwitchMlagInfoValidator) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("Validates sibling attributes 'mlag_info' and 'redundancy_mode' are aligned.")
+func (o leafSwitchMlagInfoValidator) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
 }
 
 func (o leafSwitchMlagInfoValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
