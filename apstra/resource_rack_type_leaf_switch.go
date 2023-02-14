@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -36,10 +35,8 @@ type rRackTypeLeafSwitch struct {
 func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
-			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			MarkdownDescription: "Switch name, copied from map key, used when creating intra-rack links targeting this switch.",
 			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"logical_device_id": schema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
