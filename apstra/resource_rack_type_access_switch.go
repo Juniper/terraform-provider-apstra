@@ -15,11 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 type rRackTypeAccessSwitch struct {
-	Count types.Int64 `tfsdk:"count"`
-	//EsiLagInfo         types.Object `tfsdk:"esi_lag_info""`
+	Count              types.Int64  `tfsdk:"count"`
+	EsiLagInfo         types.Object `tfsdk:"esi_lag_info""`
 	Links              types.Map    `tfsdk:"links"`
 	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
@@ -76,23 +77,11 @@ func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 				Attributes: tagData{}.resourceAttributes(),
 			},
 		},
-		//"esi_lag_info": {
-		//	MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
-		//	Optional:            true,
-		//	Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-		//		"l3_peer_link_count": {
-		//			MarkdownDescription: "Number of L3 links between ESI-LAG devices.",
-		//			Required:            true,
-		//			Type:                types.Int64Type,
-		//			Validators:          []tfsdk.AttributeValidator{int64validator.AtLeast(1)},
-		//		},
-		//		"l3_peer_link_speed": {
-		//			MarkdownDescription: "Speed of l3 links between ESI-LAG devices.",
-		//			Required:            true,
-		//			Type:                types.StringType,
-		//		},
-		//	}),
-		//},
+		"esi_lag_info": schema.SingleNestedAttribute{
+			MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
+			Optional:            true,
+			Attributes:          esiLagInfo{}.schemaAsResource(),
+		},
 	}
 }
 
@@ -106,7 +95,7 @@ func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 		"logical_device":      logicalDeviceData{}.attrType(),
 		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		//"esi_lag_info":        esiLagInfo{}.attrType(),
+		"esi_lag_info":        esiLagInfo{}.attrType(),
 	}
 }
 
@@ -137,13 +126,8 @@ func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *
 
 func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
 	redundancyProtocol := goapstra.AccessRedundancyProtocolNone
-	if !o.RedundancyProtocol.IsNull() {
-		err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
-		if err != nil {
-			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"),
-				"error parsing redundancy_protocol", err.Error())
-			return nil
-		}
+	if !o.EsiLagInfo.IsNull() {
+		redundancyProtocol = goapstra.AccessRedundancyProtocolEsi
 	}
 
 	lacpActive := goapstra.RackLinkLagModeActive.String()
@@ -184,6 +168,11 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	//	esiLagInfo.AccessAccessLinkCount = int(o.EsiLagInfo.L3PeerLinkCount)
 	//	esiLagInfo.AccessAccessLinkSpeed = goapstra.LogicalDevicePortSpeed(o.EsiLagInfo.L3PeerLinkSpeed)
 	//}
+	var eli esiLagInfo
+	diags.Append(o.EsiLagInfo.As(ctx, &eli, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return nil
+	}
 
 	return &goapstra.RackElementAccessSwitchRequest{
 		Label:              o.Name.ValueString(),
@@ -192,7 +181,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 		Links:              linkRequests,
 		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
 		Tags:               tagIds,
-		//EsiLagInfo:         esiLagInfo,
+		EsiLagInfo:         eli.request(ctx, diags),
 	}
 }
 
@@ -204,10 +193,6 @@ func (o *rRackTypeAccessSwitch) validateConfig(_ context.Context, path path.Path
 			diags.AddAttributeError(path, "error parsing redundancy protocol", err.Error())
 		}
 	}
-
-	//if len(o.TagIds) != 0 {
-	//	diags.AddAttributeError(path.AtName("tag_ids"), errInvalidConfig, "tag_ids not currently supported")
-	//}
 
 	//for i, link := range o.Links {
 	//	link.validateConfigForAccessSwitch(ctx, arp, rack, path.AtListIndex(i), diags) // todo: Need AtSetValue() here
@@ -227,11 +212,10 @@ func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstr
 		return
 	}
 
-	//if in.EsiLagInfo != nil {
-	//	o.EsiLagInfo = &esiLagInfo{}
-	//	o.EsiLagInfo.parseApi(in.EsiLagInfo)
-	//}
-	//o.LogicalDevice.parseApi(in.LogicalDevice)
+	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
+	if diags.HasError() {
+		return
+	}
 
 	// empty set for now to avoid nil pointer dereference error because the API
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.

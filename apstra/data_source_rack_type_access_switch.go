@@ -45,7 +45,11 @@ func (o dRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
 			Computed:            true,
 		},
-		"esi_lag_info": esiLagInfo{}.schemaAsDataSource(),
+		"esi_lag_info": schema.SingleNestedAttribute{
+			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
+			Computed:            true,
+			Attributes:          esiLagInfo{}.schemaAsDataSource(),
+		},
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,

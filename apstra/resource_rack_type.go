@@ -244,6 +244,7 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(plan.Id.ValueString()), rtRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
+		return
 	}
 
 	// retrieve the RackType object with fully-enumerated embedded objects
