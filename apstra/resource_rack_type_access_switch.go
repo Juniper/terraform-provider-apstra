@@ -10,17 +10,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type rRackTypeAccessSwitch struct {
-	Name               types.String `tfsdk:"name"`
-	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	Count              types.Int64  `tfsdk:"count"`
-	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	Links              types.Map    `tfsdk:"links"`
-	//LogicalDevice      types.Object `tfsdk:"logical_device"`
+	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
+	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
+	Name               types.String `tfsdk:"name"`
+	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	//TagIds             types.Set    `tfsdk:"tag_ids"`
 	//TagData            types.Set    `tfsdk:"tag_data"`
 	//EsiLagInfo         types.Object `tfsdk:"esi_lag_info""`
@@ -54,7 +56,12 @@ func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 				Attributes: rRackLink{}.attributes(),
 			},
 		},
-		//"logical_device": logicalDeviceDataAttributeSchema(),
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
+		},
 		//"tag_ids":        tagIdsAttributeSchema(),
 		//"tag_data":       tagsDataAttributeSchema(),
 		//"esi_lag_info": {
@@ -84,7 +91,7 @@ func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
 		"links":               types.MapType{ElemType: rRackLink{}.attrType()},
-		//"logical_device":      logicalDeviceData{}.attrType(),
+		"logical_device":      logicalDeviceData{}.attrType(),
 		//"tag_ids":             types.SetType{ElemType: types.StringType},
 		//"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
 		//"esi_lag_info":        esiLagInfo{}.attrType(),
@@ -181,7 +188,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	}
 }
 
-func (o *rRackTypeAccessSwitch) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
+func (o *rRackTypeAccessSwitch) validateConfig(_ context.Context, path path.Path, _ *rRackType, diags *diag.Diagnostics) {
 	arp := goapstra.AccessRedundancyProtocolNone
 	if !o.RedundancyProtocol.IsNull() {
 		err := arp.FromString(o.RedundancyProtocol.ValueString())
@@ -205,6 +212,11 @@ func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstr
 	o.RedundancyProtocol = types.StringNull()
 	if in.RedundancyProtocol != goapstra.AccessRedundancyProtocolNone {
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
+	}
+
+	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
+	if diags.HasError() {
+		return
 	}
 
 	//if in.EsiLagInfo != nil {

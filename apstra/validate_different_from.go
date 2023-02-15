@@ -23,7 +23,7 @@ var (
 	_ validator.String  = DifferentFromValidator{}
 )
 
-// DifferentFromValidator is the underlying struct implementing AlsoRequires.
+// DifferentFromValidator is the underlying struct implementing DifferentFrom.
 type DifferentFromValidator struct {
 	PathExpressions path.Expressions
 }

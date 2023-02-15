@@ -75,7 +75,7 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			},
 		},
 		"logical_device": schema.SingleNestedAttribute{
-			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
