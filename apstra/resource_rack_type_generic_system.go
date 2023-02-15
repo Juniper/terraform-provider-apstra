@@ -11,38 +11,38 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-type rRackTypeAccessSwitch struct {
-	Count              types.Int64  `tfsdk:"count"`
-	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
-	Links              types.Map    `tfsdk:"links"`
-	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
-	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
-	Name               types.String `tfsdk:"name"`
-	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
-	TagIds             types.Set    `tfsdk:"tag_ids"`
-	TagData            types.Set    `tfsdk:"tag_data"`
+type rRackTypeGenericSystem struct {
+	Name              types.String `tfsdk:"name"`
+	Count             types.Int64  `tfsdk:"count"`
+	PortChannelIdMin  types.Int64  `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax  types.Int64  `tfsdk:"port_channel_id_max"`
+	LogicalDeviceId   types.String `tfsdk:"logical_device_id"`
+	LogicalDeviceData types.Object `tfsdk:"logical_device"`
+	Links             types.Map    `tfsdk:"links"`
+	TagIds            types.Set    `tfsdk:"tag_ids"`
+	TagData           types.Set    `tfsdk:"tag_data"`
 }
 
-func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
+func (o rRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
-			MarkdownDescription: "Access Switch name, copied from map key, used when creating intra-rack links targeting this switch.",
+			MarkdownDescription: "Generic System name, copied from map key.",
 			Computed:            true,
 		},
 		"count": schema.Int64Attribute{
-			MarkdownDescription: "Number of Access Switches of this type.",
+			MarkdownDescription: "Number of Generic Systems of this type.",
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
 		"logical_device_id": schema.StringAttribute{
-			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Access Switch.",
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Generic System.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -53,7 +53,7 @@ func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
 		},
 		"links": schema.MapNestedAttribute{
-			MarkdownDescription: "Each Access Switch is required to have at least one Link to a Leaf Switch.",
+			MarkdownDescription: "Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch.",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: schema.NestedAttributeObject{
@@ -63,29 +63,42 @@ func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 		"tag_ids": schema.SetAttribute{
 			ElementType:         types.StringType,
 			Optional:            true,
-			MarkdownDescription: "Set of Tag IDs to be applied to this Access Switch",
+			MarkdownDescription: "Set of Tag IDs to be applied to this Generic System",
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"tag_data": schema.SetNestedAttribute{
-			MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Generic System",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
 				Attributes: tagData{}.resourceAttributes(),
 			},
 		},
-		"redundancy_protocol": schema.StringAttribute{
-			MarkdownDescription: "Indicates whether the switch is a redundant pair.",
-			Computed:            true,
-		},
-		"esi_lag_info": schema.SingleNestedAttribute{
-			MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
+		"port_channel_id_min": schema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
 			Optional:            true,
-			Attributes:          esiLagInfo{}.schemaAsResource(),
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.Between(poIdMin, poIdMax),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+				int64validator.AtMostSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+			},
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"port_channel_id_max": schema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.Between(poIdMin, poIdMax),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+			},
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 		},
 	}
 }
 
-func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
+func (o rRackTypeGenericSystem) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":                types.StringType,
 		"count":               types.Int64Type,
@@ -94,18 +107,18 @@ func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 		"links":               types.MapType{ElemType: rRackLink{}.attrType()},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
 		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-		"redundancy_protocol": types.StringType,
-		"esi_lag_info":        esiLagInfo{}.attrType(),
+		"port_channel_id_min": types.Int64Type,
+		"port_channel_id_max": types.Int64Type,
 	}
 }
 
-func (o rRackTypeAccessSwitch) attrType() attr.Type {
+func (o rRackTypeGenericSystem) attrType() attr.Type {
 	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
-func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
+func (o *rRackTypeGenericSystem) copyWriteOnlyElements(ctx context.Context, src *rRackTypeGenericSystem, diags *diag.Diagnostics) {
 	if src == nil {
-		diags.AddError(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		diags.AddError(errProviderBug, "rRackTypeGenericSystem.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
 
@@ -134,20 +147,16 @@ func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *
 			dstLinks[name] = dstLink
 		}
 	}
-
-	o.Links = mapValueOrNull(ctx, rRackLink{}.attrType(), dstLinks, diags)
-	if diags.HasError() {
-		return
-	}
 }
 
-func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
-	redundancyProtocol := goapstra.AccessRedundancyProtocolNone
-	if !o.EsiLagInfo.IsNull() {
-		redundancyProtocol = goapstra.AccessRedundancyProtocolEsi
+func (o *rRackTypeGenericSystem) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementGenericSystemRequest {
+	var poIdMinVal, poIdMaxVal int
+	if !o.PortChannelIdMin.IsNull() {
+		poIdMinVal = int(o.PortChannelIdMin.ValueInt64())
 	}
-
-	lacpActive := goapstra.RackLinkLagModeActive.String()
+	if !o.PortChannelIdMax.IsNull() {
+		poIdMaxVal = int(o.PortChannelIdMax.ValueInt64())
+	}
 
 	links := make(map[string]rRackLink, len(o.Links.Elements()))
 	d := o.Links.ElementsAs(ctx, &links, false)
@@ -159,7 +168,6 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	linkRequests := make([]goapstra.RackLinkRequest, len(links))
 	var i int
 	for name, link := range links {
-		link.LagMode = types.StringValue(lacpActive)
 		linkReq := link.request(ctx, path.AtName("links").AtMapKey(name), rack, diags)
 		if diags.HasError() {
 			return nil
@@ -173,37 +181,27 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
-	var eli esiLagInfo
-	diags.Append(o.EsiLagInfo.As(ctx, &eli, basetypes.ObjectAsOptions{})...)
-	if diags.HasError() {
-		return nil
-	}
-
-	return &goapstra.RackElementAccessSwitchRequest{
-		Label:              o.Name.ValueString(),
-		InstanceCount:      int(o.Count.ValueInt64()),
-		RedundancyProtocol: redundancyProtocol,
-		Links:              linkRequests,
-		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
-		Tags:               tagIds,
-		EsiLagInfo:         eli.request(ctx, diags),
+	return &goapstra.RackElementGenericSystemRequest{
+		Count:            int(o.Count.ValueInt64()),
+		AsnDomain:        goapstra.FeatureSwitchDisabled,
+		ManagementLevel:  goapstra.GenericSystemUnmanaged,
+		PortChannelIdMin: poIdMinVal,
+		PortChannelIdMax: poIdMaxVal,
+		Loopback:         goapstra.FeatureSwitchDisabled,
+		Tags:             tagIds,
+		Label:            o.Name.ValueString(),
+		Links:            linkRequests,
+		LogicalDeviceId:  goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
 	}
 }
 
-func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+func (o *rRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
-	o.Count = types.Int64Value(int64(in.InstanceCount))
-	o.RedundancyProtocol = types.StringNull()
-	if in.RedundancyProtocol != goapstra.AccessRedundancyProtocolNone {
-		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
-	}
+	o.Count = types.Int64Value(int64(in.Count))
+	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
+	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
 
 	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
-	if diags.HasError() {
-		return
-	}
-
-	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
 	if diags.HasError() {
 		return
 	}

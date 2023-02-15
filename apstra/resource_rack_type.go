@@ -93,15 +93,15 @@ func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, r
 					Attributes: rRackTypeAccessSwitch{}.attributes(),
 				},
 			},
-
-			//"generic_systems": {
-			//	MarkdownDescription: "Generic Systems are rack elements not" +
-			//		"managed by Apstra: Servers, routers, firewalls, etc...",
-			//	Optional:   true,
-			//	Validators: []tfsdk.AttributeValidator{setvalidator.SizeAtLeast(1)},
-			//	Attributes: tfsdk.SetNestedAttributes(map[string]tfsdk.Attribute{
-			//	}),
-			//},
+			"generic_systems": schema.MapNestedAttribute{
+				MarkdownDescription: "Generic Systems are rack elements not" +
+					"managed by Apstra: Servers, routers, firewalls, etc...",
+				Optional:   true,
+				Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: rRackTypeGenericSystem{}.attributes(),
+				},
+			},
 		},
 	}
 }
@@ -304,7 +304,7 @@ type rRackType struct {
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
 	LeafSwitches             types.Map    `tfsdk:"leaf_switches"`
 	AccessSwitches           types.Map    `tfsdk:"access_switches"`
-	//GenericSystems           types.Map    `tfsdk:"generic_systems"`
+	GenericSystems           types.Map    `tfsdk:"generic_systems"`
 }
 
 func (o *rRackType) fabricConnectivityDesign(_ context.Context, diags *diag.Diagnostics) goapstra.FabricConnectivityDesign {
@@ -381,6 +381,16 @@ func (o *rRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 		}
 	}
 
+	genericSystems := make(map[string]rRackTypeGenericSystem, len(in.Data.GenericSystems))
+	for _, genericIn := range in.Data.GenericSystems {
+		var genericSystem rRackTypeGenericSystem
+		genericSystem.loadApiResponse(ctx, &genericIn, diags)
+		genericSystems[genericIn.Label] = genericSystem
+		if diags.HasError() {
+			return
+		}
+	}
+
 	var description types.String
 	if in.Data.Description == "" {
 		description = types.StringNull()
@@ -394,7 +404,7 @@ func (o *rRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
 	o.LeafSwitches = mapValueOrNull(ctx, rRackTypeLeafSwitch{}.attrType(), leafSwitches, diags)
 	o.AccessSwitches = mapValueOrNull(ctx, rRackTypeAccessSwitch{}.attrType(), accessSwitches, diags)
-	//o.GenericSystems = mapValueOrNull(ctx, rRackTypeGenericSystem{}.attrType(), genericSystems, diags)
+	o.GenericSystems = mapValueOrNull(ctx, rRackTypeGenericSystem{}.attrType(), genericSystems, diags)
 }
 
 // copyWriteOnlyElements copies elements (IDs of nested design API objects)
@@ -404,7 +414,7 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	// first extract native go structs from the TF set of objects
 	dstLeafSwitches := o.leafSwitches(ctx, diags)
 	dstAccessSwitches := o.accessSwitches(ctx, diags)
-	//dstGenericSystems := o.genericSystems(ctx, diags)
+	dstGenericSystems := o.genericSystems(ctx, diags)
 
 	// invoke the copyWriteOnlyElements on every leaf switch object
 	for name, dstLeafSwitch := range dstLeafSwitches {
@@ -440,29 +450,26 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 		dstAccessSwitches[name] = dstAccessSwitch
 	}
 
-	//// invoke the copyWriteOnlyElements on every generic system object
-	//for i, genericSystem := range genericSystems {
-	//	srcGenericSystem := src.genericSystemByName(ctx, genericSystem.Name.ValueString(), diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//	if srcGenericSystem == nil {
-	//		continue
-	//	}
-	//	genericSystems[i].copyWriteOnlyElements(ctx, srcGenericSystem, diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
+	// invoke the copyWriteOnlyElements on every generic system object
+	for name, dstGenericSystem := range dstGenericSystems {
+		srcGenericSystem, ok := src.genericSystems(ctx, diags)[name]
+		if !ok {
+			continue
+		}
+		if diags.HasError() {
+			return
+		}
 
-	//var d diag.Diagnostics
-	//var leafSwitchMap types.Map
-	//var leafSwitchSet, accessSwitchSet types.Set
-	//var leafSwitchSet, accessSwitchSet, genericSystemSet types.Set
+		dstGenericSystem.copyWriteOnlyElements(ctx, &srcGenericSystem, diags)
+		if diags.HasError() {
+			return
+		}
+	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
 	leafSwitchMap := mapValueOrNull(ctx, rRackTypeLeafSwitch{}.attrType(), dstLeafSwitches, diags)
 	accessSwitchMap := mapValueOrNull(ctx, rRackTypeAccessSwitch{}.attrType(), dstAccessSwitches, diags)
+	genericSystemMap := mapValueOrNull(ctx, rRackTypeGenericSystem{}.attrType(), dstGenericSystems, diags)
 	if diags.HasError() {
 		return
 	}
@@ -470,7 +477,7 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	// save the TF sets into rRackType
 	o.LeafSwitches = leafSwitchMap
 	o.AccessSwitches = accessSwitchMap
-	//o.GenericSystems = genericSystemMap
+	o.GenericSystems = genericSystemMap
 }
 
 func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goapstra.RackLinkAttachmentType {
@@ -745,7 +752,7 @@ func (o *rRackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) m
 		return nil
 	}
 
-	// copy the switch name from the map key into the object's Name field
+	// copy the leaf switch name from the map key into the object's Name field
 	for name, leafSwitch := range leafSwitches {
 		leafSwitch.Name = types.StringValue(name)
 		leafSwitches[name] = leafSwitch
@@ -774,7 +781,7 @@ func (o *rRackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics)
 		return nil
 	}
 
-	// copy the switch name from the map key into the object's Name field
+	// copy the access switch name from the map key into the object's Name field
 	for name, accessSwitch := range accessSwitches {
 		accessSwitch.Name = types.StringValue(name)
 		accessSwitches[name] = accessSwitch
@@ -795,25 +802,34 @@ func (o *rRackType) accessSwitchByName(ctx context.Context, requested string, di
 	return nil
 }
 
-//func (o *rRackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) []rRackTypeGenericSystem {
-//	var genericSystems []rRackTypeGenericSystem
-//	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
-//	diags.Append(d...)
-//	return genericSystems
-//}
+func (o *rRackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeGenericSystem {
+	var genericSystems map[string]rRackTypeGenericSystem
+	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
 
-//func (o *rRackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeGenericSystem {
-//	genericSystems := o.genericSystems(ctx, diags)
-//	if diags.HasError() {
-//		return nil
-//	}
-//	for _, genericSystem := range genericSystems {
-//		if genericSystem.Name == requested {
-//			return &genericSystem
-//		}
-//	}
-//	return nil
-//}
+	// copy the generic system name from the map key into the object's Name field
+	for name, genericSystem := range genericSystems {
+		genericSystem.Name = types.StringValue(name)
+		genericSystems[name] = genericSystem
+	}
+	return genericSystems
+}
+
+func (o *rRackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeGenericSystem {
+	genericSystems := o.genericSystems(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	if genericSystem, ok := genericSystems[requested]; ok {
+		return &genericSystem
+	}
+
+	return nil
+}
 
 // fcdModes returns permitted fabric_connectivity_design mode strings
 func fcdModes() []string {

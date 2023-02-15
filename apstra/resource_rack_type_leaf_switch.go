@@ -39,7 +39,7 @@ func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 			Computed:            true,
 		},
 		"logical_device_id": schema.StringAttribute{
-			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Leaf Switch.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
