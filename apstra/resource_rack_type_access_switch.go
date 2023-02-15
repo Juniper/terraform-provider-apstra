@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,15 +18,15 @@ import (
 )
 
 type rRackTypeAccessSwitch struct {
-	Count              types.Int64  `tfsdk:"count"`
+	Count types.Int64 `tfsdk:"count"`
+	//EsiLagInfo         types.Object `tfsdk:"esi_lag_info""`
 	Links              types.Map    `tfsdk:"links"`
 	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
-	//TagIds             types.Set    `tfsdk:"tag_ids"`
-	//TagData            types.Set    `tfsdk:"tag_data"`
-	//EsiLagInfo         types.Object `tfsdk:"esi_lag_info""`
+	TagIds             types.Set    `tfsdk:"tag_ids"`
+	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
 func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
@@ -62,8 +63,19 @@ func (o rRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
 		},
-		//"tag_ids":        tagIdsAttributeSchema(),
-		//"tag_data":       tagsDataAttributeSchema(),
+		"tag_ids": schema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Access Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tag_data": schema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.resourceAttributes(),
+			},
+		},
 		//"esi_lag_info": {
 		//	MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
 		//	Optional:            true,
@@ -92,8 +104,8 @@ func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"links":               types.MapType{ElemType: rRackLink{}.attrType()},
 		"logical_device":      logicalDeviceData{}.attrType(),
-		//"tag_ids":             types.SetType{ElemType: types.StringType},
-		//"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
 		//"esi_lag_info":        esiLagInfo{}.attrType(),
 	}
 }
@@ -102,14 +114,14 @@ func (o rRackTypeAccessSwitch) attrType() attr.Type {
 	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
-func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
+func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddError(errProviderBug, "rRackTypeAccessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	//o.TagIds = types.SetValueMust(types.StringType, src.TagIds.Elements())
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
 	//for i, link := range o.Links {
 	//	srcLink := src.linkByName(link.Name)
@@ -163,13 +175,9 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 		i++
 	}
 
-	//var tagIds []goapstra.ObjectId
-	//if o.TagIds != nil {
-	//	tagIds = make([]goapstra.ObjectId, len(o.TagIds))
-	//	for i, tagId := range o.TagIds {
-	//		tagIds[i] = goapstra.ObjectId(tagId)
-	//	}
-	//}
+	var tagIds []goapstra.ObjectId
+	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	//var esiLagInfo *goapstra.EsiLagInfo
 	//if o.EsiLagInfo != nil {
@@ -183,7 +191,7 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 		RedundancyProtocol: redundancyProtocol,
 		Links:              linkRequests,
 		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
-		//Tags:               tagIds,
+		Tags:               tagIds,
 		//EsiLagInfo:         esiLagInfo,
 	}
 }
@@ -225,19 +233,20 @@ func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstr
 	//}
 	//o.LogicalDevice.parseApi(in.LogicalDevice)
 
-	//if len(in.Tags) > 0 {
-	//	o.TagData = make([]tagData, len(in.Tags)) // populated below
-	//	for i := range in.Tags {
-	//		o.TagData[i].parseApi(&in.Tags[i])
-	//	}
-	//}
+	// empty set for now to avoid nil pointer dereference error because the API
+	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
+	o.TagIds = types.SetNull(types.StringType)
 
-	links := newResourceLinkMap(ctx, in.Links, diags)
+	o.TagData = newTagSet(ctx, in.Tags, diags)
 	if diags.HasError() {
 		return
 	}
 
-	o.Links = links
+	o.Links = newResourceLinkMap(ctx, in.Links, diags)
+	if diags.HasError() {
+		return
+	}
+
 }
 
 //func (o *rRackTypeAccessSwitch) linkByName(desired string) *dRackLink {

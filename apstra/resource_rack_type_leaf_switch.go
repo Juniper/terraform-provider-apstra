@@ -121,14 +121,14 @@ func (o rRackTypeLeafSwitch) attrType() attr.Type {
 	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
-func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(_ context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
+func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddError(errProviderBug, "rRackTypeLeafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = types.SetValueMust(types.StringType, src.TagIds.Elements())
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {

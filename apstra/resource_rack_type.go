@@ -432,7 +432,7 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 			return
 		}
 
-		dstAccessSwitch.copyWriteOnlyElements(&srcAccessSwitch, diags)
+		dstAccessSwitch.copyWriteOnlyElements(ctx, &srcAccessSwitch, diags)
 		if diags.HasError() {
 			return
 		}
