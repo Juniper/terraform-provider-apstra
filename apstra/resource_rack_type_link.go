@@ -24,8 +24,8 @@ type rRackLink struct {
 	LinksPerSwitch   types.Int64  `tfsdk:"links_per_switch"`
 	Speed            types.String `tfsdk:"speed"`
 	SwitchPeer       types.String `tfsdk:"switch_peer"`
-	//TagData          types.Set    `tfsdk:"tag_data"`
-	TagIds types.Set `tfsdk:"tag_ids"`
+	TagData          types.Set    `tfsdk:"tag_data"`
+	TagIds           types.Set    `tfsdk:"tag_ids"`
 }
 
 func (o rRackLink) attributes() map[string]schema.Attribute {
@@ -74,13 +74,13 @@ func (o rRackLink) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Set of Tag IDs to be applied to this Link",
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
-		//"tag_data": schema.SetNestedAttribute{
-		//	MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",
-		//	Computed:            true,
-		//	NestedObject: schema.NestedAttributeObject{
-		//		Attributes: tagData{}.resourceAttributes(),
-		//	},
-		//},
+		"tag_data": schema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Link",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.resourceAttributes(),
+			},
+		},
 	}
 }
 
@@ -93,7 +93,7 @@ func (o rRackLink) attrTypes() map[string]attr.Type {
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
 		"tag_ids":            types.SetType{ElemType: types.StringType},
-		//"tag_data":           types.SetType{ElemType: tagData{}.attrType()},
+		"tag_data":           types.SetType{ElemType: tagData{}.attrType()},
 	}
 }
 
@@ -125,11 +125,10 @@ func (o *rRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, 
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
 	o.TagIds = types.SetNull(types.StringType)
 
-	// o.Tags = types.SetNull() // fill in later with copyWriteOnlyAttributes
-	//o.TagData = newTagSet(ctx, in.Tags, diags)
-	//if diags.HasError() {
-	//	return
-	//}
+	o.TagData = newTagSet(ctx, in.Tags, diags)
+	if diags.HasError() {
+		return
+	}
 }
 
 func (o *rRackLink) copyWriteOnlyElements(ctx context.Context, src *rRackLink, diags *diag.Diagnostics) {
