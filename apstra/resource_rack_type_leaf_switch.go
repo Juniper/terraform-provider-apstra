@@ -169,8 +169,7 @@ func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, fcd g
 		leafMlagInfo = mi.request(ctx, diags)
 	}
 
-	var tagIds []goapstra.ObjectId
-	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	return &goapstra.RackElementLeafSwitchRequest{
@@ -205,7 +204,7 @@ func (o *rRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		return
 	}
 
-	// empty set for now to avoid nil pointer dereference error because the API
+	// null set for now to avoid nil pointer dereference error because the API
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
 	o.TagIds = types.SetNull(types.StringType)
 

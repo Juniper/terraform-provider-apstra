@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,7 +25,7 @@ type rRackLink struct {
 	Speed            types.String `tfsdk:"speed"`
 	SwitchPeer       types.String `tfsdk:"switch_peer"`
 	//TagData          types.Set    `tfsdk:"tag_data"`
-	//TagIds           types.Set    `tfsdk:"tag_ids"`
+	TagIds types.Set `tfsdk:"tag_ids"`
 }
 
 func (o rRackLink) attributes() map[string]schema.Attribute {
@@ -67,8 +68,19 @@ func (o rRackLink) attributes() map[string]schema.Attribute {
 				goapstra.RackLinkSwitchPeerSecond.String(),
 			)},
 		},
-		//			"tag_ids":  tagIdsAttributeSchema(),
-		//			"tag_data": tagsDataAttributeSchema(),
+		"tag_ids": schema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Link",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		//"tag_data": schema.SetNestedAttribute{
+		//	MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",
+		//	Computed:            true,
+		//	NestedObject: schema.NestedAttributeObject{
+		//		Attributes: tagData{}.resourceAttributes(),
+		//	},
+		//},
 	}
 }
 
@@ -80,7 +92,7 @@ func (o rRackLink) attrTypes() map[string]attr.Type {
 		"links_per_switch":   types.Int64Type,
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
-		//"tag_ids":            types.SetType{ElemType: types.StringType},
+		"tag_ids":            types.SetType{ElemType: types.StringType},
 		//"tag_data":           types.SetType{ElemType: tagData{}.attrType()},
 	}
 }
@@ -109,6 +121,10 @@ func (o *rRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, 
 		o.SwitchPeer = types.StringValue(in.SwitchPeer.String())
 	}
 
+	// null set for now to avoid nil pointer dereference error because the API
+	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
+	o.TagIds = types.SetNull(types.StringType)
+
 	// o.Tags = types.SetNull() // fill in later with copyWriteOnlyAttributes
 	//o.TagData = newTagSet(ctx, in.Tags, diags)
 	//if diags.HasError() {
@@ -116,13 +132,20 @@ func (o *rRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, 
 	//}
 }
 
+func (o *rRackLink) copyWriteOnlyElements(ctx context.Context, src *rRackLink, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "rRackLink.copyWriteOnlyElements: attempt to copy from nil source")
+		return
+	}
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+
+}
+
 func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
 	var err error
 
-	//tags := make([]goapstra.ObjectId, len(o.TagIds))
-	//for i, tag := range o.TagIds {
-	//	tags[i] = goapstra.ObjectId(tag)
-	//}
+	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	lagMode := goapstra.RackLinkLagModeNone
 	if !o.LagMode.IsNull() {
@@ -165,8 +188,8 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 	}
 
 	return &goapstra.RackLinkRequest{
-		Label: o.Name.ValueString(),
-		//Tags:               tags,
+		Label:              o.Name.ValueString(),
+		Tags:               tagIds,
 		LinkPerSwitchCount: linksPerSwitch,
 		LinkSpeed:          goapstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
 		TargetSwitchLabel:  o.TargetSwitchName.ValueString(),

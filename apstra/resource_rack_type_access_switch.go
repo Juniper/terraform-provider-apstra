@@ -112,16 +112,33 @@ func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
 	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
-	//for i, link := range o.Links {
-	//	srcLink := src.linkByName(link.Name)
-	//	if srcLink == nil {
-	//		continue
-	//	}
-	//	o.Links[i].copyWriteOnlyElements(srcLink, diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
+	var d diag.Diagnostics
+
+	srcLinks := make(map[string]rRackLink, len(src.Links.Elements()))
+	d = src.Links.ElementsAs(ctx, &srcLinks, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	dstLinks := make(map[string]rRackLink, len(o.Links.Elements()))
+	d = o.Links.ElementsAs(ctx, &dstLinks, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	for name, dstLink := range dstLinks {
+		if srcLink, ok := srcLinks[name]; ok {
+			dstLink.copyWriteOnlyElements(ctx, &srcLink, diags)
+			dstLinks[name] = dstLink
+		}
+	}
+
+	o.Links = mapValueOrNull(ctx, rRackLink{}.attrType(), dstLinks, diags)
+	if diags.HasError() {
+		return
+	}
 }
 
 func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
@@ -217,7 +234,7 @@ func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstr
 		return
 	}
 
-	// empty set for now to avoid nil pointer dereference error because the API
+	// null set for now to avoid nil pointer dereference error because the API
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
 	o.TagIds = types.SetNull(types.StringType)
 
