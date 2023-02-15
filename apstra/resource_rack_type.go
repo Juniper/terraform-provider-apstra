@@ -687,15 +687,14 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		return nil
 	}
 
-	//genericSystems := o.genericSystems(ctx, diags) // todo re-enable
-	//if diags.HasError() {
-	//	return nil
-	//}
+	genericSystems := o.genericSystems(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
 
 	var i int
 
 	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
-
 	i = 0
 	for name, leafSwitch := range leafSwitches {
 		lsr := leafSwitch.request(ctx, path.Root("leaf_switches").AtMapKey(name), fcd, diags)
@@ -707,7 +706,6 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 	}
 
 	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
-
 	i = 0
 	for name, accessSwitch := range accessSwitches {
 		asr := accessSwitch.request(ctx, path.Root("access_switches").AtMapKey(name), o, diags)
@@ -718,21 +716,16 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		i++
 	}
 
-	//genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
-	//for i, genericSystem := range genericSystems {
-	//	setVal, d := types.ObjectValueFrom(ctx, genericSystem.attrTypes(), &genericSystem)
-	//	diags.Append(d...)
-	//	if diags.HasError() {
-	//		return nil
-	//	}
-	//
-	//	gsr := genericSystem.request(ctx, path.Root("generic_systems").AtSetValue(setVal), o, diags)
-	//	if diags.HasError() {
-	//		return nil
-	//	}
-	//
-	//	genericSystemsRequests[i] = *gsr
-	//}
+	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
+	i = 0
+	for name, genericSystem := range genericSystems {
+		gsr := genericSystem.request(ctx, path.Root("generic_systems").AtMapKey(name), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+		genericSystemsRequests[i] = *gsr
+		i++
+	}
 
 	return &goapstra.RackTypeRequest{
 		DisplayName:              o.Name.ValueString(),
@@ -740,7 +733,7 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		FabricConnectivityDesign: fcd,
 		LeafSwitches:             leafSwitchRequests,
 		AccessSwitches:           accessSwitchRequests,
-		//GenericSystems:           genericSystemsRequests,
+		GenericSystems:           genericSystemsRequests,
 	}
 }
 
