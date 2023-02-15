@@ -464,6 +464,7 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 		if diags.HasError() {
 			return
 		}
+		dstGenericSystems[name] = dstGenericSystem
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
