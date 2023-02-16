@@ -27,7 +27,6 @@ const (
 )
 
 var _ resource.ResourceWithConfigure = &resourceRackType{}
-var _ resource.ResourceWithValidateConfig = &resourceRackType{}
 
 type resourceRackType struct {
 	client *goapstra.Client
@@ -104,21 +103,6 @@ func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 		},
 	}
-}
-
-func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	if o.client == nil { // cannot proceed without a client
-		return
-	}
-
-	var config rRackType
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	//config.validateConfigAccessSwitches(ctx, path.Root("access_switches"), &resp.Diagnostics)
-	//config.validateConfigGenericSystems(ctx, path.Root("generic_systems"), &resp.Diagnostics)
 }
 
 func (o *resourceRackType) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
