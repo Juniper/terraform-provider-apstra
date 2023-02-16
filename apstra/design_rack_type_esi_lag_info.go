@@ -53,12 +53,6 @@ func (o esiLagInfo) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o esiLagInfo) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
-	}
-}
-
 func (o *esiLagInfo) loadApiResponse(_ context.Context, in *goapstra.EsiLagInfo, diags *diag.Diagnostics) {
 	o.L3PeerLinkCount = types.Int64Value(int64(in.AccessAccessLinkCount))
 	o.L3PeerLinkSpeed = types.StringValue(string(in.AccessAccessLinkSpeed))

@@ -174,7 +174,7 @@ func (o *dAsnPool) loadApiResponse(ctx context.Context, in *goapstra.AsnPool, di
 	o.CreatedAt = types.StringValue(in.CreatedAt.String())
 	o.LastModifiedAt = types.StringValue(in.LastModifiedAt.String())
 	o.Total = types.Int64Value(int64(in.Total))
-	o.Ranges = setValueOrNull(ctx, dAsnPoolRange{}.attrType(), ranges, diags)
+	o.Ranges = setValueOrNull(ctx, types.ObjectType{AttrTypes: dAsnPoolRange{}.attrTypes()}, ranges, diags)
 }
 
 type dAsnPoolRange struct {
@@ -194,12 +194,6 @@ func (o dAsnPoolRange) attrTypes() map[string]attr.Type {
 		"total":           types.Int64Type,
 		"used":            types.Int64Type,
 		"used_percentage": types.Float64Type,
-	}
-}
-
-func (o dAsnPoolRange) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
 	}
 }
 

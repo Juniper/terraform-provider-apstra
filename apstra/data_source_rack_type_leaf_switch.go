@@ -74,15 +74,9 @@ func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
-		"mlag_info":           mlagInfo{}.attrType(),
-		"logical_device":      logicalDeviceData{}.attrType(),
-		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-	}
-}
-
-func (o dRackTypeLeafSwitch) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"mlag_info":           types.ObjectType{AttrTypes: mlagInfo{}.attrTypes()},
+		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 

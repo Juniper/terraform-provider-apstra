@@ -73,15 +73,9 @@ func (o dRackTypeGenericSystem) attrTypes() map[string]attr.Type {
 		"count":               types.Int64Type,
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
-		"logical_device":      logicalDeviceData{}.attrType(),
-		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-		"links":               types.SetType{ElemType: dRackLink{}.attrType()},
-	}
-}
-
-func (o dRackTypeGenericSystem) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
 	}
 }
 

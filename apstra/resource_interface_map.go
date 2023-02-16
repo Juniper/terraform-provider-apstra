@@ -648,10 +648,10 @@ func (o *rInterfaceMap) loadApiResponse(ctx context.Context, in *goapstra.Interf
 	a = a[:aIdx] // trim the slice of allocated ports to size
 	b = b[:bIdx] // trim the slice of unallocated ports to size
 
-	aList, d := types.SetValueFrom(ctx, rInterfaceMapInterface{}.attrType(), a)
+	aList, d := types.SetValueFrom(ctx, types.ObjectType{AttrTypes: rInterfaceMapInterface{}.attrTypes()}, a)
 	diags.Append(d...)
 
-	bList, d := types.SetValueFrom(ctx, rInterfaceMapInterface{}.attrType(), b)
+	bList, d := types.SetValueFrom(ctx, types.ObjectType{AttrTypes: rInterfaceMapInterface{}.attrTypes()}, b)
 	diags.Append(d...)
 
 	o.Name = types.StringValue(in.Label)
@@ -725,12 +725,12 @@ func (o rInterfaceMapInterface) unusedAttributes() map[string]schema.Attribute {
 	}
 }
 
-func (o rInterfaceMapInterface) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"physical_interface_name": types.StringType,
-			"logical_device_port":     types.StringType,
-			"transformation_id":       types.Int64Type}}
+func (o rInterfaceMapInterface) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"physical_interface_name": types.StringType,
+		"logical_device_port":     types.StringType,
+		"transformation_id":       types.Int64Type,
+	}
 }
 
 func (o *rInterfaceMapInterface) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {

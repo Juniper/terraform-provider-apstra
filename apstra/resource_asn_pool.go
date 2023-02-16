@@ -272,7 +272,7 @@ func (o *rAsnPool) loadApiResponse(ctx context.Context, in *goapstra.AsnPool, di
 
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.DisplayName)
-	o.Ranges = setValueOrNull(ctx, rAsnPoolRange{}.attrType(), ranges, diags)
+	o.Ranges = setValueOrNull(ctx, types.ObjectType{AttrTypes: rAsnPoolRange{}.attrTypes()}, ranges, diags)
 }
 
 func (o *rAsnPool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AsnPoolRequest {
@@ -304,12 +304,6 @@ func (o rAsnPoolRange) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"first": types.Int64Type,
 		"last":  types.Int64Type,
-	}
-}
-
-func (o rAsnPoolRange) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
 	}
 }
 

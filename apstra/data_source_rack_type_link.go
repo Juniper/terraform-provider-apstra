@@ -63,13 +63,7 @@ func (o dRackLink) attrTypes() map[string]attr.Type {
 		"links_per_switch":   types.Int64Type,
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
-		"tag_data":           types.SetType{ElemType: tagData{}.attrType()},
-	}
-}
-
-func (o dRackLink) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"tag_data":           types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 
@@ -99,18 +93,18 @@ func (o *dRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, 
 
 func newDataSourceLinkSet(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Set {
 	if len(in) == 0 {
-		return types.SetNull(dRackLink{}.attrType())
+		return types.SetNull(types.ObjectType{AttrTypes: dRackLink{}.attrTypes()})
 	}
 
 	links := make([]dRackLink, len(in))
 	for i, link := range in {
 		links[i].loadApiResponse(ctx, &link, diags)
 		if diags.HasError() {
-			return types.SetNull(dRackLink{}.attrType())
+			return types.SetNull(types.ObjectType{AttrTypes: dRackLink{}.attrTypes()})
 		}
 	}
 
-	result, d := types.SetValueFrom(ctx, dRackLink{}.attrType(), &links)
+	result, d := types.SetValueFrom(ctx, types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}, &links)
 	diags.Append(d...)
 
 	return result

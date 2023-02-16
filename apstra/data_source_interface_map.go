@@ -167,7 +167,7 @@ func (o *dInterfaceMap) loadApiResponse(ctx context.Context, in *goapstra.Interf
 	for i := range in.Data.Interfaces {
 		interfaces[i].loadApiResponse(ctx, &in.Data.Interfaces[i], diags)
 	}
-	o.Interfaces, d = types.SetValueFrom(ctx, dInterfaceMapInterface{}.attrType(), interfaces)
+	o.Interfaces, d = types.SetValueFrom(ctx, types.ObjectType{AttrTypes: dInterfaceMapInterface{}.attrTypes()}, interfaces)
 	diags.Append(d...)
 }
 
@@ -216,17 +216,16 @@ func (o dInterfaceMapInterface) attributes() map[string]schema.Attribute {
 	}
 }
 
-func (o dInterfaceMapInterface) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"name":     types.StringType,
-			"roles":    types.SetType{ElemType: types.StringType},
-			"mapping":  interfaceMapMapping{}.attrType(),
-			"active":   types.BoolType,
-			"position": types.Int64Type,
-			"speed":    types.StringType,
-			"setting":  types.StringType,
-		}}
+func (o dInterfaceMapInterface) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"name":     types.StringType,
+		"roles":    types.SetType{ElemType: types.StringType},
+		"mapping":  types.ObjectType{AttrTypes: interfaceMapMapping{}.attrTypes()},
+		"active":   types.BoolType,
+		"position": types.Int64Type,
+		"speed":    types.StringType,
+		"setting":  types.StringType,
+	}
 }
 
 func (o *dInterfaceMapInterface) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
@@ -286,11 +285,6 @@ func (o interfaceMapMapping) attrTypes() map[string]attr.Type {
 		"logical_device_panel":             types.Int64Type,
 		"logical_device_panel_port":        types.Int64Type,
 	}
-}
-
-func (o interfaceMapMapping) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes()}
 }
 
 func (o *interfaceMapMapping) loadApiResponse(in *goapstra.InterfaceMapMapping) {
