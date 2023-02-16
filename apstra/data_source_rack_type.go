@@ -5,15 +5,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceRackType{}
-var _ datasource.DataSourceWithValidateConfig = &dataSourceRackType{}
 
 type dataSourceRackType struct {
 	client *goapstra.Client
@@ -49,11 +50,17 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 				MarkdownDescription: "Rack Type id.  Required when the Rack Type name is omitted.",
 				Optional:            true,
 				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("name")),
+				},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "Rack Type name displayed in the Apstra web UI.  Required when Rack Type id is omitted.",
 				Optional:            true,
 				Computed:            true,
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("id")),
+				},
 			},
 			"description": schema.StringAttribute{
 				MarkdownDescription: "Rack Type description displayed in the Apstra web UI.",
@@ -85,19 +92,6 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 				},
 			},
 		},
-	}
-}
-
-func (o *dataSourceRackType) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config dRackType
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
-		resp.Diagnostics.AddError("configuration error", "exactly one of 'id' and 'name' must be specified")
-		return
 	}
 }
 

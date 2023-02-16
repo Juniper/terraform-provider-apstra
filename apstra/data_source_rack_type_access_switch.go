@@ -18,11 +18,13 @@ func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics)
 		diags.AddError("access switch ESI LAG Info missing",
 			fmt.Sprintf("rack type '%s', access switch '%s' has '%s', but EsiLagInfo is nil",
 				rt.Id, as.Label, as.RedundancyProtocol.String()))
+		return
 	}
 	if as.LogicalDevice == nil {
 		diags.AddError("access switch logical device info missing",
 			fmt.Sprintf("rack type '%s', access switch '%s' logical device is nil",
 				rt.Id, as.Label))
+		return
 	}
 }
 
@@ -45,7 +47,11 @@ func (o dRackTypeAccessSwitch) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
 			Computed:            true,
 		},
-		"esi_lag_info": esiLagInfo{}.schemaAsDataSource(),
+		"esi_lag_info": schema.SingleNestedAttribute{
+			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
+			Computed:            true,
+			Attributes:          esiLagInfo{}.schemaAsDataSource(),
+		},
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,

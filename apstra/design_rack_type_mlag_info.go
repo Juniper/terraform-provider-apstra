@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -23,34 +22,6 @@ type mlagInfo struct {
 	L3PeerLinkCount         types.Int64  `tfsdk:"l3_peer_link_count"`
 	L3PeerLinkSpeed         types.String `tfsdk:"l3_peer_link_speed"`
 	L3PeerLinkPortChannelId types.Int64  `tfsdk:"l3_peer_link_port_channel_id"`
-}
-
-func (o *mlagInfo) validateConfig(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
-	if o == nil {
-		diags.AddError("nil", "nil")
-		return
-	}
-	if !o.PeerLinkPortChannelId.IsNull() &&
-		!o.L3PeerLinkPortChannelId.IsNull() &&
-		o.PeerLinkPortChannelId.ValueInt64() == o.L3PeerLinkPortChannelId.ValueInt64() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'peer_link_port_channel_id' and 'l3_peer_link_port_channel_id' cannot both use value %d",
-				o.PeerLinkPortChannelId.ValueInt64()))
-	}
-
-	if !o.L3PeerLinkCount.IsNull() && o.L3PeerLinkSpeed.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_speed'")
-	}
-	if !o.L3PeerLinkSpeed.IsNull() && o.L3PeerLinkCount.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_speed' requires 'l3_peer_link_count'")
-	}
-
-	if !o.L3PeerLinkPortChannelId.IsNull() && o.L3PeerLinkCount.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_port_channel_id' requires 'l3_peer_link_count'")
-	}
-	if !o.L3PeerLinkCount.IsNull() && o.L3PeerLinkPortChannelId.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig, "'l3_peer_link_count' requires 'l3_peer_link_port_channel_id'")
-	}
 }
 
 func (o mlagInfo) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -91,7 +62,9 @@ func (o mlagInfo) resourceAttributes() map[string]resourceSchema.Attribute {
 		"mlag_keepalive_vlan": resourceSchema.Int64Attribute{
 			MarkdownDescription: "MLAG keepalive VLAN ID.",
 			Required:            true,
-			Validators:          []validator.Int64{int64validator.Between(vlanMin, vlanMax)},
+			Validators: []validator.Int64{
+				int64validator.Between(vlanMin, vlanMax),
+			},
 		},
 		"peer_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of links between MLAG devices.",
@@ -106,22 +79,44 @@ func (o mlagInfo) resourceAttributes() map[string]resourceSchema.Attribute {
 		"peer_link_port_channel_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel number used for L2 Peer Link.",
 			Required:            true,
-			Validators:          []validator.Int64{int64validator.Between(poIdMin, poIdMax)},
+			Validators: []validator.Int64{
+				int64validator.Between(poIdMin, poIdMax),
+				differentFrom(path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id")),
+			},
 		},
 		"l3_peer_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of L3 links between MLAG devices.",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
+				int64validator.AlsoRequires(
+					path.MatchRelative().AtParent().AtName("l3_peer_link_speed"),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id"),
+				),
+			},
 		},
 		"l3_peer_link_speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of l3 links between MLAG devices.",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.AlsoRequires(
+					path.MatchRelative().AtParent().AtName("l3_peer_link_count"),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id"),
+				),
+			},
 		},
 		"l3_peer_link_port_channel_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel number used for L3 Peer Link. Omit to allow Apstra to choose.",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(poIdMin, poIdMax)},
+			Validators: []validator.Int64{
+				int64validator.Between(poIdMin, poIdMax),
+				int64validator.AlsoRequires(
+					path.MatchRelative().AtParent().AtName("l3_peer_link_count"),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_speed"),
+				),
+				differentFrom(path.MatchRelative().AtParent().AtName("peer_link_port_channel_id")),
+			},
 		},
 	}
 }

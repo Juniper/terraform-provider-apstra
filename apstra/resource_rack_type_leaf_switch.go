@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -24,65 +23,82 @@ import (
 type rRackTypeLeafSwitch struct {
 	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
-	MlagInfo           types.Object `tfsdk:"mlag_info""`
+	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	Name               types.String `tfsdk:"name"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
 	TagIds             types.Set    `tfsdk:"tag_ids"`
-	//TagData            types.Set    `tfsdk:"tag_data"` // todo re-enable
+	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
 func (o rRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
-			MarkdownDescription: "Switch name, used when creating intra-rack links targeting this switch.",
+			MarkdownDescription: "Switch name, copied from map key, used when creating intra-rack links targeting this switch.",
 			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"logical_device_id": schema.StringAttribute{
-			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this switch.",
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Leaf Switch.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"spine_link_count": schema.Int64Attribute{
 			MarkdownDescription: "Links per spine.",
-			Validators:          []validator.Int64{int64validator.AtLeast(1)},
-			Optional:            true,
-			Computed:            true,
-			PlanModifiers:       []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
+				int64FabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
+				int64FabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+			},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 		},
 		"spine_link_speed": schema.StringAttribute{
 			MarkdownDescription: "Speed of spine-facing links, something like '10G'",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringFabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
+				stringFabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+			},
 		},
 		"redundancy_protocol": schema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Enabling a redundancy protocol converts a single "+
 				"Leaf Switch into a LAG-capable switch pair. Must be one of '%s'.",
 				strings.Join(leafRedundancyModes(), "', '")),
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(leafRedundancyModes()...)},
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(leafRedundancyModes()...),
+				validateLeafSwitchRedundancyMode(),
+				stringFabricConnectivityDesignMustBeWhenValue(goapstra.FabricConnectivityDesignL3Clos, "mlag"),
+			},
 		},
 		"logical_device": schema.SingleNestedAttribute{
-			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          logicalDeviceData{}.schemaAsResourceReadOnly(),
 		},
-		"tag_ids": schema.SetAttribute{
-			ElementType:         types.StringType,
-			Optional:            true,
-			MarkdownDescription: "List of Tag IDs to be applied to this Leaf Switch",
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-		},
-		//"tag_data":       tagsDataAttributeSchema(), // todo re-enable
 		"mlag_info": schema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
 				"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
 			Optional:   true,
 			Attributes: mlagInfo{}.resourceAttributes(),
+			Validators: []validator.Object{validateSwitchLagInfo(goapstra.LeafRedundancyProtocolMlag.String())},
+		},
+		"tag_ids": schema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Leaf Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tag_data": schema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Leaf Switch",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.resourceAttributes(),
+			},
 		},
 	}
 }
@@ -96,93 +112,13 @@ func (o rRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"logical_device":      logicalDeviceData{}.attrType(),
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		//"tag_data":            types.SetType{ElemType: tagData{}.attrType()}, // todo re-enable
-		"mlag_info": mlagInfo{}.attrType(),
+		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"mlag_info":           mlagInfo{}.attrType(),
 	}
 }
 
 func (o rRackTypeLeafSwitch) attrType() attr.Type {
 	return types.ObjectType{AttrTypes: o.attrTypes()}
-}
-
-func (o *rRackTypeLeafSwitch) validateConfig(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) {
-	fcd := rack.fabricConnectivityDesign(ctx, diags)
-	if diags.HasError() {
-		return
-	}
-
-	switch fcd {
-	case goapstra.FabricConnectivityDesignL3Clos:
-		o.validateForL3Clos(ctx, path, diags) // todo: figure out how to use AtSetValue()
-	case goapstra.FabricConnectivityDesignL3Collapsed:
-		o.validateForL3Collapsed(ctx, path, diags)
-	default:
-		diags.AddAttributeError(path, errProviderBug, fmt.Sprintf("unknown fabric connectivity design '%s'", fcd.String()))
-	}
-
-	if o.MlagInfo.IsNull() && o.RedundancyProtocol.ValueString() == goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), errInvalidConfig,
-			fmt.Sprintf("'redundancy_protocol = \"%s\"' requires setting 'mlag_info'",
-				o.RedundancyProtocol.ValueString()))
-	}
-
-	if !o.MlagInfo.IsNull() && o.RedundancyProtocol.ValueString() != goapstra.LeafRedundancyProtocolMlag.String() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'mlag_info' requires 'redundancy_protocol = \"%s\"",
-				o.RedundancyProtocol.ValueString()))
-	}
-	if diags.HasError() {
-		return
-	}
-
-	if !o.MlagInfo.IsNull() {
-		mi := mlagInfo{}
-		d := o.MlagInfo.As(ctx, &mi, basetypes.ObjectAsOptions{})
-		diags.Append(d...)
-		if diags.HasError() {
-			return
-		}
-		mi.validateConfig(ctx, path.AtName("mlag_info"), diags)
-	}
-	if diags.HasError() {
-		return
-	}
-}
-
-func (o *rRackTypeLeafSwitch) validateForL3Clos(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
-	if o.SpineLinkSpeed.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_speed' must be specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Clos))
-	}
-}
-
-func (o *rRackTypeLeafSwitch) validateForL3Collapsed(ctx context.Context, path path.Path, diags *diag.Diagnostics) {
-	if !o.SpineLinkCount.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_count' must not be specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Collapsed))
-	}
-
-	if !o.SpineLinkSpeed.IsNull() {
-		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("'spine_link_speed' must bnot e specified when 'fabric_connectivity_design' is '%s'",
-				goapstra.FabricConnectivityDesignL3Collapsed))
-	}
-
-	if !o.RedundancyProtocol.IsNull() {
-		var redundancyProtocol goapstra.LeafRedundancyProtocol
-		err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
-		if err != nil {
-			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"), "parse_error", err.Error())
-			return
-		}
-		if redundancyProtocol == goapstra.LeafRedundancyProtocolMlag {
-			diags.AddAttributeError(path, errInvalidConfig,
-				fmt.Sprintf("'redundancy_protocol' = '%s' is not allowed when 'fabric_connectivity_design' = '%s'",
-					goapstra.LeafRedundancyProtocolMlag, goapstra.FabricConnectivityDesignL3Collapsed))
-		}
-	}
 }
 
 func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {
@@ -192,7 +128,7 @@ func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rR
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = types.SetValueMust(types.StringType, src.TagIds.Elements())
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
@@ -233,8 +169,7 @@ func (o *rRackTypeLeafSwitch) request(ctx context.Context, path path.Path, fcd g
 		leafMlagInfo = mi.request(ctx, diags)
 	}
 
-	var tagIds []goapstra.ObjectId
-	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	return &goapstra.RackElementLeafSwitchRequest{
@@ -269,26 +204,19 @@ func (o *rRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.
 		return
 	}
 
-	// empty set for now to avoid nil pointer dereference error because the API
+	// null set for now to avoid nil pointer dereference error because the API
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
 	o.TagIds = types.SetNull(types.StringType)
 
-	//o.TagData = newTagSet(ctx, in.Tags, diags)
-	//if diags.HasError() {
-	//	return
-	//}
+	o.TagData = newTagSet(ctx, in.Tags, diags)
+	if diags.HasError() {
+		return
+	}
 
 	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}
-
-	//if len(in.Tags) > 0 {
-	//	o.TagData = make([]tagData, len(in.Tags)) // populated below
-	//	for i := range in.Tags {
-	//		o.TagData[i].parseApi(&in.Tags[i])
-	//	}
-	//}
 }
 
 // leafRedundancyModes returns permitted fabric_connectivity_design mode strings
