@@ -192,7 +192,7 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 		LinkPerSwitchCount: linksPerSwitch,
 		LinkSpeed:          goapstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
 		TargetSwitchLabel:  o.TargetSwitchName.ValueString(),
-		AttachmentType:     o.linkAttachmentType(upstreamRedundancyProtocol),
+		AttachmentType:     o.linkAttachmentType(upstreamRedundancyProtocol, diags),
 		LagMode:            lagMode,
 		SwitchPeer:         switchPeer,
 	}

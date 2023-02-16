@@ -484,7 +484,7 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	o.GenericSystems = genericSystemMap
 }
 
-func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer) goapstra.RackLinkAttachmentType {
+func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, diags *diag.Diagnostics) goapstra.RackLinkAttachmentType {
 	switch upstreamRedundancyMode.String() {
 	case goapstra.LeafRedundancyProtocolNone.String():
 		return goapstra.RackLinkAttachmentTypeSingle
