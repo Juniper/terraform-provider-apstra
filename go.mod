@@ -7,7 +7,8 @@ require (
 	bitbucket.org/apstrktr/goapstra v0.0.0-20230130201634-5f0ec05b54c3
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
-	github.com/hashicorp/terraform-plugin-framework v1.1.2-0.20230210212753-757f96584fde
+	//github.com/hashicorp/terraform-plugin-framework v1.1.2-0.20230210212753-757f96584fde
+	github.com/hashicorp/terraform-plugin-framework v1.1.2-0.20230214195151-b784296a0acb
 )
 
 //                                                                                        HHMMSS
