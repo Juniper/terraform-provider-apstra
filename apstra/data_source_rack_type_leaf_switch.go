@@ -16,11 +16,13 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 		diags.AddError("leaf switch MLAG Info missing",
 			fmt.Sprintf("rack type '%s', leaf switch '%s' has '%s', but EsiLagInfo is nil",
 				rt.Id, ls.Label, ls.RedundancyProtocol.String()))
+		return
 	}
 	if ls.LogicalDevice == nil {
 		diags.AddError("leaf switch logical device info missing",
 			fmt.Sprintf("rack type '%s', leaf switch '%s' logical device is nil",
 				rt.Id, ls.Label))
+		return
 	}
 }
 

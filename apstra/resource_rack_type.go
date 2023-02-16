@@ -139,7 +139,7 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// validate API response to catch problems which might crash the provider
-	validateRackType(ctx, rt, &resp.Diagnostics) // todo: chase this down for places HasError() should be checked
+	validateRackType(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -18,11 +18,13 @@ func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics)
 		diags.AddError("access switch ESI LAG Info missing",
 			fmt.Sprintf("rack type '%s', access switch '%s' has '%s', but EsiLagInfo is nil",
 				rt.Id, as.Label, as.RedundancyProtocol.String()))
+		return
 	}
 	if as.LogicalDevice == nil {
 		diags.AddError("access switch logical device info missing",
 			fmt.Sprintf("rack type '%s', access switch '%s' logical device is nil",
 				rt.Id, as.Label))
+		return
 	}
 }
 

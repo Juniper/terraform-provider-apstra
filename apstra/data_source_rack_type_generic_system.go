@@ -18,6 +18,7 @@ func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics
 		diags.AddError("generic system logical device info missing",
 			fmt.Sprintf("rack type '%s', generic system '%s' logical device is nil",
 				rt.Id, gs.Label))
+		return
 	}
 }
 
