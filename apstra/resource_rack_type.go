@@ -496,7 +496,7 @@ func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, diag
 		return goapstra.RackLinkAttachmentTypeSingle
 	}
 
-	if o.SwitchPeer.IsNull() {
+	if !o.SwitchPeer.IsNull() && !o.SwitchPeer.IsUnknown() {
 		return goapstra.RackLinkAttachmentTypeSingle
 	}
 
@@ -578,7 +578,7 @@ func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goaps
 }
 
 func (o *rRackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeLeafSwitch {
-	var leafSwitches map[string]rRackTypeLeafSwitch
+	leafSwitches := make(map[string]rRackTypeLeafSwitch, len(o.LeafSwitches.Elements()))
 	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
 	diags.Append(d...)
 	if diags.HasError() {
@@ -607,7 +607,7 @@ func (o *rRackType) leafSwitchByName(ctx context.Context, requested string, diag
 }
 
 func (o *rRackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeAccessSwitch {
-	var accessSwitches map[string]rRackTypeAccessSwitch
+	accessSwitches := make(map[string]rRackTypeAccessSwitch, len(o.AccessSwitches.Elements()))
 	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, false)
 	diags.Append(d...)
 	if diags.HasError() {
@@ -636,7 +636,7 @@ func (o *rRackType) accessSwitchByName(ctx context.Context, requested string, di
 }
 
 func (o *rRackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeGenericSystem {
-	var genericSystems map[string]rRackTypeGenericSystem
+	genericSystems := make(map[string]rRackTypeGenericSystem, len(o.GenericSystems.Elements()))
 	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
 	if diags.HasError() {

@@ -149,23 +149,21 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 
 	lacpActive := goapstra.RackLinkLagModeActive.String()
 
-	links := make(map[string]rRackLink, len(o.Links.Elements()))
-	d := o.Links.ElementsAs(ctx, &links, false)
-	diags.Append(d...)
+	links := o.links(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
 
 	linkRequests := make([]goapstra.RackLinkRequest, len(links))
-	var i int
+	i := 0
 	for name, link := range links {
 		link.LagMode = types.StringValue(lacpActive)
-		linkReq := link.request(ctx, path.AtName("links").AtMapKey(name), rack, diags)
+		lr := link.request(ctx, path.AtName("links").AtMapKey(name), rack, diags)
 		if diags.HasError() {
 			return nil
 		}
 
-		linkRequests[i] = *linkReq
+		linkRequests[i] = *lr
 		i++
 	}
 
@@ -188,6 +186,35 @@ func (o *rRackTypeAccessSwitch) request(ctx context.Context, path path.Path, rac
 		Tags:               tagIds,
 		EsiLagInfo:         eli.request(ctx, diags),
 	}
+}
+
+func (o *rRackTypeAccessSwitch) links(ctx context.Context, diags *diag.Diagnostics) map[string]rRackLink {
+	links := make(map[string]rRackLink, len(o.Links.Elements()))
+	d := o.Links.ElementsAs(ctx, &links, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	// copy the link name from the map key into the object's Name field
+	for name, link := range links {
+		link.Name = types.StringValue(name)
+		links[name] = link
+	}
+	return links
+}
+
+func (o *rRackTypeAccessSwitch) linkByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackLink {
+	links := o.links(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	if link, ok := links[requested]; ok {
+		return &link
+	}
+
+	return nil
 }
 
 func (o *rRackTypeAccessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {

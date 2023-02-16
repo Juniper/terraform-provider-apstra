@@ -31,8 +31,8 @@ type rRackLink struct {
 func (o rRackLink) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"name": schema.StringAttribute{
-			MarkdownDescription: "Name of this link.",
-			Required:            true,
+			MarkdownDescription: "Name of this link, copied from map key.",
+			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"target_switch_name": schema.StringAttribute{
@@ -156,7 +156,7 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 	}
 
 	switchPeer := goapstra.RackLinkSwitchPeerNone
-	if !o.SwitchPeer.IsNull() {
+	if !o.SwitchPeer.IsNull() && !o.SwitchPeer.IsUnknown() {
 		err = switchPeer.FromString(o.SwitchPeer.ValueString())
 		if err != nil {
 			diags.AddAttributeError(path, "error parsing switch_peer", err.Error())
