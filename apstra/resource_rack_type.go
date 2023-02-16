@@ -346,6 +346,9 @@ func (o *rRackType) getSwitchRedundancyProtocolByName(ctx context.Context, name 
 
 	var accessRedundancyProtocol goapstra.AccessRedundancyProtocol
 	if access != nil {
+		if !access.EsiLagInfo.IsNull() {
+			return goapstra.AccessRedundancyProtocolEsi
+		}
 		if access.RedundancyProtocol.IsNull() {
 			return goapstra.AccessRedundancyProtocolNone
 		}
