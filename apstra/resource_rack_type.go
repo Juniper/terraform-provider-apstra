@@ -203,7 +203,13 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-// todo: bug: copyWriteOnlyElements needs to check whether the destination is known, not overwrite when, e.g. logical device ID changes
+// todo: there's a bug in Update()
+//
+//	when changing the logical_device_id of a leaf/access/generic, TF expects the old value for both
+//	  - `logical_device_id`
+//	  - `logical_device` (everything inside)
+//	to remain the same.
+//	logical_device_id does not have `UseStateForUnknown`, so it's not clear why this is happening
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
