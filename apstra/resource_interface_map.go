@@ -572,8 +572,6 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 			}
 			intf, err := transformation.Interface(unusedInterfaceId)
 			if err != nil {
-				dump, _ := json.MarshalIndent(&portInfo, "", "  ")
-				diags.AddWarning(fmt.Sprintf("transform %d, port %d", unused.transformId, unusedInterfaceId), string(dump))
 				diags.AddError("error getting transformation interface by ID", err.Error())
 				return nil
 			}

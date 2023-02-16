@@ -207,9 +207,6 @@ func (o *resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
-			resp.Diagnostics.AddWarning("API error",
-				fmt.Sprintf("error updating existing IPv4 pool - pool '%s' not found", plan.Id.ValueString()),
-			)
 			return
 		}
 		// some other unknown error
