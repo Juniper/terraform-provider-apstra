@@ -203,13 +203,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-// todo: there's a bug in Update()
-//
-//	when changing the logical_device_id of a leaf/access/generic, TF expects the old value for both
-//	  - `logical_device_id`
-//	  - `logical_device` (everything inside)
-//	to remain the same.
-//	logical_device_id does not have `UseStateForUnknown`, so it's not clear why this is happening
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
@@ -471,33 +464,6 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	o.LeafSwitches = leafSwitchMap
 	o.AccessSwitches = accessSwitchMap
 	o.GenericSystems = genericSystemMap
-}
-
-func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, diags *diag.Diagnostics) goapstra.RackLinkAttachmentType {
-	switch upstreamRedundancyMode.String() {
-	case goapstra.LeafRedundancyProtocolNone.String():
-		return goapstra.RackLinkAttachmentTypeSingle
-	case goapstra.AccessRedundancyProtocolNone.String():
-		return goapstra.RackLinkAttachmentTypeSingle
-	}
-
-	if o.LagMode.IsNull() {
-		return goapstra.RackLinkAttachmentTypeSingle
-	}
-
-	if !o.SwitchPeer.IsNull() && !o.SwitchPeer.IsUnknown() {
-		return goapstra.RackLinkAttachmentTypeSingle
-	}
-
-	switch o.LagMode.ValueString() {
-	case goapstra.RackLinkLagModeActive.String():
-		return goapstra.RackLinkAttachmentTypeDual
-	case goapstra.RackLinkLagModePassive.String():
-		return goapstra.RackLinkAttachmentTypeDual
-	case goapstra.RackLinkLagModeStatic.String():
-		return goapstra.RackLinkAttachmentTypeDual
-	}
-	return goapstra.RackLinkAttachmentTypeSingle
 }
 
 func (o *rRackType) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.RackTypeRequest {

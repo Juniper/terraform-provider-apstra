@@ -215,3 +215,30 @@ func newResourceLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag
 
 	return result
 }
+
+func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) goapstra.RackLinkAttachmentType {
+	switch upstreamRedundancyMode.String() {
+	case goapstra.LeafRedundancyProtocolNone.String():
+		return goapstra.RackLinkAttachmentTypeSingle
+	case goapstra.AccessRedundancyProtocolNone.String():
+		return goapstra.RackLinkAttachmentTypeSingle
+	}
+
+	if o.LagMode.IsNull() {
+		return goapstra.RackLinkAttachmentTypeSingle
+	}
+
+	if !o.SwitchPeer.IsNull() && !o.SwitchPeer.IsUnknown() {
+		return goapstra.RackLinkAttachmentTypeSingle
+	}
+
+	switch o.LagMode.ValueString() {
+	case goapstra.RackLinkLagModeActive.String():
+		return goapstra.RackLinkAttachmentTypeDual
+	case goapstra.RackLinkLagModePassive.String():
+		return goapstra.RackLinkAttachmentTypeDual
+	case goapstra.RackLinkLagModeStatic.String():
+		return goapstra.RackLinkAttachmentTypeDual
+	}
+	return goapstra.RackLinkAttachmentTypeSingle
+}
