@@ -48,7 +48,8 @@ func (o rRackLink) attributes() map[string]schema.Attribute {
 			Validators: []validator.String{stringvalidator.OneOf(
 				goapstra.RackLinkLagModeActive.String(),
 				goapstra.RackLinkLagModePassive.String(),
-				goapstra.RackLinkLagModeStatic.String())},
+				goapstra.RackLinkLagModeStatic.String(),
+			)},
 		},
 		"links_per_switch": schema.Int64Attribute{
 			MarkdownDescription: "Number of Links to each switch.",
