@@ -158,7 +158,6 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// todo: errpath with AtListIndex() are probably mostly wrong
 func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
