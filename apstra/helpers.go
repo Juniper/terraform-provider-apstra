@@ -14,8 +14,10 @@ import (
 )
 
 const (
-	asnAllocationSingle = "single"
-	asnAllocationUnique = "unique"
+	asnAllocationSingle          = "single"
+	asnAllocationUnique          = "unique"
+	overlayControlProtocolEvpn   = "evpn"
+	overlayControlProtocolStatic = "static"
 )
 
 func newKeyLogWriter(fileName string) (*os.File, error) {
@@ -288,6 +290,30 @@ func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Di
 		return asnAllocationUnique
 	default:
 		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN allocation scheme: %d", in))
+		return ""
+	}
+}
+
+func overlayControlProtocolFromString(in string, diags *diag.Diagnostics) goapstra.OverlayControlProtocol {
+	switch in {
+	case overlayControlProtocolEvpn:
+		return goapstra.OverlayControlProtocolEvpn
+	case overlayControlProtocolStatic:
+		return goapstra.OverlayControlProtocolNone
+	default:
+		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN Allocation Scheme: %q", in))
+		return -1
+	}
+}
+
+func overlayControlProtocolToString(in goapstra.OverlayControlProtocol, diags *diag.Diagnostics) string {
+	switch in {
+	case goapstra.OverlayControlProtocolEvpn:
+		return overlayControlProtocolEvpn
+	case goapstra.OverlayControlProtocolNone:
+		return overlayControlProtocolStatic
+	default:
+		diags.AddError(errProviderBug, fmt.Sprintf("unknown Overlay Control Protocol: %d", in))
 		return ""
 	}
 }

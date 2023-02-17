@@ -72,6 +72,10 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 					asnAllocationUnique, asnAllocationSingle),
 				Computed: true,
 			},
+			"overlay_control_protocol": schema.StringAttribute{
+				MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
+				Computed:            true,
+			},
 		},
 	}
 }
@@ -125,10 +129,11 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 }
 
 type dTemplateRackBased struct {
-	Id            types.String `tfsdk:"id"`
-	Name          types.String `tfsdk:"name"`
-	Spine         types.Object `tfsdk:"spine"`
-	AsnAllocation types.String `tfsdk:"asn_allocation_scheme"`
+	Id                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Spine                  types.Object `tfsdk:"spine"`
+	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
+	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
 }
 
 func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.TemplateRackBased, diags *diag.Diagnostics) {
@@ -149,4 +154,8 @@ func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.T
 		return
 	}
 	o.Spine = spine
+	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.Data.VirtualNetworkPolicy.OverlayControlProtocol, diags))
+	if diags.HasError() {
+		return
+	}
 }
