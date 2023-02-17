@@ -1,6 +1,7 @@
 package apstra
 
 import (
+	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -10,6 +11,11 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+)
+
+const (
+	asnAllocationSingle = "single"
+	asnAllocationUnique = "unique"
 )
 
 func newKeyLogWriter(fileName string) (*os.File, error) {
@@ -260,4 +266,28 @@ func setValueOrNull[T any](ctx context.Context, elementType attr.Type, elements 
 	result, d := types.SetValueFrom(ctx, elementType, elements)
 	diags.Append(d...)
 	return result
+}
+
+func asnAllocationSchemeFromString(in string, diags *diag.Diagnostics) goapstra.AsnAllocationScheme {
+	switch in {
+	case asnAllocationSingle:
+		return goapstra.AsnAllocationSchemeSingle
+	case asnAllocationUnique:
+		return goapstra.AsnAllocationSchemeDistinct
+	default:
+		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN allocation scheme: %q", in))
+		return -1
+	}
+}
+
+func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Diagnostics) string {
+	switch in {
+	case goapstra.AsnAllocationSchemeSingle:
+		return asnAllocationSingle
+	case goapstra.AsnAllocationSchemeDistinct:
+		return asnAllocationUnique
+	default:
+		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN allocation scheme: %d", in))
+		return ""
+	}
 }
