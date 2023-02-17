@@ -76,6 +76,10 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 				MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
 				Computed:            true,
 			},
+			"spine_leaf_link_addressing": schema.StringAttribute{
+				MarkdownDescription: "Fabric addressing scheme.",
+				Computed:            true,
+			},
 		},
 	}
 }
@@ -129,11 +133,12 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 }
 
 type dTemplateRackBased struct {
-	Id                     types.String `tfsdk:"id"`
-	Name                   types.String `tfsdk:"name"`
-	Spine                  types.Object `tfsdk:"spine"`
-	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
-	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
+	Id                      types.String `tfsdk:"id"`
+	Name                    types.String `tfsdk:"name"`
+	Spine                   types.Object `tfsdk:"spine"`
+	AsnAllocation           types.String `tfsdk:"asn_allocation_scheme"`
+	OverlayControlProtocol  types.String `tfsdk:"overlay_control_protocol"`
+	SpineLeafLinkAddressing types.String `tfsdk:"spine_leaf_link_addressing"`
 }
 
 func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.TemplateRackBased, diags *diag.Diagnostics) {
@@ -158,4 +163,5 @@ func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.T
 	if diags.HasError() {
 		return
 	}
+	o.SpineLeafLinkAddressing = types.StringValue(in.Data.FabricAddressingPolicy.SpineLeafLinks.String())
 }
