@@ -148,7 +148,8 @@ type dTemplateRackBasedSpine struct {
 	ExternalLinkCount   types.Int64  `tfsdk:"external_link_count"`
 	SuperSpineLinkSpeed types.String `tfsdk:"super_spine_link_speed"`
 	SuperSpineLinkCount types.Int64  `tfsdk:"super_spine_link_count"`
-	LogicalDevice       types.Object `tfsdk:"logical_device"`
+	LogicalDeviceData   types.Object `tfsdk:"logical_device"`
+	TagData             types.Set    `tfsdk:"tag_data"`
 }
 
 func (o dTemplateRackBasedSpine) attributes() map[string]schema.Attribute {
@@ -178,6 +179,13 @@ func (o dTemplateRackBasedSpine) attributes() map[string]schema.Attribute {
 			Computed:            true,
 			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
 		},
+		"tag_data": schema.SetNestedAttribute{
+			MarkdownDescription: "Details any tags applied to the Spine Switches.",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tagData{}.dataSourceAttributes(),
+			},
+		},
 	}
 }
 
@@ -189,6 +197,7 @@ func (o dTemplateRackBasedSpine) attrTypes() map[string]attr.Type {
 		"super_spine_link_speed": types.StringType,
 		"super_spine_link_count": types.Int64Type,
 		"logical_device":         types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
+		"tag_data":               types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 
@@ -211,12 +220,15 @@ func (o *dTemplateRackBasedSpine) loadApiResponse(ctx context.Context, in *goaps
 		o.SuperSpineLinkCount = types.Int64Value(int64(in.LinkPerSuperspineCount))
 	}
 
-	ld := newLogicalDeviceDataObject(ctx, &in.LogicalDevice, diags)
+	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, &in.LogicalDevice, diags)
 	if diags.HasError() {
 		return
 	}
-	o.LogicalDevice = ld
 
+	o.TagData = newTagSet(ctx, in.Tags, diags)
+	if diags.HasError() {
+		return
+	}
 }
 
 func newSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {
