@@ -210,7 +210,7 @@ func (o *dRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 	o.Name = types.StringValue(in.Data.DisplayName)
 	o.Description = stringValueOrNull(ctx, in.Data.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
-	o.LeafSwitches = mapValueOrNull(ctx, dRackTypeLeafSwitch{}.attrType(), leafSwitches, diags)
-	o.AccessSwitches = mapValueOrNull(ctx, dRackTypeAccessSwitch{}.attrType(), accessSwitches, diags)
-	o.GenericSystems = mapValueOrNull(ctx, dRackTypeGenericSystem{}.attrType(), genericSystems, diags)
+	o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: dRackTypeLeafSwitch{}.attrTypes()}, leafSwitches, diags)
+	o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: dRackTypeAccessSwitch{}.attrTypes()}, accessSwitches, diags)
+	o.GenericSystems = mapValueOrNull(ctx, types.ObjectType{AttrTypes: dRackTypeGenericSystem{}.attrTypes()}, genericSystems, diags)
 }

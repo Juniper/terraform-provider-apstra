@@ -41,7 +41,7 @@ func (o *dConfiglet) loadApiResponse(ctx context.Context, in *goapstra.Configlet
 		}
 	}
 
-	o.Generators, d = types.ListValueFrom(ctx, dConfigletGenerator{}.attrType(), configletGenerators)
+	o.Generators, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: dConfigletGenerator{}.attrTypes()}, configletGenerators)
 	diags.Append(d...)
 	if diags.HasError() {
 		return
@@ -88,12 +88,6 @@ func (o dConfigletGenerator) attrTypes() map[string]attr.Type {
 		"template_text":          types.StringType,
 		"negation_template_text": types.StringType,
 		"filename":               types.StringType,
-	}
-}
-
-func (o dConfigletGenerator) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
 	}
 }
 

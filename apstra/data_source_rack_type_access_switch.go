@@ -79,16 +79,10 @@ func (o dRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"count":               types.Int64Type,
 		"redundancy_protocol": types.StringType,
-		"esi_lag_info":        esiLagInfo{}.attrType(),
-		"logical_device":      logicalDeviceData{}.attrType(),
-		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-		"links":               types.SetType{ElemType: dRackLink{}.attrType()},
-	}
-}
-
-func (o dRackTypeAccessSwitch) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"esi_lag_info":        types.ObjectType{AttrTypes: esiLagInfo{}.attrTypes()},
+		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
 	}
 }
 

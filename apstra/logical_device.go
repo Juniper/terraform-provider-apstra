@@ -34,13 +34,7 @@ func (o logicalDevice) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":     types.StringType,
 		"name":   types.StringType,
-		"panels": types.ListType{ElemType: o.attrType()},
-	}
-}
-
-func (o logicalDevice) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"panels": types.ListType{ElemType: types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}},
 	}
 }
 
@@ -58,10 +52,10 @@ func (o *logicalDevice) loadApiResponse(ctx context.Context, in *goapstra.Logica
 
 	if len(panels) > 0 {
 		var d diag.Diagnostics
-		o.Panels, d = types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), panels)
+		o.Panels, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}, panels)
 		diags.Append(d...)
 	} else {
-		o.Panels = types.ListNull(logicalDevicePanel{}.attrType())
+		o.Panels = types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()})
 	}
 }
 
@@ -160,13 +154,7 @@ func (o logicalDevicePanel) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"rows":        types.Int64Type,
 		"columns":     types.Int64Type,
-		"port_groups": types.ListType{ElemType: logicalDevicePanelPortGroup{}.attrType()},
-	}
-}
-
-func (o logicalDevicePanel) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: logicalDevicePanelPortGroup{}.attrTypes()}},
 	}
 }
 
@@ -181,8 +169,7 @@ func (o *logicalDevicePanel) loadApiResponse(ctx context.Context, in *goapstra.L
 		}
 	}
 
-	var bogusPG logicalDevicePanelPortGroup
-	portGroupList, d := types.ListValueFrom(ctx, bogusPG.attrType(), portGroups)
+	portGroupList, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: logicalDevicePanelPortGroup{}.attrTypes()}, portGroups)
 	diags.Append(d...)
 	if diags.HasError() {
 		return
@@ -337,12 +324,6 @@ func (o logicalDevicePanelPortGroup) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o logicalDevicePanelPortGroup) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
-	}
-}
-
 func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
 	portRoles, d := types.SetValueFrom(ctx, types.StringType, in.Roles.Strings())
 	diags.Append(d...)
@@ -460,13 +441,7 @@ func (o logicalDeviceData) schemaAsResourceReadOnly() map[string]resourceSchema.
 func (o logicalDeviceData) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":   types.StringType,
-		"panels": types.ListType{ElemType: logicalDevicePanel{}.attrType()},
-	}
-}
-
-func (o logicalDeviceData) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"panels": types.ListType{ElemType: types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}},
 	}
 }
 
@@ -480,19 +455,19 @@ func (o *logicalDeviceData) loadApiResponse(ctx context.Context, in *goapstra.Lo
 
 func newLogicalDeviceDataObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
 	if in == nil {
-		return types.ObjectNull(logicalDevice{}.attrTypes())
+		return types.ObjectNull(logicalDeviceData{}.attrTypes())
 	}
 
 	var ld logicalDeviceData
 	ld.loadApiResponse(ctx, in, diags)
 	if diags.HasError() {
-		return types.ObjectNull(logicalDevice{}.attrTypes())
+		return types.ObjectNull(logicalDeviceData{}.attrTypes())
 	}
 
 	result, d := types.ObjectValueFrom(ctx, ld.attrTypes(), &ld)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ObjectNull(logicalDevice{}.attrTypes())
+		return types.ObjectNull(logicalDeviceData{}.attrTypes())
 	}
 
 	return result
@@ -500,7 +475,7 @@ func newLogicalDeviceDataObject(ctx context.Context, in *goapstra.LogicalDeviceD
 
 func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
 	if len(in) == 0 {
-		return types.ListNull(logicalDevicePanel{}.attrType())
+		return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()})
 	}
 
 	panels := make([]logicalDevicePanel, len(in))
@@ -511,14 +486,14 @@ func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDeviceP
 			PortGroups: newLogicalDevicePortGroupList(ctx, panel.PortGroups, diags),
 		}
 		if diags.HasError() {
-			return types.ListNull(logicalDevicePanel{}.attrType())
+			return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()})
 		}
 	}
 
-	result, d := types.ListValueFrom(ctx, logicalDevicePanel{}.attrType(), &panels)
+	result, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}, &panels)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ListNull(logicalDevicePanel{}.attrType())
+		return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()})
 	}
 
 	return result
@@ -526,7 +501,7 @@ func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDeviceP
 
 func newLogicalDevicePortGroupList(ctx context.Context, in []goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) types.List {
 	if len(in) == 0 {
-		return types.ListNull(logicalDevicePanelPortGroup{}.attrType())
+		return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanelPortGroup{}.attrTypes()})
 	}
 
 	portGroups := make([]logicalDevicePanelPortGroup, len(in))
@@ -534,7 +509,7 @@ func newLogicalDevicePortGroupList(ctx context.Context, in []goapstra.LogicalDev
 		portRoles, d := types.SetValueFrom(ctx, types.StringType, portGroup.Roles.Strings())
 		diags.Append(d...)
 		if diags.HasError() {
-			return types.ListNull(logicalDevicePanelPortGroup{}.attrType())
+			return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanelPortGroup{}.attrTypes()})
 		}
 		portGroups[i] = logicalDevicePanelPortGroup{
 			PortCount: types.Int64Value(int64(portGroup.Count)),
@@ -543,10 +518,10 @@ func newLogicalDevicePortGroupList(ctx context.Context, in []goapstra.LogicalDev
 		}
 	}
 
-	result, d := types.ListValueFrom(ctx, logicalDevicePanelPortGroup{}.attrType(), portGroups)
+	result, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: logicalDevicePanelPortGroup{}.attrTypes()}, portGroups)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ListNull(logicalDevicePanelPortGroup{}.attrType())
+		return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanelPortGroup{}.attrTypes()})
 	}
 	return result
 }

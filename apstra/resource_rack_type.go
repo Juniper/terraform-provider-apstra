@@ -387,9 +387,9 @@ func (o *rRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 	o.Name = types.StringValue(in.Data.DisplayName)
 	o.Description = description
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
-	o.LeafSwitches = mapValueOrNull(ctx, rRackTypeLeafSwitch{}.attrType(), leafSwitches, diags)
-	o.AccessSwitches = mapValueOrNull(ctx, rRackTypeAccessSwitch{}.attrType(), accessSwitches, diags)
-	o.GenericSystems = mapValueOrNull(ctx, rRackTypeGenericSystem{}.attrType(), genericSystems, diags)
+	o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeLeafSwitch{}.attrTypes()}, leafSwitches, diags)
+	o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeAccessSwitch{}.attrTypes()}, accessSwitches, diags)
+	o.GenericSystems = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeGenericSystem{}.attrTypes()}, genericSystems, diags)
 }
 
 // copyWriteOnlyElements copies elements (IDs of nested design API objects)
@@ -453,9 +453,9 @@ func (o *rRackType) copyWriteOnlyElements(ctx context.Context, src *rRackType, d
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	leafSwitchMap := mapValueOrNull(ctx, rRackTypeLeafSwitch{}.attrType(), dstLeafSwitches, diags)
-	accessSwitchMap := mapValueOrNull(ctx, rRackTypeAccessSwitch{}.attrType(), dstAccessSwitches, diags)
-	genericSystemMap := mapValueOrNull(ctx, rRackTypeGenericSystem{}.attrType(), dstGenericSystems, diags)
+	leafSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeLeafSwitch{}.attrTypes()}, dstLeafSwitches, diags)
+	accessSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeAccessSwitch{}.attrTypes()}, dstAccessSwitches, diags)
+	genericSystemMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeGenericSystem{}.attrTypes()}, dstGenericSystems, diags)
 	if diags.HasError() {
 		return
 	}

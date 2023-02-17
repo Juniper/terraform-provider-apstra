@@ -110,15 +110,11 @@ func (o rRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
 		"redundancy_protocol": types.StringType,
-		"logical_device":      logicalDeviceData{}.attrType(),
+		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
-		"mlag_info":           mlagInfo{}.attrType(),
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"mlag_info":           types.ObjectType{AttrTypes: mlagInfo{}.attrTypes()},
 	}
-}
-
-func (o rRackTypeLeafSwitch) attrType() attr.Type {
-	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
 func (o *rRackTypeLeafSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeLeafSwitch, diags *diag.Diagnostics) {

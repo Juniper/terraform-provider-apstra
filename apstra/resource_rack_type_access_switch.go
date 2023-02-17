@@ -90,17 +90,13 @@ func (o rRackTypeAccessSwitch) attrTypes() map[string]attr.Type {
 		"name":                types.StringType,
 		"count":               types.Int64Type,
 		"logical_device_id":   types.StringType,
-		"logical_device":      logicalDeviceData{}.attrType(),
-		"links":               types.MapType{ElemType: rRackLink{}.attrType()},
+		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
+		"links":               types.MapType{ElemType: types.ObjectType{AttrTypes: rRackLink{}.attrTypes()}},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		"tag_data":            types.SetType{ElemType: tagData{}.attrType()},
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 		"redundancy_protocol": types.StringType,
-		"esi_lag_info":        esiLagInfo{}.attrType(),
+		"esi_lag_info":        types.ObjectType{AttrTypes: esiLagInfo{}.attrTypes()},
 	}
-}
-
-func (o rRackTypeAccessSwitch) attrType() attr.Type {
-	return types.ObjectType{AttrTypes: o.attrTypes()}
 }
 
 func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *rRackTypeAccessSwitch, diags *diag.Diagnostics) {
@@ -135,7 +131,7 @@ func (o *rRackTypeAccessSwitch) copyWriteOnlyElements(ctx context.Context, src *
 		}
 	}
 
-	o.Links = mapValueOrNull(ctx, rRackLink{}.attrType(), dstLinks, diags)
+	o.Links = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackLink{}.attrTypes()}, dstLinks, diags)
 	if diags.HasError() {
 		return
 	}

@@ -48,7 +48,8 @@ func (o rRackLink) attributes() map[string]schema.Attribute {
 			Validators: []validator.String{stringvalidator.OneOf(
 				goapstra.RackLinkLagModeActive.String(),
 				goapstra.RackLinkLagModePassive.String(),
-				goapstra.RackLinkLagModeStatic.String())},
+				goapstra.RackLinkLagModeStatic.String(),
+			)},
 		},
 		"links_per_switch": schema.Int64Attribute{
 			MarkdownDescription: "Number of Links to each switch.",
@@ -93,13 +94,7 @@ func (o rRackLink) attrTypes() map[string]attr.Type {
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
 		"tag_ids":            types.SetType{ElemType: types.StringType},
-		"tag_data":           types.SetType{ElemType: tagData{}.attrType()},
-	}
-}
-
-func (o rRackLink) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
+		"tag_data":           types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 
@@ -200,7 +195,7 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 
 func newResourceLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Map {
 	if len(in) == 0 {
-		return types.MapNull(rRackLink{}.attrType())
+		return types.MapNull(types.ObjectType{AttrTypes: rRackLink{}.attrTypes()})
 	}
 
 	links := make(map[string]rRackLink, len(in))
@@ -210,7 +205,7 @@ func newResourceLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag
 		links[in[i].Label] = link
 	}
 
-	result, d := types.MapValueFrom(ctx, rRackLink{}.attrType(), &links)
+	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: rRackLink{}.attrTypes()}, &links)
 	diags.Append(d...)
 
 	return result

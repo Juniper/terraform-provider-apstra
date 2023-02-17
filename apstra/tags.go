@@ -78,12 +78,6 @@ func (o tagData) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o tagData) attrType() attr.Type {
-	return types.ObjectType{
-		AttrTypes: o.attrTypes(),
-	}
-}
-
 func (o *tagData) parseApi(in *goapstra.DesignTagData) {
 	o.Name = in.Label
 	o.Description = in.Description
@@ -91,7 +85,7 @@ func (o *tagData) parseApi(in *goapstra.DesignTagData) {
 
 func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Diagnostics) types.Set {
 	if len(in) == 0 {
-		return types.SetNull(tagData{}.attrType())
+		return types.SetNull(types.ObjectType{AttrTypes: tagData{}.attrTypes()})
 	}
 
 	tags := make([]tagData, len(in))
@@ -102,7 +96,7 @@ func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Dia
 		}
 	}
 
-	result, d := types.SetValueFrom(ctx, tagData{}.attrType(), &tags)
+	result, d := types.SetValueFrom(ctx, types.ObjectType{AttrTypes: tagData{}.attrTypes()}, &tags)
 	diags.Append(d...)
 
 	return result
