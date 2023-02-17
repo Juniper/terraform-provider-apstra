@@ -47,7 +47,7 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 			"Matching zero Rack Types or more than one Rack Type will produce an error.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "Rack Type id.  Required when the Rack Type name is omitted.",
+				MarkdownDescription: "Rack Type ID.  Required when the Rack Type name is omitted.",
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.String{
@@ -55,7 +55,7 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 				},
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "Rack Type name displayed in the Apstra web UI.  Required when Rack Type id is omitted.",
+				MarkdownDescription: "Rack Type name displayed in the Apstra web UI.  Required when Rack Type ID is omitted.",
 				Optional:            true,
 				Computed:            true,
 				Validators: []validator.String{
@@ -118,7 +118,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Rack Type not found",
-				fmt.Sprintf("Rack Type with name '%s' does not exist", config.Name.ValueString()))
+				fmt.Sprintf("Rack Type with name %q does not exist", config.Name.ValueString()))
 			return
 		}
 	}
@@ -130,7 +130,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Rack Type not found",
-				fmt.Sprintf("Rack Type with id '%s' does not exist", config.Id.ValueString()))
+				fmt.Sprintf("Rack Type with ID %q does not exist", config.Id.ValueString()))
 			return
 		}
 	}
