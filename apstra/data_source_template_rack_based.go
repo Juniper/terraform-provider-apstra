@@ -76,9 +76,16 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 				MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
 				Computed:            true,
 			},
-			"spine_leaf_link_addressing": schema.StringAttribute{
-				MarkdownDescription: "Fabric addressing scheme.",
+			"fabric_link_addressing": schema.StringAttribute{
+				MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
 				Computed:            true,
+			},
+			"rack_types": schema.MapNestedAttribute{
+				MarkdownDescription: "Details Rack Types included in the template",
+				Computed:            true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: designTemplateRackType{}.attributes(),
+				},
 			},
 		},
 	}
@@ -133,18 +140,23 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 }
 
 type dTemplateRackBased struct {
-	Id                      types.String `tfsdk:"id"`
-	Name                    types.String `tfsdk:"name"`
-	Spine                   types.Object `tfsdk:"spine"`
-	AsnAllocation           types.String `tfsdk:"asn_allocation_scheme"`
-	OverlayControlProtocol  types.String `tfsdk:"overlay_control_protocol"`
-	SpineLeafLinkAddressing types.String `tfsdk:"spine_leaf_link_addressing"`
+	Id                     types.String `tfsdk:"id"`
+	Name                   types.String `tfsdk:"name"`
+	Spine                  types.Object `tfsdk:"spine"`
+	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
+	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
+	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
+	RackTypes              types.Map    `tfsdk:"rack_types"`
 }
 
 func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.TemplateRackBased, diags *diag.Diagnostics) {
 	if in == nil || in.Data == nil {
 		diags.AddError(errProviderBug, "attempt to load dTemplateRackBased from nil source")
 		return
+	}
+
+	if in.Data.FabricAddressingPolicy.SpineLeafLinks != in.Data.FabricAddressingPolicy.SpineSuperspineLinks {
+		diags.AddError(errProviderBug, "spine/leaf and spine/superspine addressing do not match - we cannot handle this situation")
 	}
 
 	spine := newDesignTemplateSpineObject(ctx, &in.Data.Spine, diags)
@@ -163,5 +175,12 @@ func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.T
 	if diags.HasError() {
 		return
 	}
-	o.SpineLeafLinkAddressing = types.StringValue(in.Data.FabricAddressingPolicy.SpineLeafLinks.String())
+	o.FabricAddressing = types.StringValue(in.Data.FabricAddressingPolicy.SpineLeafLinks.String())
+	if diags.HasError() {
+		return
+	}
+	o.RackTypes = newDesignTemplateRackTypeMap(ctx, in.Data, diags)
+	if diags.HasError() {
+		return
+	}
 }
