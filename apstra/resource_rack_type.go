@@ -386,16 +386,9 @@ func (o *rRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, 
 		}
 	}
 
-	var description types.String
-	if in.Data.Description == "" {
-		description = types.StringNull()
-	} else {
-		description = types.StringValue(in.Data.Description)
-	}
-
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Data.DisplayName)
-	o.Description = description
+	o.Description = stringValueOrNull(ctx, in.Data.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.Data.FabricConnectivityDesign.String())
 	o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeLeafSwitch{}.attrTypes()}, leafSwitches, diags)
 	o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeAccessSwitch{}.attrTypes()}, accessSwitches, diags)
