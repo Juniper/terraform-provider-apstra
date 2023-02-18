@@ -346,6 +346,16 @@ func (o *rRackType) getSwitchRedundancyProtocolByName(ctx context.Context, name 
 }
 
 func (o *rRackType) loadApiResponse(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+	switch in.Data.FabricConnectivityDesign {
+	case goapstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case goapstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	default: // this FCD is unsupported
+		diags.AddError(
+			errProviderBug,
+			fmt.Sprintf("Rack Type '%s' has unsupported Fabric Connectivity Design '%s'",
+				in.Id, in.Data.FabricConnectivityDesign.String()))
+	}
+
 	leafSwitches := make(map[string]rRackTypeLeafSwitch, len(in.Data.LeafSwitches))
 	for _, leafIn := range in.Data.LeafSwitches {
 		var leafSwitch rRackTypeLeafSwitch
