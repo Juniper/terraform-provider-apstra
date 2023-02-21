@@ -44,14 +44,14 @@ func (o rackTypeData) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "A map of Leaf Switches in this Rack Type, keyed by name.",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: dRackTypeLeafSwitch{}.attributes(),
+				Attributes: leafSwitchData{}.attributes(),
 			},
 		},
 		"access_switches": schema.MapNestedAttribute{
 			MarkdownDescription: "A map of Access Switches in this Rack Type, keyed by name.",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: dRackTypeAccessSwitch{}.attributes(),
+				Attributes: accessSwitchData{}.attributes(),
 			},
 		},
 		"generic_systems": schema.MapNestedAttribute{
@@ -75,9 +75,9 @@ func (o *rackTypeData) loadApiResponse(ctx context.Context, in *goapstra.RackTyp
 				in.FabricConnectivityDesign.String()))
 	}
 
-	leafSwitches := make(map[string]dRackTypeLeafSwitch, len(in.LeafSwitches))
+	leafSwitches := make(map[string]leafSwitchData, len(in.LeafSwitches))
 	for _, leafIn := range in.LeafSwitches {
-		var leafSwitch dRackTypeLeafSwitch
+		var leafSwitch leafSwitchData
 		leafSwitch.loadApiResponse(ctx, &leafIn, in.FabricConnectivityDesign, diags)
 		leafSwitches[leafIn.Label] = leafSwitch
 		if diags.HasError() {
@@ -85,9 +85,9 @@ func (o *rackTypeData) loadApiResponse(ctx context.Context, in *goapstra.RackTyp
 		}
 	}
 
-	accessSwitches := make(map[string]dRackTypeAccessSwitch, len(in.AccessSwitches))
+	accessSwitches := make(map[string]accessSwitchData, len(in.AccessSwitches))
 	for _, accessIn := range in.AccessSwitches {
-		var accessSwitch dRackTypeAccessSwitch
+		var accessSwitch accessSwitchData
 		accessSwitch.loadApiResponse(ctx, &accessIn, diags)
 		accessSwitches[accessIn.Label] = accessSwitch
 		if diags.HasError() {
@@ -108,8 +108,8 @@ func (o *rackTypeData) loadApiResponse(ctx context.Context, in *goapstra.RackTyp
 	o.Name = types.StringValue(in.DisplayName)
 	o.Description = stringValueOrNull(ctx, in.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.FabricConnectivityDesign.String())
-	o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: dRackTypeLeafSwitch{}.attrTypes()}, leafSwitches, diags)
-	o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: dRackTypeAccessSwitch{}.attrTypes()}, accessSwitches, diags)
+	o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitchData{}.attrTypes()}, leafSwitches, diags)
+	o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitchData{}.attrTypes()}, accessSwitches, diags)
 	o.GenericSystems = mapValueOrNull(ctx, types.ObjectType{AttrTypes: dRackTypeGenericSystem{}.attrTypes()}, genericSystems, diags)
 }
 
@@ -118,8 +118,8 @@ func (o rackTypeData) attrTypes() map[string]attr.Type {
 		"name":                       types.StringType,
 		"description":                types.StringType,
 		"fabric_connectivity_design": types.StringType,
-		"leaf_switches":              types.MapType{ElemType: types.ObjectType{dRackTypeLeafSwitch{}.attrTypes()}},
-		"access_switches":            types.MapType{ElemType: types.ObjectType{dRackTypeAccessSwitch{}.attrTypes()}},
+		"leaf_switches":              types.MapType{ElemType: types.ObjectType{leafSwitchData{}.attrTypes()}},
+		"access_switches":            types.MapType{ElemType: types.ObjectType{accessSwitchData{}.attrTypes()}},
 		"generic_systems":            types.MapType{ElemType: types.ObjectType{dRackTypeGenericSystem{}.attrTypes()}},
 	}
 }
@@ -172,6 +172,6 @@ func validateRackType(ctx context.Context, in *goapstra.RackType, diags *diag.Di
 	}
 
 	for i := range in.Data.GenericSystems {
-		validateGenericSystem(in, i, diags)
+		genericSystemData(in, i, diags)
 	}
 }
