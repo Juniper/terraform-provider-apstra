@@ -7,6 +7,9 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -46,7 +49,36 @@ func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
+func (o tag) resourceAttributesWrite() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID of the Tag.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Name of the Tag as seen in the web UI.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()}, // {"errors":{"label":"Tag label cannot be changed"}}
+
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Indicates whether a username has been set.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+	}
+}
+
 func (o *tag) parseApiData(ctx context.Context, in *goapstra.DesignTagData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
+}
+
+func (o *tag) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.DesignTagRequest {
+	return &goapstra.DesignTagRequest{
+		Label:       o.Name.ValueString(),
+		Description: o.Description.ValueString(),
+	}
 }
