@@ -23,7 +23,7 @@ type tag struct {
 func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate to look up a Tag by ID. Required when `name`is omitted.",
+			MarkdownDescription: "Populate this field to look up a Tag by ID. Required when `name`is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -35,7 +35,7 @@ func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate to look up a Tag by name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Tag by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -88,7 +88,7 @@ func (o tag) resourceAttributesRead() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *tag) parseApiData(_ context.Context, in *goapstra.DesignTagData, _ *diag.Diagnostics) {
+func (o *tag) loadApiData(_ context.Context, in *goapstra.DesignTagData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
 }

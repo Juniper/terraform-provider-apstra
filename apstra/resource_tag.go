@@ -92,7 +92,7 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 	// create new state object
 	var newState tag
 	newState.Id = types.StringValue(string(t.Id))
-	newState.parseApiData(ctx, t.Data, &resp.Diagnostics)
+	newState.loadApiData(ctx, t.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

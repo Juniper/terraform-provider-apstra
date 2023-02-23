@@ -165,7 +165,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 
 	// Create new state object
 	var newState agentProfile
-	newState.loadApiResponse(ctx, ap, &resp.Diagnostics)
+	newState.loadApiData(ctx, ap, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -216,7 +216,7 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 
 	// Create new state object
 	var newState agentProfile
-	newState.loadApiResponse(ctx, ap, &resp.Diagnostics)
+	newState.loadApiData(ctx, ap, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

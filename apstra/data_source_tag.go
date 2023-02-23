@@ -58,7 +58,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Tag not found",
-				fmt.Sprintf("Tag with name '%s' not found", config.Name.ValueString()))
+				fmt.Sprintf("Tag with name %q not found", config.Name.ValueString()))
 			return
 		}
 	case !config.Id.IsNull():
@@ -67,11 +67,11 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Tag not found",
-				fmt.Sprintf("Tag with id '%s' not found", config.Id.ValueString()))
+				fmt.Sprintf("Tag with ID %q not found", config.Id.ValueString()))
 			return
 		}
 	default:
-		resp.Diagnostics.AddError(errProviderBug, "neither 'name' nor 'id' set")
+		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
 		return
 	}
 	if err != nil { // catch errors other than 404 from above
@@ -82,7 +82,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	// create new state object
 	var state tag
 	state.Id = types.StringValue(string(t.Id))
-	state.parseApiData(ctx, t.Data, &resp.Diagnostics)
+	state.loadApiData(ctx, t.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
