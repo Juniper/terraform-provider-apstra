@@ -4,7 +4,6 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -24,19 +23,8 @@ func (o *resourceTag) Metadata(_ context.Context, req resource.MetadataRequest, 
 	resp.TypeName = req.ProviderTypeName + "_tag"
 }
 
-func (o *resourceTag) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errResourceConfigureProviderDataDetail,
-			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *resourceTag) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	o.client = resourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceTag) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
