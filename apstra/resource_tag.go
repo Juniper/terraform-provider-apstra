@@ -71,7 +71,7 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	// Retrieve values from plan
-	var plan dTag
+	var plan tag
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -93,7 +93,7 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	// create new state object
-	state := dTag{
+	state := tag{
 		Id:          types.StringValue(string(id)),
 		Name:        plan.Name,
 		Description: plan.Description,
@@ -110,13 +110,13 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 
 	// Get current state
-	var state dTag
+	var state tag
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tag, err := o.client.GetTag(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	t, err := o.client.GetTag(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -130,16 +130,16 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 
 	var description types.String
-	if tag.Data.Description == "" {
+	if t.Data.Description == "" {
 		description = types.StringNull()
 	} else {
-		description = types.StringValue(tag.Data.Description)
+		description = types.StringValue(t.Data.Description)
 	}
 
 	// create new state object
-	newState := dTag{
-		Id:          types.StringValue(string(tag.Id)),
-		Name:        types.StringValue(tag.Data.Label),
+	newState := tag{
+		Id:          types.StringValue(string(t.Id)),
+		Name:        types.StringValue(t.Data.Label),
 		Description: description,
 	}
 
@@ -155,14 +155,14 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	// Get current state
-	var state dTag
+	var state tag
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Get plan values
-	var plan dTag
+	var plan tag
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -186,7 +186,7 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	// create new state object
-	newState := dTag{
+	newState := tag{
 		Id:          plan.Id,
 		Name:        plan.Name,
 		Description: plan.Description,
@@ -203,7 +203,7 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	var state dTag
+	var state tag
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
