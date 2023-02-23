@@ -23,7 +23,7 @@ type tag struct {
 func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Tag id. Required when the tag name is omitted.",
+			MarkdownDescription: "Populate to look up a Tag by ID. Required when `name`is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -35,7 +35,7 @@ func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Tag name. Required when tag id is omitted.",
+			MarkdownDescription: "Populate to look up a Tag by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -57,26 +57,43 @@ func (o tag) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the Tag as seen in the web UI.",
+			MarkdownDescription: "Tag name field as seen in the web UI.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()}, // {"errors":{"label":"Tag label cannot be changed"}}
 
 		},
 		"description": resourceSchema.StringAttribute{
-			MarkdownDescription: "Indicates whether a username has been set.",
+			MarkdownDescription: "Tag description field as seen in the web UI.",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 	}
 }
 
-func (o *tag) parseApiData(ctx context.Context, in *goapstra.DesignTagData, diags *diag.Diagnostics) {
+func (o tag) resourceAttributesRead() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Tag ID will always be `null` in read-only contexts.",
+			Computed:            true,
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Tag name field as seen in the web UI.",
+			Computed:            true,
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Tag description field as seen in the web UI.",
+			Computed:            true,
+		},
+	}
+}
+
+func (o *tag) parseApiData(_ context.Context, in *goapstra.DesignTagData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
 }
 
-func (o *tag) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.DesignTagRequest {
+func (o *tag) request(_ context.Context, _ *diag.Diagnostics) *goapstra.DesignTagRequest {
 	return &goapstra.DesignTagRequest{
 		Label:       o.Name.ValueString(),
 		Description: o.Description.ValueString(),

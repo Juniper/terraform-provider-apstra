@@ -93,6 +93,9 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 	var newState tag
 	newState.Id = types.StringValue(string(t.Id))
 	newState.parseApiData(ctx, t.Data, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -113,6 +116,9 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	tagRequest := plan.request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Update Tag
 	err := o.client.UpdateTag(ctx, goapstra.ObjectId(plan.Id.ValueString()), tagRequest)
