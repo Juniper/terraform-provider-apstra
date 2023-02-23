@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -25,10 +24,10 @@ func (o *dataSourceIp4Pools) Configure(ctx context.Context, req datasource.Confi
 
 func (o *dataSourceIp4Pools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs all IPv4 resource pools",
+		MarkdownDescription: "This data source returns the ID numbers of all IPv4 Pools",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "Pool IDs of all IPv4 resource pools.",
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
@@ -36,7 +35,7 @@ func (o *dataSourceIp4Pools) Schema(_ context.Context, _ datasource.SchemaReques
 	}
 }
 
-func (o *dataSourceIp4Pools) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceIp4Pools) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
@@ -44,10 +43,7 @@ func (o *dataSourceIp4Pools) Read(ctx context.Context, req datasource.ReadReques
 
 	ids, err := o.client.ListIp4PoolIds(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error retrieving IPv4 pool IDs",
-			fmt.Sprintf("error retrieving IPv4 pool IDs - %s", err),
-		)
+		resp.Diagnostics.AddError("Error retrieving IPv4 Pool IDs", err.Error())
 		return
 	}
 
