@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -25,11 +24,11 @@ func (o *dataSourceAsnPools) Configure(ctx context.Context, req datasource.Confi
 
 func (o *dataSourceAsnPools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs of all ASN resource pools",
+		MarkdownDescription: "This data source returns the ID numbers of all ASN Pools.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
-				MarkdownDescription: "Pool IDs of all ASN resource pools.",
 				ElementType:         types.StringType,
 			},
 		},
@@ -44,10 +43,7 @@ func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadReques
 
 	ids, err := o.client.ListAsnPoolIds(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error retrieving ASN pool IDs",
-			fmt.Sprintf("error retrieving ASN pool IDs - %s", err),
-		)
+		resp.Diagnostics.AddError("Error retrieving ASN pool IDs", err.Error())
 		return
 	}
 

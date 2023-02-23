@@ -24,10 +24,10 @@ func (o *dataSourceAgentProfiles) Configure(ctx context.Context, req datasource.
 
 func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource returns the ID numbers of each Agent Profile.",
+		MarkdownDescription: "This data source returns the ID numbers of all Agent Profiles.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "A set of Apstra ID numbers of each Agent Profile.",
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
