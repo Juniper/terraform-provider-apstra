@@ -30,19 +30,8 @@ func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.Metada
 	resp.TypeName = req.ProviderTypeName + "_blueprints"
 }
 
-func (o *dataSourceBlueprints) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceBlueprints) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

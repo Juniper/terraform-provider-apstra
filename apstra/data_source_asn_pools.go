@@ -19,19 +19,8 @@ func (o *dataSourceAsnPools) Metadata(_ context.Context, req datasource.Metadata
 	resp.TypeName = req.ProviderTypeName + "_asn_pools"
 }
 
-func (o *dataSourceAsnPools) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceAsnPools) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceAsnPools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

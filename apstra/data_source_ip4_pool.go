@@ -23,19 +23,8 @@ func (o *dataSourceIp4Pool) Metadata(_ context.Context, req datasource.MetadataR
 	resp.TypeName = req.ProviderTypeName + "_ip4_pool"
 }
 
-func (o *dataSourceIp4Pool) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceIp4Pool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceIp4Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
