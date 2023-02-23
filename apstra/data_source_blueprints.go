@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -78,8 +77,8 @@ func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasourc
 		}
 
 		if thisVer.LessThan(minVer) {
-			resp.Diagnostics.AddError("Apstra API version error",
-				fmt.Sprintf("Apstra %s doesn't support reference design '%s'",
+			resp.Diagnostics.AddError(errApiCompatibility,
+				fmt.Sprintf("Apstra %q doesn't support reference design %q",
 					o.client.ApiVersion(), goapstra.RefDesignFreeform.String()))
 		}
 	}
@@ -97,12 +96,12 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	var objectIds []goapstra.ObjectId
+	var ids []goapstra.ObjectId
 	var err error
 	if config.RefDesign.IsNull() {
-		objectIds, err = o.client.ListAllBlueprintIds(ctx)
+		ids, err = o.client.ListAllBlueprintIds(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("error listing blueprint IDs", err.Error())
+			resp.Diagnostics.AddError("error listing Blueprint IDs", err.Error())
 			return
 		}
 	} else {
@@ -122,14 +121,9 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		}
 		for _, bpStatus := range bpStatuses {
 			if bpStatus.Design.String() == refDesign {
-				objectIds = append(objectIds, bpStatus.Id)
+				ids = append(ids, bpStatus.Id)
 			}
 		}
-	}
-
-	ids := make([]attr.Value, len(objectIds))
-	for i, id := range objectIds {
-		ids[i] = types.StringValue(string(id))
 	}
 
 	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
@@ -138,11 +132,13 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	// set state
-	state := dBlueprintIds{
-		RefDesign: config.RefDesign,
-		Ids:       idSet,
+	// create new state object
+	var state struct {
+		Ids types.Set `tfsdk:"ids"`
 	}
+	state.Ids = idSet
+
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 

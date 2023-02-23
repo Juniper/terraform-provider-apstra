@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,8 +27,8 @@ func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaR
 		MarkdownDescription: "This resource returns the ID numbers of each Agent Profile.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
-				Computed:            true,
 				MarkdownDescription: "A set of Apstra ID numbers of each Agent Profile.",
+				Computed:            true,
 				ElementType:         types.StringType,
 			},
 		},
@@ -44,10 +43,7 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 
 	ids, err := o.client.ListAgentProfileIds(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error retrieving Agent Profile IDs",
-			fmt.Sprintf("error retrieving Agent Profile IDs - %s", err),
-		)
+		resp.Diagnostics.AddError("Error retrieving Agent Profile IDs", err.Error())
 		return
 	}
 
