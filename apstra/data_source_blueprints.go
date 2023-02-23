@@ -35,15 +35,15 @@ func (o *dataSourceBlueprints) Configure(ctx context.Context, req datasource.Con
 
 func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns a list of blueprint IDs configured on Apstra.",
+		MarkdownDescription: "This data source returns the ID numbers of Blueprints.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "ID of the desired ASN Resource Pool.",
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
 			"reference_design": schema.StringAttribute{
-				MarkdownDescription: "Optional filter for blueprints of the specified reference design.",
+				MarkdownDescription: "Optional filter to select only Blueprints matching the specified Reference Design.",
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
 					twoStageL3ClosRefDesignUiName,
