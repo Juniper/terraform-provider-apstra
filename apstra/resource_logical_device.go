@@ -67,14 +67,14 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	logicalDeviceRequest := plan.request(ctx, &resp.Diagnostics)
+	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	id, err := o.client.CreateLogicalDevice(ctx, logicalDeviceRequest)
+	id, err := o.client.CreateLogicalDevice(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating logical device", err.Error())
+		resp.Diagnostics.AddError("error creating Logical Device", err.Error())
 	}
 
 	plan.Id = types.StringValue(string(id))
