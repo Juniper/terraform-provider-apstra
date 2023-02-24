@@ -294,7 +294,7 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 			resp.Diagnostics.AddError(
 				"error updating managed device agent",
 				fmt.Sprintf("error while updating managed device agent %q (%s) - %s",
-					state.AgentId.ValueString, state.ManagementIp.ValueString, err.Error()),
+					state.AgentId.ValueString(), state.ManagementIp.ValueString(), err.Error()),
 			)
 			return
 		}

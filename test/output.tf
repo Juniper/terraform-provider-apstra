@@ -50,6 +50,10 @@
 #  value = data.apstra_tag.d
 #}
 
+#output "d_apstra_rack_based_template" {
+#  value = data.apstra_rack_based_template.d
+#}
+
 #output "d_apstra_rack_type" {
 #  value = data.apstra_rack_type.d
 #}

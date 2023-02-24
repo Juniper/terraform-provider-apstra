@@ -1,0 +1,4 @@
+data "apstra_rack_based_template" "d" {
+  id = "L2_ESI_Access"
+}
+
