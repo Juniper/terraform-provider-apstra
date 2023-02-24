@@ -72,7 +72,7 @@ func (o *resourceAsnPool) ValidateConfig(ctx context.Context, req resource.Valid
 			resp.Diagnostics.AddAttributeError(
 				path.Root("ranges").AtSetValue(setVal),
 				"ASN range collision",
-				fmt.Sprintf("ASN range %d - %d overlaps with a another range in this pool", first, last),
+				fmt.Sprintf("ASN range %d - %d overlaps with another range in this pool", first, last),
 			)
 			return
 		}
