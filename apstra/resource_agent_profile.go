@@ -5,13 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -25,70 +20,17 @@ func (o *resourceAgentProfile) Metadata(_ context.Context, req resource.Metadata
 	resp.TypeName = req.ProviderTypeName + "_agent_profile"
 }
 
-func (o *resourceAgentProfile) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errResourceConfigureProviderDataDetail,
-			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *resourceAgentProfile) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	o.client = resourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an Agent Profile. Note that credentials (username/password) " +
-			"be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible " +
-			"for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a" +
-			"safe practice.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Apstra ID of the Agent Profile.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Apstra name of the Agent Profile.",
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"has_username": schema.BoolAttribute{
-				MarkdownDescription: "Indicates whether a username has been set.",
-				Computed:            true,
-			},
-			"has_password": schema.BoolAttribute{
-				MarkdownDescription: "Indicates whether a password has been set.",
-				Computed:            true,
-			},
-			"platform": schema.StringAttribute{
-				MarkdownDescription: "Device platform.",
-				Optional:            true,
-				Validators: []validator.String{stringvalidator.OneOf(
-					goapstra.AgentPlatformNXOS.String(),
-					goapstra.AgentPlatformJunos.String(),
-					goapstra.AgentPlatformEOS.String(),
-				)},
-			},
-			"packages": schema.MapAttribute{
-				MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
-					"to be included with agents deployed using this profile.",
-				Optional:    true,
-				ElementType: types.StringType,
-				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
-			},
-			"open_options": schema.MapAttribute{
-				MarkdownDescription: "Passes configured parameters to offbox agents. For example, to use HTTPS as the " +
-					"API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.",
-				Optional:    true,
-				ElementType: types.StringType,
-				Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
-			},
-		},
+			"cannot be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's " +
+			"impossible for terraform to detect drift and because (b) leaving credentials in the configuration/state " +
+			"isn't a safe practice.",
+		Attributes: agentProfile{}.resourceAttributes(),
 	}
 }
 
@@ -105,32 +47,23 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	// Create new Agent Profile
-	id, err := o.client.CreateAgentProfile(ctx, plan.request(ctx, &resp.Diagnostics))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error creating new Agent Profile",
-			"Could not create, unexpected error: "+err.Error(),
-		)
-		return
-	}
+	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// create state object
-	state := agentProfile{
-		Id:          types.StringValue(string(id)),
-		Name:        plan.Name,
-		Platform:    plan.Platform,
-		HasUsername: types.BoolValue(false),
-		HasPassword: types.BoolValue(false),
-		Packages:    plan.Packages,
-		OpenOptions: plan.OpenOptions,
+	id, err := o.client.CreateAgentProfile(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("error creating Agent Profile", err.Error())
+		return
 	}
 
+	plan.Id = types.StringValue(string(id))
+	plan.HasUsername = types.BoolValue(false) // safe to assume false at creation time
+	plan.HasPassword = types.BoolValue(false) // safe to assume false at creation time
+
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -154,13 +87,12 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError(
-				"error reading Agent Profile",
-				fmt.Sprintf("Could not Read '%s' - %s", state.Id.ValueString(), err),
-			)
-			return
 		}
+		resp.Diagnostics.AddError(
+			"error reading Agent Profile",
+			fmt.Sprintf("Could not Read %q - %s", state.Id.ValueString(), err),
+		)
+		return
 	}
 
 	// Create new state object
@@ -174,17 +106,9 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-// Update resource
 func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
-	// Get current state
-	var state agentProfile
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -196,21 +120,25 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Update new Agent Profile
-	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.request(ctx, &resp.Diagnostics))
+	request := plan.request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	var ace goapstra.ApstraClientErr
+	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"error updating Agent Profile",
-			fmt.Sprintf("Could not Update '%s' - %s", state.Id.ValueString(), err),
-		)
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		// some other unknown error
+		resp.Diagnostics.AddError("error updating Agent Profile", err.Error())
 		return
 	}
 
-	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"error updating Agent Profile",
-			fmt.Sprintf("Could not Update '%s' - %s", state.Id.ValueString(), err),
-		)
+		resp.Diagnostics.AddError("error updating Agent Profile", err.Error())
 		return
 	}
 
@@ -225,7 +153,6 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-// Delete resource
 func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
@@ -243,10 +170,7 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError(
-				"error deleting Agent Profile",
-				fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.ValueString(), err),
-			)
+			resp.Diagnostics.AddError("error deleting Agent Profile", err.Error())
 			return
 		}
 	}

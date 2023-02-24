@@ -3,10 +3,14 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -62,6 +66,52 @@ func (o agentProfile) dataSourceAttributes() map[string]dataSourceSchema.Attribu
 			MarkdownDescription: "Configured parameters for offbox agents",
 			Computed:            true,
 			ElementType:         types.StringType,
+		},
+	}
+}
+
+func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID of the Agent Profile.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra name of the Agent Profile.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"has_username": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether a username has been set.",
+			Computed:            true,
+		},
+		"has_password": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether a password has been set.",
+			Computed:            true,
+		},
+		"platform": resourceSchema.StringAttribute{
+			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
+			Optional:            true,
+			Validators: []validator.String{stringvalidator.OneOf(
+				goapstra.AgentPlatformNXOS.String(),
+				goapstra.AgentPlatformJunos.String(),
+				goapstra.AgentPlatformEOS.String(),
+			)},
+		},
+		"packages": resourceSchema.MapAttribute{
+			MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
+				"to be included with agents deployed using this profile.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
+		},
+		"open_options": resourceSchema.MapAttribute{
+			MarkdownDescription: "Passes configured parameters to offbox agents. For example, to use HTTPS as the " +
+				"API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
