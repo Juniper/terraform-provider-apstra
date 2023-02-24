@@ -155,8 +155,14 @@ func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.T
 		return
 	}
 
-	if in.Data.FabricAddressingPolicy.SpineLeafLinks != in.Data.FabricAddressingPolicy.SpineSuperspineLinks {
-		diags.AddError(errProviderBug, "spine/leaf and spine/superspine addressing do not match - we cannot handle this situation")
+	fap := in.Data.FabricAddressingPolicy
+	if fap == nil {
+		o.FabricAddressing = types.StringNull()
+	} else {
+		if fap.SpineLeafLinks != fap.SpineSuperspineLinks {
+			diags.AddError(errProviderBug, "spine/leaf and spine/superspine addressing do not match - we cannot handle this situation")
+		}
+		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
 	}
 
 	spine := newDesignTemplateSpineObject(ctx, &in.Data.Spine, diags)
@@ -172,13 +178,6 @@ func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.T
 	}
 	o.Spine = spine
 	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.Data.VirtualNetworkPolicy.OverlayControlProtocol, diags))
-	if diags.HasError() {
-		return
-	}
-	o.FabricAddressing = types.StringValue(in.Data.FabricAddressingPolicy.SpineLeafLinks.String())
-	if diags.HasError() {
-		return
-	}
 	o.RackTypes = newDesignTemplateRackTypeMap(ctx, in.Data, diags)
 	if diags.HasError() {
 		return
