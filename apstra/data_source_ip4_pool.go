@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceIp4Pool{}
@@ -88,41 +87,4 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-// todo delete me
-type dIp4PoolSubnet struct {
-	Status         types.String  `tfsdk:"status"`
-	Network        types.String  `tfsdk:"network"`
-	Total          types.Number  `tfsdk:"total"`
-	Used           types.Number  `tfsdk:"used"`
-	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
-}
-
-// todo delete me
-func (dIp4PoolSubnet) attributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-
-		"status": schema.StringAttribute{
-			MarkdownDescription: "Status of the IPv4 resource pool.",
-			Computed:            true,
-		},
-		"network": schema.StringAttribute{
-			MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
-			Required:            true,
-		},
-		"total": schema.Int64Attribute{
-			MarkdownDescription: "Total number of addresses in this IPv4 range.",
-			Computed:            true,
-		},
-		"used": schema.Int64Attribute{
-			MarkdownDescription: "Count of used addresses in this IPv4 range.",
-			Computed:            true,
-		},
-		"used_percentage": schema.Float64Attribute{
-			MarkdownDescription: "Percent of used addresses in this IPv4 range.",
-			Computed:            true,
-		},
-	}
-
 }

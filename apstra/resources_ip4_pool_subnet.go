@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -15,6 +16,31 @@ type ip4PoolSubnet struct {
 	Total          types.Number  `tfsdk:"total"`
 	Used           types.Number  `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+}
+
+func (o ip4PoolSubnet) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"status": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Status of the IPv4 resource pool.",
+			Computed:            true,
+		},
+		"network": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
+			Required:            true,
+		},
+		"total": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Total number of addresses in this IPv4 range.",
+			Computed:            true,
+		},
+		"used": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Count of used addresses in this IPv4 range.",
+			Computed:            true,
+		},
+		"used_percentage": dataSourceSchema.Float64Attribute{
+			MarkdownDescription: "Percent of used addresses in this IPv4 range.",
+			Computed:            true,
+		},
+	}
 }
 
 func (o ip4PoolSubnet) resourceAttributesWrite() map[string]resourceSchema.Attribute {

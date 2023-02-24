@@ -50,7 +50,7 @@ func (o ip4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: dIp4PoolSubnet{}.attributes(),
+				Attributes: ip4PoolSubnet{}.dataSourceAttributes(),
 			},
 		},
 		"total": dataSourceSchema.NumberAttribute{
