@@ -48,14 +48,16 @@ func (o *resourceIp4Pool) ValidateConfig(ctx context.Context, req resource.Valid
 		return
 	}
 
-	var jNets []*net.IPNet
-	for i, subnet := range subnets {
-		setVal, d := types.ObjectValueFrom(ctx, subnet.attrTypes(), &subnet)
+	var jNets []*net.IPNet // Each subnet will be checked for overlap with members of jNets, then appended to jNets
+	for i := range subnets {
+		// setVal is used to path AttributeErrors correctly
+		setVal, d := types.ObjectValueFrom(ctx, ip4PoolSubnet{}.attrTypes(), &subnets[i])
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
+		// parse the subnet string
 		_, iNet, err := net.ParseCIDR(subnets[i].CIDR.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
@@ -64,38 +66,29 @@ func (o *resourceIp4Pool) ValidateConfig(ctx context.Context, req resource.Valid
 			return
 		}
 
-		for j, jNet := range jNets {
-			if iNet.Contains(jNet.IP) || jNet.Contains(iNet.IP) {
+		// insist the user give us the all-zeros host address: 192.168.1.0/24 not 192.168.1.50/24
+		if iNet.String() != subnets[i].CIDR.ValueString() {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("subnets").AtSetValue(setVal),
+				errInvalidConfig,
+				fmt.Sprintf("%q doesn't specify a network base address. Did you mean %q?",
+					subnets[i].CIDR.ValueString(), iNet.String()),
+			)
+		}
+
+		// check for overlaps with previous subnets
+		for j := range jNets {
+			if iNet.Contains(jNets[j].IP) || jNets[j].Contains(iNet.IP) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("subnets"),
 					"pool has overlapping subnets",
-					fmt.Sprintf("subnets %q and %q overlap", subnets[i], subnets[j]))
+					fmt.Sprintf("subnets %q and %q overlap", iNet.String(), jNets[j].String()))
 				return
 			}
 		}
 
 		// no overlap. append iNet to the jNets slice
 		jNets = append(jNets, iNet)
-
-		//for j := range subnets {
-		//	if j == i {
-		//		continue // don't compare a subnet to itself
-		//	}
-		//	_, jNet, err := net.ParseCIDR(subnets[j])
-		//	if err != nil {
-		//		resp.Diagnostics.AddAttributeError(
-		//			path.Root("subnets").AtSetValue(types.StringValue(subnets[i])),
-		//			"failure parsing cidr notation", fmt.Sprintf("error parsing '%s' - %s", subnets[i], err.Error()))
-		//		return
-		//	}
-		//	if iNet.Contains(jNet.IP) || jNet.Contains(iNet.IP) {
-		//		resp.Diagnostics.AddAttributeError(
-		//			path.Root("subnets"),
-		//			"pool has overlapping subnets",
-		//			fmt.Sprintf("subnet '%s' and '%s' overlap", subnets[i], subnets[j]))
-		//		return
-		//	}
-		//}
 	}
 }
 
@@ -240,7 +233,7 @@ func (o *resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Delete resource
@@ -264,6 +257,5 @@ func (o *resourceIp4Pool) Delete(ctx context.Context, req resource.DeleteRequest
 			resp.Diagnostics.AddError(
 				"error deleting IPv4 pool", err.Error())
 		}
-		return
 	}
 }
