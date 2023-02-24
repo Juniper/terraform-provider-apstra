@@ -258,6 +258,18 @@ func mapValueOrNull[T any](ctx context.Context, elementType attr.Type, elements 
 	return result
 }
 
+// listValueOrNull returns a types.List based on the supplied elements. If the
+// supplied elements is empty, the returned types.List will be flagged as null.
+func listValueOrNull[T any](ctx context.Context, elementType attr.Type, elements []T, diags *diag.Diagnostics) types.List {
+	if len(elements) == 0 {
+		return types.ListNull(elementType)
+	}
+
+	result, d := types.ListValueFrom(ctx, elementType, elements)
+	diags.Append(d...)
+	return result
+}
+
 // setValueOrNull returns a types.Set based on the supplied elements. If the
 // supplied elements is empty, the returned types.Set will be flagged as null.
 func setValueOrNull[T any](ctx context.Context, elementType attr.Type, elements []T, diags *diag.Diagnostics) types.Set {
