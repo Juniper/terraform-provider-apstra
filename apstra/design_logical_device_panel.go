@@ -162,25 +162,36 @@ func (o *logicalDevicePanel) request(ctx context.Context, diags *diag.Diagnostic
 }
 
 func (o *logicalDevicePanel) validate(ctx context.Context, i int, diags *diag.Diagnostics) {
-	var panelPortsByDimensions, panelPortsByPortGroup int64
-	panelPortsByDimensions = o.Rows.ValueInt64() * o.Columns.ValueInt64()
-
-	portGroups := make([]logicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
-	diags.Append(o.PortGroups.ElementsAs(ctx, &portGroups, false)...)
+	portGroups := o.portGroups(ctx, diags)
 	if diags.HasError() {
 		return
 	}
 
+	// count up the ports in each port group
+	var panelPortsByPortGroup int64
 	for _, portGroup := range portGroups {
 		panelPortsByPortGroup = panelPortsByPortGroup + portGroup.PortCount.ValueInt64()
 	}
+
+	// use panel geometry to determine total panel ports
+	panelPortsByDimensions := o.Rows.ValueInt64() * o.Columns.ValueInt64()
 	if panelPortsByDimensions != panelPortsByPortGroup {
 		diags.AddAttributeError(path.Root("panels").AtListIndex(i),
 			errInvalidConfig,
-			fmt.Sprintf("panel %d (%d by %d ports) has %d ports by dimensions, but the total by port group is %d",
+			fmt.Sprintf("panel[%d] (%d rows of %d ports) has %d ports by dimensions, but the total by port group is %d",
 				i, o.Rows.ValueInt64(), o.Columns.ValueInt64(), panelPortsByDimensions, panelPortsByPortGroup))
 		return
 	}
+}
+
+func (o *logicalDevicePanel) portGroups(ctx context.Context, diags *diag.Diagnostics) []logicalDevicePanelPortGroup {
+	portGroups := make([]logicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
+	diags.Append(o.PortGroups.ElementsAs(ctx, &portGroups, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	return portGroups
 }
 
 func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
