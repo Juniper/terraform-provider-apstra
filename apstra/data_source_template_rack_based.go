@@ -65,7 +65,7 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 			"spine": schema.SingleNestedAttribute{
 				MarkdownDescription: "Spine layer details",
 				Computed:            true,
-				Attributes:          designTemplateSpine{}.dataSourceAttributes(),
+				Attributes:          spineData{}.dataSourceAttributes(),
 			},
 			"asn_allocation_scheme": schema.StringAttribute{
 				MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",

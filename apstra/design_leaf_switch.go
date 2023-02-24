@@ -26,7 +26,7 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	}
 }
 
-type dRackTypeLeafSwitch struct {
+type leafSwitchData struct {
 	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
@@ -35,7 +35,7 @@ type dRackTypeLeafSwitch struct {
 	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
-func (o dRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
+func (o leafSwitchData) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"spine_link_count": schema.Int64Attribute{
 			MarkdownDescription: "Number of links to each spine switch.",
@@ -69,7 +69,7 @@ func (o dRackTypeLeafSwitch) attributes() map[string]schema.Attribute {
 	}
 }
 
-func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
+func (o leafSwitchData) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
@@ -80,7 +80,7 @@ func (o dRackTypeLeafSwitch) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *dRackTypeLeafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func (o *leafSwitchData) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	if fcd == goapstra.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Null()
 		o.SpineLinkSpeed = types.StringNull()

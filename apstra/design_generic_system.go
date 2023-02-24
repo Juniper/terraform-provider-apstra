@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+func genericSystemData(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	gs := rt.Data.GenericSystems[i]
 	if gs.LogicalDevice == nil {
 		diags.AddError("generic system logical device info missing",

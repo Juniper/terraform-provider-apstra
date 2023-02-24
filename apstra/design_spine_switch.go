@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type designTemplateSpine struct {
+type spineData struct {
 	Count               types.Int64  `tfsdk:"count"`
 	SuperSpineLinkSpeed types.String `tfsdk:"super_spine_link_speed"`
 	SuperSpineLinkCount types.Int64  `tfsdk:"super_spine_link_count"`
@@ -17,7 +17,7 @@ type designTemplateSpine struct {
 	TagData             types.Set    `tfsdk:"tag_data"`
 }
 
-func (o designTemplateSpine) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o spineData) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of spine switches.",
@@ -46,7 +46,7 @@ func (o designTemplateSpine) dataSourceAttributes() map[string]dataSourceSchema.
 	}
 }
 
-func (o designTemplateSpine) attrTypes() map[string]attr.Type {
+func (o spineData) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"count":                  types.Int64Type,
 		"super_spine_link_speed": types.StringType,
@@ -56,7 +56,7 @@ func (o designTemplateSpine) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *designTemplateSpine) loadApiResponse(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
+func (o *spineData) loadApiResponse(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
 	o.Count = types.Int64Value(int64(in.Count))
 
 	if in.LinkPerSuperspineSpeed == "" {
@@ -81,19 +81,19 @@ func (o *designTemplateSpine) loadApiResponse(ctx context.Context, in *goapstra.
 func newDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to generate spine object from nil source")
-		return types.ObjectNull(designTemplateSpine{}.attrTypes())
+		return types.ObjectNull(spineData{}.attrTypes())
 	}
 
-	var s designTemplateSpine
+	var s spineData
 	s.loadApiResponse(ctx, in, diags)
 	if diags.HasError() {
-		return types.ObjectNull(designTemplateSpine{}.attrTypes())
+		return types.ObjectNull(spineData{}.attrTypes())
 	}
 
 	result, d := types.ObjectValueFrom(ctx, s.attrTypes(), &s)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ObjectNull(designTemplateSpine{}.attrTypes())
+		return types.ObjectNull(spineData{}.attrTypes())
 	}
 
 	return result
