@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -47,6 +48,29 @@ func (o logicalDevice) dataSourceAttributes() map[string]dataSourceSchema.Attrib
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: logicalDevicePanel{}.dataSourceAttributes(),
+			},
+		},
+	}
+}
+
+func (o logicalDevice) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID number of the resource pool",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Pool name displayed in the Apstra web UI",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"panels": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			Required:            true,
+			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanel{}.resourceAttributes(),
 			},
 		},
 	}
@@ -119,6 +143,12 @@ func (o *logicalDevice) request(ctx context.Context, diags *diag.Diagnostics) *g
 		DisplayName: o.Name.ValueString(),
 		Panels:      panels,
 	}
+}
+
+func (o *logicalDevice) panels(ctx context.Context, diags *diag.Diagnostics) []logicalDevicePanel {
+	panels := make([]logicalDevicePanel, len(o.Panels.Elements()))
+	diags.Append(o.Panels.ElementsAs(ctx, &panels, false)...)
+	return panels
 }
 
 // everything below here is suspect...

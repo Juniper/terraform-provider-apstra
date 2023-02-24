@@ -62,7 +62,7 @@ func (o logicalDevicePanel) resourceAttributes() map[string]resourceSchema.Attri
 			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
 			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: logicalDevicePanelPortGroup{}.schemaAsResource(),
+				Attributes: logicalDevicePanelPortGroup{}.resourceAttributes(),
 			},
 		},
 	}
@@ -85,7 +85,7 @@ func (o logicalDevicePanel) resourceAttributesReadOnly() map[string]resourceSche
 			Computed:            true,
 			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: logicalDevicePanelPortGroup{}.resourceAttributesReadOnly(),
+				Attributes: logicalDevicePanelPortGroup{}.resourceAttributesNested(),
 			},
 		},
 	}

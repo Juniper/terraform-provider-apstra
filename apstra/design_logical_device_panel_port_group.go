@@ -45,7 +45,7 @@ func (o logicalDevicePanelPortGroup) dataSourceAttributes() map[string]dataSourc
 	}
 }
 
-func (o logicalDevicePanelPortGroup) schemaAsResource() map[string]resourceSchema.Attribute {
+func (o logicalDevicePanelPortGroup) resourceAttributes() map[string]resourceSchema.Attribute {
 	var allRoleFlagsSet goapstra.LogicalDevicePortRoleFlags
 	allRoleFlagsSet.SetAll()
 
@@ -74,7 +74,7 @@ func (o logicalDevicePanelPortGroup) schemaAsResource() map[string]resourceSchem
 	}
 }
 
-func (o logicalDevicePanelPortGroup) resourceAttributesReadOnly() map[string]resourceSchema.Attribute {
+func (o logicalDevicePanelPortGroup) resourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"port_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of ports in the group.",
