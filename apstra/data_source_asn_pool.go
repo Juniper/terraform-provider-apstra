@@ -75,7 +75,7 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("Error retrieving ASN pool", err.Error())
+		resp.Diagnostics.AddError("Error retrieving ASN Pool", err.Error())
 		return
 	}
 

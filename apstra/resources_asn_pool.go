@@ -78,8 +78,6 @@ func (o asnPool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 }
 
 func (o *asnPool) loadApiData(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) {
-	o.Id = types.StringValue(string(in.Id))
-
 	ranges := make([]asnPoolRange, len(in.Ranges))
 	for i, r := range in.Ranges {
 		ranges[i].loadApiData(ctx, &r, diags)
