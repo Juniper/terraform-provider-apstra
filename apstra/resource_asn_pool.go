@@ -173,7 +173,6 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-// Update resource
 func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
@@ -229,7 +228,6 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Delete resource
 func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
@@ -246,9 +244,8 @@ func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest
 	err := o.client.DeleteAsnPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
-			resp.Diagnostics.AddError(
-				"error deleting ASN pool", err.Error())
+		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+			resp.Diagnostics.AddError("error deleting ASN pool", err.Error())
 		}
 		return
 	}
