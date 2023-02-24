@@ -18,8 +18,8 @@
 #  value = data.apstra_blueprints.d
 #}
 
-#output "d_apstra_datacenter_blueprint" {
-#  value = data.apstra_datacenter_blueprint.d
+#output "d_apstra_datacenter_blueprint_status" {
+#  value = data.apstra_datacenter_blueprint_status.d
 #}
 
 #output "d_apstra_configlet" {
@@ -68,8 +68,8 @@
 #  value = apstra_asn_pool.r
 #}
 
-#output "r_apstra_asn_pool_range" {
-#  value = apstra_asn_pool_range.r
+#output "r_apstra_ip4_pool" {
+#  value = apstra_asn_pool.r
 #}
 
 #output "r_apstra_logical_device" {
