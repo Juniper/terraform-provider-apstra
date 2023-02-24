@@ -18,17 +18,17 @@ import (
 type asnPool struct {
 	Id          types.String  `tfsdk:"id"`
 	Name        types.String  `tfsdk:"name"`
+	Ranges      types.Set     `tfsdk:"ranges"`
+	Total       types.Int64   `tfsdk:"total"`
 	Status      types.String  `tfsdk:"status"`
 	Used        types.Int64   `tfsdk:"used"`
 	UsedPercent types.Float64 `tfsdk:"used_percentage"`
-	Total       types.Int64   `tfsdk:"total"`
-	Ranges      types.Set     `tfsdk:"ranges"`
 }
 
 func (o asnPool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the desired ASN Resource Pool.",
+			MarkdownDescription: "ID of the desired ASN Pool.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -40,41 +40,42 @@ func (o asnPool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Display name of the ASN Resource Pool.",
+			MarkdownDescription: "Display name of the ASN Pool.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"ranges": dataSourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Resource Pool.",
+			MarkdownDescription: "Detailed info about individual ASN Pool Ranges within the ASN Pool.",
 			Computed:            true,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: asnPoolRange{}.dataSourceAttributes(),
 			},
 		},
 		"total": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Total number of ASNs in the ASN Resource Pool.",
+			MarkdownDescription: "Total number of ASNs in the ASN Pool.",
 			Computed:            true,
 		},
 		"status": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the ASN Resource Pool.",
+			MarkdownDescription: "Status of the ASN Pool.",
 			Computed:            true,
 		},
 		"used": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Count of used ASNs in the ASN Resource Pool.",
+			MarkdownDescription: "Count of used ASNs in the ASN Pool.",
 			Computed:            true,
 		},
 		"used_percentage": dataSourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used ASNs in the ASN Resource Pool.",
+			MarkdownDescription: "Percent of used ASNs in the ASN Pool.",
 			Computed:            true,
 		},
 	}
 }
 
-func (o asnPool) resourceAttributes() map[string]resourceSchema.Attribute {
+func (o asnPool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID number of the resource pool",
+			MarkdownDescription: "Apstra ID number of the pool",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -92,21 +93,21 @@ func (o asnPool) resourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"total": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Total number of ASNs in the ASN Resource Pool.",
+			MarkdownDescription: "Total number of ASNs in the ASN Pool.",
 			Computed:            true,
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the ASN Resource Pool. " +
+			MarkdownDescription: "Status of the ASN Pool. " +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 		"used": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Count of used ASNs in the ASN Resource Pool. " +
+			MarkdownDescription: "Count of used ASNs in the ASN Pool. " +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used ASNs in the ASN Resource Pool. " +
+			MarkdownDescription: "Percent of used ASNs in the ASN Pool. " +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},

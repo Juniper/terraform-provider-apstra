@@ -35,7 +35,7 @@ func (o *resourceAsnPool) Configure(ctx context.Context, req resource.ConfigureR
 func (o *resourceAsnPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an ASN resource pool",
-		Attributes:          asnPool{}.resourceAttributes(),
+		Attributes:          asnPool{}.resourceAttributesWrite(),
 	}
 }
 
@@ -83,7 +83,6 @@ func (o *resourceAsnPool) ValidateConfig(ctx context.Context, req resource.Valid
 			Last:  last,
 		})
 	}
-
 }
 
 func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -125,7 +124,7 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	// create new state object
+	// create state object
 	var state asnPool
 	state.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -134,9 +133,6 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
 
 func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -191,26 +187,31 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// Update new ASN Pool
+	// Update ASN Pool
 	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	var ace goapstra.ApstraClientErr
 	err := o.client.UpdateAsnPool(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		// some other unknown error
 		resp.Diagnostics.AddError("error updating ASN Pool", err.Error())
 		return
 	}
 
 	// read pool back from Apstra to get usage statistics
-	var ace goapstra.ApstraClientErr
 	p, err := o.client.GetAsnPool(ctx, goapstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"ASN Pool not found",
-				fmt.Sprintf("Just-created ASN Pool with ID %q not found", plan.Id.ValueString()))
+				fmt.Sprintf("Recently updated ASN Pool with ID %q not found", plan.Id.ValueString()))
 			return
 		}
 		resp.Diagnostics.AddError("Error retrieving ASN Pool", err.Error())
@@ -226,9 +227,6 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 }
 
 // Delete resource
