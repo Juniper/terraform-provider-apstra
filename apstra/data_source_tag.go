@@ -28,9 +28,7 @@ func (o *dataSourceTag) Configure(ctx context.Context, req datasource.ConfigureR
 func (o *dataSourceTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Tag.\n\n" +
-			"At least one optional attribute is required. " +
-			"It is incumbent on the user to ensure the lookup criteria matches exactly one Tag. " +
-			"Matching zero or more Tags will produce an error.",
+			"At least one optional attribute is required.",
 		Attributes: tag{}.dataSourceAttributes(),
 	}
 }

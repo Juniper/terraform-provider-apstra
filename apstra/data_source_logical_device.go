@@ -74,11 +74,12 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
 		return
 	}
-	if err != nil {
+	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Logical Device", err.Error())
 		return
 	}
 
+	// create new state object
 	var state logicalDevice
 	state.Id = types.StringValue(string(ld.Id))
 	state.loadApiData(ctx, ld.Data, &resp.Diagnostics)
