@@ -73,7 +73,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
 		return
 	}
-	if err != nil {
+	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving IPv4 Pool", err.Error())
 		return
 	}
