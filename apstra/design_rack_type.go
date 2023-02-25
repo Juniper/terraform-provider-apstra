@@ -178,6 +178,10 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 	o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, leafSwitches, diags)
 	o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, accessSwitches, diags)
 	o.GenericSystems = mapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, genericSystems, diags)
+	// todo use these new functions
+	//o.LeafSwitches = newLeafSwitchMap(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
+	//o.AccessSwitches = newAccessSwitchMap(ctx, in.AccessSwitches, diags)
+	//o.GenericSystems = newGenericSystemMap(ctx, in.GenericSystems, diags)
 }
 
 // todo delete everything below here

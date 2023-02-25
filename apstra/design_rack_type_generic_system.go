@@ -4,10 +4,18 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -79,6 +87,70 @@ func (o genericSystem) dataSourceAttributes() map[string]dataSourceSchema.Attrib
 	}
 }
 
+func (o genericSystem) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Generic System.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"port_channel_id_min": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.Between(poIdMin, poIdMax),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+				int64validator.AtMostSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+			},
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"port_channel_id_max": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				int64validator.Between(poIdMin, poIdMax),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+			},
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Generic Systems of this type.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"links": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch.",
+			Required:            true,
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rRackLink{}.attributes(),
+			},
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Generic System",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Generic System",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
+			},
+		},
+	}
+}
+
 func (o genericSystem) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,
@@ -101,4 +173,18 @@ func (o *genericSystem) loadApiData(ctx context.Context, in *goapstra.RackElemen
 	o.Links = newLinkSet(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
+}
+
+func newGenericSystemMap(ctx context.Context, in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) types.Map {
+	genericSystems := make(map[string]genericSystem, len(in))
+	for _, genericIn := range in {
+		var gs genericSystem
+		gs.loadApiData(ctx, &genericIn, diags)
+		genericSystems[genericIn.Label] = gs
+		if diags.HasError() {
+			return types.MapNull(types.ObjectType{AttrTypes: genericSystem{}.attrTypes()})
+		}
+	}
+
+	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, genericSystems, diags)
 }

@@ -4,10 +4,16 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -86,6 +92,57 @@ func (o accessSwitch) dataSourceAttributes() map[string]dataSourceSchema.Attribu
 	}
 }
 
+func (o accessSwitch) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Access Switch.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"esi_lag_info": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
+			Optional:            true,
+			Attributes:          esiLagInfo{}.schemaAsResource(),
+		},
+		"redundancy_protocol": resourceSchema.StringAttribute{
+			MarkdownDescription: "Indicates whether the switch is a redundant pair.",
+			Computed:            true,
+		},
+		"count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Access Switches of this type.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"links": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Each Access Switch is required to have at least one Link to a Leaf Switch.",
+			Required:            true,
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rRackLink{}.attributes(),
+			},
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Access Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
+			},
+		},
+	}
+}
+
 func (o accessSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,
@@ -114,4 +171,18 @@ func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElement
 	o.Links = newLinkSet(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
+}
+
+func newAccessSwitchMap(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) types.Map {
+	accessSwitches := make(map[string]accessSwitch, len(in))
+	for _, accessIn := range in {
+		var as accessSwitch
+		as.loadApiData(ctx, &accessIn, diags)
+		accessSwitches[accessIn.Label] = as
+		if diags.HasError() {
+			return types.MapNull(types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()})
+		}
+	}
+
+	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, accessSwitches, diags)
 }

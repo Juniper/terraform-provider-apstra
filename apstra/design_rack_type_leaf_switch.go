@@ -4,10 +4,19 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
@@ -80,6 +89,73 @@ func (o leafSwitch) dataSourceAttributes() map[string]dataSourceSchema.Attribute
 	}
 }
 
+func (o leafSwitch) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Leaf Switch.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"mlag_info": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
+				"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
+			Optional:   true,
+			Attributes: mlagInfo{}.resourceAttributes(),
+			Validators: []validator.Object{validateSwitchLagInfo(goapstra.LeafRedundancyProtocolMlag.String())},
+		},
+		"redundancy_protocol": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Enabling a redundancy protocol converts a single "+
+				"Leaf Switch into a LAG-capable switch pair. Must be one of '%s'.",
+				strings.Join(leafRedundancyModes(), "', '")),
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(leafRedundancyModes()...),
+				validateLeafSwitchRedundancyMode(),
+				stringFabricConnectivityDesignMustBeWhenValue(goapstra.FabricConnectivityDesignL3Clos, "mlag"),
+			},
+		},
+		"spine_link_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Links per spine.",
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
+				int64FabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
+				int64FabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+			},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+		},
+		"spine_link_speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of spine-facing links, something like '10G'",
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringFabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
+				stringFabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+			},
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Leaf Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Leaf Switch",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
+			},
+		},
+	}
+}
+
 func (o leafSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,
@@ -119,4 +195,18 @@ func (o *leafSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementLe
 
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
+}
+
+func newLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
+	leafSwitches := make(map[string]leafSwitch, len(in))
+	for _, leafIn := range in {
+		var ls leafSwitch
+		ls.loadApiData(ctx, &leafIn, fcd, diags)
+		leafSwitches[leafIn.Label] = ls
+		if diags.HasError() {
+			return types.MapNull(types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()})
+		}
+	}
+
+	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, leafSwitches, diags)
 }
