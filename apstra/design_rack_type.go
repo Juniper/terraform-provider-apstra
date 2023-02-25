@@ -28,7 +28,7 @@ type rackType struct {
 	GenericSystems           types.Map    `tfsdk:"generic_systems"`
 }
 
-func (o rackType) dataSourceAttritbutes() map[string]dataSourceSchema.Attribute {
+func (o rackType) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Rack Type ID.  Required when the Rack Type name is omitted.",
@@ -80,7 +80,7 @@ func (o rackType) dataSourceAttritbutes() map[string]dataSourceSchema.Attribute 
 	}
 }
 
-func (o rackType) resourceAttritbutes() map[string]resourceSchema.Attribute {
+func (o rackType) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Object ID for the Rack Type, assigned by Apstra.",

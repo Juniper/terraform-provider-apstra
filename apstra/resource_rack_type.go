@@ -34,7 +34,7 @@ func (o *resourceRackType) Configure(ctx context.Context, req resource.Configure
 func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Rack Type in the Apstra Design tab.",
-		Attributes:          rackType{}.resourceAttritbutes(),
+		Attributes:          rackType{}.resourceAttributes(),
 	}
 }
 

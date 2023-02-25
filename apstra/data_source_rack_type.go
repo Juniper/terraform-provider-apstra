@@ -31,7 +31,7 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one Rack Type. " +
 			"Matching zero Rack Types or more than one Rack Type will produce an error.",
-		Attributes: rackType{}.dataSourceAttritbutes(),
+		Attributes: rackType{}.dataSourceAttributes(),
 	}
 }
 
