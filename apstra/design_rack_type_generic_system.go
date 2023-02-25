@@ -62,7 +62,7 @@ func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: dRackLink{}.attributes(),
+				Attributes: rackLink{}.dataSourceAttributes(),
 			},
 		},
 	}
@@ -74,7 +74,7 @@ func (o genericSystem) attrTypes() map[string]attr.Type {
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
 		"count":               types.Int64Type,
-		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
+		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: rackLink{}.attrTypes()}},
 		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
@@ -84,6 +84,6 @@ func (o *genericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackEl
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
 	o.Count = types.Int64Value(int64(in.Count))
-	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
+	o.Links = newLinkSet(ctx, in.Links, diags)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }

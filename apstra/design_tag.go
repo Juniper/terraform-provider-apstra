@@ -132,12 +132,9 @@ func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Dia
 	}
 
 	tags := make([]tag, len(in))
-	for i := range in {
-		tags[i] = tag{
-			Id:          types.StringNull(),
-			Name:        types.StringValue(in[i].Label),
-			Description: types.StringValue(in[i].Description),
-		}
+	for i, t := range in {
+		tags[i].Id = types.StringNull()
+		tags[i].loadApiData(ctx, &t, diags)
 	}
 
 	return setValueOrNull(ctx, types.ObjectType{AttrTypes: tag{}.attrTypes()}, tags, diags)

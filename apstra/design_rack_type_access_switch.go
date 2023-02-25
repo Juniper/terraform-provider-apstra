@@ -69,7 +69,7 @@ func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: dRackLink{}.attributes(),
+				Attributes: rackLink{}.dataSourceAttributes(),
 			},
 		},
 	}
@@ -81,7 +81,7 @@ func (o accessSwitch) attrTypes() map[string]attr.Type {
 		"esi_lag_info":        types.ObjectType{AttrTypes: esiLagInfo{}.attrTypes()},
 		"redundancy_protocol": types.StringType,
 		"count":               types.Int64Type,
-		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
+		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: rackLink{}.attrTypes()}},
 		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
@@ -97,6 +97,6 @@ func (o *accessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackEle
 	}
 
 	o.Count = types.Int64Value(int64(in.InstanceCount))
-	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
+	o.Links = newLinkSet(ctx, in.Links, diags)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }
