@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -39,47 +39,47 @@ type accessSwitch struct {
 	Tags               types.Set    `tfsdk:"tags"`
 }
 
-func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"logical_device_id": schema.StringAttribute{
+func (o accessSwitch) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"logical_device_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
 		},
-		"logical_device": schema.SingleNestedAttribute{
+		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
 			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
-		"esi_lag_info": schema.SingleNestedAttribute{
+		"esi_lag_info": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
 			Computed:            true,
 			Attributes:          esiLagInfo{}.dataSourceAttributes(),
 		},
-		"redundancy_protocol": schema.StringAttribute{
+		"redundancy_protocol": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
 			Computed:            true,
 		},
-		"count": schema.Int64Attribute{
+		"count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Count of Access Switches of this type.",
 			Computed:            true,
 		},
-		"links": schema.SetNestedAttribute{
+		"links": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details links from this Access Switch to upstream switches within this Rack Type.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
-			NestedObject: schema.NestedAttributeObject{
+			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: rackLink{}.dataSourceAttributes(),
 			},
 		},
-		"tag_ids": schema.SetAttribute{
+		"tag_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
-		"tags": schema.SetNestedAttribute{
+		"tags": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Access Switch.",
 			Computed:            true,
-			NestedObject: schema.NestedAttributeObject{
+			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: tag{}.dataSourceAttributesNested(),
 			},
 		},

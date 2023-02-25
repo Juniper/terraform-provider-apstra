@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -37,43 +37,43 @@ type leafSwitch struct {
 	Tags               types.Set    `tfsdk:"tags"`
 }
 
-func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"logical_device_id": schema.StringAttribute{
+func (o leafSwitch) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"logical_device_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
 		},
-		"logical_device": schema.SingleNestedAttribute{
+		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
 			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
-		"mlag_info": schema.SingleNestedAttribute{
+		"mlag_info": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
 			Computed:            true,
 			Attributes:          mlagInfo{}.dataSourceAttributes(),
 		},
-		"redundancy_protocol": schema.StringAttribute{
+		"redundancy_protocol": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
 			Computed:            true,
 		},
-		"spine_link_count": schema.Int64Attribute{
+		"spine_link_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of links to each spine switch.",
 			Computed:            true,
 		},
-		"spine_link_speed": schema.StringAttribute{
+		"spine_link_speed": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of links to spine switches.",
 			Computed:            true,
 		},
-		"tag_ids": schema.SetAttribute{
+		"tag_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
-		"tags": schema.SetNestedAttribute{
+		"tags": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
 			Computed:            true,
-			NestedObject: schema.NestedAttributeObject{
+			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: tag{}.dataSourceAttributesNested(),
 			},
 		},
