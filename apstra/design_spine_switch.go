@@ -3,22 +3,36 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type spine struct {
+	LogicalDeviceId     types.String `tfsdk:"logical_device_id"`
+	LogicalDevice       types.Object `tfsdk:"logical_device"`
 	Count               types.Int64  `tfsdk:"count"`
 	SuperSpineLinkSpeed types.String `tfsdk:"super_spine_link_speed"`
 	SuperSpineLinkCount types.Int64  `tfsdk:"super_spine_link_count"`
-	LogicalDeviceData   types.Object `tfsdk:"logical_device"`
+	TagIds              types.Set    `tfsdk:"tag_ids"`
 	Tags                types.Set    `tfsdk:"tags"`
 }
 
 func (o spine) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"logical_device_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
+			Computed:            true,
+		},
+		"logical_device": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
+		},
 		"count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of spine switches.",
 			Computed:            true,
@@ -31,16 +45,55 @@ func (o spine) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "Count of links to each super spine switch.",
 			Computed:            true,
 		},
-		"logical_device": dataSourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+		"tag_ids": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
 			Computed:            true,
-			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+			ElementType:         types.StringType,
 		},
 		"tags": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to the Spine Switches.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: tag{}.dataSourceAttributes(),
+				Attributes: tag{}.dataSourceAttributesNested(),
+			},
+		},
+	}
+}
+
+func (o spine) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Spine Switch.",
+			Required:            true,
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Spine Switches.",
+			Required:            true,
+		},
+		"super_spine_link_speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of links to super spine switches.",
+			Optional:            true,
+		},
+		"super_spine_link_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Count of links to each super spine switch.",
+			Optional:            true,
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Access Switch",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Spine Switch",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
 			},
 		},
 	}
@@ -48,15 +101,18 @@ func (o spine) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 
 func (o spine) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"logical_device_id":      types.StringType,
+		"logical_device":         types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
 		"count":                  types.Int64Type,
 		"super_spine_link_speed": types.StringType,
 		"super_spine_link_count": types.Int64Type,
-		"logical_device":         types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
+		"tag_ids":                types.SetType{ElemType: types.StringType},
 		"tags":                   types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
 
-func (o *spine) loadApiResponse(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
+func (o *spine) loadApiData(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
+	o.LogicalDevice = newLogicalDeviceObject(ctx, &in.LogicalDevice, diags)
 	o.Count = types.Int64Value(int64(in.Count))
 
 	if in.LinkPerSuperspineSpeed == "" {
@@ -67,15 +123,8 @@ func (o *spine) loadApiResponse(ctx context.Context, in *goapstra.Spine, diags *
 		o.SuperSpineLinkCount = types.Int64Value(int64(in.LinkPerSuperspineCount))
 	}
 
-	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, &in.LogicalDevice, diags)
-	if diags.HasError() {
-		return
-	}
-
+	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
-	if diags.HasError() {
-		return
-	}
 }
 
 func newDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {
@@ -85,7 +134,8 @@ func newDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags
 	}
 
 	var s spine
-	s.loadApiResponse(ctx, in, diags)
+	s.LogicalDeviceId = types.StringNull()
+	s.loadApiData(ctx, in, diags)
 	if diags.HasError() {
 		return types.ObjectNull(spine{}.attrTypes())
 	}

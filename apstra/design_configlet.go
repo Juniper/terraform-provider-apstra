@@ -59,8 +59,8 @@ func (o *configlet) loadApiData(ctx context.Context, in *goapstra.ConfigletData,
 	}
 
 	configletGenerators := make([]configletGenerator, len(in.Generators))
-	for i, configletGenerator := range in.Generators {
-		configletGenerators[i].loadApiData(ctx, &configletGenerator, diags)
+	for i := range in.Generators {
+		configletGenerators[i].loadApiData(ctx, &in.Generators[i], diags)
 		if diags.HasError() {
 			return
 		}

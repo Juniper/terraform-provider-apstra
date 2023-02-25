@@ -72,7 +72,7 @@ func (o asnPool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o asnPool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o asnPool) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID number of the pool",

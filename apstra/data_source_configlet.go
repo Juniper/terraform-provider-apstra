@@ -46,12 +46,12 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	var err error
-	var cl *goapstra.Configlet
+	var api *goapstra.Configlet
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		cl, err = o.client.GetConfigletByName(ctx, config.Name.ValueString())
+		api, err = o.client.GetConfigletByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -60,7 +60,7 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 			return
 		}
 	case !config.Id.IsNull():
-		cl, err = o.client.GetConfiglet(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetConfiglet(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -79,8 +79,8 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 
 	// create new state object
 	var state configlet
-	state.Id = types.StringValue(string(cl.Id))
-	state.loadApiData(ctx, cl.Data, &resp.Diagnostics)
+	state.Id = types.StringValue(string(api.Id))
+	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

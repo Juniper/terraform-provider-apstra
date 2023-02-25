@@ -48,12 +48,12 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	var err error
-	var ld *goapstra.LogicalDevice
+	var api *goapstra.LogicalDevice
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		ld, err = o.client.GetLogicalDeviceByName(ctx, config.Name.ValueString())
+		api, err = o.client.GetLogicalDeviceByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -62,7 +62,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 			return
 		}
 	case !config.Id.IsNull():
-		ld, err = o.client.GetLogicalDevice(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetLogicalDevice(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -81,8 +81,8 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 
 	// create new state object
 	var state logicalDevice
-	state.Id = types.StringValue(string(ld.Id))
-	state.loadApiData(ctx, ld.Data, &resp.Diagnostics)
+	state.Id = types.StringValue(string(api.Id))
+	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -90,45 +90,3 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
-
-//// read-only schema for logical device panels is a stand-alone function because
-//// it gets re-used by rack-type and template data sources
-//func dPanelAttributeSchema() schema.ListNestedAttribute {
-//	return schema.ListNestedAttribute{
-//		MarkdownDescription: "Details physical layout of interfaces on the device.",
-//		Computed:            true,
-//		NestedObject: schema.NestedAttributeObject{
-//			Attributes: map[string]schema.Attribute{
-//				"rows": schema.Int64Attribute{
-//					MarkdownDescription: "Physical vertical dimension of the panel.",
-//					Computed:            true,
-//				},
-//				"columns": schema.Int64Attribute{
-//					MarkdownDescription: "Physical horizontal dimension of the panel.",
-//					Computed:            true,
-//				},
-//				"port_groups": schema.ListNestedAttribute{
-//					MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
-//					Computed:            true,
-//					NestedObject: schema.NestedAttributeObject{
-//						Attributes: map[string]schema.Attribute{
-//							"port_count": schema.Int64Attribute{
-//								MarkdownDescription: "Number of ports in the group.",
-//								Computed:            true,
-//							},
-//							"port_speed": schema.StringAttribute{
-//								MarkdownDescription: "Port speed.",
-//								Computed:            true,
-//							},
-//							"port_roles": schema.SetAttribute{
-//								MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
-//								Computed:            true,
-//								ElementType:         types.StringType,
-//							},
-//						},
-//					},
-//				},
-//			},
-//		},
-//	}
-//}

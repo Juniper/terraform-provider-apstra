@@ -212,13 +212,7 @@ func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElement
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
-
-	if in.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
-		o.RedundancyProtocol = types.StringNull()
-	} else {
-		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
-	}
-
+	o.RedundancyProtocol = stringValueWithNull(ctx, in.RedundancyProtocol.String(), goapstra.AccessRedundancyProtocolNone.String(), diags)
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = newLinkMap(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)

@@ -190,19 +190,8 @@ func (o *rackLink) loadApiData(ctx context.Context, in *goapstra.RackLink, diags
 	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
 	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
 	o.Speed = types.StringValue(string(in.LinkSpeed))
-
-	if in.LagMode == goapstra.RackLinkLagModeNone {
-		o.LagMode = types.StringNull()
-	} else {
-		o.LagMode = types.StringValue(in.LagMode.String())
-	}
-
-	if in.SwitchPeer == goapstra.RackLinkSwitchPeerNone {
-		o.SwitchPeer = types.StringNull()
-	} else {
-		o.SwitchPeer = types.StringValue(in.SwitchPeer.String())
-	}
-
+	o.LagMode = stringValueWithNull(ctx, in.LagMode.String(), goapstra.RackLinkLagModeNone.String(), diags)
+	o.SwitchPeer = stringValueWithNull(ctx, in.SwitchPeer.String(), goapstra.RackLinkSwitchPeerNone.String(), diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }

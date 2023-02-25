@@ -5,12 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -34,49 +31,7 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one Rack Based Template. " +
 			"Matching zero Rack Based Templates or more than one Rack Based Template will produce an error.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Template ID.  Required when the Template name is omitted.",
-				Optional:            true,
-				Computed:            true,
-				Validators: []validator.String{
-					stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("name")),
-				},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Template name displayed in the Apstra web UI.  Required when Template ID is omitted.",
-				Optional:            true,
-				Computed:            true,
-				Validators: []validator.String{
-					stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("id")),
-				},
-			},
-			"spine": schema.SingleNestedAttribute{
-				MarkdownDescription: "Spine layer details",
-				Computed:            true,
-				Attributes:          spine{}.dataSourceAttributes(),
-			},
-			"asn_allocation_scheme": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
-					asnAllocationUnique, asnAllocationSingle),
-				Computed: true,
-			},
-			"overlay_control_protocol": schema.StringAttribute{
-				MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
-				Computed:            true,
-			},
-			"fabric_link_addressing": schema.StringAttribute{
-				MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
-				Computed:            true,
-			},
-			"rack_types": schema.MapNestedAttribute{
-				MarkdownDescription: "Details Rack Types included in the template",
-				Computed:            true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: templateRackType{}.attributes(),
-				},
-			},
-		},
+		Attributes: templateRackBased{}.dataSourceAttributes(),
 	}
 }
 
@@ -86,19 +41,19 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	var config dTemplateRackBased
+	var config templateRackBased
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var err error
-	var trb *goapstra.TemplateRackBased
+	var api *goapstra.TemplateRackBased
 	var ace goapstra.ApstraClientErr
 
 	// maybe the config gave us the rack type name?
 	if !config.Name.IsNull() { // fetch rack type by name
-		trb, err = o.client.GetRackBasedTemplateByName(ctx, config.Name.ValueString())
+		api, err = o.client.GetRackBasedTemplateByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -110,7 +65,7 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 
 	// maybe the config gave us the rack type id?
 	if !config.Id.IsNull() { // fetch rack type by ID
-		trb, err = o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -121,43 +76,10 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 	}
 
 	// create state object
-	var state dTemplateRackBased
-	state.loadApiResponse(ctx, trb, &resp.Diagnostics)
+	var state templateRackBased
+	state.Id = types.StringValue(string(api.Id))
+	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-type dTemplateRackBased struct {
-	Id                     types.String `tfsdk:"id"`
-	Name                   types.String `tfsdk:"name"`
-	Spine                  types.Object `tfsdk:"spine"`
-	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
-	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
-	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
-	RackTypes              types.Map    `tfsdk:"rack_types"`
-}
-
-func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.TemplateRackBased, diags *diag.Diagnostics) {
-	if in == nil || in.Data == nil {
-		diags.AddError(errProviderBug, "attempt to load dTemplateRackBased from nil source")
-		return
-	}
-
-	fap := in.Data.FabricAddressingPolicy
-	if fap == nil {
-		o.FabricAddressing = types.StringNull()
-	} else {
-		if fap.SpineLeafLinks != fap.SpineSuperspineLinks {
-			diags.AddError(errProviderBug, "spine/leaf and spine/superspine addressing do not match - we cannot handle this situation")
-		}
-		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
-	}
-
-	o.Name = types.StringValue(in.Data.DisplayName)
-	o.Id = types.StringValue(string(in.Id))
-	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.Data.AsnAllocationPolicy.SpineAsnScheme, diags))
-	o.Spine = newDesignTemplateSpineObject(ctx, &in.Data.Spine, diags)
-	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.Data.VirtualNetworkPolicy.OverlayControlProtocol, diags))
-	o.RackTypes = newDesignTemplateRackTypeMap(ctx, in.Data, diags)
 }
