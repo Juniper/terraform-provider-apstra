@@ -9,15 +9,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type spineData struct {
+type spine struct {
 	Count               types.Int64  `tfsdk:"count"`
 	SuperSpineLinkSpeed types.String `tfsdk:"super_spine_link_speed"`
 	SuperSpineLinkCount types.Int64  `tfsdk:"super_spine_link_count"`
 	LogicalDeviceData   types.Object `tfsdk:"logical_device"`
-	TagData             types.Set    `tfsdk:"tag_data"`
+	Tags                types.Set    `tfsdk:"tags"`
 }
 
-func (o spineData) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o spine) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of spine switches.",
@@ -36,27 +36,27 @@ func (o spineData) dataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
 		},
-		"tag_data": dataSourceSchema.SetNestedAttribute{
+		"tags": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to the Spine Switches.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: tagData{}.dataSourceAttributes(),
+				Attributes: tag{}.dataSourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o spineData) attrTypes() map[string]attr.Type {
+func (o spine) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"count":                  types.Int64Type,
 		"super_spine_link_speed": types.StringType,
 		"super_spine_link_count": types.Int64Type,
 		"logical_device":         types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
-		"tag_data":               types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"tags":                   types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
 
-func (o *spineData) loadApiResponse(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
+func (o *spine) loadApiResponse(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
 	o.Count = types.Int64Value(int64(in.Count))
 
 	if in.LinkPerSuperspineSpeed == "" {
@@ -72,7 +72,7 @@ func (o *spineData) loadApiResponse(ctx context.Context, in *goapstra.Spine, dia
 		return
 	}
 
-	o.TagData = newTagDataSet(ctx, in.Tags, diags)
+	o.Tags = newTagSet(ctx, in.Tags, diags)
 	if diags.HasError() {
 		return
 	}
@@ -81,19 +81,19 @@ func (o *spineData) loadApiResponse(ctx context.Context, in *goapstra.Spine, dia
 func newDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to generate spine object from nil source")
-		return types.ObjectNull(spineData{}.attrTypes())
+		return types.ObjectNull(spine{}.attrTypes())
 	}
 
-	var s spineData
+	var s spine
 	s.loadApiResponse(ctx, in, diags)
 	if diags.HasError() {
-		return types.ObjectNull(spineData{}.attrTypes())
+		return types.ObjectNull(spine{}.attrTypes())
 	}
 
 	result, d := types.ObjectValueFrom(ctx, s.attrTypes(), &s)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ObjectNull(spineData{}.attrTypes())
+		return types.ObjectNull(spine{}.attrTypes())
 	}
 
 	return result

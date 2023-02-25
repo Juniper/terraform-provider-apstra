@@ -54,7 +54,7 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 			"spine": schema.SingleNestedAttribute{
 				MarkdownDescription: "Spine layer details",
 				Computed:            true,
-				Attributes:          spineData{}.dataSourceAttributes(),
+				Attributes:          spine{}.dataSourceAttributes(),
 			},
 			"asn_allocation_scheme": schema.StringAttribute{
 				MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
@@ -144,32 +144,20 @@ func (o *dTemplateRackBased) loadApiResponse(ctx context.Context, in *goapstra.T
 		return
 	}
 
-	if in.Data.FabricAddressingPolicy.SpineLeafLinks != in.Data.FabricAddressingPolicy.SpineSuperspineLinks {
-		diags.AddError(errProviderBug, "spine/leaf and spine/superspine addressing do not match - we cannot handle this situation")
-	}
-
-	spine := newDesignTemplateSpineObject(ctx, &in.Data.Spine, diags)
-	if diags.HasError() {
-		return
+	fap := in.Data.FabricAddressingPolicy
+	if fap == nil {
+		o.FabricAddressing = types.StringNull()
+	} else {
+		if fap.SpineLeafLinks != fap.SpineSuperspineLinks {
+			diags.AddError(errProviderBug, "spine/leaf and spine/superspine addressing do not match - we cannot handle this situation")
+		}
+		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
 	}
 
 	o.Name = types.StringValue(in.Data.DisplayName)
 	o.Id = types.StringValue(string(in.Id))
 	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.Data.AsnAllocationPolicy.SpineAsnScheme, diags))
-	if diags.HasError() {
-		return
-	}
-	o.Spine = spine
+	o.Spine = newDesignTemplateSpineObject(ctx, &in.Data.Spine, diags)
 	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.Data.VirtualNetworkPolicy.OverlayControlProtocol, diags))
-	if diags.HasError() {
-		return
-	}
-	o.FabricAddressing = types.StringValue(in.Data.FabricAddressingPolicy.SpineLeafLinks.String())
-	if diags.HasError() {
-		return
-	}
 	o.RackTypes = newDesignTemplateRackTypeMap(ctx, in.Data, diags)
-	if diags.HasError() {
-		return
-	}
 }
