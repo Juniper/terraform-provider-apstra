@@ -85,7 +85,7 @@ func (o *dRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, 
 		o.SwitchPeer = types.StringValue(in.SwitchPeer.String())
 	}
 
-	o.TagData = newTagSet(ctx, in.Tags, diags)
+	o.TagData = newTagDataSet(ctx, in.Tags, diags)
 	if diags.HasError() {
 		return
 	}

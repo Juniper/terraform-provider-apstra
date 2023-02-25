@@ -34,7 +34,7 @@ type accessSwitch struct {
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	Count              types.Int64  `tfsdk:"count"`
 	Links              types.Set    `tfsdk:"links"`
-	TagData            types.Set    `tfsdk:"tag_data"`
+	Tags               types.Set    `tfsdk:"tags"`
 }
 
 func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
@@ -57,11 +57,11 @@ func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 			Computed:            true,
 			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
-		"tag_data": schema.SetNestedAttribute{
+		"tags": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Access Switch.",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: tagData{}.dataSourceAttributes(),
+				Attributes: tag{}.dataSourceAttributesNested(),
 			},
 		},
 		"links": schema.SetNestedAttribute{
@@ -82,7 +82,7 @@ func (o accessSwitch) attrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"count":               types.Int64Type,
 		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
-		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
 
@@ -98,5 +98,5 @@ func (o *accessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackEle
 
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
-	o.TagData = newTagSet(ctx, in.Tags, diags)
+	o.Tags = newTagSet(ctx, in.Tags, diags)
 }

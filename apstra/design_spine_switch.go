@@ -72,7 +72,7 @@ func (o *spineData) loadApiResponse(ctx context.Context, in *goapstra.Spine, dia
 		return
 	}
 
-	o.TagData = newTagSet(ctx, in.Tags, diags)
+	o.TagData = newTagDataSet(ctx, in.Tags, diags)
 	if diags.HasError() {
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -49,6 +50,23 @@ func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
+func (o tag) dataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Tag name.",
+			Computed:            true,
+		},
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Tag description.",
+			Computed:            true,
+		},
+	}
+}
+
 func (o tag) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
@@ -88,6 +106,14 @@ func (o tag) resourceAttributesNested() map[string]resourceSchema.Attribute {
 	}
 }
 
+func (o tag) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id":          types.StringType,
+		"name":        types.StringType,
+		"description": types.StringType,
+	}
+}
+
 func (o *tag) loadApiData(_ context.Context, in *goapstra.DesignTagData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
@@ -98,4 +124,21 @@ func (o *tag) request(_ context.Context, _ *diag.Diagnostics) *goapstra.DesignTa
 		Label:       o.Name.ValueString(),
 		Description: o.Description.ValueString(),
 	}
+}
+
+func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Diagnostics) types.Set {
+	if len(in) == 0 {
+		return types.SetNull(types.ObjectType{AttrTypes: tag{}.attrTypes()})
+	}
+
+	tags := make([]tag, len(in))
+	for i := range in {
+		tags[i] = tag{
+			Id:          types.StringNull(),
+			Name:        types.StringValue(in[i].Label),
+			Description: types.StringValue(in[i].Description),
+		}
+	}
+
+	return setValueOrNull(ctx, types.ObjectType{AttrTypes: tag{}.attrTypes()}, tags, diags)
 }

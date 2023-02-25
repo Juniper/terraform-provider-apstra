@@ -234,7 +234,7 @@ func (o *rRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapst
 	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
 	o.TagIds = types.SetNull(types.StringType)
 
-	o.TagData = newTagSet(ctx, in.Tags, diags)
+	o.TagData = newTagDataSet(ctx, in.Tags, diags)
 	if diags.HasError() {
 		return
 	}

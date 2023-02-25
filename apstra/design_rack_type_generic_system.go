@@ -28,7 +28,7 @@ type genericSystem struct {
 	PortChannelIdMax types.Int64  `tfsdk:"port_channel_id_max"`
 	Count            types.Int64  `tfsdk:"count"`
 	Links            types.Set    `tfsdk:"links"`
-	TagData          types.Set    `tfsdk:"tag_data"`
+	Tags             types.Set    `tfsdk:"tags"`
 }
 
 func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
@@ -50,11 +50,11 @@ func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
 			Computed:            true,
 			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
-		"tag_data": schema.SetNestedAttribute{
+		"tags": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Generic System.",
 			Computed:            true,
 			NestedObject: schema.NestedAttributeObject{
-				Attributes: tagData{}.dataSourceAttributes(),
+				Attributes: tag{}.dataSourceAttributesNested(),
 			},
 		},
 		"links": schema.SetNestedAttribute{
@@ -75,7 +75,7 @@ func (o genericSystem) attrTypes() map[string]attr.Type {
 		"port_channel_id_max": types.Int64Type,
 		"count":               types.Int64Type,
 		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
-		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
 
@@ -85,5 +85,5 @@ func (o *genericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackEl
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
 	o.Count = types.Int64Value(int64(in.Count))
 	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
-	o.TagData = newTagSet(ctx, in.Tags, diags)
+	o.Tags = newTagSet(ctx, in.Tags, diags)
 }

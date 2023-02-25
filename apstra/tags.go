@@ -83,7 +83,7 @@ func (o *tagData) parseApi(in *goapstra.DesignTagData) {
 	o.Description = in.Description
 }
 
-func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Diagnostics) types.Set {
+func newTagDataSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Diagnostics) types.Set {
 	if len(in) == 0 {
 		return types.SetNull(types.ObjectType{AttrTypes: tagData{}.attrTypes()})
 	}
