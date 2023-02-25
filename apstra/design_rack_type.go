@@ -158,43 +158,9 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 				in.FabricConnectivityDesign.String()))
 	}
 
-	//leafSwitches := make(map[string]leafSwitch, len(in.LeafSwitches))
-	//for _, leafIn := range in.LeafSwitches {
-	//	var ls leafSwitch
-	//	ls.loadApiData(ctx, &leafIn, in.FabricConnectivityDesign, diags)
-	//	leafSwitches[leafIn.Label] = ls
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
-	//
-	//accessSwitches := make(map[string]accessSwitch, len(in.AccessSwitches))
-	//for _, accessIn := range in.AccessSwitches {
-	//	var as accessSwitch
-	//	as.loadApiData(ctx, &accessIn, diags)
-	//	accessSwitches[accessIn.Label] = as
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
-	//
-	//genericSystems := make(map[string]genericSystem, len(in.GenericSystems))
-	//for _, genericIn := range in.GenericSystems {
-	//	var gs genericSystem
-	//	gs.loadApiData(ctx, &genericIn, diags)
-	//	genericSystems[genericIn.Label] = gs
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
-
 	o.Name = types.StringValue(in.DisplayName)
 	o.Description = stringValueOrNull(ctx, in.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.FabricConnectivityDesign.String())
-	//o.LeafSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, leafSwitches, diags)
-	//o.AccessSwitches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, accessSwitches, diags)
-	//o.GenericSystems = mapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, genericSystems, diags)
-	//todo use these new functions
 	o.LeafSwitches = newLeafSwitchMap(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
 	o.AccessSwitches = newAccessSwitchMap(ctx, in.AccessSwitches, diags)
 	o.GenericSystems = newGenericSystemMap(ctx, in.GenericSystems, diags)
