@@ -3,9 +3,16 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -56,6 +63,58 @@ func (o rackLink) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: tag{}.dataSourceAttributesNested(),
+			},
+		},
+	}
+}
+
+func (o rackLink) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"target_switch_name": resourceSchema.StringAttribute{
+			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"lag_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: "LAG negotiation mode of the Link.",
+			Computed:            true,
+			Optional:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators: []validator.String{stringvalidator.OneOf(
+				goapstra.RackLinkLagModeActive.String(),
+				goapstra.RackLinkLagModePassive.String(),
+				goapstra.RackLinkLagModeStatic.String(),
+			)},
+		},
+		"links_per_switch": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Links to each switch.",
+			Required:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of this Link.",
+			Required:            true,
+		},
+		"switch_peer": resourceSchema.StringAttribute{
+			MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.String{stringvalidator.OneOf(
+				goapstra.RackLinkSwitchPeerFirst.String(),
+				goapstra.RackLinkSwitchPeerSecond.String(),
+			)},
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of Tag IDs to be applied to this Link",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Link",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributes(),
 			},
 		},
 	}
