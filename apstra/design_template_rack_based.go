@@ -74,7 +74,7 @@ func (o templateRackBased) dataSourceAttributes() map[string]dataSourceSchema.At
 
 func (o *templateRackBased) loadApiData(ctx context.Context, in *goapstra.TemplateRackBasedData, diags *diag.Diagnostics) {
 	if in == nil {
-		diags.AddError(errProviderBug, "attempt to load dTemplateRackBased from nil source")
+		diags.AddError(errProviderBug, "attempt to load templateRackBased from nil source")
 		return
 	}
 
