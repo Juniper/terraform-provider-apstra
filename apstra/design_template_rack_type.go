@@ -12,7 +12,7 @@ import (
 
 type templateRackType struct {
 	Count        types.Int64  `tfsdk:"count"`
-	RackTypeData types.Object `tfsdk:"rack_type_data"`
+	RackTypeData types.Object `tfsdk:"rack_type"`
 }
 
 func (o templateRackType) attributes() map[string]schema.Attribute {
@@ -21,7 +21,7 @@ func (o templateRackType) attributes() map[string]schema.Attribute {
 			MarkdownDescription: "Number of instances of this Rack Type.",
 			Computed:            true,
 		},
-		"rack_type_data": schema.SingleNestedAttribute{
+		"rack_type": schema.SingleNestedAttribute{
 			MarkdownDescription: "Rack Type details.",
 			Computed:            true,
 			Attributes:          rackTypeData{}.dataSourceAttributes(),
@@ -31,8 +31,8 @@ func (o templateRackType) attributes() map[string]schema.Attribute {
 
 func (o templateRackType) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"count":          types.Int64Type,
-		"rack_type_data": types.ObjectType{AttrTypes: rackTypeData{}.attrTypes()},
+		"count":     types.Int64Type,
+		"rack_type": types.ObjectType{AttrTypes: rackTypeData{}.attrTypes()},
 	}
 }
 
