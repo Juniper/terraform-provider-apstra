@@ -108,7 +108,7 @@ func (o rackType) resourceAttritbutes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: rRackTypeLeafSwitch{}.attributes(),
+				Attributes: leafSwitch{}.resourceAttributes(),
 			},
 		},
 		"access_switches": resourceSchema.MapNestedAttribute{
@@ -116,7 +116,7 @@ func (o rackType) resourceAttritbutes() map[string]resourceSchema.Attribute {
 			Optional:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: rRackTypeAccessSwitch{}.attributes(),
+				Attributes: accessSwitch{}.resourceAttributes(),
 			},
 		},
 		"generic_systems": resourceSchema.MapNestedAttribute{
@@ -125,7 +125,7 @@ func (o rackType) resourceAttritbutes() map[string]resourceSchema.Attribute {
 			Optional:   true,
 			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: rRackTypeGenericSystem{}.attributes(),
+				Attributes: genericSystem{}.resourceAttributes(),
 			},
 		},
 	}
@@ -182,6 +182,86 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 	//o.LeafSwitches = newLeafSwitchMap(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
 	//o.AccessSwitches = newAccessSwitchMap(ctx, in.AccessSwitches, diags)
 	//o.GenericSystems = newGenericSystemMap(ctx, in.GenericSystems, diags)
+}
+
+func (o *rackType) fabricConnectivityDesign(_ context.Context, diags *diag.Diagnostics) goapstra.FabricConnectivityDesign {
+	var fcd goapstra.FabricConnectivityDesign
+	err := fcd.FromString(o.FabricConnectivityDesign.ValueString())
+	if err != nil {
+		diags.AddError(errProviderBug,
+			fmt.Sprintf("error parsing FCD '%s' - %s",
+				o.FabricConnectivityDesign.ValueString(), err.Error()))
+	}
+	return fcd
+}
+
+func (o *rackType) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.RackTypeRequest {
+	fcd := o.fabricConnectivityDesign(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	leafSwitches := o.leafSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	accessSwitches := o.accessSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	genericSystems := o.genericSystems(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	var i int
+
+	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
+	i = 0
+	for name, ls := range leafSwitches {
+		req := ls.request(ctx, path.Root("leaf_switches").AtMapKey(name), fcd, diags)
+		if diags.HasError() {
+			return nil
+		}
+		req.Label = name
+		leafSwitchRequests[i] = *req
+		i++
+	}
+
+	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
+	i = 0
+	for name, as := range accessSwitches {
+		req := as.request(ctx, path.Root("access_switches").AtMapKey(name), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+		req.Label = name
+		accessSwitchRequests[i] = *req
+		i++
+	}
+
+	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
+	i = 0
+	for name, gs := range genericSystems {
+		req := gs.request(ctx, path.Root("generic_systems").AtMapKey(name), o, diags)
+		if diags.HasError() {
+			return nil
+		}
+		req.Label = name
+		genericSystemsRequests[i] = *req
+		i++
+	}
+
+	return &goapstra.RackTypeRequest{
+		DisplayName:              o.Name.ValueString(),
+		Description:              o.Description.ValueString(),
+		FabricConnectivityDesign: fcd,
+		LeafSwitches:             leafSwitchRequests,
+		AccessSwitches:           accessSwitchRequests,
+		GenericSystems:           genericSystemsRequests,
+	}
 }
 
 // todo delete everything below here
@@ -360,23 +440,18 @@ func validateRackType(ctx context.Context, in *goapstra.RackType, diags *diag.Di
 	}
 }
 
-func (o *rackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeLeafSwitch {
-	leafSwitches := make(map[string]rRackTypeLeafSwitch, len(o.LeafSwitches.Elements()))
+func (o *rackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]leafSwitch {
+	leafSwitches := make(map[string]leafSwitch, len(o.LeafSwitches.Elements()))
 	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
 	diags.Append(d...)
 	if diags.HasError() {
 		return nil
 	}
 
-	// copy the leaf switch name from the map key into the object's Name field
-	for name, ls := range leafSwitches {
-		ls.Name = types.StringValue(name)
-		leafSwitches[name] = ls
-	}
 	return leafSwitches
 }
 
-func (o *rackType) leafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeLeafSwitch {
+func (o *rackType) leafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *leafSwitch {
 	leafSwitches := o.leafSwitches(ctx, diags)
 	if diags.HasError() {
 		return nil
@@ -389,23 +464,18 @@ func (o *rackType) leafSwitchByName(ctx context.Context, requested string, diags
 	return nil
 }
 
-func (o *rackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeAccessSwitch {
-	accessSwitches := make(map[string]rRackTypeAccessSwitch, len(o.AccessSwitches.Elements()))
+func (o *rackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]accessSwitch {
+	accessSwitches := make(map[string]accessSwitch, len(o.AccessSwitches.Elements()))
 	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, false)
 	diags.Append(d...)
 	if diags.HasError() {
 		return nil
 	}
 
-	// copy the access switch name from the map key into the object's Name field
-	for name, as := range accessSwitches {
-		as.Name = types.StringValue(name)
-		accessSwitches[name] = as
-	}
 	return accessSwitches
 }
 
-func (o *rackType) accessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeAccessSwitch {
+func (o *rackType) accessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *accessSwitch {
 	accessSwitches := o.accessSwitches(ctx, diags)
 	if diags.HasError() {
 		return nil
@@ -418,23 +488,18 @@ func (o *rackType) accessSwitchByName(ctx context.Context, requested string, dia
 	return nil
 }
 
-func (o *rackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeGenericSystem {
-	genericSystems := make(map[string]rRackTypeGenericSystem, len(o.GenericSystems.Elements()))
+func (o *rackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]genericSystem {
+	genericSystems := make(map[string]genericSystem, len(o.GenericSystems.Elements()))
 	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
 	if diags.HasError() {
 		return nil
 	}
 
-	// copy the generic system name from the map key into the object's Name field
-	for name, gs := range genericSystems {
-		gs.Name = types.StringValue(name)
-		genericSystems[name] = gs
-	}
 	return genericSystems
 }
 
-func (o *rackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeGenericSystem {
+func (o *rackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *genericSystem {
 	genericSystems := o.genericSystems(ctx, diags)
 	if diags.HasError() {
 		return nil
@@ -449,7 +514,7 @@ func (o *rackType) genericSystemByName(ctx context.Context, requested string, di
 
 // copyWriteOnlyElements copies elements (IDs of nested design API objects)
 // from 'src' (plan or state - something which knows these facts) into 'o' a
-// rRackType to be used as state.
+// rackType to be used as state.
 func (o *rackType) copyWriteOnlyElements(ctx context.Context, src *rackType, diags *diag.Diagnostics) {
 	// first extract native go structs from the TF set of objects
 	dstLeafSwitches := o.leafSwitches(ctx, diags)
@@ -508,15 +573,67 @@ func (o *rackType) copyWriteOnlyElements(ctx context.Context, src *rackType, dia
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	leafSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeLeafSwitch{}.attrTypes()}, dstLeafSwitches, diags)
-	accessSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeAccessSwitch{}.attrTypes()}, dstAccessSwitches, diags)
-	genericSystemMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeGenericSystem{}.attrTypes()}, dstGenericSystems, diags)
+	leafSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, dstLeafSwitches, diags)
+	accessSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, dstAccessSwitches, diags)
+	genericSystemMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, dstGenericSystems, diags)
 	if diags.HasError() {
 		return
 	}
 
-	// save the TF sets into rRackType
+	// save the TF sets into rackType
 	o.LeafSwitches = leafSwitchMap
 	o.AccessSwitches = accessSwitchMap
 	o.GenericSystems = genericSystemMap
+}
+
+func (o *rackType) getSwitchRedundancyProtocolByName(ctx context.Context, name string, path path.Path, diags *diag.Diagnostics) fmt.Stringer {
+	leaf := o.leafSwitchByName(ctx, name, diags)
+	access := o.accessSwitchByName(ctx, name, diags)
+	if leaf == nil && access == nil {
+		diags.AddAttributeError(path, errInvalidConfig,
+			fmt.Sprintf("target switch %q not found in rack type %q", name, o.Id))
+		return nil
+	}
+	if leaf != nil && access != nil {
+		diags.AddError(errProviderBug, "link seems to be attached to both leaf and access switches")
+		return nil
+	}
+
+	var leafRedundancyProtocol goapstra.LeafRedundancyProtocol
+	if leaf != nil {
+		if leaf.RedundancyProtocol.IsNull() {
+			return goapstra.LeafRedundancyProtocolNone
+		}
+		err := leafRedundancyProtocol.FromString(leaf.RedundancyProtocol.ValueString())
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing leaf switch redundancy protocol", err.Error())
+			return nil
+		}
+		return leafRedundancyProtocol
+	}
+
+	var accessRedundancyProtocol goapstra.AccessRedundancyProtocol
+	if access != nil {
+		if !access.EsiLagInfo.IsNull() {
+			return goapstra.AccessRedundancyProtocolEsi
+		}
+		if access.RedundancyProtocol.IsNull() {
+			return goapstra.AccessRedundancyProtocolNone
+		}
+		err := accessRedundancyProtocol.FromString(access.RedundancyProtocol.ValueString())
+		if err != nil {
+			diags.AddAttributeError(path, "error parsing access switch redundancy protocol", err.Error())
+			return nil
+		}
+		return accessRedundancyProtocol
+	}
+	diags.AddError(errProviderBug, "somehow we've reached the end of getSwitchRedundancyProtocolByName without finding a solution")
+	return nil
+}
+
+// fcdModes returns permitted fabric_connectivity_design mode strings
+func fcdModes() []string {
+	return []string{
+		goapstra.FabricConnectivityDesignL3Clos.String(),
+		goapstra.FabricConnectivityDesignL3Collapsed.String()}
 }

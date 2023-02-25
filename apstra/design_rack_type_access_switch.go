@@ -11,11 +11,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
@@ -35,12 +37,12 @@ func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics)
 }
 
 type accessSwitch struct {
-	LogicalDeviceID    types.String `tfsdk:"logical_device_id"`
+	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	Count              types.Int64  `tfsdk:"count"`
-	Links              types.Set    `tfsdk:"links"`
+	Links              types.Map    `tfsdk:"links"`
 	TagIds             types.Set    `tfsdk:"tag_ids"`
 	Tags               types.Set    `tfsdk:"tags"`
 }
@@ -69,10 +71,10 @@ func (o accessSwitch) dataSourceAttributes() map[string]dataSourceSchema.Attribu
 			MarkdownDescription: "Count of Access Switches of this type.",
 			Computed:            true,
 		},
-		"links": dataSourceSchema.SetNestedAttribute{
+		"links": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Details links from this Access Switch to upstream switches within this Rack Type.",
 			Computed:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: rackLink{}.dataSourceAttributes(),
 			},
@@ -124,7 +126,7 @@ func (o accessSwitch) resourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: rRackLink{}.attributes(),
+				Attributes: rackLink{}.resourceAttributes(),
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
@@ -150,14 +152,64 @@ func (o accessSwitch) attrTypes() map[string]attr.Type {
 		"esi_lag_info":        types.ObjectType{AttrTypes: esiLagInfo{}.attrTypes()},
 		"redundancy_protocol": types.StringType,
 		"count":               types.Int64Type,
-		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: rackLink{}.attrTypes()}},
+		"links":               types.MapType{ElemType: types.ObjectType{AttrTypes: rackLink{}.attrTypes()}},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
 		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
 
+func (o *accessSwitch) request(ctx context.Context, path path.Path, rack *rackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
+	redundancyProtocol := goapstra.AccessRedundancyProtocolNone
+	if !o.EsiLagInfo.IsNull() {
+		redundancyProtocol = goapstra.AccessRedundancyProtocolEsi
+	}
+
+	lacpActive := goapstra.RackLinkLagModeActive.String()
+
+	links := o.links(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	linkRequests := make([]goapstra.RackLinkRequest, len(links))
+	i := 0
+	for name, link := range links {
+		link.LagMode = types.StringValue(lacpActive)
+		lr := link.request(ctx, path.AtName("links").AtMapKey(name), rack, diags)
+		if diags.HasError() {
+			return nil
+		}
+		lr.Label = name
+		if diags.HasError() {
+			return nil
+		}
+
+		linkRequests[i] = *lr
+		i++
+	}
+
+	var tagIds []goapstra.ObjectId
+	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	o.TagIds.ElementsAs(ctx, &tagIds, false)
+
+	var eli esiLagInfo
+	diags.Append(o.EsiLagInfo.As(ctx, &eli, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &goapstra.RackElementAccessSwitchRequest{
+		InstanceCount:      int(o.Count.ValueInt64()),
+		RedundancyProtocol: redundancyProtocol,
+		Links:              linkRequests,
+		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		Tags:               tagIds,
+		EsiLagInfo:         eli.request(ctx, diags),
+	}
+}
+
 func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-	o.LogicalDeviceID = types.StringNull()
+	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
 
@@ -168,9 +220,62 @@ func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElement
 	}
 
 	o.Count = types.Int64Value(int64(in.InstanceCount))
-	o.Links = newLinkSet(ctx, in.Links, diags)
+	o.Links = newLinkMap(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
+}
+
+func (o *accessSwitch) links(ctx context.Context, diags *diag.Diagnostics) map[string]rackLink {
+	links := make(map[string]rackLink, len(o.Links.Elements()))
+	d := o.Links.ElementsAs(ctx, &links, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	// copy the link name from the map key into the object's Name field
+	for name, link := range links {
+		links[name] = link
+	}
+	return links
+}
+
+func (o *accessSwitch) copyWriteOnlyElements(ctx context.Context, src *accessSwitch, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "accessSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		return
+	}
+
+	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+
+	var d diag.Diagnostics
+
+	srcLinks := make(map[string]rackLink, len(src.Links.Elements()))
+	d = src.Links.ElementsAs(ctx, &srcLinks, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	dstLinks := make(map[string]rackLink, len(o.Links.Elements()))
+	d = o.Links.ElementsAs(ctx, &dstLinks, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	for name, dstLink := range dstLinks {
+		if srcLink, ok := srcLinks[name]; ok {
+			dstLink.copyWriteOnlyElements(ctx, &srcLink, diags)
+			dstLinks[name] = dstLink
+		}
+	}
+
+	o.Links = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, dstLinks, diags)
+	if diags.HasError() {
+		return
+	}
 }
 
 func newAccessSwitchMap(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) types.Map {

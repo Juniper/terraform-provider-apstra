@@ -10,12 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
 )
 
@@ -169,6 +171,57 @@ func (o leafSwitch) attrTypes() map[string]attr.Type {
 	}
 }
 
+func (o *leafSwitch) request(ctx context.Context, path path.Path, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
+	var linkPerSpineCount int
+	if o.SpineLinkCount.IsUnknown() && fcd == goapstra.FabricConnectivityDesignL3Clos {
+		// config omits 'spine_link_count' set default value (1) for fabric designs which require it
+		linkPerSpineCount = 1
+	} else {
+		// config includes 'spine_link_count' -- use the configured value
+		linkPerSpineCount = int(o.SpineLinkCount.ValueInt64())
+	}
+
+	var linkPerSpineSpeed goapstra.LogicalDevicePortSpeed
+	if !o.SpineLinkSpeed.IsNull() {
+		linkPerSpineSpeed = goapstra.LogicalDevicePortSpeed(o.SpineLinkSpeed.ValueString())
+	}
+
+	redundancyProtocol := goapstra.LeafRedundancyProtocolNone
+	if !o.RedundancyProtocol.IsNull() {
+		err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
+		if err != nil {
+			diags.AddAttributeError(path.AtMapKey("redundancy_protocol"),
+				fmt.Sprintf("error parsing redundancy_protocol '%s'",
+					o.RedundancyProtocol.ValueString()),
+				err.Error())
+			return nil
+		}
+	}
+
+	var leafMlagInfo *goapstra.LeafMlagInfo
+	if !o.MlagInfo.IsNull() {
+		mi := mlagInfo{}
+		d := o.MlagInfo.As(ctx, &mi, basetypes.ObjectAsOptions{})
+		diags.Append(d...)
+		if diags.HasError() {
+			return nil
+		}
+		leafMlagInfo = mi.request(ctx, diags)
+	}
+
+	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	o.TagIds.ElementsAs(ctx, &tagIds, false)
+
+	return &goapstra.RackElementLeafSwitchRequest{
+		MlagInfo:           leafMlagInfo,
+		LinkPerSpineCount:  linkPerSpineCount,
+		LinkPerSpineSpeed:  linkPerSpineSpeed,
+		RedundancyProtocol: redundancyProtocol,
+		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		Tags:               tagIds,
+	}
+}
+
 func (o *leafSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
@@ -197,6 +250,16 @@ func (o *leafSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementLe
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }
 
+func (o *leafSwitch) copyWriteOnlyElements(ctx context.Context, src *leafSwitch, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "leafSwitch.copyWriteOnlyElements: attempt to copy from nil source")
+		return
+	}
+
+	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+}
+
 func newLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
 	leafSwitches := make(map[string]leafSwitch, len(in))
 	for _, leafIn := range in {
@@ -209,4 +272,11 @@ func newLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, 
 	}
 
 	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, leafSwitches, diags)
+}
+
+// leafRedundancyModes returns permitted fabric_connectivity_design mode strings
+func leafRedundancyModes() []string {
+	return []string{
+		goapstra.LeafRedundancyProtocolEsi.String(),
+		goapstra.LeafRedundancyProtocolMlag.String()}
 }
