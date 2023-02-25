@@ -33,8 +33,8 @@ type leafSwitch struct {
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
-	//TagIds             types.Set    `tfsdk:"tag_ids"`
-	Tags types.Set `tfsdk:"tags"`
+	TagIds             types.Set    `tfsdk:"tag_ids"`
+	Tags               types.Set    `tfsdk:"tags"`
 }
 
 func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
@@ -65,6 +65,11 @@ func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
 			MarkdownDescription: "Speed of links to spine switches.",
 			Computed:            true,
 		},
+		"tag_ids": schema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 		"tags": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
 			Computed:            true,
@@ -83,6 +88,7 @@ func (o leafSwitch) attrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
+		"tag_ids":             types.SetType{ElemType: types.StringType},
 		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
@@ -111,5 +117,6 @@ func (o *leafSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementLe
 		o.SpineLinkSpeed = types.StringValue(string(in.LinkPerSpineSpeed))
 	}
 
+	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }

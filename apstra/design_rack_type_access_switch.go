@@ -35,6 +35,7 @@ type accessSwitch struct {
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	Count              types.Int64  `tfsdk:"count"`
 	Links              types.Set    `tfsdk:"links"`
+	TagIds             types.Set    `tfsdk:"tag_ids"`
 	Tags               types.Set    `tfsdk:"tags"`
 }
 
@@ -70,6 +71,11 @@ func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 				Attributes: rackLink{}.dataSourceAttributes(),
 			},
 		},
+		"tag_ids": schema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 		"tags": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Access Switch.",
 			Computed:            true,
@@ -88,6 +94,7 @@ func (o accessSwitch) attrTypes() map[string]attr.Type {
 		"redundancy_protocol": types.StringType,
 		"count":               types.Int64Type,
 		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: rackLink{}.attrTypes()}},
+		"tag_ids":             types.SetType{ElemType: types.StringType},
 		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
@@ -105,5 +112,6 @@ func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElement
 
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = newLinkSet(ctx, in.Links, diags)
+	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }
