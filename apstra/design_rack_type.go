@@ -359,3 +359,164 @@ func validateRackType(ctx context.Context, in *goapstra.RackType, diags *diag.Di
 		validateGenericSystem(in, i, diags)
 	}
 }
+
+func (o *rackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeLeafSwitch {
+	leafSwitches := make(map[string]rRackTypeLeafSwitch, len(o.LeafSwitches.Elements()))
+	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	// copy the leaf switch name from the map key into the object's Name field
+	for name, ls := range leafSwitches {
+		ls.Name = types.StringValue(name)
+		leafSwitches[name] = ls
+	}
+	return leafSwitches
+}
+
+func (o *rackType) leafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeLeafSwitch {
+	leafSwitches := o.leafSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	if ls, ok := leafSwitches[requested]; ok {
+		return &ls
+	}
+
+	return nil
+}
+
+func (o *rackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeAccessSwitch {
+	accessSwitches := make(map[string]rRackTypeAccessSwitch, len(o.AccessSwitches.Elements()))
+	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	// copy the access switch name from the map key into the object's Name field
+	for name, as := range accessSwitches {
+		as.Name = types.StringValue(name)
+		accessSwitches[name] = as
+	}
+	return accessSwitches
+}
+
+func (o *rackType) accessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeAccessSwitch {
+	accessSwitches := o.accessSwitches(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	if as, ok := accessSwitches[requested]; ok {
+		return &as
+	}
+
+	return nil
+}
+
+func (o *rackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]rRackTypeGenericSystem {
+	genericSystems := make(map[string]rRackTypeGenericSystem, len(o.GenericSystems.Elements()))
+	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	// copy the generic system name from the map key into the object's Name field
+	for name, gs := range genericSystems {
+		gs.Name = types.StringValue(name)
+		genericSystems[name] = gs
+	}
+	return genericSystems
+}
+
+func (o *rackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *rRackTypeGenericSystem {
+	genericSystems := o.genericSystems(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	if gs, ok := genericSystems[requested]; ok {
+		return &gs
+	}
+
+	return nil
+}
+
+// copyWriteOnlyElements copies elements (IDs of nested design API objects)
+// from 'src' (plan or state - something which knows these facts) into 'o' a
+// rRackType to be used as state.
+func (o *rackType) copyWriteOnlyElements(ctx context.Context, src *rackType, diags *diag.Diagnostics) {
+	// first extract native go structs from the TF set of objects
+	dstLeafSwitches := o.leafSwitches(ctx, diags)
+	dstAccessSwitches := o.accessSwitches(ctx, diags)
+	dstGenericSystems := o.genericSystems(ctx, diags)
+
+	// invoke the copyWriteOnlyElements on every leaf switch object
+	for name, dstLeafSwitch := range dstLeafSwitches {
+		srcLeafSwitch, ok := src.leafSwitches(ctx, diags)[name]
+		if !ok {
+			continue
+		}
+		if diags.HasError() {
+			return
+		}
+
+		dstLeafSwitch.copyWriteOnlyElements(ctx, &srcLeafSwitch, diags)
+		if diags.HasError() {
+			return
+		}
+		dstLeafSwitches[name] = dstLeafSwitch
+	}
+
+	// invoke the copyWriteOnlyElements on every access switch object
+	for name, dstAccessSwitch := range dstAccessSwitches {
+		srcAccessSwitch, ok := src.accessSwitches(ctx, diags)[name]
+		if !ok {
+			continue
+		}
+		if diags.HasError() {
+			return
+		}
+
+		dstAccessSwitch.copyWriteOnlyElements(ctx, &srcAccessSwitch, diags)
+		if diags.HasError() {
+			return
+		}
+		dstAccessSwitches[name] = dstAccessSwitch
+	}
+
+	// invoke the copyWriteOnlyElements on every generic system object
+	for name, dstGenericSystem := range dstGenericSystems {
+		srcGenericSystem, ok := src.genericSystems(ctx, diags)[name]
+		if !ok {
+			continue
+		}
+		if diags.HasError() {
+			return
+		}
+
+		dstGenericSystem.copyWriteOnlyElements(ctx, &srcGenericSystem, diags)
+		if diags.HasError() {
+			return
+		}
+		dstGenericSystems[name] = dstGenericSystem
+	}
+
+	// transform the native go objects (with copied object IDs) back to TF set
+	leafSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeLeafSwitch{}.attrTypes()}, dstLeafSwitches, diags)
+	accessSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeAccessSwitch{}.attrTypes()}, dstAccessSwitches, diags)
+	genericSystemMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: rRackTypeGenericSystem{}.attrTypes()}, dstGenericSystems, diags)
+	if diags.HasError() {
+		return
+	}
+
+	// save the TF sets into rRackType
+	o.LeafSwitches = leafSwitchMap
+	o.AccessSwitches = accessSwitchMap
+	o.GenericSystems = genericSystemMap
+}
