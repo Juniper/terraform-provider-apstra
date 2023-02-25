@@ -129,7 +129,7 @@ func (o logicalDevice) attrTypes() map[string]attr.Type {
 func (o *logicalDevice) loadApiData(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
 	panels := make([]logicalDevicePanel, len(in.Panels))
 	for i, panel := range in.Panels {
-		panels[i].loadApiResponse(ctx, &panel, diags)
+		panels[i].loadApiData(ctx, &panel, diags)
 		if diags.HasError() {
 			return
 		}
@@ -239,7 +239,7 @@ func (o logicalDeviceData) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *logicalDeviceData) loadApiResponse(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
+func (o *logicalDeviceData) loadApiData(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.DisplayName)
 	o.Panels = newLogicalDevicePanelList(ctx, in.Panels, diags)
 	if diags.HasError() {
@@ -253,7 +253,7 @@ func newLogicalDeviceDataObject(ctx context.Context, in *goapstra.LogicalDeviceD
 	}
 
 	var ld logicalDeviceData
-	ld.loadApiResponse(ctx, in, diags)
+	ld.loadApiData(ctx, in, diags)
 	if diags.HasError() {
 		return types.ObjectNull(logicalDeviceData{}.attrTypes())
 	}

@@ -132,7 +132,7 @@ func (o mlagInfo) attrTypes() map[string]attr.Type {
 		"l3_peer_link_port_channel_id": types.Int64Type}
 }
 
-func (o *mlagInfo) loadApiResponse(_ context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) {
+func (o *mlagInfo) loadApiData(_ context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load mlagInfo from nil pointer")
 	}
@@ -234,7 +234,7 @@ func newMlagInfoObject(ctx context.Context, in *goapstra.LeafMlagInfo, diags *di
 	}
 
 	var mi mlagInfo
-	mi.loadApiResponse(ctx, in, diags)
+	mi.loadApiData(ctx, in, diags)
 	if diags.HasError() {
 		return types.ObjectNull(mlagInfo{}.attrTypes())
 	}

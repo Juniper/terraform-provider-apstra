@@ -48,12 +48,12 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var err error
-	var im *goapstra.InterfaceMap
+	var api *goapstra.InterfaceMap
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		im, err = o.client.GetInterfaceMapByName(ctx, config.Name.ValueString())
+		api, err = o.client.GetInterfaceMapByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -62,7 +62,7 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 			return
 		}
 	case !config.Id.IsNull():
-		im, err = o.client.GetInterfaceMap(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetInterfaceMap(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -81,8 +81,8 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 
 	// create new state object
 	newState := interfaceMap{}
-	newState.Id = types.StringValue(string(im.Id))
-	newState.loadApiData(ctx, im.Data, &resp.Diagnostics)
+	newState.Id = types.StringValue(string(api.Id))
+	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

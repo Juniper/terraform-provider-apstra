@@ -47,12 +47,12 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	var err error
-	var p *goapstra.IpPool
+	var apiData *goapstra.IpPool
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		p, err = o.client.GetIp4PoolByName(ctx, config.Name.ValueString())
+		apiData, err = o.client.GetIp4PoolByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -61,7 +61,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 			return
 		}
 	case !config.Id.IsNull():
-		p, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		apiData, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -80,7 +80,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 
 	// create new state object
 	var state ip4Pool
-	state.loadApiData(ctx, p, &resp.Diagnostics)
+	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

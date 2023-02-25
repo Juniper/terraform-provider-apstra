@@ -47,12 +47,12 @@ func (o *dataSourceTwoStageL3ClosBlueprint) Read(ctx context.Context, req dataso
 	}
 
 	var err error
-	var status *goapstra.BlueprintStatus
+	var apiData *goapstra.BlueprintStatus
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		status, err = o.client.GetBlueprintStatusByName(ctx, config.Name.ValueString())
+		apiData, err = o.client.GetBlueprintStatusByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -61,7 +61,7 @@ func (o *dataSourceTwoStageL3ClosBlueprint) Read(ctx context.Context, req dataso
 			return
 		}
 	case !config.Id.IsNull():
-		status, err = o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		apiData, err = o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -80,7 +80,7 @@ func (o *dataSourceTwoStageL3ClosBlueprint) Read(ctx context.Context, req dataso
 
 	// create new state object
 	var state dcBlueprintStatus
-	state.loadApiData(ctx, status, &resp.Diagnostics)
+	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

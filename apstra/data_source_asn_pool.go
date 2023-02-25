@@ -48,12 +48,12 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	var err error
-	var p *goapstra.AsnPool
+	var apiData *goapstra.AsnPool
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		p, err = o.client.GetAsnPoolByName(ctx, config.Name.ValueString())
+		apiData, err = o.client.GetAsnPoolByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -62,7 +62,7 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 			return
 		}
 	case !config.Id.IsNull():
-		p, err = o.client.GetAsnPool(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		apiData, err = o.client.GetAsnPool(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -81,7 +81,7 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 
 	// create new state object
 	var state asnPool
-	state.loadApiData(ctx, p, &resp.Diagnostics)
+	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

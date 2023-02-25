@@ -48,12 +48,12 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	var err error
-	var rt *goapstra.RackType
+	var api *goapstra.RackType
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		rt, err = o.client.GetRackTypeByName(ctx, config.Name.ValueString())
+		api, err = o.client.GetRackTypeByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -62,7 +62,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 	case !config.Id.IsNull():
-		rt, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -80,15 +80,15 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	// catch problems which would crash the provider
-	validateRackType(ctx, rt, &resp.Diagnostics)
+	validateRackType(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create new state object
 	var newState rackType
-	newState.Id = types.StringValue(string(rt.Id))
-	newState.loadApiData(ctx, rt.Data, &resp.Diagnostics)
+	newState.Id = types.StringValue(string(api.Id))
+	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

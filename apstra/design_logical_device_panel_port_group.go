@@ -103,7 +103,7 @@ func (o logicalDevicePanelPortGroup) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *logicalDevicePanelPortGroup) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
+func (o *logicalDevicePanelPortGroup) loadApiData(ctx context.Context, in *goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
 	portRoles, d := types.SetValueFrom(ctx, types.StringType, in.Roles.Strings())
 	diags.Append(d...)
 	if diags.HasError() {

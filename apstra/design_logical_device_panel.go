@@ -99,12 +99,12 @@ func (o logicalDevicePanel) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *logicalDevicePanel) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevicePanel, diags *diag.Diagnostics) {
+func (o *logicalDevicePanel) loadApiData(ctx context.Context, in *goapstra.LogicalDevicePanel, diags *diag.Diagnostics) {
 	var portGroups []logicalDevicePanelPortGroup
 
 	portGroups = make([]logicalDevicePanelPortGroup, len(in.PortGroups))
 	for i := range in.PortGroups {
-		portGroups[i].loadApiResponse(ctx, &in.PortGroups[i], diags)
+		portGroups[i].loadApiData(ctx, &in.PortGroups[i], diags)
 		if diags.HasError() {
 			return
 		}
@@ -201,7 +201,7 @@ func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDeviceP
 
 	panels := make([]logicalDevicePanel, len(in))
 	for i, panel := range in {
-		panels[i].loadApiResponse(ctx, &panel, diags)
+		panels[i].loadApiData(ctx, &panel, diags)
 		if diags.HasError() {
 			return types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()})
 		}

@@ -46,12 +46,12 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	var err error
-	var t *goapstra.DesignTag
+	var api *goapstra.DesignTag
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		t, err = o.client.GetTagByLabel(ctx, config.Name.ValueString())
+		api, err = o.client.GetTagByLabel(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -60,7 +60,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 			return
 		}
 	case !config.Id.IsNull():
-		t, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetTag(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -79,8 +79,8 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	// create new state object
 	var state tag
-	state.Id = types.StringValue(string(t.Id))
-	state.loadApiData(ctx, t.Data, &resp.Diagnostics)
+	state.Id = types.StringValue(string(api.Id))
+	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -242,7 +242,7 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	var newState rManagedDevice
-	newState.loadApiResponse(ctx, agentInfo, &resp.Diagnostics)
+	newState.loadApiData(ctx, agentInfo, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -390,7 +390,7 @@ type rManagedDevice struct {
 	OffBox         types.Bool   `tfsdk:"off_box"`
 }
 
-func (o *rManagedDevice) loadApiResponse(ctx context.Context, in *goapstra.SystemAgent, diags *diag.Diagnostics) {
+func (o *rManagedDevice) loadApiData(ctx context.Context, in *goapstra.SystemAgent, diags *diag.Diagnostics) {
 	o.SystemId = types.StringValue(string(in.Status.SystemId))
 	o.ManagementIp = types.StringValue(in.Config.ManagementIp)
 	o.AgentProfileId = types.StringValue(string(in.Config.Profile))

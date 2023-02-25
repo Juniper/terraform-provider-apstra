@@ -46,12 +46,12 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var err error
-	var ap *goapstra.AgentProfile
+	var apiData *goapstra.AgentProfile
 	var ace goapstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
-		ap, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
+		apiData, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -60,7 +60,7 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 			return
 		}
 	case !config.Id.IsNull():
-		ap, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		apiData, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -79,8 +79,8 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 
 	// create new state object
 	var state agentProfile
-	state.Id = types.StringValue(string(ap.Id))
-	state.loadApiData(ctx, ap, &resp.Diagnostics)
+	state.Id = types.StringValue(string(apiData.Id))
+	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
