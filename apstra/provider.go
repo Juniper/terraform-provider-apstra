@@ -20,7 +20,7 @@ const (
 	DefaultVersion = "0.0.0"
 	DefaultCommit  = "devel"
 
-	envTlsKeyLogFile  = "APSTRA_TLS_KEYLOG"
+	envTlsKeyLogFile  = "SSLKEYLOGFILE"
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
 	envApstraLogfile  = "APSTRA_LOG"
