@@ -18,7 +18,7 @@ type dataSourceTemplateRackBased struct {
 }
 
 func (o *dataSourceTemplateRackBased) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_rack_based_template"
+	resp.TypeName = req.ProviderTypeName + "_template_rack_based"
 }
 
 func (o *dataSourceTemplateRackBased) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
