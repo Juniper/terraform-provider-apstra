@@ -16,6 +16,7 @@ type rackLink struct {
 	LinksPerSwitch   types.Int64  `tfsdk:"links_per_switch"`
 	Speed            types.String `tfsdk:"speed"`
 	SwitchPeer       types.String `tfsdk:"switch_peer"`
+	TagIds           types.Set    `tfsdk:"tag_ids"`
 	Tags             types.Set    `tfsdk:"tags"`
 }
 
@@ -45,6 +46,11 @@ func (o rackLink) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "For non-LAG connections to redundant switch pairs, this field selects the target switch.",
 			Computed:            true,
 		},
+		"tag_ids": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 		"tags": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Link.",
 			Computed:            true,
@@ -63,6 +69,7 @@ func (o rackLink) attrTypes() map[string]attr.Type {
 		"links_per_switch":   types.Int64Type,
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
+		"tag_ids":            types.SetType{ElemType: types.StringType},
 		"tags":               types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
@@ -85,6 +92,7 @@ func (o *rackLink) loadApiData(ctx context.Context, in *goapstra.RackLink, diags
 		o.SwitchPeer = types.StringValue(in.SwitchPeer.String())
 	}
 
+	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }
 
