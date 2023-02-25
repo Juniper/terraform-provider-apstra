@@ -5,17 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 const (
@@ -43,54 +37,7 @@ func (o *resourceRackType) Configure(ctx context.Context, req resource.Configure
 func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Rack Type in the Apstra Design tab.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Object ID for the Rack Type, assigned by Apstra.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Rack Type name, displayed in the Apstra web UI.",
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"description": schema.StringAttribute{
-				MarkdownDescription: "Rack Type description, displayed in the Apstra web UI.",
-				Optional:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"fabric_connectivity_design": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(fcdModes(), "', '")),
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.OneOf(fcdModes()...)},
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			},
-			"leaf_switches": schema.MapNestedAttribute{
-				MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
-				Required:            true,
-				Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: rRackTypeLeafSwitch{}.attributes(),
-				},
-			},
-			"access_switches": schema.MapNestedAttribute{
-				MarkdownDescription: "Access Switches are optional, link to Leaf Switches in the same rack",
-				Optional:            true,
-				Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: rRackTypeAccessSwitch{}.attributes(),
-				},
-			},
-			"generic_systems": schema.MapNestedAttribute{
-				MarkdownDescription: "Generic Systems are rack elements not" +
-					"managed by Apstra: Servers, routers, firewalls, etc...",
-				Optional:   true,
-				Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: rRackTypeGenericSystem{}.attributes(),
-				},
-			},
-		},
+		Attributes:          rackType{}.resourceAttritbutes(),
 	}
 }
 

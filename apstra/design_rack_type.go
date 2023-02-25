@@ -4,13 +4,18 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 type rackType struct {
@@ -70,6 +75,57 @@ func (o rackType) dataSourceAttritbutes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: genericSystem{}.dataSourceAttributes(),
+			},
+		},
+	}
+}
+
+func (o rackType) resourceAttritbutes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Object ID for the Rack Type, assigned by Apstra.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Rack Type name, displayed in the Apstra web UI.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Rack Type description, displayed in the Apstra web UI.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"fabric_connectivity_design": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(fcdModes(), "', '")),
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.OneOf(fcdModes()...)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+		},
+		"leaf_switches": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
+			Required:            true,
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rRackTypeLeafSwitch{}.attributes(),
+			},
+		},
+		"access_switches": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Access Switches are optional, link to Leaf Switches in the same rack",
+			Optional:            true,
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rRackTypeAccessSwitch{}.attributes(),
+			},
+		},
+		"generic_systems": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Generic Systems are rack elements not" +
+				"managed by Apstra: Servers, routers, firewalls, etc...",
+			Optional:   true,
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rRackTypeGenericSystem{}.attributes(),
 			},
 		},
 	}
