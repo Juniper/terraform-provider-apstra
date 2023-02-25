@@ -53,7 +53,7 @@ func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 		"esi_lag_info": schema.SingleNestedAttribute{
 			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
 			Computed:            true,
-			Attributes:          esiLagInfo{}.schemaAsDataSource(),
+			Attributes:          esiLagInfo{}.dataSourceAttributes(),
 		},
 		"redundancy_protocol": schema.StringAttribute{
 			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
