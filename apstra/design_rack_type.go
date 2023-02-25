@@ -88,9 +88,9 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 
 	leafSwitches := make(map[string]leafSwitch, len(in.LeafSwitches))
 	for _, leafIn := range in.LeafSwitches {
-		var leafSwitch leafSwitch
-		leafSwitch.loadApiResponse(ctx, &leafIn, in.FabricConnectivityDesign, diags)
-		leafSwitches[leafIn.Label] = leafSwitch
+		var ls leafSwitch
+		ls.loadApiData(ctx, &leafIn, in.FabricConnectivityDesign, diags)
+		leafSwitches[leafIn.Label] = ls
 		if diags.HasError() {
 			return
 		}
@@ -98,9 +98,9 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 
 	accessSwitches := make(map[string]accessSwitch, len(in.AccessSwitches))
 	for _, accessIn := range in.AccessSwitches {
-		var accessSwitch accessSwitch
-		accessSwitch.loadApiResponse(ctx, &accessIn, diags)
-		accessSwitches[accessIn.Label] = accessSwitch
+		var as accessSwitch
+		as.loadApiData(ctx, &accessIn, diags)
+		accessSwitches[accessIn.Label] = as
 		if diags.HasError() {
 			return
 		}
@@ -108,9 +108,9 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 
 	genericSystems := make(map[string]genericSystem, len(in.GenericSystems))
 	for _, genericIn := range in.GenericSystems {
-		var genericSystem genericSystem
-		genericSystem.loadApiResponse(ctx, &genericIn, diags)
-		genericSystems[genericIn.Label] = genericSystem
+		var gs genericSystem
+		gs.loadApiData(ctx, &genericIn, diags)
+		genericSystems[genericIn.Label] = gs
 		if diags.HasError() {
 			return
 		}
