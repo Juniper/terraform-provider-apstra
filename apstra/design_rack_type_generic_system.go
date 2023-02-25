@@ -23,6 +23,7 @@ func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics
 }
 
 type genericSystem struct {
+	LogicalDeviceID  types.String `tfsdk:"logical_device_id"`
 	LogicalDevice    types.Object `tfsdk:"logical_device"`
 	PortChannelIdMin types.Int64  `tfsdk:"port_channel_id_min"`
 	PortChannelIdMax types.Int64  `tfsdk:"port_channel_id_max"`
@@ -33,9 +34,14 @@ type genericSystem struct {
 
 func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"count": schema.Int64Attribute{
-			MarkdownDescription: "Number of Generic Systems of this type.",
+		"logical_device_id": schema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
+		},
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
 		"port_channel_id_min": schema.Int64Attribute{
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
@@ -45,17 +51,9 @@ func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
 			Computed:            true,
 		},
-		"logical_device": schema.SingleNestedAttribute{
-			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+		"count": schema.Int64Attribute{
+			MarkdownDescription: "Number of Generic Systems of this type.",
 			Computed:            true,
-			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
-		},
-		"tags": schema.SetNestedAttribute{
-			MarkdownDescription: "Details any tags applied to this Generic System.",
-			Computed:            true,
-			NestedObject: schema.NestedAttributeObject{
-				Attributes: tag{}.dataSourceAttributesNested(),
-			},
 		},
 		"links": schema.SetNestedAttribute{
 			MarkdownDescription: "Details links from this Generic System to upstream switches within this Rack Type.",
@@ -65,11 +63,19 @@ func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
 				Attributes: rackLink{}.dataSourceAttributes(),
 			},
 		},
+		"tags": schema.SetNestedAttribute{
+			MarkdownDescription: "Details any tags applied to this Generic System.",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tag{}.dataSourceAttributesNested(),
+			},
+		},
 	}
 }
 
 func (o genericSystem) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"logical_device_id":   types.StringType,
 		"logical_device":      types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
@@ -79,7 +85,8 @@ func (o genericSystem) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *genericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+func (o *genericSystem) loadApiData(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+	o.LogicalDeviceID = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))

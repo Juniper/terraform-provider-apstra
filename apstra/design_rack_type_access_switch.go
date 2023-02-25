@@ -29,6 +29,7 @@ func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics)
 }
 
 type accessSwitch struct {
+	LogicalDeviceID    types.String `tfsdk:"logical_device_id"`
 	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
@@ -39,30 +40,27 @@ type accessSwitch struct {
 
 func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
-		"count": schema.Int64Attribute{
-			MarkdownDescription: "Count of Access Switches of this type.",
+		"logical_device_id": schema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
-		},
-		"redundancy_protocol": schema.StringAttribute{
-			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
-			Computed:            true,
-		},
-		"esi_lag_info": schema.SingleNestedAttribute{
-			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
-			Computed:            true,
-			Attributes:          esiLagInfo{}.schemaAsDataSource(),
 		},
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
 			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
-		"tags": schema.SetNestedAttribute{
-			MarkdownDescription: "Details any tags applied to this Access Switch.",
+		"esi_lag_info": schema.SingleNestedAttribute{
+			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
 			Computed:            true,
-			NestedObject: schema.NestedAttributeObject{
-				Attributes: tag{}.dataSourceAttributesNested(),
-			},
+			Attributes:          esiLagInfo{}.schemaAsDataSource(),
+		},
+		"redundancy_protocol": schema.StringAttribute{
+			MarkdownDescription: "Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.",
+			Computed:            true,
+		},
+		"count": schema.Int64Attribute{
+			MarkdownDescription: "Count of Access Switches of this type.",
+			Computed:            true,
 		},
 		"links": schema.SetNestedAttribute{
 			MarkdownDescription: "Details links from this Access Switch to upstream switches within this Rack Type.",
@@ -72,11 +70,19 @@ func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 				Attributes: rackLink{}.dataSourceAttributes(),
 			},
 		},
+		"tags": schema.SetNestedAttribute{
+			MarkdownDescription: "Details any tags applied to this Access Switch.",
+			Computed:            true,
+			NestedObject: schema.NestedAttributeObject{
+				Attributes: tag{}.dataSourceAttributesNested(),
+			},
+		},
 	}
 }
 
 func (o accessSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"logical_device_id":   types.StringType,
 		"logical_device":      types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
 		"esi_lag_info":        types.ObjectType{AttrTypes: esiLagInfo{}.attrTypes()},
 		"redundancy_protocol": types.StringType,
@@ -86,7 +92,8 @@ func (o accessSwitch) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *accessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+	o.LogicalDeviceID = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
 

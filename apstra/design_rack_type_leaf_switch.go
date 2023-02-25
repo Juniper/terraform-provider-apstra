@@ -27,16 +27,36 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 }
 
 type leafSwitch struct {
+	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
 	SpineLinkSpeed     types.String `tfsdk:"spine_link_speed"`
-	Tags               types.Set    `tfsdk:"tags"`
+	//TagIds             types.Set    `tfsdk:"tag_ids"`
+	Tags types.Set `tfsdk:"tags"`
 }
 
 func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
+		"logical_device_id": schema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
+			Computed:            true,
+		},
+		"logical_device": schema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
+		},
+		"mlag_info": schema.SingleNestedAttribute{
+			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
+			Computed:            true,
+			Attributes:          mlagInfo{}.dataSourceAttributes(),
+		},
+		"redundancy_protocol": schema.StringAttribute{
+			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
+			Computed:            true,
+		},
 		"spine_link_count": schema.Int64Attribute{
 			MarkdownDescription: "Number of links to each spine switch.",
 			Computed:            true,
@@ -44,20 +64,6 @@ func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
 		"spine_link_speed": schema.StringAttribute{
 			MarkdownDescription: "Speed of links to spine switches.",
 			Computed:            true,
-		},
-		"redundancy_protocol": schema.StringAttribute{
-			MarkdownDescription: "When set, 'the switch' is actually a LAG-capable redundant pair of the given type.",
-			Computed:            true,
-		},
-		"mlag_info": schema.SingleNestedAttribute{
-			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
-			Computed:            true,
-			Attributes:          mlagInfo{}.dataSourceAttributes(),
-		},
-		"logical_device": schema.SingleNestedAttribute{
-			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
-			Computed:            true,
-			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
 		"tags": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
@@ -71,6 +77,7 @@ func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
 
 func (o leafSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"logical_device_id":   types.StringType,
 		"logical_device":      types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
 		"mlag_info":           types.ObjectType{AttrTypes: mlagInfo{}.attrTypes()},
 		"redundancy_protocol": types.StringType,
@@ -80,7 +87,8 @@ func (o leafSwitch) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *leafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func (o *leafSwitch) loadApiData(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 
 	switch in.RedundancyProtocol {
