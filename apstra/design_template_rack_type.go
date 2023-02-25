@@ -10,12 +10,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type designTemplateRackType struct {
+type templateRackType struct {
 	Count        types.Int64  `tfsdk:"count"`
 	RackTypeData types.Object `tfsdk:"rack_type_data"`
 }
 
-func (o designTemplateRackType) attributes() map[string]schema.Attribute {
+func (o templateRackType) attributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"count": schema.Int64Attribute{
 			MarkdownDescription: "Number of instances of this Rack Type.",
@@ -29,14 +29,14 @@ func (o designTemplateRackType) attributes() map[string]schema.Attribute {
 	}
 }
 
-func (o designTemplateRackType) attrTypes() map[string]attr.Type {
+func (o templateRackType) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"count":          types.Int64Type,
 		"rack_type_data": types.ObjectType{AttrTypes: rackTypeData{}.attrTypes()},
 	}
 }
 
-func (o *designTemplateRackType) loadApiResponse(ctx context.Context, in *goapstra.TemplateRackBasedData, id goapstra.ObjectId, diags *diag.Diagnostics) {
+func (o *templateRackType) loadApiResponse(ctx context.Context, in *goapstra.TemplateRackBasedData, id goapstra.ObjectId, diags *diag.Diagnostics) {
 	count, rt := in.GetRackTypeCount(id)
 	if count == 0 {
 		diags.AddError(errProviderBug, fmt.Sprintf("%d instances of Rack Type %q found in template.", count, id))
@@ -52,17 +52,17 @@ func (o *designTemplateRackType) loadApiResponse(ctx context.Context, in *goapst
 }
 
 func newDesignTemplateRackTypeMap(ctx context.Context, in *goapstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Map {
-	rackTypes := make(map[string]designTemplateRackType, len(in.RackTypeCounts))
+	rackTypes := make(map[string]templateRackType, len(in.RackTypeCounts))
 	for _, rtc := range in.RackTypeCounts {
-		var dtrt designTemplateRackType
+		var dtrt templateRackType
 		dtrt.loadApiResponse(ctx, in, rtc.RackTypeId, diags)
 		rackTypes[string(rtc.RackTypeId)] = dtrt
 		if diags.HasError() {
-			return types.MapNull(types.ObjectType{AttrTypes: designTemplateRackType{}.attrTypes()})
+			return types.MapNull(types.ObjectType{AttrTypes: templateRackType{}.attrTypes()})
 		}
 	}
 
-	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: designTemplateRackType{}.attrTypes()}, rackTypes)
+	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: templateRackType{}.attrTypes()}, rackTypes)
 	diags.Append(d...)
 	return result
 }

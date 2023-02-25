@@ -73,7 +73,7 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 				MarkdownDescription: "Details Rack Types included in the template",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: designTemplateRackType{}.attributes(),
+					Attributes: templateRackType{}.attributes(),
 				},
 			},
 		},
