@@ -147,27 +147,6 @@ func (o *logicalDevice) loadApiData(ctx context.Context, in *goapstra.LogicalDev
 	}
 }
 
-func (o *logicalDevice) loadApiResponse(ctx context.Context, in *goapstra.LogicalDevice, diags *diag.Diagnostics) {
-	panels := make([]logicalDevicePanel, len(in.Data.Panels))
-	for i, panel := range in.Data.Panels {
-		panels[i].loadApiResponse(ctx, &panel, diags)
-		if diags.HasError() {
-			return
-		}
-	}
-
-	o.Id = types.StringValue(string(in.Id))
-	o.Name = types.StringValue(in.Data.DisplayName)
-
-	if len(panels) > 0 {
-		var d diag.Diagnostics
-		o.Panels, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}, panels)
-		diags.Append(d...)
-	} else {
-		o.Panels = types.ListNull(types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()})
-	}
-}
-
 func (o *logicalDevice) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDeviceData {
 	var d diag.Diagnostics
 	var panelElements []logicalDevicePanel
@@ -213,69 +192,6 @@ func newLogicalDeviceObject(ctx context.Context, in *goapstra.LogicalDeviceData,
 
 	return result
 }
-
-// everything below here is suspect...
-
-//func logicalDeviceAttrType() attr.Type {
-//	return types.ObjectType{
-//		AttrTypes: logicalDeviceDataAttrTypes()}
-//}
-
-//func (o logicalDeviceData) attrType() attr.Type {
-//	return types.ObjectType{
-//		AttrTypes: map[string]attr.Type{
-//			"name": types.StringType,
-//			"panels": types.ListType{
-//				ElemType: logicalDevicePanel{}.attrType()}}}
-//}
-
-//func (o *logicalDeviceData) loadApiResponse(in *goapstra.LogicalDeviceData) {
-//	o.Name = in.DisplayName
-//	o.Panels = make([]logicalDevicePanel, len(in.Panels))
-//
-//	for i := range o.Panels {
-//		o.Panels[i].loadApiResponse(&in.Panels[i])
-//	}
-//}
-
-//func parseApiLogicalDeviceData(in *goapstra.LogicalDeviceData) *logicalDeviceData {
-//	panels := make([]logicalDevicePanel, len(in.Panels))
-//	for i := range in.Panels {
-//		panels[i].loadApiResponse(&in.Panels[i])
-//	}
-//	return &logicalDeviceData{
-//		Name:   in.DisplayName,
-//		Panels: panels,
-//	}
-//}
-
-//func logicalDeviceDataAttrTypes() map[string]attr.Type {
-//	return map[string]attr.Type{
-//		"name":   types.StringType,
-//		"panels": types.ListType{ElemType: types.ObjectType{AttrTypes: panelAttrTypes()}},
-//	}
-//}
-
-//func parseApiLogicalDeviceToTypesObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
-//	structLogicalDeviceData := parseApiLogicalDeviceData(in)
-//	result, d := types.ObjectValueFrom(ctx, logicalDeviceDataAttrTypes(), structLogicalDeviceData)
-//	diags.Append(d...)
-//	return result
-//}
-
-//func panelPortGroupAttrTypes() map[string]attr.Type {
-//	return map[string]attr.Type{
-//		"port_count": types.Int64Type,
-//		"port_speed": types.StringType,
-//		"port_roles": types.SetType{ElemType: types.StringType}}
-//}
-
-//func panelAttrTypes() map[string]attr.Type {
-//	return map[string]attr.Type{
-//		"rows":        types.Int64Type,
-//		"columns":     types.Int64Type,
-//		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: panelPortGroupAttrTypes()}}}
-//}
 
 type logicalDeviceData struct {
 	Name   types.String `tfsdk:"name"`
