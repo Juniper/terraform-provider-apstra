@@ -26,8 +26,8 @@ func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	}
 }
 
-type leafSwitchData struct {
-	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
+type leafSwitch struct {
+	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
 	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
 	SpineLinkCount     types.Int64  `tfsdk:"spine_link_count"`
@@ -35,7 +35,7 @@ type leafSwitchData struct {
 	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
-func (o leafSwitchData) attributes() map[string]schema.Attribute {
+func (o leafSwitch) dataSourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"spine_link_count": schema.Int64Attribute{
 			MarkdownDescription: "Number of links to each spine switch.",
@@ -57,7 +57,7 @@ func (o leafSwitchData) attributes() map[string]schema.Attribute {
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
 		"tag_data": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Leaf Switch.",
@@ -69,18 +69,32 @@ func (o leafSwitchData) attributes() map[string]schema.Attribute {
 	}
 }
 
-func (o leafSwitchData) attrTypes() map[string]attr.Type {
+func (o leafSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"logical_device":      types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
+		"mlag_info":           types.ObjectType{AttrTypes: mlagInfo{}.attrTypes()},
+		"redundancy_protocol": types.StringType,
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
-		"redundancy_protocol": types.StringType,
-		"mlag_info":           types.ObjectType{AttrTypes: mlagInfo{}.attrTypes()},
-		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
 		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 
-func (o *leafSwitchData) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func (o *leafSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
+
+	switch in.RedundancyProtocol {
+	case goapstra.LeafRedundancyProtocolMlag:
+		o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
+		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
+	case goapstra.LeafRedundancyProtocolEsi:
+		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
+		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
+	default:
+		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
+		o.RedundancyProtocol = types.StringNull()
+	}
+
 	if fcd == goapstra.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Null()
 		o.SpineLinkSpeed = types.StringNull()
@@ -89,25 +103,5 @@ func (o *leafSwitchData) loadApiResponse(ctx context.Context, in *goapstra.RackE
 		o.SpineLinkSpeed = types.StringValue(string(in.LinkPerSpineSpeed))
 	}
 
-	switch in.RedundancyProtocol {
-	case goapstra.LeafRedundancyProtocolMlag:
-		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
-		o.MlagInfo = newMlagInfoObject(ctx, in.MlagInfo, diags)
-	case goapstra.LeafRedundancyProtocolEsi:
-		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
-		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
-	default:
-		o.RedundancyProtocol = types.StringNull()
-		o.MlagInfo = types.ObjectNull(mlagInfo{}.attrTypes())
-	}
-
 	o.TagData = newTagSet(ctx, in.Tags, diags)
-	if diags.HasError() {
-		return
-	}
-
-	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
-	if diags.HasError() {
-		return
-	}
 }

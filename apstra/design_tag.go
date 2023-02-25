@@ -49,7 +49,7 @@ func (o tag) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o tag) resourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o tag) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID of the Tag.",
@@ -71,10 +71,10 @@ func (o tag) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o tag) resourceAttributesRead() map[string]resourceSchema.Attribute {
+func (o tag) resourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Tag ID will always be `null` in read-only contexts.",
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
 			Computed:            true,
 		},
 		"name": resourceSchema.StringAttribute{

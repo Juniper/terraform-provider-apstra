@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-func genericSystemData(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	gs := rt.Data.GenericSystems[i]
 	if gs.LogicalDevice == nil {
 		diags.AddError("generic system logical device info missing",
@@ -22,16 +22,16 @@ func genericSystemData(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
 	}
 }
 
-type dRackTypeGenericSystem struct {
-	Count             types.Int64  `tfsdk:"count"`
-	PortChannelIdMin  types.Int64  `tfsdk:"port_channel_id_min"`
-	PortChannelIdMax  types.Int64  `tfsdk:"port_channel_id_max"`
-	LogicalDeviceData types.Object `tfsdk:"logical_device"`
-	TagData           types.Set    `tfsdk:"tag_data"`
-	Links             types.Set    `tfsdk:"links"`
+type genericSystem struct {
+	LogicalDevice    types.Object `tfsdk:"logical_device"`
+	PortChannelIdMin types.Int64  `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64  `tfsdk:"port_channel_id_max"`
+	Count            types.Int64  `tfsdk:"count"`
+	Links            types.Set    `tfsdk:"links"`
+	TagData          types.Set    `tfsdk:"tag_data"`
 }
 
-func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
+func (o genericSystem) dataSourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"count": schema.Int64Attribute{
 			MarkdownDescription: "Number of Generic Systems of this type.",
@@ -48,7 +48,7 @@ func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
 		"tag_data": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Generic System.",
@@ -68,34 +68,22 @@ func (o dRackTypeGenericSystem) attributes() map[string]schema.Attribute {
 	}
 }
 
-func (o dRackTypeGenericSystem) attrTypes() map[string]attr.Type {
+func (o genericSystem) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"count":               types.Int64Type,
+		"logical_device":      types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
-		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
-		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"count":               types.Int64Type,
 		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 
-func (o *dRackTypeGenericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
-	o.Count = types.Int64Value(int64(in.Count))
+func (o *genericSystem) loadApiResponse(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
-
-	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
-	if diags.HasError() {
-		return
-	}
-
+	o.Count = types.Int64Value(int64(in.Count))
 	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
-	if diags.HasError() {
-		return
-	}
-
 	o.TagData = newTagSet(ctx, in.Tags, diags)
-	if diags.HasError() {
-		return
-	}
 }

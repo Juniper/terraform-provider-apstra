@@ -24,7 +24,7 @@ func (o designTemplateRackType) attributes() map[string]schema.Attribute {
 		"rack_type_data": schema.SingleNestedAttribute{
 			MarkdownDescription: "Rack Type details.",
 			Computed:            true,
-			Attributes:          rackTypeData{}.attributes(),
+			Attributes:          rackTypeData{}.dataSourceAttributes(),
 		},
 	}
 }

@@ -28,16 +28,16 @@ func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics)
 	}
 }
 
-type accessSwitchData struct {
-	Count              types.Int64  `tfsdk:"count"`
-	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
+type accessSwitch struct {
+	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	EsiLagInfo         types.Object `tfsdk:"esi_lag_info"`
-	LogicalDeviceData  types.Object `tfsdk:"logical_device"`
-	TagData            types.Set    `tfsdk:"tag_data"`
+	RedundancyProtocol types.String `tfsdk:"redundancy_protocol"`
+	Count              types.Int64  `tfsdk:"count"`
 	Links              types.Set    `tfsdk:"links"`
+	TagData            types.Set    `tfsdk:"tag_data"`
 }
 
-func (o accessSwitchData) attributes() map[string]schema.Attribute {
+func (o accessSwitch) dataSourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"count": schema.Int64Attribute{
 			MarkdownDescription: "Count of Access Switches of this type.",
@@ -55,7 +55,7 @@ func (o accessSwitchData) attributes() map[string]schema.Attribute {
 		"logical_device": schema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          logicalDeviceData{}.dataSourceAttributes(),
+			Attributes:          logicalDevice{}.dataSourceAttributesNested(),
 		},
 		"tag_data": schema.SetNestedAttribute{
 			MarkdownDescription: "Details any tags applied to this Access Switch.",
@@ -75,19 +75,20 @@ func (o accessSwitchData) attributes() map[string]schema.Attribute {
 	}
 }
 
-func (o accessSwitchData) attrTypes() map[string]attr.Type {
+func (o accessSwitch) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"count":               types.Int64Type,
-		"redundancy_protocol": types.StringType,
+		"logical_device":      types.ObjectType{AttrTypes: logicalDevice{}.attrTypes()},
 		"esi_lag_info":        types.ObjectType{AttrTypes: esiLagInfo{}.attrTypes()},
-		"logical_device":      types.ObjectType{AttrTypes: logicalDeviceData{}.attrTypes()},
-		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"redundancy_protocol": types.StringType,
+		"count":               types.Int64Type,
 		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: dRackLink{}.attrTypes()}},
+		"tag_data":            types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
 	}
 }
 
-func (o *accessSwitchData) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
-	o.Count = types.Int64Value(int64(in.InstanceCount))
+func (o *accessSwitch) loadApiResponse(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
+	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
 
 	if in.RedundancyProtocol == goapstra.AccessRedundancyProtocolNone {
 		o.RedundancyProtocol = types.StringNull()
@@ -95,23 +96,7 @@ func (o *accessSwitchData) loadApiResponse(ctx context.Context, in *goapstra.Rac
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
 	}
 
-	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
-	if diags.HasError() {
-		return
-	}
-
-	o.TagData = newTagSet(ctx, in.Tags, diags)
-	if diags.HasError() {
-		return
-	}
-
-	o.LogicalDeviceData = newLogicalDeviceDataObject(ctx, in.LogicalDevice, diags)
-	if diags.HasError() {
-		return
-	}
-
+	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = newDataSourceLinkSet(ctx, in.Links, diags)
-	if diags.HasError() {
-		return
-	}
+	o.TagData = newTagSet(ctx, in.Tags, diags)
 }

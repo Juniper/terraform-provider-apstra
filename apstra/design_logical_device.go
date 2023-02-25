@@ -53,6 +53,26 @@ func (o logicalDevice) dataSourceAttributes() map[string]dataSourceSchema.Attrib
 	}
 }
 
+func (o logicalDevice) dataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Logical device display name.",
+			Computed:            true,
+		},
+		"panels": dataSourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanel{}.dataSourceAttributes(),
+			},
+		},
+	}
+}
+
 func (o logicalDevice) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
@@ -149,6 +169,27 @@ func (o *logicalDevice) panels(ctx context.Context, diags *diag.Diagnostics) []l
 	panels := make([]logicalDevicePanel, len(o.Panels.Elements()))
 	diags.Append(o.Panels.ElementsAs(ctx, &panels, false)...)
 	return panels
+}
+
+func newLogicalDeviceObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
+	if in == nil {
+		return types.ObjectNull(logicalDevice{}.attrTypes())
+	}
+
+	var ld logicalDevice
+	ld.Id = types.StringNull()
+	ld.loadApiData(ctx, in, diags)
+	if diags.HasError() {
+		return types.ObjectNull(logicalDevice{}.attrTypes())
+	}
+
+	result, d := types.ObjectValueFrom(ctx, logicalDevice{}.attrTypes(), &ld)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ObjectNull(logicalDevice{}.attrTypes())
+	}
+
+	return result
 }
 
 // everything below here is suspect...
