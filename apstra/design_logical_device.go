@@ -96,6 +96,28 @@ func (o logicalDevice) resourceAttributes() map[string]resourceSchema.Attribute 
 	}
 }
 
+func (o logicalDevice) resourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Logical device display name.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"panels": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Details physical layout of interfaces on the device.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: logicalDevicePanel{}.resourceAttributesReadOnly(),
+			},
+		},
+	}
+}
+
 func (o logicalDevice) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":     types.StringType,
