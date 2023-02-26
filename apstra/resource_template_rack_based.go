@@ -24,19 +24,8 @@ func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.Met
 	resp.TypeName = req.ProviderTypeName + "_template_rack_based"
 }
 
-func (o *resourceTemplateRackBased) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errResourceConfigureProviderDataDetail,
-			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *resourceTemplateRackBased) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	o.client = resourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
