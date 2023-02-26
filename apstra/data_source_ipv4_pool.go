@@ -10,37 +10,37 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceIp4Pool{}
+var _ datasource.DataSourceWithConfigure = &dataSourceIpv4Pool{}
 
-type dataSourceIp4Pool struct {
+type dataSourceIpv4Pool struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceIp4Pool) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_ip4_pool"
+func (o *dataSourceIpv4Pool) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_ipv4_pool"
 }
 
-func (o *dataSourceIp4Pool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceIpv4Pool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceIp4Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceIpv4Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IPv4 Pool.\n\n" +
 			"At least one optional attribute is required. " +
 			"It is incumbent upon the user to ensure the lookup criteria matches exactly one IPv4 Pool. " +
 			"Matching zero or more IPv4 Pools will produce an error.",
-		Attributes: ip4Pool{}.dataSourceAttributes(),
+		Attributes: ipv4Pool{}.dataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceIpv4Pool) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
 
-	var config ip4Pool
+	var config ipv4Pool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -79,7 +79,7 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	// create new state object
-	var state ip4Pool
+	var state ipv4Pool
 	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

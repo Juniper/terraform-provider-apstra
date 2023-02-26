@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ip4Pool struct {
+type ipv4Pool struct {
 	Id          types.String  `tfsdk:"id"`
 	Name        types.String  `tfsdk:"name"`
 	Subnets     types.Set     `tfsdk:"subnets"`
@@ -25,7 +25,7 @@ type ip4Pool struct {
 	UsedPercent types.Float64 `tfsdk:"used_percentage"`
 }
 
-func (o ip4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ipv4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the desired IPv4 Pool.",
@@ -50,7 +50,7 @@ func (o ip4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: ip4PoolSubnet{}.dataSourceAttributes(),
+				Attributes: ipv4PoolSubnet{}.dataSourceAttributes(),
 			},
 		},
 		"total": dataSourceSchema.NumberAttribute{
@@ -72,7 +72,7 @@ func (o ip4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o ip4Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o ipv4Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID number of the pool",
@@ -89,7 +89,7 @@ func (o ip4Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: ip4PoolSubnet{}.resourceAttributesWrite(),
+				Attributes: ipv4PoolSubnet{}.resourceAttributesWrite(),
 			},
 		},
 		"total": resourceSchema.NumberAttribute{
@@ -114,8 +114,8 @@ func (o ip4Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *ip4Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
-	subnets := make([]ip4PoolSubnet, len(in.Subnets))
+func (o *ipv4Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
+	subnets := make([]ipv4PoolSubnet, len(in.Subnets))
 	for i, s := range in.Subnets {
 		subnets[i].loadApiData(ctx, &s, diags)
 		if diags.HasError() {
@@ -129,16 +129,16 @@ func (o *ip4Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *d
 	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
 	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
-	o.Subnets = setValueOrNull(ctx, types.ObjectType{AttrTypes: ip4PoolSubnet{}.attrTypes()}, subnets, diags)
+	o.Subnets = setValueOrNull(ctx, types.ObjectType{AttrTypes: ipv4PoolSubnet{}.attrTypes()}, subnets, diags)
 }
 
-func (o *ip4Pool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.NewIpPoolRequest {
+func (o *ipv4Pool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.NewIpPoolRequest {
 	response := goapstra.NewIpPoolRequest{
 		DisplayName: o.Name.ValueString(),
 		Subnets:     make([]goapstra.NewIpSubnet, len(o.Subnets.Elements())),
 	}
 
-	subnets := make([]ip4PoolSubnet, len(o.Subnets.Elements()))
+	subnets := make([]ipv4PoolSubnet, len(o.Subnets.Elements()))
 	d := o.Subnets.ElementsAs(ctx, &subnets, false)
 	diags.Append(d...)
 	if diags.HasError() {
