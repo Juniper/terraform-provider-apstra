@@ -26,7 +26,7 @@ func (o *resourceTemplateRackBased) Configure(ctx context.Context, req resource.
 
 func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Rack Based Templte for as a 3-stage Clos design, or for use as " +
+		MarkdownDescription: "This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as " +
 			"pod in a 5-stage design.",
 		Attributes: templateRackBased{}.resourceAttributes(),
 	}
