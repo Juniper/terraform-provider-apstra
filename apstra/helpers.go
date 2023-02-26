@@ -172,3 +172,11 @@ func overlayControlProtocolToString(in goapstra.OverlayControlProtocol, diags *d
 		return ""
 	}
 }
+
+func translateAsnAllocationSchemeForWebUi(in string) string {
+	switch in {
+	case asnAllocationUnique:
+		return goapstra.AsnAllocationSchemeDistinct.String()
+	}
+	return in
+}
