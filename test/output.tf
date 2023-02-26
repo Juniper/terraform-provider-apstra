@@ -7,6 +7,8 @@
 #output "d_configlet"                    { value = data.apstra_configlet.d }
 #output "d_ipv4_pool"                     { value = data.apstra_ipv4_pool.d }
 #output "d_ipv4_pools"                    { value = data.apstra_ipv4_pools.d }
+#output "d_ipv6_pool"                     { value = data.apstra_ipv6_pool.d }
+#output "d_ipv6_pools"                    { value = data.apstra_ipv6_pools.d }
 #output "d_logical_device"               { value = data.apstra_logical_device.d }
 #output "d_datacenter_blueprint"         { value = data.apstra_datacenter_blueprint.d }
 #output "d_interface_map"                { value = data.apstra_interface_map.d }

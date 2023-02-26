@@ -15,33 +15,33 @@ import (
 var _ resource.ResourceWithConfigure = &resourceAsnPool{}
 var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
 
-type resourceIpv4Pool struct {
+type resourceIpv6Pool struct {
 	client *goapstra.Client
 }
 
-func (o *resourceIpv4Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_ipv4_pool"
+func (o *resourceIpv6Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_ipv6_pool"
 }
 
-func (o *resourceIpv4Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceIpv6Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = resourceGetClient(ctx, req, resp)
 }
 
-func (o *resourceIpv4Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceIpv6Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates an IPv4 resource pool",
-		Attributes:          ipv4Pool{}.resourceAttributesWrite(),
+		MarkdownDescription: "This resource creates an IPv6 resource pool",
+		Attributes:          ipv6Pool{}.resourceAttributesWrite(),
 	}
 }
 
-func (o *resourceIpv4Pool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config ipv4Pool
+func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config ipv6Pool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	subnets := make([]ipv4PoolSubnet, len(config.Subnets.Elements()))
+	subnets := make([]ipv6PoolSubnet, len(config.Subnets.Elements()))
 	d := config.Subnets.ElementsAs(ctx, &subnets, false)
 	resp.Diagnostics.Append(d...)
 	if resp.Diagnostics.HasError() {
@@ -51,7 +51,7 @@ func (o *resourceIpv4Pool) ValidateConfig(ctx context.Context, req resource.Vali
 	var jNets []*net.IPNet // Each subnet will be checked for overlap with members of jNets, then appended to jNets
 	for i := range subnets {
 		// setVal is used to path AttributeErrors correctly
-		setVal, d := types.ObjectValueFrom(ctx, ipv4PoolSubnet{}.attrTypes(), &subnets[i])
+		setVal, d := types.ObjectValueFrom(ctx, ipv6PoolSubnet{}.attrTypes(), &subnets[i])
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -92,47 +92,47 @@ func (o *resourceIpv4Pool) ValidateConfig(ctx context.Context, req resource.Vali
 	}
 }
 
-func (o *resourceIpv4Pool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceIpv6Pool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
 
 	// Retrieve values from plan
-	var plan ipv4Pool
+	var plan ipv6Pool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create new IPv4 Pool
+	// Create new IPv6 Pool
 	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := o.client.CreateIp4Pool(ctx, request)
+	id, err := o.client.CreateIp6Pool(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating new IPv4 Pool", err.Error())
+		resp.Diagnostics.AddError("error creating new IPv6 Pool", err.Error())
 		return
 	}
 
 	// read pool back from Apstra to get usage statistics
 	var ace goapstra.ApstraClientErr
-	p, err := o.client.GetIp4Pool(ctx, id)
+	p, err := o.client.GetIp6Pool(ctx, id)
 	if err != nil {
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
-				"IPv4 Pool not found",
-				fmt.Sprintf("Just-created IPv4 Pool with ID %q not found", id))
+				"IPv6 Pool not found",
+				fmt.Sprintf("Just-created IPv6 Pool with ID %q not found", id))
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving IPv4 Pool", err.Error())
+		resp.Diagnostics.AddError("Error retrieving IPv6 Pool", err.Error())
 		return
 	}
 
 	// create state object
-	var state ipv4Pool
+	var state ipv6Pool
 	state.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -142,21 +142,21 @@ func (o *resourceIpv4Pool) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceIpv6Pool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
 		return
 	}
 
 	// Get current state
-	var state ipv4Pool
+	var state ipv6Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get Ipv4 pool from API and then update what is in state from what the API returns
-	p, err := o.client.GetIp4Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	// Get Ipv6 pool from API and then update what is in state from what the API returns
+	p, err := o.client.GetIp6Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -164,13 +164,13 @@ func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, r
 			resp.State.RemoveResource(ctx)
 			return
 		} else {
-			resp.Diagnostics.AddError("error reading IPv4 pool", err.Error())
+			resp.Diagnostics.AddError("error reading IPv6 pool", err.Error())
 			return
 		}
 	}
 
 	// create new state object
-	var newState ipv4Pool
+	var newState ipv6Pool
 	newState.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -181,52 +181,52 @@ func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 // Update resource
-func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceIpv6Pool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
 		return
 	}
 
 	// Get plan values
-	var plan ipv4Pool
+	var plan ipv6Pool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// update IPv4 Pool
+	// update IPv6 Pool
 	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	var ace goapstra.ApstraClientErr
-	err := o.client.UpdateIp4Pool(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	err := o.client.UpdateIp6Pool(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		// some other unknown error
-		resp.Diagnostics.AddError("error updating IPv4 Pool", err.Error())
+		resp.Diagnostics.AddError("error updating IPv6 Pool", err.Error())
 		return
 	}
 
 	// read pool back from Apstra to get usage statistics
-	p, err := o.client.GetIp4Pool(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	p, err := o.client.GetIp6Pool(ctx, goapstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
-				"IPv4 Pool not found",
-				fmt.Sprintf("Recently updated IPv4 Pool with ID %q not found", plan.Id.ValueString()))
+				"IPv6 Pool not found",
+				fmt.Sprintf("Recently updated IPv6 Pool with ID %q not found", plan.Id.ValueString()))
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving IPv4 Pool", err.Error())
+		resp.Diagnostics.AddError("Error retrieving IPv6 Pool", err.Error())
 		return
 	}
 
 	// create new state object
-	var state ipv4Pool
+	var state ipv6Pool
 	state.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -237,25 +237,25 @@ func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateReques
 }
 
 // Delete resource
-func (o *resourceIpv4Pool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceIpv6Pool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
 
-	var state ipv4Pool
+	var state ipv6Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Delete IPv4 pool by calling API
-	err := o.client.DeleteIp4Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	// Delete IPv6 pool by calling API
+	err := o.client.DeleteIp6Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
 			resp.Diagnostics.AddError(
-				"error deleting IPv4 pool", err.Error())
+				"error deleting IPv6 pool", err.Error())
 		}
 	}
 }
