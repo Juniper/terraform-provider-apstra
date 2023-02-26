@@ -80,6 +80,48 @@ func (o rackType) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
+func (o rackType) dataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Rack Type name displayed in the Apstra web UI.",
+			Computed:            true,
+		},
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Rack Type description displayed in the Apstra web UI.",
+			Computed:            true,
+		},
+		"fabric_connectivity_design": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Indicates designs for which this Rack Type is intended.",
+			Computed:            true,
+		},
+		"leaf_switches": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "A map of Leaf Switches in this Rack Type, keyed by name.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: leafSwitch{}.dataSourceAttributes(),
+			},
+		},
+		"access_switches": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "A map of Access Switches in this Rack Type, keyed by name.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: accessSwitch{}.dataSourceAttributes(),
+			},
+		},
+		"generic_systems": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "A map of Generic Systems in the Rack Type, keyed by name.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: genericSystem{}.dataSourceAttributes(),
+			},
+		},
+	}
+}
+
 func (o rackType) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
