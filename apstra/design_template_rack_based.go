@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -118,6 +119,18 @@ func (o templateRackBased) resourceAttributes() map[string]resourceSchema.Attrib
 				Attributes: rackType{}.dataSourceAttributesNested(),
 			},
 		},
+	}
+}
+
+func (o templateRackBased) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id":                       types.StringType,
+		"name":                     types.StringType,
+		"spine":                    types.ObjectType{AttrTypes: spine{}.attrTypes()},
+		"asn_allocation_scheme":    types.StringType,
+		"overlay_control_protocol": types.StringType,
+		"fabric_link_addressing":   types.StringType,
+		"rack_types":               types.MapType{ElemType: types.ObjectType{AttrTypes: rackType{}.attrTypes()}},
 	}
 }
 
