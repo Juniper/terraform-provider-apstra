@@ -120,12 +120,55 @@ func (o rackType) resourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"generic_systems": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Generic Systems are rack elements not" +
+			MarkdownDescription: "Generic Systems are optional rack elements not" +
 				"managed by Apstra: Servers, routers, firewalls, etc...",
 			Optional:   true,
 			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: genericSystem{}.resourceAttributes(),
+			},
+		},
+	}
+}
+
+func (o rackType) resourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Rack Type name, displayed in the Apstra web UI.",
+			Computed:            true,
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Rack Type description, displayed in the Apstra web UI.",
+			Computed:            true,
+		},
+		"fabric_connectivity_design": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(fcdModes(), "', '")),
+			Computed:            true,
+		},
+		"leaf_switches": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: leafSwitch{}.resourceAttributesNested(),
+			},
+		},
+		"access_switches": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Access Switches are optional, link to Leaf Switches in the same rack",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: accessSwitch{}.resourceAttributesNested(),
+			},
+		},
+		"generic_systems": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Generic Systems are optional rack elements not" +
+				"managed by Apstra: Servers, routers, firewalls, etc...",
+			Computed: true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: genericSystem{}.resourceAttributesNested(),
 			},
 		},
 	}

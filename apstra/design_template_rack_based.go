@@ -116,7 +116,7 @@ func (o templateRackBased) resourceAttributes() map[string]resourceSchema.Attrib
 			MarkdownDescription: "Details Rack Types included in the template",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: rackType{}.dataSourceAttributesNested(),
+				Attributes: rackType{}.resourceAttributesNested(),
 			},
 		},
 	}

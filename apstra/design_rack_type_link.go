@@ -117,6 +117,43 @@ func (o rackLink) resourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
+func (o rackLink) resourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"target_switch_name": resourceSchema.StringAttribute{
+			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
+			Computed:            true,
+		},
+		"lag_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: "LAG negotiation mode of the Link.",
+			Computed:            true,
+		},
+		"links_per_switch": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Links to each switch.",
+			Computed:            true,
+		},
+		"speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of this Link.",
+			Computed:            true,
+		},
+		"switch_peer": resourceSchema.StringAttribute{
+			MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+			Computed:            true,
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in nested contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Link",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributes(),
+			},
+		},
+	}
+}
+
 func (o rackLink) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"target_switch_name": types.StringType,

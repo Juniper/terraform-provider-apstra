@@ -143,10 +143,56 @@ func (o leafSwitch) resourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
-			ElementType:         types.StringType,
-			Optional:            true,
 			MarkdownDescription: "Set of Tag IDs to be applied to this Leaf Switch",
+			Optional:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			ElementType:         types.StringType,
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Leaf Switch",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
+			},
+		},
+	}
+}
+
+func (o leafSwitch) resourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"mlag_info": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: fmt.Sprintf("Defines connectivity between MLAG peers when "+
+				"`redundancy_protocol` is set to `%s`.", goapstra.LeafRedundancyProtocolMlag.String()),
+			Computed:   true,
+			Attributes: mlagInfo{}.resourceAttributes(),
+		},
+		"redundancy_protocol": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Enabling a redundancy protocol converts a single "+
+				"Leaf Switch into a LAG-capable switch pair. Must be one of '%s'.",
+				strings.Join(leafRedundancyModes(), "', '")),
+			Computed: true,
+		},
+		"spine_link_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Links per spine.",
+			Computed:            true,
+		},
+		"spine_link_speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of spine-facing links, something like '10G'",
+			Computed:            true,
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in nested contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
 		},
 		"tags": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Set of Tags (Name + Description) applied to this Leaf Switch",
