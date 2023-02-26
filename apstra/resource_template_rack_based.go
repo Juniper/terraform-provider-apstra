@@ -5,12 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -32,49 +28,7 @@ func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaR
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Rack Based Templte for as a 3-stage Clos design, or for use as " +
 			"pod in a 5-stage design.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Apstra ID of the Agent Profile.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Apstra name of the Agent Profile.",
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"spine": schema.SingleNestedAttribute{
-				MarkdownDescription: "Spine layer details",
-				Required:            true,
-				Attributes:          rDesignTemplateSpine.attributes(),
-			},
-			"asn_allocation_scheme": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
-					asnAllocationUnique, asnAllocationSingle),
-				Validators: []validator.String{stringvalidator.OneOf(asnAllocationUnique, asnAllocationSingle)},
-				Required:   true,
-			},
-			"overlay_control_protocol": schema.StringAttribute{
-				MarkdownDescription: fmt.Sprintf("Defines the inter-rack virtual network overlay protocol in the fabric. [%q,%q]",
-					overlayControlProtocolEvpn, overlayControlProtocolStatic),
-				Required: true,
-				Validators: []validator.String{
-					stringvalidator.OneOf(overlayControlProtocolEvpn, overlayControlProtocolStatic),
-					// todo make sure not ipv6 with evpn
-				},
-			},
-			"fabric_link_addressing": schema.StringAttribute{
-				MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
-				Required:            true,
-			},
-			"rack_types": schema.MapNestedAttribute{
-				MarkdownDescription: "Details Rack Types included in the template",
-				Computed:            true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: designTemplateRackType{}.dataSourceAttributes(),
-				},
-			},
-		},
+		Attributes: templateRackBased{}.resourceAttributes(),
 	}
 }
 

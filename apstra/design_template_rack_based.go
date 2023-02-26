@@ -8,6 +8,9 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -67,6 +70,52 @@ func (o templateRackBased) dataSourceAttributes() map[string]dataSourceSchema.At
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: templateRackInfo{}.dataSourceAttributes(),
+			},
+		},
+	}
+}
+
+func (o templateRackBased) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID of the Agent Profile.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra name of the Agent Profile.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"spine": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Spine layer details",
+			Required:            true,
+			Attributes:          spine{}.resourceAttributes(),
+		},
+		"asn_allocation_scheme": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
+				asnAllocationUnique, asnAllocationSingle),
+			Validators: []validator.String{stringvalidator.OneOf(asnAllocationUnique, asnAllocationSingle)},
+			Required:   true,
+		},
+		"overlay_control_protocol": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Defines the inter-rack virtual network overlay protocol in the fabric. [%q,%q]",
+				overlayControlProtocolEvpn, overlayControlProtocolStatic),
+			Required: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(overlayControlProtocolEvpn, overlayControlProtocolStatic),
+				// todo make sure not ipv6 with evpn
+			},
+		},
+		"fabric_link_addressing": resourceSchema.StringAttribute{
+			MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
+			Required:            true,
+		},
+		"rack_types": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Details Rack Types included in the template",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rackType{}.dataSourceAttributesNested(),
 			},
 		},
 	}
