@@ -111,6 +111,23 @@ func (o spine) attrTypes() map[string]attr.Type {
 	}
 }
 
+func (o *spine) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.TemplateElementSpineRequest {
+	tags := make([]goapstra.ObjectId, len(o.Tags.Elements()))
+	d := o.Tags.ElementsAs(ctx, &tags, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &goapstra.TemplateElementSpineRequest{
+		Count:                  int(o.Count.ValueInt64()),
+		LinkPerSuperspineSpeed: goapstra.LogicalDevicePortSpeed(o.SuperSpineLinkSpeed.ValueString()),
+		LogicalDevice:          goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LinkPerSuperspineCount: int(o.SuperSpineLinkCount.ValueInt64()),
+		Tags:                   tags,
+	}
+}
+
 func (o *spine) loadApiData(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
 	o.LogicalDevice = newLogicalDeviceObject(ctx, &in.LogicalDevice, diags)
 	o.Count = types.Int64Value(int64(in.Count))
