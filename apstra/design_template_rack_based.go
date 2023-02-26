@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -23,7 +24,9 @@ type templateRackBased struct {
 	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
 	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
 	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
-	RackTypes              types.Map    `tfsdk:"rack_types"`
+	RackInfos              types.Map    `tfsdk:"rack_infos"`
+	//RackTypeIds            types.Map    `tfsdk:"rack_types_ids"`
+	//RackTypes              types.Map    `tfsdk:"rack_types"`
 }
 
 func (o templateRackBased) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -66,13 +69,20 @@ func (o templateRackBased) dataSourceAttributes() map[string]dataSourceSchema.At
 			MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
 			Computed:            true,
 		},
-		"rack_types": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Details Rack Types included in the template",
+		"rack_infos": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Rack Type info (count + details)",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: templateRackInfo{}.dataSourceAttributes(),
+				Attributes: templateRackInfo{}.dataSourceAttributesNested(),
 			},
 		},
+		//"rack_types": dataSourceSchema.MapNestedAttribute{
+		//	MarkdownDescription: "Details Rack Types included in the template",
+		//	Computed:            true,
+		//	NestedObject: dataSourceSchema.NestedAttributeObject{
+		//		Attributes: templateRackInfo{}.dataSourceAttributesNested(),
+		//	},
+		//},
 	}
 }
 
@@ -112,11 +122,19 @@ func (o templateRackBased) resourceAttributes() map[string]resourceSchema.Attrib
 			MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
 			Required:            true,
 		},
-		"rack_types": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Details Rack Types included in the template",
-			Computed:            true,
+		//"rack_types": resourceSchema.MapNestedAttribute{
+		//	MarkdownDescription: "Details Rack Types included in the template",
+		//	Computed:            true,
+		//	NestedObject: resourceSchema.NestedAttributeObject{
+		//		Attributes: templateRackInfo{}.resourceAttributesNested(),
+		//	},
+		//},
+		"rack_infos": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Rack Type info (count + details)",
+			Required:            true,
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: rackType{}.resourceAttributesNested(),
+				Attributes: templateRackInfo{}.resourceAttributesNested(),
 			},
 		},
 	}
@@ -150,9 +168,14 @@ func (o *templateRackBased) loadApiData(ctx context.Context, in *goapstra.Templa
 		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
 	}
 
+	riSlice := make([]templateRackInfo, len(in.RackInfo))
+	for i := range in.RackInfo {
+		riSlice[i].loadApiData(ctx, &in.RackInfo[i], diags)
+	}
+
 	o.Name = types.StringValue(in.DisplayName)
-	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.AsnAllocationPolicy.SpineAsnScheme, diags))
 	o.Spine = newDesignTemplateSpineObject(ctx, &in.Spine, diags)
+	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.AsnAllocationPolicy.SpineAsnScheme, diags))
 	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.VirtualNetworkPolicy.OverlayControlProtocol, diags))
-	o.RackTypes = newRackTypeMap(ctx, in, diags)
+	o.RackInfos = newRackInfoMap(ctx, in, diags)
 }
