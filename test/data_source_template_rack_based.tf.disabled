@@ -1,4 +1,3 @@
-data "apstra_rack_based_template" "d" {
+data "apstra_template_rack_based" "d" {
   id = "L2_ESI_Access"
 }
-
