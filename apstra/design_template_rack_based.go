@@ -152,6 +152,61 @@ func (o templateRackBased) attrTypes() map[string]attr.Type {
 	}
 }
 
+//func (o *templateRackBased) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.CreateRackBasedTemplateRequest {
+//	var d diag.Diagnostics
+//
+//	var s *spine
+//	d = o.Spine.As(ctx, s, basetypes.ObjectAsOptions{})
+//	diags.Append(d...)
+//	if diags.HasError() {
+//		return nil
+//	}
+//
+//	rtMap := make(map[string]rackType, len(o.RackTypes.Elements()))
+//	d = o.RackTypes.ElementsAs(ctx, &rtMap, false)
+//	diags.Append(d...)
+//	if diags.HasError() {
+//		return nil
+//	}
+//
+//	rackInfo := make([]goapstra.TemplateRackBasedRackInfo, len(rtMap))
+//	for k, v := range rtMap {
+//
+//	}
+//
+//	return &goapstra.CreateRackBasedTemplateRequest{
+//		DisplayName:            o.Name.ValueString(),
+//		Capability:             goapstra.TemplateCapabilityNone,
+//		Spine:                  s.request(ctx, diags),
+//		RackInfo: ,
+//		DhcpServiceIntent:      nil,
+//		AntiAffinityPolicy:     nil,
+//		AsnAllocationPolicy:    nil,
+//		FabricAddressingPolicy: nil,
+//		VirtualNetworkPolicy:   nil,
+//	}
+//}
+
+func (o *templateRackBased) validate(ctx context.Context, diags *diag.Diagnostics) {
+	rackInfoMap := make(map[string]templateRackInfo, len(o.RackInfos.Elements()))
+	d := o.RackInfos.ElementsAs(ctx, &rackInfoMap, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	idMap := make(map[string]struct{}, len(rackInfoMap))
+	for _, rackInfo := range rackInfoMap {
+		id := rackInfo.RackTypeId.ValueString()
+		if _, ok := idMap[id]; ok {
+			diags.AddAttributeError(path.Root("rack_infos").AtMapKey(id), errInvalidConfig,
+				fmt.Sprintf("rack type id %q used multiple times", id))
+			return
+		}
+		idMap[rackInfo.RackTypeId.ValueString()] = struct{}{}
+	}
+}
+
 func (o *templateRackBased) loadApiData(ctx context.Context, in *goapstra.TemplateRackBasedData, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load templateRackBased from nil source")
