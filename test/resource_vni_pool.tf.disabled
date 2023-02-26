@@ -1,0 +1,13 @@
+resource "apstra_vni_pool" "r" {
+  name = "r"
+  ranges = [
+    {
+      first = 5000
+      last = 5999
+    },
+    {
+      first = 6000
+      last = 6999
+    },
+  ]
+}
