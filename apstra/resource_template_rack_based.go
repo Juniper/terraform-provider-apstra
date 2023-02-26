@@ -21,7 +21,7 @@ type resourceTemplateRackBased struct {
 }
 
 func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_rack_based_template"
+	resp.TypeName = req.ProviderTypeName + "_template_rack_based"
 }
 
 func (o *resourceTemplateRackBased) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
