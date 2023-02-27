@@ -209,6 +209,8 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceTemplateRackBased{} },
 		func() datasource.DataSource { return &dataSourceTwoStageL3ClosBlueprint{} },
 		func() datasource.DataSource { return &dataSourceTag{} },
+		func() datasource.DataSource { return &dataSourceVniPool{} },
+		func() datasource.DataSource { return &dataSourceVniPools{} },
 	}
 }
 
@@ -228,6 +230,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		////func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		////func() resource.Resource { return &resourceSourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceTag{} },
+		func() resource.Resource { return &resourceVniPool{} },
 		////func() resource.Resource { return &resourceWireframe{} },
 	}
 }

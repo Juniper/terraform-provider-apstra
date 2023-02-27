@@ -1,0 +1,3 @@
+data "apstra_vni_pool" "d" {
+  name = "Default-10000-20000"
+}
