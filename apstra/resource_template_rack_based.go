@@ -5,15 +5,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceAgentProfile{}
+var _ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
+var _ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
+var _ versionValidator = &resourceTemplateRackBased{}
 
 type resourceTemplateRackBased struct {
-	client *goapstra.Client
+	client           *goapstra.Client
+	minClientVersion *version.Version
+	maxClientVersion *version.Version
 }
 
 func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -32,42 +38,80 @@ func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaR
 	}
 }
 
+func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config templateRackBased
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// validate the configuration
+	config.validate(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set the min/max API versions required by the client. These elements set within 'o'
+	// do not persist after ValidateConfig exits even though 'o' is a pointer receiver.
+	o.minClientVersion, o.maxClientVersion = config.minMaxApiVersions(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if o.client == nil {
+		// Bail here because we can't validate config's API version needs if the client doesn't exist.
+		// This method should be called again (after the provider's Configure() method) with a non-nil
+		// client pointer.
+		return
+	}
+
+	// validate version compatibility between the API server and the configuration's min/max needs.
+	o.checkVersion(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
 func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
 
-	// Retrieve values from plan
-	var plan agentProfile
+	// retrieve values from plan
+	var plan templateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create new Agent Profile
-	id, err := o.client.CreateAgentProfile(ctx, plan.request(ctx, &resp.Diagnostics))
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error creating new Agent Profile",
-			"Could not create, unexpected error: "+err.Error(),
-		)
-		return
-	}
+	// create a CreateRackBasedTemplateRequest
+	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// create state object
-	state := agentProfile{
-		Id:          types.StringValue(string(id)),
-		Name:        plan.Name,
-		Platform:    plan.Platform,
-		HasUsername: types.BoolValue(false),
-		HasPassword: types.BoolValue(false),
-		Packages:    plan.Packages,
-		OpenOptions: plan.OpenOptions,
+	// create the RackBasedTemplate object (nested objects are referenced by ID)
+	id, err := o.client.CreateRackBasedTemplate(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("error creating rack-based template", err.Error())
+		return
 	}
+
+	// retrieve the rack-based template object with fully-enumerated embedded objects
+	api, err := o.client.GetRackBasedTemplate(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving rack-based template info after creation", err.Error())
+		return
+	}
+
+	// parse the API response into a state object
+	state := templateRackBased{}
+	state.Id = types.StringValue(string(id))
+	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+
+	// copy nested object IDs (those not available from the API) from the plan into the state
+	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -80,14 +124,14 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 	}
 
 	// Get current state
-	var state agentProfile
+	var state templateRackBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get Agent Profile from API and then update what is in state from what the API returns
-	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	// Get Rack Based Template from API and then update what is in state from what the API returns
+	api, err := o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
@@ -96,19 +140,23 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 			return
 		} else {
 			resp.Diagnostics.AddError(
-				"error reading Agent Profile",
-				fmt.Sprintf("Could not Read '%s' - %s", state.Id.ValueString(), err),
+				"error reading Rack Based Template",
+				fmt.Sprintf("Could not Read %q - %s", state.Id.ValueString(), err),
 			)
 			return
 		}
 	}
 
 	// Create new state object
-	var newState agentProfile
-	newState.loadApiResponse(ctx, ap, &resp.Diagnostics)
+	var newState templateRackBased
+	newState.Id = types.StringValue(string(api.Id))
+	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// copy nested object IDs (those not available from the API) from the state into the newState
+	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -121,45 +169,48 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	// Get current state
-	var state agentProfile
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get plan values
-	var plan agentProfile
+	// retrieve values from plan
+	var plan templateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update new Agent Profile
-	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()), plan.request(ctx, &resp.Diagnostics))
+	// create a CreateRackBasedTemplateRequest
+	request := plan.request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// update
+	err := o.client.UpdateRackBasedTemplate(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error updating Agent Profile",
-			fmt.Sprintf("Could not Update '%s' - %s", state.Id.ValueString(), err),
+			"error updating Rack Based Template",
+			fmt.Sprintf("Could not update %q - %s", plan.Id.ValueString(), err),
 		)
 		return
 	}
 
-	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	api, err := o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error updating Agent Profile",
-			fmt.Sprintf("Could not Update '%s' - %s", state.Id.ValueString(), err),
+			"error retrieving recently updated Rack Based Template",
+			fmt.Sprintf("Could not fetch %q - %s", plan.Id.ValueString(), err),
 		)
 		return
 	}
 
 	// Create new state object
-	var newState agentProfile
-	newState.loadApiResponse(ctx, ap, &resp.Diagnostics)
+	var newState templateRackBased
+	newState.Id = types.StringValue(string(api.Id))
+	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// copy nested object IDs (those not available from the API) from the plan into the newState
+	newState.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -172,22 +223,41 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	var state agentProfile
+	var state templateRackBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Delete Agent Profile by calling API
-	err := o.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteTemplate(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError(
 				"error deleting Agent Profile",
-				fmt.Sprintf("could not delete Agent Profile '%s' - %s", state.Id.ValueString(), err),
+				fmt.Sprintf("could not delete Agent Profile %q - %s", state.Id.ValueString(), err),
 			)
 			return
 		}
 	}
+}
+
+func (o *resourceTemplateRackBased) apiVersion() (*version.Version, error) {
+	if o.client == nil {
+		return nil, nil
+	}
+	return version.NewVersion(o.client.ApiVersion())
+}
+
+func (o *resourceTemplateRackBased) cfgVersionMin() (*version.Version, error) {
+	return o.minClientVersion, nil
+}
+
+func (o *resourceTemplateRackBased) cfgVersionMax() (*version.Version, error) {
+	return o.maxClientVersion, nil
+}
+
+func (o *resourceTemplateRackBased) checkVersion(ctx context.Context, diags *diag.Diagnostics) {
+	checkVersionCompatibility(ctx, o, diags)
 }

@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 type templateRackBased struct {
@@ -25,8 +27,6 @@ type templateRackBased struct {
 	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
 	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
 	RackInfos              types.Map    `tfsdk:"rack_infos"`
-	//RackTypeIds            types.Map    `tfsdk:"rack_types_ids"`
-	//RackTypes              types.Map    `tfsdk:"rack_types"`
 }
 
 func (o templateRackBased) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -76,25 +76,18 @@ func (o templateRackBased) dataSourceAttributes() map[string]dataSourceSchema.At
 				Attributes: templateRackInfo{}.dataSourceAttributesNested(),
 			},
 		},
-		//"rack_types": dataSourceSchema.MapNestedAttribute{
-		//	MarkdownDescription: "Details Rack Types included in the template",
-		//	Computed:            true,
-		//	NestedObject: dataSourceSchema.NestedAttributeObject{
-		//		Attributes: templateRackInfo{}.dataSourceAttributesNested(),
-		//	},
-		//},
 	}
 }
 
 func (o templateRackBased) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID of the Agent Profile.",
+			MarkdownDescription: "Apstra ID of the Rack Based Template.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra name of the Agent Profile.",
+			MarkdownDescription: "Apstra name of the Rack Based Template.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -119,16 +112,10 @@ func (o templateRackBased) resourceAttributes() map[string]resourceSchema.Attrib
 			},
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric addressing scheme for spine/leaf links.",
-			Required:            true,
+			MarkdownDescription: "Fabric addressing scheme for spine/leaf links. Required for " +
+				"Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.",
+			Optional: true,
 		},
-		//"rack_types": resourceSchema.MapNestedAttribute{
-		//	MarkdownDescription: "Details Rack Types included in the template",
-		//	Computed:            true,
-		//	NestedObject: resourceSchema.NestedAttributeObject{
-		//		Attributes: templateRackInfo{}.resourceAttributesNested(),
-		//	},
-		//},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
 			Required:            true,
@@ -148,44 +135,91 @@ func (o templateRackBased) attrTypes() map[string]attr.Type {
 		"asn_allocation_scheme":    types.StringType,
 		"overlay_control_protocol": types.StringType,
 		"fabric_link_addressing":   types.StringType,
-		"rack_types":               types.MapType{ElemType: types.ObjectType{AttrTypes: rackType{}.attrTypes()}},
+		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: rackType{}.attrTypes()}},
 	}
 }
 
-//func (o *templateRackBased) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.CreateRackBasedTemplateRequest {
-//	var d diag.Diagnostics
-//
-//	var s *spine
-//	d = o.Spine.As(ctx, s, basetypes.ObjectAsOptions{})
-//	diags.Append(d...)
-//	if diags.HasError() {
-//		return nil
-//	}
-//
-//	rtMap := make(map[string]rackType, len(o.RackTypes.Elements()))
-//	d = o.RackTypes.ElementsAs(ctx, &rtMap, false)
-//	diags.Append(d...)
-//	if diags.HasError() {
-//		return nil
-//	}
-//
-//	rackInfo := make([]goapstra.TemplateRackBasedRackInfo, len(rtMap))
-//	for k, v := range rtMap {
-//
-//	}
-//
-//	return &goapstra.CreateRackBasedTemplateRequest{
-//		DisplayName:            o.Name.ValueString(),
-//		Capability:             goapstra.TemplateCapabilityNone,
-//		Spine:                  s.request(ctx, diags),
-//		RackInfo: ,
-//		DhcpServiceIntent:      nil,
-//		AntiAffinityPolicy:     nil,
-//		AsnAllocationPolicy:    nil,
-//		FabricAddressingPolicy: nil,
-//		VirtualNetworkPolicy:   nil,
-//	}
-//}
+func (o *templateRackBased) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.CreateRackBasedTemplateRequest {
+	var d diag.Diagnostics
+
+	s := spine{}
+	d = o.Spine.As(ctx, &s, basetypes.ObjectAsOptions{})
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	rtMap := make(map[string]templateRackInfo, len(o.RackInfos.Elements()))
+	d = o.RackInfos.ElementsAs(ctx, &rtMap, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	rackInfos := make(map[goapstra.ObjectId]goapstra.TemplateRackBasedRackInfo, len(rtMap))
+	for k := range rtMap {
+		rackInfos[goapstra.ObjectId(k)] = goapstra.TemplateRackBasedRackInfo{
+			Count: int(rtMap[k].Count.ValueInt64()),
+		}
+	}
+
+	var err error
+
+	antiAffinityPolicy := &goapstra.AntiAffinityPolicy{
+		Algorithm: goapstra.AlgorithmHeuristic,
+	}
+
+	var spineAsnScheme goapstra.AsnAllocationScheme
+	err = spineAsnScheme.FromString(translateAsnAllocationSchemeFromWebUi(o.AsnAllocation.ValueString()))
+	if err != nil {
+		diags.AddError(errProviderBug,
+			fmt.Sprintf("error parsing ASN allocation scheme %q - %s",
+				o.AsnAllocation.ValueString(), err.Error()))
+	}
+	asnAllocationPolicy := &goapstra.AsnAllocationPolicy{
+		SpineAsnScheme: spineAsnScheme,
+	}
+
+	var fabricAddressingPolicy *goapstra.FabricAddressingPolicy
+	if !o.FabricAddressing.IsNull() {
+		var addressingScheme goapstra.AddressingScheme
+		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
+		if err != nil {
+			diags.AddError(errProviderBug,
+				fmt.Sprintf("error parsing fabric addressing scheme %q - %s",
+					o.FabricAddressing.ValueString(), err.Error()))
+		}
+		fabricAddressingPolicy = &goapstra.FabricAddressingPolicy{
+			SpineSuperspineLinks: addressingScheme,
+			SpineLeafLinks:       addressingScheme,
+		}
+	}
+
+	var overlayControlProtocol goapstra.OverlayControlProtocol
+	err = overlayControlProtocol.FromString(o.OverlayControlProtocol.ValueString())
+	if err != nil {
+		diags.AddError(errProviderBug,
+			fmt.Sprintf("error parsing overlay control protocol %q - %s",
+				o.OverlayControlProtocol.ValueString(), err.Error()))
+	}
+	virtualNetworkPolicy := &goapstra.VirtualNetworkPolicy{
+		OverlayControlProtocol: overlayControlProtocol,
+	}
+
+	return &goapstra.CreateRackBasedTemplateRequest{
+		DisplayName:       o.Name.ValueString(),
+		Capability:        goapstra.TemplateCapabilityNone,
+		Spine:             s.request(ctx, diags),
+		RackInfos:         rackInfos,
+		DhcpServiceIntent: &goapstra.DhcpServiceIntent{Active: true},
+		// todo: is this the right AntiAffinityPolicy?
+		//  I'd have sent <nil>, but blocked by goapstra issue #2 (crash on nil pointer deref)
+		AntiAffinityPolicy:     antiAffinityPolicy,
+		AsnAllocationPolicy:    asnAllocationPolicy,
+		FabricAddressingPolicy: fabricAddressingPolicy,
+		VirtualNetworkPolicy:   virtualNetworkPolicy,
+	}
+}
 
 func (o *templateRackBased) validate(ctx context.Context, diags *diag.Diagnostics) {
 	rackInfoMap := make(map[string]templateRackInfo, len(o.RackInfos.Elements()))
@@ -196,14 +230,13 @@ func (o *templateRackBased) validate(ctx context.Context, diags *diag.Diagnostic
 	}
 
 	idMap := make(map[string]struct{}, len(rackInfoMap))
-	for _, rackInfo := range rackInfoMap {
-		id := rackInfo.RackTypeId.ValueString()
-		if _, ok := idMap[id]; ok {
-			diags.AddAttributeError(path.Root("rack_infos").AtMapKey(id), errInvalidConfig,
-				fmt.Sprintf("rack type id %q used multiple times", id))
+	for key := range rackInfoMap {
+		if _, ok := idMap[key]; ok {
+			diags.AddAttributeError(path.Root("rack_infos").AtMapKey(key), errInvalidConfig,
+				fmt.Sprintf("rack type id %q used multiple times", key))
 			return
 		}
-		idMap[rackInfo.RackTypeId.ValueString()] = struct{}{}
+		idMap[key] = struct{}{}
 	}
 }
 
@@ -223,14 +256,52 @@ func (o *templateRackBased) loadApiData(ctx context.Context, in *goapstra.Templa
 		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
 	}
 
-	riSlice := make([]templateRackInfo, len(in.RackInfo))
-	for i := range in.RackInfo {
-		riSlice[i].loadApiData(ctx, &in.RackInfo[i], diags)
-	}
-
 	o.Name = types.StringValue(in.DisplayName)
 	o.Spine = newDesignTemplateSpineObject(ctx, &in.Spine, diags)
 	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.AsnAllocationPolicy.SpineAsnScheme, diags))
 	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.VirtualNetworkPolicy.OverlayControlProtocol, diags))
 	o.RackInfos = newRackInfoMap(ctx, in, diags)
 }
+
+func (o *templateRackBased) minMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
+	var min, max *version.Version
+	var err error
+	if o.FabricAddressing.IsNull() {
+		min, err = version.NewVersion("4.1.1")
+	} else {
+		max, err = version.NewVersion("4.1.0")
+	}
+	if err != nil {
+		diags.AddError(errProviderBug,
+			fmt.Sprintf("error parsing min/max version - %s", err.Error()))
+	}
+
+	return min, max
+}
+
+func (o *templateRackBased) copyWriteOnlyElements(ctx context.Context, src *templateRackBased, diags *diag.Diagnostics) {
+	var srcSpine, dstSpine *spine
+	var d diag.Diagnostics
+
+	// extract the source spine object from src
+	d = src.Spine.As(ctx, &srcSpine, basetypes.ObjectAsOptions{})
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	// extract the destination spine object from o
+	d = o.Spine.As(ctx, &dstSpine, basetypes.ObjectAsOptions{})
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	// clone missing spine bits
+	dstSpine.copyWriteOnlyElements(ctx, srcSpine, diags)
+
+	// repackage the destination spine in o
+	o.Spine = objectValueOrNull(ctx, spine{}.attrTypes(), dstSpine, diags)
+}
+
+// 	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)

@@ -22,6 +22,7 @@ func checkVersionCompatibility(_ context.Context, vv versionValidator, diags *di
 	}
 	if apiVersion == nil {
 		diags.AddError(errProviderBug, "attempt to verify API version compatibility with nil pointer")
+		return
 	}
 
 	cfgVersionMin, err := vv.cfgVersionMin()

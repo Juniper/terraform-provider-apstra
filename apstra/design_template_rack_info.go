@@ -13,9 +13,8 @@ import (
 )
 
 type templateRackInfo struct {
-	Count      types.Int64  `tfsdk:"count"`
-	RackTypeId types.String `tfsdk:"rack_type_id"`
-	RackType   types.Object `tfsdk:"rack_type"`
+	Count    types.Int64  `tfsdk:"count"`
+	RackType types.Object `tfsdk:"rack_type"`
 }
 
 func (o templateRackInfo) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -27,10 +26,6 @@ func (o templateRackInfo) dataSourceAttributesNested() map[string]dataSourceSche
 	return map[string]dataSourceSchema.Attribute{
 		"count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of instances of this Rack Type.",
-			Computed:            true,
-		},
-		"rack_type_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
 		},
 		"rack_type": dataSourceSchema.SingleNestedAttribute{
@@ -53,10 +48,6 @@ func (o templateRackInfo) resourceAttributesNested() map[string]resourceSchema.A
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
-		"rack_type_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Rack Type to use in this Template.",
-			Required:            true,
-		},
 		"rack_type": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Rack Type attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
@@ -67,9 +58,8 @@ func (o templateRackInfo) resourceAttributesNested() map[string]resourceSchema.A
 
 func (o templateRackInfo) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"count":        types.Int64Type,
-		"rack_type_id": types.StringType,
-		"rack_type":    types.ObjectType{AttrTypes: rackType{}.attrTypes()},
+		"count":     types.Int64Type,
+		"rack_type": types.ObjectType{AttrTypes: rackType{}.attrTypes()},
 	}
 }
 
@@ -79,25 +69,19 @@ func (o *templateRackInfo) loadApiData(ctx context.Context, in *goapstra.Templat
 		return
 	}
 
-	if in.Id == "" {
-		diags.AddError(errProviderBug, "attempt to load templateRackInfo with empty rack type ID")
-		return
-	}
-
-	o.RackTypeId = types.StringNull()
 	o.Count = types.Int64Value(int64(in.Count))
 	o.RackType = newRackTypeObject(ctx, in.RackTypeData, diags)
 }
 
 func newRackInfoMap(ctx context.Context, in *goapstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Map {
-	rackTypeMap := make(map[string]templateRackInfo, len(in.RackInfo))
-	for i := range in.RackInfo {
+	rackTypeMap := make(map[goapstra.ObjectId]templateRackInfo, len(in.RackInfo))
+	for key, apiData := range in.RackInfo {
 		var tri templateRackInfo
-		tri.loadApiData(ctx, &in.RackInfo[i], diags)
+		tri.loadApiData(ctx, &apiData, diags)
 		if diags.HasError() {
 			return types.MapNull(types.ObjectType{AttrTypes: templateRackInfo{}.attrTypes()})
 		}
-		rackTypeMap[string(in.RackInfo[i].Id)] = tri
+		rackTypeMap[key] = tri
 	}
 
 	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: templateRackInfo{}.attrTypes()}, rackTypeMap)

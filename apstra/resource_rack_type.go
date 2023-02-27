@@ -44,7 +44,7 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// Retrieve values from plan
+	// retrieve values from plan
 	var plan rackType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
