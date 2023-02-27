@@ -1,19 +1,20 @@
 package apstra
 
 import (
+	"context"
 	"fmt"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
 type versionValidator interface {
 	apiVersion() (*version.Version, error)
 	cfgVersionMin() (*version.Version, error)
 	cfgVersionMax() (*version.Version, error)
+	checkVersion(context.Context, *diag.Diagnostics)
 }
 
-func checkVersionCompatibility(vv versionValidator, path path.Path, diags *diag.Diagnostics) {
+func checkVersionCompatibility(_ context.Context, vv versionValidator, diags *diag.Diagnostics) {
 	apiVersion, err := vv.apiVersion()
 	if err != nil {
 		diags.AddError(errProviderBug, fmt.Sprintf("error determining API version - %s", err.Error()))
@@ -40,15 +41,15 @@ func checkVersionCompatibility(vv versionValidator, path path.Path, diags *diag.
 	}
 
 	if cfgVersionMin != nil && apiVersion.LessThan(cfgVersionMin) {
-		diags.AddAttributeError(path, errApiCompatibility,
+		diags.AddError(errApiCompatibility,
 			fmt.Sprintf("API version (%q) is less than minimum required by configuration (%q)",
 				apiVersion.String(), cfgVersionMin.String()))
 		return
 	}
 
-	if cfgVersionMax != nil && apiVersion.LessThan(cfgVersionMax) {
-		diags.AddAttributeError(path, errApiCompatibility,
-			fmt.Sprintf("API version (%q) is less than maximum required by configuration (%q)",
+	if cfgVersionMax != nil && apiVersion.GreaterThan(cfgVersionMax) {
+		diags.AddError(errApiCompatibility,
+			fmt.Sprintf("API version (%q) is greater than maximum allowed by configuration (%q)",
 				apiVersion.String(), cfgVersionMax.String()))
 		return
 	}
