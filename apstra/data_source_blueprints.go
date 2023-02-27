@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -30,32 +29,21 @@ func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.Metada
 	resp.TypeName = req.ProviderTypeName + "_blueprints"
 }
 
-func (o *dataSourceBlueprints) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceBlueprints) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns a list of blueprint IDs configured on Apstra.",
+		MarkdownDescription: "This data source returns the ID numbers of Blueprints.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "ID of the desired ASN Resource Pool.",
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
 			"reference_design": schema.StringAttribute{
-				MarkdownDescription: "Optional filter for blueprints of the specified reference design.",
+				MarkdownDescription: "Optional filter to select only Blueprints matching the specified Reference Design.",
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
 					twoStageL3ClosRefDesignUiName,
@@ -89,8 +77,8 @@ func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasourc
 		}
 
 		if thisVer.LessThan(minVer) {
-			resp.Diagnostics.AddError("Apstra API version error",
-				fmt.Sprintf("Apstra %s doesn't support reference design '%s'",
+			resp.Diagnostics.AddError(errApiCompatibility,
+				fmt.Sprintf("Apstra %q doesn't support reference design %q",
 					o.client.ApiVersion(), goapstra.RefDesignFreeform.String()))
 		}
 	}
@@ -108,12 +96,12 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	var objectIds []goapstra.ObjectId
+	var ids []goapstra.ObjectId
 	var err error
 	if config.RefDesign.IsNull() {
-		objectIds, err = o.client.ListAllBlueprintIds(ctx)
+		ids, err = o.client.ListAllBlueprintIds(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("error listing blueprint IDs", err.Error())
+			resp.Diagnostics.AddError("error listing Blueprint IDs", err.Error())
 			return
 		}
 	} else {
@@ -133,14 +121,9 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		}
 		for _, bpStatus := range bpStatuses {
 			if bpStatus.Design.String() == refDesign {
-				objectIds = append(objectIds, bpStatus.Id)
+				ids = append(ids, bpStatus.Id)
 			}
 		}
-	}
-
-	ids := make([]attr.Value, len(objectIds))
-	for i, id := range objectIds {
-		ids[i] = types.StringValue(string(id))
 	}
 
 	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
@@ -149,11 +132,13 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	// set state
-	state := dBlueprintIds{
-		RefDesign: config.RefDesign,
-		Ids:       idSet,
+	// create new state object
+	var state struct {
+		Ids types.Set `tfsdk:"ids"`
 	}
+	state.Ids = idSet
+
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 

@@ -181,7 +181,7 @@ func (o *resourceInterfaceMap) Create(ctx context.Context, req resource.CreateRe
 	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
 	state.Id = types.StringValue(string(id))
 
-	state.loadApiResponse(ctx, request, &resp.Diagnostics)
+	state.loadApiData(ctx, request, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -219,7 +219,7 @@ func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadReques
 
 	var newState rInterfaceMap
 	newState.Id = types.StringValue(string(iMap.Id))
-	newState.loadApiResponse(ctx, iMap.Data, &resp.Diagnostics)
+	newState.loadApiData(ctx, iMap.Data, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -265,7 +265,7 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
 	newState.Id = types.StringValue(string(id))
 
-	newState.loadApiResponse(ctx, request, &resp.Diagnostics)
+	newState.loadApiData(ctx, request, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -622,7 +622,7 @@ func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice,
 	}
 }
 
-func (o *rInterfaceMap) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMapData, diags *diag.Diagnostics) {
+func (o *rInterfaceMap) loadApiData(ctx context.Context, in *goapstra.InterfaceMapData, diags *diag.Diagnostics) {
 	// create two slices. Data from elements of in.Interfaces will filter into one of these depending
 	// on whether the element represents an "in use" interface. both receiving slices are oversize.
 	a := make([]rInterfaceMapInterface, len(in.Interfaces)) // allocated / in use interfaces
@@ -633,7 +633,7 @@ func (o *rInterfaceMap) loadApiResponse(ctx context.Context, in *goapstra.Interf
 
 	for i := range in.Interfaces { // i keeps track of our location in the in.Interfaces slice...
 		// parse the interface object
-		intf.loadApiResponse(ctx, &in.Interfaces[i], diags)
+		intf.loadApiData(ctx, &in.Interfaces[i], diags)
 
 		// add interface to the used or un-used map according to whether the logical device port ID is null
 		if intf.LogicalDevicePort.IsNull() {
@@ -733,7 +733,7 @@ func (o rInterfaceMapInterface) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *rInterfaceMapInterface) loadApiResponse(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
+func (o *rInterfaceMapInterface) loadApiData(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
 	o.PhysicalInterfaceName = types.StringValue(in.Name)
 	o.TransformationId = types.Int64Value(int64(in.Mapping.DPTransformId))
 

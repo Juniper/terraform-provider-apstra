@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -19,35 +18,24 @@ func (o *dataSourceAsnPools) Metadata(_ context.Context, req datasource.Metadata
 	resp.TypeName = req.ProviderTypeName + "_asn_pools"
 }
 
-func (o *dataSourceAsnPools) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceAsnPools) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceAsnPools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs of all ASN resource pools",
+		MarkdownDescription: "This data source returns the ID numbers of all ASN Pools.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
-				MarkdownDescription: "Pool IDs of all ASN resource pools.",
 				ElementType:         types.StringType,
 			},
 		},
 	}
 }
 
-func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceAsnPools) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
@@ -55,10 +43,7 @@ func (o *dataSourceAsnPools) Read(ctx context.Context, req datasource.ReadReques
 
 	ids, err := o.client.ListAsnPoolIds(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error retrieving ASN pool IDs",
-			fmt.Sprintf("error retrieving ASN pool IDs - %s", err),
-		)
+		resp.Diagnostics.AddError("Error retrieving ASN Pool IDs", err.Error())
 		return
 	}
 

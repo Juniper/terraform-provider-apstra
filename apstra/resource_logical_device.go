@@ -5,13 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -26,44 +21,14 @@ func (o *resourceLogicalDevice) Metadata(_ context.Context, req resource.Metadat
 	resp.TypeName = req.ProviderTypeName + "_logical_device"
 }
 
-func (o *resourceLogicalDevice) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errResourceConfigureProviderDataDetail,
-			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *resourceLogicalDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	o.client = resourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IPv4 resource pool",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "Apstra ID number of the resource pool",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "Pool name displayed in the Apstra web UI",
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"panels": schema.ListNestedAttribute{
-				MarkdownDescription: "Details physical layout of interfaces on the device.",
-				Required:            true,
-				Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: logicalDevicePanel{}.resourceAttributes(),
-				},
-			},
-		},
+		Attributes:          logicalDevice{}.resourceAttributes(),
 	}
 }
 
@@ -75,8 +40,7 @@ func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource
 	}
 
 	// extract []logicalDevicePanel from the resourceLogicalDevice
-	panels := make([]logicalDevicePanel, len(config.Panels.Elements()))
-	resp.Diagnostics.Append(config.Panels.ElementsAs(ctx, &panels, false)...)
+	panels := config.panels(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -103,14 +67,14 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	logicalDeviceRequest := plan.request(ctx, &resp.Diagnostics)
+	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	id, err := o.client.CreateLogicalDevice(ctx, logicalDeviceRequest)
+	id, err := o.client.CreateLogicalDevice(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating logical device", err.Error())
+		resp.Diagnostics.AddError("error creating Logical Device", err.Error())
 	}
 
 	plan.Id = types.StringValue(string(id))
@@ -130,6 +94,7 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
+	// Get Logical Device from API and then update what is in state from what the API returns
 	ld, err := o.client.GetLogicalDevice(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -137,34 +102,29 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError(
-				"error reading Logical Device",
-				fmt.Sprintf("Could not Read '%s' - %s", state.Id.ValueString(), err),
-			)
-			return
 		}
+		resp.Diagnostics.AddError(
+			"error reading Logical Device",
+			fmt.Sprintf("Could not Read %q - %s", state.Id.ValueString(), err.Error()),
+		)
+		return
 	}
 
+	// Create new state object
 	var newState logicalDevice
-	newState.loadApiResponse(ctx, ld, &resp.Diagnostics)
+	newState.Id = types.StringValue(string(ld.Id))
+	newState.loadApiData(ctx, ld.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
-	// Get current state
-	var state logicalDevice
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -175,17 +135,24 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	id := state.Id.ValueString()
+	// Update Logical Device
 	request := plan.request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	err := o.client.UpdateLogicalDevice(ctx, goapstra.ObjectId(id), request)
+	var ace goapstra.ApstraClientErr
+	err := o.client.UpdateLogicalDevice(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		// some other unknown error
 		resp.Diagnostics.AddError("error updating Logical Device", err.Error())
+		return
 	}
 
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -201,15 +168,12 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	// Delete Agent Profile by calling API
+	// Delete Logical Device by calling API
 	err := o.client.DeleteLogicalDevice(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError(
-				"error deleting Logical Device",
-				fmt.Sprintf("could not delete Logical Device '%s' - %s", state.Id.ValueString(), err),
-			)
+			resp.Diagnostics.AddError("error deleting Logical Device", err.Error())
 			return
 		}
 	}

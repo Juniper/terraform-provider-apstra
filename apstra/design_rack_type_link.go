@@ -8,39 +8,71 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type rRackLink struct {
-	Name             types.String `tfsdk:"name"`
+type rackLink struct {
 	TargetSwitchName types.String `tfsdk:"target_switch_name"`
 	LagMode          types.String `tfsdk:"lag_mode"`
 	LinksPerSwitch   types.Int64  `tfsdk:"links_per_switch"`
 	Speed            types.String `tfsdk:"speed"`
 	SwitchPeer       types.String `tfsdk:"switch_peer"`
-	TagData          types.Set    `tfsdk:"tag_data"`
 	TagIds           types.Set    `tfsdk:"tag_ids"`
+	Tags             types.Set    `tfsdk:"tags"`
 }
 
-func (o rRackLink) attributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"name": schema.StringAttribute{
-			MarkdownDescription: "Name of this link, copied from map key.",
+func (o rackLink) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"target_switch_name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
 			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"target_switch_name": schema.StringAttribute{
+		"lag_mode": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "LAG negotiation mode of the Link.",
+			Computed:            true,
+		},
+		"links_per_switch": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Links to each switch.",
+			Computed:            true,
+		},
+		"speed": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Speed of this Link.",
+			Computed:            true,
+		},
+		"switch_peer": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "For non-LAG connections to redundant switch pairs, this field selects the target switch.",
+			Computed:            true,
+		},
+		"tag_ids": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in data source contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"tags": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Details any tags applied to this Link.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: tag{}.dataSourceAttributesNested(),
+			},
+		},
+	}
+}
+
+func (o rackLink) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"target_switch_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"lag_mode": schema.StringAttribute{
+		"lag_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "LAG negotiation mode of the Link.",
 			Computed:            true,
 			Optional:            true,
@@ -51,16 +83,16 @@ func (o rRackLink) attributes() map[string]schema.Attribute {
 				goapstra.RackLinkLagModeStatic.String(),
 			)},
 		},
-		"links_per_switch": schema.Int64Attribute{
+		"links_per_switch": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of Links to each switch.",
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
-		"speed": schema.StringAttribute{
+		"speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of this Link.",
 			Required:            true,
 		},
-		"switch_peer": schema.StringAttribute{
+		"switch_peer": resourceSchema.StringAttribute{
 			MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
 			Optional:            true,
 			Computed:            true,
@@ -69,73 +101,35 @@ func (o rRackLink) attributes() map[string]schema.Attribute {
 				goapstra.RackLinkSwitchPeerSecond.String(),
 			)},
 		},
-		"tag_ids": schema.SetAttribute{
+		"tag_ids": resourceSchema.SetAttribute{
 			ElementType:         types.StringType,
 			Optional:            true,
 			MarkdownDescription: "Set of Tag IDs to be applied to this Link",
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
-		"tag_data": schema.SetNestedAttribute{
+		"tags": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Set of Tags (Name + Description) applied to this Link",
 			Computed:            true,
-			NestedObject: schema.NestedAttributeObject{
-				Attributes: tagData{}.resourceAttributes(),
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o rRackLink) attrTypes() map[string]attr.Type {
+func (o rackLink) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":               types.StringType,
 		"target_switch_name": types.StringType,
 		"lag_mode":           types.StringType,
 		"links_per_switch":   types.Int64Type,
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
 		"tag_ids":            types.SetType{ElemType: types.StringType},
-		"tag_data":           types.SetType{ElemType: types.ObjectType{AttrTypes: tagData{}.attrTypes()}},
+		"tags":               types.SetType{ElemType: types.ObjectType{AttrTypes: tag{}.attrTypes()}},
 	}
 }
 
-func (o *rRackLink) loadApiResponse(ctx context.Context, in *goapstra.RackLink, diags *diag.Diagnostics) {
-	o.Name = types.StringValue(in.Label)
-	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
-	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
-	o.Speed = types.StringValue(string(in.LinkSpeed))
-
-	if in.LagMode == goapstra.RackLinkLagModeNone {
-		o.LagMode = types.StringNull()
-	} else {
-		o.LagMode = types.StringValue(in.LagMode.String())
-	}
-
-	if in.SwitchPeer == goapstra.RackLinkSwitchPeerNone {
-		o.SwitchPeer = types.StringNull()
-	} else {
-		o.SwitchPeer = types.StringValue(in.SwitchPeer.String())
-	}
-
-	// null set for now to avoid nil pointer dereference error because the API
-	// response doesn't contain the tag IDs. See copyWriteOnlyElements() method.
-	o.TagIds = types.SetNull(types.StringType)
-
-	o.TagData = newTagSet(ctx, in.Tags, diags)
-	if diags.HasError() {
-		return
-	}
-}
-
-func (o *rRackLink) copyWriteOnlyElements(ctx context.Context, src *rRackLink, diags *diag.Diagnostics) {
-	if src == nil {
-		diags.AddError(errProviderBug, "rRackLink.copyWriteOnlyElements: attempt to copy from nil source")
-		return
-	}
-	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
-
-}
-
-func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
+func (o *rackLink) request(ctx context.Context, path path.Path, rack *rackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
 	var err error
 
 	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
@@ -163,7 +157,7 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 	access := rack.accessSwitchByName(ctx, o.TargetSwitchName.ValueString(), diags)
 	if leaf == nil && access == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
-			fmt.Sprintf("target switch %q not found in rack type %q", o.TargetSwitchName, rack.Id))
+			fmt.Sprintf("target switch %q not found in rack type %q", o.TargetSwitchName.ValueString(), rack.Id))
 		return nil
 	}
 	if leaf != nil && access != nil {
@@ -182,7 +176,6 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 	}
 
 	return &goapstra.RackLinkRequest{
-		Label:              o.Name.ValueString(),
 		Tags:               tagIds,
 		LinkPerSwitchCount: linksPerSwitch,
 		LinkSpeed:          goapstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
@@ -193,25 +186,25 @@ func (o *rRackLink) request(ctx context.Context, path path.Path, rack *rRackType
 	}
 }
 
-func newResourceLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Map {
-	if len(in) == 0 {
-		return types.MapNull(types.ObjectType{AttrTypes: rRackLink{}.attrTypes()})
-	}
-
-	links := make(map[string]rRackLink, len(in))
-	for i := range in {
-		var link rRackLink
-		link.loadApiResponse(ctx, &in[i], diags)
-		links[in[i].Label] = link
-	}
-
-	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: rRackLink{}.attrTypes()}, &links)
-	diags.Append(d...)
-
-	return result
+func (o *rackLink) loadApiData(ctx context.Context, in *goapstra.RackLink, diags *diag.Diagnostics) {
+	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
+	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
+	o.Speed = types.StringValue(string(in.LinkSpeed))
+	o.LagMode = stringValueWithNull(ctx, in.LagMode.String(), goapstra.RackLinkLagModeNone.String(), diags)
+	o.SwitchPeer = stringValueWithNull(ctx, in.SwitchPeer.String(), goapstra.RackLinkSwitchPeerNone.String(), diags)
+	o.TagIds = types.SetNull(types.StringType)
+	o.Tags = newTagSet(ctx, in.Tags, diags)
 }
 
-func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) goapstra.RackLinkAttachmentType {
+func (o *rackLink) copyWriteOnlyElements(ctx context.Context, src *rackLink, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "rackLink.copyWriteOnlyElements: attempt to copy from nil source")
+		return
+	}
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+}
+
+func (o *rackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) goapstra.RackLinkAttachmentType {
 	switch upstreamRedundancyMode.String() {
 	case goapstra.LeafRedundancyProtocolNone.String():
 		return goapstra.RackLinkAttachmentTypeSingle
@@ -236,4 +229,18 @@ func (o *rRackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *d
 		return goapstra.RackLinkAttachmentTypeDual
 	}
 	return goapstra.RackLinkAttachmentTypeSingle
+}
+
+func newLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Map {
+	links := make(map[string]rackLink, len(in))
+	for _, link := range in {
+		var l rackLink
+		l.loadApiData(ctx, &link, diags)
+		if diags.HasError() {
+			return types.MapNull(types.ObjectType{AttrTypes: rackLink{}.attrTypes()})
+		}
+		links[link.Label] = l
+	}
+
+	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, links, diags)
 }

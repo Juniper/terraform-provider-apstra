@@ -18,7 +18,7 @@ type esiLagInfo struct {
 	L3PeerLinkSpeed types.String `tfsdk:"l3_peer_link_speed"`
 }
 
-func (o esiLagInfo) schemaAsDataSource() map[string]dataSourceSchema.Attribute {
+func (o esiLagInfo) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"l3_peer_link_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Count of L3 links between ESI peers.",
@@ -53,7 +53,7 @@ func (o esiLagInfo) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *esiLagInfo) loadApiResponse(_ context.Context, in *goapstra.EsiLagInfo, diags *diag.Diagnostics) {
+func (o *esiLagInfo) loadApiData(_ context.Context, in *goapstra.EsiLagInfo, diags *diag.Diagnostics) {
 	o.L3PeerLinkCount = types.Int64Value(int64(in.AccessAccessLinkCount))
 	o.L3PeerLinkSpeed = types.StringValue(string(in.AccessAccessLinkSpeed))
 }
@@ -80,7 +80,7 @@ func newEsiLagInfo(ctx context.Context, in *goapstra.EsiLagInfo, diags *diag.Dia
 	}
 
 	var eli esiLagInfo
-	eli.loadApiResponse(ctx, in, diags)
+	eli.loadApiData(ctx, in, diags)
 	if diags.HasError() {
 		return types.ObjectNull(esiLagInfo{}.attrTypes())
 	}

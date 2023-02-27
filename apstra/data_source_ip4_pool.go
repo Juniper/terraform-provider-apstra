@@ -3,17 +3,14 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceIp4Pool{}
-var _ datasource.DataSourceWithValidateConfig = &dataSourceIp4Pool{}
 
 type dataSourceIp4Pool struct {
 	client *goapstra.Client
@@ -23,86 +20,17 @@ func (o *dataSourceIp4Pool) Metadata(_ context.Context, req datasource.MetadataR
 	resp.TypeName = req.ProviderTypeName + "_ip4_pool"
 }
 
-func (o *dataSourceIp4Pool) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceIp4Pool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceIp4Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a single IPv4 Resource Pool. It is incumbent upon " +
-			"the user to set enough optional criteria to match exactly one IPv4 Resource Pool. Matching zero or more " +
-			"pools will produce an error.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				MarkdownDescription: "ID of the desired IPv4 Resource Pool.",
-				Computed:            true,
-				Optional:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"name": schema.StringAttribute{
-				MarkdownDescription: "(Non unique) name of the ASN resource pool.",
-				Computed:            true,
-				Optional:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"status": schema.StringAttribute{
-				MarkdownDescription: "Status of the IPv4 resource pool.",
-				Computed:            true,
-			},
-			"total": schema.NumberAttribute{
-				MarkdownDescription: "Total number of addresses in the IPv4 resource pool.",
-				Computed:            true,
-			},
-			"used": schema.NumberAttribute{
-				MarkdownDescription: "Count of used addresses in the IPv4 resource pool.",
-				Computed:            true,
-			},
-			"used_percentage": schema.Float64Attribute{
-				MarkdownDescription: "Percent of used addresses in the IPv4 resource pool.",
-				Computed:            true,
-			},
-			"created_at": schema.StringAttribute{
-				MarkdownDescription: "Creation time.",
-				Computed:            true,
-			},
-			"last_modified_at": schema.StringAttribute{
-				MarkdownDescription: "Last modification time.",
-				Computed:            true,
-			},
-			"subnets": schema.SetNestedAttribute{
-				MarkdownDescription: "Detailed info about individual IPv4 CIDR allocations within the IPv4 Resource Pool.",
-				Computed:            true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: dIp4PoolSubnet{}.attributes(),
-				},
-			},
-		},
-	}
-}
-
-func (o *dataSourceIp4Pool) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config dIp4Pool
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if (config.Name.IsNull() && config.Id.IsNull()) || (!config.Name.IsNull() && !config.Id.IsNull()) { // XOR
-		resp.Diagnostics.AddError(
-			"cannot search for ASN Pool",
-			"exactly one of 'name' or 'id' must be specified",
-		)
+		MarkdownDescription: "This data source provides details of a specific IPv4 Pool.\n\n" +
+			"At least one optional attribute is required. " +
+			"It is incumbent upon the user to ensure the lookup criteria matches exactly one IPv4 Pool. " +
+			"Matching zero or more IPv4 Pools will produce an error.",
+		Attributes: ip4Pool{}.dataSourceAttributes(),
 	}
 }
 
@@ -112,108 +40,51 @@ func (o *dataSourceIp4Pool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	var config dIp4Pool
+	var config ip4Pool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var err error
-	var ip4Pool *goapstra.IpPool
+	var apiData *goapstra.IpPool
+	var ace goapstra.ApstraClientErr
+
 	switch {
 	case !config.Name.IsNull():
-		ip4Pool, err = o.client.GetIp4PoolByName(ctx, config.Name.ValueString())
+		apiData, err = o.client.GetIp4PoolByName(ctx, config.Name.ValueString())
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"IPv4 Pool not found",
+				fmt.Sprintf("IPv4 Pool with name %q not found", config.Name.ValueString()))
+			return
+		}
 	case !config.Id.IsNull():
-		ip4Pool, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		apiData, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"IPv4 Pool not found",
+				fmt.Sprintf("IPv4 Pool with ID %q not found", config.Id.ValueString()))
+			return
+		}
 	default:
-		resp.Diagnostics.AddError(errDataSourceReadFail, errInsufficientConfigElements)
+		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
+		return
 	}
-	if err != nil {
-		resp.Diagnostics.AddError("Error retrieving IPv4 pool",
-			fmt.Sprintf("cannot retrieve IPv4 pool - %s", err),
-		)
+	if err != nil { // catch errors other than 404 from above
+		resp.Diagnostics.AddError("Error retrieving IPv4 Pool", err.Error())
 		return
 	}
 
 	// create new state object
-	var state dIp4Pool
-	state.loadApiResponse(ctx, ip4Pool, &resp.Diagnostics)
+	var state ip4Pool
+	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-type dIp4Pool struct {
-	Id             types.String     `tfsdk:"id"`
-	Name           types.String     `tfsdk:"name"`
-	Status         types.String     `tfsdk:"status"`
-	Used           types.Number     `tfsdk:"used"`
-	UsedPercent    types.Float64    `tfsdk:"used_percentage"`
-	CreatedAt      types.String     `tfsdk:"created_at"`
-	LastModifiedAt types.String     `tfsdk:"last_modified_at"`
-	Total          types.Number     `tfsdk:"total"`
-	Subnets        []dIp4PoolSubnet `tfsdk:"subnets"`
-}
-
-func (o *dIp4Pool) loadApiResponse(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
-	subnets := make([]dIp4PoolSubnet, len(in.Subnets))
-	for i, subnet := range in.Subnets {
-		subnets[i].loadApiResponse(ctx, &subnet, diags)
-	}
-
-	o.Id = types.StringValue(string(in.Id))
-	o.Name = types.StringValue(in.DisplayName)
-	o.Status = types.StringValue(in.Status)
-	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
-	o.CreatedAt = types.StringValue(in.CreatedAt.String())
-	o.LastModifiedAt = types.StringValue(in.LastModifiedAt.String())
-	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
-	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
-	o.Subnets = subnets
-}
-
-type dIp4PoolSubnet struct {
-	Status         types.String  `tfsdk:"status"`
-	Network        types.String  `tfsdk:"network"`
-	Total          types.Number  `tfsdk:"total"`
-	Used           types.Number  `tfsdk:"used"`
-	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
-}
-
-func (dIp4PoolSubnet) attributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-
-		"status": schema.StringAttribute{
-			MarkdownDescription: "Status of the IPv4 resource pool.",
-			Computed:            true,
-		},
-		"network": schema.StringAttribute{
-			MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
-			Required:            true,
-		},
-		"total": schema.Int64Attribute{
-			MarkdownDescription: "Total number of addresses in this IPv4 range.",
-			Computed:            true,
-		},
-		"used": schema.Int64Attribute{
-			MarkdownDescription: "Count of used addresses in this IPv4 range.",
-			Computed:            true,
-		},
-		"used_percentage": schema.Float64Attribute{
-			MarkdownDescription: "Percent of used addresses in this IPv4 range.",
-			Computed:            true,
-		},
-	}
-
-}
-
-func (o *dIp4PoolSubnet) loadApiResponse(_ context.Context, in *goapstra.IpSubnet, _ *diag.Diagnostics) {
-	o.Status = types.StringValue(in.Status)
-	o.Network = types.StringValue(in.Network.String())
-	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
-	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
-	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }

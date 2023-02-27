@@ -3,7 +3,6 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -19,35 +18,24 @@ func (o *dataSourceAgentProfiles) Metadata(_ context.Context, req datasource.Met
 	resp.TypeName = req.ProviderTypeName + "_agent_profiles"
 }
 
-func (o *dataSourceAgentProfiles) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errDataSourceConfigureProviderDataDetail,
-			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *dataSourceAgentProfiles) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource returns the ID numbers of each Agent Profile.",
+		MarkdownDescription: "This data source returns the ID numbers of all Agent Profiles.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
+				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
-				MarkdownDescription: "A set of Apstra ID numbers of each Agent Profile.",
 				ElementType:         types.StringType,
 			},
 		},
 	}
 }
 
-func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceAgentProfiles) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
@@ -55,10 +43,7 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 
 	ids, err := o.client.ListAgentProfileIds(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error retrieving Agent Profile IDs",
-			fmt.Sprintf("error retrieving Agent Profile IDs - %s", err),
-		)
+		resp.Diagnostics.AddError("Error retrieving Agent Profile IDs", err.Error())
 		return
 	}
 
