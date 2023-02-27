@@ -15,33 +15,33 @@ import (
 var _ resource.ResourceWithConfigure = &resourceAsnPool{}
 var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
 
-type resourceIp4Pool struct {
+type resourceIpv4Pool struct {
 	client *goapstra.Client
 }
 
-func (o *resourceIp4Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_ip4_pool"
+func (o *resourceIpv4Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_ipv4_pool"
 }
 
-func (o *resourceIp4Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceIpv4Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = resourceGetClient(ctx, req, resp)
 }
 
-func (o *resourceIp4Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceIpv4Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IPv4 resource pool",
-		Attributes:          ip4Pool{}.resourceAttributesWrite(),
+		Attributes:          ipv4Pool{}.resourceAttributesWrite(),
 	}
 }
 
-func (o *resourceIp4Pool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config ip4Pool
+func (o *resourceIpv4Pool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config ipv4Pool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	subnets := make([]ip4PoolSubnet, len(config.Subnets.Elements()))
+	subnets := make([]ipv4PoolSubnet, len(config.Subnets.Elements()))
 	d := config.Subnets.ElementsAs(ctx, &subnets, false)
 	resp.Diagnostics.Append(d...)
 	if resp.Diagnostics.HasError() {
@@ -51,28 +51,28 @@ func (o *resourceIp4Pool) ValidateConfig(ctx context.Context, req resource.Valid
 	var jNets []*net.IPNet // Each subnet will be checked for overlap with members of jNets, then appended to jNets
 	for i := range subnets {
 		// setVal is used to path AttributeErrors correctly
-		setVal, d := types.ObjectValueFrom(ctx, ip4PoolSubnet{}.attrTypes(), &subnets[i])
+		setVal, d := types.ObjectValueFrom(ctx, ipv4PoolSubnet{}.attrTypes(), &subnets[i])
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
 		// parse the subnet string
-		_, iNet, err := net.ParseCIDR(subnets[i].CIDR.ValueString())
+		_, iNet, err := net.ParseCIDR(subnets[i].Network.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("subnets").AtSetValue(setVal),
-				"failure parsing cidr notation", fmt.Sprintf("error parsing %q - %s", subnets[i], err.Error()))
+				"failure parsing CIDR notation", fmt.Sprintf("error parsing %q - %s", subnets[i], err.Error()))
 			return
 		}
 
 		// insist the user give us the all-zeros host address: 192.168.1.0/24 not 192.168.1.50/24
-		if iNet.String() != subnets[i].CIDR.ValueString() {
+		if iNet.String() != subnets[i].Network.ValueString() {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("subnets").AtSetValue(setVal),
 				errInvalidConfig,
 				fmt.Sprintf("%q doesn't specify a network base address. Did you mean %q?",
-					subnets[i].CIDR.ValueString(), iNet.String()),
+					subnets[i].Network.ValueString(), iNet.String()),
 			)
 		}
 
@@ -92,14 +92,14 @@ func (o *resourceIp4Pool) ValidateConfig(ctx context.Context, req resource.Valid
 	}
 }
 
-func (o *resourceIp4Pool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceIpv4Pool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
 
 	// Retrieve values from plan
-	var plan ip4Pool
+	var plan ipv4Pool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -132,7 +132,7 @@ func (o *resourceIp4Pool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// create state object
-	var state ip4Pool
+	var state ipv4Pool
 	state.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -142,20 +142,20 @@ func (o *resourceIp4Pool) Create(ctx context.Context, req resource.CreateRequest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceIp4Pool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
 		return
 	}
 
 	// Get current state
-	var state ip4Pool
+	var state ipv4Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get Ip4 pool from API and then update what is in state from what the API returns
+	// Get Ipv4 pool from API and then update what is in state from what the API returns
 	p, err := o.client.GetIp4Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -170,7 +170,7 @@ func (o *resourceIp4Pool) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// create new state object
-	var newState ip4Pool
+	var newState ipv4Pool
 	newState.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -181,14 +181,14 @@ func (o *resourceIp4Pool) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 // Update resource
-func (o *resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
 		return
 	}
 
 	// Get plan values
-	var plan ip4Pool
+	var plan ipv4Pool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -226,7 +226,7 @@ func (o *resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// create new state object
-	var state ip4Pool
+	var state ipv4Pool
 	state.loadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -237,13 +237,13 @@ func (o *resourceIp4Pool) Update(ctx context.Context, req resource.UpdateRequest
 }
 
 // Delete resource
-func (o *resourceIp4Pool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceIpv4Pool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
 
-	var state ip4Pool
+	var state ipv4Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

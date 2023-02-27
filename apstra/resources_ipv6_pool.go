@@ -15,7 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ip4Pool struct {
+type ipv6Pool struct {
 	Id          types.String  `tfsdk:"id"`
 	Name        types.String  `tfsdk:"name"`
 	Subnets     types.Set     `tfsdk:"subnets"`
@@ -25,10 +25,10 @@ type ip4Pool struct {
 	UsedPercent types.Float64 `tfsdk:"used_percentage"`
 }
 
-func (o ip4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ipv6Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the desired IPv4 Pool.",
+			MarkdownDescription: "ID of the desired IPv6 Pool.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -40,39 +40,39 @@ func (o ip4Pool) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "(Non unique) name of the IPv4 pool.",
+			MarkdownDescription: "(Non unique) name of the IPv6 pool.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"subnets": dataSourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Detailed info about individual IPv4 CIDR allocations within the IPv4 Pool.",
+			MarkdownDescription: "Detailed info about individual IPv6 CIDR allocations within the IPv6 Pool.",
 			Computed:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: ip4PoolSubnet{}.dataSourceAttributes(),
+				Attributes: ipv6PoolSubnet{}.dataSourceAttributes(),
 			},
 		},
 		"total": dataSourceSchema.NumberAttribute{
-			MarkdownDescription: "Total number of addresses in the IPv4 pool.",
+			MarkdownDescription: "Total number of addresses in the IPv6 pool.",
 			Computed:            true,
 		},
 		"status": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the IPv4 pool.",
+			MarkdownDescription: "Status of the IPv6 pool.",
 			Computed:            true,
 		},
 		"used": dataSourceSchema.NumberAttribute{
-			MarkdownDescription: "Count of used addresses in the IPv4 pool.",
+			MarkdownDescription: "Count of used addresses in the IPv6 pool.",
 			Computed:            true,
 		},
 		"used_percentage": dataSourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used addresses in the IPv4 pool.",
+			MarkdownDescription: "Percent of used addresses in the IPv6 pool.",
 			Computed:            true,
 		},
 	}
 }
 
-func (o ip4Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o ipv6Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID number of the pool",
@@ -85,37 +85,37 @@ func (o ip4Pool) resourceAttributesWrite() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"subnets": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Detailed info about individual IPv4 CIDR allocations within the IPv4 Pool.",
+			MarkdownDescription: "Detailed info about individual IPv6 CIDR allocations within the IPv6 Pool.",
 			Required:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: ip4PoolSubnet{}.resourceAttributesWrite(),
+				Attributes: ipv6PoolSubnet{}.resourceAttributesWrite(),
 			},
 		},
 		"total": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Total number of addresses in the IPv4 pool.",
+			MarkdownDescription: "Total number of addresses in the IPv6 pool.",
 			Computed:            true,
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the IPv4 pool. " +
+			MarkdownDescription: "Status of the IPv6 pool. " +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 		"used": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Count of used addresses in the IPv4 pool. " +
+			MarkdownDescription: "Count of used addresses in the IPv6 pool. " +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used addresses in the IPv4 pool. " +
+			MarkdownDescription: "Percent of used addresses in the IPv6 pool. " +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 	}
 }
 
-func (o *ip4Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
-	subnets := make([]ip4PoolSubnet, len(in.Subnets))
+func (o *ipv6Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
+	subnets := make([]ipv6PoolSubnet, len(in.Subnets))
 	for i, s := range in.Subnets {
 		subnets[i].loadApiData(ctx, &s, diags)
 		if diags.HasError() {
@@ -129,16 +129,16 @@ func (o *ip4Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *d
 	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
 	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
-	o.Subnets = setValueOrNull(ctx, types.ObjectType{AttrTypes: ip4PoolSubnet{}.attrTypes()}, subnets, diags)
+	o.Subnets = setValueOrNull(ctx, types.ObjectType{AttrTypes: ipv6PoolSubnet{}.attrTypes()}, subnets, diags)
 }
 
-func (o *ip4Pool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.NewIpPoolRequest {
+func (o *ipv6Pool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.NewIpPoolRequest {
 	response := goapstra.NewIpPoolRequest{
 		DisplayName: o.Name.ValueString(),
 		Subnets:     make([]goapstra.NewIpSubnet, len(o.Subnets.Elements())),
 	}
 
-	subnets := make([]ip4PoolSubnet, len(o.Subnets.Elements()))
+	subnets := make([]ipv6PoolSubnet, len(o.Subnets.Elements()))
 	d := o.Subnets.ElementsAs(ctx, &subnets, false)
 	diags.Append(d...)
 	if diags.HasError() {

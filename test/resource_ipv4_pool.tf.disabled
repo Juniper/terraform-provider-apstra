@@ -1,4 +1,4 @@
-#resource "apstra_ip4_pool" "r" {
+#resource "apstra_ipv4_pool" "r" {
 #  name = "tf_pool"
 #  subnets = [
 #    "1.0.0.0/8",
