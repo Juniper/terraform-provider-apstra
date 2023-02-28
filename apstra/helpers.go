@@ -125,6 +125,18 @@ func setValueOrNull[T any](ctx context.Context, elementType attr.Type, elements 
 	return result
 }
 
+// objectValueOrNull returns a types.Object based on the supplied attributes. If the
+// supplied attributes is nil, the returned types.Object will be flagged as null.
+func objectValueOrNull(ctx context.Context, attrTypes map[string]attr.Type, attributes any, diags *diag.Diagnostics) types.Object {
+	if attributes == nil {
+		return types.ObjectNull(attrTypes)
+	}
+
+	result, d := types.ObjectValueFrom(ctx, attrTypes, attributes)
+	diags.Append(d...)
+	return result
+}
+
 func asnAllocationSchemeFromString(in string, diags *diag.Diagnostics) goapstra.AsnAllocationScheme {
 	switch in {
 	case asnAllocationSingle:
@@ -171,4 +183,12 @@ func overlayControlProtocolToString(in goapstra.OverlayControlProtocol, diags *d
 		diags.AddError(errProviderBug, fmt.Sprintf("unknown Overlay Control Protocol: %d", in))
 		return ""
 	}
+}
+
+func translateAsnAllocationSchemeFromWebUi(in string) string {
+	switch in {
+	case asnAllocationUnique:
+		return goapstra.AsnAllocationSchemeDistinct.String()
+	}
+	return in
 }

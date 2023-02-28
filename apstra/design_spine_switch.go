@@ -111,6 +111,23 @@ func (o spine) attrTypes() map[string]attr.Type {
 	}
 }
 
+func (o *spine) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.TemplateElementSpineRequest {
+	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	d := o.TagIds.ElementsAs(ctx, &tagIds, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &goapstra.TemplateElementSpineRequest{
+		Count:                  int(o.Count.ValueInt64()),
+		LinkPerSuperspineSpeed: goapstra.LogicalDevicePortSpeed(o.SuperSpineLinkSpeed.ValueString()),
+		LogicalDevice:          goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LinkPerSuperspineCount: int(o.SuperSpineLinkCount.ValueInt64()),
+		Tags:                   tagIds,
+	}
+}
+
 func (o *spine) loadApiData(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
 	o.LogicalDevice = newLogicalDeviceObject(ctx, &in.LogicalDevice, diags)
 	o.Count = types.Int64Value(int64(in.Count))
@@ -125,6 +142,14 @@ func (o *spine) loadApiData(ctx context.Context, in *goapstra.Spine, diags *diag
 
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
+}
+
+func (o *spine) copyWriteOnlyElements(ctx context.Context, src *spine, diags *diag.Diagnostics) {
+	if src == nil {
+		diags.AddError(errProviderBug, "spine.copyWriteOnlyElements: attempt to copy from nil source")
+	}
+	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
+	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func newDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {

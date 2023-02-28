@@ -151,6 +151,51 @@ func (o genericSystem) resourceAttributes() map[string]resourceSchema.Attribute 
 	}
 }
 
+func (o genericSystem) resourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"port_channel_id_min": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Computed:            true,
+		},
+		"port_channel_id_max": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
+			Computed:            true,
+		},
+		"count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Generic Systems of this type.",
+			Computed:            true,
+		},
+		"links": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch.",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rackLink{}.resourceAttributes(),
+			},
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in nested contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Generic System",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
+			},
+		},
+	}
+}
+
 func (o genericSystem) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,

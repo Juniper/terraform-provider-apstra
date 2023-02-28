@@ -130,10 +130,57 @@ func (o accessSwitch) resourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
-			ElementType:         types.StringType,
-			Optional:            true,
 			MarkdownDescription: "Set of Tag IDs to be applied to this Access Switch",
+			Optional:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			ElementType:         types.StringType,
+		},
+		"tags": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: tag{}.resourceAttributesNested(),
+			},
+		},
+	}
+}
+
+func (o accessSwitch) resourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"logical_device_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
+			Computed:            true,
+		},
+		"logical_device": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
+			Computed:            true,
+			Attributes:          logicalDevice{}.resourceAttributesNested(),
+		},
+		"esi_lag_info": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: fmt.Sprintf("Defines connectivity between ESI LAG peers when "+
+				"`redundancy_protocol` is set to `%s`.", goapstra.AccessRedundancyProtocolEsi.String()),
+			Computed:   true,
+			Attributes: esiLagInfo{}.schemaAsResource(),
+		},
+		"redundancy_protocol": resourceSchema.StringAttribute{
+			MarkdownDescription: "Indicates whether the switch is a redundant pair.",
+			Computed:            true,
+		},
+		"count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of Access Switches of this type.",
+			Computed:            true,
+		},
+		"links": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Each Access Switch is required to have at least one Link to a Leaf Switch.",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: rackLink{}.resourceAttributesNested(),
+			},
+		},
+		"tag_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "IDs will always be `<null>` in nested contexts.",
+			Computed:            true,
+			ElementType:         types.StringType,
 		},
 		"tags": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Set of Tags (Name + Description) applied to this Access Switch",

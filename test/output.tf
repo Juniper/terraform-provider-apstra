@@ -27,4 +27,5 @@
 #output "r_tag"                          { value = apstra_tag.r }
 #output "r_interface_map"                { value = apstra_interface_map.r }
 #output "r_rack_type"                    { value = apstra_rack_type.r }
+#output "r_template_rack_based"          { value = apstra_template_rack_based.r }
 #output "r_vni_pool"                     { value = apstra_vni_pool.r }
