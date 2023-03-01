@@ -137,18 +137,6 @@ func objectValueOrNull(ctx context.Context, attrTypes map[string]attr.Type, attr
 	return result
 }
 
-func asnAllocationSchemeFromString(in string, diags *diag.Diagnostics) goapstra.AsnAllocationScheme {
-	switch in {
-	case asnAllocationSingle:
-		return goapstra.AsnAllocationSchemeSingle
-	case asnAllocationUnique:
-		return goapstra.AsnAllocationSchemeDistinct
-	default:
-		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN allocation scheme: %q", in))
-		return -1
-	}
-}
-
 func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Diagnostics) string {
 	switch in {
 	case goapstra.AsnAllocationSchemeSingle:
