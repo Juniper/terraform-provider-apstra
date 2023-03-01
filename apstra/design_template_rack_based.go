@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type templateRackBased struct {
@@ -301,7 +302,7 @@ func (o *templateRackBased) copyWriteOnlyElements(ctx context.Context, src *temp
 	dstSpine.copyWriteOnlyElements(ctx, srcSpine, diags)
 
 	// repackage the destination spine in o
-	o.Spine = objectValueOrNull(ctx, spine{}.attrTypes(), dstSpine, diags)
+	o.Spine = utils.ObjectValueOrNull(ctx, spine{}.attrTypes(), dstSpine, diags)
 }
 
 // 	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)

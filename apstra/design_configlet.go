@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type configlet struct {
@@ -67,6 +68,6 @@ func (o *configlet) loadApiData(ctx context.Context, in *goapstra.ConfigletData,
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
-	o.RefArchs = setValueOrNull(ctx, types.StringType, refArchs, diags)
-	o.Generators = listValueOrNull(ctx, types.ObjectType{AttrTypes: configletGenerator{}.attrTypes()}, configletGenerators, diags)
+	o.RefArchs = utils.SetValueOrNull(ctx, types.StringType, refArchs, diags)
+	o.Generators = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: configletGenerator{}.attrTypes()}, configletGenerators, diags)
 }

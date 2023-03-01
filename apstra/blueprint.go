@@ -245,7 +245,7 @@ func (o *blueprint) validateTemplateId(ctx context.Context, client *goapstra.Cli
 //		switchMap[switchLabel] = plannedSwitch
 //	}
 //
-//	o.Switches = mapValueOrNull(ctx, types.ObjectType{AttrTypes: blueprintSwitch{}.attrTypes()}, switchMap, diags)
+//	o.Switches = MapValueOrNull(ctx, types.ObjectType{AttrTypes: blueprintSwitch{}.attrTypes()}, switchMap, diags)
 //}
 //
 //// extractResourcePoolElementByTfsdkTag returns the value (types.Set)

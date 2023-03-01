@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type ipv4Pool struct {
@@ -129,7 +130,7 @@ func (o *ipv4Pool) loadApiData(ctx context.Context, in *goapstra.IpPool, diags *
 	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
 	o.Used = types.NumberValue(bigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(bigIntToBigFloat(&in.Total))
-	o.Subnets = setValueOrNull(ctx, types.ObjectType{AttrTypes: ipv4PoolSubnet{}.attrTypes()}, subnets, diags)
+	o.Subnets = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: ipv4PoolSubnet{}.attrTypes()}, subnets, diags)
 }
 
 func (o *ipv4Pool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.NewIpPoolRequest {

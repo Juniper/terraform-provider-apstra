@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type logicalDevicePanel struct {
@@ -207,5 +208,5 @@ func newLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDeviceP
 		}
 	}
 
-	return listValueOrNull(ctx, types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}, panels, diags)
+	return utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}, panels, diags)
 }

@@ -10,6 +10,7 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type spine struct {
@@ -149,7 +150,7 @@ func (o *spine) copyWriteOnlyElements(ctx context.Context, src *spine, diags *di
 		diags.AddError(errProviderBug, "spine.copyWriteOnlyElements: attempt to copy from nil source")
 	}
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func newDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {

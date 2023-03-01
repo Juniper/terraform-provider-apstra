@@ -7,6 +7,7 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type interfaceMapInterface struct {
@@ -71,7 +72,7 @@ func (o *interfaceMapInterface) loadApiData(ctx context.Context, in *goapstra.In
 	mapping.loadApiData(ctx, &in.Mapping, diags)
 
 	o.Name = types.StringValue(in.Name)
-	o.Roles = setValueOrNull(ctx, types.StringType, in.Roles.Strings(), diags)
+	o.Roles = utils.SetValueOrNull(ctx, types.StringType, in.Roles.Strings(), diags)
 	o.Mapping = newInterfaceMapMappingObject(ctx, &in.Mapping, diags)
 	o.Active = types.BoolValue(bool(in.ActiveState))
 	o.Position = types.Int64Value(int64(in.Position))
@@ -87,5 +88,5 @@ func newInterfaceMapInterfaceSet(ctx context.Context, in []goapstra.InterfaceMap
 			return types.SetNull(types.ObjectType{AttrTypes: interfaceMapInterface{}.attrTypes()})
 		}
 	}
-	return setValueOrNull(ctx, types.ObjectType{AttrTypes: interfaceMapInterface{}.attrTypes()}, interfaces, diags)
+	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: interfaceMapInterface{}.attrTypes()}, interfaces, diags)
 }

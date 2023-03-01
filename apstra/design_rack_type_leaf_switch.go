@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 func validateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
@@ -303,7 +304,7 @@ func (o *leafSwitch) copyWriteOnlyElements(ctx context.Context, src *leafSwitch,
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func newLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
@@ -317,7 +318,7 @@ func newLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, 
 		}
 	}
 
-	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, leafSwitches, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, leafSwitches, diags)
 }
 
 // leafRedundancyModes returns permitted fabric_connectivity_design mode strings

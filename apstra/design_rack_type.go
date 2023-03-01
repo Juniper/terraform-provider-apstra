@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type rackType struct {
@@ -244,7 +245,7 @@ func (o *rackType) loadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
-	o.Description = stringValueOrNull(ctx, in.Description, diags)
+	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.FabricConnectivityDesign.String())
 	o.LeafSwitches = newLeafSwitchMap(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
 	o.AccessSwitches = newAccessSwitchMap(ctx, in.AccessSwitches, diags)
@@ -517,9 +518,9 @@ func (o *rackType) copyWriteOnlyElements(ctx context.Context, src *rackType, dia
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	leafSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, dstLeafSwitches, diags)
-	accessSwitchMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, dstAccessSwitches, diags)
-	genericSystemMap := mapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, dstGenericSystems, diags)
+	leafSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: leafSwitch{}.attrTypes()}, dstLeafSwitches, diags)
+	accessSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, dstAccessSwitches, diags)
+	genericSystemMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, dstGenericSystems, diags)
 	if diags.HasError() {
 		return
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 func validateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
@@ -289,7 +290,7 @@ func (o *genericSystem) copyWriteOnlyElements(ctx context.Context, src *genericS
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
 	var d diag.Diagnostics
 
@@ -314,7 +315,7 @@ func (o *genericSystem) copyWriteOnlyElements(ctx context.Context, src *genericS
 		}
 	}
 
-	o.Links = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, dstLinks, diags)
+	o.Links = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, dstLinks, diags)
 	if diags.HasError() {
 		return
 	}
@@ -332,5 +333,5 @@ func newGenericSystemMap(ctx context.Context, in []goapstra.RackElementGenericSy
 		}
 	}
 
-	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, genericSystems, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: genericSystem{}.attrTypes()}, genericSystems, diags)
 }

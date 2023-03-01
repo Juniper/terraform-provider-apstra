@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 func validateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
@@ -259,7 +260,7 @@ func (o *accessSwitch) loadApiData(ctx context.Context, in *goapstra.RackElement
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = newLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.EsiLagInfo = newEsiLagInfo(ctx, in.EsiLagInfo, diags)
-	o.RedundancyProtocol = stringValueWithNull(ctx, in.RedundancyProtocol.String(), goapstra.AccessRedundancyProtocolNone.String(), diags)
+	o.RedundancyProtocol = utils.StringValueWithNull(ctx, in.RedundancyProtocol.String(), goapstra.AccessRedundancyProtocolNone.String(), diags)
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = newLinkMap(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
@@ -288,7 +289,7 @@ func (o *accessSwitch) copyWriteOnlyElements(ctx context.Context, src *accessSwi
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
 	var d diag.Diagnostics
 
@@ -313,7 +314,7 @@ func (o *accessSwitch) copyWriteOnlyElements(ctx context.Context, src *accessSwi
 		}
 	}
 
-	o.Links = mapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, dstLinks, diags)
+	o.Links = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, dstLinks, diags)
 	if diags.HasError() {
 		return
 	}
@@ -330,5 +331,5 @@ func newAccessSwitchMap(ctx context.Context, in []goapstra.RackElementAccessSwit
 		}
 	}
 
-	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, accessSwitches, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: accessSwitch{}.attrTypes()}, accessSwitches, diags)
 }

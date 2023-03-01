@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type rackLink struct {
@@ -227,8 +228,8 @@ func (o *rackLink) loadApiData(ctx context.Context, in *goapstra.RackLink, diags
 	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
 	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
 	o.Speed = types.StringValue(string(in.LinkSpeed))
-	o.LagMode = stringValueWithNull(ctx, in.LagMode.String(), goapstra.RackLinkLagModeNone.String(), diags)
-	o.SwitchPeer = stringValueWithNull(ctx, in.SwitchPeer.String(), goapstra.RackLinkSwitchPeerNone.String(), diags)
+	o.LagMode = utils.StringValueWithNull(ctx, in.LagMode.String(), goapstra.RackLinkLagModeNone.String(), diags)
+	o.SwitchPeer = utils.StringValueWithNull(ctx, in.SwitchPeer.String(), goapstra.RackLinkSwitchPeerNone.String(), diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = newTagSet(ctx, in.Tags, diags)
 }
@@ -238,7 +239,7 @@ func (o *rackLink) copyWriteOnlyElements(ctx context.Context, src *rackLink, dia
 		diags.AddError(errProviderBug, "rackLink.copyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
-	o.TagIds = setValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func (o *rackLink) linkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) goapstra.RackLinkAttachmentType {
@@ -279,5 +280,5 @@ func newLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnos
 		links[link.Label] = l
 	}
 
-	return mapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, links, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: rackLink{}.attrTypes()}, links, diags)
 }

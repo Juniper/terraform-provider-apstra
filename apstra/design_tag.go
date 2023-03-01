@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type tag struct {
@@ -137,5 +138,5 @@ func newTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Dia
 		tags[i].loadApiData(ctx, &t, diags)
 	}
 
-	return setValueOrNull(ctx, types.ObjectType{AttrTypes: tag{}.attrTypes()}, tags, diags)
+	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: tag{}.attrTypes()}, tags, diags)
 }

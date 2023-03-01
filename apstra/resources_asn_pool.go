@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type asnPool struct {
@@ -129,7 +130,7 @@ func (o *asnPool) loadApiData(ctx context.Context, in *goapstra.AsnPool, diags *
 	o.Used = types.Int64Value(int64(in.Used))
 	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
 	o.Total = types.Int64Value(int64(in.Total))
-	o.Ranges = setValueOrNull(ctx, types.ObjectType{AttrTypes: asnPoolRange{}.attrTypes()}, ranges, diags)
+	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: asnPoolRange{}.attrTypes()}, ranges, diags)
 }
 
 func (o *asnPool) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AsnPoolRequest {
