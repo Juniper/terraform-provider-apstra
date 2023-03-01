@@ -161,18 +161,6 @@ func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Di
 	}
 }
 
-func overlayControlProtocolFromString(in string, diags *diag.Diagnostics) goapstra.OverlayControlProtocol {
-	switch in {
-	case overlayControlProtocolEvpn:
-		return goapstra.OverlayControlProtocolEvpn
-	case overlayControlProtocolStatic:
-		return goapstra.OverlayControlProtocolNone
-	default:
-		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN Allocation Scheme: %q", in))
-		return -1
-	}
-}
-
 func overlayControlProtocolToString(in goapstra.OverlayControlProtocol, diags *diag.Diagnostics) string {
 	switch in {
 	case goapstra.OverlayControlProtocolEvpn:
