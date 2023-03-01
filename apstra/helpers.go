@@ -168,3 +168,44 @@ func translateAsnAllocationSchemeFromWebUi(in string) string {
 	}
 	return in
 }
+
+//// getAllSystemsInfo returns map[string]goapstra.ManagedSystemInfo keyed by
+//// device_key (switch serial number)
+//func getAllSystemsInfo(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) map[string]goapstra.ManagedSystemInfo {
+//	// pull SystemInfo for all switches managed by apstra
+//	asi, err := client.GetAllSystemsInfo(ctx) // pull all managed systems info from Apstra
+//	if err != nil {
+//		diags.AddError(errApiData, fmt.Sprintf("GetAllSystemsInfo error - %s", err.Error()))
+//		return nil
+//	}
+//
+//	// organize the []ManagedSystemInfo into a map by device key (serial number)
+//	deviceKeyToSystemInfo := make(map[string]goapstra.ManagedSystemInfo, len(asi))
+//	for i := range asi {
+//		deviceKeyToSystemInfo[asi[i].DeviceKey] = asi[i]
+//	}
+//	return deviceKeyToSystemInfo
+//}
+//
+//func sliceAttrValueToSliceObjectId(in []attr.Value) []goapstra.ObjectId {
+//	result := make([]goapstra.ObjectId, len(in))
+//	stringSlice := sliceAttrValueToSliceString(in)
+//	for i, s := range stringSlice {
+//		result[i] = goapstra.ObjectId(s)
+//	}
+//	return result
+//}
+//
+//func newRga(name goapstra.ResourceGroupName, poolIds []goapstra.ObjectId, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
+//	poolIds := make([]goapstra.ObjectId, 0)
+//	if !set.IsNull() {
+//		poolIds = sliceAttrValueToSliceObjectId(set.Elems)
+//	}
+//	return &goapstra.ResourceGroupAllocation{
+//		ResourceGroup: goapstra.ResourceGroup{
+//			Type: resourceTypeNameFromResourceGroupName(name, diags),
+//			Name: name,
+//		},
+//		PoolIds: poolIds,
+//	}
+//}

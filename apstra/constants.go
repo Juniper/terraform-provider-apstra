@@ -3,6 +3,7 @@ package apstra
 const (
 	errApiCompatibility                       = "Apstra API version incompatibility"
 	errApiData                                = "API produced unexpected result"
+	errApiError                               = "API response included an error"
 	errDataSourceConfigureProviderDataSummary = "Unexpected Data Source Configure Type."
 	errDataSourceConfigureProviderDataDetail  = "Expected '%T', got: '%T'. Please report this issue to the provider maintainers."
 	errResourceConfigureProviderDataSummary   = "Unexpected Resource Configure Type."

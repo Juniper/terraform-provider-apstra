@@ -10,37 +10,37 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceTwoStageL3ClosBlueprint{}
+var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
 
-type dataSourceTwoStageL3ClosBlueprint struct {
+type dataSourceDatacenterBlueprint struct {
 	client *goapstra.Client
 }
 
-func (o *dataSourceTwoStageL3ClosBlueprint) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_status"
+func (o *dataSourceDatacenterBlueprint) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint"
 }
 
-func (o *dataSourceTwoStageL3ClosBlueprint) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceDatacenterBlueprint) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = dataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceTwoStageL3ClosBlueprint) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceDatacenterBlueprint) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source looks up summary details of a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required. " +
 			"It is incumbent upon the user to ensure the lookup criteria matches exactly one Datacenter Blueprint. " +
 			"Matching zero or more Datacenter Blueprints will produce an error.",
-		Attributes: dcBlueprintStatus{}.dataSourceAttributes(),
+		Attributes: blueprint{}.dataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceTwoStageL3ClosBlueprint) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
 
-	var config dcBlueprintStatus
+	var config blueprint
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -79,7 +79,7 @@ func (o *dataSourceTwoStageL3ClosBlueprint) Read(ctx context.Context, req dataso
 	}
 
 	// create new state object
-	var state dcBlueprintStatus
+	var state blueprint
 	state.loadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
