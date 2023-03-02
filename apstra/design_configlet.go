@@ -7,6 +7,7 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -47,6 +48,31 @@ func (o configlet) dataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: configletGenerator{}.dataSourceAttributes(),
+			},
+		},
+	}
+}
+
+func (o configlet) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name`is omitted.",
+			Computed:            true,
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id`is omitted.",
+			Required:            true,
+		},
+		"ref_archs": resourceSchema.SetAttribute{
+			MarkdownDescription: "List of architectures",
+			Required:            true,
+			ElementType:         types.StringType,
+		},
+		"generators": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Generators organized by Network OS",
+			Required:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: configletGenerator{}.resourceAttributes(),
 			},
 		},
 	}

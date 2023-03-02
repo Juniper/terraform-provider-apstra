@@ -4,7 +4,7 @@
 #output "d_asn_pools"                    { value = data.apstra_asn_pools.d }
 #output "d_blueprints"                   { value = data.apstra_blueprints.d }
 #output "d_datacenter_blueprint_status"  { value = data.apstra_datacenter_blueprint_status.d }
-#output "d_configlet"                    { value = data.apstra_configlet.d }
+output "d_configlet"                    { value = data.apstra_configlet.d }
 #output "d_ipv4_pool"                    { value = data.apstra_ipv4_pool.d }
 #output "d_ipv4_pools"                   { value = data.apstra_ipv4_pools.d }
 #output "d_ipv6_pool"                    { value = data.apstra_ipv6_pool.d }

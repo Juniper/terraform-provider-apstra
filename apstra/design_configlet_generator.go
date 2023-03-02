@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -39,6 +40,31 @@ func (o configletGenerator) dataSourceAttributes() map[string]dataSourceSchema.A
 		"filename": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "FileName",
 			Computed:            true,
+		},
+	}
+}
+
+func (o configletGenerator) resourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"config_style": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(""),
+			Required:            true,
+		},
+		"section": resourceSchema.StringAttribute{
+			MarkdownDescription: "Config Section",
+			Required:            true,
+		},
+		"template_text": resourceSchema.StringAttribute{
+			MarkdownDescription: "Template Text",
+			Required:            true,
+		},
+		"negation_template_text": resourceSchema.StringAttribute{
+			MarkdownDescription: "Negation Template Text",
+			Optional:            true,
+		},
+		"filename": resourceSchema.StringAttribute{
+			MarkdownDescription: "FileName",
+			Optional:            true,
 		},
 	}
 }
