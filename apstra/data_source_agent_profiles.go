@@ -19,7 +19,7 @@ func (o *dataSourceAgentProfiles) Metadata(_ context.Context, req datasource.Met
 }
 
 func (o *dataSourceAgentProfiles) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

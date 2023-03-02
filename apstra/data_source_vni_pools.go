@@ -19,7 +19,7 @@ func (o *dataSourceVniPools) Metadata(_ context.Context, req datasource.Metadata
 }
 
 func (o *dataSourceVniPools) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceVniPools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {

@@ -1,20 +1,10 @@
 package apstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/mitchellh/go-homedir"
-	"math/big"
 	"os"
 	"path/filepath"
-)
-
-const (
-	asnAllocationSingle          = "single"
-	asnAllocationUnique          = "unique"
-	overlayControlProtocolEvpn   = "evpn"
-	overlayControlProtocolStatic = "static"
 )
 
 func newKeyLogWriter(fileName string) (*os.File, error) {
@@ -28,12 +18,6 @@ func newKeyLogWriter(fileName string) (*os.File, error) {
 		return nil, err
 	}
 	return os.OpenFile(absPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-}
-
-func bigIntToBigFloat(in *big.Int) *big.Float {
-	bigval := new(big.Float)
-	bigval.SetInt(in)
-	return bigval
 }
 
 // sliceWithoutString returns a copy of in with all occurrences of t removed.
@@ -66,41 +50,9 @@ func sliceWithoutInt(in []int, t int) ([]int, int) {
 	return result[:resultIdx], len(in) - resultIdx
 }
 
-func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Diagnostics) string {
-	switch in {
-	case goapstra.AsnAllocationSchemeSingle:
-		return asnAllocationSingle
-	case goapstra.AsnAllocationSchemeDistinct:
-		return asnAllocationUnique
-	default:
-		diags.AddError(errProviderBug, fmt.Sprintf("unknown ASN allocation scheme: %d", in))
-		return ""
-	}
-}
-
-func overlayControlProtocolToString(in goapstra.OverlayControlProtocol, diags *diag.Diagnostics) string {
-	switch in {
-	case goapstra.OverlayControlProtocolEvpn:
-		return overlayControlProtocolEvpn
-	case goapstra.OverlayControlProtocolNone:
-		return overlayControlProtocolStatic
-	default:
-		diags.AddError(errProviderBug, fmt.Sprintf("unknown Overlay Control Protocol: %d", in))
-		return ""
-	}
-}
-
-func translateAsnAllocationSchemeFromWebUi(in string) string {
-	switch in {
-	case asnAllocationUnique:
-		return goapstra.AsnAllocationSchemeDistinct.String()
-	}
-	return in
-}
-
 //// getAllSystemsInfo returns map[string]goapstra.ManagedSystemInfo keyed by
 //// device_key (switch serial number)
-//func getAllSystemsInfo(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) map[string]goapstra.ManagedSystemInfo {
+//func getAllSystemsInfo(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) map[string]goapstra.ManagedSystemInfo {
 //	// pull SystemInfo for all switches managed by apstra
 //	asi, err := client.GetAllSystemsInfo(ctx) // pull all managed systems info from Apstra
 //	if err != nil {

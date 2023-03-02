@@ -34,7 +34,7 @@ func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.Metada
 }
 
 func (o *dataSourceBlueprints) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -115,7 +115,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 
 		bpStatuses, err := o.client.GetAllBlueprintStatus(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("error retrieving blueprint statuses", err.Error())
+			resp.Diagnostics.AddError("error retrieving Blueprint statuses", err.Error())
 			return
 		}
 		for _, bpStatus := range bpStatuses {

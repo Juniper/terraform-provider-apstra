@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceLogicalDevice{}
@@ -22,7 +23,7 @@ func (o *dataSourceLogicalDevice) Metadata(_ context.Context, req datasource.Met
 }
 
 func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -31,7 +32,7 @@ func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaR
 			"At least one optional attribute is required. " +
 			"It is incumbent upon the user to ensure the lookup criteria matches exactly one Logical Device. " +
 			"Matching zero or more Logical Devices will produce an error.",
-		Attributes: logicalDevice{}.dataSourceAttributes(),
+		Attributes: design.LogicalDevice{}.DataSourceAttributes(),
 	}
 }
 
@@ -41,7 +42,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	var config logicalDevice
+	var config design.LogicalDevice
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -80,9 +81,9 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	// create new state object
-	var state logicalDevice
+	var state design.LogicalDevice
 	state.Id = types.StringValue(string(api.Id))
-	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

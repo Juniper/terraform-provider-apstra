@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
@@ -27,33 +28,33 @@ func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.Met
 }
 
 func (o *resourceTemplateRackBased) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as " +
 			"pod in a 5-stage design.",
-		Attributes: templateRackBased{}.resourceAttributes(),
+		Attributes: design.TemplateRackBased{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config templateRackBased
+	var config design.TemplateRackBased
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// validate the configuration
-	config.validate(ctx, &resp.Diagnostics)
+	config.Validate(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Set the min/max API versions required by the client. These elements set within 'o'
 	// do not persist after ValidateConfig exits even though 'o' is a pointer receiver.
-	o.minClientVersion, o.maxClientVersion = config.minMaxApiVersions(ctx, &resp.Diagnostics)
+	o.minClientVersion, o.maxClientVersion = config.MinMaxApiVersions(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -79,14 +80,14 @@ func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.Cre
 	}
 
 	// retrieve values from plan
-	var plan templateRackBased
+	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create a CreateRackBasedTemplateRequest
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -106,12 +107,12 @@ func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.Cre
 	}
 
 	// parse the API response into a state object
-	state := templateRackBased{}
+	state := design.TemplateRackBased{}
 	state.Id = types.StringValue(string(id))
-	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// copy nested object IDs (those not available from the API) from the plan into the state
-	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+	state.CopyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -124,7 +125,7 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 	}
 
 	// Get current state
-	var state templateRackBased
+	var state design.TemplateRackBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -148,15 +149,15 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 	}
 
 	// Create new state object
-	var newState templateRackBased
+	var newState design.TemplateRackBased
 	newState.Id = types.StringValue(string(api.Id))
-	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// copy nested object IDs (those not available from the API) from the state into the newState
-	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
+	newState.CopyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -170,14 +171,14 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 	}
 
 	// retrieve values from plan
-	var plan templateRackBased
+	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create a CreateRackBasedTemplateRequest
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -202,15 +203,15 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 	}
 
 	// Create new state object
-	var newState templateRackBased
+	var newState design.TemplateRackBased
 	newState.Id = types.StringValue(string(api.Id))
-	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// copy nested object IDs (those not available from the API) from the plan into the newState
-	newState.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+	newState.CopyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -223,7 +224,7 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	var state templateRackBased
+	var state design.TemplateRackBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

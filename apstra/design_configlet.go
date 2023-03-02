@@ -12,14 +12,14 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-type configlet struct {
+type Configlet struct {
 	Id         types.String `tfsdk:"id"`
 	Name       types.String `tfsdk:"name"`
 	RefArchs   types.Set    `tfsdk:"ref_archs"`
 	Generators types.List   `tfsdk:"generators"`
 }
 
-func (o configlet) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o Configlet) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name`is omitted.",
@@ -53,7 +53,7 @@ func (o configlet) dataSourceAttributes() map[string]dataSourceSchema.Attribute 
 	}
 }
 
-func (o *configlet) loadApiData(ctx context.Context, in *goapstra.ConfigletData, diags *diag.Diagnostics) {
+func (o *Configlet) loadApiData(ctx context.Context, in *goapstra.ConfigletData, diags *diag.Diagnostics) {
 	refArchs := make([]string, len(in.RefArchs))
 	for i, refArch := range in.RefArchs {
 		refArchs[i] = refArch.String()

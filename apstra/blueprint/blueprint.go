@@ -1,4 +1,4 @@
-package apstra
+package blueprint
 
 import (
 	"bitbucket.org/apstrktr/goapstra"
@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type blueprint struct {
+type Blueprint struct {
 	Id               types.String `tfsdk:"id"`
 	Name             types.String `tfsdk:"name"`
 	TemplateId       types.String `tfsdk:"template_id"`
@@ -31,7 +31,7 @@ type blueprint struct {
 	ExternalCount    types.Int64  `tfsdk:"external_router_count"`
 }
 
-func (o blueprint) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Blueprint: Either as a result of a lookup, or user-specified.",
@@ -60,7 +60,7 @@ func (o blueprint) dataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 		},
 		"status": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Deployment status of the blueprint",
+			MarkdownDescription: "Deployment status of the Blueprint",
 			Computed:            true,
 		},
 		"superspine_count": dataSourceSchema.Int64Attribute{
@@ -90,14 +90,7 @@ func (o blueprint) dataSourceAttributes() map[string]dataSourceSchema.Attribute 
 	}
 }
 
-type blueprintRackBased struct {
-	Id               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	TemplateId       types.String `tfsdk:"template_id"`
-	FabricAddressing types.String `tfsdk:"fabric_addressing"`
-}
-
-func (o blueprint) resourceAttributes() map[string]resourceSchema.Attribute {
+func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			MarkdownDescription: "Blueprint ID assigned by Apstra.",
@@ -110,7 +103,7 @@ func (o blueprint) resourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"template_id": schema.StringAttribute{
-			MarkdownDescription: "ID of Rack Based Template used to instantiate the blueprint.",
+			MarkdownDescription: "ID of Rack Based Template used to instantiate the Blueprint.",
 			Required:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -126,7 +119,7 @@ func (o blueprint) resourceAttributes() map[string]resourceSchema.Attribute {
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Deployment status of the blueprint",
+			MarkdownDescription: "Deployment status of the Blueprint",
 			Computed:            true,
 		},
 		"superspine_count": resourceSchema.Int64Attribute{
@@ -156,14 +149,16 @@ func (o blueprint) resourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o blueprint) request(_ context.Context, diags *diag.Diagnostics) *goapstra.CreateBlueprintFromTemplateRequest {
+func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.CreateBlueprintFromTemplateRequest {
 	var fap *goapstra.FabricAddressingPolicy
 	if !o.FabricAddressing.IsNull() {
 		var ap goapstra.AddressingScheme
 		err := ap.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
-			diags.AddError(errProviderBug, fmt.Sprintf("error parsing fabric_addressing %q - %s",
-				o.FabricAddressing.ValueString(), err.Error()))
+			diags.AddError(
+				errProviderBug,
+				fmt.Sprintf("error parsing fabric_addressing %q - %s",
+					o.FabricAddressing.ValueString(), err.Error()))
 			return nil
 		}
 		fap = &goapstra.FabricAddressingPolicy{
@@ -180,7 +175,7 @@ func (o blueprint) request(_ context.Context, diags *diag.Diagnostics) *goapstra
 	}
 }
 
-func (o *blueprint) loadApiData(_ context.Context, in *goapstra.BlueprintStatus, _ *diag.Diagnostics) {
+func (o *Blueprint) LoadApiData(_ context.Context, in *goapstra.BlueprintStatus, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
 	o.TemplateId = types.StringNull()
@@ -194,29 +189,9 @@ func (o *blueprint) loadApiData(_ context.Context, in *goapstra.BlueprintStatus,
 	o.ExternalCount = types.Int64Value(int64(in.ExternalRouterCount))
 }
 
-// validateTemplateId ensures that the specified Template exists and ensures
-// that it is a Rack Based Template
-func (o *blueprint) validateTemplateId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	// ensure template ID exists and learn its type
-	templateType, err := client.GetTemplateType(ctx, goapstra.ObjectId(o.TemplateId.ValueString()))
-	if err != nil {
-		diags.AddAttributeError(path.Root("template_id"), errApiData,
-			fmt.Sprintf("error retrieving Template %q - %s", o.TemplateId.ValueString(), err.Error()))
-		return
-	}
-
-	// validate expected type
-	if templateType != goapstra.TemplateTypeRackBased {
-		diags.AddAttributeError(path.Root("template_id"), errInvalidConfig,
-			fmt.Sprintf("Template %q has wrong type %q for use in a Rack Based Blueprint",
-				o.TemplateId.ValueString(), templateType.String()))
-		return
-	}
-}
-
 //// populateDeviceProfileIds uses the user supplied device_key for each switch to
 //// populate device_profile_id (hardware type)
-//func (o *blueprintRackBased) populateDeviceProfileIds(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *blueprintRackBased) populateDeviceProfileIds(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	allSystemsInfo := getAllSystemsInfo(ctx, client, diags)
 //	if diags.HasError() {
 //		return
@@ -301,7 +276,7 @@ func (o *blueprint) validateTemplateId(ctx context.Context, client *goapstra.Cli
 //	if err != nil {
 //		var ace goapstra.ApstraClientErr
 //		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
-//			// the blueprint doesn't need/want this resource group.
+//			// the Blueprint doesn't need/want this resource group.
 //			if poolSet.IsNull() {
 //				return // apstra does not want, and the set is null - nothing to do
 //			}
@@ -310,7 +285,7 @@ func (o *blueprint) validateTemplateId(ctx context.Context, client *goapstra.Cli
 //				o.setResourcePoolElementByTfsdkTag(tag, types.Set{ElemType: types.StringType, Null: true}, diags)
 //				return
 //			}
-//			// blueprint doesn't want it, but the pool is non-null (appears in the TF config) warn the user.
+//			// Blueprint doesn't want it, but the pool is non-null (appears in the TF config) warn the user.
 //			diags.AddWarning(warnUnwantedResourceSummary, fmt.Sprintf(warnUnwantedResourceDetail, tag))
 //			// overwrite the planned value so that TF state doesn't reflect the unwanted group
 //			o.setResourcePoolElementByTfsdkTag(tag, types.Set{ElemType: types.StringType, Null: true}, diags)
@@ -339,17 +314,17 @@ func (o *blueprint) validateTemplateId(ctx context.Context, client *goapstra.Cli
 //	}
 //}
 //
-//func (o *blueprintRackBased) allocateResources(ctx context.Context, client *goapstra.Client, id goapstra.ObjectId, diags *diag.Diagnostics) {
+//func (o *blueprintRackBased) allocateResources(ctx context.Context, client *goapstra.client, id goapstra.ObjectId, diags *diag.Diagnostics) {
 //	// create a client specific to the reference design
-//	blueprint, err := client.NewTwoStageL3ClosClient(ctx, id)
+//	Blueprint, err := client.NewTwoStageL3ClosClient(ctx, id)
 //	if err != nil {
-//		diags.AddError("error creating blueprint client", err.Error())
+//		diags.AddError("error creating Blueprint client", err.Error())
 //		return
 //	}
 //
 //	// set user-configured resource group allocations
 //	for _, t := range listOfResourceGroupAllocationTags() {
-//		o.setApstraPoolAllocationByTfsdkTag(ctx, t, blueprint, diags)
+//		o.setApstraPoolAllocationByTfsdkTag(ctx, t, Blueprint, diags)
 //		if diags.HasError() {
 //			return
 //		}
@@ -357,7 +332,7 @@ func (o *blueprint) validateTemplateId(ctx context.Context, client *goapstra.Cli
 //
 //}
 
-func (o *blueprint) setName(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *Blueprint) SetName(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	// create a client specific to the reference design
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(o.Id.ValueString()))
 	if err != nil {
@@ -375,8 +350,10 @@ func (o *blueprint) setName(ctx context.Context, client *goapstra.Client, diags 
 
 	err = bpClient.GetNodes(ctx, goapstra.NodeTypeMetadata, response)
 	if err != nil {
-		diags.AddError(errApiError, fmt.Sprintf("error getting nodes of Blueprint %q - %s",
-			bpClient.Id(), err.Error()))
+		diags.AddError(
+			fmt.Sprintf(errApiGetWithTypeAndId, "Blueprint Node", bpClient.Id()),
+			err.Error(),
+		)
 		return
 	}
 	if len(response.Nodes) != 1 {
@@ -390,13 +367,15 @@ func (o *blueprint) setName(ctx context.Context, client *goapstra.Client, diags 
 	}
 	err = bpClient.PatchNode(ctx, nodeId, &node{Label: o.Name.ValueString()}, nil)
 	if err != nil {
-		diags.AddError(errApiError, fmt.Sprintf("error setting Blueprint %q name in node %q - %s",
-			bpClient.Id(), nodeId, err.Error()))
+		diags.AddError(
+			fmt.Sprintf(errApiPatchWithTypeAndId, bpClient.Id(), nodeId),
+			err.Error(),
+		)
 		return
 	}
 }
 
-func (o *blueprint) minMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
+func (o *Blueprint) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
 	var min, max *version.Version
 	var err error
 	if o.FabricAddressing.IsNull() {
