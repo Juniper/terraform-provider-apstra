@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceTag{}
@@ -22,14 +23,14 @@ func (o *dataSourceTag) Metadata(_ context.Context, req datasource.MetadataReque
 }
 
 func (o *dataSourceTag) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Tag.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: tag{}.dataSourceAttributes(),
+		Attributes: design.Tag{}.DataSourceAttributes(),
 	}
 }
 
@@ -39,7 +40,7 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
-	var config tag
+	var config design.Tag
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -78,9 +79,9 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 	}
 
 	// create new state object
-	var state tag
+	var state design.Tag
 	state.Id = types.StringValue(string(api.Id))
-	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

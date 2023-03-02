@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfaceMap{}
@@ -22,7 +23,7 @@ func (o *dataSourceInterfaceMap) Metadata(_ context.Context, req datasource.Meta
 }
 
 func (o *dataSourceInterfaceMap) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -31,7 +32,7 @@ func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRe
 			"At least one optional attribute is required. " +
 			"It is incumbent upon the user to ensure the lookup criteria matches exactly one Interface Map. " +
 			"Matching zero or more Interface Maps will produce an error.",
-		Attributes: interfaceMap{}.dataSourceAttributes(),
+		Attributes: design.InterfaceMap{}.DataSourceAttributes(),
 	}
 }
 
@@ -41,7 +42,7 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	var config interfaceMap
+	var config design.InterfaceMap
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -80,9 +81,9 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	// create new state object
-	newState := interfaceMap{}
+	newState := design.InterfaceMap{}
 	newState.Id = types.StringValue(string(api.Id))
-	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"terraform-provider-apstra/apstra/blueprint"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
@@ -26,13 +27,13 @@ func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.M
 }
 
 func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceDatacenterBlueprint) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource instantiates a Datacenter Blueprint from a template.",
-		Attributes:          blueprint{}.resourceAttributes(),
+		Attributes:          blueprint.Blueprint{}.ResourceAttributes(),
 	}
 }
 
@@ -41,7 +42,7 @@ func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req re
 		return
 	}
 
-	var config blueprint
+	var config blueprint.Blueprint
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -49,7 +50,7 @@ func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req re
 
 	// Set the min/max API versions required by the client. These elements set within 'o'
 	// do not persist after ValidateConfig exits even though 'o' is a pointer receiver.
-	o.minClientVersion, o.maxClientVersion = config.minMaxApiVersions(ctx, &resp.Diagnostics)
+	o.minClientVersion, o.maxClientVersion = config.MinMaxApiVersions(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -80,10 +81,10 @@ func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req re
 	//
 	//// ensure Ip4 pools from the plan exist on Apstra
 	//var ipv4Pools []attr.Value
-	//ipv4Pools = append(ipv4Pools, config.SpineIp4PoolIds.Elements()...)  // spine loopback
+	//ipv4Pools = append(ipv4Pools, config.SpineIp4PoolIds.Elements()...)  // Spine loopback
 	//ipv4Pools = append(ipv4Pools, config.LeafIp4PoolIds.Elements()...)   // leaf loopback
 	//ipv4Pools = append(ipv4Pools, config.AccessIp4PoolIds.Elements()...) // access loopback
-	//ipv4Pools = append(ipv4Pools, config.SpineLeafPoolIp4.Elements()...) // spine fabric
+	//ipv4Pools = append(ipv4Pools, config.SpineLeafPoolIp4.Elements()...) // Spine fabric
 	//ipv4Pools = append(ipv4Pools, config.LeafLeafPoolIp4.Elements()...)  // leaf-only fabric
 	//ipv4Pools = append(ipv4Pools, config.LeafMlagPeerIp4.Elements()...)  // leaf peer link
 	//ipv4Pools = append(ipv4Pools, config.AccessEsiPeerIp4.Elements()...) // access peer link
@@ -96,7 +97,7 @@ func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req re
 	//
 	//// ensure Ip6 pools from the plan exist on Apstra
 	//var ip6Pools []attr.Value
-	//ip6Pools = append(ip6Pools, config.SpineLeafPoolIp6.Elements()...) // spine fabric
+	//ip6Pools = append(ip6Pools, config.SpineLeafPoolIp6.Elements()...) // Spine fabric
 	//missing = findMissingIpv6Pools(ctx, ip6Pools, o.client, &resp.Diagnostics)
 	//if len(missing) > 0 {
 	//	resp.Diagnostics.AddError("cannot assign IPv6 pool",
@@ -126,14 +127,11 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	}
 
 	// Retrieve values from plan
-	var plan blueprint
+	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// validate Template exists and has the correct type
-	plan.validateTemplateId(ctx, o.client, &resp.Diagnostics)
 
 	//// compute the device profile of each switch the user told us about (use device key)
 	//plan.populateDeviceProfileIds(ctx, o.client, &resp.Diagnostics)
@@ -141,7 +139,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	//	return
 	//}
 
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -157,8 +155,8 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	}
 
 	// Create new state object
-	var state blueprint
-	state.loadApiData(ctx, apiData, &resp.Diagnostics)
+	var state blueprint.Blueprint
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -176,12 +174,12 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	//}
 	//
 	//// warn the user about any omitted resource group allocations
-	//warnMissingResourceGroupAllocations(ctx, blueprint, &resp.Diagnostics)
+	//warnMissingResourceGroupAllocations(ctx, Blueprint, &resp.Diagnostics)
 	//if resp.Diagnostics.HasError() {
 	//	return
 	//}
 	//
-	//// compute the blueprint "system" node IDs (switches)
+	//// compute the Blueprint "system" node IDs (switches)
 	//plan.populateSystemNodeIds(ctx, o.client, &resp.Diagnostics)
 	//if resp.Diagnostics.HasError() {
 	//	return
@@ -194,7 +192,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	//}
 	//
 	//// set interface map assignments (selects hardware model, but not specific instance)
-	//plan.assignInterfaceMaps(ctx, blueprint, &resp.Diagnostics)
+	//plan.assignInterfaceMaps(ctx, Blueprint, &resp.Diagnostics)
 	//if resp.Diagnostics.HasError() {
 	//	return
 	//}
@@ -205,7 +203,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	//	return
 	//}
 	//
-	//// assign switches (managed devices) to blueprint system nodes
+	//// assign switches (managed devices) to Blueprint system nodes
 	//plan.assignManagedDevices(ctx, o.client, &resp.Diagnostics)
 	//if resp.Diagnostics.HasError() {
 	//	return
@@ -218,7 +216,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	////	- DeviceKey : required user input
 	////	- InterfaceMap : optional user input - if only one option, we'll auto-assign
 	////	- DeviceProfile : a.k.a. aos_hcl_model - determined from InterfaceMap, represents physical device/model
-	////	- SystemNodeId : id of the "type='system', system_type="switch" graph db node representing a spine/leaf/etc...
+	////	- SystemNodeId : id of the "type='system', system_type="switch" graph db node representing a Spine/leaf/etc...
 	////for switchLabel, switchPlan := range plan.Switches {
 	////	// fetch the switch graph db node ID and candidate interface maps
 	////	systemNodeId, ifmapCandidates, err := getSystemNodeIdAndIfmapCandidates(ctx, r.p.client, blueprintId, switchLabel)
@@ -305,7 +303,7 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 	}
 
 	// Get current state
-	var state blueprint
+	var state blueprint.Blueprint
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -321,22 +319,22 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 			return
 		}
 		resp.Diagnostics.AddError(
-			"error fetching blueprint",
+			"error fetching Blueprint",
 			fmt.Sprintf("Could not read %q - %s", state.Id.ValueString(), err.Error()),
 		)
 		return
 	}
 
 	//// create a client specific to the reference design
-	//blueprint, err := o.client.NewTwoStageL3ClosClient(ctx, blueprintStatus.Id)
+	//Blueprint, err := o.client.NewTwoStageL3ClosClient(ctx, blueprintStatus.Id)
 	//if err != nil {
-	//	resp.Diagnostics.AddError("error getting blueprint client", err.Error())
+	//	resp.Diagnostics.AddError("error getting Blueprint client", err.Error())
 	//	return
 	//}
 
 	// create new state object with some obvious values
-	var newState blueprint
-	newState.loadApiData(ctx, apiData, &resp.Diagnostics)
+	var newState blueprint.Blueprint
+	newState.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	newState.FabricAddressing = state.FabricAddressing // blindly copy because resource.RequiresReplace()
 	newState.TemplateId = state.TemplateId             // blindly copy because resource.RequiresReplace()
 
@@ -345,7 +343,7 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 
 	//// collect resource pool values into new state object
 	//for _, tag := range listOfResourceGroupAllocationTags() {
-	//	newState.readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx, tag, blueprint, &resp.Diagnostics)
+	//	newState.readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx, tag, Blueprint, &resp.Diagnostics)
 	//}
 	//if resp.Diagnostics.HasError() {
 	//	return
@@ -369,21 +367,21 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	}
 
 	// Retrieve plan
-	var plan blueprint
+	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// name change is the only possible update method (other attributes trigger replace)
-	plan.setName(ctx, o.client, &resp.Diagnostics)
+	plan.SetName(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	//// reset resource group allocations as needed
 	//for _, tag := range listOfResourceGroupAllocationTags() {
-	//	plan.updateResourcePoolAllocationByTfsdkTag(ctx, tag, blueprint, &state, &resp.Diagnostics)
+	//	plan.updateResourcePoolAllocationByTfsdkTag(ctx, tag, Blueprint, &state, &resp.Diagnostics)
 	//	if resp.Diagnostics.HasError() {
 	//		return
 	//	}
@@ -395,7 +393,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	//	return
 	//}
 	//
-	//// compute the blueprint "system" node IDs for the planned switches
+	//// compute the Blueprint "system" node IDs for the planned switches
 	//plan.populateSystemNodeIds(ctx, o.client, &resp.Diagnostics)
 	//if resp.Diagnostics.HasError() {
 	//	return
@@ -446,7 +444,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	//	nodeId := state.Switches[label].Attrs["system_node_id"].(types.String)
 	//	assignments[nodeId.Value] = nil
 	//}
-	//err = blueprint.SetInterfaceMapAssignments(ctx, assignments)
+	//err = Blueprint.SetInterfaceMapAssignments(ctx, assignments)
 	//if err != nil {
 	//	resp.Diagnostics.AddError("error clearing interface map assignment", err.Error())
 	//}
@@ -457,7 +455,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	//	interfaceMapId := plan.Switches[label].Attrs["interface_map_id"].(types.String)
 	//	assignments[nodeId.Value] = interfaceMapId.Value
 	//}
-	//err = blueprint.SetInterfaceMapAssignments(ctx, assignments)
+	//err = Blueprint.SetInterfaceMapAssignments(ctx, assignments)
 	//if err != nil {
 	//	resp.Diagnostics.AddError("error setting interface map assignment", err.Error())
 	//}
@@ -474,8 +472,8 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	}
 
 	// Create new state object
-	var state blueprint
-	state.loadApiData(ctx, apiData, &resp.Diagnostics)
+	var state blueprint.Blueprint
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -494,7 +492,7 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	var state blueprint
+	var state blueprint.Blueprint
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -507,7 +505,7 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting blueprint", err.Error())
+		resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
 		return
 	}
 }
@@ -545,8 +543,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 
 //// populateInterfaceMapIds attempts to populate (and validate when known) the
 //// interface_map_id for each switch using either the design API's global catalog
-//// (blueprint not created yet) or graphDB elements (blueprint exists).
-//func (o *blueprint) populateInterfaceMapIds(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//// (Blueprint not created yet) or graphDB elements (Blueprint exists).
+//func (o *Blueprint) populateInterfaceMapIds(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	if o.Id.IsNull() {
 //		o.populateInterfaceMapIdsFromGC(ctx, client, diags)
 //	} else {
@@ -554,7 +552,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 
-//func (o *blueprint) populateInterfaceMapIdsFromGC(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *Blueprint) populateInterfaceMapIdsFromGC(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	for switchLabel, plannedSwitch := range o.Switches {
 //		devProfile := plannedSwitch.Attrs["device_profile_id"].(types.String)
 //		ifMapId := plannedSwitch.Attrs["interface_map_id"].(types.String)
@@ -582,8 +580,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 
-//func (o *blueprint) populateInterfaceMapIdsFromBP(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-//	// structure for receiving results of blueprint query
+//func (o *Blueprint) populateInterfaceMapIdsFromBP(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
+//	// structure for receiving results of Blueprint query
 //	var candidateInterfaceMapsQR struct {
 //		Items []struct {
 //			InterfaceMap struct {
@@ -654,7 +652,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 
-//func (o *blueprint) populateSystemNodeIds(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *Blueprint) populateSystemNodeIds(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	var candidateSystemsQR struct {
 //		Items []struct {
 //			System struct {
@@ -678,14 +676,14 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //
 //		switch len(candidateSystemsQR.Items) {
 //		case 0:
-//			diags.AddError("switch node not found in blueprint",
-//				fmt.Sprintf("switch/system node with label '%s' not found in blueprint", switchLabel))
+//			diags.AddError("switch node not found in Blueprint",
+//				fmt.Sprintf("switch/system node with label '%s' not found in Blueprint", switchLabel))
 //			return
 //		case 1:
 //			// no error case
 //		default:
-//			diags.AddError("multiple switches found in blueprint",
-//				fmt.Sprintf("switch/system node with label '%s': %d matches found in blueprint",
+//			diags.AddError("multiple switches found in Blueprint",
+//				fmt.Sprintf("switch/system node with label '%s': %d matches found in Blueprint",
 //					switchLabel, len(candidateSystemsQR.Items)))
 //			return
 //		}
@@ -694,7 +692,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-//func (o *blueprint) assignInterfaceMaps(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+//func (o *Blueprint) assignInterfaceMaps(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 //	assignments := make(goapstra.SystemIdToInterfaceMapAssignment, len(o.Switches))
 //	for k, v := range o.Switches {
 //		switch {
@@ -722,7 +720,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-//func (o *blueprint) assignManagedDevices(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *Blueprint) assignManagedDevices(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	//// having assigned interface maps, link physical assets to graph db 'switch' nodes
 //	var patch struct {
 //		SystemId string `json:"system_id"`
@@ -738,7 +736,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-//func (o *blueprint) releaseManagedDevice(ctx context.Context, nodeId string, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *Blueprint) releaseManagedDevice(ctx context.Context, nodeId string, client *goapstra.client, diags *diag.Diagnostics) {
 //	var patch struct {
 //		_ interface{} `json:"system_id"`
 //	}
@@ -748,7 +746,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-//func assertInterfaceMapSupportsDeviceProfile(ctx context.Context, client *goapstra.Client, ifMapId string, devProfileId string, diags *diag.Diagnostics) {
+//func assertInterfaceMapSupportsDeviceProfile(ctx context.Context, client *goapstra.client, ifMapId string, devProfileId string, diags *diag.Diagnostics) {
 //	ifMap, err := client.GetInterfaceMapDigest(ctx, goapstra.ObjectId(ifMapId))
 //	if err != nil {
 //		var ace goapstra.ApstraClientErr
@@ -766,7 +764,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-////func assertInterfaceMapExists(ctx context.Context, client *goapstra.Client, id string, diags *diag.Diagnostics) {
+////func assertInterfaceMapExists(ctx context.Context, client *goapstra.client, id string, diags *diag.Diagnostics) {
 ////	_, err := client.GetInterfaceMapDigest(ctx, goapstra.ObjectId(id))
 ////	if err != nil {
 ////		var ace goapstra.ApstraClientErr
@@ -779,9 +777,9 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 ////}
 //
 //// populateSwitchNodeAndInterfaceMapIds
-//func (o *blueprint) populateSwitchNodeAndInterfaceMapIds(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *Blueprint) populateSwitchNodeAndInterfaceMapIds(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	if o.Id.IsUnknown() {
-//		diags.AddError(errProviderBug, "attempt to populateSwitchNodeAndInterfaceMapIds while blueprint ID is unknown")
+//		diags.AddError(errProviderBug, "attempt to populateSwitchNodeAndInterfaceMapIds while Blueprint ID is unknown")
 //		return
 //	}
 //
@@ -839,10 +837,10 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-//func (o *blueprint) warnSwitchConfigVsBlueprint(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+//func (o *Blueprint) warnSwitchConfigVsBlueprint(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
 //	switchLabelToGraphDbId, err := getSwitchLabelId(ctx, client, goapstra.ObjectId(o.Id.Value))
 //	if err != nil {
-//		diags.AddError("error getting blueprint switch inventory", err.Error())
+//		diags.AddError("error getting Blueprint switch inventory", err.Error())
 //		return
 //	}
 //
@@ -865,7 +863,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //		diags.AddAttributeWarning(
 //			path.Root("switches"),
 //			"switch missing from plan",
-//			fmt.Sprintf("blueprint expects the following switches: ['%s']",
+//			fmt.Sprintf("Blueprint expects the following switches: ['%s']",
 //				strings.Join(missing, "', '")))
 //	}
 //
@@ -874,7 +872,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //		diags.AddAttributeWarning(
 //			path.Root("switches"),
 //			"extraneous switches found in configuration",
-//			fmt.Sprintf("please remove switches not needed by blueprint: '%s'",
+//			fmt.Sprintf("please remove switches not needed by Blueprint: '%s'",
 //				strings.Join(extra, "', '")))
 //	}
 //}
@@ -888,7 +886,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //// getSystemNodeIdAndLogicalDeviceId takes the 'label' field representing a
 //// graph db node with "type='system', returns its node id and the linked
 //// logical device Id
-//func getSystemNodeIdAndLogicalDeviceId(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string) (string, string, error) {
+//func getSystemNodeIdAndLogicalDeviceId(ctx context.Context, client *goapstra.client, bpId goapstra.ObjectId, label string) (string, string, error) {
 //	var systemAndLogicalDeviceQR struct {
 //		Items []struct {
 //			System struct {
@@ -935,7 +933,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //// getSystemNodeIdAndIfmapCandidates takes the 'label' field representing a
 //// graph db node with "type='system', returns the node id and a []ifmapInfo
 //// representing candidate interface maps for that system.
-//func getSystemNodeIdAndIfmapCandidates(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string) (string, []ifmapInfo, error) {
+//func getSystemNodeIdAndIfmapCandidates(ctx context.Context, client *goapstra.client, bpId goapstra.ObjectId, label string) (string, []ifmapInfo, error) {
 //	var candidateInterfaceMapsQR struct {
 //		Items []struct {
 //			System struct {
@@ -1004,7 +1002,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	return nil
 //}
 //
-//func getNodeInterfaceMap(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string) (*ifmapInfo, error) {
+//func getNodeInterfaceMap(ctx context.Context, client *goapstra.client, bpId goapstra.ObjectId, label string) (*ifmapInfo, error) {
 //	var interfaceMapQR struct {
 //		Items []struct {
 //			InterfaceMap struct {
@@ -1039,7 +1037,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}, nil
 //}
 //
-//func getSwitchFromGraphDb(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, label string, diags *diag.Diagnostics) *types.Object {
+//func getSwitchFromGraphDb(ctx context.Context, client *goapstra.client, bpId goapstra.ObjectId, label string, diags *diag.Diagnostics) *types.Object {
 //	// query for system node on its own
 //	var systemOnlyQR struct {
 //		Items []struct {
@@ -1059,11 +1057,11 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //		}).
 //		Do(&systemOnlyQR)
 //	if err != nil {
-//		diags.AddError("error querying blueprint node", err.Error())
+//		diags.AddError("error querying Blueprint node", err.Error())
 //		return nil
 //	}
 //	if len(systemOnlyQR.Items) != 1 {
-//		diags.AddError("error querying blueprint node",
+//		diags.AddError("error querying Blueprint node",
 //			fmt.Sprintf("expected exactly one system node, got %d", len(systemOnlyQR.Items)))
 //		return nil
 //	}
@@ -1090,7 +1088,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //		}).
 //		Do(&interfaceMapQR)
 //	if err != nil {
-//		diags.AddError("error querying blueprint node", err.Error())
+//		diags.AddError("error querying Blueprint node", err.Error())
 //		return nil
 //	}
 //	switch len(interfaceMapQR.Items) {
@@ -1171,8 +1169,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //}
 //
 //// setResourcePoolElementByTfsdkTag sets value (types.Set) into the named field
-//// of the blueprint object by tfsdk tag
-//func (o *blueprint) setResourcePoolElementByTfsdkTag(fieldName string, value types.Set, diags *diag.Diagnostics) {
+//// of the Blueprint object by tfsdk tag
+//func (o *Blueprint) setResourcePoolElementByTfsdkTag(fieldName string, value types.Set, diags *diag.Diagnostics) {
 //	v := reflect.ValueOf(o).Elem()
 //	findTfsdkName := func(t reflect.StructTag) string {
 //		if tfsdkTag, ok := t.Lookup("tfsdk"); ok {
@@ -1199,8 +1197,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 
 //// readPoolAllocationFromApstraIntoElementByTfsdkTag retrieves a pool
 //// allocation from apstra and sets the appropriate element in the
-//// blueprint structure
-//func (o *blueprint) readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx context.Context, tag string, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+//// Blueprint structure
+//func (o *Blueprint) readPoolAllocationFromApstraIntoElementByTfsdkTag(ctx context.Context, tag string, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 //	rgn := tfsdkTagToRgn(tag, diags)
 //	rg := &goapstra.ResourceGroup{
 //		Type: resourceTypeNameFromResourceGroupName(rgn, diags),
@@ -1233,7 +1231,7 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	o.setResourcePoolElementByTfsdkTag(tag, poolIds, diags)
 //}
 //
-//func (o *blueprint) updateResourcePoolAllocationByTfsdkTag(ctx context.Context, tag string, client *goapstra.TwoStageL3ClosClient, state *blueprint, diags *diag.Diagnostics) {
+//func (o *Blueprint) updateResourcePoolAllocationByTfsdkTag(ctx context.Context, tag string, client *goapstra.TwoStageL3ClosClient, state *Blueprint, diags *diag.Diagnostics) {
 //	planPool := o.extractResourcePoolElementByTfsdkTag(tag, diags)
 //	statePool := state.extractResourcePoolElementByTfsdkTag(tag, diags)
 //	if diags.HasError() {
@@ -1251,8 +1249,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //	}
 //}
 //
-//func (o *blueprint) readSwitchesFromGraphDb(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-//	// get the list of switch roles (spine1, leaf2...) from the blueprint
+//func (o *Blueprint) readSwitchesFromGraphDb(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) {
+//	// get the list of switch roles (spine1, leaf2...) from the Blueprint
 //	switchLabels := listSwitches(ctx, client, goapstra.ObjectId(o.Id.Value), diags)
 //	if diags.HasError() {
 //		return
@@ -1388,8 +1386,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //
 //// listOfResourceGroupAllocationTags returns the full list of tfsdk tags
 //// representing potential resource group allocations for a "datacenter"
-//// blueprint. This could probably be rewritten as a "reflect" operation against
-//// an blueprint which extracts tags ending in "_pool_ids".
+//// Blueprint. This could probably be rewritten as a "reflect" operation against
+//// an Blueprint which extracts tags ending in "_pool_ids".
 //func listOfResourceGroupAllocationTags() []string {
 //	return []string{
 //		"superspine_asn_pool_ids",
@@ -1428,8 +1426,8 @@ func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstr
 //}
 
 //// listSwitches returns a []string enumerating switch roles (spine1,
-//// leaf2_1, etc...) in the indicated blueprint
-//func listSwitches(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId, diags *diag.Diagnostics) []string {
+//// leaf2_1, etc...) in the indicated Blueprint
+//func listSwitches(ctx context.Context, client *goapstra.client, bpId goapstra.ObjectId, diags *diag.Diagnostics) []string {
 //	var switchQr struct {
 //		Items []struct {
 //			System struct {

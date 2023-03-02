@@ -7,14 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-)
-
-const (
-	vlanMin = 1
-	vlanMax = 4094
-
-	poIdMin = 0
-	poIdMax = 4096
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ resource.ResourceWithConfigure = &resourceRackType{}
@@ -28,13 +21,13 @@ func (o *resourceRackType) Metadata(_ context.Context, req resource.MetadataRequ
 }
 
 func (o *resourceRackType) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Rack Type in the Apstra Design tab.",
-		Attributes:          rackType{}.resourceAttributes(),
+		Attributes:          design.RackType{}.ResourceAttributes(),
 	}
 }
 
@@ -45,14 +38,14 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Retrieve values from plan
-	var plan rackType
+	var plan design.RackType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create a RackTypeRequest
-	rtRequest := plan.request(ctx, &resp.Diagnostics)
+	rtRequest := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -72,21 +65,21 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// validate API response to catch problems which might crash the provider
-	validateRackType(ctx, rt, &resp.Diagnostics)
+	design.ValidateRackType(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// parse the API response into a state object
-	state := rackType{}
+	state := design.RackType{}
 	state.Id = types.StringValue(string(rt.Id))
-	state.loadApiData(ctx, rt.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, rt.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// copy nested object IDs (those not available from the API) from the plan into the state
-	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+	state.CopyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -99,7 +92,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// Retrieve values from state
-	var state rackType
+	var state design.RackType
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -118,21 +111,21 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// validate API response to catch problems which might crash the provider
-	validateRackType(ctx, rt, &resp.Diagnostics)
+	design.ValidateRackType(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// parse the API response into a new state object
-	var newState rackType
+	var newState design.RackType
 	newState.Id = types.StringValue(string(rt.Id))
-	newState.loadApiData(ctx, rt.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, rt.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// copy nested object IDs (those not available from the API) from the previous state into the new state
-	newState.copyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
+	newState.CopyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
@@ -145,19 +138,19 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// Retrieve plan
-	var plan rackType
+	var plan design.RackType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create a RackTypeRequest
-	rtRequest := plan.request(ctx, &resp.Diagnostics)
+	rtRequest := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// send the request to Apstra
+	// send the Request to Apstra
 	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(plan.Id.ValueString()), rtRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
@@ -172,21 +165,21 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// validate API response to catch problems which might crash the provider
-	validateRackType(ctx, rt, &resp.Diagnostics)
+	design.ValidateRackType(ctx, rt, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// parse the API response into a state object
-	state := &rackType{}
+	var state design.RackType
 	state.Id = types.StringValue(string(rt.Id))
-	state.loadApiData(ctx, rt.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, rt.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// copy nested object IDs (those not available from the API) from the (old) into state
-	state.copyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+	state.CopyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -199,7 +192,7 @@ func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	// Retrieve values from state
-	var state rackType
+	var state design.RackType
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

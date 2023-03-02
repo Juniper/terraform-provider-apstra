@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceRackType{}
@@ -22,7 +23,7 @@ func (o *dataSourceRackType) Metadata(_ context.Context, req datasource.Metadata
 }
 
 func (o *dataSourceRackType) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -31,7 +32,7 @@ func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaReques
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one Rack Type. " +
 			"Matching zero Rack Types or more than one Rack Type will produce an error.",
-		Attributes: rackType{}.dataSourceAttributes(),
+		Attributes: design.RackType{}.DataSourceAttributes(),
 	}
 }
 
@@ -41,7 +42,7 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	var config rackType
+	var config design.RackType
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -80,15 +81,15 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	// catch problems which would crash the provider
-	validateRackType(ctx, api, &resp.Diagnostics)
+	design.ValidateRackType(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create new state object
-	var newState rackType
+	var newState design.RackType
 	newState.Id = types.StringValue(string(api.Id))
-	newState.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

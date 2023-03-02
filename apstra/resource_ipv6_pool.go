@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
+	"terraform-provider-apstra/apstra/resources"
 )
 
 var _ resource.ResourceWithConfigure = &resourceAsnPool{}
@@ -24,24 +25,24 @@ func (o *resourceIpv6Pool) Metadata(_ context.Context, req resource.MetadataRequ
 }
 
 func (o *resourceIpv6Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceIpv6Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IPv6 resource pool",
-		Attributes:          ipv6Pool{}.resourceAttributesWrite(),
+		Attributes:          resources.Ipv6Pool{}.ResourceAttributesWrite(),
 	}
 }
 
 func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config ipv6Pool
+	var config resources.Ipv6Pool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	subnets := make([]ipv6PoolSubnet, len(config.Subnets.Elements()))
+	subnets := make([]resources.Ipv6PoolSubnet, len(config.Subnets.Elements()))
 	d := config.Subnets.ElementsAs(ctx, &subnets, false)
 	resp.Diagnostics.Append(d...)
 	if resp.Diagnostics.HasError() {
@@ -51,7 +52,7 @@ func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.Vali
 	var jNets []*net.IPNet // Each subnet will be checked for overlap with members of jNets, then appended to jNets
 	for i := range subnets {
 		// setVal is used to path AttributeErrors correctly
-		setVal, d := types.ObjectValueFrom(ctx, ipv6PoolSubnet{}.attrTypes(), &subnets[i])
+		setVal, d := types.ObjectValueFrom(ctx, resources.Ipv6PoolSubnet{}.AttrTypes(), &subnets[i])
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -99,14 +100,14 @@ func (o *resourceIpv6Pool) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// Retrieve values from plan
-	var plan ipv6Pool
+	var plan resources.Ipv6Pool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create new IPv6 Pool
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -132,8 +133,8 @@ func (o *resourceIpv6Pool) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// create state object
-	var state ipv6Pool
-	state.loadApiData(ctx, p, &resp.Diagnostics)
+	var state resources.Ipv6Pool
+	state.LoadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -149,7 +150,7 @@ func (o *resourceIpv6Pool) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// Get current state
-	var state ipv6Pool
+	var state resources.Ipv6Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -170,8 +171,8 @@ func (o *resourceIpv6Pool) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// create new state object
-	var newState ipv6Pool
-	newState.loadApiData(ctx, p, &resp.Diagnostics)
+	var newState resources.Ipv6Pool
+	newState.LoadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -188,14 +189,14 @@ func (o *resourceIpv6Pool) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// Get plan values
-	var plan ipv6Pool
+	var plan resources.Ipv6Pool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// update IPv6 Pool
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -226,8 +227,8 @@ func (o *resourceIpv6Pool) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// create new state object
-	var state ipv6Pool
-	state.loadApiData(ctx, p, &resp.Diagnostics)
+	var state resources.Ipv6Pool
+	state.LoadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -243,7 +244,7 @@ func (o *resourceIpv6Pool) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	var state ipv6Pool
+	var state resources.Ipv6Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
