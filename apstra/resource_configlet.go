@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
@@ -29,7 +30,7 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This  resource provides details of a specific Configlet.\n\n" +
 			"At least one optional attribute is required. ",
-		Attributes: Configlet{}.resourceAttributes(),
+		Attributes: design.Configlet{}.ResourceAttributes(),
 	}
 }
 
@@ -40,24 +41,24 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	// Retrieve values from plan
-	var plan Configlet
+	var plan design.Configlet
 	req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var r *goapstra.ConfigletRequest
 
-	r = plan.Request(ctx, &resp.Diagnostics)
-
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	id, err := o.client.CreateConfiglet(ctx, r)
+
+	id, err := o.client.CreateConfiglet(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("Error Creating Configlet", err.Error())
 		return
 	}
+
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -68,7 +69,7 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	var state Configlet
+	var state design.Configlet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -83,11 +84,13 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 		resp.State.RemoveResource(ctx)
 		return
 	}
+
 	state.Id = types.StringValue(string(api.Id))
-	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -100,7 +103,7 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	// Get plan values
-	var plan Configlet
+	var plan design.Configlet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -130,7 +133,7 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
-	var state Configlet
+	var state design.Configlet
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

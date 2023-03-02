@@ -85,7 +85,6 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goaps
 	var r *goapstra.ConfigletRequest = &goapstra.ConfigletRequest{}
 
 	diags.Append(o.Generators.ElementsAs(ctx, &tf_gen, true)...)
-	r.DisplayName = o.Name.ValueString()
 	r.RefArchs = make([]goapstra.RefDesign, len(o.RefArchs.Elements()))
 	refArches := make([]string, len(o.RefArchs.Elements()))
 	d := o.RefArchs.ElementsAs(ctx, &refArches, false)
@@ -126,7 +125,38 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goaps
 			Filename:             j.FileName.ValueString(),
 		}
 	}
-	return r
+
+	var d diag.Diagnostics
+
+	refArchStrings := make([]string, len(o.RefArchs.Elements()))
+	d = o.RefArchs.ElementsAs(ctx, &refArchStrings, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	refArchs := make([]goapstra.RefDesign, len(refArchStrings))
+	for i, s := range refArchStrings {
+		err := refArchs[i].FromString(s)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing reference architecture %q", s), err.Error())
+		}
+	}
+
+	generators := make([]goapstra.ConfigletGenerator, len(o.Generators.Elements()))
+	d = o.RefArchs.ElementsAs(ctx, &generators, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+
+	genRequests := make()
+
+	return &goapstra.ConfigletRequest{
+		DisplayName: o.Name.ValueString(),
+		RefArchs:    refArchs,
+		Generators:  nil, // todo
+	}
 }
 
 func (o *Configlet) loadApiData(ctx context.Context, in *goapstra.ConfigletData, diags *diag.Diagnostics) {
