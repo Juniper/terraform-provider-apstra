@@ -4,8 +4,6 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
-	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -34,54 +32,6 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 		Attributes: Configlet{}.resourceAttributes(),
 	}
 }
-func (o Configlet) make_configlet_request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ConfigletRequest {
-	var tf_gen []configletGenerator
-	var r *goapstra.ConfigletRequest = &goapstra.ConfigletRequest{}
-
-	diags.Append(o.Generators.ElementsAs(ctx, &tf_gen, true)...)
-	r.DisplayName = o.Name.ValueString()
-	r.RefArchs = make([]goapstra.RefDesign, len(o.RefArchs.Elements()))
-	refArches := make([]string, len(o.RefArchs.Elements()))
-	d := o.RefArchs.ElementsAs(ctx, &refArches, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-	for i, j := range refArches {
-		e := r.RefArchs[i].FromString(j)
-		if e != nil {
-			diags.AddError(fmt.Sprintf("error parsing reference architecture : %q", j), e.Error())
-		}
-	}
-	r.Generators = make([]goapstra.ConfigletGenerator, len(o.Generators.Elements()))
-	dCG := make([]configletGenerator, len(o.Generators.Elements()))
-	d = o.Generators.ElementsAs(ctx, &dCG, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-	for i, j := range dCG {
-		var a goapstra.ApstraPlatformOS
-		e := a.FromString(j.ConfigStyle.ValueString())
-		if e != nil {
-			diags.AddError(fmt.Sprintf("error parsing configlet style : '%s'", j.ConfigStyle.ValueString()), e.Error())
-		}
-		var s goapstra.ApstraConfigletSection
-
-		e = s.FromString(j.Section.ValueString())
-		if e != nil {
-			diags.AddError(fmt.Sprintf("error parsing configlet section : '%s'", j.Section.ValueString()), e.Error())
-		}
-		r.Generators[i] = goapstra.ConfigletGenerator{
-			ConfigStyle:          a,
-			Section:              s,
-			TemplateText:         j.TemplateText.ValueString(),
-			NegationTemplateText: j.NegationTemplateText.ValueString(),
-			Filename:             j.FileName.ValueString(),
-		}
-	}
-	return r
-}
 
 func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
@@ -98,7 +48,7 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 	}
 	var r *goapstra.ConfigletRequest
 
-	r = plan.make_configlet_request(ctx, &resp.Diagnostics)
+	r = plan.Request(ctx, &resp.Diagnostics)
 
 	if resp.Diagnostics.HasError() {
 		return
@@ -155,7 +105,7 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	c := plan.make_configlet_request(ctx, &resp.Diagnostics)
+	c := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

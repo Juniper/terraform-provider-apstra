@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -77,6 +78,55 @@ func (o Configlet) resourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 	}
+}
+
+func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ConfigletRequest {
+	var tf_gen []configletGenerator
+	var r *goapstra.ConfigletRequest = &goapstra.ConfigletRequest{}
+
+	diags.Append(o.Generators.ElementsAs(ctx, &tf_gen, true)...)
+	r.DisplayName = o.Name.ValueString()
+	r.RefArchs = make([]goapstra.RefDesign, len(o.RefArchs.Elements()))
+	refArches := make([]string, len(o.RefArchs.Elements()))
+	d := o.RefArchs.ElementsAs(ctx, &refArches, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+	for i, j := range refArches {
+		e := r.RefArchs[i].FromString(j)
+		if e != nil {
+			diags.AddError(fmt.Sprintf("error parsing reference architecture : %q", j), e.Error())
+		}
+	}
+	r.Generators = make([]goapstra.ConfigletGenerator, len(o.Generators.Elements()))
+	dCG := make([]configletGenerator, len(o.Generators.Elements()))
+	d = o.Generators.ElementsAs(ctx, &dCG, false)
+	diags.Append(d...)
+	if diags.HasError() {
+		return nil
+	}
+	for i, j := range dCG {
+		var a goapstra.ApstraPlatformOS
+		e := a.FromString(j.ConfigStyle.ValueString())
+		if e != nil {
+			diags.AddError(fmt.Sprintf("error parsing configlet style : '%s'", j.ConfigStyle.ValueString()), e.Error())
+		}
+		var s goapstra.ApstraConfigletSection
+
+		e = s.FromString(j.Section.ValueString())
+		if e != nil {
+			diags.AddError(fmt.Sprintf("error parsing configlet section : '%s'", j.Section.ValueString()), e.Error())
+		}
+		r.Generators[i] = goapstra.ConfigletGenerator{
+			ConfigStyle:          a,
+			Section:              s,
+			TemplateText:         j.TemplateText.ValueString(),
+			NegationTemplateText: j.NegationTemplateText.ValueString(),
+			Filename:             j.FileName.ValueString(),
+		}
+	}
+	return r
 }
 
 func (o *Configlet) loadApiData(ctx context.Context, in *goapstra.ConfigletData, diags *diag.Diagnostics) {
