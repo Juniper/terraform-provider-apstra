@@ -77,16 +77,3 @@ func sliceWithoutInt(in []int, t int) ([]int, int) {
 //	return result
 //}
 //
-//func newRga(name goapstra.ResourceGroupName, poolIds []goapstra.ObjectId, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
-//	poolIds := make([]goapstra.ObjectId, 0)
-//	if !set.IsNull() {
-//		poolIds = sliceAttrValueToSliceObjectId(set.Elems)
-//	}
-//	return &goapstra.ResourceGroupAllocation{
-//		ResourceGroup: goapstra.ResourceGroup{
-//			Type: resourceTypeNameFromResourceGroupName(name, diags),
-//			Name: name,
-//		},
-//		PoolIds: poolIds,
-//	}
-//}

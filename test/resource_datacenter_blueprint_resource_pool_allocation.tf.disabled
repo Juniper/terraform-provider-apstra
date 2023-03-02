@@ -1,0 +1,5 @@
+resource "apstra_datacenter_blueprint_resource_pool_allocation" "r" {
+  pool_id      = "Private-64512-65534"
+  role         = "spine_asns"
+  blueprint_id = "2a0f0c0b-66e2-41b8-90db-07e6446ec354"
+}

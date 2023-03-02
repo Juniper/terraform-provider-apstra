@@ -30,7 +30,7 @@ func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resourc
 	o.client = ResourceGetClient(ctx, req, resp)
 }
 
-func (o *resourceDatacenterBlueprint) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource instantiates a Datacenter Blueprint from a template.",
 		Attributes:          blueprint.Blueprint{}.ResourceAttributes(),
@@ -38,7 +38,8 @@ func (o *resourceDatacenterBlueprint) Schema(_ context.Context, req resource.Sch
 }
 
 func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	if o.client == nil { // cannot proceed without a client
+	// Cannot proceed without a client
+	if o.client == nil {
 		return
 	}
 
