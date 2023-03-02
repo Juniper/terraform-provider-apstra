@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 )
 
 var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
@@ -64,7 +65,7 @@ func (o *resourceManagedDevice) Schema(_ context.Context, req resource.SchemaReq
 				MarkdownDescription: "Management IP address of the system.",
 				Required:            true,
 				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-				Validators:          []validator.String{parseIp(false, false)},
+				Validators:          []validator.String{apstravalidator.ParseIp(false, false)},
 			},
 			"device_key": schema.StringAttribute{
 				MarkdownDescription: "Key which uniquely identifies a System asset. Possibly a MAC address or serial number.",

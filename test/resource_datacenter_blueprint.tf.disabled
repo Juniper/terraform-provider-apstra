@@ -1,0 +1,4 @@
+resource "apstra_datacenter_blueprint" "r" {
+  name        = "aaa"
+  template_id = "L2_Virtual_4x_Access"
+}

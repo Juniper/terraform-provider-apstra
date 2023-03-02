@@ -3,6 +3,7 @@ package apstra
 const (
 	errApiCompatibility                       = "Apstra API version incompatibility"
 	errApiData                                = "API produced unexpected result"
+	errApiError                               = "API response included an error"
 	errDataSourceConfigureProviderDataSummary = "Unexpected Data Source Configure Type."
 	errDataSourceConfigureProviderDataDetail  = "Expected '%T', got: '%T'. Please report this issue to the provider maintainers."
 	errResourceConfigureProviderDataSummary   = "Unexpected Resource Configure Type."
@@ -15,7 +16,7 @@ const (
 	errResourceUnconfiguredReadDetail         = "Unconfigured resource encountered in Read() operation, possibly because it depends on an unknown value from another object. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!"
 	errResourceUnconfiguredUpdateDetail       = "Unconfigured resource encountered in Update() operation, possibly because it depends on an unknown value from another object. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!"
 	errResourceUnconfiguredDeleteDetail       = "Unconfigured resource encountered in Delete() operation, possibly because it depends on an unknown value from another object. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!"
-	errReadingAllocation                      = "error reading '%s' resource allocation '%s' for blueprint '%s'"
+	errReadingAllocation                      = "error reading '%s' resource allocation '%s' for Blueprint '%s'"
 	errSettingAllocation                      = "error setting resource allocation"
 	errProviderBug                            = "Provider Bug. Please report this issue to the provider maintainers."
 	errInvalidConfig                          = "invalid configuration"
@@ -25,8 +26,8 @@ const (
 	errResourceReadFail           = "Resource Read() failure'"
 	errInsufficientConfigElements = "Available configuration elements did provide a solution. Please report this issue to the provider maintainers"
 
-	warnUnwantedResourceSummary = "ignoring attempt to set resource allocation because it is not needed by blueprint"
+	warnUnwantedResourceSummary = "ignoring attempt to set resource allocation because it is not needed by Blueprint"
 	warnUnwantedResourceDetail  = "not allocating resources for '%s' please remove element from the configuration"
-	warnMissingResourceSummary  = "blueprint staged with missing resources"
+	warnMissingResourceSummary  = "Blueprint staged with missing resources"
 	warnMissingResourceDetail   = "the following resource assignments should be added to the configuration: %s"
 )

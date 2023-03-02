@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"terraform-provider-apstra/apstra/resources"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceIpv6Pool{}
@@ -21,7 +22,7 @@ func (o *dataSourceIpv6Pool) Metadata(_ context.Context, req datasource.Metadata
 }
 
 func (o *dataSourceIpv6Pool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceIpv6Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -30,7 +31,7 @@ func (o *dataSourceIpv6Pool) Schema(_ context.Context, _ datasource.SchemaReques
 			"At least one optional attribute is required. " +
 			"It is incumbent upon the user to ensure the lookup criteria matches exactly one IPv6 Pool. " +
 			"Matching zero or more IPv6 Pools will produce an error.",
-		Attributes: ipv6Pool{}.dataSourceAttributes(),
+		Attributes: resources.Ipv6Pool{}.DataSourceAttributes(),
 	}
 }
 
@@ -40,7 +41,7 @@ func (o *dataSourceIpv6Pool) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	var config ipv6Pool
+	var config resources.Ipv6Pool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -79,8 +80,8 @@ func (o *dataSourceIpv6Pool) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	// create new state object
-	var state ipv6Pool
-	state.loadApiData(ctx, apiData, &resp.Diagnostics)
+	var state resources.Ipv6Pool
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

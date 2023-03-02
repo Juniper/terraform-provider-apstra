@@ -22,14 +22,14 @@ func (o *dataSourceConfiglet) Metadata(_ context.Context, req datasource.Metadat
 }
 
 func (o *dataSourceConfiglet) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Configlet.\n\n" +
 			"At least one optional attribute is required. ",
-		Attributes: configlet{}.dataSourceAttributes(),
+		Attributes: Configlet{}.dataSourceAttributes(),
 	}
 }
 
@@ -39,7 +39,7 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	var config configlet
+	var config Configlet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -78,7 +78,7 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	// create new state object
-	var state configlet
+	var state Configlet
 	state.Id = types.StringValue(string(api.Id))
 	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {

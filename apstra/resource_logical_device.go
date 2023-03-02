@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ resource.ResourceWithConfigure = &resourceLogicalDevice{}
@@ -22,32 +23,32 @@ func (o *resourceLogicalDevice) Metadata(_ context.Context, req resource.Metadat
 }
 
 func (o *resourceLogicalDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IPv4 resource pool",
-		Attributes:          logicalDevice{}.resourceAttributes(),
+		Attributes:          design.LogicalDevice{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config logicalDevice
+	var config design.LogicalDevice
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// extract []logicalDevicePanel from the resourceLogicalDevice
-	panels := config.panels(ctx, &resp.Diagnostics)
+	// extract []LogicalDevicePanel from the resourceLogicalDevice
+	panels := config.GetPanels(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// validate each panel
 	for i, panel := range panels {
-		panel.validate(ctx, i, &resp.Diagnostics)
+		panel.Validate(ctx, i, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -61,13 +62,13 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Retrieve values from plan
-	var plan logicalDevice
+	var plan design.LogicalDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -88,7 +89,7 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// Get current state
-	var state logicalDevice
+	var state design.LogicalDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -111,9 +112,9 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// Create new state object
-	var newState logicalDevice
+	var newState design.LogicalDevice
 	newState.Id = types.StringValue(string(ld.Id))
-	newState.loadApiData(ctx, ld.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, ld.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -129,14 +130,14 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	// Get plan values
-	var plan logicalDevice
+	var plan design.LogicalDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Update Logical Device
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -162,7 +163,7 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	var state logicalDevice
+	var state design.LogicalDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

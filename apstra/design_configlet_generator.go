@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type configletGenerator struct {
@@ -83,6 +84,6 @@ func (o *configletGenerator) loadApiData(ctx context.Context, in *goapstra.Confi
 	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
 	o.Section = types.StringValue(in.Section.String())
 	o.TemplateText = types.StringValue(in.TemplateText)
-	o.NegationTemplateText = stringValueOrNull(ctx, in.NegationTemplateText, diags)
-	o.FileName = stringValueOrNull(ctx, in.Filename, diags)
+	o.NegationTemplateText = utils.StringValueOrNull(ctx, in.NegationTemplateText, diags)
+	o.FileName = utils.StringValueOrNull(ctx, in.Filename, diags)
 }

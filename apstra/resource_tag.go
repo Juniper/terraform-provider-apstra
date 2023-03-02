@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ resource.ResourceWithConfigure = &resourceTag{}
@@ -20,13 +21,13 @@ func (o *resourceTag) Metadata(_ context.Context, req resource.MetadataRequest, 
 }
 
 func (o *resourceTag) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceTag) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Tag in the Apstra Design tab.",
-		Attributes:          tag{}.resourceAttributes(),
+		Attributes:          design.Tag{}.ResourceAttributes(),
 	}
 }
 
@@ -37,14 +38,14 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	// Retrieve values from plan
-	var plan tag
+	var plan design.Tag
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Convert the plan into an API request
-	tagRequest := plan.request(ctx, &resp.Diagnostics)
+	// Convert the plan into an API Request
+	tagRequest := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -70,7 +71,7 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 
 	// Get current state
-	var state tag
+	var state design.Tag
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -90,9 +91,9 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 	}
 
 	// create new state object
-	var newState tag
+	var newState design.Tag
 	newState.Id = types.StringValue(string(t.Id))
-	newState.loadApiData(ctx, t.Data, &resp.Diagnostics)
+	newState.LoadApiData(ctx, t.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -109,13 +110,13 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	// Get plan values
-	var plan tag
+	var plan design.Tag
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tagRequest := plan.request(ctx, &resp.Diagnostics)
+	tagRequest := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -138,7 +139,7 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 		return
 	}
 
-	var state tag
+	var state design.Tag
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

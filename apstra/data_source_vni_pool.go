@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
+	"terraform-provider-apstra/apstra/resources"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceVniPool{}
@@ -22,7 +23,7 @@ func (o *dataSourceVniPool) Metadata(_ context.Context, req datasource.MetadataR
 }
 
 func (o *dataSourceVniPool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceVniPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -31,7 +32,7 @@ func (o *dataSourceVniPool) Schema(_ context.Context, _ datasource.SchemaRequest
 			"At least one optional attribute is required. " +
 			"It is incumbent upon the user to ensure the lookup criteria matches exactly one VNI Pool. " +
 			"Matching zero or more VNI Pools will produce an error.",
-		Attributes: vniPool{}.dataSourceAttributes(),
+		Attributes: resources.VniPool{}.DataSourceAttributes(),
 	}
 }
 
@@ -41,7 +42,7 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 		return
 	}
 
-	var config vniPool
+	var config resources.VniPool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -80,8 +81,8 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	// create new state object
-	var state vniPool
-	state.loadApiData(ctx, apiData, &resp.Diagnostics)
+	var state resources.VniPool
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

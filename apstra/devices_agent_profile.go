@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type agentProfile struct {
@@ -147,9 +148,9 @@ func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *go
 func (o *agentProfile) loadApiData(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) {
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Label)
-	o.Platform = stringValueOrNull(ctx, in.Platform, diags)
+	o.Platform = utils.StringValueOrNull(ctx, in.Platform, diags)
 	o.HasUsername = types.BoolValue(in.HasUsername)
 	o.HasPassword = types.BoolValue(in.HasPassword)
-	o.Packages = mapValueOrNull(ctx, types.StringType, in.Packages, diags)
-	o.OpenOptions = mapValueOrNull(ctx, types.StringType, in.OpenOptions, diags)
+	o.Packages = utils.MapValueOrNull(ctx, types.StringType, in.Packages, diags)
+	o.OpenOptions = utils.MapValueOrNull(ctx, types.StringType, in.OpenOptions, diags)
 }

@@ -24,17 +24,17 @@ func (o *resourceConfiglet) Metadata(_ context.Context, req resource.MetadataReq
 }
 
 func (o *resourceConfiglet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This  resource provides details of a specific Configlet.\n\n" +
 			"At least one optional attribute is required. ",
-		Attributes: configlet{}.resourceAttributes(),
+		Attributes: Configlet{}.resourceAttributes(),
 	}
 }
-func (o configlet) make_configlet_request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ConfigletRequest {
+func (o Configlet) make_configlet_request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ConfigletRequest {
 	var tf_gen []configletGenerator
 	var r *goapstra.ConfigletRequest = &goapstra.ConfigletRequest{}
 
@@ -90,7 +90,7 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 	}
 
 	// Retrieve values from plan
-	var plan configlet
+	var plan Configlet
 	req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -118,7 +118,7 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	var state configlet
+	var state Configlet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -150,7 +150,7 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 	}
 
 	// Get plan values
-	var plan configlet
+	var plan Configlet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -180,7 +180,7 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
-	var state configlet
+	var state Configlet
 
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

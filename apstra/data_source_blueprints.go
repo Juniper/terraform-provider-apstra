@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -20,9 +21,12 @@ const (
 
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
 var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprints{}
+var _ versionValidator = &dataSourceBlueprints{}
 
 type dataSourceBlueprints struct {
-	client *goapstra.Client
+	client           *goapstra.Client
+	minClientVersion *version.Version
+	maxClientVersion *version.Version
 }
 
 func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -30,7 +34,7 @@ func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.Metada
 }
 
 func (o *dataSourceBlueprints) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -55,33 +59,28 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 }
 
 func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	if o.client == nil {
+	if o.client == nil { // cannot proceed without a client
 		return
 	}
 
-	var config dBlueprintIds
+	var config blueprintIds
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if !config.RefDesign.IsNull() && config.RefDesign.ValueString() == goapstra.RefDesignFreeform.String() {
-		minVer, err := version.NewVersion(minimumFreeFormVersion)
+	if config.RefDesign.ValueString() == goapstra.RefDesignFreeform.String() {
+		var err error
+		o.minClientVersion, err = version.NewVersion("4.1.2")
 		if err != nil {
-			resp.Diagnostics.AddError("error parsing minimum freeform version", err.Error())
-		}
+			resp.Diagnostics.AddError(errProviderBug,
+				fmt.Sprintf("error parsing min/max version - %s", err.Error()))
 
-		thisVer, err := version.NewVersion(o.client.ApiVersion())
-		if err != nil {
-			resp.Diagnostics.AddError("error parsing reported apstra version", err.Error())
-		}
-
-		if thisVer.LessThan(minVer) {
-			resp.Diagnostics.AddError(errApiCompatibility,
-				fmt.Sprintf("Apstra %q doesn't support reference design %q",
-					o.client.ApiVersion(), goapstra.RefDesignFreeform.String()))
+			return
 		}
 	}
+
+	o.checkVersion(ctx, &resp.Diagnostics)
 }
 
 func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -90,7 +89,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	var config dBlueprintIds
+	var config blueprintIds
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -116,7 +115,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 
 		bpStatuses, err := o.client.GetAllBlueprintStatus(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("error retrieving blueprint statuses", err.Error())
+			resp.Diagnostics.AddError("error retrieving Blueprint statuses", err.Error())
 			return
 		}
 		for _, bpStatus := range bpStatuses {
@@ -132,17 +131,33 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	// create new state object
-	var state struct {
-		Ids types.Set `tfsdk:"ids"`
-	}
-	state.Ids = idSet
+	// save the list of IDs in the config object
+	config.Ids = idSet
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-type dBlueprintIds struct {
+type blueprintIds struct {
 	Ids       types.Set    `tfsdk:"ids"`
 	RefDesign types.String `tfsdk:"reference_design"`
+}
+
+func (o *dataSourceBlueprints) apiVersion() (*version.Version, error) {
+	if o.client == nil {
+		return nil, nil
+	}
+	return version.NewVersion(o.client.ApiVersion())
+}
+
+func (o *dataSourceBlueprints) cfgVersionMin() (*version.Version, error) {
+	return o.minClientVersion, nil
+}
+
+func (o *dataSourceBlueprints) cfgVersionMax() (*version.Version, error) {
+	return o.maxClientVersion, nil
+}
+
+func (o *dataSourceBlueprints) checkVersion(ctx context.Context, diags *diag.Diagnostics) {
+	checkVersionCompatibility(ctx, o, diags)
 }

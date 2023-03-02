@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/resources"
 )
 
 var _ resource.ResourceWithConfigure = &resourceVniPool{}
@@ -23,24 +24,24 @@ func (o *resourceVniPool) Metadata(_ context.Context, req resource.MetadataReque
 }
 
 func (o *resourceVniPool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = resourceGetClient(ctx, req, resp)
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceVniPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an VNI resource pool",
-		Attributes:          vniPool{}.resourceAttributes(),
+		Attributes:          resources.VniPool{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config vniPool
+	var config resources.VniPool
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	poolRanges := make([]vniPoolRange, len(config.Ranges.Elements()))
+	poolRanges := make([]resources.VniPoolRange, len(config.Ranges.Elements()))
 	d := config.Ranges.ElementsAs(ctx, &poolRanges, false)
 	resp.Diagnostics.Append(d...)
 	if resp.Diagnostics.HasError() {
@@ -49,7 +50,7 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 
 	var okayRanges goapstra.IntRanges
 	for _, poolRange := range poolRanges {
-		setVal, d := types.ObjectValueFrom(ctx, poolRange.attrTypes(), &poolRange)
+		setVal, d := types.ObjectValueFrom(ctx, poolRange.AttrTypes(), &poolRange)
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return
@@ -86,14 +87,14 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Retrieve values from plan
-	var plan vniPool
+	var plan resources.VniPool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create new VNI Pool
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -119,8 +120,8 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// create state object
-	var state vniPool
-	state.loadApiData(ctx, p, &resp.Diagnostics)
+	var state resources.VniPool
+	state.LoadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -136,7 +137,7 @@ func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// Get current state
-	var state vniPool
+	var state resources.VniPool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -157,8 +158,8 @@ func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// create state object
-	var newState vniPool
-	newState.loadApiData(ctx, p, &resp.Diagnostics)
+	var newState resources.VniPool
+	newState.LoadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -174,14 +175,14 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Get plan values
-	var plan vniPool
+	var plan resources.VniPool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Update VNI Pool
-	request := plan.request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -212,8 +213,8 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// create new state object
-	var state vniPool
-	state.loadApiData(ctx, p, &resp.Diagnostics)
+	var state resources.VniPool
+	state.LoadApiData(ctx, p, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -228,7 +229,7 @@ func (o *resourceVniPool) Delete(ctx context.Context, req resource.DeleteRequest
 		return
 	}
 
-	var state vniPool
+	var state resources.VniPool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

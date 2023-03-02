@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceTemplateRackBased{}
@@ -22,7 +23,7 @@ func (o *dataSourceTemplateRackBased) Metadata(_ context.Context, req datasource
 }
 
 func (o *dataSourceTemplateRackBased) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = dataSourceGetClient(ctx, req, resp)
+	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
 func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -31,7 +32,7 @@ func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.Sch
 			"At least one optional attribute is required. " +
 			"It is incumbent on the user to ensure the criteria matches exactly one Rack Based Template. " +
 			"Matching zero Rack Based Templates or more than one Rack Based Template will produce an error.",
-		Attributes: templateRackBased{}.dataSourceAttributes(),
+		Attributes: design.TemplateRackBased{}.DataSourceAttributes(),
 	}
 }
 
@@ -41,7 +42,7 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 		return
 	}
 
-	var config templateRackBased
+	var config design.TemplateRackBased
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -76,9 +77,9 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 	}
 
 	// create state object
-	var state templateRackBased
+	var state design.TemplateRackBased
 	state.Id = types.StringValue(string(api.Id))
-	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

@@ -1,3 +1,0 @@
-data "apstra_datacenter_blueprint_status" "d" {
-  name = "foo"
-}
