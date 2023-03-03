@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceConfiglet{}
@@ -29,7 +30,7 @@ func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaReque
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Configlet.\n\n" +
 			"At least one optional attribute is required. ",
-		Attributes: Configlet{}.dataSourceAttributes(),
+		Attributes: design.Configlet{}.DataSourceAttributes(),
 	}
 }
 
@@ -39,7 +40,7 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	var config Configlet
+	var config design.Configlet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -78,9 +79,9 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	// create new state object
-	var state Configlet
+	var state design.Configlet
 	state.Id = types.StringValue(string(api.Id))
-	state.loadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
