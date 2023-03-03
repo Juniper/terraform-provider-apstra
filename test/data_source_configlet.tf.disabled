@@ -1,3 +1,4 @@
-#data "apstra_configlet" "d" {
-#  name = "US-MOTD"
-#}
+data "apstra_configlet" "d" {
+  name = "US-MOTD"
+}
+
