@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
 )
 
@@ -37,13 +38,14 @@ func (o *resourcePoolAllocation) ValidateConfig(ctx context.Context, req resourc
 		return
 	}
 
-	var plan blueprint.PoolAllocation
-	resp.Diagnostics.Append(req.Config.Get(ctx, &plan)...)
+	// Retrieve values from config
+	var config blueprint.PoolAllocation
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.Validate(ctx, o.client, &resp.Diagnostics)
+	config.Validate(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -74,44 +76,16 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 	}
 
-	// Parse 'role' into a ResourceGroupName
-	var rgName goapstra.ResourceGroupName
-	err = rgName.FromString(plan.Role.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("error parsing role %q", plan.Role.ValueString()), err.Error())
+	// Create a resource allocation request
+	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Collect the current allocations for the given resource name+type
-	rga, err := client.GetResourceAllocation(ctx, &goapstra.ResourceGroup{
-		Type: rgName.Type(),
-		Name: rgName,
-	})
+	// Set the new allocation
+	err = client.SetResourceAllocation(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error retrieving resource allocation for %q in blueprint %q", rgName.String(), client.Id()),
-			err.Error())
-		return
-	}
-
-	// If the desired pool is on the list, then we're done.
-	for _, poolId := range rga.PoolIds {
-		if poolId.String() == plan.PoolId.ValueString() {
-			// nothing to do because the pool is already allocated!
-			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-			return
-		}
-	}
-
-	// Add our pool to the list and send it back to Apstra
-	rga.PoolIds = append(rga.PoolIds, goapstra.ObjectId(plan.PoolId.ValueString()))
-	err = client.SetResourceAllocation(ctx, rga)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error allocating pool %q to role %q in blueprint %q",
-				plan.PoolId.ValueString(), plan.Role.ValueString(), plan.BlueprintId.ValueString()),
-			err.Error(),
-		)
+		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
 	}
 
 	// Set state
@@ -119,16 +93,117 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 }
 
 func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	//TODO implement me
-	panic("implement me")
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.PoolAllocation
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create a blueprint client
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+		return
+	}
+
+	// Create an allocation request (because it's got the ResourceGroup object inside)
+	allocationRequest := state.Request(ctx, &resp.Diagnostics)
+	apiData, err := client.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error getting %q resource allocation", allocationRequest.ResourceGroup.Name.String()),
+			err.Error())
+		return
+	}
+
+	// Load the API response into state
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//TODO implement me
-	panic("implement me")
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
+	// Retrieve values from plan
+	var plan blueprint.PoolAllocation
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Validate the plan (depends on state at Apstra)
+	plan.Validate(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create a blueprint client
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+	}
+
+	// Create a resource allocation request
+	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set the new allocation
+	err = client.SetResourceAllocation(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
+	}
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	//TODO implement me
-	panic("implement me")
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.PoolAllocation
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Clear the poolIds so they'll get un-allocated
+	state.PoolIds = types.SetNull(types.StringType)
+
+	// Create a blueprint client
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+	}
+
+	// Create a resource allocation request
+	request := state.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set the empty allocation
+	err = client.SetResourceAllocation(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
+	}
 }
