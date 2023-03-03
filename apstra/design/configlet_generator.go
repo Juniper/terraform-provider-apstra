@@ -57,6 +57,7 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 		"section": resourceSchema.StringAttribute{
 			MarkdownDescription: "Config Section",
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.OneOf(AllowedConfigletSections()...)},
 		},
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",

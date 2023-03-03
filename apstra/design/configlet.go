@@ -25,9 +25,9 @@ type Configlet struct {
 func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a C	onfiglet by ID. Required when `name`is omitted.",
-			Optional: true,
-			Computed: true,
+			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name` is omitted.",
+			Optional:            true,
+			Computed:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
@@ -37,12 +37,13 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id`is omitted.",
+			MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"generators": dataSourceSchema.ListNestedAttribute{
-			MarkdownDescription: "Generators organized by Network OS",
+			MarkdownDescription: "Ordered list of Generators",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: ConfigletGenerator{}.DataSourceAttributesNested(),
@@ -60,8 +61,8 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configlet name displayed in the Apstra web UI",
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"generators": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Generators organized by Network OS",
@@ -79,9 +80,6 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goaps
 
 	// We only use the Datacenter Reference Design
 	refArchs := []goapstra.RefDesign{goapstra.RefDesignDatacenter}
-	if diags.HasError() {
-		return nil
-	}
 
 	// Extract configlet generators
 	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))
