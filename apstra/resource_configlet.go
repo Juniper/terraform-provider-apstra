@@ -12,8 +12,6 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
 
-//var _ resource.ResourceWithValidateConfig = &resourceConfiglet{}
-
 type resourceConfiglet struct {
 	client *goapstra.Client
 }
@@ -28,9 +26,8 @@ func (o *resourceConfiglet) Configure(ctx context.Context, req resource.Configur
 
 func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This  resource provides details of a specific Configlet.\n\n" +
-			"At least one optional attribute is required. ",
-		Attributes: design.Configlet{}.ResourceAttributes(),
+		MarkdownDescription: "This resource creates a specific Configlet.\n\n",
+		Attributes:          design.Configlet{}.ResourceAttributes(),
 	}
 }
 
@@ -65,7 +62,7 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 
 func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
 		return
 	}
 
@@ -78,19 +75,16 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 	var err error
 	var api *goapstra.Configlet
 	var ace goapstra.ApstraClientErr
-
 	api, err = o.client.GetConfiglet(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
-
 	state.Id = types.StringValue(string(api.Id))
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -113,7 +107,6 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 	// Update Configlet
-
 	err := o.client.UpdateConfiglet(ctx, goapstra.ObjectId(plan.Id.ValueString()), c)
 	if err != nil {
 		var ace goapstra.ApstraClientErr

@@ -23,10 +23,10 @@ type ConfigletGenerator struct {
 	FileName             types.String `tfsdk:"filename"`
 }
 
-func (o ConfigletGenerator) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ConfigletGenerator) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"config_style": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf(""),
+			MarkdownDescription: fmt.Sprintf("Indicates Platform Specific Configuration Style"),
 			Computed:            true,
 		},
 		"section": dataSourceSchema.StringAttribute{
@@ -48,7 +48,7 @@ func (o ConfigletGenerator) DataSourceAttributes() map[string]dataSourceSchema.A
 	}
 }
 
-func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"config_style": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(AllowedConfigletStyles(), "', '")),
@@ -66,10 +66,12 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 		"negation_template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Negation Template Text",
 			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"filename": resourceSchema.StringAttribute{
 			MarkdownDescription: "FileName",
 			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 	}
 }
@@ -137,12 +139,5 @@ func AllowedConfigletStyles() []string {
 		goapstra.ApstraPlatformOSEos.String(),
 		goapstra.ApstraPlatformOSJunos.String(),
 		goapstra.ApstraPlatformOSSonic.String(),
-	}
-}
-
-func AllowedReferenceArchs() []string {
-	return []string{
-		goapstra.RefDesignTwoStageL3Clos.String(),
-		goapstra.RefDesignFreeform.String(),
 	}
 }

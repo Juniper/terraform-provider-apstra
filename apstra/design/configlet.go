@@ -3,14 +3,14 @@ package design
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/utils"
@@ -19,7 +19,6 @@ import (
 type Configlet struct {
 	Id         types.String `tfsdk:"id"`
 	Name       types.String `tfsdk:"name"`
-	RefArchs   types.Set    `tfsdk:"ref_archs"`
 	Generators types.List   `tfsdk:"generators"`
 }
 
@@ -27,8 +26,8 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up a C	onfiglet by ID. Required when `name`is omitted.",
-			Optional: true,
-			Computed: true,
+			Optional:            true,
+			Computed:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
@@ -41,11 +40,6 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id`is omitted.",
 			Optional:            true,
 			Computed:            true,
-		},
-		"ref_archs": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "List of architectures",
-			Computed:            true,
-			ElementType:         types.StringType,
 		},
 		"generators": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Generators organized by Network OS",
@@ -60,19 +54,14 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet ID",
+			MarkdownDescription: "Apstra ID number of Configlet",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet Name",
+			MarkdownDescription: "Configlet name displayed in the Apstra web UI",
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			Required:            true,
-		},
-		"ref_archs": resourceSchema.SetAttribute{
-			MarkdownDescription: "List of architectures",
-			Required:            true,
-			ElementType:         types.StringType,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"generators": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Generators organized by Network OS",
@@ -88,29 +77,15 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ConfigletRequest {
 	var d diag.Diagnostics
 
-	// Extract reference architecture strings
-	refArchStrings := make([]string, len(o.RefArchs.Elements()))
-	d = o.RefArchs.ElementsAs(ctx, &refArchStrings, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-
-	// Convert reference architecture strings to goapstra types
-	refArchs := make([]goapstra.RefDesign, len(refArchStrings))
-	for i, s := range refArchStrings {
-		err := refArchs[i].FromString(s)
-		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing reference architecture %q", s), err.Error())
-		}
-	}
+	// We only use the Datacenter Reference Design
+	refArchs := []goapstra.RefDesign{goapstra.RefDesignDatacenter}
 	if diags.HasError() {
 		return nil
 	}
 
 	// Extract configlet generators
 	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))
-	d = o.RefArchs.ElementsAs(ctx, &tfGenerators, false)
+	d = o.Generators.ElementsAs(ctx, &tfGenerators, false)
 	diags.Append(d...)
 	if diags.HasError() {
 		return nil
@@ -128,16 +103,11 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goaps
 	return &goapstra.ConfigletRequest{
 		DisplayName: o.Name.ValueString(),
 		RefArchs:    refArchs,
-		Generators:  nil, // todo
+		Generators:  generators,
 	}
 }
 
 func (o *Configlet) LoadApiData(ctx context.Context, in *goapstra.ConfigletData, diags *diag.Diagnostics) {
-	refArchs := make([]string, len(in.RefArchs))
-	for i, refArch := range in.RefArchs {
-		refArchs[i] = refArch.String()
-	}
-
 	configletGenerators := make([]ConfigletGenerator, len(in.Generators))
 	for i := range in.Generators {
 		configletGenerators[i].LoadApiData(ctx, &in.Generators[i], diags)
@@ -147,6 +117,5 @@ func (o *Configlet) LoadApiData(ctx context.Context, in *goapstra.ConfigletData,
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
-	o.RefArchs = utils.SetValueOrNull(ctx, types.StringType, refArchs, diags)
 	o.Generators = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: ConfigletGenerator{}.AttrTypes()}, configletGenerators, diags)
 }
