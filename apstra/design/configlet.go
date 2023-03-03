@@ -4,6 +4,8 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,9 +26,9 @@ type Configlet struct {
 func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name`is omitted.",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: "Populate this field to look up a C	onfiglet by ID. Required when `name`is omitted.",
+			Optional: true,
+			Computed: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
@@ -58,17 +60,19 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name`is omitted.",
+			MarkdownDescription: "Configlet ID",
 			Computed:            true,
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id`is omitted.",
+			MarkdownDescription: "Configlet Name",
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			Required:            true,
 		},
 		"ref_archs": resourceSchema.SetAttribute{
 			MarkdownDescription: "List of architectures",
 			Required:            true,
 			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"generators": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Generators organized by Network OS",
@@ -76,6 +80,7 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: ConfigletGenerator{}.ResourceAttributes(),
 			},
+			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 		},
 	}
 }

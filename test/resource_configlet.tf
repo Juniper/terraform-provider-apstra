@@ -3,8 +3,8 @@ data "apstra_configlet" "d" {
 }
 
 
-resource "apstra_configlet" "r" {
-  name        = "TEST-MOTD-AGAIN"
+resource "apstra_configlet" "r1" {
+  name        = "MOTD-TEST-AGAIN-AGAIN"
   ref_archs   = ["two_stage_l3clos"]
   generators  = [
   {

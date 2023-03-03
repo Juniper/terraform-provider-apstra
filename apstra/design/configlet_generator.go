@@ -4,11 +4,14 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -48,9 +51,9 @@ func (o ConfigletGenerator) DataSourceAttributes() map[string]dataSourceSchema.A
 func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"config_style": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf(""),
+			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(AllowedConfigletStyles(), "', '")),
 			Required:            true,
-		},
+			Validators:          []validator.String{stringvalidator.OneOf(AllowedConfigletStyles()...)}},
 		"section": resourceSchema.StringAttribute{
 			MarkdownDescription: "Config Section",
 			Required:            true,
@@ -58,6 +61,7 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"negation_template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Negation Template Text",
@@ -109,5 +113,36 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 		TemplateText:         o.TemplateText.ValueString(),
 		NegationTemplateText: o.NegationTemplateText.ValueString(),
 		Filename:             o.FileName.ValueString(),
+	}
+}
+
+func AllowedConfigletSections() []string {
+	return []string{
+		goapstra.ApstraConfigletSectionSystem.String(),
+		goapstra.ApstraConfigletSectionInterface.String(),
+		goapstra.ApstraConfigletSectionFile.String(),
+		goapstra.ApstraConfigletSectionFRR.String(),
+		goapstra.ApstraConfigletSectionOSPF.String(),
+		goapstra.ApstraConfigletSectionSystemTop.String(),
+		goapstra.ApstraConfigletSectionSetBasedSystem.String(),
+		goapstra.ApstraConfigletSectionSetBasedInterface.String(),
+		goapstra.ApstraConfigletSectionDeleteBasedInterface.String(),
+	}
+}
+
+func AllowedConfigletStyles() []string {
+	return []string{
+		goapstra.ApstraPlatformOSCumulus.String(),
+		goapstra.ApstraPlatformOSNxos.String(),
+		goapstra.ApstraPlatformOSEos.String(),
+		goapstra.ApstraPlatformOSJunos.String(),
+		goapstra.ApstraPlatformOSSonic.String(),
+	}
+}
+
+func AllowedReferenceArchs() []string {
+	return []string{
+		goapstra.RefDesignTwoStageL3Clos.String(),
+		goapstra.RefDesignFreeform.String(),
 	}
 }
