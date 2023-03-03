@@ -1,4 +1,4 @@
-package apstra
+package design
 
 import (
 	"bitbucket.org/apstrktr/goapstra"
@@ -12,7 +12,7 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-type configletGenerator struct {
+type ConfigletGenerator struct {
 	ConfigStyle          types.String `tfsdk:"config_style"`
 	Section              types.String `tfsdk:"section"`
 	TemplateText         types.String `tfsdk:"template_text"`
@@ -20,7 +20,7 @@ type configletGenerator struct {
 	FileName             types.String `tfsdk:"filename"`
 }
 
-func (o configletGenerator) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ConfigletGenerator) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"config_style": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(""),
@@ -45,7 +45,7 @@ func (o configletGenerator) dataSourceAttributes() map[string]dataSourceSchema.A
 	}
 }
 
-func (o configletGenerator) resourceAttributes() map[string]resourceSchema.Attribute {
+func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"config_style": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(""),
@@ -70,7 +70,7 @@ func (o configletGenerator) resourceAttributes() map[string]resourceSchema.Attri
 	}
 }
 
-func (o configletGenerator) attrTypes() map[string]attr.Type {
+func (o ConfigletGenerator) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"config_style":           types.StringType,
 		"section":                types.StringType,
@@ -80,10 +80,34 @@ func (o configletGenerator) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *configletGenerator) loadApiData(ctx context.Context, in *goapstra.ConfigletGenerator, diags *diag.Diagnostics) {
+func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *goapstra.ConfigletGenerator, diags *diag.Diagnostics) {
 	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
 	o.Section = types.StringValue(in.Section.String())
 	o.TemplateText = types.StringValue(in.TemplateText)
 	o.NegationTemplateText = utils.StringValueOrNull(ctx, in.NegationTemplateText, diags)
 	o.FileName = utils.StringValueOrNull(ctx, in.Filename, diags)
+}
+
+func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.ConfigletGenerator {
+	var err error
+
+	var configStyle goapstra.ApstraPlatformOS
+	err = configStyle.FromString(o.ConfigStyle.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing configlet config_style %q", o.ConfigStyle.ValueString()), err.Error())
+	}
+
+	var section goapstra.ApstraConfigletSection
+	err = section.FromString(o.Section.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
+	}
+
+	return &goapstra.ConfigletGenerator{
+		ConfigStyle:          configStyle,
+		Section:              section,
+		TemplateText:         o.TemplateText.ValueString(),
+		NegationTemplateText: o.NegationTemplateText.ValueString(),
+		Filename:             o.FileName.ValueString(),
+	}
 }
