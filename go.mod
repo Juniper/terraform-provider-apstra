@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	//                                             HHMMSS
-	bitbucket.org/apstrktr/goapstra v0.0.0-20230302140942-a4c31cd84080
+	bitbucket.org/apstrktr/goapstra v0.0.0-20230303211329-7fdb19e03349
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	//github.com/hashicorp/terraform-plugin-framework v1.1.2-0.20230210212753-757f96584fde
@@ -12,7 +12,7 @@ require (
 )
 
 //                                                                                        HHMMSS
-replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230303033321-7a9791138806
+//replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230303033321-7a9791138806
 
 require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.9.0
