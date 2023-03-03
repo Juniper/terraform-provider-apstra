@@ -26,8 +26,8 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up a C	onfiglet by ID. Required when `name`is omitted.",
-			Optional:            true,
-			Computed:            true,
+			Optional: true,
+			Computed: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
@@ -45,7 +45,7 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Generators organized by Network OS",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: ConfigletGenerator{}.DataSourceAttributes(),
+				Attributes: ConfigletGenerator{}.DataSourceAttributesNested(),
 			},
 		},
 	}
@@ -67,7 +67,7 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Generators organized by Network OS",
 			Required:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: ConfigletGenerator{}.ResourceAttributes(),
+				Attributes: ConfigletGenerator{}.ResourceAttributesNested(),
 			},
 			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 		},
