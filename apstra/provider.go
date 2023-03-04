@@ -220,6 +220,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceAgentProfile{} },
 		func() resource.Resource { return &resourceAsnPool{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
+		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },
 		func() resource.Resource { return &resourceIpv4Pool{} },
 		func() resource.Resource { return &resourceIpv6Pool{} },
