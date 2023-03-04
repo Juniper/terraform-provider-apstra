@@ -227,6 +227,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceIpv6Pool{} },
 		func() resource.Resource { return &resourceLogicalDevice{} },
 		func() resource.Resource { return &resourceManagedDevice{} },
+		func() resource.Resource { return &resourcePoolAllocation{} },
 		func() resource.Resource { return &resourceRackType{} },
 		////func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
 		////func() resource.Resource { return &resourceSourceTemplatePodBased{} },
