@@ -219,6 +219,8 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		func() resource.Resource { return &resourceAgentProfile{} },
 		func() resource.Resource { return &resourceAsnPool{} },
+		//func() resource.Resource { return &resourceBlueprint{} },
+		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },
