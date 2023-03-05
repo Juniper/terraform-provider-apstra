@@ -169,13 +169,15 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 }
 
 func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	// Common start to the query:
-	//  - our 'system' node
-	//  - with an outbound 'logical_device' relationship
-	//  - to a 'logical_device' node
-	//  - with an inbound 'logical_device' relationship
-	//  ... continued in the conditional below ...
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	var result struct {
+		Items []struct {
+			InterfaceMap struct {
+				Id string `json:"id"`
+			} `json:"n_interface_map"`
+		} `json:"items"`
+	}
+
+	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
@@ -185,48 +187,17 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("logical_device")},
 		}).
-		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}})
-
-	//if o.InterfaceMapId.IsUnknown() {
-	query = query.
-		//... continue building the query ...
-		//- to any 'interface_map' node (we are hoping for exactly one candidate)
-		//... more query building below when we run it ...
+		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("interface_map")},
 			{"name", goapstra.QEStringVal("n_interface_map")},
-		})
-	//} else {
-	//query = query.
-	//	... continue building the query ...
-	//	- to an 'interface_map' node matching the configured ID
-	//	... more query building below when we run it ...
-	//Node([]goapstra.QEEAttribute{
-	//	{"type", goapstra.QEStringVal("interface_map")},
-	//	{"name", goapstra.QEStringVal("n_interface_map")},
-	//	{"id", goapstra.QEStringVal(o.InterfaceMapId.ValueString())},
-	//})
-	//}
-
-	query = query.
-		// ... continue building the query ...
-		// - with an outbound 'device_profile' relationship
-		// -- to a 'device_profile' node matching our device.
+		}).
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("device_profile")},
 			{"device_profile_id", goapstra.QEStringVal(o.DeviceProfileId.ValueString())},
-		})
-
-	var result struct {
-		Items []struct {
-			InterfaceMap struct {
-				Id string `json:"id"`
-			} `json:"n_interface_map"`
-		} `json:"items"`
-	}
-
-	err := query.Do(&result)
+		}).
+		Do(&result)
 	if err != nil {
 		diags.AddError("error running interface map query", err.Error())
 		return
@@ -251,14 +222,6 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 }
 
 func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
-		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
-			{"name", goapstra.QEStringVal("n_system")},
-		})
-
 	var result struct {
 		Items []struct {
 			System struct {
@@ -267,7 +230,14 @@ func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goa
 		} `json:"items"`
 	}
 
-	err := query.Do(&result)
+	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("system")},
+			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
+			{"name", goapstra.QEStringVal("n_system")},
+		}).
+		Do(&result)
 	if err != nil {
 		diags.AddError("error running system node query", err.Error())
 		return
