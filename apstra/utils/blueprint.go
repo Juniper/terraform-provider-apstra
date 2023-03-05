@@ -3,7 +3,9 @@ package utils
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
 // GetAllSystemsInfo returns map[string]goapstra.ManagedSystemInfo keyed by
@@ -22,4 +24,22 @@ func GetAllSystemsInfo(ctx context.Context, client *goapstra.Client, diags *diag
 		deviceKeyToSystemInfo[si.DeviceKey] = si
 	}
 	return deviceKeyToSystemInfo
+}
+
+func DeviceProfileFromDeviceKey(ctx context.Context, deviceKey string, client *goapstra.Client, diags *diag.Diagnostics) goapstra.ObjectId {
+	gasi := GetAllSystemsInfo(ctx, client, diags)
+	if diags.HasError() {
+		return ""
+	}
+
+	si, ok := gasi[deviceKey]
+	if !ok {
+		diags.AddAttributeError(
+			path.Root("device_key"),
+			"Device Key not found",
+			fmt.Sprintf("Device Key %q not found", deviceKey),
+		)
+		return ""
+	}
+	return si.Facts.AosHclModel
 }
