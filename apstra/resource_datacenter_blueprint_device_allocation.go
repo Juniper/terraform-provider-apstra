@@ -48,6 +48,11 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	plan.AssignInterfaceMap(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	plan.AllocateDevice(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

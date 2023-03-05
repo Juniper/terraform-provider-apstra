@@ -255,7 +255,6 @@ func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goa
 	case 0:
 		diags.AddError("switch node not found in blueprint",
 			fmt.Sprintf("switch/system node with label '%s' not found in blueprint", o.NodeName.ValueString()))
-		return
 	case 1:
 		// no error case
 		o.SystemNodeId = types.StringValue(result.Items[0].System.Id)
@@ -263,7 +262,6 @@ func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goa
 		diags.AddError("multiple switches found in blueprint",
 			fmt.Sprintf("switch/system node with label '%s': %d matches found in blueprint",
 				o.NodeName.ValueString(), len(result.Items)))
-		return
 	}
 }
 
@@ -283,6 +281,22 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	// Determine the graph db node ID of the desired system
 	o.populateSystemNodeId(ctx, client, diags)
 	if diags.HasError() {
+		return
+	}
+}
+
+func (o *DeviceAllocation) AssignInterfaceMap(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	assignments := make(goapstra.SystemIdToInterfaceMapAssignment, 1)
+	assignments[o.SystemNodeId.ValueString()] = o.InterfaceMapId.ValueString()
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
+	if err != nil {
+		diags.AddError("error creating blueprint client", err.Error())
+		return
+	}
+
+	err = bpClient.SetInterfaceMapAssignments(ctx, assignments)
+	if err != nil {
+		diags.AddError("error assigning interface maps", err.Error())
 		return
 	}
 }
