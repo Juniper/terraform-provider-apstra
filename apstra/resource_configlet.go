@@ -13,6 +13,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
+var _ resource.ResourceWithValidateConfig = &resourceConfiglet{}
 
 type resourceConfiglet struct {
 	client *goapstra.Client
