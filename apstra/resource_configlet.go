@@ -35,10 +35,6 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 }
 
 func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	if o.client == nil { // cannot proceed without a client
-		return
-	}
-
 	var config design.Configlet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
