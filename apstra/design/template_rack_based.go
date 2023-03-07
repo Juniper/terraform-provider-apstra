@@ -223,6 +223,10 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 }
 
 func (o *TemplateRackBased) Validate(ctx context.Context, diags *diag.Diagnostics) {
+	if o.RackInfos.IsUnknown() {
+		return
+	}
+
 	rackInfoMap := make(map[string]TemplateRackInfo, len(o.RackInfos.Elements()))
 	d := o.RackInfos.ElementsAs(ctx, &rackInfoMap, false)
 	diags.Append(d...)
