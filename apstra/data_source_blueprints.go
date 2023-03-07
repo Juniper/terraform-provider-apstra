@@ -63,7 +63,7 @@ func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasourc
 		return
 	}
 
-	var config blueprintIds
+	var config blueprints
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -89,7 +89,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	var config blueprintIds
+	var config blueprints
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -138,7 +138,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-type blueprintIds struct {
+type blueprints struct {
 	Ids       types.Set    `tfsdk:"ids"`
 	RefDesign types.String `tfsdk:"reference_design"`
 }

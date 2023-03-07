@@ -12,6 +12,7 @@
 #output "d_logical_device"               { value = data.apstra_logical_device.d }
 #output "d_datacenter_blueprint"         { value = data.apstra_datacenter_blueprint.d }
 #output "d_interface_map"                { value = data.apstra_interface_map.d }
+#output "d_interface_maps"               { value = data.apstra_interface_maps.imaps }
 #output "d_tag"                          { value = data.apstra_tag.d }
 #output "d_template_rack_based"          { value = data.apstra_template_rack_based.d }
 #output "d_rack_type"                    { value = data.apstra_rack_type.d }
