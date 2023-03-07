@@ -46,7 +46,10 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.AtLeastOneOf(path.MatchRelative().AtName("interface_map_id")),
+				stringvalidator.AtLeastOneOf(path.Expressions{
+					path.MatchRelative(),
+					path.MatchRoot("interface_map_id"),
+				}...),
 			},
 		},
 		"interface_map_id": resourceSchema.StringAttribute{
