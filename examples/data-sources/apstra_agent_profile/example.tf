@@ -1,15 +1,15 @@
-# The following example shows how a module might accept an agent profile's name
-# as an input variable and use it to retrieve the agent profile ID when
-# provisioning a managed device (a switch).
+# The following example grabs the ID numbers of all agent profiles, uses those
+# IDs to grab the details of each agent profile, and then
 
-variable "agent_profile_name" {}
-variable "switch_mgmt_ip" {}
+data "apstra_agent_profiles" "all" {}
 
-data "apstra_agent_profile" "selected" {
-  name = var.agent_profile_name
+data "apstra_agent_profile" "all" {
+  for_each = data.apstra_agent_profiles.all.ids
+  id       = each.key
 }
 
-resource "apstra_managed_device" "switch" {
-  agent_profile_id = data.apstra_agent_profile.selected.id
-  management_ip    = var.switch_mgmt_ip
+output "agent_profiles_missing_credentials" {
+  value = [
+    for k, v in data.apstra_agent_profile.all : v.name if !v.has_username || !v.has_password
+  ]
 }
