@@ -55,10 +55,9 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"interface_map_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) to a " +
 				"Device Profile which describes a hardware model. This field is required when `device_key` " +
-				"is omitted, or when `device_key` is supplied, but multiple Interface Maps link the system " +
-				"node Logical Device to the specific Device Profile (hardware model) indicated by `device_key`. " +
-				"This field represents the Blueprint graphDB node ID, which is the same string as the global " +
-				"ID used in the design API global catalog.",
+				"is omitted, or when `device_key` is supplied, but does not provide enough information to`. " +
+				"select an Interface Map. This field represents the Blueprint graphDB node ID, which is " +
+				"the same string as the global ID used in the design API global catalog.",
 			Optional:      true,
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
