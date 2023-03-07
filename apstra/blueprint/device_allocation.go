@@ -72,66 +72,6 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 	}
 }
 
-//func (o *DeviceAllocation) Validate(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-//	if !o.Role.IsUnknown() {
-//		// Extract role to ResourceGroupName
-//		var rgName goapstra.ResourceGroupName
-//		err := rgName.FromString(o.Role.ValueString())
-//		if err != nil {
-//			diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()),
-//				err.Error())
-//			return
-//		}
-//
-//		// Get list of poolIds from Apstra
-//		var apiPoolIds []goapstra.ObjectId
-//		switch rgName.Type() {
-//		case goapstra.ResourceTypeAsnPool:
-//			apiPoolIds, err = client.ListAsnPoolIds(ctx)
-//		case goapstra.ResourceTypeIp4Pool:
-//			apiPoolIds, err = client.ListIp4PoolIds(ctx)
-//		case goapstra.ResourceTypeIp6Pool:
-//			apiPoolIds, err = client.ListIp6PoolIds(ctx)
-//		case goapstra.ResourceTypeVniPool:
-//			apiPoolIds, err = client.ListVniPoolIds(ctx)
-//		default:
-//			diags.AddError("error determining Resource Group Type by Name",
-//				fmt.Sprintf("Resource Group %q not recognized", o.Role.ValueString()))
-//		}
-//		if err != nil {
-//			diags.AddError("error listing pool IDs", err.Error())
-//		}
-//		if diags.HasError() {
-//			return
-//		}
-//
-//		// Quick function to check for 'id' among 'ids'
-//		contains := func(ids []goapstra.ObjectId, id goapstra.ObjectId) bool {
-//			for i := range ids {
-//				if ids[i] == id {
-//					return true
-//				}
-//			}
-//			return false
-//		}
-//
-//		// Check that each PoolId configuration element appears in the API results
-//		for _, elem := range o.PoolIds.Elements() {
-//			id := elem.(basetypes.StringValue).ValueString()
-//			if !contains(apiPoolIds, goapstra.ObjectId(id)) {
-//				diags.AddError(
-//					"pool not found",
-//					fmt.Sprintf("pool id %q of type %q not found", id, rgName.Type().String()))
-//				return
-//			}
-//		}
-//	}
-//}
-
-//func (o *DeviceAllocation) LoadApiData(ctx context.Context, in *goapstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
-//	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
-//}
-
 func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
