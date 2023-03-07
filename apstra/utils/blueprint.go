@@ -26,7 +26,47 @@ func GetAllSystemsInfo(ctx context.Context, client *goapstra.Client, diags *diag
 	return deviceKeyToSystemInfo
 }
 
-func DeviceProfileFromDeviceKey(ctx context.Context, deviceKey string, client *goapstra.Client, diags *diag.Diagnostics) goapstra.ObjectId {
+func DeviceProfileIdFromInterfaceMapId(ctx context.Context, bpId goapstra.ObjectId, iMapId goapstra.ObjectId, client *goapstra.Client, diags *diag.Diagnostics) goapstra.ObjectId {
+	var response struct {
+		Items []struct {
+			DeviceProfile struct {
+				Id goapstra.ObjectId `json:"id"`
+			} `json:"n_device_profile"`
+		} `json:"items"`
+	}
+
+	query := client.NewQuery(bpId).SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("interface_map")},
+			{"id", goapstra.QEStringVal(iMapId.String())},
+			//{"name", goapstra.QEStringVal("n_interface_map")},
+		}).
+		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("device_profile")},
+			{"name", goapstra.QEStringVal("n_device_profile")},
+		})
+
+	err := query.Do(&response)
+
+	if err != nil {
+		diags.AddError("error querying graphDB for device profile", err.Error())
+		return ""
+	}
+
+	switch len(response.Items) {
+	case 0:
+		diags.AddError("no results when querying for Device Profile", fmt.Sprintf("query string %q", query.String()))
+		return ""
+	case 1:
+		return response.Items[0].DeviceProfile.Id
+	default:
+		diags.AddError("multiple matches when querying for Device Profile", fmt.Sprintf("query string %q", query.String()))
+		return ""
+	}
+}
+
+func DeviceProfileIdFromDeviceKey(ctx context.Context, deviceKey string, client *goapstra.Client, diags *diag.Diagnostics) goapstra.ObjectId {
 	gasi := GetAllSystemsInfo(ctx, client, diags)
 	if diags.HasError() {
 		return ""

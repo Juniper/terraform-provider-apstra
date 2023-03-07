@@ -90,7 +90,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	if state.SystemNodeId.IsNull() || state.InterfaceMapId.IsNull() || state.DeviceProfileId.IsNull() {
+	if state.SystemNodeId.IsNull() || state.InterfaceMapCatalogId.IsNull() || state.DeviceProfileNodeId.IsNull() {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -142,7 +142,7 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	state.InterfaceMapId = types.StringNull()
+	state.InterfaceMapCatalogId = types.StringNull()
 	state.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
 
 	state.DeviceKey = types.StringNull()
