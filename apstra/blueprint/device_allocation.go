@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -39,15 +40,20 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"device_key": resourceSchema.StringAttribute{
-			MarkdownDescription: "Unique ID for a device, generally the serial number.",
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Unique ID for a Managed Device, generally the serial number, used to. " +
+				"assign a Managed Device to a fabric role.",
+			Optional:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.AtLeastOneOf(path.MatchRelative().AtName("interface_map_id")),
+			},
 		},
 		"interface_map_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) " +
-				"to a Device Profile which describes a hardware model. Optional when only a single " +
-				"interface map references the Logical Device describing the specified `node_name`.",
+			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) to a " +
+				"Device Profile which describes a hardware model. This field is required when `device_key` " +
+				"is omitted, or when `device_key` is supplied, but multiple Interface Maps link the system " +
+				"node Logical Device to the specific Device Profile (hardware model) indicated by `device_key`.",
 			Optional:      true,
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
