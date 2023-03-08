@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -16,12 +17,12 @@ import (
 )
 
 type DeviceAllocation struct {
-	BlueprintId     types.String `tfsdk:"blueprint_id"`
-	NodeName        types.String `tfsdk:"node_name"`
-	DeviceKey       types.String `tfsdk:"device_key"`
-	InterfaceMapId  types.String `tfsdk:"interface_map_id"`
-	DeviceProfileId types.String `tfsdk:"device_profile_id"`
-	SystemNodeId    types.String `tfsdk:"system_node_id"`
+	BlueprintId           types.String `tfsdk:"blueprint_id"`
+	NodeName              types.String `tfsdk:"node_name"`
+	DeviceKey             types.String `tfsdk:"device_key"`
+	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`
+	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`
+	SystemNodeId          types.String `tfsdk:"system_node_id"`
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -39,21 +40,30 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"device_key": resourceSchema.StringAttribute{
-			MarkdownDescription: "Unique ID for a device, generally the serial number.",
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Unique ID for a Managed Device, generally the serial number, used to. " +
+				"assign a Managed Device to a fabric role.",
+			Optional:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.AtLeastOneOf(path.Expressions{
+					path.MatchRelative(),
+					path.MatchRoot("interface_map_id"),
+				}...),
+			},
 		},
 		"interface_map_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) " +
-				"to a Device Profile which describes a hardware model. Optional when only a single " +
-				"interface map references the Logical Device describing the specified `node_name`.",
+			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) to a " +
+				"Device Profile which describes a hardware model. This field is required when `device_key` " +
+				"is omitted, or when `device_key` is supplied, but does not provide enough information to`. " +
+				"select an Interface Map. This field represents the Blueprint graphDB node ID, which is " +
+				"the same string as the global ID used in the design API global catalog.",
 			Optional:      true,
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"device_profile_id": resourceSchema.StringAttribute{
+		"device_profile_node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.", //todo
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -66,66 +76,6 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 	}
 }
 
-//func (o *DeviceAllocation) Validate(ctx context.Context, client *goapstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-//	if !o.Role.IsUnknown() {
-//		// Extract role to ResourceGroupName
-//		var rgName goapstra.ResourceGroupName
-//		err := rgName.FromString(o.Role.ValueString())
-//		if err != nil {
-//			diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()),
-//				err.Error())
-//			return
-//		}
-//
-//		// Get list of poolIds from Apstra
-//		var apiPoolIds []goapstra.ObjectId
-//		switch rgName.Type() {
-//		case goapstra.ResourceTypeAsnPool:
-//			apiPoolIds, err = client.ListAsnPoolIds(ctx)
-//		case goapstra.ResourceTypeIp4Pool:
-//			apiPoolIds, err = client.ListIp4PoolIds(ctx)
-//		case goapstra.ResourceTypeIp6Pool:
-//			apiPoolIds, err = client.ListIp6PoolIds(ctx)
-//		case goapstra.ResourceTypeVniPool:
-//			apiPoolIds, err = client.ListVniPoolIds(ctx)
-//		default:
-//			diags.AddError("error determining Resource Group Type by Name",
-//				fmt.Sprintf("Resource Group %q not recognized", o.Role.ValueString()))
-//		}
-//		if err != nil {
-//			diags.AddError("error listing pool IDs", err.Error())
-//		}
-//		if diags.HasError() {
-//			return
-//		}
-//
-//		// Quick function to check for 'id' among 'ids'
-//		contains := func(ids []goapstra.ObjectId, id goapstra.ObjectId) bool {
-//			for i := range ids {
-//				if ids[i] == id {
-//					return true
-//				}
-//			}
-//			return false
-//		}
-//
-//		// Check that each PoolId configuration element appears in the API results
-//		for _, elem := range o.PoolIds.Elements() {
-//			id := elem.(basetypes.StringValue).ValueString()
-//			if !contains(apiPoolIds, goapstra.ObjectId(id)) {
-//				diags.AddError(
-//					"pool not found",
-//					fmt.Sprintf("pool id %q of type %q not found", id, rgName.Type().String()))
-//				return
-//			}
-//		}
-//	}
-//}
-
-//func (o *DeviceAllocation) LoadApiData(ctx context.Context, in *goapstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
-//	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
-//}
-
 func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
@@ -135,7 +85,7 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
@@ -149,13 +99,15 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("interface_map")},
 			{"name", goapstra.QEStringVal("n_interface_map")},
-			{"id", goapstra.QEStringVal(o.InterfaceMapId.ValueString())},
+			{"id", goapstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
 		}).
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("device_profile")},
-			{"device_profile_id", goapstra.QEStringVal(o.DeviceProfileId.ValueString())},
-		}).Do(&result)
+			{"id", goapstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
+		})
+
+	err := query.Do(&result)
 	if err != nil {
 		diags.AddError("error running interface map query", err.Error())
 		return
@@ -163,8 +115,10 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 
 	if len(result.Items) != 1 {
 		diags.AddError("error validating interface_map_id",
-			fmt.Sprintf("expected 1 path linking system %q, interface map %q and device profile %q, got %d",
-				o.NodeName.ValueString(), o.InterfaceMapId.ValueString(), o.DeviceProfileId.ValueString(), len(result.Items)))
+			fmt.Sprintf(
+				"expected 1 path linking system %q, interface map %q and device profile %q, got %d\nquery: %q",
+				o.NodeName.ValueString(), o.InterfaceMapCatalogId.ValueString(),
+				o.DeviceProfileNodeId.ValueString(), len(result.Items), query.String()))
 	}
 }
 
@@ -177,7 +131,7 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
@@ -195,9 +149,10 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("device_profile")},
-			{"device_profile_id", goapstra.QEStringVal(o.DeviceProfileId.ValueString())},
-		}).
-		Do(&result)
+			{"id", goapstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
+		})
+
+	err := query.Do(&result)
 	if err != nil {
 		diags.AddError("error running interface map query", err.Error())
 		return
@@ -206,18 +161,18 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 	switch len(result.Items) {
 	case 0:
 		diags.AddError("unable to assign interface_map",
-			fmt.Sprintf("no interface_map links system '%s' to device profile '%s'",
-				o.NodeName.ValueString(), o.DeviceProfileId.ValueString()))
+			fmt.Sprintf("no interface_map links system '%s' to device profile '%s'\nquery: %q",
+				o.NodeName.ValueString(), o.DeviceProfileNodeId.ValueString(), query.String()))
 	case 1:
-		o.InterfaceMapId = types.StringValue(result.Items[0].InterfaceMap.Id)
+		o.InterfaceMapCatalogId = types.StringValue(result.Items[0].InterfaceMap.Id)
 	default:
 		candidates := make([]string, len(result.Items))
 		for i := range result.Items {
 			candidates[i] = result.Items[i].InterfaceMap.Id
 		}
-		diags.AddError("multiple Interface Map candidates - additional configuration required",
-			fmt.Sprintf("enter one of the following into interface_map to use Device Profile %q at Node %q - [%s]",
-				o.DeviceProfileId.ValueString(), o.NodeName.ValueString(), strings.Join(candidates, ", ")))
+		diags.AddError("multiple Interface Map candidates - `interface_map` configuration attribute required",
+			fmt.Sprintf("enter one of the following into `interface_map` to use Device Profile %q at Node %q - [%s]",
+				o.DeviceProfileNodeId.ValueString(), o.NodeName.ValueString(), strings.Join(candidates, ", ")))
 	}
 }
 
@@ -258,13 +213,50 @@ func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goa
 }
 
 func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	deviceProfile := utils.DeviceProfileFromDeviceKey(ctx, o.DeviceKey.ValueString(), client, diags)
-	if diags.HasError() {
-		return
-	}
-	o.DeviceProfileId = types.StringValue(deviceProfile.String())
+	var dpNodeId goapstra.ObjectId
+	bpId := goapstra.ObjectId(o.BlueprintId.ValueString())
+	if o.DeviceKey.IsNull() {
+		iMapId := goapstra.ObjectId(o.InterfaceMapCatalogId.ValueString())
+		dpNodeId = utils.DeviceProfileIdFromInterfaceMapId(ctx, bpId, iMapId, client, diags)
+	} else {
+		dpCatalogId := utils.DeviceProfileIdFromDeviceKey(ctx, o.DeviceKey.ValueString(), client, diags)
+		if diags.HasError() {
+			return
+		}
 
-	if o.InterfaceMapId.IsUnknown() {
+		query := client.NewQuery(bpId).SetContext(ctx).
+			Node([]goapstra.QEEAttribute{
+				{"type", goapstra.QEStringVal("device_profile")},
+				{"device_profile_id", goapstra.QEStringVal(dpCatalogId.String())},
+				{"name", goapstra.QEStringVal("n_device_profile")},
+			})
+
+		var result struct {
+			Items []struct {
+				DeviceProfile struct {
+					Id string `json:"id"`
+				} `json:"n_device_profile"`
+			} `json:"items"`
+		}
+
+		err := query.Do(&result)
+		if err != nil {
+			diags.AddError("error querying graphDB for device profile", err.Error())
+			return
+		}
+
+		if len(result.Items) != 1 {
+			diags.AddError(fmt.Sprintf(
+				"expected 1 graphDB query result, got %d", len(result.Items)),
+				fmt.Sprintf("query: %q", query.String()))
+			return
+		}
+
+		dpNodeId = goapstra.ObjectId(result.Items[0].DeviceProfile.Id)
+	}
+	o.DeviceProfileNodeId = types.StringValue(dpNodeId.String())
+
+	if o.InterfaceMapCatalogId.IsUnknown() {
 		o.populateInterfaceMapId(ctx, client, diags)
 	} else {
 		o.validateInterfaceMapId(ctx, client, diags)
@@ -282,10 +274,10 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 
 func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	assignments := make(goapstra.SystemIdToInterfaceMapAssignment, 1)
-	if o.InterfaceMapId.IsNull() {
+	if o.InterfaceMapCatalogId.IsNull() {
 		assignments[o.SystemNodeId.ValueString()] = nil
 	} else {
-		assignments[o.SystemNodeId.ValueString()] = o.InterfaceMapId.ValueString()
+		assignments[o.SystemNodeId.ValueString()] = o.InterfaceMapCatalogId.ValueString()
 	}
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
@@ -301,6 +293,10 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *goapstra
 }
 
 func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	if o.DeviceKey.IsNull() {
+		return
+	}
+
 	patch := &struct {
 		SystemId string `json:"system_id"`
 	}{
@@ -380,9 +376,9 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 
 	switch len(result.Items) {
 	case 0:
-		o.InterfaceMapId = types.StringNull()
+		o.InterfaceMapCatalogId = types.StringNull()
 	case 1:
-		o.InterfaceMapId = types.StringValue(result.Items[0].InterfaceMap.Id)
+		o.InterfaceMapCatalogId = types.StringValue(result.Items[0].InterfaceMap.Id)
 	default:
 		iMaps := make([]string, len(result.Items))
 		for i := range result.Items {
@@ -426,9 +422,9 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 
 	switch len(result.Items) {
 	case 0:
-		o.DeviceProfileId = types.StringNull()
+		o.DeviceProfileNodeId = types.StringNull()
 	case 1:
-		o.DeviceProfileId = types.StringValue(result.Items[0].DeviceProfile.Id)
+		o.DeviceProfileNodeId = types.StringValue(result.Items[0].DeviceProfile.Id)
 	default:
 		ids := make([]string, len(result.Items))
 		for i := range result.Items {
