@@ -50,7 +50,7 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	// Convert configlet generators to goapstra types
 	for _, gen := range tfGenerators {
 		invalid := true
-		g := *gen.Request(ctx, &d)
+		g := gen.Request(ctx, &d)
 		for _, i := range g.ConfigStyle.ValidSections() {
 			if i == g.Section {
 				invalid = false
