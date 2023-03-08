@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -40,31 +39,25 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	tfGenerators := make([]design.ConfigletGenerator, len(config.Generators.Elements()))
 	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &tfGenerators, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var d diag.Diagnostics
 	// Convert configlet generators to goapstra types
+generator:
 	for _, gen := range tfGenerators {
-		invalid := true
-		g := gen.Request(ctx, &d)
+		g := gen.Request(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		for _, i := range g.ConfigStyle.ValidSections() {
 			if i == g.Section {
-				invalid = false
-				break
+				continue generator
 			}
 		}
-		if invalid {
-			resp.Diagnostics.AddError("Invalid Section", fmt.Sprint("Invalid Section %s used for Config Style %s", g.Section.String(), g.ConfigStyle.String()))
-		}
+		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", g.Section.String(), g.ConfigStyle.String()))
 	}
-	if d.HasError() {
-		return
-	}
-
 }
 
 func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
