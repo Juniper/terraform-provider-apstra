@@ -4,6 +4,8 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -29,6 +31,43 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 		MarkdownDescription: "This resource creates a specific Configlet.\n\n",
 		Attributes:          design.Configlet{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	if o.client == nil { // cannot proceed without a client
+		return
+	}
+
+	var config design.Configlet
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tfGenerators := make([]design.ConfigletGenerator, len(config.Generators.Elements()))
+	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &tfGenerators, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	var d diag.Diagnostics
+	// Convert configlet generators to goapstra types
+	for _, gen := range tfGenerators {
+		invalid := true
+		g := *gen.Request(ctx, &d)
+		for _, i := range g.ConfigStyle.ValidSections() {
+			if i == g.Section {
+				invalid = false
+				break
+			}
+		}
+		if invalid {
+			resp.Diagnostics.AddError("Invalid Section", fmt.Sprint("Invalid Section %s used for Config Style %s", g.Section.String(), g.ConfigStyle.String()))
+		}
+	}
+	if d.HasError() {
+		return
+	}
+
 }
 
 func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
