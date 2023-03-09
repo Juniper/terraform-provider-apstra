@@ -12,7 +12,7 @@ require (
 )
 
 //                                                                                        HHMMSS
-//replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230307171951-5f1d0796a31a
+replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230309024738-1e48e4f0cadc
 
 require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.10.0
@@ -66,5 +66,5 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	google.golang.org/grpc v1.53.0 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.29.0 // indirect
 )
