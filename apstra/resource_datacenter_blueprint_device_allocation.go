@@ -44,12 +44,22 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	// Ensure the following are populated:o//   - SystemNodeId (from node_name)
+	//   - plan.SystemNodeId
+	//   - plan.InterfaceMapCatalogId
+	//   - plan.DeviceProfileNodeId
 	plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	if plan.BlueprintId.IsNull() {
+		resp.Diagnostics.AddError("blueprint does not exist", "blueprint vanished while we were working on it")
+	}
 
 	plan.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
+	if plan.BlueprintId.IsNull() {
+		resp.Diagnostics.AddError("blueprint does not exist", "blueprint vanished while we were working on it")
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -75,8 +85,12 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.GetCurrentSystemId(ctx, o.client, &resp.Diagnostics)
+	state.ReadSystemNode(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+	if state.BlueprintId.IsNull() || state.NodeId.IsNull() {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -84,13 +98,16 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	if state.BlueprintId.IsNull() || state.NodeId.IsNull() {
+		resp.State.RemoveResource(ctx)
+		return
+	}
 
 	state.GetCurrentDeviceProfileId(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	if state.SystemNodeId.IsNull() || state.InterfaceMapCatalogId.IsNull() || state.DeviceProfileNodeId.IsNull() {
+	if state.BlueprintId.IsNull() || state.NodeId.IsNull() {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -99,34 +116,34 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
-	// Retrieve values from plan
-	var plan blueprint.DeviceAllocation
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	//if o.client == nil {
+	//	resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+	//	return
+	//}
+	//
+	//// Retrieve values from plan
+	//var plan blueprint.DeviceAllocation
+	//resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+	//
+	//plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+	//
+	//plan.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+	//
+	//plan.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+	//
+	//resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

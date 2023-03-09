@@ -17,18 +17,19 @@ import (
 )
 
 type DeviceAllocation struct {
-	BlueprintId           types.String `tfsdk:"blueprint_id"`
-	NodeName              types.String `tfsdk:"node_name"`
-	DeviceKey             types.String `tfsdk:"device_key"`
-	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`
-	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`
-	SystemNodeId          types.String `tfsdk:"system_node_id"`
+	BlueprintId           types.String `tfsdk:"blueprint_id"`     // required
+	NodeName              types.String `tfsdk:"node_name"`        // required
+	DeviceKey             types.String `tfsdk:"device_key"`       // optional
+	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"` // computed + optional
+	NodeId                types.String `tfsdk:"node_id"`          // computed
+	//SystemNodeId          types.String `tfsdk:"system_node_id"`         // computed
+	DeviceProfileNodeId types.String `tfsdk:"device_profile_node_id"` // computed
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID of the Blueprint to which the Resource Pool should be allocated.",
+			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -63,16 +64,21 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
+		"node_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "GraphDB Node ID of the fabric node to which we're allocating an Interface Map " +
+				"and Managed Device.",
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"device_profile_node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.", //todo
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
-		"system_node_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID number of the Blueprint graphdb node representing this system.",
-			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-		},
+		//"system_node_id": resourceSchema.StringAttribute{
+		//	MarkdownDescription: "ID number of the Blueprint graphdb node representing this system.",
+		//	Computed:            true,
+		//	PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		//},
 	}
 }
 
@@ -86,10 +92,11 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 	}
 
 	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+		SetType(goapstra.BlueprintTypeStaging).
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
+			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
 		}).
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
 		Node([]goapstra.QEEAttribute{
@@ -109,6 +116,10 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 
 	err := query.Do(&result)
 	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
 		diags.AddError("error running interface map query", err.Error())
 		return
 	}
@@ -116,13 +127,13 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 	if len(result.Items) != 1 {
 		diags.AddError("error validating interface_map_id",
 			fmt.Sprintf(
-				"expected 1 path linking system %q, interface map %q and device profile %q, got %d\nquery: %q",
+				"expected 1 path linking system %q, logical device (any), interface map %q and device profile %q, got %d\nquery: %q",
 				o.NodeName.ValueString(), o.InterfaceMapCatalogId.ValueString(),
 				o.DeviceProfileNodeId.ValueString(), len(result.Items), query.String()))
 	}
 }
 
-func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			InterfaceMap struct {
@@ -133,9 +144,10 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 
 	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
+		SetType(goapstra.BlueprintTypeStaging).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
+			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
 		}).
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
 		Node([]goapstra.QEEAttribute{
@@ -154,6 +166,10 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 
 	err := query.Do(&result)
 	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
 		diags.AddError("error running interface map query", err.Error())
 		return
 	}
@@ -176,7 +192,7 @@ func (o *DeviceAllocation) populateInterfaceMapId(ctx context.Context, client *g
 	}
 }
 
-func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			System struct {
@@ -185,14 +201,16 @@ func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goa
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+		SetType(goapstra.BlueprintTypeStaging).
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
 			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
 			{"name", goapstra.QEStringVal("n_system")},
-		}).
-		Do(&result)
+		})
+
+	err := query.Do(&result)
 	if err != nil {
 		diags.AddError("error running system node query", err.Error())
 		return
@@ -201,97 +219,177 @@ func (o *DeviceAllocation) populateSystemNodeId(ctx context.Context, client *goa
 	switch len(result.Items) {
 	case 0:
 		diags.AddError("switch node not found in blueprint",
-			fmt.Sprintf("switch/system node with label '%s' not found in blueprint", o.NodeName.ValueString()))
+			fmt.Sprintf("switch/system node with label %q: not found with query %q", o.NodeName.ValueString()))
 	case 1:
 		// no error case
-		o.SystemNodeId = types.StringValue(result.Items[0].System.Id)
+		o.NodeId = types.StringValue(result.Items[0].System.Id)
 	default:
-		diags.AddError("multiple switches found in blueprint",
-			fmt.Sprintf("switch/system node with label '%s': %d matches found in blueprint",
-				o.NodeName.ValueString(), len(result.Items)))
+		diags.AddError("multiple matches found in blueprint",
+			fmt.Sprintf("switch/system node with label %q: %d matches found using query %q",
+				o.NodeName.ValueString(), len(result.Items), query.String()),
+		)
 	}
 }
 
+// PopulateDataFromGraphDb attempts to set
+//   - NodeId (from node_name)
+//   - InterfaceMapCatalogId (when not set)
+//   - DeviceProfileNodeId
+//   - from DeviceKey when set
+//   - from InterfaceMapCatalogId when DeviceKey not set
 func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	var dpNodeId goapstra.ObjectId
-	bpId := goapstra.ObjectId(o.BlueprintId.ValueString())
-	if o.DeviceKey.IsNull() {
-		iMapId := goapstra.ObjectId(o.InterfaceMapCatalogId.ValueString())
-		dpNodeId = utils.DeviceProfileIdFromInterfaceMapId(ctx, bpId, iMapId, client, diags)
-	} else {
-		dpCatalogId := utils.DeviceProfileIdFromDeviceKey(ctx, o.DeviceKey.ValueString(), client, diags)
-		if diags.HasError() {
-			return
-		}
-
-		query := client.NewQuery(bpId).SetContext(ctx).
-			Node([]goapstra.QEEAttribute{
-				{"type", goapstra.QEStringVal("device_profile")},
-				{"device_profile_id", goapstra.QEStringVal(dpCatalogId.String())},
-				{"name", goapstra.QEStringVal("n_device_profile")},
-			})
-
-		var result struct {
-			Items []struct {
-				DeviceProfile struct {
-					Id string `json:"id"`
-				} `json:"n_device_profile"`
-			} `json:"items"`
-		}
-
-		err := query.Do(&result)
-		if err != nil {
-			diags.AddError("error querying graphDB for device profile", err.Error())
-			return
-		}
-
-		if len(result.Items) != 1 {
-			diags.AddError(fmt.Sprintf(
-				"expected 1 graphDB query result, got %d", len(result.Items)),
-				fmt.Sprintf("query: %q", query.String()))
-			return
-		}
-
-		dpNodeId = goapstra.ObjectId(result.Items[0].DeviceProfile.Id)
+	if o.NodeId.IsUnknown() {
+		// this should only be true once, in Create()
+		o.nodeIdFromNodeName(ctx, client, diags)
 	}
-	o.DeviceProfileNodeId = types.StringValue(dpNodeId.String())
+	if diags.HasError() {
+		return
+	}
+
+	switch {
+	case (!o.InterfaceMapCatalogId.IsUnknown() && !o.InterfaceMapCatalogId.IsNull()) && o.DeviceKey.IsNull():
+		// interface_map_id known, device_key not supplied
+		o.deviceProfileNodeIdFromInterfaceMapCatalogId(ctx, client, diags) // this will clear BlueprintId on 404
+	case !o.DeviceKey.IsNull() && o.InterfaceMapCatalogId.IsUnknown():
+		// device_key known, interface_map_id not supplied
+		o.deviceProfileNodeIdFromDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
+	case !o.InterfaceMapCatalogId.IsNull() && !o.InterfaceMapCatalogId.IsUnknown() && !o.DeviceKey.IsNull():
+		// device_key and interface_map_id both supplied
+		o.deviceProfileNodeIdFromDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
+		if o.BlueprintId.IsNull() {
+			return
+		}
+		if !diags.HasError() {
+			o.validateInterfaceMapId(ctx, client, diags) // this will clear BlueprintId on 404
+		}
+	default:
+		// config validation should not have allowed this
+		diags.AddError(
+			errProviderBug,
+			fmt.Sprintf("cannot proceed\n"+
+				"  device_key null: %t, device_key unknown: %t\n"+
+				"  interface_map_id null: %t, interface_map_id known: %t",
+				o.DeviceKey.IsNull(), o.DeviceKey.IsUnknown(),
+				o.InterfaceMapCatalogId.IsNull(), o.InterfaceMapCatalogId.IsUnknown(),
+			),
+		)
+	}
+	if diags.HasError() || o.BlueprintId.IsNull() {
+		return
+	}
 
 	if o.InterfaceMapCatalogId.IsUnknown() {
-		o.populateInterfaceMapId(ctx, client, diags)
-	} else {
-		o.validateInterfaceMapId(ctx, client, diags)
+		o.populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx, client, diags)
 	}
-	if diags.HasError() {
+	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
 
-	// Determine the graph db node ID of the desired system
-	o.populateSystemNodeId(ctx, client, diags)
-	if diags.HasError() {
+	o.validateInterfaceMapId(ctx, client, diags) // this will clear BlueprintId on 404
+	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
+
+	////	BlueprintId           types.String `tfsdk:"blueprint_id"`			// required
+	////	NodeName              types.String `tfsdk:"node_name"`				// required
+	////	DeviceKey             types.String `tfsdk:"device_key"`				// optional
+	////	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`		// computed + optional
+	//// 	NodeId                types.String `tfsdk:"node_id"`				// computed
+	////	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`	// computed
+	//
+	//if o.DeviceKey.IsNull() {
+	//	iMapId := goapstra.ObjectId(o.InterfaceMapCatalogId.ValueString())
+	//	dpNodeId = utils.DeviceProfileIdFromInterfaceMapId(ctx, bpId, iMapId, client, diags)
+	//} else {
+	//	dpCatalogId := utils.DeviceProfileIdFromDeviceKey(ctx, o.DeviceKey.ValueString(), client, diags)
+	//	if diags.HasError() {
+	//		return
+	//	}
+	//
+	//	query := client.NewQuery(bpId).
+	//		SetContext(ctx).
+	//		SetType(goapstra.BlueprintTypeStaging).
+	//		Node([]goapstra.QEEAttribute{
+	//			{"type", goapstra.QEStringVal("device_profile")},
+	//			{"device_profile_id", goapstra.QEStringVal(dpCatalogId.String())},
+	//			{"name", goapstra.QEStringVal("n_device_profile")},
+	//		})
+	//
+	//	var result struct {
+	//		Items []struct {
+	//			DeviceProfile struct {
+	//				Id string `json:"id"`
+	//			} `json:"n_device_profile"`
+	//		} `json:"items"`
+	//	}
+	//
+	//	err := query.Do(&result)
+	//	if err != nil {
+	//		diags.AddError("error querying graphDB for device profile", err.Error())
+	//		return
+	//	}
+	//
+	//	if len(result.Items) != 1 {
+	//		diags.AddError(fmt.Sprintf(
+	//			"expected 1 graphDB query result, got %d", len(result.Items)),
+	//			fmt.Sprintf("query: %q", query.String()))
+	//		return
+	//	}
+	//
+	//	dpNodeId = goapstra.ObjectId(result.Items[0].DeviceProfile.Id)
+	//}
+	//o.DeviceProfileNodeId = types.StringValue(dpNodeId.String())
+	//
+	//if o.InterfaceMapCatalogId.IsUnknown() {
+	//	o.populateInterfaceMapId(ctx, client, diags)
+	//} else {
+	//	o.validateInterfaceMapId(ctx, client, diags)
+	//}
+	//if diags.HasError() {
+	//	return
+	//}
+	//
+	//// Determine the graph db node ID of the desired system
+	//o.nodeIdFromNodeName(ctx, client, diags)
+	//if diags.HasError() {
+	//	return
+	//}
 }
 
+// SetInterfaceMap creates or deletes the graph db relationship between a switch
+// 'system' node and its interface map.
 func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	assignments := make(goapstra.SystemIdToInterfaceMapAssignment, 1)
 	if o.InterfaceMapCatalogId.IsNull() {
-		assignments[o.SystemNodeId.ValueString()] = nil
+		assignments[o.NodeId.ValueString()] = nil
 	} else {
-		assignments[o.SystemNodeId.ValueString()] = o.InterfaceMapCatalogId.ValueString()
+		assignments[o.NodeId.ValueString()] = o.InterfaceMapCatalogId.ValueString()
 	}
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
 		diags.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
 	err = bpClient.SetInterfaceMapAssignments(ctx, assignments)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("error (re)setting interface map for node %q", o.SystemNodeId.ValueString()), err.Error())
-		return
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
+		diags.AddError(fmt.Sprintf("error (re)setting interface map for node %q", o.NodeId.ValueString()), err.Error())
 	}
+	return
 }
 
+// SetNodeSystemId assigns a managed device 'device_key' (serial number) to a
+// switch 'system' node in the blueprint graphdb. Returns false when Apstra
+// returns a 404 to the blueprint operation, indicating the blueprint doesn't
+// exist and resources depending on the blueprint's existence should be removed.
 func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
 	if o.DeviceKey.IsNull() {
 		return
@@ -303,47 +401,68 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *goapstra
 		SystemId: o.DeviceKey.ValueString(),
 	}
 
-	nodeId := goapstra.ObjectId(o.SystemNodeId.ValueString())
+	nodeId := goapstra.ObjectId(o.NodeId.ValueString())
 	blueprintId := goapstra.ObjectId(o.BlueprintId.ValueString())
 	err := client.PatchNode(ctx, blueprintId, nodeId, &patch, nil)
 	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
 		diags.AddError(fmt.Sprintf("failed to (re)assign system_id for node '%s'", nodeId), err.Error())
-		return
 	}
+	return
 }
 
-func (o *DeviceAllocation) GetCurrentSystemId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+// ReadSystemNode uses the BlueprintId and NodeId to determine the current
+// DeviceKey value in the blueprint.
+func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	if o.NodeId.IsNull() {
+		diags.AddError(errProviderBug, "ReadSystemNode invoked with null NodeId")
+		return
+	}
+
 	var result struct {
 		Items []struct {
 			System struct {
-				Id string `json:"id"`
+				SystemId string `json:"system_id"`
 			} `json:"n_system"`
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
+		SetType(goapstra.BlueprintTypeStaging).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
+			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
 			{"name", goapstra.QEStringVal("n_system")},
-		}).
-		Do(&result)
+		})
+
+	err := query.Do(&result)
 	if err != nil {
-		diags.AddError("error querying system_id", err.Error())
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+		} else {
+			diags.AddError("error querying system_id", err.Error())
+		}
 		return
 	}
+
 	switch len(result.Items) {
 	case 0:
-		o.SystemNodeId = types.StringNull()
+		// node doesn't exist!?!?
+		o.NodeId = types.StringNull()
+		o.DeviceKey = types.StringNull()
 	case 1:
-		o.SystemNodeId = types.StringValue(result.Items[0].System.Id)
+		// expected result
+		o.DeviceKey = utils.StringValueOrNull(ctx, result.Items[0].System.SystemId, diags)
 	default:
 		ids := make([]string, len(result.Items))
 		for i := range result.Items {
-			ids[i] = result.Items[i].System.Id
+			ids[i] = result.Items[i].System.SystemId
 		}
-		diags.AddError("cannot proceed: multiple graphdb nodes share common label",
+		diags.AddError("cannot proceed: multiple graphdb nodes share common id",
 			fmt.Sprintf("label %q used by %q", o.NodeName.ValueString(), strings.Join(ids, "\", \"")))
 	}
 }
@@ -361,7 +480,7 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
+			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
 		}).
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
 		Node([]goapstra.QEEAttribute{
@@ -370,6 +489,10 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 		}).
 		Do(&result)
 	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
 		diags.AddError("error querying interface map assignment", err.Error())
 		return
 	}
@@ -398,11 +521,11 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
+			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
 		}).
 		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
 		Node([]goapstra.QEEAttribute{
@@ -414,10 +537,16 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 		Node([]goapstra.QEEAttribute{
 			{"type", goapstra.QEStringVal("device_profile")},
 			{"name", goapstra.QEStringVal("n_device_profile")},
-		}).
-		Do(&result)
+		})
+
+	err := query.Do(&result)
 	if err != nil {
-		diags.AddError("error querying device profile", err.Error())
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+		} else {
+			diags.AddError("error querying device profile", err.Error())
+		}
+		return
 	}
 
 	switch len(result.Items) {
@@ -433,4 +562,100 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 		diags.AddError("cannot proceed: graphdb links system node to multiple device profiles",
 			fmt.Sprintf("%q matches %q", o.NodeName.ValueString(), strings.Join(ids, "\", \"")))
 	}
+}
+
+func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	var response struct {
+		Items []struct {
+			DeviceProfile struct {
+				Id string `json:"id"`
+			} `json:"n_device_profile"`
+		} `json:"items"`
+	}
+
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+		SetType(goapstra.BlueprintTypeStaging).
+		SetContext(ctx).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("interface_map")},
+			{"id", goapstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+		}).
+		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("device_profile")},
+			{"name", goapstra.QEStringVal("n_device_profile")},
+		})
+
+	err := query.Do(&response)
+
+	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
+		diags.AddError("error querying graphDB for device profile", err.Error())
+		return
+	}
+
+	switch len(response.Items) {
+	case 0:
+		diags.AddError("no results when querying for Device Profile", fmt.Sprintf("query string %q", query.String()))
+	case 1:
+		o.DeviceProfileNodeId = types.StringValue(response.Items[0].DeviceProfile.Id)
+	default:
+		diags.AddError("multiple matches when querying for Device Profile", fmt.Sprintf("query string %q", query.String()))
+	}
+}
+
+func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+	gasi := utils.GetAllSystemsInfo(ctx, client, diags)
+	if diags.HasError() {
+		return
+	}
+
+	si, ok := gasi[o.DeviceKey.ValueString()]
+	if !ok {
+		diags.AddAttributeError(
+			path.Root("device_key"),
+			"Device Key not found",
+			fmt.Sprintf("Device Key %q not found", o.DeviceKey.ValueString()),
+		)
+		return
+	}
+
+	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+		SetContext(ctx).
+		SetType(goapstra.BlueprintTypeStaging).
+		Node([]goapstra.QEEAttribute{
+			{"type", goapstra.QEStringVal("device_profile")},
+			{"device_profile_id", goapstra.QEStringVal(si.Facts.AosHclModel.String())},
+			{"name", goapstra.QEStringVal("n_device_profile")},
+		})
+
+	var result struct {
+		Items []struct {
+			DeviceProfile struct {
+				Id string `json:"id"`
+			} `json:"n_device_profile"`
+		} `json:"items"`
+	}
+
+	err := query.Do(&result)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			o.BlueprintId = types.StringNull()
+			return
+		}
+		diags.AddError("error querying graphDB for device profile", err.Error())
+		return
+	}
+
+	if len(result.Items) != 1 {
+		diags.AddError(fmt.Sprintf(
+			"expected 1 graphDB query result, got %d", len(result.Items)),
+			fmt.Sprintf("query: %q", query.String()))
+		return
+	}
+
+	o.DeviceProfileNodeId = types.StringValue(result.Items[0].DeviceProfile.Id)
 }
