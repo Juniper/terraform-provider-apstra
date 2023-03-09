@@ -13,9 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/utils"
@@ -98,7 +95,6 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
 		},
 		"port_channel_id_min": resourceSchema.Int64Attribute{
@@ -110,7 +106,6 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
 				int64validator.AtMostSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
 			},
-			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 		},
 		"port_channel_id_max": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
@@ -121,7 +116,6 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 			},
-			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
 		},
 		"count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of Generic Systems of this type.",

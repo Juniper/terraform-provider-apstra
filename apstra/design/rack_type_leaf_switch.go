@@ -12,9 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -103,7 +100,6 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
 		},
 		"mlag_info": resourceSchema.SingleNestedAttribute{
@@ -132,9 +128,8 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 				apstravalidator.Int64FabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
 				apstravalidator.Int64FabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
 			},
-			Optional:      true,
-			Computed:      true,
-			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Optional: true,
+			Computed: true,
 		},
 		"spine_link_speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of Spine-facing links, something like '10G'",
