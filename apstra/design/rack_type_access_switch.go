@@ -240,10 +240,17 @@ func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackTy
 	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
-	var eli EsiLagInfo
-	diags.Append(o.EsiLagInfo.As(ctx, &eli, basetypes.ObjectAsOptions{})...)
-	if diags.HasError() {
-		return nil
+	var esiLagInfo *goapstra.EsiLagInfo
+	if !o.EsiLagInfo.IsNull() {
+		var eli *EsiLagInfo
+		diags.Append(o.EsiLagInfo.As(ctx, &eli, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return nil
+		}
+
+		if eli != nil {
+			esiLagInfo = eli.Request(ctx, diags)
+		}
 	}
 
 	return &goapstra.RackElementAccessSwitchRequest{
@@ -252,7 +259,7 @@ func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackTy
 		Links:              linkRequests,
 		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
 		Tags:               tagIds,
-		EsiLagInfo:         eli.Request(ctx, diags),
+		EsiLagInfo:         esiLagInfo,
 	}
 }
 
