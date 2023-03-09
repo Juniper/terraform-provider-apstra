@@ -116,34 +116,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//if o.client == nil {
-	//	resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-	//	return
-	//}
-	//
-	//// Retrieve values from plan
-	//var plan blueprint.DeviceAllocation
-	//resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//plan.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//plan.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Update not needed because any change triggers replacement
 }
 
 func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
