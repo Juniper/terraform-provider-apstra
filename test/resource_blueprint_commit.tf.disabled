@@ -1,0 +1,175 @@
+# This example creates a blueprint, including:
+# - rack type
+# - template
+# - blueprint instantiation from template
+#
+# It then assigns resource pools and devices (by serial number - these are the
+# serial numbers found in a specific cloudlabs "Customer" topology) to roles
+# in the fabric
+
+# Create a very simple rack type
+resource "apstra_rack_type" "r" {
+  name                       = "my rack"
+  fabric_connectivity_design = "l3clos"
+  leaf_switches = {
+    leaf_one = {
+      logical_device_id = "AOS-7x10-Leaf"
+      spine_link_count  = 1
+      spine_link_speed  = "10G"
+    }
+  }
+}
+
+# Create a template using the rack type. Note that the `rack_infos` map is
+# keyed by rack type ID. Becuause the key is a reference, it needs to be
+# wrapped in parenthesis.
+resource "apstra_template_rack_based" "r" {
+  name                     = "my template"
+  overlay_control_protocol = "evpn"
+  asn_allocation_scheme    = "unique"
+  spine = {
+    count             = 2
+    logical_device_id = "AOS-7x10-Spine"
+  }
+  rack_infos = {
+    (apstra_rack_type.r.id) = {
+      count = 3
+    }
+  }
+}
+
+# Instantiate the blueprint from the template
+resource "apstra_datacenter_blueprint" "r" {
+  name        = "aaa"
+  template_id = apstra_template_rack_based.r.id
+}
+
+# ASN pools, IPv4 pools and switch devices will be allocated using looping
+# resources. These three `local` maps are what we'll loop over.
+locals {
+  switches = {
+#    spine1            = { device_key = null, interface_map_id = "Juniper_vQFX__AOS-7x10-Spine" }
+#    spine1            = { device_key = null, interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf" } // bogus
+#    spine1            = { device_key = "5254004796D4", interface_map_id = null }
+    spine1            = { device_key = "5254004796D4", interface_map_id = "Juniper_vQFX__AOS-7x10-Spine" }
+#    spine2            = { device_key = "52540092F72A", interface_map_id = "Juniper_vQFX__AOS-7x10-Spine" }
+#    my_rack_001_leaf1 = { device_key = "525400361AC5", interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf" }
+#    my_rack_002_leaf1 = { device_key = "52540057C718", interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf" }
+#    my_rack_003_leaf1 = { device_key = "525400428913", interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf" }
+  }
+  asn_pools = {
+    spine_asns = ["Private-64512-65534"]
+    leaf_asns  = ["Private-4200000000-4294967294"]
+  }
+  ipv4_pools = {
+    spine_loopback_ips  = ["Private-10_0_0_0-8"]
+    leaf_loopback_ips   = ["Private-10_0_0_0-8"]
+    spine_leaf_link_ips = ["Private-10_0_0_0-8"]
+  }
+}
+
+# Assign switches to fabric roles
+resource "apstra_datacenter_blueprint_device_allocation" "switches" {
+  for_each         = local.switches
+  blueprint_id     = apstra_datacenter_blueprint.r.id
+  device_key       = each.value["device_key"]
+  node_name        = each.key
+  interface_map_id = each.value["interface_map_id"]
+}
+
+#resource "apstra_datacenter_blueprint_device_allocation" "my_rack_001_leaf1" {
+#  blueprint_id     = apstra_datacenter_blueprint.r.id
+#  node_name        = "my_rack_001_leaf1"
+#  device_key       = "525400361AC5"
+#  interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+#}
+#
+#resource "apstra_datacenter_blueprint_device_allocation" "my_rack_002_leaf1" {
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#  node_name    = "my_rack_002_leaf1"
+#  device_key   = "52540057C718"
+#  #  interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+#}
+#
+#resource "apstra_datacenter_blueprint_device_allocation" "my_rack_003_leaf1" {
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#  node_name    = "my_rack_003_leaf1"
+#  #  device_key       = "525400428913"
+#  interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+#}
+
+## Assign ASN pools to fabric roles
+#resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
+#  for_each     = local.asn_pools
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#  role         = each.key
+#  pool_ids     = each.value
+#}
+#
+## Assign IPv4 pools to fabric roles
+#resource "apstra_datacenter_blueprint_resource_pool_allocation" "ipv4" {
+#  for_each     = local.ipv4_pools
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#  role         = each.key
+#  pool_ids     = each.value
+#}
+
+#data "apstra_blueprint_deployment" "status" {
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#  depends_on = [
+#    apstra_datacenter_blueprint_resource_pool_allocation.asn,
+#    apstra_datacenter_blueprint_resource_pool_allocation.ipv4,
+#    apstra_datacenter_blueprint_device_allocation.switches,
+#  ]
+#}
+#
+#resource "null_resource" "trigger" {
+#  triggers = {
+#    stage = data.apstra_blueprint_deployment.status.revision_staged
+#  }
+#}
+#
+#resource "apstra_blueprint_deployment" "deploy" {
+#  depends_on = [ null_resource.trigger ]
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#}
+#
+#output "resource_deploy" {
+#  value = apstra_blueprint_deployment.deploy
+#  depends_on = [
+#    apstra_datacenter_blueprint_resource_pool_allocation.asn,
+#    apstra_datacenter_blueprint_resource_pool_allocation.ipv4,
+#    apstra_datacenter_blueprint_device_allocation.switches,
+#  ]
+#}
+
+#resource "null_resource" "deploy_trigger" {
+#  triggers = {
+#    bp_version = data.apstra_blueprint_deployment.status.revision_staged
+#    foo = "foo"
+#  }
+#}
+
+
+#output "blueprint" {
+#  value = data.apstra_datacenter_blueprint.status
+#}
+
+#resource "null_resource" "commit_trigger" {
+#  triggers = {
+#    blueprint = data.apstra_blueprint.status.version
+#  }
+#}
+#
+#resource "apstra_blueprint_commit" "r" {
+#  depends_on = [
+#    apstra_datacenter_blueprint_resource_pool_allocation.asn,
+#    apstra_datacenter_blueprint_resource_pool_allocation.ipv4,
+#    apstra_datacenter_blueprint_device_allocation.switches,
+#  ]
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#}
+
+#output "commit" {
+#  value = apstra_blueprint_commit.r
+#}
