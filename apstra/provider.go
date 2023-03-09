@@ -195,6 +195,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceAgentProfiles{} },
 		func() datasource.DataSource { return &dataSourceAsnPool{} },
 		func() datasource.DataSource { return &dataSourceAsnPools{} },
+		func() datasource.DataSource { return &dataSourceBlueprintDeploy{} },
 		func() datasource.DataSource { return &dataSourceBlueprints{} },
 		func() datasource.DataSource { return &dataSourceConfiglet{} },
 		func() datasource.DataSource { return &dataSourceInterfaceMap{} },
@@ -220,7 +221,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		func() resource.Resource { return &resourceAgentProfile{} },
 		func() resource.Resource { return &resourceAsnPool{} },
-		//func() resource.Resource { return &resourceBlueprint{} },
+		func() resource.Resource { return &resourceBlueprintDeploy{} },
 		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
@@ -236,6 +237,5 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
-		////func() resource.Resource { return &resourceWireframe{} },
 	}
 }
