@@ -205,6 +205,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceIpv6Pools{} },
 		func() datasource.DataSource { return &dataSourceLogicalDevice{} },
 		func() datasource.DataSource { return &dataSourceRackType{} },
+		func() datasource.DataSource { return &dataSourceRackTypes{} },
 		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
 		////func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
 		func() datasource.DataSource { return &dataSourceTemplateRackBased{} },
