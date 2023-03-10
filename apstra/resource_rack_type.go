@@ -118,8 +118,8 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 
 	// parse the API response into a new state object
 	var newState design.RackType
-	newState.Id = types.StringValue(string(rt.Id))
 	newState.LoadApiData(ctx, rt.Data, &resp.Diagnostics)
+	newState.Id = types.StringValue(string(rt.Id))
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -172,8 +172,8 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 
 	// parse the API response into a state object
 	var state design.RackType
-	state.Id = types.StringValue(string(rt.Id))
 	state.LoadApiData(ctx, rt.Data, &resp.Diagnostics)
+	state.Id = types.StringValue(string(rt.Id))
 	if resp.Diagnostics.HasError() {
 		return
 	}
