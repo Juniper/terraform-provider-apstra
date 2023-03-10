@@ -1,12 +1,6 @@
-bitbucket.org/apstrktr/goapstra v0.0.0-20230309163726-26c736fc23a3 h1:EUPjYpgmckm5i4aRUI9O24HnBBkcMJpPW42nkjRsdnI=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230309163726-26c736fc23a3/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230309024738-1e48e4f0cadc h1:xGH5Wt6Q/9PRWTQHZ7yQ3ZJnphqHljsEAe8JMTDuUfo=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230309024738-1e48e4f0cadc/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230307171951-5f1d0796a31a h1:VkXk236IPnOHuRDvf9kx0gSy+ATD4yFY+UGqxc6XuY8=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230307171951-5f1d0796a31a/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230307221329-e0cbc709008f h1:93CaBe6hwYA3PL7cJRHhzQghICIhdl0sZ32/HTaCgBw=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230307221329-e0cbc709008f/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
-cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+bitbucket.org/apstrktr/goapstra v0.0.0-20230310191532-926a19749e17 h1:cwQy2MYT2Gb2hRJszMV2jNZ2bGuazBMFF55ddn/AF1U=
+bitbucket.org/apstrktr/goapstra v0.0.0-20230310191532-926a19749e17/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
+
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=

@@ -51,13 +51,15 @@ func (o ConfigletGenerator) DataSourceAttributesNested() map[string]dataSourceSc
 func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"config_style": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(AllowedConfigletStyles(), "', '")),
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(AllowedConfigletStyles()...)}},
+			MarkdownDescription: fmt.Sprintf("Specifies the switch platform, must be one of '%s'.",
+				strings.Join(utils.AllPlatformOSNames(), "', '")),
+			Required:   true,
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)}},
 		"section": resourceSchema.StringAttribute{
-			MarkdownDescription: "Config Section",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(AllowedConfigletSections()...)},
+			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet"+
+				"should be applied. Must be one of '%s", strings.Join(utils.AllConfigletSectionNames(), "', '")),
+			Required:   true,
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllConfigletSectionNames()...)},
 		},
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",
@@ -98,13 +100,13 @@ func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *goapstra.Confi
 func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.ConfigletGenerator {
 	var err error
 
-	var configStyle goapstra.ApstraPlatformOS
+	var configStyle goapstra.PlatformOS
 	err = configStyle.FromString(o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet config_style %q", o.ConfigStyle.ValueString()), err.Error())
 	}
 
-	var section goapstra.ApstraConfigletSection
+	var section goapstra.ConfigletSection
 	err = section.FromString(o.Section.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
@@ -116,29 +118,5 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 		TemplateText:         o.TemplateText.ValueString(),
 		NegationTemplateText: o.NegationTemplateText.ValueString(),
 		Filename:             o.FileName.ValueString(),
-	}
-}
-
-func AllowedConfigletSections() []string {
-	return []string{
-		goapstra.ApstraConfigletSectionSystem.String(),
-		goapstra.ApstraConfigletSectionInterface.String(),
-		goapstra.ApstraConfigletSectionFile.String(),
-		goapstra.ApstraConfigletSectionFRR.String(),
-		goapstra.ApstraConfigletSectionOSPF.String(),
-		goapstra.ApstraConfigletSectionSystemTop.String(),
-		goapstra.ApstraConfigletSectionSetBasedSystem.String(),
-		goapstra.ApstraConfigletSectionSetBasedInterface.String(),
-		goapstra.ApstraConfigletSectionDeleteBasedInterface.String(),
-	}
-}
-
-func AllowedConfigletStyles() []string {
-	return []string{
-		goapstra.ApstraPlatformOSCumulus.String(),
-		goapstra.ApstraPlatformOSNxos.String(),
-		goapstra.ApstraPlatformOSEos.String(),
-		goapstra.ApstraPlatformOSJunos.String(),
-		goapstra.ApstraPlatformOSSonic.String(),
 	}
 }
