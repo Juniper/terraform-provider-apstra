@@ -115,7 +115,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDeviceAllocation) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
 	// Update not needed because any change triggers replacement
 }
 
