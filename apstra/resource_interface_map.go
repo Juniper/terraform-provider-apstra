@@ -694,9 +694,10 @@ func (o rInterfaceMapInterface) attributes(diags *diag.Diagnostics) map[string]s
 			},
 		},
 		"transformation_id": schema.Int64Attribute{
-			MarkdownDescription: "Transformation ID number identifying the desired port behavior, as found " +
+			MarkdownDescription: "Transformation ID number identifying the desired port behavior, detailed " +
 				"in the Device Profile. Required only when multiple transformation candidates are found for " +
-				"a given physical_interface_name and speed (as determined by the Logical Device and logical_device_port.",
+				"a given physical_interface_name and speed as determined by definitions found the Logical " +
+				"Device definition and logical_device_port field.",
 			Optional:      true,
 			Computed:      true,
 			Validators:    []validator.Int64{int64validator.AtLeast(1)},
