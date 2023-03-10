@@ -71,7 +71,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"device_profile_node_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.", //todo
+			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.",
 			Computed:            true,
 		},
 		//"system_node_id": resourceSchema.StringAttribute{
