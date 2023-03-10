@@ -10,12 +10,16 @@ data "apstra_rack_type" "each" {
   id       = each.key
 }
 
-# Create a map of Rack Type name to Generic System count, but only include Rack
-# Types with 40 or more Generic Systems
-output "racks_with_mlag_leafs" {
+# Create a map of Rack Type name to Generic System count,
+# including only Rack Types with 40 or more Generic Systems
+output "rack_types_with_40_or_more_generic_systems_by_ID" {
   value = {
-    for rt in data.apstra_rack_type.each : rt.id => sum([
+    for rt in data.apstra_rack_type.each :
+    rt.name => sum([
       for gs in rt.generic_systems : gs.count
-    ]) if sum([for gs in rt.generic_systems : gs.count]) >= 40
+    ])
+    if sum([
+      for gs in rt.generic_systems : gs.count
+    ]) >= 40
   }
 }
