@@ -17,13 +17,12 @@ import (
 )
 
 type DeviceAllocation struct {
-	BlueprintId           types.String `tfsdk:"blueprint_id"`     // required
-	NodeName              types.String `tfsdk:"node_name"`        // required
-	DeviceKey             types.String `tfsdk:"device_key"`       // optional
-	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"` // computed + optional
-	NodeId                types.String `tfsdk:"node_id"`          // computed
-	//SystemNodeId          types.String `tfsdk:"system_node_id"`         // computed
-	DeviceProfileNodeId types.String `tfsdk:"device_profile_node_id"` // computed
+	BlueprintId           types.String `tfsdk:"blueprint_id"`           // required
+	NodeName              types.String `tfsdk:"node_name"`              // required
+	DeviceKey             types.String `tfsdk:"device_key"`             // optional
+	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`       // computed + optional
+	NodeId                types.String `tfsdk:"node_id"`                // computed
+	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"` // computed
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -35,10 +34,11 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"node_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "", // todo
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "GraphDB node 'label which identifies the switch. Strings like 'spine1' " +
+				"and 'rack_2_leaf_1 are appropraite here.",
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"device_key": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique ID for a Managed Device, generally the serial number, used to. " +
