@@ -5,6 +5,7 @@
 #output "d_blueprints"                   { value = data.apstra_blueprints.d }
 #output "d_datacenter_blueprint_status"  { value = data.apstra_datacenter_blueprint_status.d }
 #output "d_configlet"                    { value = data.apstra_configlet.d }
+#output "d_configlets"                   { value = data.apstra_configlet.d }
 #output "d_ipv4_pool"                    { value = data.apstra_ipv4_pool.d }
 #output "d_ipv4_pools"                   { value = data.apstra_ipv4_pools.d }
 #output "d_ipv6_pool"                    { value = data.apstra_ipv6_pool.d }
@@ -23,6 +24,7 @@
 
 #output "r_agent_profile"                { value = apstra_agent_profile.r }
 #output "r_asn_pool"                     { value = apstra_asn_pool.r }
+#output "r_configlet"                    { value = apstra_configlet.r }
 #output "r_ipv4_pool"                    { value = apstra_asn_pool.r }
 #output "r_logical_device"               { value = apstra_logical_device.r }
 #output "r_tag"                          { value = apstra_tag.r }

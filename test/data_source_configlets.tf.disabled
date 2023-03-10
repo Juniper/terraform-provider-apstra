@@ -1,0 +1,3 @@
+data "apstra_configlets" "d" {
+  supported_platforms = ["junos", "sonic"]
+}
