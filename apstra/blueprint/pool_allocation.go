@@ -17,7 +17,7 @@ import (
 )
 
 type PoolAllocation struct {
-	BlueprintId types.String `tfsdk:"blueprint_id""`
+	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Role        types.String `tfsdk:"role"`
 	PoolIds     types.Set    `tfsdk:"pool_ids"`
 }

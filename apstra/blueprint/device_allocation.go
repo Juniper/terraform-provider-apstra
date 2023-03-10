@@ -219,7 +219,8 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *goaps
 	switch len(result.Items) {
 	case 0:
 		diags.AddError("switch node not found in blueprint",
-			fmt.Sprintf("switch/system node with label %q: not found with query %q", o.NodeName.ValueString()))
+			fmt.Sprintf("switch/system node with label %q: not found with query %q",
+				o.NodeName.ValueString(), query.String()))
 	case 1:
 		// no error case
 		o.NodeId = types.StringValue(result.Items[0].System.Id)
