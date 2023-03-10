@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfiles{}
+var _ datasource.DataSourceWithConfigure = &dataSourceRackTypes{}
 
 type dataSourceRackTypes struct {
 	client *goapstra.Client
