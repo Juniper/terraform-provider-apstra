@@ -26,25 +26,27 @@ type Deploy struct {
 func (o Deploy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "", // todo
+			MarkdownDescription: "Apstra ID of the blueprint.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"comment": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "", // todo
+			MarkdownDescription: "Comment associated with the Deployment/Commit.",
 			Computed:            true,
 		},
 		"has_uncommitted_changes": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "", // todo
+			MarkdownDescription: "True when there are uncommited changes in the staging Blueprint.",
 			Computed:            true,
 		},
 		"revision_active": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "", // todo
-			Computed:            true,
+			MarkdownDescription: "Revision numbers increment with each Blueprint change. This is " +
+				"the currently deployed revision number.",
+			Computed: true,
 		},
 		"revision_staged": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "", // todo
-			Computed:            true,
+			MarkdownDescription: "Revision numbers increment with each Blueprint change. This is " +
+				"the revision number currently in staging.",
+			Computed: true,
 		},
 	}
 }
@@ -52,27 +54,29 @@ func (o Deploy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 func (o Deploy) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "", // todo
+			MarkdownDescription: "Apstra ID of the blueprint.",
 			Required:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"comment": resourceSchema.StringAttribute{
-			MarkdownDescription: "", // todo
+			MarkdownDescription: "Comment associated with the Deployment/Commit.",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"has_uncommitted_changes": resourceSchema.BoolAttribute{
-			MarkdownDescription: "", // todo
+			MarkdownDescription: "True when there are uncommited changes in the staging Blueprint.",
 			Computed:            true,
 		},
 		"revision_active": resourceSchema.Int64Attribute{
-			MarkdownDescription: "", // todo
-			Computed:            true,
+			MarkdownDescription: "Revision numbers increment with each Blueprint change. This is " +
+				"the currently deployed revision number.",
+			Computed: true,
 		},
 		"revision_staged": resourceSchema.Int64Attribute{
-			MarkdownDescription: "", // todo
-			Computed:            true,
+			MarkdownDescription: "Revision numbers increment with each Blueprint change. This is " +
+				"the revision number currently in staging.",
+			Computed: true,
 		},
 	}
 }
