@@ -1,7 +1,7 @@
 ### Steps to convert Data Source or Resource documentation from the hand-built README.md to using `tfplugindocs`
 
 1. The details for a given `resource` or `data source` may have been previously documented in [README.md](README.md).
-1. Add documentation into the `GetSchema()` function as `MarkdownDescription` elements within the
+1. Add documentation into the `Schema()` function as `MarkdownDescription` elements within the
 `apstra/data_source_<name>.go` or `apstra/resource_<name>.go` files at various levels:
    - at the level of each Attribute (or nested Attribute) element
    - on each individual attribute
