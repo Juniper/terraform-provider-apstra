@@ -42,6 +42,10 @@ func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
+	if config.Subnets.IsUnknown() {
+		return
+	}
+
 	subnets := make([]resources.Ipv6PoolSubnet, len(config.Subnets.Elements()))
 	d := config.Subnets.ElementsAs(ctx, &subnets, false)
 	resp.Diagnostics.Append(d...)
@@ -119,22 +123,27 @@ func (o *resourceIpv6Pool) Create(ctx context.Context, req resource.CreateReques
 
 	// read pool back from Apstra to get usage statistics
 	var ace goapstra.ApstraClientErr
-	p, err := o.client.GetIp6Pool(ctx, id)
-	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"IPv6 Pool not found",
-				fmt.Sprintf("Just-created IPv6 Pool with ID %q not found", id))
+	var pool *goapstra.IpPool
+	for { // loop until creation complete
+		pool, err = o.client.GetIp6Pool(ctx, id)
+		if err != nil {
+			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+				resp.Diagnostics.AddError(
+					"IPv6 Pool not found",
+					fmt.Sprintf("Just-created IPv6 Pool with ID %q not found", id))
+				return
+			}
+			resp.Diagnostics.AddError("Error retrieving IPv6 Pool", err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving IPv6 Pool", err.Error())
-		return
+		if pool.Status != goapstra.PoolStatusCreating {
+			break
+		}
 	}
 
 	// create state object
 	var state resources.Ipv6Pool
-	state.LoadApiData(ctx, p, &resp.Diagnostics)
+	state.LoadApiData(ctx, pool, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
