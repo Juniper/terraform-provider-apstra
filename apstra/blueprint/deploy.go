@@ -38,7 +38,7 @@ func (o Deploy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Computed:            true,
 		},
 		"has_uncommitted_changes": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "True when there are uncommited changes in the staging Blueprint.",
+			MarkdownDescription: "True when there are uncommitted changes in the staging Blueprint.",
 			Computed:            true,
 		},
 		"revision_active": dataSourceSchema.Int64Attribute{
