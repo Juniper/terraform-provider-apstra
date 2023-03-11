@@ -126,7 +126,7 @@ func (o *Ipv4Pool) LoadApiData(ctx context.Context, in *goapstra.IpPool, diags *
 
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.DisplayName)
-	o.Status = types.StringValue(in.Status)
+	o.Status = types.StringValue(in.Status.String())
 	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
 	o.Used = types.NumberValue(utils.BigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))

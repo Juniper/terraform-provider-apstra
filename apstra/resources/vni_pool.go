@@ -126,7 +126,7 @@ func (o *VniPool) LoadApiData(ctx context.Context, in *goapstra.VniPool, diags *
 
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.DisplayName)
-	o.Status = types.StringValue(in.Status)
+	o.Status = types.StringValue(in.Status.String())
 	o.Used = types.Int64Value(int64(in.Used))
 	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
 	o.Total = types.Int64Value(int64(in.Total))
