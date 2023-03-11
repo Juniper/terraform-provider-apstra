@@ -43,3 +43,21 @@ func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *r
 	)
 	return nil
 }
+
+func ResourceGetVersion(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) string {
+	if req.ProviderData == nil {
+		return ""
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.version + "-" + pd.commit
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataDetail,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+	return ""
+}
