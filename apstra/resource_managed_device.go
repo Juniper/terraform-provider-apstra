@@ -151,7 +151,7 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
-	// figure out the new switch system Id
+	// figure out the new switch system ID
 	agentInfo, err := o.client.GetSystemAgent(ctx, agentId)
 	if err != nil {
 		resp.Diagnostics.AddError(

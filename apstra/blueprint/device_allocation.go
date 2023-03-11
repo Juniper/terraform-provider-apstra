@@ -17,13 +17,12 @@ import (
 )
 
 type DeviceAllocation struct {
-	BlueprintId           types.String `tfsdk:"blueprint_id"`     // required
-	NodeName              types.String `tfsdk:"node_name"`        // required
-	DeviceKey             types.String `tfsdk:"device_key"`       // optional
-	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"` // computed + optional
-	NodeId                types.String `tfsdk:"node_id"`          // computed
-	//SystemNodeId          types.String `tfsdk:"system_node_id"`         // computed
-	DeviceProfileNodeId types.String `tfsdk:"device_profile_node_id"` // computed
+	BlueprintId           types.String `tfsdk:"blueprint_id"`           // required
+	NodeName              types.String `tfsdk:"node_name"`              // required
+	DeviceKey             types.String `tfsdk:"device_key"`             // optional
+	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`       // computed + optional
+	NodeId                types.String `tfsdk:"node_id"`                // computed
+	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"` // computed
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -35,10 +34,11 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"node_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "", // todo
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "GraphDB node 'label which identifies the switch. Strings like 'spine1' " +
+				"and 'rack_2_leaf_1 are appropraite here.",
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"device_key": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique ID for a Managed Device, generally the serial number, used to. " +
@@ -71,7 +71,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"device_profile_node_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.", //todo
+			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.",
 			Computed:            true,
 		},
 		//"system_node_id": resourceSchema.StringAttribute{
@@ -219,7 +219,8 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *goaps
 	switch len(result.Items) {
 	case 0:
 		diags.AddError("switch node not found in blueprint",
-			fmt.Sprintf("switch/system node with label %q: not found with query %q", o.NodeName.ValueString()))
+			fmt.Sprintf("switch/system node with label %q: not found with query %q",
+				o.NodeName.ValueString(), query.String()))
 	case 1:
 		// no error case
 		o.NodeId = types.StringValue(result.Items[0].System.Id)
@@ -289,71 +290,6 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
-
-	////	BlueprintId           types.String `tfsdk:"blueprint_id"`			// required
-	////	NodeName              types.String `tfsdk:"node_name"`				// required
-	////	DeviceKey             types.String `tfsdk:"device_key"`				// optional
-	////	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`		// computed + optional
-	//// 	NodeId                types.String `tfsdk:"node_id"`				// computed
-	////	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`	// computed
-	//
-	//if o.DeviceKey.IsNull() {
-	//	iMapId := goapstra.ObjectId(o.InterfaceMapCatalogId.ValueString())
-	//	dpNodeId = utils.DeviceProfileIdFromInterfaceMapId(ctx, bpId, iMapId, client, diags)
-	//} else {
-	//	dpCatalogId := utils.DeviceProfileIdFromDeviceKey(ctx, o.DeviceKey.ValueString(), client, diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//
-	//	query := client.NewQuery(bpId).
-	//		SetContext(ctx).
-	//		SetType(goapstra.BlueprintTypeStaging).
-	//		Node([]goapstra.QEEAttribute{
-	//			{"type", goapstra.QEStringVal("device_profile")},
-	//			{"device_profile_id", goapstra.QEStringVal(dpCatalogId.String())},
-	//			{"name", goapstra.QEStringVal("n_device_profile")},
-	//		})
-	//
-	//	var result struct {
-	//		Items []struct {
-	//			DeviceProfile struct {
-	//				Id string `json:"id"`
-	//			} `json:"n_device_profile"`
-	//		} `json:"items"`
-	//	}
-	//
-	//	err := query.Do(&result)
-	//	if err != nil {
-	//		diags.AddError("error querying graphDB for device profile", err.Error())
-	//		return
-	//	}
-	//
-	//	if len(result.Items) != 1 {
-	//		diags.AddError(fmt.Sprintf(
-	//			"expected 1 graphDB query result, got %d", len(result.Items)),
-	//			fmt.Sprintf("query: %q", query.String()))
-	//		return
-	//	}
-	//
-	//	dpNodeId = goapstra.ObjectId(result.Items[0].DeviceProfile.Id)
-	//}
-	//o.DeviceProfileNodeId = types.StringValue(dpNodeId.String())
-	//
-	//if o.InterfaceMapCatalogId.IsUnknown() {
-	//	o.populateInterfaceMapId(ctx, client, diags)
-	//} else {
-	//	o.validateInterfaceMapId(ctx, client, diags)
-	//}
-	//if diags.HasError() {
-	//	return
-	//}
-	//
-	//// Determine the graph db node ID of the desired system
-	//o.nodeIdFromNodeName(ctx, client, diags)
-	//if diags.HasError() {
-	//	return
-	//}
 }
 
 // SetInterfaceMap creates or deletes the graph db relationship between a switch

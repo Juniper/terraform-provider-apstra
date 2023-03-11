@@ -54,7 +54,7 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				Optional: true,
-				MarkdownDescription: "URL of the apstra server, e.g. `http://<user>:<password>@apstra.juniper.net:443/`\n" +
+				MarkdownDescription: "URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`\n" +
 					"If username or password are omitted from URL string, environment variables `" + envApstraUsername +
 					"` and `" + envApstraPassword + "` will be used.  If `url` is omitted, environment variable " +
 					envApstraUrl + " will be used.",

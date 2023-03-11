@@ -215,37 +215,6 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 	}
 }
 
-// getSwitchLabelId queries the graph db for 'switch' type systems, returns
-// map[string]string (map[label]id)
-func getSwitchLabelId(ctx context.Context, client *goapstra.Client, bpId goapstra.ObjectId) (map[string]string, error) {
-	var switchQr struct {
-		Items []struct {
-			System struct {
-				Label string `json:"label"`
-				Id    string `json:"id"`
-			} `json:"n_system"`
-		} `json:"items"`
-	}
-	err := client.NewQuery(bpId).
-		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"name", goapstra.QEStringVal("n_system")},
-			{"system_type", goapstra.QEStringVal("switch")},
-		}).
-		Do(&switchQr)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make(map[string]string, len(switchQr.Items))
-	for _, item := range switchQr.Items {
-		result[item.System.Label] = item.System.Id
-	}
-
-	return result, nil
-}
-
 func (o *resourceDatacenterBlueprint) apiVersion() (*version.Version, error) {
 	if o.client == nil {
 		return nil, nil
