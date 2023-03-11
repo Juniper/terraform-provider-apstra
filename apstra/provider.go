@@ -41,7 +41,9 @@ type Provider struct {
 // is made available to the Configure() method of implementations of
 // datasource.DataSource and resource.Resource
 type providerData struct {
-	client *goapstra.Client
+	client  *goapstra.Client
+	version string
+	commit  string
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -183,7 +185,11 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// data passed to Resource and DataSource Configure() methods
-	pd := &providerData{client: client}
+	pd := &providerData{
+		client:  client,
+		version: p.Version,
+		commit:  p.Commit,
+	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd
 }
