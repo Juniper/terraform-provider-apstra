@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"bitbucket.org/apstrktr/goapstra"
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -12,7 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"os"
 	"terraform-provider-apstra/apstra/utils"
+	"text/template"
 )
 
 type Deploy struct {
@@ -20,7 +23,7 @@ type Deploy struct {
 	Comment               types.String `tfsdk:"comment"`
 	HasUncommittedChanges types.Bool   `tfsdk:"has_uncommitted_changes"`
 	ActiveRevision        types.Int64  `tfsdk:"revision_active"`
-	StageDRevision        types.Int64  `tfsdk:"revision_staged"`
+	StagedRevision        types.Int64  `tfsdk:"revision_staged"`
 }
 
 func (o Deploy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -60,9 +63,12 @@ func (o Deploy) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"comment": resourceSchema.StringAttribute{
-			MarkdownDescription: "Comment associated with the Deployment/Commit.",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Comment associated with the Deployment/Commit. This field supports templating " +
+				"using the `text/template` library (currently supported replacements: ['Version']) and " +
+				"environment variable expansion using `os.ExpandEnv` to include contextual information like the " +
+				"Terraform username, CI system job ID, etc...",
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"has_uncommitted_changes": resourceSchema.BoolAttribute{
 			MarkdownDescription: "True when there are uncommited changes in the staging Blueprint.",
@@ -81,7 +87,7 @@ func (o Deploy) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Deploy) Deploy(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, client *goapstra.Client, diags *diag.Diagnostics) {
 	status, err := client.GetBlueprintStatus(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
 		diags.AddError("error getting Blueprint status", err.Error())
@@ -105,12 +111,27 @@ func (o *Deploy) Deploy(ctx context.Context, client *goapstra.Client, diags *dia
 			fmt.Sprintf(
 				"deploy of Blueprint %q requested but current revision %d has no uncommitted changes",
 				o.BlueprintId.ValueString(), status.Version))
+		o.HasUncommittedChanges = types.BoolValue(status.HasUncommittedChanges)
+		o.ActiveRevision = types.Int64Value(int64(status.Version))
+		o.StagedRevision = types.Int64Value(int64(status.Version))
 		return
+	}
+
+	t, err := new(template.Template).Parse(o.Comment.ValueString())
+	if err != nil {
+		diags.AddWarning(
+			fmt.Sprintf("error creating deployment comment template from string %q", o.Comment.ValueString()),
+			err.Error())
+	}
+	buf := new(bytes.Buffer)
+	err = t.Execute(buf, commentTemplate)
+	if err != nil {
+		diags.AddWarning("error executing deployment comment template", err.Error())
 	}
 
 	response, err := client.DeployBlueprint(ctx, &goapstra.BlueprintDeployRequest{
 		Id:          goapstra.ObjectId(o.BlueprintId.ValueString()),
-		Description: o.Comment.ValueString(),
+		Description: os.ExpandEnv(buf.String()),
 		Version:     status.Version,
 	})
 	if err != nil {
@@ -133,7 +154,7 @@ func (o *Deploy) Deploy(ctx context.Context, client *goapstra.Client, diags *dia
 	}
 
 	o.ActiveRevision = types.Int64Value(int64(response.Version))
-	o.StageDRevision = types.Int64Value(int64(response.Version))
+	o.StagedRevision = types.Int64Value(int64(response.Version))
 	o.HasUncommittedChanges = types.BoolValue(false)
 }
 
@@ -175,7 +196,12 @@ func (o *Deploy) Read(ctx context.Context, client *goapstra.Client, diags *diag.
 	//} else {
 	o.Comment = utils.StringValueOrNull(ctx, revision.Description, diags)
 	o.ActiveRevision = types.Int64Value(int64(revision.RevisionId))
-	o.StageDRevision = types.Int64Value(int64(status.Version))
+	o.StagedRevision = types.Int64Value(int64(status.Version))
 	//}
 	//}
+}
+
+type CommentTemplate struct {
+	ProviderVersion  string
+	TerraformVersion string
 }
