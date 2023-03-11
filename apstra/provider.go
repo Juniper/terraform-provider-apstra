@@ -224,6 +224,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
 		////func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
 		func() datasource.DataSource { return &dataSourceTemplateRackBased{} },
+		func() datasource.DataSource { return &dataSourceTemplates{} },
 		func() datasource.DataSource { return &dataSourceDatacenterBlueprint{} },
 		func() datasource.DataSource { return &dataSourceTag{} },
 		func() datasource.DataSource { return &dataSourceVniPool{} },
