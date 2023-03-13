@@ -3,7 +3,7 @@
 # and deploys the template.
 
 # Instantiate a blueprint from a template
-resource "apstra_datacenter_blueprint" "r" {
+resource "apstra_datacenter_blueprint" "instantiation" {
   name        = "terraform commit example"
   template_id = "L2_Virtual_EVPN"
 }
@@ -31,9 +31,9 @@ locals {
 }
 
 # Assign interface maps to fabric roles to eliminate build errors so we can deploy
-resource "apstra_datacenter_blueprint_device_allocation" "r" {
+resource "apstra_datacenter_blueprint_device_allocation" "interface_map_assignment" {
   for_each         = local.switches
-  blueprint_id     = apstra_datacenter_blueprint.r.id
+  blueprint_id     = apstra_datacenter_blueprint.instantiation.id
   node_name        = each.key
   interface_map_id = each.value
 }
@@ -41,7 +41,7 @@ resource "apstra_datacenter_blueprint_device_allocation" "r" {
 # Assign ASN pools to fabric roles to eliminate build errors so we can deploy
 resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
   for_each     = local.asn_pools
-  blueprint_id = apstra_datacenter_blueprint.r.id
+  blueprint_id = apstra_datacenter_blueprint.instantiation.id
   role         = each.key
   pool_ids     = each.value
 }
@@ -49,7 +49,7 @@ resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
 # Assign IPv4 pools to fabric roles to eliminate build errors so we can deploy
 resource "apstra_datacenter_blueprint_resource_pool_allocation" "ipv4" {
   for_each     = local.ipv4_pools
-  blueprint_id = apstra_datacenter_blueprint.r.id
+  blueprint_id = apstra_datacenter_blueprint.instantiation.id
   role         = each.key
   pool_ids     = each.value
 }
@@ -57,11 +57,11 @@ resource "apstra_datacenter_blueprint_resource_pool_allocation" "ipv4" {
 # The only required field for deployment is blueprint_id, but we're ensuring
 # sensible run order and setting a custom commit message.
 resource "apstra_blueprint_deployment" "deploy" {
-  blueprint_id = apstra_datacenter_blueprint.r.id
+  blueprint_id = apstra_datacenter_blueprint.instantiation.id
 
   #ensure that deployment doesn't run before build errors are resolved
   depends_on = [
-    apstra_datacenter_blueprint_device_allocation.r,
+    apstra_datacenter_blueprint_device_allocation.interface_map_assignment,
     apstra_datacenter_blueprint_resource_pool_allocation.asn,
     apstra_datacenter_blueprint_resource_pool_allocation.ipv4,
   ]
