@@ -41,6 +41,10 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 		return
 	}
 
+	if config.Ranges.IsUnknown() {
+		return
+	}
+
 	poolRanges := make([]resources.VniPoolRange, len(config.Ranges.Elements()))
 	d := config.Ranges.ElementsAs(ctx, &poolRanges, false)
 	resp.Diagnostics.Append(d...)
@@ -106,22 +110,28 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 
 	// read pool back from Apstra to get usage statistics
 	var ace goapstra.ApstraClientErr
-	p, err := o.client.GetVniPool(ctx, id)
-	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"VNI Pool not found",
-				fmt.Sprintf("Just-created VNI Pool with ID %q not found", id))
+	var pool *goapstra.VniPool
+	for {
+		pool, err = o.client.GetVniPool(ctx, id)
+		if err != nil {
+			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("id"),
+					"VNI Pool not found",
+					fmt.Sprintf("Just-created VNI Pool with ID %q not found", id))
+				return
+			}
+			resp.Diagnostics.AddError("Error retrieving VNI Pool", err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving VNI Pool", err.Error())
-		return
+		if pool.Status != goapstra.PoolStatusCreating {
+			break
+		}
 	}
 
 	// create state object
 	var state resources.VniPool
-	state.LoadApiData(ctx, p, &resp.Diagnostics)
+	state.LoadApiData(ctx, pool, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
