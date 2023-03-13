@@ -1,11 +1,6 @@
-# This example commits a blueprint, including:
-# - rack type
-# - template
-# - blueprint instantiation from template
-#
-# It then assigns resource pools and devices (by serial number - these are the
-# serial numbers found in a specific cloudlabs "Customer" topology) to roles
-# in the fabric
+# This example instantiates a blueprint from a template,
+# allocates IPv4 and ASN resource pools to template roles
+# and deploys the template.
 
 # Instantiate a blueprint from a template
 resource "apstra_datacenter_blueprint" "r" {
