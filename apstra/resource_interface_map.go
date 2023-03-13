@@ -239,21 +239,17 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	// Get current state
-	var state rInterfaceMap
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	id := goapstra.ObjectId(state.Id.ValueString())
 	ld, dp := plan.fetchEmbeddedObjects(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	request := plan.request(ctx, ld, dp, &resp.Diagnostics)
-	err := o.client.UpdateInterfaceMap(ctx, id, request)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := o.client.UpdateInterfaceMap(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Interface Map", err.Error())
 		return
@@ -263,7 +259,7 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 	var newState rInterfaceMap
 
 	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
-	newState.Id = types.StringValue(string(id))
+	newState.Id = plan.Id
 
 	newState.loadApiData(ctx, request, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -472,8 +468,8 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 					fmt.Sprintf("planned transform %d for logical device"+
 						" interface at index %d ('%s') not available using device"+
 						" profile '%s' and interface '%s'",
-						i,
 						planInterface.TransformationId.ValueInt64(),
+						i,
 						planInterface.LogicalDevicePort.ValueString(),
 						o.LogicalDeviceId.ValueString(),
 						planInterface.PhysicalInterfaceName.ValueString()))

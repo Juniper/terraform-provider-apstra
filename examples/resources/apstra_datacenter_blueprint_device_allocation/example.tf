@@ -1,90 +1,55 @@
-# This example creates a blueprint, including:
-# - rack type
-# - template
-# - blueprint instantiation from template
-#
-# It then assigns resource pools and devices (by serial number - these are the
-# serial numbers found in a specific cloudlabs "Customer" topology) to roles
-# in the fabric
-
-# Create a very simple rack type
-resource "apstra_rack_type" "r" {
-  name                       = "my rack"
-  fabric_connectivity_design = "l3clos"
-  leaf_switches = {
-    leaf_one = {
-      logical_device_id = "AOS-7x10-Leaf"
-      spine_link_count  = 1
-      spine_link_speed  = "10G"
-    }
-  }
-}
-
-# Create a template using the rack type. Note that the `rack_infos` map is
-# keyed by rack type ID. Becuause the key is a reference, it needs to be
-# wrapped in parenthesis.
-resource "apstra_template_rack_based" "r" {
-  name                     = "my template"
-  overlay_control_protocol = "evpn"
-  asn_allocation_scheme    = "unique"
-  spine = {
-    count             = 2
-    logical_device_id = "AOS-7x10-Spine"
-  }
-  rack_infos = {
-    (apstra_rack_type.r.id) = {
-      count = 3
-    }
-  }
-}
+# This example deploys a blueprint from a template and assigns
+# interface maps to the fabric nodes.
 
 # Instantiate the blueprint from the template
 resource "apstra_datacenter_blueprint" "r" {
-  name        = "aaa"
-  template_id = apstra_template_rack_based.r.id
+  name        = "example blueprint with switch allocation"
+  template_id = "L2_Virtual_EVPN"
 }
 
-# ASN pools, IPv4 pools and switch devices will be allocated using looping
-# resources. These three `local` maps are what we'll loop over.
+# Only one of "device_key" and "interface_map_id" is required in most cases.
+#
+# When only the interface_map_id is provided, we set the interface map (this
+# step eliminates build errors), but do not assign systems by ID.
+#
+# When only the device_key is provided, we try to infer the interface_map_id
+# by first determining the device type, and then looking for candidate
+# interface maps which can map the specific hardware to the logical device
+# specified by the fabric role. When multiple candidate interface maps exist
+# supplying interface_map_id becomes mandatory.
 locals {
   switches = {
-    spine1            = "5254004796D4"
-    spine2            = "52540092F72A"
-    my_rack_001_leaf1 = "525400361AC5"
-    my_rack_002_leaf1 = "52540057C718"
-    my_rack_003_leaf1 = "525400428913"
-  }
-  asn_pools = {
-    spine_asns = ["Private-64512-65534"]
-    leaf_asns  = ["Private-4200000000-4294967294"]
-  }
-  ipv4_pools = {
-    spine_loopback_ips  = ["Private-10_0_0_0-8"]
-    leaf_loopback_ips   = ["Private-10_0_0_0-8"]
-    spine_leaf_link_ips = ["Private-10_0_0_0-8"]
+    spine1 = {
+#     device_key       = "<serial-number-goes-here>"
+      interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
+    }
+    spine2 = {
+#     device_key       = "<serial-number-goes-here>"
+      interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
+    }
+    l2_virtual_001_leaf1 = {
+#     device_key       = "<serial-number-goes-here>"
+      interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+    }
+    l2_virtual_002_leaf1 = {
+#     device_key       = "<serial-number-goes-here>"
+      interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+    }
+    l2_virtual_003_leaf1 = {
+#     device_key       = "<serial-number-goes-here>"
+      interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+    }
+    l2_virtual_004_leaf1 = {
+#     device_key       = "<serial-number-goes-here>"
+      interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
+    }
   }
 }
 
 # Assign switches to fabric roles
 resource "apstra_datacenter_blueprint_device_allocation" "r" {
-  for_each     = local.switches
-  blueprint_id = apstra_datacenter_blueprint.r.id
-  device_key   = each.value
-  node_name    = each.key
-}
-
-# Assign ASN pools to fabric roles
-resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
-  for_each     = local.asn_pools
-  blueprint_id = apstra_datacenter_blueprint.r.id
-  role         = each.key
-  pool_ids     = each.value
-}
-
-# Assign IPv4 pools to fabric roles
-resource "apstra_datacenter_blueprint_resource_pool_allocation" "ipv4" {
-  for_each     = local.ipv4_pools
-  blueprint_id = apstra_datacenter_blueprint.r.id
-  role         = each.key
-  pool_ids     = each.value
+  for_each         = local.switches
+  blueprint_id     = apstra_datacenter_blueprint.r.id
+  interface_map_id = each.value["interface_map_id"]
+  node_name        = each.key
 }

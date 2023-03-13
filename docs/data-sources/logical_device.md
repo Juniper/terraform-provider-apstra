@@ -2,33 +2,66 @@
 page_title: "apstra_logical_device Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source provides details about a specific logical device (a logical device is a template used by apstra when creating rack types (rack types are also templates)).
-  The logical device can be specified by id xor by name. Returns an error if 0 matches or more than 1 match. Note on looking up logical devices by name:
-  Apstra allows multiple logical devices to have the same name, although this is not recommended.To lookup a logical device that shares a name with any other device(s) you must lookup by id.
+  This data source provides details of a specific Logical Device.
+  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Logical Device. Matching zero or more Logical Devices will produce an error.
 ---
 
 # apstra_logical_device (Data Source)
 
-This data source provides details about a specific logical device (a logical device is a template used by apstra when creating rack types (rack types are also templates)).
+This data source provides details of a specific Logical Device.
 
-The logical device can be specified by id xor by name. Returns an error if 0 matches or more than 1 match. Note on looking up logical devices by name:
-
-1. Apstra allows multiple logical devices to have the same name, although this is not recommended.
-1. To lookup a logical device that shares a name with any other device(s) you must lookup by id.
+At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Logical Device. Matching zero or more Logical Devices will produce an error.
 
 ## Example Usage
 
 ```terraform
-# The following example shows how a module might accept a logical device name as an input variable and use it to retrieve the agent profile ID when provisioning a rack type.
+# The following example shows how a module might accept a Logical Device's name
+# as an input variable and then use it to retrieve the Logical Device ID when
+# provisioning a Rack Type.
 
-variable "logical_device_name" {}
+# module input variable has the Logical Device name
+variable "logical_device_name" {
+    type = string
+    default = "AOS-24x10-2"
+}
 
+# Data lookup using the Logical Device name. Name collisions are possible,
+# will produce an error. Apstra permits name collisions for many object types.
+# It's probably best to avoid creating them.
 data "apstra_logical_device" "selected" {
     name = var.logical_device_name
 }
 
+# Create a Rack Type using the Logical Device ID found in the object which
+# was looked up by name.
 resource "apstra_rack_type" "my_rack" {
-    todo = "all of this"
+    name = "terraform, yo"
+    fabric_connectivity_design = "l3clos"
+    leaf_switches = {
+        leaf_one = {
+            spine_link_count = 2
+            spine_link_speed = "10G"
+            logical_device_id = data.apstra_logical_device.selected.id
+            redundancy_protocol = "esi"
+        }
+    }
+    access_switches = {
+        access_one = {
+            count = 3
+            logical_device_id = data.apstra_logical_device.selected.id
+            links = {
+                link_one = {
+                    speed = "10G"
+                    links_per_switch = 2
+                    target_switch_name = "leaf_one"
+                }
+            }
+            esi_lag_info = {
+                l3_peer_link_count = 2
+                l3_peer_link_speed = "10G"
+            }
+        }
+    }
 }
 ```
 
@@ -37,8 +70,8 @@ resource "apstra_rack_type" "my_rack" {
 
 ### Optional
 
-- `id` (String) ID of the logical device. Required when name is omitted.
-- `name` (String) Name of the logical device. Required when id is omitted.
+- `id` (String) Populate this field to look up a Logical Device by ID. Required when `name`is omitted.
+- `name` (String) Populate this field to look up a Logical Device by name. Required when `id`is omitted.
 
 ### Read-Only
 
@@ -59,5 +92,5 @@ Read-Only:
 Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
-- `port_roles` (Set of String) One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.
+- `port_roles` (Set of String) Describes the device types to which this port can connect.
 - `port_speed` (String) Port speed.

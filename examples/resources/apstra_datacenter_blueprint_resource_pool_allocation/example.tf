@@ -1,76 +1,29 @@
-# This example creates a blueprint, including:
-# - rack type
-# - template
-# - blueprint instantiation from template
-#
-# It then assigns resource pools and devices (by serial number - these are the
-# serial numbers found in a specific cloudlabs "Customer" topology) to roles
-# in the fabric
-
-# Create a very simple rack type
-resource "apstra_rack_type" "r" {
-  name                       = "my rack"
-  fabric_connectivity_design = "l3clos"
-  leaf_switches = {
-    leaf_one = {
-      logical_device_id = "AOS-7x10-Leaf"
-      spine_link_count  = 1
-      spine_link_speed  = "10G"
-    }
-  }
-}
-
-# Create a template using the rack type. Note that the `rack_infos` map is
-# keyed by rack type ID. Becuause the key is a reference, it needs to be
-# wrapped in parenthesis.
-resource "apstra_template_rack_based" "r" {
-  name                     = "my template"
-  overlay_control_protocol = "evpn"
-  asn_allocation_scheme    = "unique"
-  spine = {
-    count             = 2
-    logical_device_id = "AOS-7x10-Spine"
-  }
-  rack_infos = {
-    (apstra_rack_type.r.id) = {
-      count = 3
-    }
-  }
-}
+# This example deploys a blueprint from a template and assigns
+# resource pools maps to various roles in the fabric.
 
 # Instantiate the blueprint from the template
 resource "apstra_datacenter_blueprint" "r" {
-  name        = "aaa"
-  template_id = apstra_template_rack_based.r.id
+  name        = "example blueprint with switch allocation"
+  template_id = "L2_Virtual_EVPN"
 }
 
-# ASN pools, IPv4 pools and switch devices will be allocated using looping
-# resources. These three `local` maps are what we'll loop over.
+# Discover every ASN resource pool ID
+data "apstra_asn_pools" "all" {}
+
+# ASN pools and IPv4 pools will be allocated from these
+# local variables using looping resources.
 locals {
-  switches = {
-    spine1            = "5254004796D4"
-    spine2            = "52540092F72A"
-    my_rack_001_leaf1 = "525400361AC5"
-    my_rack_002_leaf1 = "52540057C718"
-    my_rack_003_leaf1 = "525400428913"
-  }
   asn_pools = {
-    spine_asns = ["Private-64512-65534"]
-    leaf_asns  = ["Private-4200000000-4294967294"]
+    // use the first discovered ASN pool for spines
+    spine_asns = slice(tolist(data.apstra_asn_pools.all.ids), 0, 1)
+    // use all other discovered ASN pools for leafs
+    leaf_asns  = slice(tolist(data.apstra_asn_pools.all.ids), 1, length(data.apstra_asn_pools.all.ids))
   }
   ipv4_pools = {
     spine_loopback_ips  = ["Private-10_0_0_0-8"]
     leaf_loopback_ips   = ["Private-10_0_0_0-8"]
     spine_leaf_link_ips = ["Private-10_0_0_0-8"]
   }
-}
-
-# Assign switches to fabric roles
-resource "apstra_datacenter_blueprint_device_allocation" "r" {
-  for_each     = local.switches
-  blueprint_id = apstra_datacenter_blueprint.r.id
-  device_key   = each.value
-  node_name    = each.key
 }
 
 # Assign ASN pools to fabric roles

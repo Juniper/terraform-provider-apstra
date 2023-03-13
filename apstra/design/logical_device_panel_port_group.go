@@ -38,7 +38,7 @@ func (o LogicalDevicePanelPortGroup) DataSourceAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"port_roles": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "One or more of: access, generic, l3_server, leaf, peer, server, spine, superspine and unused.",
+			MarkdownDescription: "Describes the device types to which this port can connect.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},

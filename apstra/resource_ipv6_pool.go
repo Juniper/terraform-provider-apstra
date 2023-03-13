@@ -62,6 +62,10 @@ func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.Vali
 			return
 		}
 
+		if subnets[i].Network.IsUnknown() {
+			continue
+		}
+
 		// parse the subnet string
 		_, iNet, err := net.ParseCIDR(subnets[i].Network.ValueString())
 		if err != nil {

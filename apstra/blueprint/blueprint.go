@@ -18,17 +18,21 @@ import (
 )
 
 type Blueprint struct {
-	Id               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	TemplateId       types.String `tfsdk:"template_id"`
-	FabricAddressing types.String `tfsdk:"fabric_addressing"`
-	Status           types.String `tfsdk:"status"`
-	SuperspineCount  types.Int64  `tfsdk:"superspine_count"`
-	SpineCount       types.Int64  `tfsdk:"spine_count"`
-	LeafCount        types.Int64  `tfsdk:"leaf_switch_count"`
-	AccessCount      types.Int64  `tfsdk:"access_switch_count"`
-	GenericCount     types.Int64  `tfsdk:"generic_system_count"`
-	ExternalCount    types.Int64  `tfsdk:"external_router_count"`
+	Id                    types.String `tfsdk:"id"`
+	Name                  types.String `tfsdk:"name"`
+	TemplateId            types.String `tfsdk:"template_id"`
+	FabricAddressing      types.String `tfsdk:"fabric_addressing"`
+	Status                types.String `tfsdk:"status"`
+	SuperspineCount       types.Int64  `tfsdk:"superspine_count"`
+	SpineCount            types.Int64  `tfsdk:"spine_count"`
+	LeafCount             types.Int64  `tfsdk:"leaf_switch_count"`
+	AccessCount           types.Int64  `tfsdk:"access_switch_count"`
+	GenericCount          types.Int64  `tfsdk:"generic_system_count"`
+	ExternalCount         types.Int64  `tfsdk:"external_router_count"`
+	HasUncommittedChanges types.Bool   `tfsdk:"has_uncommitted_changes"`
+	Version               types.Int64  `tfsdk:"version"`
+	BuildWarningsCount    types.Int64  `tfsdk:"build_warnings_count"`
+	BuildErrorsCount      types.Int64  `tfsdk:"build_errors_count"`
 }
 
 func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -85,6 +89,22 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		},
 		"external_router_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "The count of external routers attached to the topology.",
+			Computed:            true,
+		},
+		"has_uncommitted_changes": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether the staging blueprint has uncommitted changes.",
+			Computed:            true,
+		},
+		"version": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Currently active blueprint version",
+			Computed:            true,
+		},
+		"build_warnings_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of build warnings.",
+			Computed:            true,
+		},
+		"build_errors_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of build errors.",
 			Computed:            true,
 		},
 	}
@@ -146,6 +166,22 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "The count of external routers attached to the topology.",
 			Computed:            true,
 		},
+		"has_uncommitted_changes": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether the staging blueprint has uncommitted changes.",
+			Computed:            true,
+		},
+		"version": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Currently active blueprint version",
+			Computed:            true,
+		},
+		"build_warnings_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of build warnings.",
+			Computed:            true,
+		},
+		"build_errors_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of build errors.",
+			Computed:            true,
+		},
 	}
 }
 
@@ -187,6 +223,10 @@ func (o *Blueprint) LoadApiData(_ context.Context, in *goapstra.BlueprintStatus,
 	o.AccessCount = types.Int64Value(int64(in.AccessCount))
 	o.GenericCount = types.Int64Value(int64(in.GenericCount))
 	o.ExternalCount = types.Int64Value(int64(in.ExternalRouterCount))
+	o.HasUncommittedChanges = types.BoolValue(in.HasUncommittedChanges)
+	o.Version = types.Int64Value(int64(in.Version))
+	o.BuildErrorsCount = types.Int64Value(int64(in.BuildErrorsCount))
+	o.BuildWarningsCount = types.Int64Value(int64(in.BuildWarningsCount))
 }
 
 func (o *Blueprint) SetName(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {

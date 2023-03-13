@@ -91,6 +91,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating Rack Based Blueprint", err.Error())
+		return
 	}
 
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
