@@ -2,30 +2,33 @@
 page_title: "apstra_agent_profile Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).
+  This data source looks up details of an Agent Profile
+  At least one optional attribute is required.
 ---
 
 # apstra_agent_profile (Data Source)
 
-This data source looks up details of an Agent Profile using either its name (Apstra ensures these are unique), or its ID (but not both).
+This data source looks up details of an Agent Profile
+
+At least one optional attribute is required.
 
 ## Example Usage
 
 ```terraform
-# The following example shows how a module might accept an agent profile's name
-# as an input variable and use it to retrieve the agent profile ID when
-# provisioning a managed device (a switch).
+# The following example grabs the ID numbers of all agent profiles, uses those
+# IDs to grab the details of each agent profile, and then
 
-variable "agent_profile_name" {}
-variable "switch_mgmt_ip" {}
+data "apstra_agent_profiles" "all" {}
 
-data "apstra_agent_profile" "selected" {
-  name = var.agent_profile_name
+data "apstra_agent_profile" "all" {
+  for_each = data.apstra_agent_profiles.all.ids
+  id       = each.key
 }
 
-resource "apstra_managed_device" "switch" {
-  agent_profile_id = data.apstra_agent_profile.selected.id
-  management_ip    = var.switch_mgmt_ip
+output "agent_profiles_missing_credentials" {
+  value = [
+    for k, v in data.apstra_agent_profile.all : v.name if !v.has_username || !v.has_password
+  ]
 }
 ```
 
@@ -34,8 +37,8 @@ resource "apstra_managed_device" "switch" {
 
 ### Optional
 
-- `id` (String) ID of the Agent Profile. Required when `name` is omitted.
-- `name` (String) Name of the Agent Profile. Required when `id` is omitted.
+- `id` (String) Populate this field to look up an Agent Profile by ID. Required when `name`is omitted.
+- `name` (String) Populate this field to look up an Agent Profile by name. Required when `id`is omitted.
 
 ### Read-Only
 

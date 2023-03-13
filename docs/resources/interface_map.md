@@ -12,98 +12,97 @@ This resource creates an Interface Map
 ## Example Usage
 
 ```terraform
-locals {
-  if_map = [
-    { // map ld 1/1 - 1/2 to et-0/0/48 - et-0/0/49
-      ld_prefix = "1/"
-      ld_first_port = 1
-      phy_prefix = "et-0/0/"
-      phy_first_port = 48
-      count = 2
-      transform_id = 3
+# Interface Maps have an "interfaces" section which can get tedious because it
+# involves spelling out the relationship between each Logical Device interface
+# with the corresponding Device Profile interface.
+
+# We'll create two interface maps here:
+# - QFX5120-48T -> AOS-7x10-Spine (typing out all of the details)
+# - QFX5120-48T -> AOS-48x10+6x40-1 (using loops)
+
+# First example: we type out all of the interface mappings.
+resource "apstra_interface_map" "the_hard_way" {
+  name              = "example interface map 1"
+  logical_device_id = "AOS-7x10-Spine"
+  device_profile_id = "Juniper_QFX5120-48T_Junos"
+  interfaces = [
+    {
+      "logical_device_port"     = "1/1"
+      "physical_interface_name" = "xe-0/0/0"
+      "transformation_id"       = 1
+      # transform #1 is the only transform which can fulfill the Logical
+      # Device requirement with this equipment, making it optional (the
+      # provider infers the transform ID in that case), so it's omitted
+      # from the interface mappings which follow.
     },
-    { // map ld 1/3 - 1/4 to et-0/0/50 - et-0/0/50
-      ld_prefix = "1/"
-      ld_first_port = 3
-      phy_prefix = "et-0/0/"
-      phy_first_port = 52
-      count = 2
-      transform_id = 3
+    {
+      "logical_device_port"     = "1/2"
+      "physical_interface_name" = "xe-0/0/1"
     },
-    { // map ld 2/1 - 2/8 to xe-0/0/0 - xe-0/0/7
-      ld_prefix = "2/"
-      ld_first_port = 1
-      phy_prefix = "xe-0/0/"
-      phy_first_port = 10
-      count = 8
-      transform_id = 1
+    {
+      "logical_device_port"     = "1/3"
+      "physical_interface_name" = "xe-0/0/2"
+    },
+    {
+      "logical_device_port"     = "1/4"
+      "physical_interface_name" = "xe-0/0/3"
+    },
+    {
+      "logical_device_port"     = "1/5"
+      "physical_interface_name" = "xe-0/0/4"
+    },
+    {
+      "logical_device_port"     = "1/6"
+      "physical_interface_name" = "xe-0/0/5"
+    },
+    {
+      "logical_device_port"     = "1/7"
+      "physical_interface_name" = "xe-0/0/6"
     },
   ]
 }
 
-resource "apstra_interface_map" "if_map" {
-  name = "aaa tf_map2"
-  logical_device_id = "AOS-4x40_8x10-1"
-  device_profile_id = "Juniper_QFX5120-48T_Junos"
-  interfaces = flatten([
-    for map in local.if_map: [
-      for i in range(map.count): {
-        logical_device_port = format("%s%d", map.ld_prefix, map.ld_first_port + i)
+# Local variables which help build up the interface mapping
+# used in the resource.
+locals {
+  # local.if_map spells out two ranges of mappings for our
+  # second interface map: 48x10G ports and 6x40G ports.
+  if_map = [
+    { // map logical 1/1 - 1/48 to physical xe-0/0/0 - xe-0/0/47
+      ld_panel       = 1
+      ld_first_port  = 1
+      phy_prefix     = "xe-0/0/"
+      phy_first_port = 0
+      count          = 48
+    },
+    { // map logical 2/1 - 2/6 to physical et-0/0/48 - et-0/0/53
+      ld_panel       = 2
+      ld_first_port  = 1
+      phy_prefix     = "et-0/0/"
+      phy_first_port = 48
+      count          = 6
+    },
+  ]
+  # local.interfaces loops over the elements of if_map (panel 1 and panel 2).
+  # within each iteration, it loops 'count' times (every interface in the panel)
+  # to build up the detailed mapping between logical and physical ports.
+  interfaces = [
+    for map in local.if_map : [
+      for i in range(map.count) : {
+        logical_device_port     = format("%d/%d", map.ld_panel, map.ld_first_port + i)
         physical_interface_name = format("%s%d", map.phy_prefix, map.phy_first_port + i)
-        transform_id = map.transform_id
       }
     ]
-  ])
-#  interfaces = [
-#    {
-#      "logical_device_port" = "1/1"
-#      "physical_interface_name" = "et-0/0/48"
-#    },
-#    {
-#      "logical_device_port" = "1/2"
-#      "physical_interface_name" = "et-0/0/49"
-#    },
-#    {
-#      "logical_device_port" = "1/3"
-#      "physical_interface_name" = "et-0/0/52"
-#    },
-#    {
-#      "logical_device_port" = "1/4"
-#      "physical_interface_name" = "et-0/0/53"
-#    },
-#    {
-#      "logical_device_port" = "2/1"
-#      "physical_interface_name" = "xe-0/0/0"
-#    },
-#    {
-#      "logical_device_port" = "2/2"
-#      "physical_interface_name" = "xe-0/0/1"
-#    },
-#    {
-#      "logical_device_port" = "2/3"
-#      "physical_interface_name" = "xe-0/0/2"
-#    },
-#    {
-#      "logical_device_port" = "2/4"
-#      "physical_interface_name" = "xe-0/0/3"
-#    },
-#    {
-#      "logical_device_port" = "2/5"
-#      "physical_interface_name" = "xe-0/0/4"
-#    },
-#    {
-#      "logical_device_port" = "2/6"
-#      "physical_interface_name" = "xe-0/0/5"
-#    },
-#    {
-#      "logical_device_port" = "2/7"
-#      "physical_interface_name" = "xe-0/0/6"
-#    },
-#    {
-#      "logical_device_port" = "2/8"
-#      "physical_interface_name" = "xe-0/0/7"
-#    },
-#  ]
+  ]
+}
+
+# second example: interfacemappings are calculated
+# using the local variables above.
+resource "apstra_interface_map" "with_loops" {
+  name              = "example interface map 2"
+  logical_device_id = "AOS-48x10_6x40-1"
+  device_profile_id = "Juniper_QFX5120-48T_Junos"
+  interfaces        = flatten([local.interfaces])
 }
 ```
 
@@ -113,14 +112,14 @@ resource "apstra_interface_map" "if_map" {
 ### Required
 
 - `device_profile_id` (String) ID of Device Profile to be mapped.
-- `interfaces` (Attributes List) Ordered list of interface mapping info. (see [below for nested schema](#nestedatt--interfaces))
+- `interfaces` (Attributes Set) Ordered list of interface mapping info. (see [below for nested schema](#nestedatt--interfaces))
 - `logical_device_id` (String) ID of Logical Device to be mapped.
 - `name` (String) Interface Map name as displayed in the web UI
 
 ### Read-Only
 
 - `id` (String) Apstra ID number of the Interface Map
-- `unused_interfaces` (Attributes List) Ordered list of interface mapping info for unused interfaces. (see [below for nested schema](#nestedatt--unused_interfaces))
+- `unused_interfaces` (Attributes Set) Ordered list of interface mapping info for unused interfaces. (see [below for nested schema](#nestedatt--unused_interfaces))
 
 <a id="nestedatt--interfaces"></a>
 ### Nested Schema for `interfaces`
@@ -132,7 +131,7 @@ Required:
 
 Optional:
 
-- `transformation_id` (Number) Transformation ID number identifying the desired port behavior, as found in the Device Profile. Required only when multiple transformation candidates are found for a given physical_interface_name and speed (as determined by the Logical Device and logical_device_port.
+- `transformation_id` (Number) Transformation ID number identifying the desired port behavior, detailed in the Device Profile. Required only when multiple transformation candidates are found for a given physical_interface_name and speed as determined by definitions found the Logical Device definition and logical_device_port field.
 
 
 <a id="nestedatt--unused_interfaces"></a>

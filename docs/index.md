@@ -39,5 +39,5 @@ APSTRA_PASS=password
 ### Optional
 
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
-- `url` (String) URL of the apstra server, e.g. `http://<user>:<password>@apstra.juniper.net:443/`
+- `url` (String) URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`
 If username or password are omitted from URL string, environment variables `APSTRA_USER` and `APSTRA_PASS` will be used.  If `url` is omitted, environment variable APSTRA_URL will be used.

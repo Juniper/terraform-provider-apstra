@@ -2,15 +2,15 @@
 page_title: "apstra_tag Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source provides details of a specific tag.
-  At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one tag. Matching zero tags or more than one tag will produce an error.
+  This data source provides details of a specific Tag.
+  At least one optional attribute is required.
 ---
 
 # apstra_tag (Data Source)
 
-This data source provides details of a specific tag.
+This data source provides details of a specific Tag.
 
-At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one tag. Matching zero tags or more than one tag will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -33,9 +33,9 @@ resource "apstra_rack_type" "my_rack" {
 
 ### Optional
 
-- `id` (String) Tag id. Required when the tag name is omitted.
-- `name` (String) Tag name. Required when tag id is omitted.
+- `id` (String) Populate this field to look up a Tag by ID. Required when `name`is omitted.
+- `name` (String) Populate this field to look up a Tag by name. Required when `id` is omitted.
 
 ### Read-Only
 
-- `description` (String) The description of the returned tag.
+- `description` (String) The description of the returned Tag.
