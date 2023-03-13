@@ -43,3 +43,39 @@ func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *r
 	)
 	return nil
 }
+
+func ResourceGetProviderVersion(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) string {
+	if req.ProviderData == nil {
+		return ""
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.providerVersion
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataDetail,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+	return ""
+}
+
+func ResourceGetTerraformVersion(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) string {
+	if req.ProviderData == nil {
+		return ""
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.terraformVersion
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataDetail,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+	return ""
+}

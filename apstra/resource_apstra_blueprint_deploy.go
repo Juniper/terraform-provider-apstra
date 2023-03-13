@@ -11,7 +11,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceBlueprintDeploy{}
 
 type resourceBlueprintDeploy struct {
-	client *goapstra.Client
+	client          *goapstra.Client
+	CommentTemplate *blueprint.CommentTemplate
 }
 
 func (o *resourceBlueprintDeploy) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -20,6 +21,10 @@ func (o *resourceBlueprintDeploy) Metadata(_ context.Context, req resource.Metad
 
 func (o *resourceBlueprintDeploy) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.CommentTemplate = &blueprint.CommentTemplate{
+		ProviderVersion:  ResourceGetProviderVersion(ctx, req, resp),
+		TerraformVersion: ResourceGetTerraformVersion(ctx, req, resp),
+	}
 }
 
 func (o *resourceBlueprintDeploy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -42,7 +47,7 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	plan.Deploy(ctx, o.client, &resp.Diagnostics)
+	plan.Deploy(ctx, o.CommentTemplate, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -89,7 +94,7 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	plan.Deploy(ctx, o.client, &resp.Diagnostics)
+	plan.Deploy(ctx, o.CommentTemplate, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
