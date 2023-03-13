@@ -19,5 +19,5 @@ locals {
 resource "apstra_blueprint_deployment" "as_needed" {
   count = local.build_when ? 1 : 0
   blueprint_id = data.apstra_datacenter_blueprint.status.id
-  comment      = "Deployment by Terraform {{.TerraformVersion }}, Apstra provider {{.ProviderVersion}}, User $USER."
+  comment      = "Deployment by Terraform {{`{{.TerraformVersion}}`}}, Apstra provider {{`{{.ProviderVersion}}`}}, User $USER."
 }

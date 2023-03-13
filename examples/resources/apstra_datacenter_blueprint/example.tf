@@ -69,5 +69,5 @@ resource "apstra_blueprint_deployment" "deploy" {
   # Version is replaced using `text/template` method. Only predefined values
   # may be replaced with this syntax. USER is replaced using values from the
   # environment. Any environment variable may be specified this way.
-  comment      = "Deployment by Terraform {{.TerraformVersion }}, Apstra provider {{.ProviderVersion}}, User $USER."
+  comment      = "Deployment by Terraform {{`{{.TerraformVersion}}`}}, Apstra provider {{`{{.ProviderVersion}}`}}, User $USER."
 }
