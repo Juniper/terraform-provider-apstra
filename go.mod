@@ -12,7 +12,7 @@ require (
 )
 
 //                                                                                        HHMMSS
-//replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230311230739-53699fdefbb4
+replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230315142559-b0fa56af6e49
 
 require (
 	github.com/hashicorp/terraform-plugin-framework-validators v0.10.0
