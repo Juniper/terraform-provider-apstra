@@ -44,8 +44,7 @@ type providerData struct {
 	client           *goapstra.Client
 	providerVersion  string
 	terraformVersion string
-	skipMutex        bool
-	locks            []goapstra.TwoStageL3ClosMutex
+	mutexes          *[]goapstra.TwoStageL3ClosMutex
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -198,12 +197,18 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		version = p.Version + "-" + p.Commit
 	}
 
+	var mutexes []goapstra.TwoStageL3ClosMutex
+	if !config.MutexDisable.ValueBool() {
+		// non-nil slice signals resources to lock and log mutexes
+		mutexes = make([]goapstra.TwoStageL3ClosMutex, 0)
+	}
+
 	// data passed to Resource and DataSource Configure() methods
 	pd := &providerData{
 		client:           client,
 		providerVersion:  version,
 		terraformVersion: req.TerraformVersion,
-		skipMutex:        config.MutexDisable.ValueBool(),
+		mutexes:          &mutexes,
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd
