@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -45,6 +46,7 @@ type providerData struct {
 	providerVersion  string
 	terraformVersion string
 	mutexes          *[]goapstra.TwoStageL3ClosMutex
+	uuid             uuid.UUID
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -209,6 +211,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		providerVersion:  version,
 		terraformVersion: req.TerraformVersion,
 		mutexes:          &mutexes,
+		uuid:             uuid.New(),
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd
