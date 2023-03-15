@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
@@ -96,4 +97,27 @@ func ResourceGetMutexes(_ context.Context, req resource.ConfigureRequest, resp *
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return nil
+}
+
+func ResourceGetProviderUUID(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) uuid.UUID {
+	if req.ProviderData == nil {
+		resp.Diagnostics.AddError(
+			errProviderBug,
+			"attempt to fetch UUID from nil ProviderData",
+		)
+
+		return uuid.UUID{}
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.uuid
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataDetail,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+	return uuid.UUID{}
 }
