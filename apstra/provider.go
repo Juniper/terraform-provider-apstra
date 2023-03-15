@@ -44,6 +44,8 @@ type providerData struct {
 	client           *goapstra.Client
 	providerVersion  string
 	terraformVersion string
+	skipMutex        bool
+	locks            []goapstra.TwoStageL3ClosMutex
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -65,14 +67,19 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 				Optional:            true,
 				MarkdownDescription: "Set 'true' to disable TLS certificate validation.",
 			},
+			"blueprint_mutex_disabled": schema.BoolAttribute{
+				Optional:            true,
+				MarkdownDescription: "Set 'true' to skip locking the mutex(es) which signal exclusive blueprint access",
+			},
 		},
 	}
 }
 
 // Provider configuration struct. Matches GetSchema() output.
 type providerConfig struct {
-	Url         types.String `tfsdk:"url"`
-	TlsNoVerify types.Bool   `tfsdk:"tls_validation_disabled"`
+	Url          types.String `tfsdk:"url"`
+	TlsNoVerify  types.Bool   `tfsdk:"tls_validation_disabled"`
+	MutexDisable types.Bool   `tfsdk:"blueprint_mutex_disabled"`
 }
 
 func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -196,6 +203,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		client:           client,
 		providerVersion:  version,
 		terraformVersion: req.TerraformVersion,
+		skipMutex:        config.MutexDisable.ValueBool(),
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd
