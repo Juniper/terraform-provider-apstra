@@ -45,11 +45,7 @@ func sameOwner(a, b *goapstra.TwoStageL3ClosMutex) bool {
 		return false
 	}
 
-	if msgA.Owner == msgB.Owner {
-		return true
-	}
-
-	return false
+	return msgA.Owner == msgB.Owner
 }
 
 func Lock(ctx context.Context, mutex *goapstra.TwoStageL3ClosMutex) error {
