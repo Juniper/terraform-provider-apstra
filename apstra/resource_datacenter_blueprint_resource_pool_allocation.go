@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -108,6 +109,11 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 	// Create a blueprint client
 	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 		return
 	}
