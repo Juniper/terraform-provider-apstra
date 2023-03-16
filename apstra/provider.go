@@ -52,7 +52,7 @@ type providerData struct {
 	providerVersion  string
 	terraformVersion string
 	bpLockFunc       func(context.Context, *goapstra.TwoStageL3ClosMutex) error
-	bpUnlockFunc     func(ctx context.Context, id goapstra.ObjectId) error
+	bpUnlockFunc     func(context.Context, goapstra.ObjectId) error
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -236,9 +236,6 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 			return fmt.Errorf("error locking blueprint mutex - %w", err)
 		}
 
-		// todo fix this lookup  - not keyed by tag id, but by blueprint ID
-		blueprintID := tsl3cm.BlueprintID()
-		_ = blueprintID
 		if _, ok := blueprintMutexes[tsl3cm.BlueprintID()]; !ok {
 			blueprintMutexes[tsl3cm.BlueprintID()] = *tsl3cm
 		}
