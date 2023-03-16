@@ -20,6 +20,7 @@ type resourceDatacenterBlueprint struct {
 	client           *goapstra.Client
 	minClientVersion *version.Version
 	maxClientVersion *version.Version
+	lockFunc         func(ctx context.Context, closMutex *goapstra.TwoStageL3ClosMutex) error
 }
 
 func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -28,6 +29,7 @@ func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.M
 
 func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
 func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -83,14 +85,28 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	// Make a blueprint creation request
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Create the blueprint
 	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating Rack Based Blueprint", err.Error())
+		return
+	}
+
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("error creating TwoStageL3ClosClient", err.Error())
+		return
+	}
+
+	err = o.lockFunc(ctx, bp.Mutex)
+	if err != nil {
+		resp.Diagnostics.AddError("error locking blueprint mutex", err.Error())
 		return
 	}
 
@@ -205,14 +221,27 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	err := o.client.DeleteBlueprint(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			return // 404 is okay and the blueprint doesn't need to be deleted
+		}
+		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+	}
+
+	err = o.client.DeleteBlueprint(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
-		return
+	}
+
+	err = bp.Mutex.ClearUnsafely(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("error clearing blueprint lock", err.Error())
 	}
 }
 

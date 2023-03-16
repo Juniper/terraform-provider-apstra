@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"terraform-provider-apstra/apstra/mutex"
 )
 
 const (
@@ -26,9 +27,14 @@ const (
 	envApstraPassword = "APSTRA_PASS"
 	envApstraLogfile  = "APSTRA_LOG"
 	envApstraUrl      = "APSTRA_URL"
+
+	blueprintMutexMessage = "locked by terraform "
 )
 
 var _ provider.Provider = &Provider{}
+
+var blueprintMutexes map[goapstra.ObjectId]goapstra.TwoStageL3ClosMutex
+var blueprintMutexMsg mutex.BlueprintMutexMsg
 
 // Provider fulfils the provider.Provider interface
 type Provider struct {
@@ -45,8 +51,8 @@ type providerData struct {
 	client           *goapstra.Client
 	providerVersion  string
 	terraformVersion string
-	mutexes          *[]goapstra.TwoStageL3ClosMutex
-	uuid             uuid.UUID
+	bpLockFunc       func(context.Context, *goapstra.TwoStageL3ClosMutex) error
+	bpUnlockFunc     func(ctx context.Context, id goapstra.ObjectId) error
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -185,7 +191,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	// login after creation so that future parallel workflows don't trigger TOO MANY REQUESTS threshold
+	// login after client creation so that future parallel
+	// workflows don't trigger TOO MANY REQUESTS threshold
 	err = client.Login(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("apstra login failure", err.Error())
@@ -199,10 +206,50 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		version = p.Version + "-" + p.Commit
 	}
 
-	var mutexes []goapstra.TwoStageL3ClosMutex
 	if !config.MutexDisable.ValueBool() {
-		// non-nil slice signals resources to lock and log mutexes
-		mutexes = make([]goapstra.TwoStageL3ClosMutex, 0)
+		// non-nil slice signals intent to lock and track mutexes
+		blueprintMutexes = make(map[goapstra.ObjectId]goapstra.TwoStageL3ClosMutex, 0)
+	}
+
+	blueprintMutexMsg = mutex.BlueprintMutexMsg{
+		Owner:   uuid.New().String(),
+		Details: blueprintMutexMessage,
+	}
+
+	bpLockFunc := func(ctx context.Context, tsl3cm *goapstra.TwoStageL3ClosMutex) error {
+		if blueprintMutexes == nil {
+			return nil
+		}
+
+		msg, err := blueprintMutexMsg.String()
+		if err != nil {
+			return fmt.Errorf("error string-ifying blueprint mutex message - %w", err)
+		}
+
+		err = tsl3cm.SetMessage(msg)
+		if err != nil {
+			return fmt.Errorf("error setting mutex message - %w", err)
+		}
+
+		err = mutex.Lock(ctx, tsl3cm)
+		if err != nil {
+			return fmt.Errorf("error locking blueprint mutex - %w", err)
+		}
+
+		// todo fix this lookup  - not keyed by tag id, but by blueprint ID
+		blueprintID := tsl3cm.BlueprintID()
+		_ = blueprintID
+		if _, ok := blueprintMutexes[tsl3cm.BlueprintID()]; !ok {
+			blueprintMutexes[tsl3cm.BlueprintID()] = *tsl3cm
+		}
+		return nil
+	}
+
+	bpUnlockFunc := func(ctx context.Context, id goapstra.ObjectId) error {
+		if m, ok := blueprintMutexes[id]; ok {
+			return m.ClearUnsafely(ctx)
+		}
+		return nil
 	}
 
 	// data passed to Resource and DataSource Configure() methods
@@ -210,8 +257,31 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		client:           client,
 		providerVersion:  version,
 		terraformVersion: req.TerraformVersion,
-		mutexes:          &mutexes,
-		uuid:             uuid.New(),
+		bpLockFunc:       bpLockFunc,
+		bpUnlockFunc:     bpUnlockFunc,
+		//bpLockFunc: func(ctx context.Context, tsl3cm *goapstra.TwoStageL3ClosMutex) error {
+		//	if blueprintMutexes == nil {
+		//		return nil
+		//	}
+		//
+		//	msg, err := blueprintMutexMsg.String()
+		//	if err != nil {
+		//		return fmt.Errorf("error string-ifying blueprint mutex message - %w", err)
+		//	}
+		//
+		//	err = tsl3cm.SetMessage(msg)
+		//	if err != nil {
+		//		return fmt.Errorf("error setting mutex message - %w", err)
+		//	}
+		//
+		//	err = mutex.Lock(ctx, tsl3cm)
+		//	if err != nil {
+		//		return fmt.Errorf("error locking blueprint mutex - %w", err)
+		//	}
+		//
+		//	blueprintMutexes = append(blueprintMutexes, *tsl3cm)
+		//	return nil
+		//},
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd
