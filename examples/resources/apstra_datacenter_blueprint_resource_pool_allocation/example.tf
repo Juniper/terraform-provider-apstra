@@ -17,7 +17,7 @@ locals {
     // use the first discovered ASN pool for spines
     spine_asns = slice(tolist(data.apstra_asn_pools.all.ids), 0, 1)
     // use all other discovered ASN pools for leafs
-    leaf_asns  = slice(tolist(data.apstra_asn_pools.all.ids), 1, length(data.apstra_asn_pools.all.ids))
+    leaf_asns = slice(tolist(data.apstra_asn_pools.all.ids), 1, length(data.apstra_asn_pools.all.ids))
   }
   ipv4_pools = {
     spine_loopback_ips  = ["Private-10_0_0_0-8"]
