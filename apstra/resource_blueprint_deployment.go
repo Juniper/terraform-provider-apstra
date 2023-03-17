@@ -14,8 +14,8 @@ var _ resource.ResourceWithConfigure = &resourceBlueprintDeploy{}
 type resourceBlueprintDeploy struct {
 	client          *goapstra.Client
 	commentTemplate *blueprint.CommentTemplate
-	lockFunc        func(context.Context, *goapstra.TwoStageL3ClosMutex) error
-	unlockFunc      func(context.Context, goapstra.ObjectId) error
+	lockFunc        func(context.Context, string) error
+	unlockFunc      func(context.Context, string) error
 }
 
 func (o *resourceBlueprintDeploy) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -52,15 +52,11 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
-		return
-	}
-
-	err = o.lockFunc(ctx, bp.Mutex)
-	if err != nil {
-		resp.Diagnostics.AddError("error locking blueprint mutex", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
@@ -69,10 +65,11 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	err = o.unlockFunc(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	err = o.unlockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error unlocking blueprint %q", plan.BlueprintId.ValueString()), err.Error())
+			fmt.Sprintf("error unlocking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -117,14 +114,46 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
+		return
+	}
+
 	plan.Deploy(ctx, o.commentTemplate, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	err = o.unlockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error unlocking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceBlueprintDeploy) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
-	// nothing to do
+func (o *resourceBlueprintDeploy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.Deploy
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err := o.unlockFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error unlocking blueprint %q mutex", state.BlueprintId.ValueString()),
+			err.Error())
+	}
 }
