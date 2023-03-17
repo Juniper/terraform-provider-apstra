@@ -80,7 +80,7 @@ func ResourceGetTerraformVersion(_ context.Context, req resource.ConfigureReques
 	return ""
 }
 
-func ResourceGetBlueprintLockFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, *goapstra.TwoStageL3ClosMutex) error {
+func ResourceGetBlueprintLockFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, string) error {
 	if req.ProviderData == nil {
 		return nil
 	}
@@ -98,7 +98,7 @@ func ResourceGetBlueprintLockFunc(_ context.Context, req resource.ConfigureReque
 	return nil
 }
 
-func ResourceGetBlueprintUnlockFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, goapstra.ObjectId) error {
+func ResourceGetBlueprintUnlockFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, string) error {
 	if req.ProviderData == nil {
 		return nil
 	}
@@ -115,39 +115,3 @@ func ResourceGetBlueprintUnlockFunc(_ context.Context, req resource.ConfigureReq
 	)
 	return nil
 }
-
-//func ResourceGetMutexes(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) *[]goapstra.TwoStageL3ClosMutex {
-//	if req.ProviderData == nil {
-//		return nil
-//	}
-//
-//	var pd *providerData
-//	var ok bool
-//	if pd, ok = req.ProviderData.(*providerData); ok {
-//		return pd.mutexes
-//	}
-//
-//	resp.Diagnostics.AddError(
-//		errResourceConfigureProviderDataDetail,
-//		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
-//	)
-//	return nil
-//}
-//
-//func ResourceGetProviderUUID(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) uuid.UUID {
-//	if req.ProviderData == nil {
-//		return uuid.UUID{}
-//	}
-//
-//	var pd *providerData
-//	var ok bool
-//	if pd, ok = req.ProviderData.(*providerData); ok {
-//		return pd.uuid
-//	}
-//
-//	resp.Diagnostics.AddError(
-//		errResourceConfigureProviderDataDetail,
-//		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
-//	)
-//	return uuid.UUID{}
-//}
