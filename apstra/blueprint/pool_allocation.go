@@ -55,29 +55,6 @@ func (o *PoolAllocation) LoadApiData(ctx context.Context, in *goapstra.ResourceG
 	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
 }
 
-func (o *PoolAllocation) Validate(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	// Ensure the configured blueprint ID exists on Apstra
-	if !o.BlueprintId.IsUnknown() {
-		_, err := client.GetBlueprintStatus(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
-		if err != nil {
-			diags.AddError(
-				fmt.Sprintf("Error retrieving blueprint %q", o.BlueprintId.ValueString()),
-				err.Error())
-		}
-	}
-
-	if !o.Role.IsUnknown() {
-		// Extract role to ResourceGroupName
-		var rgName goapstra.ResourceGroupName
-		err := rgName.FromString(o.Role.ValueString())
-		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()),
-				err.Error())
-			return
-		}
-	}
-}
-
 func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
 	// Parse 'role' into a ResourceGroupName
 	var rgName goapstra.ResourceGroupName

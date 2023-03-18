@@ -52,6 +52,7 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	// Lock the blueprint mutex.
 	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -114,6 +115,7 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	// Lock the blueprint mutex.
 	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -127,6 +129,7 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	// Unlock the blueprint mutex.
 	err = o.unlockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -150,6 +153,7 @@ func (o *resourceBlueprintDeploy) Delete(ctx context.Context, req resource.Delet
 		return
 	}
 
+	// Unlock the blueprint mutex.
 	err := o.unlockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
