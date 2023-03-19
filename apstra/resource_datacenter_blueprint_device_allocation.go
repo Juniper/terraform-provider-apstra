@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -12,7 +13,9 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
 
 type resourceDeviceAllocation struct {
-	client *goapstra.Client
+	client     *goapstra.Client
+	lockFunc   func(context.Context, string) error
+	unlockFunc func(context.Context, string) error
 }
 
 func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -21,6 +24,8 @@ func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.Meta
 
 func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
 }
 
 func (o *resourceDeviceAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -37,10 +42,19 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// Retrieve values from plan
+	// Retrieve values from plan.
 	var plan blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
@@ -129,6 +143,15 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 	var state blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 

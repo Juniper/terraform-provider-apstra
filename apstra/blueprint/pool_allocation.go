@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -54,72 +53,6 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 
 func (o *PoolAllocation) LoadApiData(ctx context.Context, in *goapstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
 	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
-}
-
-func (o *PoolAllocation) Validate(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	// Ensure the configured blueprint ID exists on Apstra
-	if !o.BlueprintId.IsUnknown() {
-		_, err := client.GetBlueprintStatus(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
-		if err != nil {
-			diags.AddError(
-				fmt.Sprintf("Error retrieving blueprint %q", o.BlueprintId.ValueString()),
-				err.Error())
-		}
-	}
-
-	if !o.Role.IsUnknown() {
-		// Extract role to ResourceGroupName
-		var rgName goapstra.ResourceGroupName
-		err := rgName.FromString(o.Role.ValueString())
-		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()),
-				err.Error())
-			return
-		}
-
-		// Get list of poolIds from Apstra
-		var apiPoolIds []goapstra.ObjectId
-		switch rgName.Type() {
-		case goapstra.ResourceTypeAsnPool:
-			apiPoolIds, err = client.ListAsnPoolIds(ctx)
-		case goapstra.ResourceTypeIp4Pool:
-			apiPoolIds, err = client.ListIp4PoolIds(ctx)
-		case goapstra.ResourceTypeIp6Pool:
-			apiPoolIds, err = client.ListIp6PoolIds(ctx)
-		case goapstra.ResourceTypeVniPool:
-			apiPoolIds, err = client.ListVniPoolIds(ctx)
-		default:
-			diags.AddError("error determining Resource Group Type by Name",
-				fmt.Sprintf("Resource Group %q not recognized", o.Role.ValueString()))
-		}
-		if err != nil {
-			diags.AddError("error listing pool IDs", err.Error())
-		}
-		if diags.HasError() {
-			return
-		}
-
-		// Quick function to check for 'id' among 'ids'
-		contains := func(ids []goapstra.ObjectId, id goapstra.ObjectId) bool {
-			for i := range ids {
-				if ids[i] == id {
-					return true
-				}
-			}
-			return false
-		}
-
-		// Check that each PoolId configuration element appears in the API results
-		for _, elem := range o.PoolIds.Elements() {
-			id := elem.(basetypes.StringValue).ValueString()
-			if !contains(apiPoolIds, goapstra.ObjectId(id)) {
-				diags.AddError(
-					"pool not found",
-					fmt.Sprintf("pool id %q of type %q not found", id, rgName.Type().String()))
-				return
-			}
-		}
-	}
 }
 
 func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {

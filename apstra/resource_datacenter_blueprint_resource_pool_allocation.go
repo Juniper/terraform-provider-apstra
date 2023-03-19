@@ -3,6 +3,7 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -11,10 +12,11 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourcePoolAllocation{}
-var _ resource.ResourceWithValidateConfig = &resourcePoolAllocation{}
 
 type resourcePoolAllocation struct {
-	client *goapstra.Client
+	client     *goapstra.Client
+	lockFunc   func(context.Context, string) error
+	unlockFunc func(context.Context, string) error
 }
 
 func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -23,31 +25,14 @@ func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.Metada
 
 func (o *resourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
 }
 
 func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource allocates a resource pool to a role within a Blueprint.",
 		Attributes:          blueprint.PoolAllocation{}.ResourceAttributes(),
-	}
-}
-
-func (o *resourcePoolAllocation) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	// Cannot proceed without a client
-	if o.client == nil {
-		return
-	}
-
-	// Retrieve values from config
-	var config blueprint.PoolAllocation
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	config.Validate(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }
 
@@ -64,9 +49,12 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// Validate the plan (depends on state at Apstra)
-	plan.Validate(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
@@ -108,6 +96,11 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 	// Create a blueprint client
 	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
+		var ace goapstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 		return
 	}
@@ -145,9 +138,12 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	// Validate the plan (depends on state at Apstra)
-	plan.Validate(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
@@ -183,6 +179,15 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 

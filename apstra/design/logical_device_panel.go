@@ -163,6 +163,10 @@ func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostic
 }
 
 func (o *LogicalDevicePanel) Validate(ctx context.Context, i int, diags *diag.Diagnostics) {
+	if o.Rows.IsUnknown() || o.Columns.IsUnknown() || o.PortGroups.IsUnknown() {
+		return
+	}
+
 	portGroups := o.GetPortGroups(ctx, diags)
 	if diags.HasError() {
 		return
