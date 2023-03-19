@@ -23,8 +23,8 @@ type VniPoolRange struct {
 }
 
 const (
-	minVni = 4096
-	maxVni = 16777214
+	VniMin = 4096
+	VniMax = 16777214
 )
 
 func (o VniPoolRange) AttrTypes() map[string]attr.Type {
@@ -71,12 +71,12 @@ func (o VniPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"first": resourceSchema.Int64Attribute{
 			Required:   true,
-			Validators: []validator.Int64{int64validator.Between(minVni-1, maxVni+1)},
+			Validators: []validator.Int64{int64validator.Between(VniMin-1, VniMax+1)},
 		},
 		"last": resourceSchema.Int64Attribute{
 			Required: true,
 			Validators: []validator.Int64{
-				int64validator.Between(minVni-1, maxVni+1),
+				int64validator.Between(VniMin-1, VniMax+1),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
 			},
 		},
