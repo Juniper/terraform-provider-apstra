@@ -335,6 +335,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceBlueprintDeploy{} },
 		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
+		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },
 		func() resource.Resource { return &resourceIpv4Pool{} },
