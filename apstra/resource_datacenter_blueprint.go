@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
@@ -176,6 +177,12 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Ensure the blueprint still exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
