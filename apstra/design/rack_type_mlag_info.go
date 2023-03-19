@@ -64,7 +64,7 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "MLAG keepalive VLAN ID.",
 			Required:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(vlanMin, vlanMax),
+				int64validator.Between(VlanMin, VlanMax),
 			},
 		},
 		"peer_link_count": resourceSchema.Int64Attribute{
