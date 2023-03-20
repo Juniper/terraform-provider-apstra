@@ -15,7 +15,7 @@ func translateAsnAllocationSchemeFromWebUi(in string) string {
 	return in
 }
 
-func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Diagnostics) string {
+func asnAllocationSchemeToFriendlyString(in goapstra.AsnAllocationScheme, diags *diag.Diagnostics) string {
 	switch in {
 	case goapstra.AsnAllocationSchemeSingle:
 		return AsnAllocationSingle
@@ -27,7 +27,7 @@ func asnAllocationSchemeToString(in goapstra.AsnAllocationScheme, diags *diag.Di
 	}
 }
 
-func overlayControlProtocolToString(in goapstra.OverlayControlProtocol, diags *diag.Diagnostics) string {
+func overlayControlProtocolToFriendlyString(in goapstra.OverlayControlProtocol, diags *diag.Diagnostics) string {
 	switch in {
 	case goapstra.OverlayControlProtocolEvpn:
 		return OverlayControlProtocolEvpn
@@ -47,14 +47,7 @@ const (
 	JunOSInterfaceLevelDelete       = "interface_level_delete"
 )
 
-func ConfigletSectionIotaToFriendlyString(diags *diag.Diagnostics, in goapstra.ConfigletSection, ctx ...fmt.Stringer) string {
-	// We know that the first entry is going to be the platform OS
-	var os goapstra.PlatformOS
-	err := os.FromString(ctx[0].String())
-	if err != nil {
-		diags.AddError("Unknown network OS", "Unknown network OS %s"ctx[0].String())
-		return ""
-	}
+func configletSectionIotaToFriendlyString(in goapstra.ConfigletSection, os goapstra.PlatformOS, diags *diag.Diagnostics) string {
 	switch os {
 	case goapstra.PlatformOSJunos:
 		switch in {
@@ -69,7 +62,7 @@ func ConfigletSectionIotaToFriendlyString(diags *diag.Diagnostics, in goapstra.C
 		case goapstra.ConfigletSectionSetBasedInterface:
 			return JunOSInterfaceLevelSet
 		default:
-			diags.AddError("Unknown Section for JunOS", "Unknown section %s for JunOS"os.String())
+			diags.AddError("Unknown Section for JunOS", fmt.Sprintf("Unknown section %s for JunOS", os.String()))
 		}
 	default:
 		return in.String()
@@ -85,12 +78,32 @@ func IotaToFriendlyString(diags *diag.Diagnostics, in fmt.Stringer, ctx ...fmt.S
 	switch in.(type) {
 	case goapstra.ConfigletSection:
 		var i goapstra.ConfigletSection
-		err := i.FromString(in)
+		err := i.FromString(in.String())
 		if err != nil {
 			diags.AddError(errProviderBug, fmt.Sprintf("Unknown Configlet Section %s", in.String()))
 			return ""
 		}
-		return ConfigletSectionIotaToFriendlyString(diags, in, ctx)
+		var os goapstra.PlatformOS
+		err = os.FromString(ctx[0].String())
+		if err != nil {
+			diags.AddError("Unknown network OS", fmt.Sprintf("Unknown network OS %s", ctx[0].String()))
+			return ""
+		}
+		return configletSectionIotaToFriendlyString(i, os, diags)
+	case goapstra.OverlayControlProtocol:
+		var i goapstra.OverlayControlProtocol
+		err := i.FromString(in.String())
+		if err != nil {
+			diags.AddError(errProviderBug, fmt.Sprintf("Unknown Overlay Control Protocol %s", in))
+		}
+		return overlayControlProtocolToFriendlyString(i, diags)
+	case goapstra.AsnAllocationScheme:
+		var i goapstra.AsnAllocationScheme
+		err := i.FromString(in.String())
+		if err != nil {
+			diags.AddError(errProviderBug, fmt.Sprintf("Unknown ASN Allocation Scheme %s", in))
+		}
+		return asnAllocationSchemeToFriendlyString(i, diags)
 	default:
 		x := types.StringNull()
 		x.ValueString()
@@ -98,8 +111,10 @@ func IotaToFriendlyString(diags *diag.Diagnostics, in fmt.Stringer, ctx ...fmt.S
 	}
 }
 
-func FriendlyStringToIota(diags *diag.Diagnostics, in string, ctx ...string) fmt.Stringer {
-}
+//
+//func FriendlyStringToIota(diags *diag.Diagnostics, in string, ctx ...string) fmt.Stringer {
+// return ""
+//}
 
 //switch on typeof (in[0])
 //return typeioatatoui(in...)

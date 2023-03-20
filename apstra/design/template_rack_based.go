@@ -263,11 +263,11 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *goapstra.Templa
 
 	o.Name = types.StringValue(in.DisplayName)
 	o.Spine = NewDesignTemplateSpineObject(ctx, &in.Spine, diags)
-	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.AsnAllocationPolicy.SpineAsnScheme, diags))
-	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.VirtualNetworkPolicy.OverlayControlProtocol, diags))
+	o.AsnAllocation = types.StringValue(IotaToFriendlyString(diags, in.AsnAllocationPolicy.SpineAsnScheme, nil))
+	o.OverlayControlProtocol = types.StringValue(IotaToFriendlyString(diags, in.VirtualNetworkPolicy.OverlayControlProtocol, nil))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
 }
-
+x
 func (o *TemplateRackBased) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
 	var min, max *version.Version
 	var err error
