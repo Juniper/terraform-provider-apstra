@@ -3,9 +3,11 @@ package blueprint
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -14,6 +16,10 @@ import (
 	"regexp"
 	"terraform-provider-apstra/apstra/design"
 	"terraform-provider-apstra/apstra/resources"
+)
+
+const (
+	errInvalidConfig = "invalid configuration"
 )
 
 type DatacenterRoutingZone struct {
@@ -71,7 +77,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 	}
 }
 
-func (o *DatacenterRoutingZone) Request(_ context.Context, _ *diag.Diagnostics) *goapstra.SecurityZoneData {
+func (o *DatacenterRoutingZone) Request(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) *goapstra.SecurityZoneData {
 	var vlan *goapstra.Vlan
 	if !o.VlanId.IsNull() && !o.VlanId.IsUnknown() {
 		v := goapstra.Vlan(o.VlanId.ValueInt64())
@@ -84,13 +90,19 @@ func (o *DatacenterRoutingZone) Request(_ context.Context, _ *diag.Diagnostics) 
 		vni = &v
 	}
 
-	// todo:
-	//var routingPolicyId goapstra.ObjectId
-	//if o.RoutingPolicyId.IsNull() {
-	//	routingPolicyId = client.GetDefaultRoutingZone()
-	//} else {
-	//	routingPolicyId = o.RoutingPolicyId.ValueString()
-	//}
+	ocp, err := client.BlueprintOverlayControlProtocol(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
+	if err != nil {
+		diags.AddError(fmt.Sprintf("API error querying for blueprint %q Overlay Control Protocol",
+			o.BlueprintId.ValueString()), err.Error())
+		return nil
+	}
+
+	if ocp != goapstra.OverlayControlProtocolEvpn {
+		diags.AddAttributeError(
+			path.Root("blueprint_id"),
+			errInvalidConfig,
+			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosettta treatment
+	}
 
 	return &goapstra.SecurityZoneData{
 		SzType:          goapstra.SecurityZoneTypeEVPN,

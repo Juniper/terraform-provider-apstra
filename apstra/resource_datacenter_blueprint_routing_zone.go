@@ -19,7 +19,7 @@ type resourceDatacenterRoutingZone struct {
 }
 
 func (o *resourceDatacenterRoutingZone) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_routing_zone"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_routing_zone"
 }
 
 func (o *resourceDatacenterRoutingZone) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -62,7 +62,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		return
 	}
 
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -153,7 +153,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
