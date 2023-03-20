@@ -63,10 +63,11 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators: []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
+				"Set this attribute in an EVPN blueprint to use a non-default policy.",
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 	}
 }
