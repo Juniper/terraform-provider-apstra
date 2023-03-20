@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceBlueprintDeploy{}
@@ -61,16 +62,25 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	plan.Deploy(ctx, o.commentTemplate, o.client, &resp.Diagnostics)
+	defer func() {
+		err := o.unlockFunc(ctx, plan.BlueprintId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("error unlocking blueprint %q mutex", plan.BlueprintId.ValueString()),
+				err.Error())
+		}
+	}()
+
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.Diagnostics.AddError("Blueprint not found", fmt.Sprintf("Blueprint %q not found", plan.BlueprintId.ValueString()))
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err = o.unlockFunc(ctx, plan.BlueprintId.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error unlocking blueprint %q mutex", plan.BlueprintId.ValueString()),
-			err.Error())
+	plan.Deploy(ctx, o.commentTemplate, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -86,6 +96,11 @@ func (o *resourceBlueprintDeploy) Read(ctx context.Context, req resource.ReadReq
 	var state blueprint.Deploy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -115,6 +130,11 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	// Lock the blueprint mutex.
 	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -124,17 +144,18 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
+	defer func() {
+		err := o.unlockFunc(ctx, plan.BlueprintId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("error unlocking blueprint %q mutex", plan.BlueprintId.ValueString()),
+				err.Error())
+		}
+	}()
+
 	plan.Deploy(ctx, o.commentTemplate, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// Unlock the blueprint mutex.
-	err = o.unlockFunc(ctx, plan.BlueprintId.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error unlocking blueprint %q mutex", plan.BlueprintId.ValueString()),
-			err.Error())
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -150,6 +171,11 @@ func (o *resourceBlueprintDeploy) Delete(ctx context.Context, req resource.Delet
 	var state blueprint.Deploy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// No need to proceed if the blueprint no longer exists
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
 		return
 	}
 

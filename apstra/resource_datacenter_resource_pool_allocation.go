@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourcePoolAllocation{}
@@ -20,7 +21,7 @@ type resourcePoolAllocation struct {
 }
 
 func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_resource_pool_allocation"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_resource_pool_allocation"
 }
 
 func (o *resourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -46,6 +47,12 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Ensure the blueprint exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
 		return
 	}
 
@@ -90,6 +97,12 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Ensure the blueprint still exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -138,6 +151,12 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 		return
 	}
 
+	// Ensure the blueprint still exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	// Lock the blueprint mutex.
 	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -179,6 +198,11 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// No need to proceed if the blueprint no longer exists
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
 		return
 	}
 
