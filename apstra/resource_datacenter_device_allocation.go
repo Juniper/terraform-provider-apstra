@@ -20,7 +20,7 @@ type resourceDeviceAllocation struct {
 }
 
 func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_device_allocation"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_device_allocation"
 }
 
 func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {

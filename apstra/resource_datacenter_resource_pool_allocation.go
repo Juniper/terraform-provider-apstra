@@ -21,7 +21,7 @@ type resourcePoolAllocation struct {
 }
 
 func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_resource_pool_allocation"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_resource_pool_allocation"
 }
 
 func (o *resourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
