@@ -42,7 +42,6 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
 			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
 				stringvalidator.LengthBetween(1, 15),
