@@ -53,22 +53,22 @@ func (o ParseIpValidator) ValidateString(ctx context.Context, req validator.Stri
 
 	value := req.ConfigValue.ValueString()
 
-	ipStr := net.ParseIP(value)
-	if ipStr == nil {
+	ip := net.ParseIP(value)
+	if ip == nil {
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
 			"input validation error",
 			fmt.Sprintf("is %q an IP address?", req.ConfigValue.String()))
 	}
 
-	if o.requireIpv4 && len(ipStr) != 4 {
+	if o.requireIpv4 && len(ip) != 4 {
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
 			"input validation error",
 			fmt.Sprintf("is %q an IPv4 address?", req.ConfigValue.String()))
 	}
 
-	if o.requireIpv4 && len(ipStr) != 16 {
+	if o.requireIpv4 && len(ip) != 16 {
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
 			"input validation error",
