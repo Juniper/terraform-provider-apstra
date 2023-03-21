@@ -24,6 +24,6 @@ to your CloudLabs instance.
 
 ### Work through the files in numerical order
 Each terraform configuration file after `0_provider.tf` is 100% commented
-out. Work through the files in order, paying special attention to these gotchas:
-- foo
-- bar
+out. Work through the files in order, un-commenting one `resource` or
+`data`(source) at a time. Compare the results with the lab guide and with the
+Apstra web UI.
