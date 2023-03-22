@@ -1,0 +1,260 @@
+# This example creates a blueprint, including:
+# - rack type
+# - template
+# - blueprint instantiation from template
+#
+# It then assigns resource pools and devices (by serial number - these are the
+# serial numbers found in a specific cloudlabs "Customer" topology) to roles
+# in the fabric
+
+# Create IPv4 resource pool
+resource "apstra_ipv4_pool" "r" {
+  name    = "terraform"
+  subnets = [{ network = "10.0.0.0/8" }]
+}
+
+# Create ASN resource pool
+resource "apstra_asn_pool" "r" {
+  name = "terraform"
+  ranges = [{
+    first = 1000
+    last  = 1999
+  }]
+}
+
+# Create a very simple rack type
+resource "apstra_rack_type" "r" {
+  name                       = "terraform"
+  fabric_connectivity_design = "l3clos"
+  leaf_switches = {
+    leaf_one = {
+      logical_device_id = "virtual-7x10-1"
+      spine_link_count  = 1
+      spine_link_speed  = "10G"
+    }
+  }
+}
+
+# Create a template using the rack type. Note that the `rack_infos` map is
+# keyed by rack type ID. Because the key is a reference, it needs to be
+# wrapped in parenthesis.
+resource "apstra_template_rack_based" "r" {
+  name                     = "terraform"
+  overlay_control_protocol = "evpn"
+  asn_allocation_scheme    = "unique"
+  spine = {
+    count             = 2
+    logical_device_id = "virtual-7x10-1"
+  }
+  rack_infos = {
+    (apstra_rack_type.r.id) = {
+      count = 3
+    }
+  }
+}
+
+# Instantiate the blueprint from the template
+resource "apstra_datacenter_blueprint" "r" {
+  name        = "terraform"
+  template_id = apstra_template_rack_based.r.id
+}
+
+# Assign ASN pool to fabric roles
+resource "apstra_datacenter_resource_pool_allocation" "asn" {
+  for_each     = toset(["spine_asns", "leaf_asns"])
+  blueprint_id = apstra_datacenter_blueprint.r.id
+  role         = each.key
+  pool_ids     = [apstra_asn_pool.r.id]
+}
+
+# Assign IPv4 pool to fabric roles
+resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
+  for_each     = toset(["spine_loopback_ips", "leaf_loopback_ips", "spine_leaf_link_ips"])
+  blueprint_id = apstra_datacenter_blueprint.r.id
+  role         = each.key
+  pool_ids     = [apstra_ipv4_pool.r.id]
+}
+
+# Assign interface maps to fabric nodes
+resource "apstra_datacenter_device_allocation" "r" {
+  for_each         = toset(["spine1", "spine2", "terraform_001_leaf1", "terraform_002_leaf1", "terraform_003_leaf1"])
+  blueprint_id     = apstra_datacenter_blueprint.r.id
+  node_name        = each.key
+  interface_map_id = "Juniper_vQFX__slicer-7x10-1"
+}
+
+
+
+
+
+resource "apstra_datacenter_routing_policy" "r" {
+  blueprint_id  = "0ce61894-7efc-4367-964e-6628bd007b0d"
+  name          = "my_policy"
+  description   = "Very important policy - use this one!"
+  import_policy = "default_only" // "default_only" "all" "extra_only"
+  extra_imports = [
+    { prefix = "10.0.0.0/8", ge_mask = null, le_mask = null, action = "deny" },
+    { prefix = "11.0.0.0/8", ge_mask = 31, le_mask = 32, action = "deny" },
+    { prefix = "12.0.0.0/8", ge_mask = 9, le_mask = 10, action = "deny" },
+    { prefix = "13.0.0.0/8", ge_mask = 9, le_mask = 32, action = "deny" },
+    { prefix = "14.0.0.0/8", ge_mask = 9, le_mask = null, action = "deny" },
+    { prefix = "15.0.0.0/8", ge_mask = 32, le_mask = null, action = "deny" },
+    { prefix = "16.0.0.0/8", ge_mask = null, le_mask = 9, action = "deny" },
+    { prefix = "17.0.0.0/8", ge_mask = null, le_mask = 32, action = "deny" },
+    { prefix = "20.0.0.0/8", ge_mask = null, le_mask = null, action = "permit" },
+    { prefix = "21.0.0.0/8", ge_mask = 31, le_mask = 32, action = "permit" },
+    { prefix = "22.0.0.0/8", ge_mask = 9, le_mask = 10, action = "permit" },
+    { prefix = "23.0.0.0/8", ge_mask = 9, le_mask = 32, action = "permit" },
+    { prefix = "24.0.0.0/8", ge_mask = 9, le_mask = null, action = "permit" },
+    { prefix = "25.0.0.0/8", ge_mask = 32, le_mask = null, action = "permit" },
+    { prefix = "26.0.0.0/8", ge_mask = null, le_mask = 9, action = "permit" },
+    { prefix = "27.0.0.0/8", ge_mask = null, le_mask = 32, action = "permit" },
+    { prefix = "30.0.0.0/8", ge_mask = null, le_mask = null, action = null }, // default action is "permit"
+    { prefix = "31.0.0.0/8", ge_mask = 31, le_mask = 32, action = null }, // default action is "permit"
+    { prefix = "32.0.0.0/8", ge_mask = 9, le_mask = 10, action = null }, // default action is "permit"
+    { prefix = "33.0.0.0/8", ge_mask = 9, le_mask = 32, action = null }, // default action is "permit"
+    { prefix = "34.0.0.0/8", ge_mask = 9, le_mask = null, action = null }, // default action is "permit"
+    { prefix = "35.0.0.0/8", ge_mask = 32, le_mask = null, action = null }, // default action is "permit"
+    { prefix = "36.0.0.0/8", ge_mask = null, le_mask = 9, action = null }, // default action is "permit"
+    { prefix = "37.0.0.0/8", ge_mask = null, le_mask = 32, action = null }, // default action is "permit"
+  ]
+  extra_exports = [
+    { prefix = "40.0.0.0/8", ge_mask = null, le_mask = null, action = "deny" },
+    { prefix = "41.0.0.0/8", ge_mask = 31, le_mask = 32, action = "deny" },
+    { prefix = "42.0.0.0/8", ge_mask = 9, le_mask = 10, action = "deny" },
+    { prefix = "43.0.0.0/8", ge_mask = 9, le_mask = 32, action = "deny" },
+    { prefix = "44.0.0.0/8", ge_mask = 9, le_mask = null, action = "deny" },
+    { prefix = "45.0.0.0/8", ge_mask = 32, le_mask = null, action = "deny" },
+    { prefix = "46.0.0.0/8", ge_mask = null, le_mask = 9, action = "deny" },
+    { prefix = "47.0.0.0/8", ge_mask = null, le_mask = 32, action = "deny" },
+    { prefix = "50.0.0.0/8", ge_mask = null, le_mask = null, action = "permit" },
+    { prefix = "51.0.0.0/8", ge_mask = 31, le_mask = 32, action = "permit" },
+    { prefix = "52.0.0.0/8", ge_mask = 9, le_mask = 10, action = "permit" },
+    { prefix = "53.0.0.0/8", ge_mask = 9, le_mask = 32, action = "permit" },
+    { prefix = "54.0.0.0/8", ge_mask = 9, le_mask = null, action = "permit" },
+    { prefix = "55.0.0.0/8", ge_mask = 32, le_mask = null, action = "permit" },
+    { prefix = "56.0.0.0/8", ge_mask = null, le_mask = 9, action = "permit" },
+    { prefix = "57.0.0.0/8", ge_mask = null, le_mask = 32, action = "permit" },
+    { prefix = "60.0.0.0/8", ge_mask = null, le_mask = null, action = null }, // default action is "permit"
+    { prefix = "61.0.0.0/8", ge_mask = 31, le_mask = 32, action = null }, // default action is "permit"
+    { prefix = "62.0.0.0/8", ge_mask = 9, le_mask = 10, action = null }, // default action is "permit"
+    { prefix = "63.0.0.0/8", ge_mask = 9, le_mask = 32, action = null }, // default action is "permit"
+    { prefix = "64.0.0.0/8", ge_mask = 9, le_mask = null, action = null }, // default action is "permit"
+    { prefix = "65.0.0.0/8", ge_mask = 32, le_mask = null, action = null }, // default action is "permit"
+    { prefix = "66.0.0.0/8", ge_mask = null, le_mask = 9, action = null }, // default action is "permit"
+    { prefix = "67.0.0.0/8", ge_mask = null, le_mask = 32, action = null }, // default action is "permit"
+  ]
+  export_policy = {
+#    export_spine_leaf_links       = false
+    export_spine_superspine_links = null
+    export_l3_edge_server_links   = false
+    export_l2_edge_subnets        = true
+    export_loopbacks              = false
+    export_static_routes          = true
+  }
+  aggregate_prefixes = [
+    "0.0.0.0/0",
+    "0.0.0.0/1",
+    "0.0.0.0/2",
+    "0.0.0.0/3",
+    "0.0.0.0/4",
+    "0.0.0.0/5",
+    "0.0.0.0/6",
+    "0.0.0.0/7",
+    "0.0.0.0/8",
+    "1.0.0.0/9",
+    "0.0.0.0/10",
+    "0.0.0.0/11",
+    "0.0.0.0/12",
+    "0.0.0.0/13",
+    "0.0.0.0/14",
+    "0.0.0.0/15",
+    "0.0.0.0/16",
+    "0.0.0.0/17",
+    "0.0.0.0/18",
+    "0.0.0.0/19",
+    "0.0.0.0/20",
+    "0.0.0.0/21",
+    "0.0.0.0/22",
+    "0.0.0.0/23",
+    "0.0.0.0/24",
+    "0.0.0.0/25",
+    "0.0.0.0/26",
+    "0.0.0.0/27",
+    "0.0.0.0/28",
+    "0.0.0.0/29",
+    "0.0.0.0/30",
+    "0.0.0.0/31",
+    "0.0.0.0/32",
+    "255.255.255.255/32"
+  ]
+  expect_default_ipv4 = true
+  expect_default_ipv6 = false
+}
+
+
+
+
+
+output "x" { value = apstra_datacenter_routing_policy.r }
+
+
+#data "apstra_blueprint_deployment" "status" {
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#  depends_on = [
+#    apstra_datacenter_resource_pool_allocation.asn,
+#    apstra_datacenter_resource_pool_allocation.ipv4,
+#    apstra_datacenter_device_allocation.switches,
+#  ]
+#}
+#
+#resource "null_resource" "trigger" {
+#  triggers = {
+#    stage = data.apstra_blueprint_deployment.status.revision_staged
+#  }
+#}
+#
+#resource "apstra_blueprint_deployment" "deploy" {
+#  depends_on = [ null_resource.trigger ]
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#}
+#
+#output "resource_deploy" {
+#  value = apstra_blueprint_deployment.deploy
+#  depends_on = [
+#    apstra_datacenter_resource_pool_allocation.asn,
+#    apstra_datacenter_resource_pool_allocation.ipv4,
+#    apstra_datacenter_device_allocation.switches,
+#  ]
+#}
+
+#resource "null_resource" "deploy_trigger" {
+#  triggers = {
+#    bp_version = data.apstra_blueprint_deployment.status.revision_staged
+#    foo = "foo"
+#  }
+#}
+
+
+#output "blueprint" {
+#  value = data.apstra_datacenter_blueprint.status
+#}
+
+#resource "null_resource" "commit_trigger" {
+#  triggers = {
+#    blueprint = data.apstra_blueprint.status.version
+#  }
+#}
+#
+#resource "apstra_blueprint_deployment" "r" {
+#  depends_on = [
+#    apstra_datacenter_resource_pool_allocation.asn,
+#    apstra_datacenter_resource_pool_allocation.ipv4,
+#    apstra_datacenter_device_allocation.switches,
+#  ]
+#  blueprint_id = apstra_datacenter_blueprint.r.id
+#}
+
+#output "commit" {
+#  value = apstra_blueprint_commit.r
+#}
