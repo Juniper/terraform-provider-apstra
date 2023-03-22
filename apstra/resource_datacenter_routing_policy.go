@@ -189,12 +189,12 @@ func (o *resourceDatacenterRoutingPolicy) Delete(ctx context.Context, req resour
 		return
 	}
 
-	err = bp.DeleteSecurityZone(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteRoutingPolicy(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting routing zone", err.Error())
+		resp.Diagnostics.AddError("error deleting routing policy", err.Error())
 	}
 }
