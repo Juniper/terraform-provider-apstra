@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -46,33 +47,38 @@ func (o ParseCidrValidator) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o ParseCidrValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+func (o ParseCidrValidator) ValidateString(_ context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		return
 	}
 
 	value := req.ConfigValue.ValueString()
 
-	ip, _, err := net.ParseCIDR(value)
+	ip, ipNet, err := net.ParseCIDR(value)
 	if err != nil {
-		resp.Diagnostics.AddAttributeError(
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
 			req.Path,
-			fmt.Sprintf("error parsing %q as a CIDR-notation prefix", value),
-			err.Error())
+			"value is not a valid CIDR notation prefix",
+			value))
+		return
+	}
+
+	if !ipNet.IP.Equal(ip) {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
+			req.Path,
+			fmt.Sprintf("value is not a valid CIDR base address (did you mean %q?)", ipNet.String()),
+			value,
+		))
 	}
 
 	if o.requireIpv4 && len(ip) != 4 {
-		resp.Diagnostics.AddAttributeError(
-			req.Path,
-			"input validation error",
-			fmt.Sprintf("is %q an IPv4 address?", req.ConfigValue.String()))
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
+			req.Path, "value is not an IPv4 address", value))
 	}
 
-	if o.requireIpv4 && len(ip) != 16 {
-		resp.Diagnostics.AddAttributeError(
-			req.Path,
-			"input validation error",
-			fmt.Sprintf("is %q an IPv6 address?", req.ConfigValue.String()))
+	if o.requireIpv6 && len(ip) != 16 {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
+			req.Path, "value is not an IPv6 address", value))
 	}
 }
 
