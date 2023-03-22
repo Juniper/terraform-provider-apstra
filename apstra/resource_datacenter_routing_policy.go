@@ -27,7 +27,7 @@ func (o *resourceDatacenterRoutingPolicy) Configure(ctx context.Context, req res
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourceDatacenterRoutingPolicy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterRoutingPolicy) Schema(ctx context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Routing Policy within a Blueprint.",
 		Attributes:          blueprint.DatacenterRoutingPolicy{}.ResourceAttributes(),

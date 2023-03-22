@@ -2,13 +2,18 @@ package utils
 
 import "bitbucket.org/apstrktr/goapstra"
 
-func AllPrefixFilterActions() []string {
+func AllValidPrefixFilterActions() []string {
 	actions := goapstra.AllPrefixFilterActions()
 	result := make([]string, len(actions))
-	for i := range actions {
-		result[i] = actions[i].String()
+	var i int
+	for _, action := range actions {
+		if action != goapstra.PrefixFilterActionNone {
+			result[i] = action.String()
+			i++
+		}
 	}
-	return result
+
+	return result[:i]
 }
 
 func AllDcRoutingPolicyImportPolicy() []string {
