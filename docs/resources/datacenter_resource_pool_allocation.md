@@ -41,7 +41,7 @@ locals {
 }
 
 # Assign ASN pools to fabric roles
-resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
+resource "apstra_datacenter_resource_pool_allocation" "asn" {
   for_each     = local.asn_pools
   blueprint_id = apstra_datacenter_blueprint.r.id
   role         = each.key
@@ -49,7 +49,7 @@ resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
 }
 
 # Assign IPv4 pools to fabric roles
-resource "apstra_datacenter_blueprint_resource_pool_allocation" "ipv4" {
+resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   for_each     = local.ipv4_pools
   blueprint_id = apstra_datacenter_blueprint.r.id
   role         = each.key
