@@ -2,12 +2,18 @@ package blueprint
 
 import (
 	"bitbucket.org/apstrktr/goapstra"
+	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"net"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -23,6 +29,7 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 		"prefix": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 or IPv6 network address specified in the form of network/prefixlen.",
 			Required:            true,
+			Validators:          []validator.String{apstravalidator.ParseCidr(false, false)},
 		},
 		"ge_mask": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Match less-specific prefixes from a parent prefix, up from `ge_mask` to the prefix " +
@@ -30,7 +37,8 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 				"prefix-list entry should be an exact match. The option can be optionally be used in combination " +
 				"with `le_mask`. `ge_mask` must be longer than the subnet prefix length. If `le_mask` and `ge_mask` " +
 				"are both specified, then `le_mask` must be greater than `ge_mask`.",
-			Optional: true,
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.AtLeast(1)},
 		},
 		"le_mask": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Match more-specific prefixes from a parent prefix, up until `le_mask` prefix len. " +
@@ -38,14 +46,17 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 				"an exact match. The option can be optionally be used in combination with `ge_mask`. `le_mask` must " +
 				"be longer than the subnet prefix length. If `le_mask` and `ge_mask` are both specified, then " +
 				"`le_mask` must be greater than `ge_mask`.",
-			Optional: true,
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.AtLeast(1)},
 		},
 		"action": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("If the action is %q, match the route. If the action is %q, do "+
 				"not match the route. For composing complex policies, all prefix-list items will be processed in the "+
 				"order specified, top-down. This allows the user to deny a subset of a route that may otherwise be "+
 				"permitted.", goapstra.PrefixFilterActionPermit, goapstra.PrefixFilterActionDeny),
-			Required:   true,
+			Computed:   true,
+			Optional:   true,
+			Default:    stringdefault.StaticString(goapstra.PrefixFilterActionPermit.String()),
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllValidPrefixFilterActions()...)},
 		},
 	}
@@ -57,5 +68,44 @@ func (o prefixFilter) attrTypes() map[string]attr.Type {
 		"ge_mask": types.Int64Type,
 		"le_mask": types.Int64Type,
 		"action":  types.StringType,
+	}
+}
+
+func (o *prefixFilter) loadApiData(ctx context.Context, in *goapstra.PrefixFilter, diags *diag.Diagnostics) {
+	o.Prefix = types.StringValue(in.Prefix.String())
+	o.GeMask = utils.Int64ValueOrNull(ctx, in.GeMask, diags)
+	o.LeMask = utils.Int64ValueOrNull(ctx, in.LeMask, diags)
+	o.Action = types.StringValue(in.Action.String())
+}
+
+func (o *prefixFilter) request(_ context.Context, diags *diag.Diagnostics) *goapstra.PrefixFilter {
+	var action goapstra.PrefixFilterAction
+	err := action.FromString(o.Action.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing prefix filter action string %q", o.Action.ValueString()), err.Error())
+		return nil
+	}
+
+	_, prefix, err := net.ParseCIDR(o.Prefix.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing prefix %q", o.Prefix.ValueString()), err.Error())
+		return nil
+	}
+
+	var geMask, leMask *int
+	if !o.GeMask.IsNull() && !o.GeMask.IsUnknown() {
+		m := int(o.GeMask.ValueInt64())
+		geMask = &m
+	}
+	if !o.LeMask.IsNull() && !o.LeMask.IsUnknown() {
+		m := int(o.LeMask.ValueInt64())
+		leMask = &m
+	}
+
+	return &goapstra.PrefixFilter{
+		Action: action,
+		Prefix: *prefix,
+		GeMask: geMask,
+		LeMask: leMask,
 	}
 }
