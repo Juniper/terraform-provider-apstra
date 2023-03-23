@@ -92,6 +92,11 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 					"This attribute overrides the default message in that field: %q.", blueprintMutexMessage),
 				Optional: true,
 			},
+			"experimental": schema.BoolAttribute{
+				MarkdownDescription: "Sets a flag in the underlying Apstra SDK client object which enables " +
+					"'experimental' features. At this time, the only effect is bypassing version compatibility checks.",
+				Optional: true,
+			},
 		},
 	}
 }
@@ -102,6 +107,7 @@ type providerConfig struct {
 	TlsNoVerify  types.Bool   `tfsdk:"tls_validation_disabled"`
 	MutexDisable types.Bool   `tfsdk:"blueprint_mutex_disabled"`
 	MutexMessage types.String `tfsdk:"blueprint_mutex_message"`
+	Experimental types.Bool   `tfsdk:"experimental"`
 }
 
 func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -166,10 +172,13 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 	// Remove credentials from the URL prior to rendering it into ClientCfg.
 	parsedUrl.User = nil
+
+	// Create the clientCfg
 	clientCfg := &goapstra.ClientCfg{
-		Url:  parsedUrl.String(),
-		User: user,
-		Pass: pass,
+		Url:          parsedUrl.String(),
+		User:         user,
+		Pass:         pass,
+		Experimental: config.Experimental.ValueBool(),
 	}
 
 	// Set up a logger.
