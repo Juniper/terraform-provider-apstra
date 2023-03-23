@@ -35,11 +35,11 @@ func (o ParseCidrValidator) Description(_ context.Context) string {
 	case o.requireIpv4 && o.requireIpv6:
 		return "Ensures that the supplied value can be parsed as both an IPv4 and IPv6 prefix - this usage is likely a mistake in the provider code"
 	case o.requireIpv4:
-		return "Ensures that the supplied can be parsed as an IPv4 prefix"
+		return "Ensures that the supplied value can be parsed as an IPv4 prefix"
 	case o.requireIpv6:
-		return "Ensures that the supplied can be parsed as an IPv6 prefix"
+		return "Ensures that the supplied value can be parsed as an IPv6 prefix"
 	default:
-		return "Ensures that the supplied can be parsed as either an IPv4 or IPv6 prefix"
+		return "Ensures that the supplied value can be parsed as either an IPv4 or IPv6 prefix"
 	}
 }
 
