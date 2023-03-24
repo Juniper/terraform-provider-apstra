@@ -2,9 +2,11 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"reflect"
 )
 
 // StringValueOrNull returns a types.String based on the supplied string. If the
@@ -73,4 +75,65 @@ func ObjectValueOrNull(ctx context.Context, attrTypes map[string]attr.Type, attr
 	result, d := types.ObjectValueFrom(ctx, attrTypes, attributes)
 	diags.Append(d...)
 	return result
+}
+
+func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64 {
+	// when in is nil, return a null attr.Value
+	if in == nil {
+		return types.Int64Null()
+	}
+
+	// when in is a nil pointer, return a null attr.Value
+	if reflect.TypeOf(in).Kind() == reflect.Ptr && reflect.ValueOf(in).IsNil() {
+		return types.Int64Null()
+	}
+
+	switch in.(type) {
+	case *int:
+		return types.Int64Value(int64(*in.(*int)))
+	case *int8:
+		return types.Int64Value(int64(*in.(*int8)))
+	case *int16:
+		return types.Int64Value(int64(*in.(*int16)))
+	case *int32:
+		return types.Int64Value(int64(*in.(*int32)))
+	case *int64:
+		return types.Int64Value(*in.(*int64))
+	case *uint:
+		return types.Int64Value(int64(*in.(*uint)))
+	case *uint8:
+		return types.Int64Value(int64(*in.(*uint8)))
+	case *uint16:
+		return types.Int64Value(int64(*in.(*uint16)))
+	case *uint32:
+		return types.Int64Value(int64(*in.(*uint32)))
+	case *uint64:
+		return types.Int64Value(int64(*in.(*uint64)))
+	case int:
+		return types.Int64Value(int64(in.(int)))
+	case int8:
+		return types.Int64Value(int64(in.(int8)))
+	case int16:
+		return types.Int64Value(int64(in.(int16)))
+	case int32:
+		return types.Int64Value(int64(in.(int32)))
+	case int64:
+		return types.Int64Value(in.(int64))
+	case uint:
+		return types.Int64Value(int64(in.(uint)))
+	case uint8:
+		return types.Int64Value(int64(in.(uint8)))
+	case uint16:
+		return types.Int64Value(int64(in.(uint16)))
+	case uint32:
+		return types.Int64Value(int64(in.(uint32)))
+	case uint64:
+		return types.Int64Value(int64(in.(uint64)))
+
+	default:
+		diags.AddError("cannot convert interface to int64",
+			fmt.Sprintf("value is type %s", reflect.TypeOf(in).String()))
+	}
+
+	return types.Int64Null()
 }
