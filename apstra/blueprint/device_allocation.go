@@ -35,7 +35,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		},
 		"node_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "GraphDB node 'label which identifies the switch. Strings like 'spine1' " +
-				"and 'rack_2_leaf_1 are appropraite here.",
+				"and 'rack_2_leaf_1' are appropriate here.",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -74,11 +74,6 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.",
 			Computed:            true,
 		},
-		//"system_node_id": resourceSchema.StringAttribute{
-		//	MarkdownDescription: "ID number of the Blueprint graphdb node representing this system.",
-		//	Computed:            true,
-		//	PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-		//},
 	}
 }
 

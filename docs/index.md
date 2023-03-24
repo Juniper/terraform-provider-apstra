@@ -38,6 +38,9 @@ APSTRA_PASS=password
 
 ### Optional
 
+- `blueprint_mutex_disabled` (Boolean) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform)  should wait before beginning to make changes of their own. Set this attribute 'true' to skip locking the mutex(es) which signal exclusive Blueprint access for all Blueprint changes made in this project.
+- `blueprint_mutex_message` (String) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform)  should wait before beginning to make changes of their own. The mutexes embed a human-readable field to reduce confusion in the event a mutex needs to be cleared manually. This attribute overrides the default message in that field: "locked by terraform at $DATE".
+- `experimental` (Boolean) Sets a flag in the underlying Apstra SDK client object which enables 'experimental' features. At this time, the only effect is bypassing version compatibility checks.
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
 - `url` (String) URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`
 If username or password are omitted from URL string, environment variables `APSTRA_USER` and `APSTRA_PASS` will be used.  If `url` is omitted, environment variable APSTRA_URL will be used.

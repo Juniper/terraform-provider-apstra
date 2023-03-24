@@ -1,11 +1,11 @@
 ---
-page_title: "apstra_datacenter_blueprint_device_allocation Resource - terraform-provider-apstra"
+page_title: "apstra_datacenter_device_allocation Resource - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This resource allocates a Managed Device (probably a switch) to a node role (spine1, etc...) within a Blueprint.
 ---
 
-# apstra_datacenter_blueprint_device_allocation (Resource)
+# apstra_datacenter_device_allocation (Resource)
 
 This resource allocates a Managed Device (probably a switch) to a node role (spine1, etc...) within a Blueprint.
 
@@ -75,7 +75,7 @@ resource "apstra_datacenter_blueprint_device_allocation" "r" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `node_name` (String) GraphDB node 'label which identifies the switch. Strings like 'spine1' and 'rack_2_leaf_1 are appropraite here.
+- `node_name` (String) GraphDB node 'label which identifies the switch. Strings like 'spine1' and 'rack_2_leaf_1' are appropriate here.
 
 ### Optional
 

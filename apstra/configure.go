@@ -79,3 +79,39 @@ func ResourceGetTerraformVersion(_ context.Context, req resource.ConfigureReques
 	)
 	return ""
 }
+
+func ResourceGetBlueprintLockFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, string) error {
+	if req.ProviderData == nil {
+		return nil
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.bpLockFunc
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataDetail,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+	return nil
+}
+
+func ResourceGetBlueprintUnlockFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, string) error {
+	if req.ProviderData == nil {
+		return nil
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.bpUnlockFunc
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataDetail,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+	return nil
+}

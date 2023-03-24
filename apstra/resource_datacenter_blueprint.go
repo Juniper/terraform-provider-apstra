@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
@@ -20,6 +21,8 @@ type resourceDatacenterBlueprint struct {
 	client           *goapstra.Client
 	minClientVersion *version.Version
 	maxClientVersion *version.Version
+	lockFunc         func(context.Context, string) error
+	unlockFunc       func(context.Context, string) error
 }
 
 func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -28,6 +31,8 @@ func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.M
 
 func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
 }
 
 func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -76,21 +81,30 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Retrieve values from plan
+	// Retrieve values from plan.
 	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Make a blueprint creation request.
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Create the blueprint.
 	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating Rack Based Blueprint", err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, id.String())
+	if err != nil {
+		resp.Diagnostics.AddError("error locking blueprint mutex", err.Error())
 		return
 	}
 
@@ -99,7 +113,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
 
-	// Create new state object
+	// Create new state object.
 	var state blueprint.Blueprint
 	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -109,7 +123,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	state.FabricAddressing = plan.FabricAddressing // blindly copy because resource.RequiresReplace()
 	state.TemplateId = plan.TemplateId             // blindly copy because resource.RequiresReplace()
 
-	// Set state
+	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -119,14 +133,14 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// Get current state
+	// Get current state.
 	var state blueprint.Blueprint
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// some interesting details are in blueprintStatus
+	// Some interesting details are in BlueprintStatus.
 	apiData, err := o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace goapstra.ApstraClientErr
@@ -142,13 +156,13 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// create new state object with some obvious values
+	// Create new state object with some obvious values.
 	var newState blueprint.Blueprint
 	newState.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	newState.FabricAddressing = state.FabricAddressing // blindly copy because resource.RequiresReplace()
 	newState.TemplateId = state.TemplateId             // blindly copy because resource.RequiresReplace()
 
-	// set state
+	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
@@ -159,14 +173,27 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// Retrieve plan
+	// Retrieve plan.
 	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// name change is the only possible update method (other attributes trigger replace)
+	// Ensure the blueprint still exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.Id.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("error locking blueprint mutex", err.Error())
+		return
+	}
+
+	// Name change is the only possible update method (other attributes trigger replace).
 	plan.SetName(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -205,14 +232,21 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	err := o.client.DeleteBlueprint(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	bpID := goapstra.ObjectId(state.Id.ValueString())
+
+	err := o.client.DeleteBlueprint(ctx, bpID)
 	if err != nil {
 		var ace goapstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
-		return
+	}
+
+	// Unlock the blueprint mutex.
+	err = o.unlockFunc(ctx, bpID.String())
+	if err != nil {
+		resp.Diagnostics.AddError("error unlocking blueprint mutex", err.Error())
 	}
 }
 

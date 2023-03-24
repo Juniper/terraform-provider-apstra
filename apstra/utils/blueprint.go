@@ -23,3 +23,18 @@ func GetAllSystemsInfo(ctx context.Context, client *goapstra.Client, diags *diag
 	}
 	return deviceKeyToSystemInfo
 }
+
+func BlueprintExists(ctx context.Context, client *goapstra.Client, id goapstra.ObjectId, diags *diag.Diagnostics) bool {
+	ids, err := client.ListAllBlueprintIds(ctx)
+	if err != nil {
+		diags.AddError("error listing blueprints", err.Error())
+		return false
+	}
+
+	for i := range ids {
+		if ids[i] == id {
+			return true
+		}
+	}
+	return false
+}

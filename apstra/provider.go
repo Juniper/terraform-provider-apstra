@@ -14,6 +14,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
+	"time"
 )
 
 const (
@@ -25,9 +27,17 @@ const (
 	envApstraPassword = "APSTRA_PASS"
 	envApstraLogfile  = "APSTRA_LOG"
 	envApstraUrl      = "APSTRA_URL"
+
+	blueprintMutexMessage = "locked by terraform at $DATE"
 )
 
 var _ provider.Provider = &Provider{}
+
+// map of mutexes keyed by blueprint ID
+var blueprintMutexes map[string]goapstra.Mutex
+
+// mutex which we use to control access to blueprintMutexes
+var blueprintMutexesMutex sync.Mutex
 
 // Provider fulfils the provider.Provider interface
 type Provider struct {
@@ -44,6 +54,8 @@ type providerData struct {
 	client           *goapstra.Client
 	providerVersion  string
 	terraformVersion string
+	bpLockFunc       func(context.Context, string) error
+	bpUnlockFunc     func(context.Context, string) error
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -55,15 +67,35 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
-				Optional: true,
 				MarkdownDescription: "URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`\n" +
 					"If username or password are omitted from URL string, environment variables `" + envApstraUsername +
 					"` and `" + envApstraPassword + "` will be used.  If `url` is omitted, environment variable " +
 					envApstraUrl + " will be used.",
+				Optional: true,
 			},
 			"tls_validation_disabled": schema.BoolAttribute{
-				Optional:            true,
 				MarkdownDescription: "Set 'true' to disable TLS certificate validation.",
+				Optional:            true,
+			},
+			"blueprint_mutex_disabled": schema.BoolAttribute{
+				MarkdownDescription: "Blueprint mutexes are signals that changes are being made in the staging " +
+					"Blueprint and other automation processes (including other instances of Terraform)  should wait " +
+					"before beginning to make changes of their own. Set this attribute 'true' to skip locking the " +
+					"mutex(es) which signal exclusive Blueprint access for all Blueprint changes made in this project.",
+				Optional: true,
+			},
+			"blueprint_mutex_message": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("Blueprint mutexes are signals that changes are being made "+
+					"in the staging Blueprint and other automation processes (including other instances of "+
+					"Terraform)  should wait before beginning to make changes of their own. The mutexes embed a "+
+					"human-readable field to reduce confusion in the event a mutex needs to be cleared manually. "+
+					"This attribute overrides the default message in that field: %q.", blueprintMutexMessage),
+				Optional: true,
+			},
+			"experimental": schema.BoolAttribute{
+				MarkdownDescription: "Sets a flag in the underlying Apstra SDK client object which enables " +
+					"'experimental' features. At this time, the only effect is bypassing version compatibility checks.",
+				Optional: true,
 			},
 		},
 	}
@@ -71,8 +103,11 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 
 // Provider configuration struct. Matches GetSchema() output.
 type providerConfig struct {
-	Url         types.String `tfsdk:"url"`
-	TlsNoVerify types.Bool   `tfsdk:"tls_validation_disabled"`
+	Url          types.String `tfsdk:"url"`
+	TlsNoVerify  types.Bool   `tfsdk:"tls_validation_disabled"`
+	MutexDisable types.Bool   `tfsdk:"blueprint_mutex_disabled"`
+	MutexMessage types.String `tfsdk:"blueprint_mutex_message"`
+	Experimental types.Bool   `tfsdk:"experimental"`
 }
 
 func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
@@ -83,7 +118,12 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	// populate raw URL string from config or environment
+	// Default the mutex message if needed.
+	if config.MutexMessage.IsNull() {
+		config.MutexMessage = types.StringValue(fmt.Sprintf(blueprintMutexMessage))
+	}
+
+	// Populate raw URL string from config or environment.
 	var apstraUrl string
 	var ok bool
 	if config.Url.IsNull() {
@@ -95,20 +135,20 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		apstraUrl = config.Url.ValueString()
 	}
 
-	// either config or env could have sent us an empty string
+	// Either config or env could have sent us an empty string.
 	if apstraUrl == "" {
 		resp.Diagnostics.AddError(errInvalidConfig, "Apstra URL: empty string")
 		return
 	}
 
-	// parse the URL
+	// Parse the URL.
 	parsedUrl, err := url.Parse(apstraUrl)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("error parsing URL '%s'", config.Url.ValueString()), err.Error())
 		return
 	}
 
-	// determine apstra username
+	// Determine the Apstra username.
 	user := parsedUrl.User.Username()
 	if user == "" {
 		if val, ok := os.LookupEnv(envApstraUsername); ok {
@@ -119,7 +159,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		}
 	}
 
-	// determine apstra password
+	// Determine  the Apstra password.
 	pass, found := parsedUrl.User.Password()
 	if !found {
 		if val, ok := os.LookupEnv(envApstraPassword); ok {
@@ -130,16 +170,18 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		}
 	}
 
-	// remove credentials from URL prior to rendering it into ClientCfg
+	// Remove credentials from the URL prior to rendering it into ClientCfg.
 	parsedUrl.User = nil
 
+	// Create the clientCfg
 	clientCfg := &goapstra.ClientCfg{
-		Url:  parsedUrl.String(),
-		User: user,
-		Pass: pass,
+		Url:          parsedUrl.String(),
+		User:         user,
+		Pass:         pass,
+		Experimental: config.Experimental.ValueBool(),
 	}
 
-	// set up logger
+	// Set up a logger.
 	if logFileName, ok := os.LookupEnv(envApstraLogfile); ok {
 		logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
@@ -150,14 +192,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		clientCfg.Logger = logger
 	}
 
-	// create client's httpClient with the configured TLS verification switch
+	// Create the client's httpClient with(out) TLS verification.
 	clientCfg.HttpClient = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: config.TlsNoVerify.ValueBool(),
 			}}}
 
-	// TLS key log
+	// Set up the TLS session key log.
 	if fileName, ok := os.LookupEnv(envTlsKeyLogFile); ok {
 		klw, err := newKeyLogWriter(fileName)
 		if err != nil {
@@ -167,7 +209,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.KeyLogWriter = klw
 	}
 
-	// create the goapstra client
+	// Create the goapstra client.
 	client, err := clientCfg.NewClient()
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -177,7 +219,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	// login after creation so that future parallel workflows don't trigger TOO MANY REQUESTS threshold
+	// Login after client creation so that future parallel
+	// workflows don't trigger TOO MANY REQUESTS threshold.
 	err = client.Login(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("apstra login failure", err.Error())
@@ -191,11 +234,72 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		version = p.Version + "-" + p.Commit
 	}
 
+	if !config.MutexDisable.ValueBool() {
+		// non-nil slice signals intent to lock and track mutexes
+		blueprintMutexes = make(map[string]goapstra.Mutex, 0)
+	}
+
+	bpLockFunc := func(ctx context.Context, id string) error {
+		if blueprintMutexes == nil {
+			// A nil map indicates we're not configured to lock the mutex.
+			return nil
+		}
+
+		blueprintMutexesMutex.Lock()
+		defer blueprintMutexesMutex.Unlock()
+
+		if _, ok := blueprintMutexes[id]; ok {
+			// We have a map entry, so the mutex must be locked already.
+			return nil
+		}
+
+		bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(id))
+		if err != nil {
+			return fmt.Errorf("error creating blueprint client while attempting to lock blueprint mutex - %w", err)
+		}
+
+		// Shove the date into the environment so it's available to ExpandEnv.
+		// This should probably be in a text/template configuration.
+		err = os.Setenv("DATE", time.Now().UTC().String())
+		if err != nil {
+			return fmt.Errorf("error setting the 'DATE' environment variable - %w", err)
+		}
+
+		// Set the mutex message.
+		err = bpClient.Mutex.SetMessage(os.ExpandEnv(config.MutexMessage.ValueString()))
+		if err != nil {
+			return fmt.Errorf("error setting mutex message - %w", err)
+		}
+
+		// This is a blocking call. We get the lock, we hit an error, or we wait.
+		err = bpClient.Mutex.Lock(ctx)
+		if err != nil {
+			return fmt.Errorf("error locking blueprint mutex - %w", err)
+		}
+
+		// Drop the Mutex into the map so that it can be unlocked after deployment.
+		blueprintMutexes[id] = bpClient.Mutex
+
+		return nil
+	}
+
+	bpUnlockFunc := func(ctx context.Context, id string) error {
+		blueprintMutexesMutex.Lock()
+		defer blueprintMutexesMutex.Unlock()
+		if m, ok := blueprintMutexes[id]; ok {
+			delete(blueprintMutexes, id)
+			return m.Unlock(ctx)
+		}
+		return nil
+	}
+
 	// data passed to Resource and DataSource Configure() methods
 	pd := &providerData{
 		client:           client,
 		providerVersion:  version,
 		terraformVersion: req.TerraformVersion,
+		bpLockFunc:       bpLockFunc,
+		bpUnlockFunc:     bpUnlockFunc,
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd
@@ -240,6 +344,8 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceBlueprintDeploy{} },
 		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
+		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
+		//func() resource.Resource { return &resourceDatacenterRoutingPolicy{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },
 		func() resource.Resource { return &resourceIpv4Pool{} },

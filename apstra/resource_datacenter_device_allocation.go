@@ -3,24 +3,30 @@ package apstra
 import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
 
 type resourceDeviceAllocation struct {
-	client *goapstra.Client
+	client     *goapstra.Client
+	lockFunc   func(context.Context, string) error
+	unlockFunc func(context.Context, string) error
 }
 
 func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_device_allocation"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_device_allocation"
 }
 
 func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
 }
 
 func (o *resourceDeviceAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -37,10 +43,25 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// Retrieve values from plan
+	// Retrieve values from plan.
 	var plan blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Ensure the blueprint exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
@@ -82,6 +103,12 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	var state blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Ensure the blueprint still exists.
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		resp.State.RemoveResource(ctx)
 		return
 	}
 
@@ -129,6 +156,20 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 	var state blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// No need to proceed if the blueprint no longer exists
+	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
