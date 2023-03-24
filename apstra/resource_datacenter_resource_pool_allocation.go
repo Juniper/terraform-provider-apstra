@@ -37,6 +37,15 @@ func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequ
 	}
 }
 
+// {
+//  "type": "ip",
+//  "id": "rag_ip_sz:mWSoTAQpY5DSifaDZ50,leaf_loopback_ips",
+//  "name": "sz:mWSoTAQpY5DSifaDZ50,leaf_loopback_ips",
+//  "pool_ids": [
+//    "66e3fd04-cbb1-4262-8556-01335dd9d040"
+//  ]
+//}
+
 func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
@@ -78,7 +87,12 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	}
 
 	// Set the new allocation
-	err = client.SetResourceAllocation(ctx, request)
+	switch {
+	case !plan.RoutingZoneId.IsNull():
+		err = client.SetSecurityZoneResourcePools(ctx, goapstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	default:
+		err = client.SetResourceAllocation(ctx, request)
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
 	}
@@ -117,6 +131,8 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 		return
 	}
+
+	// todo fix Read() so it calls the routing-zone specific method
 
 	// Create an allocation request (because it's got the ResourceGroup object inside)
 	allocationRequest := state.Request(ctx, &resp.Diagnostics)
@@ -179,7 +195,12 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	}
 
 	// Set the new allocation
-	err = client.SetResourceAllocation(ctx, request)
+	switch {
+	case !plan.RoutingZoneId.IsNull():
+		err = client.SetSecurityZoneResourcePools(ctx, goapstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	default:
+		err = client.SetResourceAllocation(ctx, request)
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
 	}
@@ -231,7 +252,12 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	}
 
 	// Set the empty allocation
-	err = client.SetResourceAllocation(ctx, request)
+	switch {
+	case !state.RoutingZoneId.IsNull():
+		err = client.SetSecurityZoneResourcePools(ctx, goapstra.ObjectId(state.RoutingZoneId.ValueString()), request)
+	default:
+		err = client.SetResourceAllocation(ctx, request)
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
 	}
