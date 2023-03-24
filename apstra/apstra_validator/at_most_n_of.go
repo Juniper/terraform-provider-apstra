@@ -25,6 +25,18 @@ var (
 	_ validator.String  = AtMostNOfValidator{}
 )
 
+type NineTypesValidator interface {
+	validator.Bool
+	validator.Float64
+	validator.Int64
+	validator.List
+	validator.Map
+	validator.Number
+	validator.Object
+	validator.Set
+	validator.String
+}
+
 // AtMostNOfValidator is the underlying struct implementing AtMostNOf.
 type AtMostNOfValidator struct {
 	N               int
@@ -51,14 +63,14 @@ func (o AtMostNOfValidator) MarkdownDescription(_ context.Context) string {
 	return fmt.Sprintf("Ensure that at most %d attributes from this collection is set: %s", o.N, o.PathExpressions)
 }
 
-func (o AtMostNOfValidator) Validate(ctx context.Context, req AtMostNOfValidatorRequest, res *AtMostNOfValidatorResponse) {
+func (o AtMostNOfValidator) Validate(ctx context.Context, req AtMostNOfValidatorRequest, resp *AtMostNOfValidatorResponse) {
 	expressions := req.PathExpression.MergeExpressions(o.PathExpressions...)
 
 	var notNullPaths []path.Path
 	for _, expression := range expressions {
 		matchedPaths, diags := req.Config.PathMatches(ctx, expression)
 
-		res.Diagnostics.Append(diags...)
+		resp.Diagnostics.Append(diags...)
 
 		// Collect all errors
 		if diags.HasError() {
@@ -68,7 +80,7 @@ func (o AtMostNOfValidator) Validate(ctx context.Context, req AtMostNOfValidator
 		for _, mp := range matchedPaths {
 			var mpVal attr.Value
 			diags := req.Config.GetAttribute(ctx, mp, &mpVal)
-			res.Diagnostics.Append(diags...)
+			resp.Diagnostics.Append(diags...)
 
 			// Collect all errors
 			if diags.HasError() {
@@ -90,7 +102,7 @@ func (o AtMostNOfValidator) Validate(ctx context.Context, req AtMostNOfValidator
 		return // this is the desired outcome: fewer non-null paths than the limit.
 	}
 
-	res.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+	resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 		req.Path,
 		fmt.Sprintf("At most %d attributes out of %s must be specified, but %d matches were found",
 			req.N, expressions, len(notNullPaths)),
@@ -236,14 +248,9 @@ func (o AtMostNOfValidator) ValidateString(ctx context.Context, req validator.St
 // including the attribute this validator is applied to,
 // at most 'n' have a non-null value.
 //
-// This implements the validation logic declaratively within the tfsdk.Schema.
-// Refer to [datasourcevalidator.AtLeastOneOf],
-// [providervalidator.AtLeastOneOf], or [resourcevalidator.AtLeastOneOf]
-// for declaring this type of validation outside the schema definition.
-//
 // Any relative path.Expression will be resolved using the attribute being
 // validated.
-func AtMostNOf(n int, expressions ...path.Expression) validator.String {
+func AtMostNOf(n int, expressions ...path.Expression) NineTypesValidator {
 	return AtMostNOfValidator{
 		N:               n,
 		PathExpressions: expressions,
