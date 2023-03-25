@@ -95,10 +95,16 @@ func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *
 		return nil
 	}
 
+	var securityZoneId goapstra.ObjectId
+	if !o.RoutingZoneId.IsNull() {
+		securityZoneId = goapstra.ObjectId(o.RoutingZoneId.ValueString())
+	}
+
 	return &goapstra.ResourceGroupAllocation{
 		ResourceGroup: goapstra.ResourceGroup{
-			Type: rgName.Type(),
-			Name: rgName,
+			Name:           rgName,
+			Type:           rgName.Type(),
+			SecurityZoneId: &securityZoneId,
 		},
 		PoolIds: poolIds,
 	}
