@@ -14,15 +14,7 @@ import (
 
 // This type of validator must satisfy all types.
 var (
-	_ validator.Bool    = AtMostNOfValidator{}
-	_ validator.Float64 = AtMostNOfValidator{}
-	_ validator.Int64   = AtMostNOfValidator{}
-	_ validator.List    = AtMostNOfValidator{}
-	_ validator.Map     = AtMostNOfValidator{}
-	_ validator.Number  = AtMostNOfValidator{}
-	_ validator.Object  = AtMostNOfValidator{}
-	_ validator.Set     = AtMostNOfValidator{}
-	_ validator.String  = AtMostNOfValidator{}
+	_ NineTypesValidator = AtMostNOfValidator{}
 )
 
 type NineTypesValidator interface {
