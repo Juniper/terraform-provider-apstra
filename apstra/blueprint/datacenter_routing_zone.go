@@ -65,6 +65,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
 			Optional:   true,
+			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{

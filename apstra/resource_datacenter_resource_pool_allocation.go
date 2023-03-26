@@ -37,6 +37,14 @@ func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequ
 	}
 }
 
+// example API transaction
+// {
+//  "id": "rag_ip_sz:mWSoTAQpY5DSifaDZ50,leaf_loopback_ips",
+//  "type": "ip",
+//  "name": "sz:mWSoTAQpY5DSifaDZ50,leaf_loopback_ips",
+//  "pool_ids": [ "66e3fd04-cbb1-4262-8556-01335dd9d040" ]
+//}
+
 func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
@@ -78,7 +86,12 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	}
 
 	// Set the new allocation
-	err = client.SetResourceAllocation(ctx, request)
+	switch {
+	case !plan.RoutingZoneId.IsNull():
+		err = client.SetResourceAllocation(ctx, request)
+	default:
+		err = client.SetResourceAllocation(ctx, request)
+	}
 	if err != nil {
 		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
 	}

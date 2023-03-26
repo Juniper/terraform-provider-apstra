@@ -7,18 +7,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
 type PoolAllocation struct {
-	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Role        types.String `tfsdk:"role"`
-	PoolIds     types.Set    `tfsdk:"pool_ids"`
+	BlueprintId   types.String `tfsdk:"blueprint_id"`
+	Role          types.String `tfsdk:"role"`
+	PoolIds       types.Set    `tfsdk:"pool_ids"`
+	RoutingZoneId types.String `tfsdk:"routing_zone_id"`
+	//PoolAllocationId types.String `tfsdk:"pool_allocation_id"` // placeholder for freeform
 }
 
 func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -48,6 +52,26 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 				),
 			},
 		},
+		"routing_zone_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "",
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				apstravalidator.AtMostNOf(1,
+					path.Expressions{
+						path.MatchRelative(),
+						// other blueprint objects to which pools can be assigned must be listed here
+						//path.MatchRoot("pool_allocation_id"), //placeholder for freeform
+					}...,
+				),
+			},
+		},
+		// placeholder for freeform
+		//"pool_allocation_id": resourceSchema.StringAttribute{
+		//	MarkdownDescription: "",
+		//	Optional:            true,
+		//	Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		//},
 	}
 }
 
@@ -71,11 +95,18 @@ func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *
 		return nil
 	}
 
+	rg := goapstra.ResourceGroup{
+		Type: rgName.Type(),
+		Name: rgName,
+	}
+
+	if !o.RoutingZoneId.IsNull() {
+		szId := goapstra.ObjectId(o.RoutingZoneId.ValueString())
+		rg.SecurityZoneId = &szId
+	}
+
 	return &goapstra.ResourceGroupAllocation{
-		ResourceGroup: goapstra.ResourceGroup{
-			Type: rgName.Type(),
-			Name: rgName,
-		},
-		PoolIds: poolIds,
+		ResourceGroup: rg,
+		PoolIds:       poolIds,
 	}
 }
