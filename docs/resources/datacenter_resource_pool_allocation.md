@@ -65,3 +65,7 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
 - `blueprint_id` (String) Apstra ID of the Blueprint to which the Resource Pool should be allocated.
 - `pool_ids` (Set of String) Apstra IDs of the Resource Pools to be allocated to the given Blueprint role.
 - `role` (String) Fabric Role (Apstra Resource Group Name)
+
+### Optional
+
+- `routing_zone_id` (String)
