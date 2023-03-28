@@ -22,6 +22,7 @@ func AllConfigletSectionNames() []string {
 	for i := range sections {
 		result[i] = sections[i].String()
 	}
+
 	return result
 }
 

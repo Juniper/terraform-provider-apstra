@@ -1,4 +1,4 @@
-data "apstra_configlet" "d" {
+data "apstra_configlet" "d1" {
   name = "US-MOTD"
 }
 
