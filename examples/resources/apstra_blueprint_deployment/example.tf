@@ -31,7 +31,7 @@ locals {
 }
 
 # Assign interface maps to fabric roles to eliminate build errors so we can deploy
-resource "apstra_datacenter_blueprint_device_allocation" "interface_map_assignment" {
+resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   for_each         = local.switches
   blueprint_id     = apstra_datacenter_blueprint.instantiation.id
   node_name        = each.key
@@ -39,7 +39,7 @@ resource "apstra_datacenter_blueprint_device_allocation" "interface_map_assignme
 }
 
 # Assign ASN pools to fabric roles to eliminate build errors so we can deploy
-resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
+resource "apstra_datacenter_resource_pool_allocation" "asn" {
   for_each     = local.asn_pools
   blueprint_id = apstra_datacenter_blueprint.instantiation.id
   role         = each.key
@@ -47,7 +47,7 @@ resource "apstra_datacenter_blueprint_resource_pool_allocation" "asn" {
 }
 
 # Assign IPv4 pools to fabric roles to eliminate build errors so we can deploy
-resource "apstra_datacenter_blueprint_resource_pool_allocation" "ipv4" {
+resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   for_each     = local.ipv4_pools
   blueprint_id = apstra_datacenter_blueprint.instantiation.id
   role         = each.key
@@ -61,9 +61,9 @@ resource "apstra_blueprint_deployment" "deploy" {
 
   #ensure that deployment doesn't run before build errors are resolved
   depends_on = [
-    apstra_datacenter_blueprint_device_allocation.interface_map_assignment,
-    apstra_datacenter_blueprint_resource_pool_allocation.asn,
-    apstra_datacenter_blueprint_resource_pool_allocation.ipv4,
+    apstra_datacenter_device_allocation.interface_map_assignment,
+    apstra_datacenter_resource_pool_allocation.asn,
+    apstra_datacenter_resource_pool_allocation.ipv4,
   ]
 
   # Version is replaced using `text/template` method. Only predefined values
