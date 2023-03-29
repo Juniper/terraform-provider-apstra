@@ -58,8 +58,7 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 		"section": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet"+
 				"should be applied. Must be one of '%s", strings.Join(utils.AllConfigletSectionNames(), "', '")),
-			Required:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllConfigletSectionNames()...)},
+			Required: true,
 		},
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",
@@ -120,4 +119,49 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 		NegationTemplateText: o.NegationTemplateText.ValueString(),
 		Filename:             o.FileName.ValueString(),
 	}
+}
+
+var _ validator.Object = ConfigletGeneratorValidator{}
+
+type ConfigletGeneratorValidator struct {
+}
+
+func (o ConfigletGeneratorValidator) Description(_ context.Context) string {
+	return fmt.Sprintf("Ensures that the section name matches the config style.")
+}
+
+func (o ConfigletGeneratorValidator) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {
+	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
+		return
+	}
+	var c Configlet
+	resp.Diagnostics.Append(req.Config.Get(ctx, &c)...)
+	tfGenerators := make([]ConfigletGenerator, len(c.Generators.Elements()))
+	resp.Diagnostics.Append(c.Generators.ElementsAs(ctx, &tfGenerators, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// Convert configlet generators to goapstra types
+generator:
+	for _, gen := range tfGenerators {
+		g := gen.Request(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		for _, i := range g.ConfigStyle.ValidSections() {
+			if i == g.Section {
+				continue generator
+			}
+		}
+		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", g.Section.String(), g.ConfigStyle.String()))
+	}
+	return
+}
+
+func ValidateConfigletGenerator() validator.Object {
+	return ConfigletGeneratorValidator{}
 }

@@ -69,6 +69,7 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: ConfigletGenerator{}.ResourceAttributesNested(),
+				Validators: []validator.Object{ValidateConfigletGenerator()},
 			},
 			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 		},

@@ -4,7 +4,6 @@ import (
 	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -38,25 +37,6 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-	tfGenerators := make([]design.ConfigletGenerator, len(config.Generators.Elements()))
-	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &tfGenerators, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Convert configlet generators to goapstra types
-generator:
-	for _, gen := range tfGenerators {
-		g := gen.Request(ctx, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		for _, i := range g.ConfigStyle.ValidSections() {
-			if i == g.Section {
-				continue generator
-			}
-		}
-		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", g.Section.String(), g.ConfigStyle.String()))
 	}
 }
 
