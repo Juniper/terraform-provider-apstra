@@ -56,7 +56,7 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 			Required:   true,
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)}},
 		"section": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. valid values are '%v", utils.ValidSectionsMap()),
+			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. Valid values are %v", utils.ValidSectionsMap()),
 			Required:            true,
 		},
 		"template_text": resourceSchema.StringAttribute{
@@ -105,7 +105,6 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 	}
 
 	var section goapstra.ConfigletSection
-	//err = section.FromString(o.Section.ValueString())
 	err = utils.FriendlyStringToAPIStringer(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
