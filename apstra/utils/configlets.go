@@ -16,13 +16,20 @@ func ConfigletSupportsPlatforms(configlet *goapstra.Configlet, platforms []goaps
 	return true
 }
 
-func AllConfigletSectionNames() []string {
-	sections := goapstra.AllConfigletSections()
-	result := make([]string, len(sections))
-	for i := range sections {
-		result[i] = sections[i].String()
+func SectionNamesByOS(os goapstra.PlatformOS) []string {
+	var r []string
+	for _, v := range os.ValidSections() {
+		r = append(r, StringersToFriendlyString(v, os))
 	}
-	return result
+	return r
+}
+
+func ValidSectionsMap() map[string][]string {
+	var m = make(map[string][]string)
+	for _, i := range goapstra.AllPlatformOSes() {
+		m[i.String()] = SectionNamesByOS(i)
+	}
+	return m
 }
 
 func AllPlatformOSNames() []string {

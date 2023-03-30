@@ -171,7 +171,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var spineAsnScheme goapstra.AsnAllocationScheme
-	err = spineAsnScheme.FromString(translateAsnAllocationSchemeFromWebUi(o.AsnAllocation.ValueString()))
+	err = utils.FriendlyStringToAPIStringer(&spineAsnScheme, o.AsnAllocation.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing ASN allocation scheme %q - %s",
@@ -197,7 +197,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var overlayControlProtocol goapstra.OverlayControlProtocol
-	err = overlayControlProtocol.FromString(o.OverlayControlProtocol.ValueString())
+	err = utils.FriendlyStringToAPIStringer(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing overlay control protocol %q - %s",
@@ -263,8 +263,8 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *goapstra.Templa
 
 	o.Name = types.StringValue(in.DisplayName)
 	o.Spine = NewDesignTemplateSpineObject(ctx, &in.Spine, diags)
-	o.AsnAllocation = types.StringValue(asnAllocationSchemeToString(in.AsnAllocationPolicy.SpineAsnScheme, diags))
-	o.OverlayControlProtocol = types.StringValue(overlayControlProtocolToString(in.VirtualNetworkPolicy.OverlayControlProtocol, diags))
+	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
+	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
 }
 

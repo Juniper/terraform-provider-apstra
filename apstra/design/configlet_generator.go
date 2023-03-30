@@ -56,10 +56,8 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 			Required:   true,
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)}},
 		"section": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet"+
-				"should be applied. Must be one of '%s", strings.Join(utils.AllConfigletSectionNames(), "', '")),
-			Required:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllConfigletSectionNames()...)},
+			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. Valid values are %v", utils.ValidSectionsMap()),
+			Required:            true,
 		},
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",
@@ -91,7 +89,7 @@ func (o ConfigletGenerator) AttrTypes() map[string]attr.Type {
 
 func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *goapstra.ConfigletGenerator, diags *diag.Diagnostics) {
 	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
-	o.Section = types.StringValue(in.Section.String())
+	o.Section = types.StringValue(utils.StringersToFriendlyString(in.Section, in.ConfigStyle))
 	o.TemplateText = types.StringValue(in.TemplateText)
 	o.NegationTemplateText = utils.StringValueOrNull(ctx, in.NegationTemplateText, diags)
 	o.FileName = utils.StringValueOrNull(ctx, in.Filename, diags)
@@ -107,7 +105,7 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 	}
 
 	var section goapstra.ConfigletSection
-	err = section.FromString(o.Section.ValueString())
+	err = utils.FriendlyStringToAPIStringer(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
 	}

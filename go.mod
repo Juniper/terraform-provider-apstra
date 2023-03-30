@@ -14,6 +14,7 @@ require (
 //replace bitbucket.org/apstrktr/goapstra => bitbucket.org/apstrktr/goapstra v0.0.0-20230323203410-4100b2482119
 
 require (
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/hashicorp/terraform-plugin-framework-validators v0.10.0
 	github.com/mitchellh/go-homedir v1.1.0
 )
@@ -25,6 +26,7 @@ require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/fatih/color v1.14.1 // indirect
+	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -66,4 +68,5 @@ require (
 	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
 	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
+	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

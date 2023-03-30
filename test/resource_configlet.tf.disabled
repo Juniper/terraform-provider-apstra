@@ -1,40 +1,84 @@
-#data "apstra_configlet" "d" {
+#data "apstra_configlet" "a" {
 #  name = "US-MOTD"
 #}
 #
+#output "out" {
+#  value = data.apstra_configlet.a
+#}
+#resource "apstra_configlet" "d" {
 #
-#resource "apstra_configlet" "r" {
-#  name        = "MOTD-TEST-ONCE-MORE"
-#  generators  = [
-#  {
-#    config_style           = "nxos"
-#    filename               = null
-#    negation_template_text = <<-EOT
-#                              no banner login
-#                              EOT
-#    section                = "system"
-#    template_text          = <<-EOT
-#                    banner login #
-#                    --------------------------------------------------------
-#                    THIS IS A TEST SCRIPT
-#                    --------------------------------------------------------
-#                    #
-#                     EOT
-#  },
-# {
-#    config_style           = "eos"
-#    filename               = null
-#    negation_template_text = <<-EOT
-#                      no banner motd
-#                    EOT
-#    section                = "system"
-#    template_text          = <<-EOT
-#                    banner motd
-#                    --------------------------------------------------------
-#                    This is a TEST SCRIPT
-#                    --------------------------------------------------------
-#                    EOF
-#                EOT
-# },
-#  ]
+# generators = tolist([
+#    {
+#    config_style = "nxos"
+#    filename = tostring(null)
+#    negation_template_text = "no ntp server {{ntp_server}} use-vrf {{mgmt_vrf}}"
+#    section = "system"
+#    template_text = "ntp server {{ntp_server}} use-vrf {{mgmt_vrf}}"
+#    },
+#    {
+#      config_style = "junos"
+#      filename = tostring(null)
+#      negation_template_text = tostring(null)
+#      section = "top_level_hierarchical"
+#      template_text = <<-EOT
+#        system {
+#          ntp {
+#            server {{ntp_server}} routing-instance {{junos_mgmt_vrf}};
+#          }
+#        }
+#        EOT
+#    },
+#   {
+#     config_style = "junos"
+#     filename = tostring(null)
+#     negation_template_text = tostring(null)
+#     section = "top_level_set_delete"
+#     template_text = <<-EOT
+#        system {
+#          ntp {
+#            server {{ntp_server}} routing-instance {{junos_mgmt_vrf}};
+#          }
+#        }
+#        EOT
+#   },{
+#     config_style = "junos"
+#     filename = tostring(null)
+#     negation_template_text = tostring(null)
+#     section = "interface_level_hierarchical"
+#     template_text = <<-EOT
+#        system {
+#          ntp {
+#            server {{ntp_server}} routing-instance {{junos_mgmt_vrf}};
+#          }
+#        }
+#        EOT
+#   },
+#   {
+#     config_style = "junos"
+#     filename = tostring(null)
+#     negation_template_text = tostring(null)
+#     section = "interface_level_set"
+#     template_text = <<-EOT
+#        system {
+#          ntp {
+#            server {{ntp_server}} routing-instance {{junos_mgmt_vrf}};
+#          }
+#        }
+#        EOT
+#   },
+#   {
+#     config_style = "junos"
+#     filename = tostring(null)
+#     negation_template_text = tostring(null)
+#     section = "interface_level_delete"
+#     template_text = <<-EOT
+#        system {
+#          ntp {
+#            server {{ntp_server}} routing-instance {{junos_mgmt_vrf}};
+#          }
+#        }
+#        EOT
+#   },
+#])
+#  name = "rosetta"
 #}
