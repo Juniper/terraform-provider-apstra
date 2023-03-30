@@ -6,28 +6,6 @@ import (
 	"strings"
 )
 
-func asnAllocationSchemeToFriendlyString(in goapstra.AsnAllocationScheme) string {
-	switch in {
-	case goapstra.AsnAllocationSchemeSingle:
-		return AsnAllocationSingle
-	case goapstra.AsnAllocationSchemeDistinct:
-		return AsnAllocationUnique
-	default:
-		return ""
-	}
-}
-
-func overlayControlProtocolToFriendlyString(in goapstra.OverlayControlProtocol) string {
-	switch in {
-	case goapstra.OverlayControlProtocolEvpn:
-		return OverlayControlProtocolEvpn
-	case goapstra.OverlayControlProtocolNone:
-		return OverlayControlProtocolStatic
-	default:
-		return ""
-	}
-}
-
 const (
 	JunOSTopLevelHierarchical       = "top_level_hierarchical"
 	JunOSTopLevelSetDelete          = "top_level_set_delete"
@@ -42,6 +20,43 @@ const (
 	OverlayControlProtocolEvpn   = "evpn"
 	OverlayControlProtocolStatic = "static"
 )
+
+func asnAllocationSchemeToFriendlyString(in goapstra.AsnAllocationScheme) string {
+	switch in {
+	case goapstra.AsnAllocationSchemeSingle:
+		return AsnAllocationSingle
+	case goapstra.AsnAllocationSchemeDistinct:
+		return AsnAllocationUnique
+	default:
+		return in.String()
+	}
+}
+
+func overlayControlProtocolToFriendlyString(in goapstra.OverlayControlProtocol) string {
+	switch in {
+	case goapstra.OverlayControlProtocolEvpn:
+		return OverlayControlProtocolEvpn
+	case goapstra.OverlayControlProtocolNone:
+		return OverlayControlProtocolStatic
+	default:
+		return in.String()
+	}
+}
+
+func overlayControlProtocolFromFriendlyString(out *goapstra.OverlayControlProtocol, in ...string) error {
+	if len(in) < 1 {
+		return out.FromString("")
+	}
+	switch in[0] {
+	case OverlayControlProtocolEvpn:
+		*out = goapstra.OverlayControlProtocolEvpn
+	case OverlayControlProtocolStatic:
+		*out = goapstra.OverlayControlProtocolNone
+	default:
+		return out.FromString(in[0])
+	}
+	return nil
+}
 
 func configletSectionIotaToFriendlyString(in goapstra.ConfigletSection, ctx ...fmt.Stringer) string {
 	if len(ctx) == 0 {
@@ -98,15 +113,17 @@ type StringerWithFromString interface {
 func FriendlyStringToAPIStringer(target StringerWithFromString, in ...string) error {
 	switch target.(type) {
 	case *goapstra.ConfigletSection:
-		return configletSectionFriendlyStringToIota(target.(*goapstra.ConfigletSection), in...)
+		return configletSectionFromFriendlyString(target.(*goapstra.ConfigletSection), in...)
 	case *goapstra.AsnAllocationScheme:
-		return asnAllocationSchemeFriendlyStringtoIota(target.(*goapstra.AsnAllocationScheme), in...)
+		return asnAllocationSchemeFromFriendlyString(target.(*goapstra.AsnAllocationScheme), in...)
+	case *goapstra.OverlayControlProtocol:
+		return overlayControlProtocolFromFriendlyString(target.(*goapstra.OverlayControlProtocol), in...)
 	default:
 		return target.FromString(in[0])
 	}
 }
 
-func configletSectionFriendlyStringToIota(out *goapstra.ConfigletSection, in ...string) error {
+func configletSectionFromFriendlyString(out *goapstra.ConfigletSection, in ...string) error {
 	if len(in) < 1 {
 		return out.FromString("")
 	}
@@ -140,7 +157,7 @@ func configletSectionFriendlyStringToIota(out *goapstra.ConfigletSection, in ...
 	return nil
 }
 
-func asnAllocationSchemeFriendlyStringtoIota(out *goapstra.AsnAllocationScheme, in ...string) error {
+func asnAllocationSchemeFromFriendlyString(out *goapstra.AsnAllocationScheme, in ...string) error {
 	if len(in) < 1 {
 		return out.FromString("")
 	}

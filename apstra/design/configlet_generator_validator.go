@@ -25,7 +25,6 @@ func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req val
 		return
 	}
 	var c ConfigletGenerator
-	//resp.Diagnostics.Append(req.Config.Get(ctx, &c)...)
 	resp.Diagnostics.Append(req.ConfigValue.As(ctx, &c, basetypes.ObjectAsOptions{})...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -38,14 +37,12 @@ func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req val
 	for _, i := range cg.ConfigStyle.ValidSections() {
 		if i == cg.Section {
 			valid = true
-			goto done
+			break
 		}
 	}
-done:
 	if !valid {
 		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", cg.Section.String(), cg.ConfigStyle.String()))
 	}
-	return
 }
 
 func ValidateConfigletGenerator() validator.Object {

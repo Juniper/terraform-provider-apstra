@@ -11,7 +11,6 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
-var _ resource.ResourceWithValidateConfig = &resourceConfiglet{}
 
 type resourceConfiglet struct {
 	client *goapstra.Client
@@ -29,14 +28,6 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a specific Configlet.\n\n",
 		Attributes:          design.Configlet{}.ResourceAttributes(),
-	}
-}
-
-func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config design.Configlet
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }
 

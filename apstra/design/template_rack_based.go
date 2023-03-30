@@ -197,7 +197,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var overlayControlProtocol goapstra.OverlayControlProtocol
-	err = overlayControlProtocol.FromString(o.OverlayControlProtocol.ValueString())
+	err = utils.FriendlyStringToAPIStringer(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing overlay control protocol %q - %s",
