@@ -71,8 +71,8 @@ func configletSectionIotaToFriendlyString(in goapstra.ConfigletSection, ctx ...f
 }
 
 /*
-	This accepts a Iota, potential context strings and returns a string that is what the customer would see on the UI
-    For example, for Junos, the configletsection Iota
+		This accepts a Iota, potential context strings and returns a string that is what the customer would see on the UI
+	    For example, for Junos, the configletsection Iota
 */
 func StringersToFriendlyString(in ...fmt.Stringer) string {
 	if len(in) == 0 {

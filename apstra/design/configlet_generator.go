@@ -11,6 +11,7 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
 	"terraform-provider-apstra/apstra/utils"
 )
@@ -56,9 +57,8 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 			Required:   true,
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)}},
 		"section": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet"+
-				"should be applied. Must be one of '%s", strings.Join(utils.AllConfigletSectionNames(), "', '")),
-			Required: true,
+			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. valid values are '%v", utils.ValidSectionsMap()),
+			Required:            true,
 		},
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",
@@ -138,26 +138,26 @@ func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req val
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		return
 	}
-	var c Configlet
-	resp.Diagnostics.Append(req.Config.Get(ctx, &c)...)
-	tfGenerators := make([]ConfigletGenerator, len(c.Generators.Elements()))
-	resp.Diagnostics.Append(c.Generators.ElementsAs(ctx, &tfGenerators, false)...)
+	var c ConfigletGenerator
+	//resp.Diagnostics.Append(req.Config.Get(ctx, &c)...)
+	resp.Diagnostics.Append(req.ConfigValue.As(ctx, &c, basetypes.ObjectAsOptions{})...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// Convert configlet generators to goapstra types
-generator:
-	for _, gen := range tfGenerators {
-		g := gen.Request(ctx, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
+	cg := c.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	valid := false
+	for _, i := range cg.ConfigStyle.ValidSections() {
+		if i == cg.Section {
+			valid = true
+			goto done
 		}
-		for _, i := range g.ConfigStyle.ValidSections() {
-			if i == g.Section {
-				continue generator
-			}
-		}
-		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", g.Section.String(), g.ConfigStyle.String()))
+	}
+done:
+	if !valid {
+		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", cg.Section.String(), cg.ConfigStyle.String()))
 	}
 	return
 }
