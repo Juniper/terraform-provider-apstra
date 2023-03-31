@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceRackType{}
 
 type dataSourceRackType struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceRackType) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,13 +49,13 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	var err error
-	var api *goapstra.RackType
-	var ace goapstra.ApstraClientErr
+	var api *apstra.RackType
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		api, err = o.client.GetRackTypeByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Rack Type not found",
@@ -63,8 +63,8 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = o.client.GetRackType(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
+		api, err = o.client.GetRackType(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Rack Type not found",

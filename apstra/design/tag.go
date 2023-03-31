@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -115,19 +115,19 @@ func (o Tag) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *Tag) LoadApiData(_ context.Context, in *goapstra.DesignTagData, _ *diag.Diagnostics) {
+func (o *Tag) LoadApiData(_ context.Context, in *apstra.DesignTagData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
 }
 
-func (o *Tag) Request(_ context.Context, _ *diag.Diagnostics) *goapstra.DesignTagRequest {
-	return &goapstra.DesignTagRequest{
+func (o *Tag) Request(_ context.Context, _ *diag.Diagnostics) *apstra.DesignTagRequest {
+	return &apstra.DesignTagRequest{
 		Label:       o.Name.ValueString(),
 		Description: o.Description.ValueString(),
 	}
 }
 
-func NewTagSet(ctx context.Context, in []goapstra.DesignTagData, diags *diag.Diagnostics) types.Set {
+func NewTagSet(ctx context.Context, in []apstra.DesignTagData, diags *diag.Diagnostics) types.Set {
 	if len(in) == 0 {
 		return types.SetNull(types.ObjectType{AttrTypes: Tag{}.AttrTypes()})
 	}

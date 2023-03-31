@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -53,20 +53,20 @@ func (o EsiLagInfo) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *EsiLagInfo) LoadApiData(_ context.Context, in *goapstra.EsiLagInfo, diags *diag.Diagnostics) {
+func (o *EsiLagInfo) LoadApiData(_ context.Context, in *apstra.EsiLagInfo, diags *diag.Diagnostics) {
 	o.L3PeerLinkCount = types.Int64Value(int64(in.AccessAccessLinkCount))
 	o.L3PeerLinkSpeed = types.StringValue(string(in.AccessAccessLinkSpeed))
 }
 
-func (o *EsiLagInfo) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.EsiLagInfo {
+func (o *EsiLagInfo) Request(_ context.Context, diags *diag.Diagnostics) *apstra.EsiLagInfo {
 	if o.L3PeerLinkSpeed.IsNull() && o.L3PeerLinkSpeed.IsNull() {
 		return nil
 	}
 
 	if !o.L3PeerLinkSpeed.IsNull() && !o.L3PeerLinkCount.IsNull() {
-		return &goapstra.EsiLagInfo{
+		return &apstra.EsiLagInfo{
 			AccessAccessLinkCount: int(o.L3PeerLinkCount.ValueInt64()),
-			AccessAccessLinkSpeed: goapstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString()),
+			AccessAccessLinkSpeed: apstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString()),
 		}
 	}
 
@@ -74,7 +74,7 @@ func (o *EsiLagInfo) Request(_ context.Context, diags *diag.Diagnostics) *goapst
 	return nil
 }
 
-func NewEsiLagInfo(ctx context.Context, in *goapstra.EsiLagInfo, diags *diag.Diagnostics) types.Object {
+func NewEsiLagInfo(ctx context.Context, in *apstra.EsiLagInfo, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		return types.ObjectNull(EsiLagInfo{}.AttrTypes())
 	}

@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"encoding/json"
 	"errors"
@@ -34,7 +34,7 @@ var _ resource.ResourceWithConfigure = &resourceInterfaceMap{}
 var _ resource.ResourceWithValidateConfig = &resourceInterfaceMap{}
 
 type resourceInterfaceMap struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceInterfaceMap) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -178,7 +178,7 @@ func (o *resourceInterfaceMap) Create(ctx context.Context, req resource.CreateRe
 	// create new state object
 	var state rInterfaceMap
 
-	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
+	// id is not in the apstra.InterfaceMapData object we're using, so set it directly
 	state.Id = types.StringValue(string(id))
 
 	state.loadApiData(ctx, request, &resp.Diagnostics)
@@ -204,10 +204,10 @@ func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Get Interface Map from API and then update what is in state from what the API returns
-	iMap, err := o.client.GetInterfaceMap(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	iMap, err := o.client.GetInterfaceMap(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -249,7 +249,7 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	err := o.client.UpdateInterfaceMap(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	err := o.client.UpdateInterfaceMap(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Interface Map", err.Error())
 		return
@@ -258,7 +258,7 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 	// create new state object
 	var newState rInterfaceMap
 
-	// id is not in the goapstra.InterfaceMapData object we're using, so set it directly
+	// id is not in the apstra.InterfaceMapData object we're using, so set it directly
 	newState.Id = plan.Id
 
 	newState.loadApiData(ctx, request, &resp.Diagnostics)
@@ -284,10 +284,10 @@ func (o *resourceInterfaceMap) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	// Delete Interface Map by calling API
-	err := o.client.DeleteInterfaceMap(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteInterfaceMap(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
 			resp.Diagnostics.AddError(
 				"error deleting Interface Map", err.Error())
 		}
@@ -304,12 +304,12 @@ type rInterfaceMap struct {
 	UnusedInterfaces types.Set    `tfsdk:"unused_interfaces"`
 }
 
-func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) (*goapstra.LogicalDevice, *goapstra.DeviceProfile) {
-	var ace goapstra.ApstraClientErr
+func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) (*apstra.LogicalDevice, *apstra.DeviceProfile) {
+	var ace apstra.ApstraClientErr
 	// fetch the logical device
-	ld, err := client.GetLogicalDevice(ctx, goapstra.ObjectId(o.LogicalDeviceId.ValueString()))
+	ld, err := client.GetLogicalDevice(ctx, apstra.ObjectId(o.LogicalDeviceId.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
 				fmt.Sprintf(fmt.Sprintf("logical device'%s' not found", o.DeviceProfileId.ValueString())))
 		}
@@ -317,9 +317,9 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *goapst
 	}
 
 	// fetch the device profile specified by the user
-	dp, err := client.GetDeviceProfile(ctx, goapstra.ObjectId(o.DeviceProfileId.ValueString()))
+	dp, err := client.GetDeviceProfile(ctx, apstra.ObjectId(o.DeviceProfileId.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
 				fmt.Sprintf(fmt.Sprintf("device profile '%s' not found", o.DeviceProfileId.ValueString())))
 		}
@@ -350,13 +350,13 @@ func (o *rInterfaceMap) ldPortNames(ctx context.Context, diags *diag.Diagnostics
 
 // validatePortSelections ensures that (a) all logical device ports in o appear in ld
 // and (b) no ports defined in ld are missing from o
-func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *goapstra.LogicalDevice, diags *diag.Diagnostics) {
+func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *apstra.LogicalDevice, diags *diag.Diagnostics) {
 	plannedPortNames := o.ldPortNames(ctx, diags)
 	if diags.HasError() {
 		return
 	}
 
-	// prepare a slice of port names required by the goapstra.LogicalDeviceData []string{"1/1", "1/2", ...etc...}
+	// prepare a slice of port names required by the apstra.LogicalDeviceData []string{"1/1", "1/2", ...etc...}
 	ldii := getLogicalDevicePortInfo(ld)
 	requiredPortNames := make([]string, len(ldii))
 	var i int
@@ -399,7 +399,7 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *goapstra
 // unused) belonging to the same transformation as any allocated interfaces.
 // This satisfies Apstra's requirement that all interfaces belonging to a
 // transformation be mapped together.
-func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) []goapstra.InterfaceMapInterface {
+func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDevice, dp *apstra.DeviceProfile, diags *diag.Diagnostics) []apstra.InterfaceMapInterface {
 	// extract interface list from plan
 	var planInterfaces []rInterfaceMapInterface
 	diags.Append(o.Interfaces.ElementsAs(ctx, &planInterfaces, true)...)
@@ -422,7 +422,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 		return nil
 	}
 
-	result := make([]goapstra.InterfaceMapInterface, len(planInterfaces))
+	result := make([]apstra.InterfaceMapInterface, len(planInterfaces))
 	portIdToSelectedTransformId := make(map[int]int) // to ensure we don't double-dip transform IDs
 
 	for i, planInterface := range planInterfaces {
@@ -531,10 +531,10 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 			}
 		}
 
-		result[i] = goapstra.InterfaceMapInterface{
+		result[i] = apstra.InterfaceMapInterface{
 			Name:  planInterface.PhysicalInterfaceName.ValueString(),
 			Roles: ldpiMap[planInterface.LogicalDevicePort.ValueString()].Roles,
-			Mapping: goapstra.InterfaceMapMapping{
+			Mapping: apstra.InterfaceMapMapping{
 				DPPortId:      portId,
 				DPTransformId: transformation.TransformationId,
 				DPInterfaceId: transformInterface.InterfaceId,
@@ -544,7 +544,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 			ActiveState: transformInterface.State == "active",
 			Position:    i + 1,
 			Speed:       transformInterface.Speed,
-			Setting: goapstra.InterfaceMapInterfaceSetting{
+			Setting: apstra.InterfaceMapInterfaceSetting{
 				Param: transformation.Interfaces[interfaceIdx].Setting,
 			},
 		}
@@ -571,10 +571,10 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 				diags.AddError("error getting transformation interface by ID", err.Error())
 				return nil
 			}
-			result = append(result, goapstra.InterfaceMapInterface{
+			result = append(result, apstra.InterfaceMapInterface{
 				Name:  intf.Name,
-				Roles: goapstra.LogicalDevicePortRoleUnused,
-				Mapping: goapstra.InterfaceMapMapping{
+				Roles: apstra.LogicalDevicePortRoleUnused,
+				Mapping: apstra.InterfaceMapMapping{
 					DPPortId:      portId,
 					DPTransformId: unused.transformId,
 					DPInterfaceId: unusedInterfaceId,
@@ -584,7 +584,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *goapstra.Logical
 				ActiveState: true,
 				Position:    positionIdx,
 				Speed:       intf.Speed,
-				Setting: goapstra.InterfaceMapInterfaceSetting{
+				Setting: apstra.InterfaceMapInterfaceSetting{
 					Param: intf.Setting,
 				},
 			})
@@ -599,7 +599,7 @@ type unusedInterfaces struct {
 	interfaces  []int
 }
 
-func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) *goapstra.InterfaceMapData {
+func (o *rInterfaceMap) request(ctx context.Context, ld *apstra.LogicalDevice, dp *apstra.DeviceProfile, diags *diag.Diagnostics) *apstra.InterfaceMapData {
 	allocatedInterfaces := o.iMapInterfaces(ctx, ld, dp, diags)
 	if diags.HasError() {
 		return nil
@@ -610,7 +610,7 @@ func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice,
 		return nil
 	}
 
-	return &goapstra.InterfaceMapData{
+	return &apstra.InterfaceMapData{
 		LogicalDeviceId: ld.Id,
 		DeviceProfileId: dp.Id,
 		Label:           o.Name.ValueString(),
@@ -618,7 +618,7 @@ func (o *rInterfaceMap) request(ctx context.Context, ld *goapstra.LogicalDevice,
 	}
 }
 
-func (o *rInterfaceMap) loadApiData(ctx context.Context, in *goapstra.InterfaceMapData, diags *diag.Diagnostics) {
+func (o *rInterfaceMap) loadApiData(ctx context.Context, in *apstra.InterfaceMapData, diags *diag.Diagnostics) {
 	// create two slices. Data from elements of in.Interfaces will filter into one of these depending
 	// on whether the element represents an "in use" interface. both receiving slices are oversize.
 	a := make([]rInterfaceMapInterface, len(in.Interfaces)) // allocated / in use interfaces
@@ -730,7 +730,7 @@ func (o rInterfaceMapInterface) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *rInterfaceMapInterface) loadApiData(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
+func (o *rInterfaceMapInterface) loadApiData(ctx context.Context, in *apstra.InterfaceMapInterface, diags *diag.Diagnostics) {
 	o.PhysicalInterfaceName = types.StringValue(in.Name)
 	o.TransformationId = types.Int64Value(int64(in.Mapping.DPTransformId))
 
@@ -762,13 +762,13 @@ func ldPanelAndPortFromString(in string, diags *diag.Diagnostics) (int, int) {
 }
 
 type ldPortInfo struct {
-	Speed goapstra.LogicalDevicePortSpeed
-	Roles goapstra.LogicalDevicePortRoleFlags
+	Speed apstra.LogicalDevicePortSpeed
+	Roles apstra.LogicalDevicePortRoleFlags
 }
 
 // getLogicalDevicePortInfo extracts a map[string]ldPortInfo keyed by logical
 // device panel/port number, e.g. "1/3"
-func getLogicalDevicePortInfo(ld *goapstra.LogicalDevice) map[string]ldPortInfo {
+func getLogicalDevicePortInfo(ld *apstra.LogicalDevice) map[string]ldPortInfo {
 	result := make(map[string]ldPortInfo)
 	for panelIdx, panel := range ld.Data.Panels {
 		panelNum := panelIdx + 1
@@ -792,7 +792,7 @@ func getLogicalDevicePortInfo(ld *goapstra.LogicalDevice) map[string]ldPortInfo 
 // port ID and a map of "active" transformations keyed by transformtion ID.
 // Only transformations matching the specified physical interface name and speed
 // are returned.
-func getPortIdAndTransformations(dp *goapstra.DeviceProfile, speed goapstra.LogicalDevicePortSpeed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]goapstra.Transformation) {
+func getPortIdAndTransformations(dp *apstra.DeviceProfile, speed apstra.LogicalDevicePortSpeed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]apstra.Transformation) {
 	// find the device profile "port info" by physical port name (expecting exactly one match from DP)
 	dpPort, err := dp.Data.PortByInterfaceName(phyIntfName)
 	if err != nil {
@@ -813,11 +813,11 @@ func getPortIdAndTransformations(dp *goapstra.DeviceProfile, speed goapstra.Logi
 	return dpPort.PortId, transformations
 }
 
-// iMapUnallocatedInterfaces takes []goapstra.InterfaceMapInterface and
-// *goapstra.DeviceProfile, returns []goapstra.InterfaceMapInterface
-// representing all interfaces from the *goapstra.DeviceProfile which did
+// iMapUnallocatedInterfaces takes []apstra.InterfaceMapInterface and
+// *apstra.DeviceProfile, returns []apstra.InterfaceMapInterface
+// representing all interfaces from the *apstra.DeviceProfile which did
 // not appear in the supplied slice.
-func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, dp *goapstra.DeviceProfile, diags *diag.Diagnostics) []goapstra.InterfaceMapInterface {
+func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp *apstra.DeviceProfile, diags *diag.Diagnostics) []apstra.InterfaceMapInterface {
 	// make a map[portId]struct{} so we can quickly determine whether
 	// a port ID has been previously allocated.
 	allocatedPortCount := len(allocatedPorts)
@@ -828,7 +828,7 @@ func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, d
 
 	missingAllocationCount := len(dp.Data.Ports) - len(allocatedPortIds) // device profile ports - used port IDs (ignore breakout ports)
 
-	result := make([]goapstra.InterfaceMapInterface, missingAllocationCount)
+	result := make([]apstra.InterfaceMapInterface, missingAllocationCount)
 	var i int
 	for _, dpPort := range dp.Data.Ports {
 		if _, ok := allocatedPortIds[dpPort.PortId]; ok {
@@ -840,10 +840,10 @@ func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, d
 			diags.AddError(errProviderBug, "port has no default transformation")
 		}
 
-		result[i] = goapstra.InterfaceMapInterface{
+		result[i] = apstra.InterfaceMapInterface{
 			Name:  transformation.Interfaces[0].Name,
-			Roles: goapstra.LogicalDevicePortRoleUnused,
-			Mapping: goapstra.InterfaceMapMapping{
+			Roles: apstra.LogicalDevicePortRoleUnused,
+			Mapping: apstra.InterfaceMapMapping{
 				DPPortId:      dpPort.PortId,
 				DPTransformId: transformation.TransformationId,
 				DPInterfaceId: transformation.Interfaces[0].InterfaceId, // blindly use the first interface - UI seems to do this and testing shows there's always at least 1
@@ -853,7 +853,7 @@ func iMapUnallocaedInterfaces(allocatedPorts []goapstra.InterfaceMapInterface, d
 			ActiveState: true, // unclear what this is, UI sets "active"
 			Position:    allocatedPortCount + i + 1,
 			Speed:       transformation.Interfaces[0].Speed,
-			Setting:     goapstra.InterfaceMapInterfaceSetting{Param: transformation.Interfaces[0].Setting},
+			Setting:     apstra.InterfaceMapInterfaceSetting{Param: transformation.Interfaces[0].Setting},
 		}
 
 		i++

@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceVniPool{}
 
 type dataSourceVniPool struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceVniPool) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,13 +49,13 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	var err error
-	var apiData *goapstra.VniPool
-	var ace goapstra.ApstraClientErr
+	var apiData *apstra.VniPool
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetVniPoolByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"VNI Pool not found",
@@ -63,8 +63,8 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 			return
 		}
 	case !config.Id.IsNull():
-		apiData, err = o.client.GetVniPool(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		apiData, err = o.client.GetVniPool(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"VNI Pool not found",

@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -126,7 +126,7 @@ func (o LogicalDevice) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *LogicalDevice) LoadApiData(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) {
+func (o *LogicalDevice) LoadApiData(ctx context.Context, in *apstra.LogicalDeviceData, diags *diag.Diagnostics) {
 	panels := make([]LogicalDevicePanel, len(in.Panels))
 	for i, panel := range in.Panels {
 		panels[i].LoadApiData(ctx, &panel, diags)
@@ -147,7 +147,7 @@ func (o *LogicalDevice) LoadApiData(ctx context.Context, in *goapstra.LogicalDev
 	}
 }
 
-func (o *LogicalDevice) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDeviceData {
+func (o *LogicalDevice) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.LogicalDeviceData {
 	var d diag.Diagnostics
 	var panelElements []LogicalDevicePanel
 	d = o.Panels.ElementsAs(ctx, &panelElements, false)
@@ -156,11 +156,11 @@ func (o *LogicalDevice) Request(ctx context.Context, diags *diag.Diagnostics) *g
 		return nil
 	}
 
-	panels := make([]goapstra.LogicalDevicePanel, len(panelElements))
+	panels := make([]apstra.LogicalDevicePanel, len(panelElements))
 	for i, panel := range panelElements {
 		panels[i] = *panel.Request(ctx, diags)
 	}
-	return &goapstra.LogicalDeviceData{
+	return &apstra.LogicalDeviceData{
 		DisplayName: o.Name.ValueString(),
 		Panels:      panels,
 	}
@@ -172,7 +172,7 @@ func (o *LogicalDevice) GetPanels(ctx context.Context, diags *diag.Diagnostics) 
 	return panels
 }
 
-func NewLogicalDeviceObject(ctx context.Context, in *goapstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
+func NewLogicalDeviceObject(ctx context.Context, in *apstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		return types.ObjectNull(LogicalDevice{}.AttrTypes())
 	}

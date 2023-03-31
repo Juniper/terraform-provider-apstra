@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceIpv4Pool{}
 
 type dataSourceIpv4Pool struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceIpv4Pool) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -48,13 +48,13 @@ func (o *dataSourceIpv4Pool) Read(ctx context.Context, req datasource.ReadReques
 	}
 
 	var err error
-	var apiData *goapstra.IpPool
-	var ace goapstra.ApstraClientErr
+	var apiData *apstra.IpPool
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetIp4PoolByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"IPv4 Pool not found",
@@ -62,8 +62,8 @@ func (o *dataSourceIpv4Pool) Read(ctx context.Context, req datasource.ReadReques
 			return
 		}
 	case !config.Id.IsNull():
-		apiData, err = o.client.GetIp4Pool(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		apiData, err = o.client.GetIp4Pool(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"IPv4 Pool not found",

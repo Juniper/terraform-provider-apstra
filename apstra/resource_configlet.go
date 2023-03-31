@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,7 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
 
 type resourceConfiglet struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceConfiglet) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -73,10 +73,10 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 	}
 
 	var err error
-	var api *goapstra.Configlet
-	var ace goapstra.ApstraClientErr
-	api, err = o.client.GetConfiglet(ctx, goapstra.ObjectId(state.Id.ValueString()))
-	if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+	var api *apstra.Configlet
+	var ace apstra.ApstraClientErr
+	api, err = o.client.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -107,10 +107,10 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 		return
 	}
 	// Update Configlet
-	err := o.client.UpdateConfiglet(ctx, goapstra.ObjectId(plan.Id.ValueString()), c)
+	err := o.client.UpdateConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()), c)
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -134,10 +134,10 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 		return
 	}
 	// Delete Configlet by calling API
-	err := o.client.DeleteConfiglet(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError("error deleting Configlet", err.Error())
 			return
 		}

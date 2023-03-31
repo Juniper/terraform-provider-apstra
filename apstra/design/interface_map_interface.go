@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -67,7 +67,7 @@ func (o InterfaceMapInterface) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *InterfaceMapInterface) LoadApiData(ctx context.Context, in *goapstra.InterfaceMapInterface, diags *diag.Diagnostics) {
+func (o *InterfaceMapInterface) LoadApiData(ctx context.Context, in *apstra.InterfaceMapInterface, diags *diag.Diagnostics) {
 	var mapping InterfaceMapMapping
 	mapping.LoadApiData(ctx, &in.Mapping, diags)
 
@@ -80,7 +80,7 @@ func (o *InterfaceMapInterface) LoadApiData(ctx context.Context, in *goapstra.In
 	o.Setting = types.StringValue(in.Setting.Param)
 }
 
-func NewInterfaceMapInterfaceSet(ctx context.Context, in []goapstra.InterfaceMapInterface, diags *diag.Diagnostics) types.Set {
+func NewInterfaceMapInterfaceSet(ctx context.Context, in []apstra.InterfaceMapInterface, diags *diag.Diagnostics) types.Set {
 	interfaces := make([]InterfaceMapInterface, len(in))
 	for i := range in {
 		interfaces[i].LoadApiData(ctx, &in[i], diags)

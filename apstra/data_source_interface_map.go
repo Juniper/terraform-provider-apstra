@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfaceMap{}
 
 type dataSourceInterfaceMap struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceInterfaceMap) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,13 +49,13 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var err error
-	var api *goapstra.InterfaceMap
-	var ace goapstra.ApstraClientErr
+	var api *apstra.InterfaceMap
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		api, err = o.client.GetInterfaceMapByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Interface Map not found",
@@ -63,8 +63,8 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = o.client.GetInterfaceMap(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // 404?
+		api, err = o.client.GetInterfaceMap(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // 404?
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Interface Map not found",

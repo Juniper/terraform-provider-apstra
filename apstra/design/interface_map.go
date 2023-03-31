@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -57,7 +57,7 @@ func (o InterfaceMap) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 	}
 }
 
-func (o *InterfaceMap) LoadApiData(ctx context.Context, in *goapstra.InterfaceMapData, diags *diag.Diagnostics) {
+func (o *InterfaceMap) LoadApiData(ctx context.Context, in *apstra.InterfaceMapData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.LogicalDevice = types.StringValue(string(in.LogicalDeviceId))
 	o.DeviceProfile = types.StringValue(string(in.DeviceProfileId))

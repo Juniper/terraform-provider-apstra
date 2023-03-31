@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -133,7 +133,7 @@ func (o MlagInfo) AttrTypes() map[string]attr.Type {
 		"l3_peer_link_port_channel_id": types.Int64Type}
 }
 
-func (o *MlagInfo) LoadApiData(_ context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) {
+func (o *MlagInfo) LoadApiData(_ context.Context, in *apstra.LeafMlagInfo, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load MlagInfo from nil pointer")
 	}
@@ -159,7 +159,7 @@ func (o *MlagInfo) LoadApiData(_ context.Context, in *goapstra.LeafMlagInfo, dia
 	o.L3PeerLinkPortChannelId = l3PeerLinkPortChannelId
 }
 
-func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.LeafMlagInfo {
+func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *apstra.LeafMlagInfo {
 	if o == nil {
 		return nil
 	}
@@ -180,9 +180,9 @@ func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *goapstra
 		return nil
 	}
 
-	var leafLeafLinkSpeed goapstra.LogicalDevicePortSpeed
+	var leafLeafLinkSpeed apstra.LogicalDevicePortSpeed
 	if !o.PeerLinkSpeed.IsNull() {
-		leafLeafLinkSpeed = goapstra.LogicalDevicePortSpeed(o.PeerLinkSpeed.ValueString())
+		leafLeafLinkSpeed = apstra.LogicalDevicePortSpeed(o.PeerLinkSpeed.ValueString())
 	} else {
 		diags.AddError(errProviderBug, "attempt to generated LeafMlagInfo with null PeerLinkSpeed")
 		return nil
@@ -213,12 +213,12 @@ func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *goapstra
 		leafLeafL3LinkPortChannelId = int(o.L3PeerLinkPortChannelId.ValueInt64())
 	}
 
-	var leafLeafL3LinkSpeed goapstra.LogicalDevicePortSpeed
+	var leafLeafL3LinkSpeed apstra.LogicalDevicePortSpeed
 	if !o.L3PeerLinkSpeed.IsNull() {
-		leafLeafL3LinkSpeed = goapstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString())
+		leafLeafL3LinkSpeed = apstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString())
 	}
 
-	return &goapstra.LeafMlagInfo{
+	return &apstra.LeafMlagInfo{
 		LeafLeafL3LinkCount:         leafLeafL3LinkCount,
 		LeafLeafL3LinkPortChannelId: leafLeafL3LinkPortChannelId,
 		LeafLeafL3LinkSpeed:         leafLeafL3LinkSpeed,
@@ -229,7 +229,7 @@ func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *goapstra
 	}
 }
 
-func NewMlagInfoObject(ctx context.Context, in *goapstra.LeafMlagInfo, diags *diag.Diagnostics) types.Object {
+func NewMlagInfoObject(ctx context.Context, in *apstra.LeafMlagInfo, diags *diag.Diagnostics) types.Object {
 	if in == nil || in.LeafLeafLinkCount == 0 {
 		return types.ObjectNull(MlagInfo{}.AttrTypes())
 	}

@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceTemplates{}
 
 type dataSourceTemplates struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceTemplates) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -61,7 +61,7 @@ func (o *dataSourceTemplates) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	var ids []goapstra.ObjectId
+	var ids []apstra.ObjectId
 	var err error
 	//if config.Type.IsNull() && config.OverlayControlProtocol.IsNull() { // see todo in Schema(), then restore this
 	if config.Type.IsNull() {

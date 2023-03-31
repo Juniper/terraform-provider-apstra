@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/go-version"
@@ -24,7 +24,7 @@ var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprints{}
 var _ versionValidator = &dataSourceBlueprints{}
 
 type dataSourceBlueprints struct {
-	client           *goapstra.Client
+	client           *apstra.Client
 	minClientVersion *version.Version
 	maxClientVersion *version.Version
 }
@@ -51,7 +51,7 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
 					twoStageL3ClosRefDesignUiName,
-					goapstra.RefDesignFreeform.String(),
+					apstra.RefDesignFreeform.String(),
 				)},
 			},
 		},
@@ -69,7 +69,7 @@ func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasourc
 		return
 	}
 
-	if config.RefDesign.ValueString() == goapstra.RefDesignFreeform.String() {
+	if config.RefDesign.ValueString() == apstra.RefDesignFreeform.String() {
 		var err error
 		o.minClientVersion, err = version.NewVersion("4.1.2")
 		if err != nil {
@@ -95,7 +95,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
-	var ids []goapstra.ObjectId
+	var ids []apstra.ObjectId
 	var err error
 	if config.RefDesign.IsNull() {
 		ids, err = o.client.ListAllBlueprintIds(ctx)
@@ -108,7 +108,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		// substitute UI name for API name
 		switch config.RefDesign.ValueString() {
 		case twoStageL3ClosRefDesignUiName:
-			refDesign = goapstra.RefDesignDatacenter.String()
+			refDesign = apstra.RefDesignDatacenter.String()
 		default:
 			refDesign = config.RefDesign.ValueString()
 		}

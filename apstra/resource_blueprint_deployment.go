@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,7 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceBlueprintDeploy{}
 
 type resourceBlueprintDeploy struct {
-	client          *goapstra.Client
+	client          *apstra.Client
 	commentTemplate *blueprint.CommentTemplate
 	lockFunc        func(context.Context, string) error
 	unlockFunc      func(context.Context, string) error
@@ -71,7 +71,7 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		}
 	}()
 
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.Diagnostics.AddError("Blueprint not found", fmt.Sprintf("Blueprint %q not found", plan.BlueprintId.ValueString()))
 	}
 	if resp.Diagnostics.HasError() {
@@ -99,7 +99,7 @@ func (o *resourceBlueprintDeploy) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -130,7 +130,7 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		return
 	}
 
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -175,7 +175,7 @@ func (o *resourceBlueprintDeploy) Delete(ctx context.Context, req resource.Delet
 	}
 
 	// No need to proceed if the blueprint no longer exists
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
 		return
 	}
 

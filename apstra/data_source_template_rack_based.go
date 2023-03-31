@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceTemplateRackBased{}
 
 type dataSourceTemplateRackBased struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceTemplateRackBased) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -48,32 +48,32 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 	}
 
 	var err error
-	var api *goapstra.TemplateRackBased
-	var ace goapstra.ApstraClientErr
+	var api *apstra.TemplateRackBased
+	var ace apstra.ApstraClientErr
 
 	switch { // attribute validation ensures that one of Name and ID must be set.
 	case !config.Name.IsNull():
 		api, err = o.client.GetRackBasedTemplateByName(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) {
 			switch ace.Type() {
-			case goapstra.ErrNotfound:
+			case apstra.ErrNotfound:
 				resp.Diagnostics.AddError(
 					"Rack Based Template not found",
 					fmt.Sprintf("Rack Based Template with name %q does not exist", config.Name.ValueString()))
-			case goapstra.ErrWrongType:
+			case apstra.ErrWrongType:
 				resp.Diagnostics.AddError("Specified Template has wrong type", err.Error())
 			}
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(config.Id.ValueString()))
+		api, err = o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if err != nil && errors.As(err, &ace) {
 			switch ace.Type() {
-			case goapstra.ErrNotfound:
+			case apstra.ErrNotfound:
 				resp.Diagnostics.AddError(
 					"Rack Based Template not found",
 					fmt.Sprintf("Rack Based Template with ID %q does not exist", config.Id.ValueString()))
-			case goapstra.ErrWrongType:
+			case apstra.ErrWrongType:
 				resp.Diagnostics.AddError("Specified Template has wrong type", err.Error())
 			}
 			return

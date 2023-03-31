@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ var _ resource.ResourceWithConfigure = &resourceLogicalDevice{}
 var _ resource.ResourceWithValidateConfig = &resourceLogicalDevice{}
 
 type resourceLogicalDevice struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceLogicalDevice) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -97,10 +97,10 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// Get Logical Device from API and then update what is in state from what the API returns
-	ld, err := o.client.GetLogicalDevice(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	ld, err := o.client.GetLogicalDevice(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -142,10 +142,10 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace goapstra.ApstraClientErr
-	err := o.client.UpdateLogicalDevice(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	var ace apstra.ApstraClientErr
+	err := o.client.UpdateLogicalDevice(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -171,10 +171,10 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	// Delete Logical Device by calling API
-	err := o.client.DeleteLogicalDevice(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteLogicalDevice(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError("error deleting Logical Device", err.Error())
 			return
 		}

@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingPolicy{}
 
 type resourceDatacenterRoutingPolicy struct {
-	client   *goapstra.Client
+	client   *apstra.Client
 	lockFunc func(context.Context, string) error
 }
 
@@ -56,7 +56,7 @@ func (o *resourceDatacenterRoutingPolicy) Create(ctx context.Context, req resour
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
@@ -94,16 +94,16 @@ func (o *resourceDatacenterRoutingPolicy) Read(ctx context.Context, req resource
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	rp, err := bp.GetRoutingPolicy(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	rp, err := bp.GetRoutingPolicy(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -141,7 +141,7 @@ func (o *resourceDatacenterRoutingPolicy) Update(ctx context.Context, req resour
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
@@ -152,7 +152,7 @@ func (o *resourceDatacenterRoutingPolicy) Update(ctx context.Context, req resour
 		return
 	}
 
-	err = bp.UpdateRoutingPolicy(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdateRoutingPolicy(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating routing policy", err.Error())
 		return
@@ -183,16 +183,16 @@ func (o *resourceDatacenterRoutingPolicy) Delete(ctx context.Context, req resour
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	err = bp.DeleteRoutingPolicy(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteRoutingPolicy(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting routing policy", err.Error())

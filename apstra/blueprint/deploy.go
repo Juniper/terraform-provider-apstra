@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"bytes"
 	"context"
 	"fmt"
@@ -87,8 +87,8 @@ func (o Deploy) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, client *goapstra.Client, diags *diag.Diagnostics) {
-	status, err := client.GetBlueprintStatus(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
+func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, client *apstra.Client, diags *diag.Diagnostics) {
+	status, err := client.GetBlueprintStatus(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
 		diags.AddError("error getting Blueprint status", err.Error())
 		return
@@ -129,8 +129,8 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 		diags.AddWarning("error executing deployment comment template", err.Error())
 	}
 
-	response, err := client.DeployBlueprint(ctx, &goapstra.BlueprintDeployRequest{
-		Id:          goapstra.ObjectId(o.BlueprintId.ValueString()),
+	response, err := client.DeployBlueprint(ctx, &apstra.BlueprintDeployRequest{
+		Id:          apstra.ObjectId(o.BlueprintId.ValueString()),
 		Description: os.ExpandEnv(buf.String()),
 		Version:     status.Version,
 	})
@@ -145,7 +145,7 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 		)
 		return
 	}
-	if response.Status != goapstra.DeployStatusSuccess {
+	if response.Status != apstra.DeployStatusSuccess {
 		diags.AddError(
 			"blueprint deploy status",
 			fmt.Sprintf("status: %q", response.Status.String()),
@@ -158,8 +158,8 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 	o.HasUncommittedChanges = types.BoolValue(false)
 }
 
-func (o *Deploy) Read(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	bpId := goapstra.ObjectId(o.BlueprintId.ValueString())
+func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	bpId := apstra.ObjectId(o.BlueprintId.ValueString())
 	status, err := client.GetBlueprintStatus(ctx, bpId)
 	if err != nil {
 		diags.AddError("error getting Blueprint status", err.Error())

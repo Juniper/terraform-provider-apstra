@@ -1,9 +1,9 @@
 package utils
 
-import "bitbucket.org/apstrktr/goapstra"
+import "github.com/Juniper/apstra-go-sdk/apstra"
 
 func AllTemplateTypes() []string {
-	templates := goapstra.AllTemplateTypes()
+	templates := apstra.AllTemplateTypes()
 	result := make([]string, len(templates))
 	for i := range templates {
 		result[i] = templates[i].String()
@@ -12,7 +12,7 @@ func AllTemplateTypes() []string {
 }
 
 func AllOverlayControlProtocols() []string {
-	overlayControlProtocols := goapstra.AllOverlayControlProtocols()
+	overlayControlProtocols := apstra.AllOverlayControlProtocols()
 	result := make([]string, len(overlayControlProtocols))
 	for i := range overlayControlProtocols {
 		result[i] = overlayControlProtocols[i].String()

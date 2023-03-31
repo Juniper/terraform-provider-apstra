@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -77,7 +77,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 	}
 }
 
-func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			InterfaceMap struct {
@@ -86,27 +86,27 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
-		SetType(goapstra.BlueprintTypeStaging).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetType(apstra.BlueprintTypeStaging).
 		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("system")},
+			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("logical_device")},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("logical_device")},
 		}).
-		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("interface_map")},
-			{"name", goapstra.QEStringVal("n_interface_map")},
-			{"id", goapstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+		In([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("interface_map")},
+			{"name", apstra.QEStringVal("n_interface_map")},
+			{"id", apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("device_profile")},
-			{"id", goapstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("device_profile")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("device_profile")},
+			{"id", apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
 		})
 
 	err := query.Do(&result)
@@ -128,7 +128,7 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *g
 	}
 }
 
-func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			InterfaceMap struct {
@@ -137,26 +137,26 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
-		SetType(goapstra.BlueprintTypeStaging).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
+		SetType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("system")},
+			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("logical_device")},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("logical_device")},
 		}).
-		In([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("logical_device")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("interface_map")},
-			{"name", goapstra.QEStringVal("n_interface_map")},
+		In([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("interface_map")},
+			{"name", apstra.QEStringVal("n_interface_map")},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("device_profile")},
-			{"id", goapstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("device_profile")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("device_profile")},
+			{"id", apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
 		})
 
 	err := query.Do(&result)
@@ -187,7 +187,7 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 	}
 }
 
-func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			System struct {
@@ -196,13 +196,13 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *goaps
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
-		SetType(goapstra.BlueprintTypeStaging).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetType(apstra.BlueprintTypeStaging).
 		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"label", goapstra.QEStringVal(o.NodeName.ValueString())},
-			{"name", goapstra.QEStringVal("n_system")},
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("system")},
+			{"label", apstra.QEStringVal(o.NodeName.ValueString())},
+			{"name", apstra.QEStringVal("n_system")},
 		})
 
 	err := query.Do(&result)
@@ -233,7 +233,7 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *goaps
 //   - DeviceProfileNodeId
 //   - from DeviceKey when set
 //   - from InterfaceMapCatalogId when DeviceKey not set
-func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.NodeId.IsUnknown() {
 		// this should only be true once, in Create()
 		o.nodeIdFromNodeName(ctx, client, diags)
@@ -289,14 +289,14 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 
 // SetInterfaceMap creates or deletes the graph db relationship between a switch
 // 'system' node and its interface map.
-func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	assignments := make(goapstra.SystemIdToInterfaceMapAssignment, 1)
+func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	assignments := make(apstra.SystemIdToInterfaceMapAssignment, 1)
 	if o.InterfaceMapCatalogId.IsNull() {
 		assignments[o.NodeId.ValueString()] = nil
 	} else {
 		assignments[o.NodeId.ValueString()] = o.InterfaceMapCatalogId.ValueString()
 	}
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
@@ -321,7 +321,7 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *goapstra
 // switch 'system' node in the blueprint graphdb. Returns false when Apstra
 // returns a 404 to the blueprint operation, indicating the blueprint doesn't
 // exist and resources depending on the blueprint's existence should be removed.
-func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.DeviceKey.IsNull() {
 		return
 	}
@@ -332,8 +332,8 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *goapstra
 		SystemId: o.DeviceKey.ValueString(),
 	}
 
-	nodeId := goapstra.ObjectId(o.NodeId.ValueString())
-	blueprintId := goapstra.ObjectId(o.BlueprintId.ValueString())
+	nodeId := apstra.ObjectId(o.NodeId.ValueString())
+	blueprintId := apstra.ObjectId(o.BlueprintId.ValueString())
 	err := client.PatchNode(ctx, blueprintId, nodeId, &patch, nil)
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -347,7 +347,7 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *goapstra
 
 // ReadSystemNode uses the BlueprintId and NodeId to determine the current
 // DeviceKey value in the blueprint.
-func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.NodeId.IsNull() {
 		diags.AddError(errProviderBug, "ReadSystemNode invoked with null NodeId")
 		return
@@ -361,13 +361,13 @@ func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *goapstra.
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
-		SetType(goapstra.BlueprintTypeStaging).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
-			{"name", goapstra.QEStringVal("n_system")},
+		SetType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("system")},
+			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
+			{"name", apstra.QEStringVal("n_system")},
 		})
 
 	err := query.Do(&result)
@@ -398,7 +398,7 @@ func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *goapstra.
 	}
 }
 
-func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			InterfaceMap struct {
@@ -407,16 +407,16 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	err := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("system")},
+			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("interface_map")},
-			{"name", goapstra.QEStringVal("n_interface_map")},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("interface_map")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("interface_map")},
+			{"name", apstra.QEStringVal("n_interface_map")},
 		}).
 		Do(&result)
 	if err != nil {
@@ -443,7 +443,7 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 	}
 }
 
-func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var result struct {
 		Items []struct {
 			DeviceProfile struct {
@@ -452,22 +452,22 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("system")},
-			{"id", goapstra.QEStringVal(o.NodeId.ValueString())},
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("system")},
+			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("interface_map")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("interface_map")},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("interface_map")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("interface_map")},
 		}).
-		Out([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("device_profile")},
+		Out([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("device_profile")},
 		}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("device_profile")},
-			{"name", goapstra.QEStringVal("n_device_profile")},
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("device_profile")},
+			{"name", apstra.QEStringVal("n_device_profile")},
 		})
 
 	err := query.Do(&result)
@@ -495,7 +495,7 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 	}
 }
 
-func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var response struct {
 		Items []struct {
 			DeviceProfile struct {
@@ -504,17 +504,17 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
-		SetType(goapstra.BlueprintTypeStaging).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetType(apstra.BlueprintTypeStaging).
 		SetContext(ctx).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("interface_map")},
-			{"id", goapstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("interface_map")},
+			{"id", apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
 		}).
-		Out([]goapstra.QEEAttribute{{"type", goapstra.QEStringVal("device_profile")}}).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("device_profile")},
-			{"name", goapstra.QEStringVal("n_device_profile")},
+		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("device_profile")}}).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("device_profile")},
+			{"name", apstra.QEStringVal("n_device_profile")},
 		})
 
 	err := query.Do(&response)
@@ -538,7 +538,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 	}
 }
 
-func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	gasi := utils.GetAllSystemsInfo(ctx, client, diags)
 	if diags.HasError() {
 		return
@@ -554,13 +554,13 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 		return
 	}
 
-	query := client.NewQuery(goapstra.ObjectId(o.BlueprintId.ValueString())).
+	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetContext(ctx).
-		SetType(goapstra.BlueprintTypeStaging).
-		Node([]goapstra.QEEAttribute{
-			{"type", goapstra.QEStringVal("device_profile")},
-			{"device_profile_id", goapstra.QEStringVal(si.Facts.AosHclModel.String())},
-			{"name", goapstra.QEStringVal("n_device_profile")},
+		SetType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{"type", apstra.QEStringVal("device_profile")},
+			{"device_profile_id", apstra.QEStringVal(si.Facts.AosHclModel.String())},
+			{"name", apstra.QEStringVal("n_device_profile")},
 		})
 
 	var result struct {

@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -103,7 +103,7 @@ func (o AsnPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *AsnPoolRange) LoadApiData(_ context.Context, in *goapstra.IntRange, _ *diag.Diagnostics) {
+func (o *AsnPoolRange) LoadApiData(_ context.Context, in *apstra.IntRange, _ *diag.Diagnostics) {
 	o.Status = types.StringValue(in.Status)
 	o.First = types.Int64Value(int64(in.First))
 	o.Last = types.Int64Value(int64(in.Last))
@@ -112,8 +112,8 @@ func (o *AsnPoolRange) LoadApiData(_ context.Context, in *goapstra.IntRange, _ *
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }
 
-func (o *AsnPoolRange) Request(_ context.Context, _ *diag.Diagnostics) goapstra.IntfIntRange {
-	return &goapstra.IntRangeRequest{
+func (o *AsnPoolRange) Request(_ context.Context, _ *diag.Diagnostics) apstra.IntfIntRange {
+	return &apstra.IntRangeRequest{
 		First: uint32(o.First.ValueInt64()),
 		Last:  uint32(o.Last.ValueInt64()),
 	}

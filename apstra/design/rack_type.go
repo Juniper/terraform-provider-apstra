@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -229,14 +229,14 @@ func (o RackType) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *RackType) LoadApiData(ctx context.Context, in *goapstra.RackTypeData, diags *diag.Diagnostics) {
+func (o *RackType) LoadApiData(ctx context.Context, in *apstra.RackTypeData, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load RackType data from nil source")
 		return
 	}
 	switch in.FabricConnectivityDesign {
-	case goapstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
-	case goapstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	case apstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case apstra.FabricConnectivityDesignL3Clos: // this FCD is supported
 	default: // this FCD is unsupported
 		diags.AddError(
 			errProviderBug,
@@ -252,8 +252,8 @@ func (o *RackType) LoadApiData(ctx context.Context, in *goapstra.RackTypeData, d
 	o.GenericSystems = NewGenericSystemMap(ctx, in.GenericSystems, diags)
 }
 
-func (o *RackType) GetFabricConnectivityDesign(_ context.Context, diags *diag.Diagnostics) goapstra.FabricConnectivityDesign {
-	var fcd goapstra.FabricConnectivityDesign
+func (o *RackType) GetFabricConnectivityDesign(_ context.Context, diags *diag.Diagnostics) apstra.FabricConnectivityDesign {
+	var fcd apstra.FabricConnectivityDesign
 	err := fcd.FromString(o.FabricConnectivityDesign.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
@@ -263,7 +263,7 @@ func (o *RackType) GetFabricConnectivityDesign(_ context.Context, diags *diag.Di
 	return fcd
 }
 
-func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.RackTypeRequest {
+func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.RackTypeRequest {
 	fcd := o.GetFabricConnectivityDesign(ctx, diags)
 	if diags.HasError() {
 		return nil
@@ -286,7 +286,7 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *goapst
 
 	var i int
 
-	leafSwitchRequests := make([]goapstra.RackElementLeafSwitchRequest, len(leafSwitches))
+	leafSwitchRequests := make([]apstra.RackElementLeafSwitchRequest, len(leafSwitches))
 	i = 0
 	for name, ls := range leafSwitches {
 		req := ls.Request(ctx, path.Root("leaf_switches").AtMapKey(name), fcd, diags)
@@ -298,7 +298,7 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *goapst
 		i++
 	}
 
-	accessSwitchRequests := make([]goapstra.RackElementAccessSwitchRequest, len(accessSwitches))
+	accessSwitchRequests := make([]apstra.RackElementAccessSwitchRequest, len(accessSwitches))
 	i = 0
 	for name, as := range accessSwitches {
 		req := as.Request(ctx, path.Root("access_switches").AtMapKey(name), o, diags)
@@ -310,7 +310,7 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *goapst
 		i++
 	}
 
-	genericSystemsRequests := make([]goapstra.RackElementGenericSystemRequest, len(genericSystems))
+	genericSystemsRequests := make([]apstra.RackElementGenericSystemRequest, len(genericSystems))
 	i = 0
 	for name, gs := range genericSystems {
 		req := gs.Request(ctx, path.Root("generic_systems").AtMapKey(name), o, diags)
@@ -322,7 +322,7 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *goapst
 		i++
 	}
 
-	return &goapstra.RackTypeRequest{
+	return &apstra.RackTypeRequest{
 		DisplayName:              o.Name.ValueString(),
 		Description:              o.Description.ValueString(),
 		FabricConnectivityDesign: fcd,
@@ -332,7 +332,7 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *goapst
 	}
 }
 
-func NewRackTypeObject(ctx context.Context, in *goapstra.RackTypeData, diags *diag.Diagnostics) types.Object {
+func NewRackTypeObject(ctx context.Context, in *apstra.RackTypeData, diags *diag.Diagnostics) types.Object {
 	var rt RackType
 	rt.Id = types.StringNull()
 	rt.LoadApiData(ctx, in, diags)
@@ -349,10 +349,10 @@ func NewRackTypeObject(ctx context.Context, in *goapstra.RackTypeData, diags *di
 	return rtdObj
 }
 
-func ValidateFcdSupport(_ context.Context, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func ValidateFcdSupport(_ context.Context, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	switch fcd {
-	case goapstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
-	case goapstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	case apstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case apstra.FabricConnectivityDesignL3Clos: // this FCD is supported
 	default: // this FCD is unsupported
 		diags.AddError(
 			errProviderBug,
@@ -361,7 +361,7 @@ func ValidateFcdSupport(_ context.Context, fcd goapstra.FabricConnectivityDesign
 	}
 }
 
-func ValidateRackType(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+func ValidateRackType(ctx context.Context, in *apstra.RackType, diags *diag.Diagnostics) {
 	if in.Data == nil {
 		diags.AddError("rack type has no data", fmt.Sprintf("rack type '%s' data object is nil", in.Id))
 		return
@@ -544,10 +544,10 @@ func (o *RackType) GetSwitchRedundancyProtocolByName(ctx context.Context, name s
 		return nil
 	}
 
-	var leafRedundancyProtocol goapstra.LeafRedundancyProtocol
+	var leafRedundancyProtocol apstra.LeafRedundancyProtocol
 	if leaf != nil {
 		if leaf.RedundancyProtocol.IsNull() {
-			return goapstra.LeafRedundancyProtocolNone
+			return apstra.LeafRedundancyProtocolNone
 		}
 		err := leafRedundancyProtocol.FromString(leaf.RedundancyProtocol.ValueString())
 		if err != nil {
@@ -557,13 +557,13 @@ func (o *RackType) GetSwitchRedundancyProtocolByName(ctx context.Context, name s
 		return leafRedundancyProtocol
 	}
 
-	var accessRedundancyProtocol goapstra.AccessRedundancyProtocol
+	var accessRedundancyProtocol apstra.AccessRedundancyProtocol
 	if access != nil {
 		if !access.EsiLagInfo.IsNull() {
-			return goapstra.AccessRedundancyProtocolEsi
+			return apstra.AccessRedundancyProtocolEsi
 		}
 		if access.RedundancyProtocol.IsNull() {
-			return goapstra.AccessRedundancyProtocolNone
+			return apstra.AccessRedundancyProtocolNone
 		}
 		err := accessRedundancyProtocol.FromString(access.RedundancyProtocol.ValueString())
 		if err != nil {
@@ -579,6 +579,6 @@ func (o *RackType) GetSwitchRedundancyProtocolByName(ctx context.Context, name s
 // FcdModes returns permitted fabric_connectivity_design mode strings
 func FcdModes() []string {
 	return []string{
-		goapstra.FabricConnectivityDesignL3Clos.String(),
-		goapstra.FabricConnectivityDesignL3Collapsed.String()}
+		apstra.FabricConnectivityDesignL3Clos.String(),
+		apstra.FabricConnectivityDesignL3Collapsed.String()}
 }

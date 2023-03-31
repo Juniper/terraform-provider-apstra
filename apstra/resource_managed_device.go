@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -22,7 +22,7 @@ var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
 var _ resource.ResourceWithValidateConfig = &resourceManagedDevice{}
 
 type resourceManagedDevice struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceManagedDevice) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -129,11 +129,11 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Create new Agent for this Managed Device
-	agentId, err := o.client.CreateAgent(ctx, &goapstra.SystemAgentRequest{
-		AgentTypeOffbox: goapstra.AgentTypeOffbox(plan.OffBox.ValueBool()),
+	agentId, err := o.client.CreateAgent(ctx, &apstra.SystemAgentRequest{
+		AgentTypeOffbox: apstra.AgentTypeOffbox(plan.OffBox.ValueBool()),
 		ManagementIp:    plan.ManagementIp.ValueString(),
-		Profile:         goapstra.ObjectId(plan.AgentProfileId.ValueString()),
-		OperationMode:   goapstra.AgentModeFull,
+		Profile:         apstra.ObjectId(plan.AgentProfileId.ValueString()),
+		OperationMode:   apstra.AgentModeFull,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -143,7 +143,7 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Install the new agent
-	_, err = o.client.SystemAgentRunJob(ctx, agentId, goapstra.AgentJobTypeInstall)
+	_, err = o.client.SystemAgentRunJob(ctx, agentId, apstra.AgentJobTypeInstall)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("Could not run 'install' job on new agent %q", agentId),
@@ -183,9 +183,9 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 		}
 
 		// update with new SystemUserConfig
-		err = o.client.UpdateSystem(ctx, agentInfo.Status.SystemId, &goapstra.SystemUserConfig{
+		err = o.client.UpdateSystem(ctx, agentInfo.Status.SystemId, &apstra.SystemUserConfig{
 			AosHclModel: systemInfo.Facts.AosHclModel,
-			AdminState:  goapstra.SystemAdminStateNormal,
+			AdminState:  apstra.SystemAdminStateNormal,
 		})
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -227,10 +227,10 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// Get AgentInfo from API
-	agentInfo, err := o.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.ValueString()))
+	agentInfo, err := o.client.GetSystemAgent(ctx, apstra.ObjectId(state.AgentId.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		} else {
@@ -287,9 +287,9 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 
 	// update agent as needed
 	if state.AgentProfileId.ValueString() != plan.AgentProfileId.ValueString() {
-		err := o.client.AssignAgentProfile(ctx, &goapstra.AssignAgentProfileRequest{
-			SystemAgents: []goapstra.ObjectId{goapstra.ObjectId(state.AgentId.ValueString())},
-			ProfileId:    goapstra.ObjectId(plan.AgentProfileId.ValueString()),
+		err := o.client.AssignAgentProfile(ctx, &apstra.AssignAgentProfileRequest{
+			SystemAgents: []apstra.ObjectId{apstra.ObjectId(state.AgentId.ValueString())},
+			ProfileId:    apstra.ObjectId(plan.AgentProfileId.ValueString()),
 		})
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -325,10 +325,10 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 
 	var agentDoesNotExist, systemDoesNotExist bool
 
-	_, err := o.client.GetSystemAgent(ctx, goapstra.ObjectId(state.AgentId.ValueString()))
+	_, err := o.client.GetSystemAgent(ctx, apstra.ObjectId(state.AgentId.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
+		var ace apstra.ApstraClientErr
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
 			agentDoesNotExist = true
 		} else {
 			resp.Diagnostics.AddError(
@@ -339,10 +339,10 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 		}
 	}
 
-	_, err = o.client.GetSystemInfo(ctx, goapstra.SystemId(state.SystemId.ValueString()))
+	_, err = o.client.GetSystemInfo(ctx, apstra.SystemId(state.SystemId.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
+		var ace apstra.ApstraClientErr
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
 			systemDoesNotExist = true
 		} else {
 			resp.Diagnostics.AddError(
@@ -354,10 +354,10 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	if !agentDoesNotExist {
-		err = o.client.DeleteSystemAgent(ctx, goapstra.ObjectId(state.AgentId.ValueString()))
+		err = o.client.DeleteSystemAgent(ctx, apstra.ObjectId(state.AgentId.ValueString()))
 		if err != nil {
-			var ace goapstra.ApstraClientErr
-			if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
+			var ace apstra.ApstraClientErr
+			if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
 				resp.Diagnostics.AddError(
 					"error deleting device agent",
 					fmt.Sprintf("device agent %q (%q %q) delete error - %s",
@@ -368,10 +368,10 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	if !systemDoesNotExist {
-		err = o.client.DeleteSystem(ctx, goapstra.SystemId(state.SystemId.ValueString()))
+		err = o.client.DeleteSystem(ctx, apstra.SystemId(state.SystemId.ValueString()))
 		if err != nil {
-			var ace goapstra.ApstraClientErr
-			if !(errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound) {
+			var ace apstra.ApstraClientErr
+			if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
 				resp.Diagnostics.AddError(
 					"error deleting managed device",
 					fmt.Sprintf("managed device %q (%s) delete error - %s",
@@ -391,7 +391,7 @@ type rManagedDevice struct {
 	OffBox         types.Bool   `tfsdk:"off_box"`
 }
 
-func (o *rManagedDevice) loadApiData(ctx context.Context, in *goapstra.SystemAgent, diags *diag.Diagnostics) {
+func (o *rManagedDevice) loadApiData(ctx context.Context, in *apstra.SystemAgent, diags *diag.Diagnostics) {
 	o.SystemId = types.StringValue(string(in.Status.SystemId))
 	o.ManagementIp = types.StringValue(in.Config.ManagementIp)
 	o.AgentProfileId = types.StringValue(string(in.Config.Profile))
@@ -399,12 +399,12 @@ func (o *rManagedDevice) loadApiData(ctx context.Context, in *goapstra.SystemAge
 	o.AgentId = types.StringValue(string(in.Id))
 }
 
-func (o *rManagedDevice) getDeviceKey(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *rManagedDevice) getDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	// Get SystemInfo from API
-	systemInfo, err := client.GetSystemInfo(ctx, goapstra.SystemId(o.SystemId.ValueString()))
+	systemInfo, err := client.GetSystemInfo(ctx, apstra.SystemId(o.SystemId.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 		} else {
 			diags.AddError(
 				"error reading managed device system info",
@@ -422,11 +422,11 @@ func (o *rManagedDevice) getDeviceKey(ctx context.Context, client *goapstra.Clie
 	}
 }
 
-func (o *rManagedDevice) validateAgentProfile(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
-	agentProfile, err := client.GetAgentProfile(ctx, goapstra.ObjectId(o.AgentProfileId.ValueString()))
+func (o *rManagedDevice) validateAgentProfile(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	agentProfile, err := client.GetAgentProfile(ctx, apstra.ObjectId(o.AgentProfileId.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			diags.AddAttributeError(
 				path.Root("agent_profile_id"),
 				"agent profile not found",

@@ -1,9 +1,9 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -87,7 +87,7 @@ func (o ConfigletGenerator) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *goapstra.ConfigletGenerator, diags *diag.Diagnostics) {
+func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *apstra.ConfigletGenerator, diags *diag.Diagnostics) {
 	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
 	o.Section = types.StringValue(utils.StringersToFriendlyString(in.Section, in.ConfigStyle))
 	o.TemplateText = types.StringValue(in.TemplateText)
@@ -95,22 +95,22 @@ func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *goapstra.Confi
 	o.FileName = utils.StringValueOrNull(ctx, in.Filename, diags)
 }
 
-func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.ConfigletGenerator {
+func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.ConfigletGenerator {
 	var err error
 
-	var configStyle goapstra.PlatformOS
+	var configStyle apstra.PlatformOS
 	err = configStyle.FromString(o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet config_style %q", o.ConfigStyle.ValueString()), err.Error())
 	}
 
-	var section goapstra.ConfigletSection
-	err = utils.FriendlyStringToAPIStringer(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
+	var section apstra.ConfigletSection
+	err = utils.ApiStringerFromFriendlyString(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
 	}
 
-	return &goapstra.ConfigletGenerator{
+	return &apstra.ConfigletGenerator{
 		ConfigStyle:          configStyle,
 		Section:              section,
 		TemplateText:         o.TemplateText.ValueString(),

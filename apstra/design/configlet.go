@@ -1,8 +1,8 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -76,11 +76,11 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ConfigletRequest {
+func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletRequest {
 	var d diag.Diagnostics
 
 	// We only use the Datacenter Reference Design
-	refArchs := []goapstra.RefDesign{goapstra.RefDesignDatacenter}
+	refArchs := []apstra.RefDesign{apstra.RefDesignDatacenter}
 
 	// Extract configlet generators
 	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))
@@ -90,8 +90,8 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		return nil
 	}
 
-	// Convert configlet generators to goapstra types
-	generators := make([]goapstra.ConfigletGenerator, len(tfGenerators))
+	// Convert configlet generators to apstra types
+	generators := make([]apstra.ConfigletGenerator, len(tfGenerators))
 	for i, gen := range tfGenerators {
 		generators[i] = *gen.Request(ctx, diags)
 	}
@@ -99,14 +99,14 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *goaps
 		return nil
 	}
 
-	return &goapstra.ConfigletRequest{
+	return &apstra.ConfigletRequest{
 		DisplayName: o.Name.ValueString(),
 		RefArchs:    refArchs,
 		Generators:  generators,
 	}
 }
 
-func (o *Configlet) LoadApiData(ctx context.Context, in *goapstra.ConfigletData, diags *diag.Diagnostics) {
+func (o *Configlet) LoadApiData(ctx context.Context, in *apstra.ConfigletData, diags *diag.Diagnostics) {
 	configletGenerators := make([]ConfigletGenerator, len(in.Generators))
 	for i := range in.Generators {
 		configletGenerators[i].LoadApiData(ctx, &in.Generators[i], diags)

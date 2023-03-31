@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"errors"
 	"fmt"
-	"strings"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 const (
@@ -12,7 +12,6 @@ const (
 	JunOSInterfaceLevelHierarchical = "interface_level_hierarchical"
 	JunOSInterfaceLevelSet          = "interface_level_set"
 	JunOSInterfaceLevelDelete       = "interface_level_delete"
-	JunOSUnknown                    = "unknown_section"
 
 	AsnAllocationSingle = "single"
 	AsnAllocationUnique = "unique"
@@ -21,151 +20,169 @@ const (
 	OverlayControlProtocolStatic = "static"
 )
 
-func asnAllocationSchemeToFriendlyString(in goapstra.AsnAllocationScheme) string {
-	switch in {
-	case goapstra.AsnAllocationSchemeSingle:
-		return AsnAllocationSingle
-	case goapstra.AsnAllocationSchemeDistinct:
-		return AsnAllocationUnique
-	default:
-		return in.String()
-	}
+type StringerWithFromString interface {
+	String() string
+	FromString(string) error
 }
 
-func overlayControlProtocolToFriendlyString(in goapstra.OverlayControlProtocol) string {
-	switch in {
-	case goapstra.OverlayControlProtocolEvpn:
-		return OverlayControlProtocolEvpn
-	case goapstra.OverlayControlProtocolNone:
-		return OverlayControlProtocolStatic
-	default:
-		return in.String()
-	}
-}
-
-func overlayControlProtocolFromFriendlyString(out *goapstra.OverlayControlProtocol, in ...string) error {
-	if len(in) < 1 {
-		return out.FromString("")
-	}
-	switch in[0] {
-	case OverlayControlProtocolEvpn:
-		*out = goapstra.OverlayControlProtocolEvpn
-	case OverlayControlProtocolStatic:
-		*out = goapstra.OverlayControlProtocolNone
-	default:
-		return out.FromString(in[0])
-	}
-	return nil
-}
-
-func configletSectionIotaToFriendlyString(in goapstra.ConfigletSection, ctx ...fmt.Stringer) string {
-	if len(ctx) == 0 {
-		return ""
-	}
-	os := ctx[0].(goapstra.PlatformOS)
-	switch os {
-	case goapstra.PlatformOSJunos:
-		switch in {
-		case goapstra.ConfigletSectionSystem:
-			return JunOSTopLevelHierarchical
-		case goapstra.ConfigletSectionInterface:
-			return JunOSInterfaceLevelHierarchical
-		case goapstra.ConfigletSectionSetBasedSystem:
-			return JunOSTopLevelSetDelete
-		case goapstra.ConfigletSectionDeleteBasedInterface:
-			return JunOSInterfaceLevelDelete
-		case goapstra.ConfigletSectionSetBasedInterface:
-			return JunOSInterfaceLevelSet
-		default:
-			return JunOSUnknown
-		}
-	default:
-		return in.String()
-	}
-	return ""
-}
-
-/*
-		This accepts a Iota, potential context strings and returns a string that is what the customer would see on the UI
-	    For example, for Junos, the configletsection Iota
-*/
+// StringersToFriendlyString accepts stringers (probably apstra-go-sdk
+// string-able iota types) and returns a string that better reflects terminology
+// used by the Apstra web UI. For example, the API uses "distinct" where the web
+// UI uses "unique". This function turns apstra.AsnAllocationSchemeDistinct into
+// "unique".
 func StringersToFriendlyString(in ...fmt.Stringer) string {
 	if len(in) == 0 {
 		return ""
 	}
+
 	switch in[0].(type) {
-	case goapstra.ConfigletSection:
-		return configletSectionIotaToFriendlyString(in[0].(goapstra.ConfigletSection), in[1:]...)
-	case goapstra.OverlayControlProtocol:
-		return overlayControlProtocolToFriendlyString(in[0].(goapstra.OverlayControlProtocol))
-	case goapstra.AsnAllocationScheme:
-		return asnAllocationSchemeToFriendlyString(in[0].(goapstra.AsnAllocationScheme))
-	default:
-		return in[0].String()
+	case apstra.AsnAllocationScheme:
+		return asnAllocationSchemeToFriendlyString(in[0].(apstra.AsnAllocationScheme))
+	case apstra.ConfigletSection:
+		return configletSectionToFriendlyString(in[0].(apstra.ConfigletSection), in[1:]...)
+	case apstra.OverlayControlProtocol:
+		return overlayControlProtocolToFriendlyString(in[0].(apstra.OverlayControlProtocol))
 	}
+
+	return in[0].String()
 }
 
-type StringerWithFromString interface {
-	fmt.Stringer
-	FromString(string) error
-}
+// ApiStringerFromFriendlyString attempts to populate a StringerWithFromString
+// using one or more friendly 'in' strings. It is used to turn friendly strings
+// used in the web UI into types used by the SDK and ultimately the API. For
+// example, we can get apstra.AsnAllocationSchemeDistinct directly from a string
+// by invoking apstra.AsnAllocationScheme.FromString("distinct"). But the web UI
+// uses "unique", rather than "distinct". This method will be able to translate
+// "unique" into an apstra.AsnAllocationScheme value.
+func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) error {
+	if len(in) == 0 {
+		return errors.New("ApiStringerFromFriendlyString called with no string input")
+	}
 
-func FriendlyStringToAPIStringer(target StringerWithFromString, in ...string) error {
 	switch target.(type) {
-	case *goapstra.ConfigletSection:
-		return configletSectionFromFriendlyString(target.(*goapstra.ConfigletSection), in...)
-	case *goapstra.AsnAllocationScheme:
-		return asnAllocationSchemeFromFriendlyString(target.(*goapstra.AsnAllocationScheme), in...)
-	case *goapstra.OverlayControlProtocol:
-		return overlayControlProtocolFromFriendlyString(target.(*goapstra.OverlayControlProtocol), in...)
+	case *apstra.AsnAllocationScheme:
+		return asnAllocationSchemeFromFriendlyString(target.(*apstra.AsnAllocationScheme), in...)
+	case *apstra.ConfigletSection:
+		return configletSectionFromFriendlyString(target.(*apstra.ConfigletSection), in...)
+	case *apstra.OverlayControlProtocol:
+		return overlayControlProtocolFromFriendlyString(target.(*apstra.OverlayControlProtocol), in...)
+	}
+
+	return target.FromString(in[0])
+}
+
+func asnAllocationSchemeToFriendlyString(in apstra.AsnAllocationScheme) string {
+	switch in {
+	case apstra.AsnAllocationSchemeSingle:
+		return AsnAllocationSingle
+	case apstra.AsnAllocationSchemeDistinct:
+		return AsnAllocationUnique
+	}
+
+	return in.String()
+}
+
+func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo ...fmt.Stringer) string {
+	if len(additionalInfo) == 0 {
+		return in.String()
+	}
+
+	os, ok := additionalInfo[0].(apstra.PlatformOS)
+	if !ok {
+		return in.String()
+	}
+
+	switch os {
+	case apstra.PlatformOSJunos:
+		switch in {
+		case apstra.ConfigletSectionSystem:
+			return JunOSTopLevelHierarchical
+		case apstra.ConfigletSectionSetBasedSystem:
+			return JunOSTopLevelSetDelete
+		case apstra.ConfigletSectionSetBasedInterface:
+			return JunOSInterfaceLevelSet
+		case apstra.ConfigletSectionDeleteBasedInterface:
+			return JunOSInterfaceLevelDelete
+		case apstra.ConfigletSectionInterface:
+			return JunOSInterfaceLevelHierarchical
+		}
+	}
+
+	return in.String()
+}
+
+func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) string {
+	switch in {
+	case apstra.OverlayControlProtocolEvpn:
+		return OverlayControlProtocolEvpn
+	case apstra.OverlayControlProtocolNone:
+		return OverlayControlProtocolStatic
+	}
+
+	return in.String()
+}
+
+func asnAllocationSchemeFromFriendlyString(target *apstra.AsnAllocationScheme, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case AsnAllocationUnique:
+		*target = apstra.AsnAllocationSchemeDistinct
 	default:
 		return target.FromString(in[0])
 	}
-}
 
-func configletSectionFromFriendlyString(out *goapstra.ConfigletSection, in ...string) error {
-	if len(in) < 1 {
-		return out.FromString("")
-	}
-	if len(in) < 2 {
-		return out.FromString(in[0])
-	}
-	cs := in[0]
-	os := in[1]
-	if strings.ToUpper(os) != strings.ToUpper(goapstra.PlatformOSJunos.String()) {
-		return out.FromString(cs)
-	}
-	switch cs {
-	case JunOSTopLevelHierarchical:
-		*out = goapstra.ConfigletSectionSystem
-		return nil
-	case JunOSInterfaceLevelHierarchical:
-		*out = goapstra.ConfigletSectionInterface
-		return nil
-	case JunOSTopLevelSetDelete:
-		*out = goapstra.ConfigletSectionSetBasedSystem
-		return nil
-	case JunOSInterfaceLevelDelete:
-		*out = goapstra.ConfigletSectionDeleteBasedInterface
-		return nil
-	case JunOSInterfaceLevelSet:
-		*out = goapstra.ConfigletSectionSetBasedInterface
-		return nil
-	default:
-		return out.FromString(cs)
-	}
 	return nil
 }
 
-func asnAllocationSchemeFromFriendlyString(out *goapstra.AsnAllocationScheme, in ...string) error {
-	if len(in) < 1 {
-		return out.FromString("")
+func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...string) error {
+	switch len(in) {
+	case 0:
+		return target.FromString("")
+	case 1:
+		return target.FromString(in[0])
 	}
-	switch in[0] {
-	case AsnAllocationUnique:
-		*out = goapstra.AsnAllocationSchemeDistinct
+
+	section := in[0]
+	platform := in[1]
+
+	if platform != apstra.PlatformOSJunos.String() {
+		return target.FromString(section)
+	}
+
+	switch section {
+	case JunOSTopLevelHierarchical:
+		*target = apstra.ConfigletSectionSystem
+	case JunOSInterfaceLevelHierarchical:
+		*target = apstra.ConfigletSectionInterface
+	case JunOSTopLevelSetDelete:
+		*target = apstra.ConfigletSectionSetBasedSystem
+	case JunOSInterfaceLevelDelete:
+		*target = apstra.ConfigletSectionDeleteBasedInterface
+	case JunOSInterfaceLevelSet:
+		*target = apstra.ConfigletSectionSetBasedInterface
 	default:
-		return out.FromString(in[0])
+		return target.FromString(section)
 	}
+
+	return nil
+}
+
+func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProtocol, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case OverlayControlProtocolEvpn:
+		*target = apstra.OverlayControlProtocolEvpn
+	case OverlayControlProtocolStatic:
+		*target = apstra.OverlayControlProtocolNone
+	default:
+		return target.FromString(in[0])
+	}
+
 	return nil
 }

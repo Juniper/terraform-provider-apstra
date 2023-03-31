@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,7 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceRackType{}
 
 type resourceRackType struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceRackType) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -99,10 +99,10 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// fetch the rack type detail from the API
-	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	rt, err := o.client.GetRackType(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -151,14 +151,14 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// send the Request to Apstra
-	err := o.client.UpdateRackType(ctx, goapstra.ObjectId(plan.Id.ValueString()), rtRequest)
+	err := o.client.UpdateRackType(ctx, apstra.ObjectId(plan.Id.ValueString()), rtRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error while updating Rack Type", err.Error())
 		return
 	}
 
 	// retrieve the RackType object with fully-enumerated embedded objects
-	rt, err := o.client.GetRackType(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	rt, err := o.client.GetRackType(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving rack type info after creation", err.Error())
 		return
@@ -198,10 +198,10 @@ func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	err := o.client.DeleteRackType(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteRackType(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			return // 404 is okay in Delete()
 		}
 		resp.Diagnostics.AddError("error deleting Rack Type", err.Error())

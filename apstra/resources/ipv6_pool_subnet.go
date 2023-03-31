@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -79,7 +79,7 @@ func (o Ipv6PoolSubnet) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *Ipv6PoolSubnet) LoadApiData(_ context.Context, in *goapstra.IpSubnet, _ *diag.Diagnostics) {
+func (o *Ipv6PoolSubnet) LoadApiData(_ context.Context, in *apstra.IpSubnet, _ *diag.Diagnostics) {
 	o.Status = types.StringValue(in.Status)
 	o.Network = types.StringValue(in.Network.String())
 	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))
@@ -87,8 +87,8 @@ func (o *Ipv6PoolSubnet) LoadApiData(_ context.Context, in *goapstra.IpSubnet, _
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }
 
-func (o *Ipv6PoolSubnet) Request(_ context.Context, _ *diag.Diagnostics) *goapstra.NewIpSubnet {
-	return &goapstra.NewIpSubnet{
+func (o *Ipv6PoolSubnet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.NewIpSubnet {
+	return &apstra.NewIpSubnet{
 		Network: o.Network.ValueString(),
 	}
 }

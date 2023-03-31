@@ -1,7 +1,7 @@
 package apstravalidator
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -19,7 +19,7 @@ var (
 )
 
 type RackFabricConnectivityDesignMustBeValidator struct {
-	fcd goapstra.FabricConnectivityDesign
+	fcd apstra.FabricConnectivityDesign
 }
 
 type RackFabricConnectivityDesignMustBeValidatorRequest struct {
@@ -89,13 +89,13 @@ func (o RackFabricConnectivityDesignMustBeValidator) ValidateString(ctx context.
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func Int64FabricConnectivityDesignMustBe(fcd goapstra.FabricConnectivityDesign) validator.Int64 {
+func Int64FabricConnectivityDesignMustBe(fcd apstra.FabricConnectivityDesign) validator.Int64 {
 	return RackFabricConnectivityDesignMustBeValidator{
 		fcd: fcd,
 	}
 }
 
-func StringFabricConnectivityDesignMustBe(fcd goapstra.FabricConnectivityDesign) validator.String {
+func StringFabricConnectivityDesignMustBe(fcd apstra.FabricConnectivityDesign) validator.String {
 	return RackFabricConnectivityDesignMustBeValidator{
 		fcd: fcd,
 	}

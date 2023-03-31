@@ -1,4 +1,4 @@
-package apstra
+package tfapstra
 
 import (
 	"context"

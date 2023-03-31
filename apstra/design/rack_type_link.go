@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -79,9 +79,9 @@ func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{stringvalidator.OneOf(
-				goapstra.RackLinkLagModeActive.String(),
-				goapstra.RackLinkLagModePassive.String(),
-				goapstra.RackLinkLagModeStatic.String(),
+				apstra.RackLinkLagModeActive.String(),
+				apstra.RackLinkLagModePassive.String(),
+				apstra.RackLinkLagModeStatic.String(),
 			)},
 		},
 		"links_per_switch": resourceSchema.Int64Attribute{
@@ -98,8 +98,8 @@ func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				goapstra.RackLinkSwitchPeerFirst.String(),
-				goapstra.RackLinkSwitchPeerSecond.String(),
+				apstra.RackLinkSwitchPeerFirst.String(),
+				apstra.RackLinkSwitchPeerSecond.String(),
 			)},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
@@ -167,13 +167,13 @@ func (o RackLink) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, diags *diag.Diagnostics) *goapstra.RackLinkRequest {
+func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, diags *diag.Diagnostics) *apstra.RackLinkRequest {
 	var err error
 
-	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	tagIds := make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
-	lagMode := goapstra.RackLinkLagModeNone
+	lagMode := apstra.RackLinkLagModeNone
 	if !o.LagMode.IsNull() {
 		err = lagMode.FromString(o.LagMode.ValueString())
 		if err != nil {
@@ -182,7 +182,7 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 		}
 	}
 
-	switchPeer := goapstra.RackLinkSwitchPeerNone
+	switchPeer := apstra.RackLinkSwitchPeerNone
 	if !o.SwitchPeer.IsNull() && !o.SwitchPeer.IsUnknown() {
 		err = switchPeer.FromString(o.SwitchPeer.ValueString())
 		if err != nil {
@@ -213,10 +213,10 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 		linksPerSwitch = int(o.LinksPerSwitch.ValueInt64())
 	}
 
-	return &goapstra.RackLinkRequest{
+	return &apstra.RackLinkRequest{
 		Tags:               tagIds,
 		LinkPerSwitchCount: linksPerSwitch,
-		LinkSpeed:          goapstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
+		LinkSpeed:          apstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
 		TargetSwitchLabel:  o.TargetSwitchName.ValueString(),
 		AttachmentType:     o.LinkAttachmentType(upstreamRedundancyProtocol, diags),
 		LagMode:            lagMode,
@@ -224,12 +224,12 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 	}
 }
 
-func (o *RackLink) LoadApiData(ctx context.Context, in *goapstra.RackLink, diags *diag.Diagnostics) {
+func (o *RackLink) LoadApiData(ctx context.Context, in *apstra.RackLink, diags *diag.Diagnostics) {
 	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
 	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
 	o.Speed = types.StringValue(string(in.LinkSpeed))
-	o.LagMode = utils.StringValueWithNull(ctx, in.LagMode.String(), goapstra.RackLinkLagModeNone.String(), diags)
-	o.SwitchPeer = utils.StringValueWithNull(ctx, in.SwitchPeer.String(), goapstra.RackLinkSwitchPeerNone.String(), diags)
+	o.LagMode = utils.StringValueWithNull(ctx, in.LagMode.String(), apstra.RackLinkLagModeNone.String(), diags)
+	o.SwitchPeer = utils.StringValueWithNull(ctx, in.SwitchPeer.String(), apstra.RackLinkSwitchPeerNone.String(), diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = NewTagSet(ctx, in.Tags, diags)
 }
@@ -242,34 +242,34 @@ func (o *RackLink) CopyWriteOnlyElements(ctx context.Context, src *RackLink, dia
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
-func (o *RackLink) LinkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) goapstra.RackLinkAttachmentType {
+func (o *RackLink) LinkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) apstra.RackLinkAttachmentType {
 	switch upstreamRedundancyMode.String() {
-	case goapstra.LeafRedundancyProtocolNone.String():
-		return goapstra.RackLinkAttachmentTypeSingle
-	case goapstra.AccessRedundancyProtocolNone.String():
-		return goapstra.RackLinkAttachmentTypeSingle
+	case apstra.LeafRedundancyProtocolNone.String():
+		return apstra.RackLinkAttachmentTypeSingle
+	case apstra.AccessRedundancyProtocolNone.String():
+		return apstra.RackLinkAttachmentTypeSingle
 	}
 
 	if o.LagMode.IsNull() {
-		return goapstra.RackLinkAttachmentTypeSingle
+		return apstra.RackLinkAttachmentTypeSingle
 	}
 
 	if !o.SwitchPeer.IsNull() && !o.SwitchPeer.IsUnknown() {
-		return goapstra.RackLinkAttachmentTypeSingle
+		return apstra.RackLinkAttachmentTypeSingle
 	}
 
 	switch o.LagMode.ValueString() {
-	case goapstra.RackLinkLagModeActive.String():
-		return goapstra.RackLinkAttachmentTypeDual
-	case goapstra.RackLinkLagModePassive.String():
-		return goapstra.RackLinkAttachmentTypeDual
-	case goapstra.RackLinkLagModeStatic.String():
-		return goapstra.RackLinkAttachmentTypeDual
+	case apstra.RackLinkLagModeActive.String():
+		return apstra.RackLinkAttachmentTypeDual
+	case apstra.RackLinkLagModePassive.String():
+		return apstra.RackLinkAttachmentTypeDual
+	case apstra.RackLinkLagModeStatic.String():
+		return apstra.RackLinkAttachmentTypeDual
 	}
-	return goapstra.RackLinkAttachmentTypeSingle
+	return apstra.RackLinkAttachmentTypeSingle
 }
 
-func NewLinkMap(ctx context.Context, in []goapstra.RackLink, diags *diag.Diagnostics) types.Map {
+func NewLinkMap(ctx context.Context, in []apstra.RackLink, diags *diag.Diagnostics) types.Map {
 	links := make(map[string]RackLink, len(in))
 	for _, link := range in {
 		var l RackLink

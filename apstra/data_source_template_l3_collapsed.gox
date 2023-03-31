@@ -1,7 +1,7 @@
 package apstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +17,7 @@ var _ datasource.DataSourceWithConfigure = &dataSourceTag{}
 var _ datasource.DataSourceWithValidateConfig = &dataSourceTag{}
 
 type dataSourceTemplateL3Collapsed struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceTemplateL3Collapsed) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -123,15 +123,15 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 	}
 
 	var err error
-	var ace goapstra.ApstraClientErr
-	var templateId goapstra.ObjectId
-	var templateType goapstra.TemplateType
+	var ace apstra.ApstraClientErr
+	var templateId apstra.ObjectId
+	var templateType apstra.TemplateType
 
 	// maybe the config gave us the template name?
 	if !config.Id.IsNull() { // fetch template by id
-		templateId = goapstra.ObjectId(config.Id.ValueString())
+		templateId = apstra.ObjectId(config.Id.ValueString())
 		templateType, err = o.client.GetTemplateType(ctx, templateId)
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(path.Root("id"), "Not found", err.Error())
 			return
 		}
@@ -139,15 +139,15 @@ func (o *dataSourceTemplateL3Collapsed) Read(ctx context.Context, req datasource
 
 	if !config.Name.IsNull() { // fetch template by name
 		templateId, templateType, err = o.client.GetTemplateIdTypeByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(path.Root("name"), "Not found", err.Error())
 			return
 		}
 	}
 
-	if templateType != goapstra.TemplateTypeL3Collapsed {
+	if templateType != apstra.TemplateTypeL3Collapsed {
 		resp.Diagnostics.AddError("wrong template type",
-			fmt.Sprintf("selected template has type '%s', not '%s'", templateType, goapstra.TemplateTypeL3Collapsed.String()))
+			fmt.Sprintf("selected template has type '%s', not '%s'", templateType, apstra.TemplateTypeL3Collapsed.String()))
 		return
 	}
 
@@ -182,7 +182,7 @@ type dTemplateL3Collapsed struct {
 	RackType      *dTemplateL3CollapsedRackType `tfsdk:"rack_type"`
 }
 
-func (o *dTemplateL3Collapsed) parseApi(ctx context.Context, in *goapstra.TemplateL3Collapsed, diags *diag.Diagnostics) {
+func (o *dTemplateL3Collapsed) parseApi(ctx context.Context, in *apstra.TemplateL3Collapsed, diags *diag.Diagnostics) {
 	var rackType dTemplateL3CollapsedRackType
 	rackType.parseApi(ctx, &in.Data.RackTypes[0], diags)
 	if diags.HasError() {
@@ -207,7 +207,7 @@ type dTemplateL3CollapsedRackType struct {
 	GenericSystems types.Set    `tfsdk:"generic_systems"`
 }
 
-func (o *dTemplateL3CollapsedRackType) parseApi(ctx context.Context, in *goapstra.RackType, diags *diag.Diagnostics) {
+func (o *dTemplateL3CollapsedRackType) parseApi(ctx context.Context, in *apstra.RackType, diags *diag.Diagnostics) {
 	var d diag.Diagnostics
 
 	o.Name = types.StringValue(in.Data.DisplayName)
@@ -220,7 +220,7 @@ func (o *dTemplateL3CollapsedRackType) parseApi(ctx context.Context, in *goapstr
 	}
 
 	var leafSwitch dRackTypeLeafSwitch
-	leafSwitch.parseApi(&in.Data.LeafSwitches[0], goapstra.FabricConnectivityDesignL3Collapsed)
+	leafSwitch.parseApi(&in.Data.LeafSwitches[0], apstra.FabricConnectivityDesignL3Collapsed)
 	o.LeafSwitch, d = types.ObjectValueFrom(ctx, leafSwitch.attrTypes(), &leafSwitch)
 	diags.Append(d...)
 	if diags.HasError() {

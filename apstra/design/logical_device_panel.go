@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -100,7 +100,7 @@ func (o LogicalDevicePanel) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *goapstra.LogicalDevicePanel, diags *diag.Diagnostics) {
+func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePanel, diags *diag.Diagnostics) {
 	var portGroups []LogicalDevicePanelPortGroup
 
 	portGroups = make([]LogicalDevicePanelPortGroup, len(in.PortGroups))
@@ -122,41 +122,41 @@ func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *goapstra.Logic
 	o.PortGroups = portGroupList
 }
 
-func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.LogicalDevicePanel {
+func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.LogicalDevicePanel {
 	tfPortGroups := make([]LogicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
 	diags.Append(o.PortGroups.ElementsAs(ctx, &tfPortGroups, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
-	reqPortGroups := make([]goapstra.LogicalDevicePortGroup, len(tfPortGroups))
+	reqPortGroups := make([]apstra.LogicalDevicePortGroup, len(tfPortGroups))
 	for i, pg := range tfPortGroups {
 		roleStrings := make([]string, len(pg.PortRoles.Elements()))
 		diags.Append(pg.PortRoles.ElementsAs(ctx, &roleStrings, false)...)
 		if diags.HasError() {
 			return nil
 		}
-		var reqRoles goapstra.LogicalDevicePortRoleFlags
+		var reqRoles apstra.LogicalDevicePortRoleFlags
 		err := reqRoles.FromStrings(roleStrings)
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error parsing port roles: '%s'", strings.Join(roleStrings, "','")), err.Error())
 		}
-		reqPortGroups[i] = goapstra.LogicalDevicePortGroup{
+		reqPortGroups[i] = apstra.LogicalDevicePortGroup{
 			Count: int(pg.PortCount.ValueInt64()),
-			Speed: goapstra.LogicalDevicePortSpeed(pg.PortSpeed.ValueString()),
+			Speed: apstra.LogicalDevicePortSpeed(pg.PortSpeed.ValueString()),
 			Roles: reqRoles,
 		}
 	}
 
-	return &goapstra.LogicalDevicePanel{
-		PanelLayout: goapstra.LogicalDevicePanelLayout{
+	return &apstra.LogicalDevicePanel{
+		PanelLayout: apstra.LogicalDevicePanelLayout{
 			RowCount:    int(o.Rows.ValueInt64()),
 			ColumnCount: int(o.Columns.ValueInt64()),
 		},
-		PortIndexing: goapstra.LogicalDevicePortIndexing{
-			Order:      goapstra.PortIndexingHorizontalFirst,
+		PortIndexing: apstra.LogicalDevicePortIndexing{
+			Order:      apstra.PortIndexingHorizontalFirst,
 			StartIndex: 1,
-			Schema:     goapstra.PortIndexingSchemaAbsolute,
+			Schema:     apstra.PortIndexingSchemaAbsolute,
 		},
 		PortGroups: reqPortGroups,
 	}
@@ -199,7 +199,7 @@ func (o *LogicalDevicePanel) GetPortGroups(ctx context.Context, diags *diag.Diag
 	return portGroups
 }
 
-func NewLogicalDevicePanelList(ctx context.Context, in []goapstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
+func NewLogicalDevicePanelList(ctx context.Context, in []apstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
 	if len(in) == 0 {
 		return types.ListNull(types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()})
 	}

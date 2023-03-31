@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -19,9 +19,9 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-func ValidateAccessSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+func ValidateAccessSwitch(rt *apstra.RackType, i int, diags *diag.Diagnostics) {
 	as := rt.Data.AccessSwitches[i]
-	if as.RedundancyProtocol == goapstra.AccessRedundancyProtocolEsi && as.EsiLagInfo == nil {
+	if as.RedundancyProtocol == apstra.AccessRedundancyProtocolEsi && as.EsiLagInfo == nil {
 		diags.AddError("access switch ESI LAG Info missing",
 			fmt.Sprintf("rack type '%s', access switch '%s' has '%s', but EsiLagInfo is nil",
 				rt.Id, as.Label, as.RedundancyProtocol.String()))
@@ -156,7 +156,7 @@ func (o AccessSwitch) ResourceAttributesNested() map[string]resourceSchema.Attri
 		},
 		"esi_lag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Defines connectivity between ESI LAG peers when "+
-				"`redundancy_protocol` is set to `%s`.", goapstra.AccessRedundancyProtocolEsi.String()),
+				"`redundancy_protocol` is set to `%s`.", apstra.AccessRedundancyProtocolEsi.String()),
 			Computed:   true,
 			Attributes: EsiLagInfo{}.ResourceAttributes(),
 		},
@@ -203,20 +203,20 @@ func (o AccessSwitch) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackType, diags *diag.Diagnostics) *goapstra.RackElementAccessSwitchRequest {
-	redundancyProtocol := goapstra.AccessRedundancyProtocolNone
+func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackType, diags *diag.Diagnostics) *apstra.RackElementAccessSwitchRequest {
+	redundancyProtocol := apstra.AccessRedundancyProtocolNone
 	if !o.EsiLagInfo.IsNull() {
-		redundancyProtocol = goapstra.AccessRedundancyProtocolEsi
+		redundancyProtocol = apstra.AccessRedundancyProtocolEsi
 	}
 
-	lacpActive := goapstra.RackLinkLagModeActive.String()
+	lacpActive := apstra.RackLinkLagModeActive.String()
 
 	links := o.GetLinks(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
 
-	linkRequests := make([]goapstra.RackLinkRequest, len(links))
+	linkRequests := make([]apstra.RackLinkRequest, len(links))
 	i := 0
 	for name, link := range links {
 		link.LagMode = types.StringValue(lacpActive)
@@ -233,11 +233,11 @@ func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackTy
 		i++
 	}
 
-	var tagIds []goapstra.ObjectId
-	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	var tagIds []apstra.ObjectId
+	tagIds = make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
-	var esiLagInfo *goapstra.EsiLagInfo
+	var esiLagInfo *apstra.EsiLagInfo
 	if !o.EsiLagInfo.IsNull() {
 		var eli *EsiLagInfo
 		diags.Append(o.EsiLagInfo.As(ctx, &eli, basetypes.ObjectAsOptions{})...)
@@ -250,21 +250,21 @@ func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackTy
 		}
 	}
 
-	return &goapstra.RackElementAccessSwitchRequest{
+	return &apstra.RackElementAccessSwitchRequest{
 		InstanceCount:      int(o.Count.ValueInt64()),
 		RedundancyProtocol: redundancyProtocol,
 		Links:              linkRequests,
-		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LogicalDeviceId:    apstra.ObjectId(o.LogicalDeviceId.ValueString()),
 		Tags:               tagIds,
 		EsiLagInfo:         esiLagInfo,
 	}
 }
 
-func (o *AccessSwitch) LoadApiData(ctx context.Context, in *goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
+func (o *AccessSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementAccessSwitch, diags *diag.Diagnostics) {
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.EsiLagInfo = NewEsiLagInfo(ctx, in.EsiLagInfo, diags)
-	o.RedundancyProtocol = utils.StringValueWithNull(ctx, in.RedundancyProtocol.String(), goapstra.AccessRedundancyProtocolNone.String(), diags)
+	o.RedundancyProtocol = utils.StringValueWithNull(ctx, in.RedundancyProtocol.String(), apstra.AccessRedundancyProtocolNone.String(), diags)
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = NewLinkMap(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
@@ -324,7 +324,7 @@ func (o *AccessSwitch) CopyWriteOnlyElements(ctx context.Context, src *AccessSwi
 	}
 }
 
-func NewAccessSwitchMap(ctx context.Context, in []goapstra.RackElementAccessSwitch, diags *diag.Diagnostics) types.Map {
+func NewAccessSwitchMap(ctx context.Context, in []apstra.RackElementAccessSwitch, diags *diag.Diagnostics) types.Map {
 	accessSwitches := make(map[string]AccessSwitch, len(in))
 	for _, accessIn := range in {
 		var as AccessSwitch

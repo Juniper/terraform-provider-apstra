@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -13,7 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceAgentProfile{}
 
 type resourceAgentProfile struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceAgentProfile) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -80,10 +80,10 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Get Agent Profile from API and then update what is in state from what the API returns
-	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	ap, err := o.client.GetAgentProfile(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -124,10 +124,10 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace goapstra.ApstraClientErr
-	err := o.client.UpdateAgentProfile(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	var ace apstra.ApstraClientErr
+	err := o.client.UpdateAgentProfile(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -136,7 +136,7 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
-	ap, err := o.client.GetAgentProfile(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	ap, err := o.client.GetAgentProfile(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Agent Profile", err.Error())
 		return
@@ -166,10 +166,10 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 	}
 
 	// Delete Agent Profile by calling API
-	err := o.client.DeleteAgentProfile(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteAgentProfile(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError("error deleting Agent Profile", err.Error())
 			return
 		}

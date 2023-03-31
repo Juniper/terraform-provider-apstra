@@ -1,9 +1,9 @@
 package apstravalidator
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -32,14 +32,14 @@ func (o LeafSwitchMlagInfoValidator) ValidateString(ctx context.Context, req val
 		return
 	}
 
-	if !miObj.IsNull() && req.ConfigValue.ValueString() != goapstra.LeafRedundancyProtocolMlag.String() {
+	if !miObj.IsNull() && req.ConfigValue.ValueString() != apstra.LeafRedundancyProtocolMlag.String() {
 		resp.Diagnostics.AddAttributeError(req.Path, errInvalidConfig,
 			fmt.Sprintf("setting '%s' at '%s' is incompatible with '%s'",
 				req.ConfigValue.ValueString(), req.Path.String(), mlagInfoPath.String()))
 		return
 	}
 
-	if miObj.IsNull() && req.ConfigValue.ValueString() == goapstra.LeafRedundancyProtocolMlag.String() {
+	if miObj.IsNull() && req.ConfigValue.ValueString() == apstra.LeafRedundancyProtocolMlag.String() {
 		resp.Diagnostics.AddAttributeError(req.Path, errInvalidConfig,
 			fmt.Sprintf("setting '%s' at '%s' requires setting '%s'",
 				req.ConfigValue.ValueString(), req.Path.String(), mlagInfoPath.String()))
