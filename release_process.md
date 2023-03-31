@@ -63,7 +63,7 @@ These tokens expire, will need to be refreshed before `goreleaser` can deliver a
   - Note the token string. If you're planning to hang onto the token think about how you'll store it securely.
   It's a nuclear bomb, definitely better NOT written to disk.
 
-### Release Signing
+### Build. Package. Sign. Upload.
 - Confirm that you have a github API token and know the signing key passphrase.
 - Confirm that you're on the `main` branch, and there are no un-committed changes.
   ```shell
