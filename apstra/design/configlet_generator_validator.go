@@ -3,8 +3,11 @@ package design
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ validator.Object = ConfigletGeneratorValidator{}
@@ -13,7 +16,7 @@ type ConfigletGeneratorValidator struct {
 }
 
 func (o ConfigletGeneratorValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that the section name matches the config style.")
+	return fmt.Sprintf("Ensures that the section names matches the config style.")
 }
 
 func (o ConfigletGeneratorValidator) MarkdownDescription(ctx context.Context) string {
@@ -24,24 +27,32 @@ func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req val
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		return
 	}
-	var c ConfigletGenerator
-	resp.Diagnostics.Append(req.ConfigValue.As(ctx, &c, basetypes.ObjectAsOptions{})...)
+
+	var generator ConfigletGenerator
+	resp.Diagnostics.Append(req.ConfigValue.As(ctx, &generator, basetypes.ObjectAsOptions{})...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	cg := c.Request(ctx, &resp.Diagnostics)
+
+	request := generator.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	valid := false
-	for _, i := range cg.ConfigStyle.ValidSections() {
-		if i == cg.Section {
-			valid = true
-			break
-		}
+
+	if !utils.ItemInSlice(request.Section, request.ConfigStyle.ValidSections()) {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			req.Path.AtName("section"),
+			fmt.Sprintf("Section %q not valid with config_style %q",
+				request.Section.String(), request.ConfigStyle.String()),
+		))
 	}
-	if !valid {
-		resp.Diagnostics.AddError("Invalid Section", fmt.Sprintf("Invalid Section %q used for Config Style %q", cg.Section.String(), cg.ConfigStyle.String()))
+
+	if !generator.FileName.IsNull() && request.Section != apstra.ConfigletSectionFile {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			req.Path.AtName("filename"),
+			fmt.Sprintf("'filename' attribute permitted only when section == %q",
+				apstra.ConfigletSectionFile.String()),
+		))
 	}
 }
 

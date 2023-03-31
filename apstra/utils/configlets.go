@@ -16,7 +16,28 @@ func ConfigletSupportsPlatforms(configlet *apstra.Configlet, platforms []apstra.
 	return true
 }
 
-func SectionNamesByOS(os apstra.PlatformOS) []string {
+func AllConfigletSectionNames() []string {
+	platformToFriendlySectionName := ConfigletValidSectionsMap() // map of os -> friendly section names
+	friendlySectionNames := make(map[string]struct{})            // unique-ify the friendly section names here
+
+	for _, v := range platformToFriendlySectionName {
+		for _, friendlyName := range v {
+			friendlySectionNames[friendlyName] = struct{}{} // map keys are friendly names across all platforms
+		}
+	}
+
+	// turn the map into a list
+	var i int
+	result := make([]string, len(friendlySectionNames))
+	for k := range friendlySectionNames {
+		result[i] = k
+		i++
+	}
+
+	return result
+}
+
+func ConfigletSectionNamesByOS(os apstra.PlatformOS) []string {
 	var r []string
 	for _, v := range os.ValidSections() {
 		r = append(r, StringersToFriendlyString(v, os))
@@ -24,10 +45,10 @@ func SectionNamesByOS(os apstra.PlatformOS) []string {
 	return r
 }
 
-func ValidSectionsMap() map[string][]string {
+func ConfigletValidSectionsMap() map[string][]string {
 	var m = make(map[string][]string)
 	for _, i := range apstra.AllPlatformOSes() {
-		m[i.String()] = SectionNamesByOS(i)
+		m[i.String()] = ConfigletSectionNamesByOS(i)
 	}
 	return m
 }
