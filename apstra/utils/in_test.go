@@ -49,7 +49,7 @@ func TestItemInSlice(t *testing.T) {
 			result = ItemInSlice(item, slice)
 		}
 		if result != tc.expected {
-			t.Fatalf("test case %d produced %t, epexcted %t", i, result, tc.expected)
+			t.Fatalf("test case %d produced %t, expected %t", i, result, tc.expected)
 		}
 	}
 }
