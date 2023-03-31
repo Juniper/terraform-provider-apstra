@@ -1,4 +1,4 @@
-package apstra
+package tfapstra
 
 const (
 	errApiCompatibility                       = "Apstra API version incompatibility"

@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
 
 type resourceDatacenterRoutingZone struct {
-	client   *goapstra.Client
+	client   *apstra.Client
 	lockFunc func(context.Context, string) error
 }
 
@@ -56,7 +56,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
@@ -100,16 +100,16 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -147,7 +147,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
@@ -158,13 +158,13 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
-	err = bp.UpdateSecurityZone(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating security zone", err.Error())
 		return
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
 	}
@@ -199,16 +199,16 @@ func (o *resourceDatacenterRoutingZone) Delete(ctx context.Context, req resource
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	err = bp.DeleteSecurityZone(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting routing zone", err.Error())

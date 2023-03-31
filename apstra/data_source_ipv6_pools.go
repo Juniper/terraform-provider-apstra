@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -11,7 +11,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceIpv6Pools{}
 
 type dataSourceIpv6Pools struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceIpv6Pools) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {

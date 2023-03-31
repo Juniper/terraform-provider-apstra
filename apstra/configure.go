@@ -1,14 +1,14 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-func DataSourceGetClient(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) *goapstra.Client {
+func DataSourceGetClient(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) *apstra.Client {
 	if req.ProviderData == nil {
 		return nil
 	}
@@ -26,7 +26,7 @@ func DataSourceGetClient(_ context.Context, req datasource.ConfigureRequest, res
 	return nil
 }
 
-func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) *goapstra.Client {
+func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) *apstra.Client {
 	if req.ProviderData == nil {
 		return nil
 	}

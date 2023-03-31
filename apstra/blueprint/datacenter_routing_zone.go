@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -78,10 +78,10 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 	}
 }
 
-func (o *DatacenterRoutingZone) Request(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) *goapstra.SecurityZoneData {
-	var vlan *goapstra.Vlan
+func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) *apstra.SecurityZoneData {
+	var vlan *apstra.Vlan
 	if !o.VlanId.IsNull() && !o.VlanId.IsUnknown() {
-		v := goapstra.Vlan(o.VlanId.ValueInt64())
+		v := apstra.Vlan(o.VlanId.ValueInt64())
 		vlan = &v
 	}
 
@@ -91,31 +91,31 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *goapstra.Cl
 		vni = &v
 	}
 
-	ocp, err := client.BlueprintOverlayControlProtocol(ctx, goapstra.ObjectId(o.BlueprintId.ValueString()))
+	ocp, err := client.BlueprintOverlayControlProtocol(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
 		diags.AddError(fmt.Sprintf("API error querying for blueprint %q Overlay Control Protocol",
 			o.BlueprintId.ValueString()), err.Error())
 		return nil
 	}
 
-	if ocp != goapstra.OverlayControlProtocolEvpn {
+	if ocp != apstra.OverlayControlProtocolEvpn {
 		diags.AddAttributeError(
 			path.Root("blueprint_id"),
 			errInvalidConfig,
 			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosettta treatment
 	}
 
-	return &goapstra.SecurityZoneData{
-		SzType:          goapstra.SecurityZoneTypeEVPN,
+	return &apstra.SecurityZoneData{
+		SzType:          apstra.SecurityZoneTypeEVPN,
 		VrfName:         o.Name.ValueString(),
 		Label:           o.Name.ValueString(),
-		RoutingPolicyId: goapstra.ObjectId(o.RoutingPolicyId.ValueString()),
+		RoutingPolicyId: apstra.ObjectId(o.RoutingPolicyId.ValueString()),
 		VlanId:          vlan,
 		VniId:           vni,
 	}
 }
 
-func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *goapstra.SecurityZoneData, diags *diag.Diagnostics) {
+func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.SecurityZoneData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(sz.VrfName)
 	o.VlanId = types.Int64Value(int64(*sz.VlanId))
 

@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -115,7 +115,7 @@ func (o Ipv4Pool) ResourceAttributesWrite() map[string]resourceSchema.Attribute 
 	}
 }
 
-func (o *Ipv4Pool) LoadApiData(ctx context.Context, in *goapstra.IpPool, diags *diag.Diagnostics) {
+func (o *Ipv4Pool) LoadApiData(ctx context.Context, in *apstra.IpPool, diags *diag.Diagnostics) {
 	subnets := make([]Ipv4PoolSubnet, len(in.Subnets))
 	for i, s := range in.Subnets {
 		subnets[i].LoadApiData(ctx, &s, diags)
@@ -133,10 +133,10 @@ func (o *Ipv4Pool) LoadApiData(ctx context.Context, in *goapstra.IpPool, diags *
 	o.Subnets = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: Ipv4PoolSubnet{}.AttrTypes()}, subnets, diags)
 }
 
-func (o *Ipv4Pool) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.NewIpPoolRequest {
-	response := goapstra.NewIpPoolRequest{
+func (o *Ipv4Pool) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.NewIpPoolRequest {
+	response := apstra.NewIpPoolRequest{
 		DisplayName: o.Name.ValueString(),
-		Subnets:     make([]goapstra.NewIpSubnet, len(o.Subnets.Elements())),
+		Subnets:     make([]apstra.NewIpSubnet, len(o.Subnets.Elements())),
 	}
 
 	subnets := make([]Ipv4PoolSubnet, len(o.Subnets.Elements()))

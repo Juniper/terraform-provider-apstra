@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -112,24 +112,24 @@ func (o Spine) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *Spine) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.TemplateElementSpineRequest {
-	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+func (o *Spine) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.TemplateElementSpineRequest {
+	tagIds := make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	d := o.TagIds.ElementsAs(ctx, &tagIds, false)
 	diags.Append(d...)
 	if diags.HasError() {
 		return nil
 	}
 
-	return &goapstra.TemplateElementSpineRequest{
+	return &apstra.TemplateElementSpineRequest{
 		Count:                  int(o.Count.ValueInt64()),
-		LinkPerSuperspineSpeed: goapstra.LogicalDevicePortSpeed(o.SuperSpineLinkSpeed.ValueString()),
-		LogicalDevice:          goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LinkPerSuperspineSpeed: apstra.LogicalDevicePortSpeed(o.SuperSpineLinkSpeed.ValueString()),
+		LogicalDevice:          apstra.ObjectId(o.LogicalDeviceId.ValueString()),
 		LinkPerSuperspineCount: int(o.SuperSpineLinkCount.ValueInt64()),
 		Tags:                   tagIds,
 	}
 }
 
-func (o *Spine) LoadApiData(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) {
+func (o *Spine) LoadApiData(ctx context.Context, in *apstra.Spine, diags *diag.Diagnostics) {
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, &in.LogicalDevice, diags)
 	o.Count = types.Int64Value(int64(in.Count))
 
@@ -153,7 +153,7 @@ func (o *Spine) CopyWriteOnlyElements(ctx context.Context, src *Spine, diags *di
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
-func NewDesignTemplateSpineObject(ctx context.Context, in *goapstra.Spine, diags *diag.Diagnostics) types.Object {
+func NewDesignTemplateSpineObject(ctx context.Context, in *apstra.Spine, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to generate Spine object from nil source")
 		return types.ObjectNull(Spine{}.AttrTypes())

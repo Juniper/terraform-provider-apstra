@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -16,7 +16,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
 
 type dataSourceConfiglets struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceConfiglets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -67,7 +67,7 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	var err error
-	var ids []goapstra.ObjectId
+	var ids []apstra.ObjectId
 	if config.SupportedPlatforms.IsNull() {
 		// no required platform filters
 		ids, err = o.client.ListAllConfiglets(ctx)
@@ -84,7 +84,7 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 
-		platforms := make([]goapstra.PlatformOS, len(platformStrings))
+		platforms := make([]apstra.PlatformOS, len(platformStrings))
 		for i := range platformStrings {
 			err := platforms[i].FromString(platformStrings[i])
 			if err != nil {
@@ -102,7 +102,7 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 
-		ids = make([]goapstra.ObjectId, len(configlets))
+		ids = make([]apstra.ObjectId, len(configlets))
 		var count int
 		for i := range configlets {
 			if utils.ConfigletSupportsPlatforms(&configlets[i], platforms) {

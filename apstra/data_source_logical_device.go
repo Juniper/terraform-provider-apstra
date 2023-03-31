@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceLogicalDevice{}
 
 type dataSourceLogicalDevice struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceLogicalDevice) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -49,13 +49,13 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	var err error
-	var api *goapstra.LogicalDevice
-	var ace goapstra.ApstraClientErr
+	var api *apstra.LogicalDevice
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		api, err = o.client.GetLogicalDeviceByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Logical Device not found",
@@ -63,8 +63,8 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = o.client.GetLogicalDevice(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		api, err = o.client.GetLogicalDevice(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Logical Device not found",

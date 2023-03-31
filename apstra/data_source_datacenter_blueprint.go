@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
 
 type dataSourceDatacenterBlueprint struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceDatacenterBlueprint) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -48,13 +48,13 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 	}
 
 	var err error
-	var apiData *goapstra.BlueprintStatus
-	var ace goapstra.ApstraClientErr
+	var apiData *apstra.BlueprintStatus
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetBlueprintStatusByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Blueprint not found",
@@ -62,8 +62,8 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 			return
 		}
 	case !config.Id.IsNull():
-		apiData, err = o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		apiData, err = o.client.GetBlueprintStatus(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Blueprint not found",

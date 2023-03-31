@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -95,9 +95,9 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
 			Optional:            true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				goapstra.AgentPlatformNXOS.String(),
-				goapstra.AgentPlatformJunos.String(),
-				goapstra.AgentPlatformEOS.String(),
+				apstra.AgentPlatformNXOS.String(),
+				apstra.AgentPlatformJunos.String(),
+				apstra.AgentPlatformEOS.String(),
 			)},
 		},
 		"packages": resourceSchema.MapAttribute{
@@ -117,7 +117,7 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AgentProfileConfig {
+func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *apstra.AgentProfileConfig {
 	var platform string
 	if o.Platform.IsNull() || o.Platform.IsUnknown() {
 		platform = ""
@@ -125,7 +125,7 @@ func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *go
 		platform = o.Platform.ValueString()
 	}
 
-	packages := make(goapstra.AgentPackages)
+	packages := make(apstra.AgentPackages)
 	diags.Append(o.Packages.ElementsAs(ctx, &packages, false)...)
 	if diags.HasError() {
 		return nil
@@ -137,7 +137,7 @@ func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *go
 		return nil
 	}
 
-	return &goapstra.AgentProfileConfig{
+	return &apstra.AgentProfileConfig{
 		Label:       o.Name.ValueString(),
 		Platform:    platform,
 		Packages:    packages,
@@ -145,7 +145,7 @@ func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *go
 	}
 }
 
-func (o *agentProfile) loadApiData(ctx context.Context, in *goapstra.AgentProfile, diags *diag.Diagnostics) {
+func (o *agentProfile) loadApiData(ctx context.Context, in *apstra.AgentProfile, diags *diag.Diagnostics) {
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Label)
 	o.Platform = utils.StringValueOrNull(ctx, in.Platform, diags)

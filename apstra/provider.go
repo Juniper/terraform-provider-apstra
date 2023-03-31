@@ -1,10 +1,10 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -19,9 +19,6 @@ import (
 )
 
 const (
-	DefaultVersion = "0.0.0"
-	DefaultCommit  = "devel"
-
 	envTlsKeyLogFile  = "SSLKEYLOGFILE"
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
@@ -34,7 +31,7 @@ const (
 var _ provider.Provider = &Provider{}
 
 // map of mutexes keyed by blueprint ID
-var blueprintMutexes map[string]goapstra.Mutex
+var blueprintMutexes map[string]apstra.Mutex
 
 // mutex which we use to control access to blueprintMutexes
 var blueprintMutexesMutex sync.Mutex
@@ -44,14 +41,14 @@ type Provider struct {
 	Version    string
 	Commit     string
 	configured bool
-	client     *goapstra.Client
+	client     *apstra.Client
 }
 
 // providerData gets instantiated in Provider's Configure() method and
 // is made available to the Configure() method of implementations of
 // datasource.DataSource and resource.Resource
 type providerData struct {
-	client           *goapstra.Client
+	client           *apstra.Client
 	providerVersion  string
 	terraformVersion string
 	bpLockFunc       func(context.Context, string) error
@@ -174,7 +171,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	parsedUrl.User = nil
 
 	// Create the clientCfg
-	clientCfg := &goapstra.ClientCfg{
+	clientCfg := &apstra.ClientCfg{
 		Url:          parsedUrl.String(),
 		User:         user,
 		Pass:         pass,
@@ -209,7 +206,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.KeyLogWriter = klw
 	}
 
-	// Create the goapstra client.
+	// Create the Apstra client.
 	client, err := clientCfg.NewClient()
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -236,7 +233,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 	if !config.MutexDisable.ValueBool() {
 		// non-nil slice signals intent to lock and track mutexes
-		blueprintMutexes = make(map[string]goapstra.Mutex, 0)
+		blueprintMutexes = make(map[string]apstra.Mutex, 0)
 	}
 
 	bpLockFunc := func(ctx context.Context, id string) error {
@@ -253,7 +250,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 			return nil
 		}
 
-		bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(id))
+		bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(id))
 		if err != nil {
 			return fmt.Errorf("error creating blueprint client while attempting to lock blueprint mutex - %w", err)
 		}

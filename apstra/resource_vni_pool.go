@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -16,7 +16,7 @@ var _ resource.ResourceWithConfigure = &resourceVniPool{}
 var _ resource.ResourceWithValidateConfig = &resourceVniPool{}
 
 type resourceVniPool struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceVniPool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -52,7 +52,7 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 		return
 	}
 
-	var okayRanges goapstra.IntRanges
+	var okayRanges apstra.IntRanges
 	for _, poolRange := range poolRanges {
 		setVal, d := types.ObjectValueFrom(ctx, poolRange.AttrTypes(), &poolRange)
 		resp.Diagnostics.Append(d...)
@@ -64,7 +64,7 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 		last := uint32(poolRange.Last.ValueInt64())
 
 		// check whether this range overlaps previous ranges
-		if okayRanges.Overlaps(goapstra.IntRangeRequest{
+		if okayRanges.Overlaps(apstra.IntRangeRequest{
 			First: first,
 			Last:  last,
 		}) {
@@ -77,7 +77,7 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 		}
 
 		// no overlap, append this range to the list for future overlap checks
-		okayRanges = append(okayRanges, goapstra.IntRange{
+		okayRanges = append(okayRanges, apstra.IntRange{
 			First: first,
 			Last:  last,
 		})
@@ -109,12 +109,12 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// read pool back from Apstra to get usage statistics
-	var ace goapstra.ApstraClientErr
-	var pool *goapstra.VniPool
+	var ace apstra.ApstraClientErr
+	var pool *apstra.VniPool
 	for {
 		pool, err = o.client.GetVniPool(ctx, id)
 		if err != nil {
-			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
 					"VNI Pool not found",
@@ -124,7 +124,7 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 			resp.Diagnostics.AddError("Error retrieving VNI Pool", err.Error())
 			return
 		}
-		if pool.Status != goapstra.PoolStatusCreating {
+		if pool.Status != apstra.PoolStatusCreating {
 			break
 		}
 	}
@@ -154,10 +154,10 @@ func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// Get VNI pool from API and then update what is in state from what the API returns
-	p, err := o.client.GetVniPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	p, err := o.client.GetVniPool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -196,10 +196,10 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace goapstra.ApstraClientErr
-	err := o.client.UpdateVniPool(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	var ace apstra.ApstraClientErr
+	err := o.client.UpdateVniPool(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -209,9 +209,9 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// read pool back from Apstra to get usage statistics
-	p, err := o.client.GetVniPool(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	p, err := o.client.GetVniPool(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"VNI Pool not found",
@@ -246,10 +246,10 @@ func (o *resourceVniPool) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	// Delete VNI pool by calling API
-	err := o.client.DeleteVniPool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteVniPool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError("error deleting VNI pool", err.Error())
 		}
 		return

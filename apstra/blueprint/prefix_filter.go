@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -53,10 +53,10 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: fmt.Sprintf("If the action is %q, match the route. If the action is %q, do "+
 				"not match the route. For composing complex policies, all prefix-list items will be processed in the "+
 				"order specified, top-down. This allows the user to deny a subset of a route that may otherwise be "+
-				"permitted.", goapstra.PrefixFilterActionPermit, goapstra.PrefixFilterActionDeny),
+				"permitted.", apstra.PrefixFilterActionPermit, apstra.PrefixFilterActionDeny),
 			Computed:   true,
 			Optional:   true,
-			Default:    stringdefault.StaticString(goapstra.PrefixFilterActionPermit.String()),
+			Default:    stringdefault.StaticString(apstra.PrefixFilterActionPermit.String()),
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllValidPrefixFilterActions()...)},
 		},
 	}
@@ -71,15 +71,15 @@ func (o prefixFilter) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *prefixFilter) loadApiData(ctx context.Context, in *goapstra.PrefixFilter, diags *diag.Diagnostics) {
+func (o *prefixFilter) loadApiData(ctx context.Context, in *apstra.PrefixFilter, diags *diag.Diagnostics) {
 	o.Prefix = types.StringValue(in.Prefix.String())
 	o.GeMask = utils.Int64ValueOrNull(ctx, in.GeMask, diags)
 	o.LeMask = utils.Int64ValueOrNull(ctx, in.LeMask, diags)
 	o.Action = types.StringValue(in.Action.String())
 }
 
-func (o *prefixFilter) request(_ context.Context, diags *diag.Diagnostics) *goapstra.PrefixFilter {
-	var action goapstra.PrefixFilterAction
+func (o *prefixFilter) request(_ context.Context, diags *diag.Diagnostics) *apstra.PrefixFilter {
+	var action apstra.PrefixFilterAction
 	err := action.FromString(o.Action.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing prefix filter action string %q", o.Action.ValueString()), err.Error())
@@ -102,7 +102,7 @@ func (o *prefixFilter) request(_ context.Context, diags *diag.Diagnostics) *goap
 		leMask = &m
 	}
 
-	return &goapstra.PrefixFilter{
+	return &apstra.PrefixFilter{
 		Action: action,
 		Prefix: *prefix,
 		GeMask: geMask,

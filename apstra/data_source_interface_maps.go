@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -15,7 +15,7 @@ var _ datasource.DataSourceWithConfigure = &dataSourceInterfaceMaps{}
 var _ versionValidator = &dataSourceBlueprints{}
 
 type dataSourceInterfaceMaps struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceInterfaceMaps) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -61,7 +61,7 @@ func (o *dataSourceInterfaceMaps) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	var ids []goapstra.ObjectId
+	var ids []apstra.ObjectId
 	var err error
 	if config.LogicalDeviceId.IsNull() && config.DeviceProfileId.IsNull() {
 		ids, err = o.client.ListAllInterfaceMapIds(ctx)

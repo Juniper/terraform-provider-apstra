@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -12,7 +12,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
 
 type dataSourceBlueprintDeploy struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceBlueprintDeploy) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {

@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -18,7 +18,7 @@ var _ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
 var _ versionValidator = &resourceTemplateRackBased{}
 
 type resourceTemplateRackBased struct {
-	client           *goapstra.Client
+	client           *apstra.Client
 	minClientVersion *version.Version
 	maxClientVersion *version.Version
 }
@@ -132,10 +132,10 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 	}
 
 	// Get Rack Based Template from API and then update what is in state from what the API returns
-	api, err := o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	api, err := o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -184,7 +184,7 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 	}
 
 	// update
-	err := o.client.UpdateRackBasedTemplate(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	err := o.client.UpdateRackBasedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Rack Based Template",
@@ -193,7 +193,7 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	api, err := o.client.GetRackBasedTemplate(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	api, err := o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error retrieving recently updated Rack Based Template",
@@ -231,10 +231,10 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 	}
 
 	// Delete Agent Profile by calling API
-	err := o.client.DeleteTemplate(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError(
 				"error deleting Agent Profile",
 				fmt.Sprintf("could not delete Agent Profile %q - %s", state.Id.ValueString(), err),

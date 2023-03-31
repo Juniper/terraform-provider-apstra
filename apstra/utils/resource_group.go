@@ -1,9 +1,9 @@
 package utils
 
-import "bitbucket.org/apstrktr/goapstra"
+import "github.com/Juniper/apstra-go-sdk/apstra"
 
 func AllResourceGroupNameStrings() []string {
-	argn := goapstra.AllResourceGroupNames()
+	argn := apstra.AllResourceGroupNames()
 	result := make([]string, len(argn))
 	for i := range argn {
 		result[i] = argn[i].String()

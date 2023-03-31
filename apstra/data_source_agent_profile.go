@@ -1,10 +1,10 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfile{}
 
 type dataSourceAgentProfile struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceAgentProfile) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -46,13 +46,13 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	var err error
-	var apiData *goapstra.AgentProfile
-	var ace goapstra.ApstraClientErr
+	var apiData *apstra.AgentProfile
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Agent Profile not found",
@@ -60,8 +60,8 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 			return
 		}
 	case !config.Id.IsNull():
-		apiData, err = o.client.GetAgentProfile(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		apiData, err = o.client.GetAgentProfile(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Agent Profile not found",

@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -63,7 +63,7 @@ func (o TemplateRackInfo) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *TemplateRackInfo) LoadApiData(ctx context.Context, in *goapstra.TemplateRackBasedRackInfo, diags *diag.Diagnostics) {
+func (o *TemplateRackInfo) LoadApiData(ctx context.Context, in *apstra.TemplateRackBasedRackInfo, diags *diag.Diagnostics) {
 	if in.Count == 0 {
 		diags.AddError(errProviderBug, "attempt to load TemplateRackInfo with 0 instances of rack type")
 		return
@@ -73,8 +73,8 @@ func (o *TemplateRackInfo) LoadApiData(ctx context.Context, in *goapstra.Templat
 	o.RackType = NewRackTypeObject(ctx, in.RackTypeData, diags)
 }
 
-func NewRackInfoMap(ctx context.Context, in *goapstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Map {
-	rackTypeMap := make(map[goapstra.ObjectId]TemplateRackInfo, len(in.RackInfo))
+func NewRackInfoMap(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Map {
+	rackTypeMap := make(map[apstra.ObjectId]TemplateRackInfo, len(in.RackInfo))
 	for key, apiData := range in.RackInfo {
 		var tri TemplateRackInfo
 		tri.LoadApiData(ctx, &apiData, diags)

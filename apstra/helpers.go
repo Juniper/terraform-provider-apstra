@@ -1,4 +1,4 @@
-package apstra
+package tfapstra
 
 import (
 	"fmt"
@@ -50,9 +50,9 @@ func sliceWithoutInt(in []int, t int) ([]int, int) {
 	return result[:resultIdx], len(in) - resultIdx
 }
 
-//// getAllSystemsInfo returns map[string]goapstra.ManagedSystemInfo keyed by
+//// getAllSystemsInfo returns map[string]apstra.ManagedSystemInfo keyed by
 //// device_key (switch serial number)
-//func getAllSystemsInfo(ctx context.Context, client *goapstra.client, diags *diag.Diagnostics) map[string]goapstra.ManagedSystemInfo {
+//func getAllSystemsInfo(ctx context.Context, client *apstra.client, diags *diag.Diagnostics) map[string]apstra.ManagedSystemInfo {
 //	// pull SystemInfo for all switches managed by apstra
 //	asi, err := client.GetAllSystemsInfo(ctx) // pull all managed systems info from Apstra
 //	if err != nil {
@@ -61,18 +61,18 @@ func sliceWithoutInt(in []int, t int) ([]int, int) {
 //	}
 //
 //	// organize the []ManagedSystemInfo into a map by device key (serial number)
-//	deviceKeyToSystemInfo := make(map[string]goapstra.ManagedSystemInfo, len(asi))
+//	deviceKeyToSystemInfo := make(map[string]apstra.ManagedSystemInfo, len(asi))
 //	for i := range asi {
 //		deviceKeyToSystemInfo[asi[i].DeviceKey] = asi[i]
 //	}
 //	return deviceKeyToSystemInfo
 //}
 //
-//func sliceAttrValueToSliceObjectId(in []attr.Value) []goapstra.ObjectId {
-//	result := make([]goapstra.ObjectId, len(in))
+//func sliceAttrValueToSliceObjectId(in []attr.Value) []apstra.ObjectId {
+//	result := make([]apstra.ObjectId, len(in))
 //	stringSlice := sliceAttrValueToSliceString(in)
 //	for i, s := range stringSlice {
-//		result[i] = goapstra.ObjectId(s)
+//		result[i] = apstra.ObjectId(s)
 //	}
 //	return result
 //}

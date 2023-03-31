@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourcePoolAllocation{}
 
 type resourcePoolAllocation struct {
-	client     *goapstra.Client
+	client     *apstra.Client
 	lockFunc   func(context.Context, string) error
 	unlockFunc func(context.Context, string) error
 }
@@ -59,7 +59,7 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	}
 
 	// Ensure the blueprint exists.
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
 		return
 	}
@@ -74,7 +74,7 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	}
 
 	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 	}
@@ -114,16 +114,16 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
 		return
 	}
 
 	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -165,7 +165,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	}
 
 	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -180,7 +180,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	}
 
 	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(plan.BlueprintId.ValueString()))
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 	}
@@ -215,7 +215,7 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	}
 
 	// No need to proceed if the blueprint no longer exists
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
 		return
 	}
 
@@ -232,7 +232,7 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	state.PoolIds = types.SetNull(types.StringType)
 
 	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(state.BlueprintId.ValueString()))
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 	}

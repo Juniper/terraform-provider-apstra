@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -20,9 +20,9 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-func ValidateLeafSwitch(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+func ValidateLeafSwitch(rt *apstra.RackType, i int, diags *diag.Diagnostics) {
 	ls := rt.Data.LeafSwitches[i]
-	if ls.RedundancyProtocol == goapstra.LeafRedundancyProtocolMlag && ls.MlagInfo == nil {
+	if ls.RedundancyProtocol == apstra.LeafRedundancyProtocolMlag && ls.MlagInfo == nil {
 		diags.AddError("leaf switch MLAG Info missing",
 			fmt.Sprintf("rack type '%s', leaf switch '%s' has '%s', but EsiLagInfo is nil",
 				rt.Id, ls.Label, ls.RedundancyProtocol.String()))
@@ -104,11 +104,11 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"mlag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
-				"defines the connectivity between MLAG peers.", goapstra.LeafRedundancyProtocolMlag.String()),
+				"defines the connectivity between MLAG peers.", apstra.LeafRedundancyProtocolMlag.String()),
 			Optional:   true,
 			Attributes: MlagInfo{}.ResourceAttributes(),
 			Validators: []validator.Object{
-				apstravalidator.ValidateSwitchLagInfo(goapstra.LeafRedundancyProtocolMlag.String()),
+				apstravalidator.ValidateSwitchLagInfo(apstra.LeafRedundancyProtocolMlag.String()),
 			},
 		},
 		"redundancy_protocol": resourceSchema.StringAttribute{
@@ -118,15 +118,15 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(LeafRedundancyModes()...),
-				apstravalidator.StringFabricConnectivityDesignMustBeWhenValue(goapstra.FabricConnectivityDesignL3Clos, "mlag"),
+				apstravalidator.StringFabricConnectivityDesignMustBeWhenValue(apstra.FabricConnectivityDesignL3Clos, "mlag"),
 			},
 		},
 		"spine_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Links per Spine.",
 			Validators: []validator.Int64{
 				int64validator.AtLeast(1),
-				apstravalidator.Int64FabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
-				apstravalidator.Int64FabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+				apstravalidator.Int64FabricConnectivityDesignMustBe(apstra.FabricConnectivityDesignL3Clos),
+				apstravalidator.Int64FabricConnectivityDesignMustBeWhenNull(apstra.FabricConnectivityDesignL3Collapsed),
 			},
 			Optional: true,
 			Computed: true,
@@ -136,8 +136,8 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				apstravalidator.StringFabricConnectivityDesignMustBe(goapstra.FabricConnectivityDesignL3Clos),
-				apstravalidator.StringFabricConnectivityDesignMustBeWhenNull(goapstra.FabricConnectivityDesignL3Collapsed),
+				apstravalidator.StringFabricConnectivityDesignMustBe(apstra.FabricConnectivityDesignL3Clos),
+				apstravalidator.StringFabricConnectivityDesignMustBeWhenNull(apstra.FabricConnectivityDesignL3Collapsed),
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
@@ -169,7 +169,7 @@ func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribu
 		},
 		"mlag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Defines connectivity between MLAG peers when "+
-				"`redundancy_protocol` is set to `%s`.", goapstra.LeafRedundancyProtocolMlag.String()),
+				"`redundancy_protocol` is set to `%s`.", apstra.LeafRedundancyProtocolMlag.String()),
 			Computed:   true,
 			Attributes: MlagInfo{}.ResourceAttributes(),
 		},
@@ -215,9 +215,9 @@ func (o LeafSwitch) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) *goapstra.RackElementLeafSwitchRequest {
+func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) *apstra.RackElementLeafSwitchRequest {
 	var linkPerSpineCount int
-	if o.SpineLinkCount.IsUnknown() && fcd == goapstra.FabricConnectivityDesignL3Clos {
+	if o.SpineLinkCount.IsUnknown() && fcd == apstra.FabricConnectivityDesignL3Clos {
 		// config omits 'spine_link_count' set default value (1) for fabric designs which require it
 		linkPerSpineCount = 1
 	} else {
@@ -225,12 +225,12 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd goapstra.F
 		linkPerSpineCount = int(o.SpineLinkCount.ValueInt64())
 	}
 
-	var linkPerSpineSpeed goapstra.LogicalDevicePortSpeed
+	var linkPerSpineSpeed apstra.LogicalDevicePortSpeed
 	if !o.SpineLinkSpeed.IsNull() {
-		linkPerSpineSpeed = goapstra.LogicalDevicePortSpeed(o.SpineLinkSpeed.ValueString())
+		linkPerSpineSpeed = apstra.LogicalDevicePortSpeed(o.SpineLinkSpeed.ValueString())
 	}
 
-	redundancyProtocol := goapstra.LeafRedundancyProtocolNone
+	redundancyProtocol := apstra.LeafRedundancyProtocolNone
 	if !o.RedundancyProtocol.IsNull() {
 		err := redundancyProtocol.FromString(o.RedundancyProtocol.ValueString())
 		if err != nil {
@@ -242,7 +242,7 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd goapstra.F
 		}
 	}
 
-	var leafMlagInfo *goapstra.LeafMlagInfo
+	var leafMlagInfo *apstra.LeafMlagInfo
 	if !o.MlagInfo.IsNull() {
 		mi := MlagInfo{}
 		d := o.MlagInfo.As(ctx, &mi, basetypes.ObjectAsOptions{})
@@ -253,28 +253,28 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd goapstra.F
 		leafMlagInfo = mi.Request(ctx, diags)
 	}
 
-	tagIds := make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	tagIds := make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
-	return &goapstra.RackElementLeafSwitchRequest{
+	return &apstra.RackElementLeafSwitchRequest{
 		MlagInfo:           leafMlagInfo,
 		LinkPerSpineCount:  linkPerSpineCount,
 		LinkPerSpineSpeed:  linkPerSpineSpeed,
 		RedundancyProtocol: redundancyProtocol,
-		LogicalDeviceId:    goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LogicalDeviceId:    apstra.ObjectId(o.LogicalDeviceId.ValueString()),
 		Tags:               tagIds,
 	}
 }
 
-func (o *LeafSwitch) LoadApiData(ctx context.Context, in *goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 
 	switch in.RedundancyProtocol {
-	case goapstra.LeafRedundancyProtocolMlag:
+	case apstra.LeafRedundancyProtocolMlag:
 		o.MlagInfo = NewMlagInfoObject(ctx, in.MlagInfo, diags)
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
-	case goapstra.LeafRedundancyProtocolEsi:
+	case apstra.LeafRedundancyProtocolEsi:
 		o.MlagInfo = types.ObjectNull(MlagInfo{}.AttrTypes())
 		o.RedundancyProtocol = types.StringValue(in.RedundancyProtocol.String())
 	default:
@@ -282,7 +282,7 @@ func (o *LeafSwitch) LoadApiData(ctx context.Context, in *goapstra.RackElementLe
 		o.RedundancyProtocol = types.StringNull()
 	}
 
-	if fcd == goapstra.FabricConnectivityDesignL3Collapsed {
+	if fcd == apstra.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Null()
 		o.SpineLinkSpeed = types.StringNull()
 	} else {
@@ -304,7 +304,7 @@ func (o *LeafSwitch) CopyWriteOnlyElements(ctx context.Context, src *LeafSwitch,
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
-func NewLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, fcd goapstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
+func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
 	leafSwitches := make(map[string]LeafSwitch, len(in))
 	for _, leafIn := range in {
 		var ls LeafSwitch
@@ -321,6 +321,6 @@ func NewLeafSwitchMap(ctx context.Context, in []goapstra.RackElementLeafSwitch, 
 // LeafRedundancyModes returns permitted fabric_connectivity_design mode strings
 func LeafRedundancyModes() []string {
 	return []string{
-		goapstra.LeafRedundancyProtocolEsi.String(),
-		goapstra.LeafRedundancyProtocolMlag.String()}
+		apstra.LeafRedundancyProtocolEsi.String(),
+		apstra.LeafRedundancyProtocolMlag.String()}
 }

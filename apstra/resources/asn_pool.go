@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -115,7 +115,7 @@ func (o AsnPool) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *AsnPool) LoadApiData(ctx context.Context, in *goapstra.AsnPool, diags *diag.Diagnostics) {
+func (o *AsnPool) LoadApiData(ctx context.Context, in *apstra.AsnPool, diags *diag.Diagnostics) {
 	ranges := make([]AsnPoolRange, len(in.Ranges))
 	for i, r := range in.Ranges {
 		ranges[i].LoadApiData(ctx, &r, diags)
@@ -133,10 +133,10 @@ func (o *AsnPool) LoadApiData(ctx context.Context, in *goapstra.AsnPool, diags *
 	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: AsnPoolRange{}.AttrTypes()}, ranges, diags)
 }
 
-func (o *AsnPool) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.AsnPoolRequest {
-	response := goapstra.AsnPoolRequest{
+func (o *AsnPool) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.AsnPoolRequest {
+	response := apstra.AsnPoolRequest{
 		DisplayName: o.Name.ValueString(),
-		Ranges:      make([]goapstra.IntfIntRange, len(o.Ranges.Elements())),
+		Ranges:      make([]apstra.IntfIntRange, len(o.Ranges.Elements())),
 	}
 
 	poolRanges := make([]AsnPoolRange, len(o.Ranges.Elements()))

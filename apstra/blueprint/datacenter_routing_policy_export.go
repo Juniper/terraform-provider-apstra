@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -86,8 +86,8 @@ func (o datacenterRoutingPolicyExport) defaultObject() map[string]attr.Value {
 	}
 }
 
-func (o *datacenterRoutingPolicyExport) request() *goapstra.DcRoutingExportPolicy {
-	return &goapstra.DcRoutingExportPolicy{
+func (o *datacenterRoutingPolicyExport) request() *apstra.DcRoutingExportPolicy {
+	return &apstra.DcRoutingExportPolicy{
 		Loopbacks:            o.Loopback.ValueBool(),
 		SpineSuperspineLinks: o.Superspine.ValueBool(),
 		SpineLeafLinks:       o.Spine.ValueBool(),
@@ -97,7 +97,7 @@ func (o *datacenterRoutingPolicyExport) request() *goapstra.DcRoutingExportPolic
 	}
 }
 
-func (o *datacenterRoutingPolicyExport) loadApiData(_ context.Context, in *goapstra.DcRoutingExportPolicy, _ *diag.Diagnostics) {
+func (o *datacenterRoutingPolicyExport) loadApiData(_ context.Context, in *apstra.DcRoutingExportPolicy, _ *diag.Diagnostics) {
 	o.Loopback = types.BoolValue(in.Loopbacks)
 	o.Superspine = types.BoolValue(in.SpineSuperspineLinks)
 	o.Spine = types.BoolValue(in.SpineLeafLinks)

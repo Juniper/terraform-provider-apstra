@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -46,7 +46,7 @@ func (o LogicalDevicePanelPortGroup) DataSourceAttributes() map[string]dataSourc
 }
 
 func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
-	var allRoleFlagsSet goapstra.LogicalDevicePortRoleFlags
+	var allRoleFlagsSet apstra.LogicalDevicePortRoleFlags
 	allRoleFlagsSet.SetAll()
 
 	return map[string]resourceSchema.Attribute{
@@ -103,7 +103,7 @@ func (o LogicalDevicePanelPortGroup) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *LogicalDevicePanelPortGroup) LoadApiData(ctx context.Context, in *goapstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
+func (o *LogicalDevicePanelPortGroup) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
 	portRoles, d := types.SetValueFrom(ctx, types.StringType, in.Roles.Strings())
 	diags.Append(d...)
 	if diags.HasError() {

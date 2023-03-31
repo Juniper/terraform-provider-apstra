@@ -1,4 +1,4 @@
-package apstra
+package tfapstra
 
 //func TestSliceAttrValueToSliceString(t *testing.T) {
 //	test := []attr.Value{
@@ -25,7 +25,7 @@ package apstra
 //		types.String{Value: "foo"},
 //		types.Int64{Value: 6},
 //	}
-//	expected := []goapstra.ObjectId{
+//	expected := []apstra.ObjectId{
 //		"foo",
 //		"6",
 //	}

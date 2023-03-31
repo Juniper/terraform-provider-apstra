@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,7 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceTag{}
 
 type resourceTag struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceTag) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -77,10 +77,10 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	t, err := o.client.GetTag(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	t, err := o.client.GetTag(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -122,7 +122,7 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 	}
 
 	// Update Tag
-	err := o.client.UpdateTag(ctx, goapstra.ObjectId(plan.Id.ValueString()), tagRequest)
+	err := o.client.UpdateTag(ctx, apstra.ObjectId(plan.Id.ValueString()), tagRequest)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Tag", err.Error())
 		return
@@ -146,10 +146,10 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 	}
 
 	// Delete Tag by calling API
-	err := o.client.DeleteTag(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteTag(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound { // 404 is okay - it's the objective
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
 			resp.Diagnostics.AddError("error deleting Tag", err.Error())
 			return
 		}

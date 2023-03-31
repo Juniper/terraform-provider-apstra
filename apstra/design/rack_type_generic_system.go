@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -18,7 +18,7 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-func ValidateGenericSystem(rt *goapstra.RackType, i int, diags *diag.Diagnostics) {
+func ValidateGenericSystem(rt *apstra.RackType, i int, diags *diag.Diagnostics) {
 	gs := rt.Data.GenericSystems[i]
 	if gs.LogicalDevice == nil {
 		diags.AddError("generic system logical device info missing",
@@ -204,7 +204,7 @@ func (o GenericSystem) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackType, diags *diag.Diagnostics) *goapstra.RackElementGenericSystemRequest {
+func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackType, diags *diag.Diagnostics) *apstra.RackElementGenericSystemRequest {
 	var poIdMinVal, poIdMaxVal int
 	if !o.PortChannelIdMin.IsNull() {
 		poIdMinVal = int(o.PortChannelIdMin.ValueInt64())
@@ -218,7 +218,7 @@ func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackT
 		return nil
 	}
 
-	linkRequests := make([]goapstra.RackLinkRequest, len(links))
+	linkRequests := make([]apstra.RackLinkRequest, len(links))
 	i := 0
 	for name, link := range links {
 		lr := link.Request(ctx, path.AtName("links").AtMapKey(name), rack, diags)
@@ -234,24 +234,24 @@ func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackT
 		i++
 	}
 
-	var tagIds []goapstra.ObjectId
-	tagIds = make([]goapstra.ObjectId, len(o.TagIds.Elements()))
+	var tagIds []apstra.ObjectId
+	tagIds = make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
-	return &goapstra.RackElementGenericSystemRequest{
+	return &apstra.RackElementGenericSystemRequest{
 		Count:            int(o.Count.ValueInt64()),
-		AsnDomain:        goapstra.FeatureSwitchDisabled,
-		ManagementLevel:  goapstra.GenericSystemUnmanaged,
+		AsnDomain:        apstra.FeatureSwitchDisabled,
+		ManagementLevel:  apstra.GenericSystemUnmanaged,
 		PortChannelIdMin: poIdMinVal,
 		PortChannelIdMax: poIdMaxVal,
-		Loopback:         goapstra.FeatureSwitchDisabled,
+		Loopback:         apstra.FeatureSwitchDisabled,
 		Tags:             tagIds,
 		Links:            linkRequests,
-		LogicalDeviceId:  goapstra.ObjectId(o.LogicalDeviceId.ValueString()),
+		LogicalDeviceId:  apstra.ObjectId(o.LogicalDeviceId.ValueString()),
 	}
 }
 
-func (o *GenericSystem) LoadApiData(ctx context.Context, in *goapstra.RackElementGenericSystem, diags *diag.Diagnostics) {
+func (o *GenericSystem) LoadApiData(ctx context.Context, in *apstra.RackElementGenericSystem, diags *diag.Diagnostics) {
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
@@ -316,7 +316,7 @@ func (o *GenericSystem) CopyWriteOnlyElements(ctx context.Context, src *GenericS
 
 }
 
-func NewGenericSystemMap(ctx context.Context, in []goapstra.RackElementGenericSystem, diags *diag.Diagnostics) types.Map {
+func NewGenericSystemMap(ctx context.Context, in []apstra.RackElementGenericSystem, diags *diag.Diagnostics) types.Map {
 	genericSystems := make(map[string]GenericSystem, len(in))
 	for _, genericIn := range in {
 		var gs GenericSystem

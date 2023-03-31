@@ -2,7 +2,7 @@
 
 This is the beginning of a [Terraform](https://www.terraform.io)
 [provider](https://developer.hashicorp.com/terraform/language/providers?page=providers)
-for Juniper Apstra. It relies on a Go client library at https://bitbucket.org/apstrktr/goapstra
+for Juniper Apstra. It relies on a Go client library at https://github.com/Juniper/apstra-go-sdk
 
 ## Getting Started
 
@@ -10,26 +10,11 @@ You can build from source or use a precompiled binary.
 
 #### Build from source
 
-1. Get access to both this repo and the client library repo, both of which are
-   currently private. You're reading this, so that's a good start.
-1. Configure `Go` so that it doesn't try to use a public mirror for these repos
-   by running the following shell command:
-   ```shell
-   go env -w GOPRIVATE=bitbucket.org/apstrktr,github.com/chrismarget-j
-   ```
-1. Add an `ssh` key to your [github](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
-   and [bitbucket](https://support.atlassian.com/bitbucket-cloud/docs/set-up-an-ssh-key/)
-   accounts so that `git` can do authenticated operations against those services.
-1. Configure `git` to use `ssh` rather than `http` for these repositories:
-   ```shell
-   git config --global url.git@github.com:.insteadOf https://github.com/
-   git config --global url.git@bitbucket.org:.insteadOf https://bitbucket.org/
-   ```
 1. Install [`Terraform`](https://www.terraform.io/downloads) and [`Go`](https://go.dev/dl/)
    on your machine.
 1. Clone this repo to your local system:
    ```shell
-   git clone git@github.com:chrismarget-j/terraform-provider-apstra.git
+   git clone git@github.com:Juniper/terraform-provider-apstra.git
    ```
 1. Build the provider:
    ```shell
@@ -77,7 +62,3 @@ files. Use environment variables:
 export APSTRA_USER=<username>
 export APSTRA_PASS=<password>
 ```
-
-data "apstra_agent_profile" "selected" {
-   name = var.agent_profile_name
-}

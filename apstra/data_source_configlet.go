@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceConfiglet{}
 
 type dataSourceConfiglet struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *dataSourceConfiglet) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -47,13 +47,13 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 	}
 
 	var err error
-	var api *goapstra.Configlet
-	var ace goapstra.ApstraClientErr
+	var api *apstra.Configlet
+	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		api, err = o.client.GetConfigletByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Configlet not found",
@@ -61,8 +61,8 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = o.client.GetConfiglet(ctx, goapstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		api, err = o.client.GetConfiglet(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Configlet not found",

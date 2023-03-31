@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/go-version"
@@ -133,9 +133,9 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"applicable to Apstra versions 4.1.1 and later.",
 			Optional: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				goapstra.AddressingSchemeIp4.String(),
-				goapstra.AddressingSchemeIp6.String(),
-				goapstra.AddressingSchemeIp46.String())},
+				apstra.AddressingSchemeIp4.String(),
+				apstra.AddressingSchemeIp6.String(),
+				apstra.AddressingSchemeIp46.String())},
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"status": resourceSchema.StringAttribute{
@@ -185,10 +185,10 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *goapstra.CreateBlueprintFromTemplateRequest {
-	var fap *goapstra.FabricAddressingPolicy
+func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *apstra.CreateBlueprintFromTemplateRequest {
+	var fap *apstra.FabricAddressingPolicy
 	if !o.FabricAddressing.IsNull() {
-		var ap goapstra.AddressingScheme
+		var ap apstra.AddressingScheme
 		err := ap.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
 			diags.AddError(
@@ -197,21 +197,21 @@ func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *goapstra
 					o.FabricAddressing.ValueString(), err.Error()))
 			return nil
 		}
-		fap = &goapstra.FabricAddressingPolicy{
+		fap = &apstra.FabricAddressingPolicy{
 			SpineSuperspineLinks: ap,
 			SpineLeafLinks:       ap,
 		}
 	}
 
-	return &goapstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:              goapstra.RefDesignDatacenter,
+	return &apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:              apstra.RefDesignDatacenter,
 		Label:                  o.Name.ValueString(),
-		TemplateId:             goapstra.ObjectId(o.TemplateId.ValueString()),
+		TemplateId:             apstra.ObjectId(o.TemplateId.ValueString()),
 		FabricAddressingPolicy: fap,
 	}
 }
 
-func (o *Blueprint) LoadApiData(_ context.Context, in *goapstra.BlueprintStatus, _ *diag.Diagnostics) {
+func (o *Blueprint) LoadApiData(_ context.Context, in *apstra.BlueprintStatus, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
 	o.TemplateId = types.StringNull()
@@ -229,9 +229,9 @@ func (o *Blueprint) LoadApiData(_ context.Context, in *goapstra.BlueprintStatus,
 	o.BuildWarningsCount = types.Int64Value(int64(in.BuildWarningsCount))
 }
 
-func (o *Blueprint) SetName(ctx context.Context, client *goapstra.Client, diags *diag.Diagnostics) {
+func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	// create a client specific to the reference design
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, goapstra.ObjectId(o.Id.ValueString()))
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.Id.ValueString()))
 	if err != nil {
 		diags.AddError("error creating Blueprint client", err.Error())
 		return
@@ -239,13 +239,13 @@ func (o *Blueprint) SetName(ctx context.Context, client *goapstra.Client, diags 
 
 	type node struct {
 		Label string            `json:"label,omitempty"`
-		Id    goapstra.ObjectId `json:"id,omitempty"`
+		Id    apstra.ObjectId `json:"id,omitempty"`
 	}
 	response := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
 
-	err = bpClient.GetNodes(ctx, goapstra.NodeTypeMetadata, response)
+	err = bpClient.GetNodes(ctx, apstra.NodeTypeMetadata, response)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf(errApiGetWithTypeAndId, "Blueprint Node", bpClient.Id()),
@@ -254,11 +254,11 @@ func (o *Blueprint) SetName(ctx context.Context, client *goapstra.Client, diags 
 		return
 	}
 	if len(response.Nodes) != 1 {
-		diags.AddError(fmt.Sprintf("wrong number of %s nodes", goapstra.NodeTypeMetadata.String()),
+		diags.AddError(fmt.Sprintf("wrong number of %s nodes", apstra.NodeTypeMetadata.String()),
 			fmt.Sprintf("expecting 1 got %d nodes", len(response.Nodes)))
 		return
 	}
-	var nodeId goapstra.ObjectId
+	var nodeId apstra.ObjectId
 	for _, v := range response.Nodes {
 		nodeId = v.Id
 	}

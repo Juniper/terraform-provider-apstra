@@ -1,7 +1,7 @@
 package blueprint
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -75,13 +75,13 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 	}
 }
 
-func (o *PoolAllocation) LoadApiData(ctx context.Context, in *goapstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
+func (o *PoolAllocation) LoadApiData(ctx context.Context, in *apstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
 	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
 }
 
-func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.ResourceGroupAllocation {
+func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ResourceGroupAllocation {
 	// Parse 'role' into a ResourceGroupName
-	var rgName goapstra.ResourceGroupName
+	var rgName apstra.ResourceGroupName
 	err := rgName.FromString(o.Role.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()), err.Error())
@@ -89,23 +89,23 @@ func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *
 	}
 
 	// extract pool IDs
-	poolIds := make([]goapstra.ObjectId, len(o.PoolIds.Elements()))
+	poolIds := make([]apstra.ObjectId, len(o.PoolIds.Elements()))
 	diags.Append(o.PoolIds.ElementsAs(ctx, &poolIds, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
-	rg := goapstra.ResourceGroup{
+	rg := apstra.ResourceGroup{
 		Type: rgName.Type(),
 		Name: rgName,
 	}
 
 	if !o.RoutingZoneId.IsNull() {
-		szId := goapstra.ObjectId(o.RoutingZoneId.ValueString())
+		szId := apstra.ObjectId(o.RoutingZoneId.ValueString())
 		rg.SecurityZoneId = &szId
 	}
 
-	return &goapstra.ResourceGroupAllocation{
+	return &apstra.ResourceGroupAllocation{
 		ResourceGroup: rg,
 		PoolIds:       poolIds,
 	}

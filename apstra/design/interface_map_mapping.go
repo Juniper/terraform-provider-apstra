@@ -1,7 +1,7 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -52,7 +52,7 @@ func (o InterfaceMapMapping) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *InterfaceMapMapping) LoadApiData(_ context.Context, in *goapstra.InterfaceMapMapping, _ *diag.Diagnostics) {
+func (o *InterfaceMapMapping) LoadApiData(_ context.Context, in *apstra.InterfaceMapMapping, _ *diag.Diagnostics) {
 	o.DPPort = types.Int64Value(int64(in.DPPortId))
 	o.DPTransform = types.Int64Value(int64(in.DPTransformId))
 	o.DPInterface = types.Int64Value(int64(in.DPInterfaceId))
@@ -68,7 +68,7 @@ func (o *InterfaceMapMapping) LoadApiData(_ context.Context, in *goapstra.Interf
 	}
 }
 
-func NewInterfaceMapMappingObject(ctx context.Context, in *goapstra.InterfaceMapMapping, diags *diag.Diagnostics) types.Object {
+func NewInterfaceMapMappingObject(ctx context.Context, in *apstra.InterfaceMapMapping, diags *diag.Diagnostics) types.Object {
 	if in == nil {
 		return types.ObjectNull(InterfaceMapMapping{}.AttrTypes())
 	}

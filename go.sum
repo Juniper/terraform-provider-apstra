@@ -1,6 +1,6 @@
-bitbucket.org/apstrktr/goapstra v0.0.0-20230324183419-74dfde086ee5 h1:UGtxfXwaPUUakqNuXWa3CT/fIeo3jVmKJUsSrygzr5g=
-bitbucket.org/apstrktr/goapstra v0.0.0-20230324183419-74dfde086ee5/go.mod h1:fQ7AUuC5l7ahRxEPXa7nEIDFraFOHoblJV+31p7W6RE=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+github.com/Juniper/apstra-go-sdk v0.0.0-20230330142348-70f41c75087f h1:K4pzEccvtdeVmvuuVzHvi8awNsrzbi+/LNyyfgcwulU=
+github.com/Juniper/apstra-go-sdk v0.0.0-20230330142348-70f41c75087f/go.mod h1:EZtDsV2etSqm1OY3MbVGTCRXlRHnFQb2Lgz67tsdf60=
 github.com/Masterminds/goutils v1.1.0/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
 github.com/Masterminds/goutils v1.1.1/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
@@ -172,7 +172,6 @@ github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLA
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=

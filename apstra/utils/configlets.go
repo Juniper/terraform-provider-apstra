@@ -1,9 +1,9 @@
 package utils
 
-import "bitbucket.org/apstrktr/goapstra"
+import "github.com/Juniper/apstra-go-sdk/apstra"
 
-func ConfigletSupportsPlatforms(configlet *goapstra.Configlet, platforms []goapstra.PlatformOS) bool {
-	supportedPlatforms := make(map[goapstra.PlatformOS]struct{})
+func ConfigletSupportsPlatforms(configlet *apstra.Configlet, platforms []apstra.PlatformOS) bool {
+	supportedPlatforms := make(map[apstra.PlatformOS]struct{})
 	for _, generator := range configlet.Data.Generators {
 		supportedPlatforms[generator.ConfigStyle] = struct{}{}
 	}
@@ -16,7 +16,7 @@ func ConfigletSupportsPlatforms(configlet *goapstra.Configlet, platforms []goaps
 	return true
 }
 
-func SectionNamesByOS(os goapstra.PlatformOS) []string {
+func SectionNamesByOS(os apstra.PlatformOS) []string {
 	var r []string
 	for _, v := range os.ValidSections() {
 		r = append(r, StringersToFriendlyString(v, os))
@@ -26,14 +26,14 @@ func SectionNamesByOS(os goapstra.PlatformOS) []string {
 
 func ValidSectionsMap() map[string][]string {
 	var m = make(map[string][]string)
-	for _, i := range goapstra.AllPlatformOSes() {
+	for _, i := range apstra.AllPlatformOSes() {
 		m[i.String()] = SectionNamesByOS(i)
 	}
 	return m
 }
 
 func AllPlatformOSNames() []string {
-	platforms := goapstra.AllPlatformOSes()
+	platforms := apstra.AllPlatformOSes()
 	result := make([]string, len(platforms))
 	for i := range platforms {
 		result[i] = platforms[i].String()

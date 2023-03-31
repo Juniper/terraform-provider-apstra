@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +17,7 @@ var _ resource.ResourceWithConfigure = &resourceAsnPool{}
 var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
 
 type resourceIpv6Pool struct {
-	client *goapstra.Client
+	client *apstra.Client
 }
 
 func (o *resourceIpv6Pool) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -126,12 +126,12 @@ func (o *resourceIpv6Pool) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// read pool back from Apstra to get usage statistics
-	var ace goapstra.ApstraClientErr
-	var pool *goapstra.IpPool
+	var ace apstra.ApstraClientErr
+	var pool *apstra.IpPool
 	for { // loop until creation complete
 		pool, err = o.client.GetIp6Pool(ctx, id)
 		if err != nil {
-			if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 				resp.Diagnostics.AddError(
 					"IPv6 Pool not found",
 					fmt.Sprintf("Just-created IPv6 Pool with ID %q not found", id))
@@ -140,7 +140,7 @@ func (o *resourceIpv6Pool) Create(ctx context.Context, req resource.CreateReques
 			resp.Diagnostics.AddError("Error retrieving IPv6 Pool", err.Error())
 			return
 		}
-		if pool.Status != goapstra.PoolStatusCreating {
+		if pool.Status != apstra.PoolStatusCreating {
 			break
 		}
 	}
@@ -170,10 +170,10 @@ func (o *resourceIpv6Pool) Read(ctx context.Context, req resource.ReadRequest, r
 	}
 
 	// Get Ipv6 pool from API and then update what is in state from what the API returns
-	p, err := o.client.GetIp6Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	p, err := o.client.GetIp6Pool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -213,10 +213,10 @@ func (o *resourceIpv6Pool) Update(ctx context.Context, req resource.UpdateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace goapstra.ApstraClientErr
-	err := o.client.UpdateIp6Pool(ctx, goapstra.ObjectId(plan.Id.ValueString()), request)
+	var ace apstra.ApstraClientErr
+	err := o.client.UpdateIp6Pool(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound { // deleted manually since 'plan'?
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -226,9 +226,9 @@ func (o *resourceIpv6Pool) Update(ctx context.Context, req resource.UpdateReques
 	}
 
 	// read pool back from Apstra to get usage statistics
-	p, err := o.client.GetIp6Pool(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	p, err := o.client.GetIp6Pool(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"IPv6 Pool not found",
@@ -264,10 +264,10 @@ func (o *resourceIpv6Pool) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	// Delete IPv6 pool by calling API
-	err := o.client.DeleteIp6Pool(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteIp6Pool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
 			resp.Diagnostics.AddError(
 				"error deleting IPv6 pool", err.Error())
 		}

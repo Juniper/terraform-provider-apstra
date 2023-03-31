@@ -1,13 +1,13 @@
 package utils
 
-import "bitbucket.org/apstrktr/goapstra"
+import "github.com/Juniper/apstra-go-sdk/apstra"
 
 func AllValidPrefixFilterActions() []string {
-	actions := goapstra.AllPrefixFilterActions()
+	actions := apstra.AllPrefixFilterActions()
 	result := make([]string, len(actions))
 	var i int
 	for _, action := range actions {
-		if action != goapstra.PrefixFilterActionNone {
+		if action != apstra.PrefixFilterActionNone {
 			result[i] = action.String()
 			i++
 		}
@@ -17,7 +17,7 @@ func AllValidPrefixFilterActions() []string {
 }
 
 func AllDcRoutingPolicyImportPolicy() []string {
-	policies := goapstra.AllDcRoutingPolicyImportPolicies()
+	policies := apstra.AllDcRoutingPolicyImportPolicies()
 	result := make([]string, len(policies))
 	for i := range policies {
 		result[i] = policies[i].String()

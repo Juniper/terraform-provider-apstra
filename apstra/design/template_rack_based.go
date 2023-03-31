@@ -1,9 +1,9 @@
 package design
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -140,7 +140,7 @@ func (o TemplateRackBased) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics) *goapstra.CreateRackBasedTemplateRequest {
+func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateRackBasedTemplateRequest {
 	var d diag.Diagnostics
 
 	s := Spine{}
@@ -157,64 +157,64 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 		return nil
 	}
 
-	rackInfos := make(map[goapstra.ObjectId]goapstra.TemplateRackBasedRackInfo, len(rtMap))
+	rackInfos := make(map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo, len(rtMap))
 	for k := range rtMap {
-		rackInfos[goapstra.ObjectId(k)] = goapstra.TemplateRackBasedRackInfo{
+		rackInfos[apstra.ObjectId(k)] = apstra.TemplateRackBasedRackInfo{
 			Count: int(rtMap[k].Count.ValueInt64()),
 		}
 	}
 
 	var err error
 
-	antiAffinityPolicy := &goapstra.AntiAffinityPolicy{
-		Algorithm: goapstra.AlgorithmHeuristic,
+	antiAffinityPolicy := &apstra.AntiAffinityPolicy{
+		Algorithm: apstra.AlgorithmHeuristic,
 	}
 
-	var spineAsnScheme goapstra.AsnAllocationScheme
-	err = utils.FriendlyStringToAPIStringer(&spineAsnScheme, o.AsnAllocation.ValueString())
+	var spineAsnScheme apstra.AsnAllocationScheme
+	err = utils.ApiStringerFromFriendlyString(&spineAsnScheme, o.AsnAllocation.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing ASN allocation scheme %q - %s",
 				o.AsnAllocation.ValueString(), err.Error()))
 	}
-	asnAllocationPolicy := &goapstra.AsnAllocationPolicy{
+	asnAllocationPolicy := &apstra.AsnAllocationPolicy{
 		SpineAsnScheme: spineAsnScheme,
 	}
 
-	var fabricAddressingPolicy *goapstra.FabricAddressingPolicy
+	var fabricAddressingPolicy *apstra.FabricAddressingPolicy
 	if !o.FabricAddressing.IsNull() {
-		var addressingScheme goapstra.AddressingScheme
+		var addressingScheme apstra.AddressingScheme
 		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
 			diags.AddError(errProviderBug,
 				fmt.Sprintf("error parsing fabric addressing scheme %q - %s",
 					o.FabricAddressing.ValueString(), err.Error()))
 		}
-		fabricAddressingPolicy = &goapstra.FabricAddressingPolicy{
+		fabricAddressingPolicy = &apstra.FabricAddressingPolicy{
 			SpineSuperspineLinks: addressingScheme,
 			SpineLeafLinks:       addressingScheme,
 		}
 	}
 
-	var overlayControlProtocol goapstra.OverlayControlProtocol
-	err = utils.FriendlyStringToAPIStringer(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
+	var overlayControlProtocol apstra.OverlayControlProtocol
+	err = utils.ApiStringerFromFriendlyString(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing overlay control protocol %q - %s",
 				o.OverlayControlProtocol.ValueString(), err.Error()))
 	}
-	virtualNetworkPolicy := &goapstra.VirtualNetworkPolicy{
+	virtualNetworkPolicy := &apstra.VirtualNetworkPolicy{
 		OverlayControlProtocol: overlayControlProtocol,
 	}
 
-	return &goapstra.CreateRackBasedTemplateRequest{
+	return &apstra.CreateRackBasedTemplateRequest{
 		DisplayName:       o.Name.ValueString(),
-		Capability:        goapstra.TemplateCapabilityNone,
+		Capability:        apstra.TemplateCapabilityNone,
 		Spine:             s.Request(ctx, diags),
 		RackInfos:         rackInfos,
-		DhcpServiceIntent: &goapstra.DhcpServiceIntent{Active: true},
+		DhcpServiceIntent: &apstra.DhcpServiceIntent{Active: true},
 		// todo: is this the right AntiAffinityPolicy?
-		//  I'd have sent <nil>, but blocked by goapstra issue #2 (crash on nil pointer deref)
+		//  I'd have sent <nil>, but blocked by sdk issue #2 (crash on nil pointer deref)
 		AntiAffinityPolicy:     antiAffinityPolicy,
 		AsnAllocationPolicy:    asnAllocationPolicy,
 		FabricAddressingPolicy: fabricAddressingPolicy,
@@ -245,7 +245,7 @@ func (o *TemplateRackBased) Validate(ctx context.Context, diags *diag.Diagnostic
 	}
 }
 
-func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *goapstra.TemplateRackBasedData, diags *diag.Diagnostics) {
+func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load TemplateRackBased from nil source")
 		return

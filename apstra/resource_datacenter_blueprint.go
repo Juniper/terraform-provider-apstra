@@ -1,7 +1,7 @@
-package apstra
+package tfapstra
 
 import (
-	"bitbucket.org/apstrktr/goapstra"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
@@ -18,7 +18,7 @@ var _ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
 var _ versionValidator = &resourceDatacenterBlueprint{}
 
 type resourceDatacenterBlueprint struct {
-	client           *goapstra.Client
+	client           *apstra.Client
 	minClientVersion *version.Version
 	maxClientVersion *version.Version
 	lockFunc         func(context.Context, string) error
@@ -141,10 +141,10 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 	}
 
 	// Some interesting details are in BlueprintStatus.
-	apiData, err := o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(state.Id.ValueString()))
+	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -181,7 +181,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	}
 
 	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, goapstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
+	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -199,7 +199,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	apiData, err := o.client.GetBlueprintStatus(ctx, goapstra.ObjectId(plan.Id.ValueString()))
+	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
@@ -232,12 +232,12 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	bpID := goapstra.ObjectId(state.Id.ValueString())
+	bpID := apstra.ObjectId(state.Id.ValueString())
 
 	err := o.client.DeleteBlueprint(ctx, bpID)
 	if err != nil {
-		var ace goapstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == goapstra.ErrNotfound {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
