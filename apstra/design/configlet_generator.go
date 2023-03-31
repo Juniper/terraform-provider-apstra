@@ -54,10 +54,12 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 			MarkdownDescription: fmt.Sprintf("Specifies the switch platform, must be one of '%s'.",
 				strings.Join(utils.AllPlatformOSNames(), "', '")),
 			Required:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)}},
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)},
+		},
 		"section": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. Valid values are %v", utils.ValidSectionsMap()),
+			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. Valid values are %v", utils.ConfigletValidSectionsMap()),
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllConfigletSectionNames()...)},
 		},
 		"template_text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Template Text",
