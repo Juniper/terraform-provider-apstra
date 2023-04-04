@@ -55,7 +55,15 @@ resource "apstra_configlet" "example" {
 Required:
 
 - `config_style` (String) Specifies the switch platform, must be one of 'cumulus', 'nxos', 'eos', 'junos', 'sonic'.
-- `section` (String) Specifies where in the target device the configlet should be applied. Valid values are map[cumulus:[file frr interface ospf system] eos:[interface ospf system system_top] junos:[interface_level_hierarchical interface_level_delete interface_level_set top_level_hierarchical top_level_set_delete] nxos:[system interface system_top ospf] sonic:[file frr ospf system]]
+- `section` (String) Specifies where in the target device the configlet should be applied. Varies by network OS:
+
+| **Config Style**  | **Section** |
+|-|-|
+|eos|system_top,system,ospf,interface|
+|junos|top_level_set_delete,top_level_hierarchical,interface_level_set,interface_level_delete,interface_level_hierarchical|
+|sonic|system,ospf,frr,file|
+|cumulus|system,ospf,interface,frr,file|
+|nxos|ospf,system_top,interface,system|
 - `template_text` (String) Template Text
 
 Optional:
