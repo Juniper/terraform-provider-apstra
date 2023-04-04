@@ -1,6 +1,9 @@
 package utils
 
-import "github.com/Juniper/apstra-go-sdk/apstra"
+import (
+	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
+)
 
 func ConfigletSupportsPlatforms(configlet *apstra.Configlet, platforms []apstra.PlatformOS) bool {
 	supportedPlatforms := make(map[apstra.PlatformOS]struct{})
@@ -51,6 +54,22 @@ func ConfigletValidSectionsMap() map[string][]string {
 		m[i.String()] = ConfigletSectionNamesByOS(i)
 	}
 	return m
+}
+
+func ValidSectionsAsTable() string {
+	m := ConfigletValidSectionsMap()
+	o := fmt.Sprintf("\n\r| **Config Style**  | **Section** |")
+	o += "\n|-|-|"
+	for k := range m {
+		s := ""
+		for _, i := range m[k] {
+			s = fmt.Sprintf("%v,%s", i, s)
+		}
+		s = s[:len(s)-1] //drop tha last comma
+		o += fmt.Sprintf("\n|%v|%v|", k, s)
+	}
+	o += "\n"
+	return o
 }
 
 func AllPlatformOSNames() []string {

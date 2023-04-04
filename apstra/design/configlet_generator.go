@@ -57,7 +57,7 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)},
 		},
 		"section": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. Valid values are %v", utils.ConfigletValidSectionsMap()),
+			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be applied. Varies by network OS:%s", utils.ValidSectionsAsTable()),
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllConfigletSectionNames()...)},
 		},
