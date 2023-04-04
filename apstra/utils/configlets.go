@@ -58,7 +58,7 @@ func ConfigletValidSectionsMap() map[string][]string {
 
 func ValidSectionsAsTable() string {
 	m := ConfigletValidSectionsMap()
-	o := fmt.Sprintf("\n\r| **Config Style**  | **Section** |")
+	o := fmt.Sprintf("\n\n| **Config Style**  | **Section** |")
 	o += "\n|-|-|"
 	for k := range m {
 		s := ""
