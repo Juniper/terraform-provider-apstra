@@ -43,7 +43,7 @@ func main() {
 	flag.Parse()
 
 	err := providerserver.Serve(context.Background(), NewApstraProvider, providerserver.ServeOpts{
-		Address: "example.com/apstrktr/apstra",
+		Address: "registry.terraform.io/Juniper/apstra",
 		Debug:   debug,
 	})
 	if err != nil {

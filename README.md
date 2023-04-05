@@ -43,7 +43,7 @@ My `~/.terraformrc` looks like:
 provider_installation {
 
     dev_overrides {
-        "example.com/apstrktr/apstra" = "/Users/cmarget/golang/bin"
+        "registry.terraform.io/Juniper/apstra" = "/Users/cmarget/golang/bin"
     }
 
     # For all other providers, install them directly from their origin provider
