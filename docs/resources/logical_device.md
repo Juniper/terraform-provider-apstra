@@ -2,12 +2,12 @@
 page_title: "apstra_logical_device Resource - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This resource creates an IPv4 resource pool
+  This resource creates a Logical Device
 ---
 
 # apstra_logical_device (Resource)
 
-This resource creates an IPv4 resource pool
+This resource creates a Logical Device
 
 ## Example Usage
 
@@ -64,5 +64,8 @@ Required:
 Required:
 
 - `port_count` (Number) Number of ports in the group.
-- `port_roles` (Set of String) One or more of: 'access', 'generic', 'l3_server', 'leaf', 'peer', 'server', 'spine', 'superspine', 'unused'
 - `port_speed` (String) Port speed.
+
+Optional:
+
+- `port_roles` (Set of String) One or more of: 'spine', 'superspine', 'leaf', 'access', 'l3_server', 'peer', 'unused', 'generic', by default all values except 'unused' are selected

@@ -149,13 +149,13 @@ Read-Only:
 
 Required:
 
-- `links_per_switch` (Number) Number of Links to each switch.
 - `speed` (String) Speed of this Link.
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
 Optional:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
+- `links_per_switch` (Number) Number of Links to each switch.
 - `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) Set of Tag IDs to be applied to this Link
 
@@ -255,13 +255,13 @@ Read-Only:
 
 Required:
 
-- `links_per_switch` (Number) Number of Links to each switch.
 - `speed` (String) Speed of this Link.
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
 Optional:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
+- `links_per_switch` (Number) Number of Links to each switch.
 - `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) Set of Tag IDs to be applied to this Link
 
