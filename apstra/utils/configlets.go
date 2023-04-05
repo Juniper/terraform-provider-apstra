@@ -3,6 +3,8 @@ package utils
 import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"sort"
+	"strings"
 )
 
 func ConfigletSupportsPlatforms(configlet *apstra.Configlet, platforms []apstra.PlatformOS) bool {
@@ -58,18 +60,25 @@ func ConfigletValidSectionsMap() map[string][]string {
 
 func ValidSectionsAsTable() string {
 	m := ConfigletValidSectionsMap()
-	o := fmt.Sprintf("\n\n| **Config Style**  | **Section** |")
-	o += "\n|-|-|"
+
+	// collect map keys into a sorted slice so that the table renders in consistent order
+	keys := make([]string, len(m))
+	var i int
 	for k := range m {
-		s := ""
-		for _, i := range m[k] {
-			s = fmt.Sprintf("%v,%s", i, s)
-		}
-		s = s[:len(s)-1] //drop tha last comma
-		o += fmt.Sprintf("\n|%v|%v|", k, s)
+		keys[i] = k
+		i++
 	}
-	o += "\n"
-	return o
+	sort.Strings(keys)
+
+	var sb strings.Builder
+	sb.WriteString("  | **Config Style**  | **Valid Sections** |\n")
+	sb.WriteString("  |---|---|\n")
+
+	for _, k := range keys {
+		sb.WriteString(fmt.Sprintf("  |%s|%s|\n", k, strings.Join(m[k], ", ")))
+	}
+
+	return sb.String()
 }
 
 func AllPlatformOSNames() []string {
