@@ -59,11 +59,11 @@ Required:
 
 | **Config Style**  | **Section** |
 |-|-|
+|nxos|ospf,system_top,interface,system|
+|eos|system_top,system,ospf,interface|
 |junos|top_level_set_delete,top_level_hierarchical,interface_level_set,interface_level_delete,interface_level_hierarchical|
 |sonic|system,ospf,frr,file|
 |cumulus|system,ospf,interface,frr,file|
-|nxos|ospf,system_top,interface,system|
-|eos|system_top,system,ospf,interface|
 - `template_text` (String) Template Text
 
 Optional:
