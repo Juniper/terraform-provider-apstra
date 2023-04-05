@@ -1,10 +1,11 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,7 +29,7 @@ func (o *resourceLogicalDevice) Configure(ctx context.Context, req resource.Conf
 
 func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates an IPv4 resource pool",
+		MarkdownDescription: "This resource creates a Logical Device",
 		Attributes:          design.LogicalDevice{}.ResourceAttributes(),
 	}
 }

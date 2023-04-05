@@ -77,7 +77,7 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
 
 # Assign interface maps to fabric nodes
 resource "apstra_datacenter_device_allocation" "r" {
-  for_each         = toset(["spine1", "spine2", "terraform_001_leaf1", "terraform_0002_leaf1", "terraform_003_leaf1"])
+  for_each         = toset(["spine1", "spine2", "terraform_001_leaf1", "terraform_002_leaf1", "terraform_003_leaf1"])
   blueprint_id     = apstra_datacenter_blueprint.r.id
   node_name        = each.key
   interface_map_id = "Juniper_vQFX__slicer-7x10-1"

@@ -1,9 +1,9 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -141,9 +141,9 @@ func (o RackType) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"fabric_connectivity_design": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(FcdModes(), "', '")),
+			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(utils.FcdModes(), "', '")),
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(FcdModes()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.FcdModes()...)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"leaf_switches": resourceSchema.MapNestedAttribute{
@@ -189,7 +189,7 @@ func (o RackType) ResourceAttributesNested() map[string]resourceSchema.Attribute
 			Computed:            true,
 		},
 		"fabric_connectivity_design": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(FcdModes(), "', '")),
+			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(utils.FcdModes(), "', '")),
 			Computed:            true,
 		},
 		"leaf_switches": resourceSchema.MapNestedAttribute{
@@ -574,11 +574,4 @@ func (o *RackType) GetSwitchRedundancyProtocolByName(ctx context.Context, name s
 	}
 	diags.AddError(errProviderBug, "somehow we've reached the end of GetSwitchRedundancyProtocolByName without finding a solution")
 	return nil
-}
-
-// FcdModes returns permitted fabric_connectivity_design mode strings
-func FcdModes() []string {
-	return []string{
-		apstra.FabricConnectivityDesignL3Clos.String(),
-		apstra.FabricConnectivityDesignL3Collapsed.String()}
 }

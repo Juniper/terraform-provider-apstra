@@ -1,9 +1,9 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
+	"terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -130,6 +130,7 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 			Optional: true,
 			Computed: true,
+			// Default: ** do not default this attribute because L3Collapsed designs can't use it **
 		},
 		"spine_link_speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of Spine-facing links, something like '10G'",
