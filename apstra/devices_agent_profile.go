@@ -1,8 +1,8 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -93,12 +94,14 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"platform": resourceSchema.StringAttribute{
 			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
+			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{stringvalidator.OneOf(
 				apstra.AgentPlatformNXOS.String(),
 				apstra.AgentPlatformJunos.String(),
 				apstra.AgentPlatformEOS.String(),
 			)},
+			Default: stringdefault.StaticString(apstra.AgentPlatformJunos.String()),
 		},
 		"packages": resourceSchema.MapAttribute{
 			MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +

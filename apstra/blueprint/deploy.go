@@ -1,15 +1,16 @@
 package blueprint
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -67,8 +68,10 @@ func (o Deploy) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"using the `text/template` library (currently supported replacements: ['Version']) and " +
 				"environment variable expansion using `os.ExpandEnv` to include contextual information like the " +
 				"Terraform username, CI system job ID, etc...",
+			Computed:   true,
 			Optional:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+			Default:    stringdefault.StaticString("Terraform {{.TerraformVersion}}, Apstra provider {{.ProviderVersion}}, User $USER."),
 		},
 		"has_uncommitted_changes": resourceSchema.BoolAttribute{
 			MarkdownDescription: "True when there are uncommited changes in the staging Blueprint.",

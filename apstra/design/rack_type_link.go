@@ -1,9 +1,9 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -86,8 +87,10 @@ func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"links_per_switch": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of Links to each switch.",
-			Required:            true,
+			Computed:            true,
+			Optional:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			Default:             int64default.StaticInt64(1),
 		},
 		"speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of this Link.",

@@ -1,16 +1,15 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -19,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	"terraform-provider-apstra/apstra/defaults"
 )
 
 type LogicalDevicePanelPortGroup struct {
@@ -50,26 +50,30 @@ func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSch
 	allRoleFlagsSet.SetAll()
 
 	return map[string]resourceSchema.Attribute{
-		"port_count": schema.Int64Attribute{
+		"port_count": resourceSchema.Int64Attribute{
 			Required:            true,
 			MarkdownDescription: "Number of ports in the group.",
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
-		"port_speed": schema.StringAttribute{
+		"port_speed": resourceSchema.StringAttribute{
 			Required:            true,
 			MarkdownDescription: "Port speed.",
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(2),
 			},
 		},
-		"port_roles": schema.SetAttribute{
-			ElementType:         types.StringType,
-			Required:            true,
-			MarkdownDescription: fmt.Sprintf("One or more of: '%s'", strings.Join(allRoleFlagsSet.Strings(), "', '")),
+		"port_roles": resourceSchema.SetAttribute{
+			ElementType: types.StringType,
+			Computed:    true,
+			Optional:    true,
+			MarkdownDescription: fmt.Sprintf(
+				"One or more of: '%s', by default all values except 'unused' are selected",
+				strings.Join(allRoleFlagsSet.Strings(), "', '")),
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.OneOf(allRoleFlagsSet.Strings()...)),
 			},
+			Default: apstradefault.PortRolesDefault{},
 		},
 	}
 }
