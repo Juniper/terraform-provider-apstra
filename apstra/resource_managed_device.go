@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -20,7 +19,6 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
-var _ resource.ResourceWithValidateConfig = &resourceManagedDevice{}
 
 type resourceManagedDevice struct {
 	client *apstra.Client
@@ -81,33 +79,11 @@ func (o *resourceManagedDevice) Schema(_ context.Context, req resource.SchemaReq
 				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"off_box": schema.BoolAttribute{
-				MarkdownDescription: "Indicates that an 'Offbox' agent should be created (required for Junos devices)",
-				Computed:            true,
-				Optional:            true,
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.RequiresReplace(),
-					boolplanmodifier.UseStateForUnknown(),
-				},
+				MarkdownDescription: "Indicates that an *offbox* agent should be created (required for Junos devices, default: `true`)",
+				Required:            true,
+				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 			},
 		},
-	}
-}
-
-func (o *resourceManagedDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	if o.client == nil { // cannot proceed without a client
-		return
-	}
-
-	var config rManagedDevice
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	config.validateAgentProfile(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }
 
