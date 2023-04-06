@@ -43,4 +43,4 @@ APSTRA_PASS=password
 - `experimental` (Boolean) Sets a flag in the underlying Apstra SDK client object which enables 'experimental' features. At this time, the only effect is bypassing version compatibility checks.
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
 - `url` (String) URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`
-If username or password are omitted from URL string, environment variables `APSTRA_USER` and `APSTRA_PASS` will be used.  If `url` is omitted, environment variable APSTRA_URL will be used.
+If username or password are omitted from URL string, environment variables `APSTRA_USER` and `APSTRA_PASS` will be used.  If `url` is omitted, environment variable APSTRA_URL will be used.  When the username or password are embedded in the URL string, any special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`.
