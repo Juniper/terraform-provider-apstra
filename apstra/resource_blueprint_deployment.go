@@ -1,9 +1,9 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"terraform-provider-apstra/apstra/blueprint"
@@ -104,15 +104,20 @@ func (o *resourceBlueprintDeploy) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	state.Read(ctx, o.client, &resp.Diagnostics)
+	// Create a new state object so we don't overwrite the comment template in Read().
+	newState := blueprint.Deploy{BlueprintId: state.BlueprintId}
+	newState.Read(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if state.HasUncommittedChanges.ValueBool() {
+	if newState.HasUncommittedChanges.ValueBool() {
 		resp.State.RemoveResource(ctx)
 		return
 	}
+
+	// Re-use the old comment template, rather than the rendered template we got during Read().
+	newState.Comment = state.Comment
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
