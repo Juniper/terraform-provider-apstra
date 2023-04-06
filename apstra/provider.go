@@ -67,7 +67,8 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 				MarkdownDescription: "URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`\n" +
 					"If username or password are omitted from URL string, environment variables `" + envApstraUsername +
 					"` and `" + envApstraPassword + "` will be used.  If `url` is omitted, environment variable " +
-					envApstraUrl + " will be used.",
+					envApstraUrl + " will be used.  When the username or password are embedded in the URL string, any " +
+					"special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`. ",
 				Optional: true,
 			},
 			"tls_validation_disabled": schema.BoolAttribute{
