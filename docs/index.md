@@ -40,7 +40,12 @@ APSTRA_PASS=password
 
 - `blueprint_mutex_disabled` (Boolean) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform)  should wait before beginning to make changes of their own. Set this attribute 'true' to skip locking the mutex(es) which signal exclusive Blueprint access for all Blueprint changes made in this project.
 - `blueprint_mutex_message` (String) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform)  should wait before beginning to make changes of their own. The mutexes embed a human-readable field to reduce confusion in the event a mutex needs to be cleared manually. This attribute overrides the default message in that field: "locked by terraform at $DATE".
-- `experimental` (Boolean) Sets a flag in the underlying Apstra SDK client object which enables 'experimental' features. At this time, the only effect is bypassing version compatibility checks.
+- `experimental` (Boolean) Sets a flag in the underlying Apstra SDK client object which enables *experimental* features. At this time, the only effect is bypassing version compatibility checks in the SDK. This provider release is tested with Apstra versions 4.1.0, 4.1.1, and 4.1.2
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
-- `url` (String) URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`
-If username or password are omitted from URL string, environment variables `APSTRA_USER` and `APSTRA_PASS` will be used.  If `url` is omitted, environment variable APSTRA_URL will be used.  When the username or password are embedded in the URL string, any special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`.
+- `url` (String) URL of the apstra server, e.g. `https://apstra.example.com`
+
+It is possible to include Apstra API credentials in the URL using [standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure that these credentials aren't accidentally committed to version control, etc... The preferred approach is to pass the credentials as environment variables `APSTRA_USER` and `APSTRA_PASS`.
+
+If `url` is omitted, environment variable `APSTRA_URL` can be used to in its place.
+
+When the username or password are embedded in the URL string, any special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`.
