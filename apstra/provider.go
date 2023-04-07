@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"terraform-provider-apstra/apstra/compatibility"
 	"time"
 )
 
@@ -60,15 +61,18 @@ func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp 
 	resp.Version = p.Version + "_" + p.Commit
 }
 
-func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
-				MarkdownDescription: "URL of the apstra server, e.g. `https://<user>:<password>@apstra.juniper.net:443/`\n" +
-					"If username or password are omitted from URL string, environment variables `" + envApstraUsername +
-					"` and `" + envApstraPassword + "` will be used.  If `url` is omitted, environment variable " +
-					envApstraUrl + " will be used.  When the username or password are embedded in the URL string, any " +
-					"special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`. ",
+				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n\n" +
+					"It is possible to include Apstra API credentials in the URL using [standard syntax]" +
+					"(https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure " +
+					"that these credentials aren't accidentally committed to version control, etc... The preferred " +
+					"approach is to pass the credentials as environment variables `" + envApstraUsername + "` and `" +
+					envApstraPassword + "`.\n\nIf `url` is omitted, environment variable `" + envApstraUrl + "` can " +
+					"be used to in its place.\n\nWhen the username or password are embedded in the URL string, any " +
+					"special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`.",
 				Optional: true,
 			},
 			"tls_validation_disabled": schema.BoolAttribute{
@@ -91,8 +95,10 @@ func (p *Provider) Schema(_ context.Context, req provider.SchemaRequest, resp *p
 				Optional: true,
 			},
 			"experimental": schema.BoolAttribute{
-				MarkdownDescription: "Sets a flag in the underlying Apstra SDK client object which enables " +
-					"'experimental' features. At this time, the only effect is bypassing version compatibility checks.",
+				MarkdownDescription: fmt.Sprintf("Sets a flag in the underlying Apstra SDK client object "+
+					"which enables *experimental* features. At this time, the only effect is bypassing version "+
+					"compatibility checks in the SDK. This provider release is tested with Apstra versions %s",
+					compatibility.SupportedApiVersionsPretty()),
 				Optional: true,
 			},
 		},
