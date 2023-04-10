@@ -1,9 +1,9 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -12,11 +12,7 @@ import (
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-)
-
-const (
-	minimumFreeFormVersion        = "4.1.1"
-	twoStageL3ClosRefDesignUiName = "datacenter"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
@@ -50,7 +46,7 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 				MarkdownDescription: "Optional filter to select only Blueprints matching the specified Reference Design.",
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
-					twoStageL3ClosRefDesignUiName,
+					utils.StringersToFriendlyString(apstra.RefDesignDatacenter),
 					apstra.RefDesignFreeform.String(),
 				)},
 			},
@@ -104,22 +100,14 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 	} else {
-		var refDesign string
-		// substitute UI name for API name
-		switch config.RefDesign.ValueString() {
-		case twoStageL3ClosRefDesignUiName:
-			refDesign = apstra.RefDesignDatacenter.String()
-		default:
-			refDesign = config.RefDesign.ValueString()
-		}
-
 		bpStatuses, err := o.client.GetAllBlueprintStatus(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("error retrieving Blueprint statuses", err.Error())
 			return
 		}
+
 		for _, bpStatus := range bpStatuses {
-			if bpStatus.Design.String() == refDesign {
+			if utils.StringersToFriendlyString(bpStatus.Design) == config.RefDesign.ValueString() {
 				ids = append(ids, bpStatus.Id)
 			}
 		}
