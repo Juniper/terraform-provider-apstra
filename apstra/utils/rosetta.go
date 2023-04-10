@@ -13,10 +13,8 @@ const (
 	JunOSInterfaceLevelSet          = "interface_level_set"
 	JunOSInterfaceLevelDelete       = "interface_level_delete"
 
-	AsnAllocationSingle = "single"
 	AsnAllocationUnique = "unique"
 
-	OverlayControlProtocolEvpn   = "evpn"
 	OverlayControlProtocolStatic = "static"
 
 	RefDesignDataCenter = "datacenter"
@@ -79,8 +77,6 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 
 func asnAllocationSchemeToFriendlyString(in apstra.AsnAllocationScheme) string {
 	switch in {
-	case apstra.AsnAllocationSchemeSingle:
-		return AsnAllocationSingle
 	case apstra.AsnAllocationSchemeDistinct:
 		return AsnAllocationUnique
 	}
@@ -119,8 +115,6 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 
 func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) string {
 	switch in {
-	case apstra.OverlayControlProtocolEvpn:
-		return OverlayControlProtocolEvpn
 	case apstra.OverlayControlProtocolNone:
 		return OverlayControlProtocolStatic
 	}
@@ -191,8 +185,6 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 	}
 
 	switch in[0] {
-	case OverlayControlProtocolEvpn:
-		*target = apstra.OverlayControlProtocolEvpn
 	case OverlayControlProtocolStatic:
 		*target = apstra.OverlayControlProtocolNone
 	default:
