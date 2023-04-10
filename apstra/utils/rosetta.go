@@ -18,6 +18,8 @@ const (
 
 	OverlayControlProtocolEvpn   = "evpn"
 	OverlayControlProtocolStatic = "static"
+
+	RefDesignDataCenter = "datacenter"
 )
 
 type StringerWithFromString interface {
@@ -42,6 +44,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return configletSectionToFriendlyString(in[0].(apstra.ConfigletSection), in[1:]...)
 	case apstra.OverlayControlProtocol:
 		return overlayControlProtocolToFriendlyString(in[0].(apstra.OverlayControlProtocol))
+	case apstra.RefDesign:
+		return refDesignToFriendlyString(in[0].(apstra.RefDesign))
 	}
 
 	return in[0].String()
@@ -66,6 +70,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return configletSectionFromFriendlyString(target.(*apstra.ConfigletSection), in...)
 	case *apstra.OverlayControlProtocol:
 		return overlayControlProtocolFromFriendlyString(target.(*apstra.OverlayControlProtocol), in...)
+	case *apstra.RefDesign:
+		return refDesignFromFriendlyString(target.(*apstra.RefDesign), in...)
 	}
 
 	return target.FromString(in[0])
@@ -117,6 +123,15 @@ func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) st
 		return OverlayControlProtocolEvpn
 	case apstra.OverlayControlProtocolNone:
 		return OverlayControlProtocolStatic
+	}
+
+	return in.String()
+}
+
+func refDesignToFriendlyString(in apstra.RefDesign) string {
+	switch in {
+	case apstra.RefDesignDatacenter:
+		return RefDesignDataCenter
 	}
 
 	return in.String()
@@ -180,6 +195,21 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 		*target = apstra.OverlayControlProtocolEvpn
 	case OverlayControlProtocolStatic:
 		*target = apstra.OverlayControlProtocolNone
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func refDesignFromFriendlyString(target *apstra.RefDesign, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case RefDesignDataCenter:
+		*target = apstra.RefDesignDatacenter
 	default:
 		return target.FromString(in[0])
 	}
