@@ -7,17 +7,17 @@ import (
 )
 
 const (
-	JunOSTopLevelHierarchical       = "top_level_hierarchical"
-	JunOSTopLevelSetDelete          = "top_level_set_delete"
-	JunOSInterfaceLevelHierarchical = "interface_level_hierarchical"
-	JunOSInterfaceLevelSet          = "interface_level_set"
-	JunOSInterfaceLevelDelete       = "interface_level_delete"
+	junOSTopLevelHierarchical       = "top_level_hierarchical"
+	junOSTopLevelSetDelete          = "top_level_set_delete"
+	junOSInterfaceLevelHierarchical = "interface_level_hierarchical"
+	junOSInterfaceLevelSet          = "interface_level_set"
+	junOSInterfaceLevelDelete       = "interface_level_delete"
 
-	AsnAllocationUnique = "unique"
+	asnAllocationUnique = "unique"
 
-	OverlayControlProtocolStatic = "static"
+	overlayControlProtocolStatic = "static"
 
-	RefDesignDataCenter = "datacenter"
+	refDesignDataCenter = "datacenter"
 )
 
 type StringerWithFromString interface {
@@ -78,7 +78,7 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 func asnAllocationSchemeToFriendlyString(in apstra.AsnAllocationScheme) string {
 	switch in {
 	case apstra.AsnAllocationSchemeDistinct:
-		return AsnAllocationUnique
+		return asnAllocationUnique
 	}
 
 	return in.String()
@@ -98,15 +98,15 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 	case apstra.PlatformOSJunos:
 		switch in {
 		case apstra.ConfigletSectionSystem:
-			return JunOSTopLevelHierarchical
+			return junOSTopLevelHierarchical
 		case apstra.ConfigletSectionSetBasedSystem:
-			return JunOSTopLevelSetDelete
+			return junOSTopLevelSetDelete
 		case apstra.ConfigletSectionSetBasedInterface:
-			return JunOSInterfaceLevelSet
+			return junOSInterfaceLevelSet
 		case apstra.ConfigletSectionDeleteBasedInterface:
-			return JunOSInterfaceLevelDelete
+			return junOSInterfaceLevelDelete
 		case apstra.ConfigletSectionInterface:
-			return JunOSInterfaceLevelHierarchical
+			return junOSInterfaceLevelHierarchical
 		}
 	}
 
@@ -116,7 +116,7 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) string {
 	switch in {
 	case apstra.OverlayControlProtocolNone:
-		return OverlayControlProtocolStatic
+		return overlayControlProtocolStatic
 	}
 
 	return in.String()
@@ -125,7 +125,7 @@ func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) st
 func refDesignToFriendlyString(in apstra.RefDesign) string {
 	switch in {
 	case apstra.RefDesignDatacenter:
-		return RefDesignDataCenter
+		return refDesignDataCenter
 	}
 
 	return in.String()
@@ -137,7 +137,7 @@ func asnAllocationSchemeFromFriendlyString(target *apstra.AsnAllocationScheme, i
 	}
 
 	switch in[0] {
-	case AsnAllocationUnique:
+	case asnAllocationUnique:
 		*target = apstra.AsnAllocationSchemeDistinct
 	default:
 		return target.FromString(in[0])
@@ -162,15 +162,15 @@ func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...s
 	}
 
 	switch section {
-	case JunOSTopLevelHierarchical:
+	case junOSTopLevelHierarchical:
 		*target = apstra.ConfigletSectionSystem
-	case JunOSInterfaceLevelHierarchical:
+	case junOSInterfaceLevelHierarchical:
 		*target = apstra.ConfigletSectionInterface
-	case JunOSTopLevelSetDelete:
+	case junOSTopLevelSetDelete:
 		*target = apstra.ConfigletSectionSetBasedSystem
-	case JunOSInterfaceLevelDelete:
+	case junOSInterfaceLevelDelete:
 		*target = apstra.ConfigletSectionDeleteBasedInterface
-	case JunOSInterfaceLevelSet:
+	case junOSInterfaceLevelSet:
 		*target = apstra.ConfigletSectionSetBasedInterface
 	default:
 		return target.FromString(section)
@@ -185,7 +185,7 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 	}
 
 	switch in[0] {
-	case OverlayControlProtocolStatic:
+	case overlayControlProtocolStatic:
 		*target = apstra.OverlayControlProtocolNone
 	default:
 		return target.FromString(in[0])
@@ -200,7 +200,7 @@ func refDesignFromFriendlyString(target *apstra.RefDesign, in ...string) error {
 	}
 
 	switch in[0] {
-	case RefDesignDataCenter:
+	case refDesignDataCenter:
 		*target = apstra.RefDesignDatacenter
 	default:
 		return target.FromString(in[0])
