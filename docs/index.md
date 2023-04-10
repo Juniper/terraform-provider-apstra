@@ -4,7 +4,7 @@ description: |-
   The Apstra provider allows Terraform to control Juniper Apstra fabrics.
 ---
 
-# APSTRA Provider
+# Apstra Provider
 
 The Apstra provider allows Terraform to control Juniper Apstra fabrics.
 
