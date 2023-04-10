@@ -97,7 +97,7 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 			"experimental": schema.BoolAttribute{
 				MarkdownDescription: fmt.Sprintf("Sets a flag in the underlying Apstra SDK client object "+
 					"which enables *experimental* features. At this time, the only effect is bypassing version "+
-					"compatibility checks in the SDK. This provider release is tested with Apstra versions %s",
+					"compatibility checks in the SDK. This provider release is tested with Apstra versions %s.",
 					compatibility.SupportedApiVersionsPretty()),
 				Optional: true,
 			},
