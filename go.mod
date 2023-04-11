@@ -3,7 +3,7 @@ module terraform-provider-apstra
 go 1.19
 
 require (
-	github.com/Juniper/apstra-go-sdk v0.0.0-20230407174653-236333bfa984
+	github.com/Juniper/apstra-go-sdk v0.0.0-20230410201948-7215adc4554f
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-framework v1.2.0
@@ -12,7 +12,7 @@ require (
 )
 
 //                                                                                          HHMMSS
-//replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230407163453-95a45cfa135f
+//replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230410195130-d9da8aae87f4
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect

@@ -5,17 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
+	"terraform-provider-apstra/apstra/system_agents"
 )
 
 var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
@@ -48,42 +42,7 @@ func (o *resourceManagedDevice) Schema(_ context.Context, req resource.SchemaReq
 		MarkdownDescription: "This resource creates/installs an Agent for an Apstra Managed Device." +
 			"Optionally, it will 'Acknolwedge' the discovered system if the `device key` (serial number)" +
 			"reported by the agent matches the optional `device_key` field.",
-		Attributes: map[string]schema.Attribute{
-			"agent_id": schema.StringAttribute{
-				MarkdownDescription: "Apstra ID for the Managed Device Agent.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			},
-			"system_id": schema.StringAttribute{
-				MarkdownDescription: "Apstra ID for the System onboarded by the Managed Device Agent.",
-				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"management_ip": schema.StringAttribute{
-				MarkdownDescription: "Management IP address of the system.",
-				Required:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-				Validators:          []validator.String{apstravalidator.ParseIp(false, false)},
-			},
-			"device_key": schema.StringAttribute{
-				MarkdownDescription: "Key which uniquely identifies a System asset. Possibly a MAC address or serial number.",
-				Optional:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"agent_profile_id": schema.StringAttribute{
-				MarkdownDescription: "ID of the Agent Profile used when instantiating the Agent. An Agent Profile is" +
-					"required to specify the login credentials and platform type.",
-				Required:   true,
-				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-			},
-			"off_box": schema.BoolAttribute{
-				MarkdownDescription: "Indicates that an *offbox* agent should be created (required for Junos devices, default: `true`)",
-				Required:            true,
-				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
-			},
-		},
+		Attributes: systemAgents.ManagedDevice{}.ResourceAttributes(),
 	}
 }
 
@@ -94,36 +53,37 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Retrieve values from plan
-	var plan rManagedDevice
+	var plan systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.validateAgentProfile(ctx, o.client, &resp.Diagnostics)
+	plan.ValidateAgentProfile(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create new Agent for this Managed Device
-	agentId, err := o.client.CreateAgent(ctx, &apstra.SystemAgentRequest{
-		AgentTypeOffbox: apstra.AgentTypeOffbox(plan.OffBox.ValueBool()),
-		ManagementIp:    plan.ManagementIp.ValueString(),
-		Profile:         apstra.ObjectId(plan.AgentProfileId.ValueString()),
-		OperationMode:   apstra.AgentModeFull,
-	})
+	agentId, err := o.client.CreateAgent(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent",
 			err.Error())
 		return
 	}
+	plan.AgentId = types.StringValue(string(agentId))
 
 	// Install the new agent
 	_, err = o.client.SystemAgentRunJob(ctx, agentId, apstra.AgentJobTypeInstall)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("Could not run 'install' job on new agent %q", agentId),
+			fmt.Sprintf("Could not run %q job on new agent %q", apstra.AgentJobTypeInstall.String(), agentId),
 			err.Error())
 		return
 	}
@@ -136,55 +96,34 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 			err.Error())
 		return
 	}
+	plan.SystemId = types.StringValue(string(agentInfo.Status.SystemId))
 
-	// figure out the new switch serial number (device_key)
-	systemInfo, err := o.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error fetching system info",
-			err.Error())
-		return
-	}
+	if !plan.DeviceKey.IsNull() {
+		// figure out the actual serial number (device_key)
+		systemInfo, err := o.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"error fetching system info",
+				err.Error())
+		}
 
-	// submit a SystemUserConfig only if device_key was supplied
-	if !plan.DeviceKey.IsNull() && !plan.DeviceKey.IsUnknown() {
-		// mismatched device key is fatal
-		if plan.DeviceKey.ValueString() != systemInfo.DeviceKey {
+		// validate discovered device_key (serial number)
+		if plan.DeviceKey.ValueString() == systemInfo.DeviceKey {
+			// "acknowledge" the managed device:q
+			plan.Acknowledge(ctx, systemInfo, o.client, &resp.Diagnostics)
+		} else {
+			// device_key supplied by config does not match discovered asset
 			resp.Diagnostics.AddAttributeError(
 				path.Root("device_key"),
 				"error system device_key mismatch",
 				fmt.Sprintf("config expects switch device_key %q, device reports %q",
 					plan.DeviceKey.ValueString(), systemInfo.DeviceKey),
 			)
-			return
 		}
-
-		// update with new SystemUserConfig
-		err = o.client.UpdateSystem(ctx, agentInfo.Status.SystemId, &apstra.SystemUserConfig{
-			AosHclModel: systemInfo.Facts.AosHclModel,
-			AdminState:  apstra.SystemAdminStateNormal,
-		})
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"error updating managed device",
-				fmt.Sprintf("unexpected error while updating user config: %s", err.Error()),
-			)
-			return
-		}
-	}
-
-	// create new state object
-	state := rManagedDevice{
-		AgentId:        types.StringValue(string(agentId)),
-		SystemId:       types.StringValue(string(agentInfo.Status.SystemId)),
-		ManagementIp:   types.StringValue(agentInfo.Config.ManagementIp),
-		DeviceKey:      types.StringValue(systemInfo.DeviceKey),
-		AgentProfileId: types.StringValue(string(agentInfo.Config.Profile)),
-		OffBox:         types.BoolValue(bool(agentInfo.Config.AgentTypeOffBox)),
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -197,7 +136,7 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// Get current state
-	var state rManagedDevice
+	var state systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -219,20 +158,20 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 		}
 	}
 
-	var newState rManagedDevice
-	newState.loadApiData(ctx, agentInfo, &resp.Diagnostics)
+	var newState systemAgents.ManagedDevice
+	newState.LoadApiData(ctx, agentInfo, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	newState.getDeviceKey(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// not currently clear why we need to copy this from old state
-	if newState.DeviceKey.IsNull() && !state.DeviceKey.IsNull() {
-		newState.DeviceKey = types.StringValue(state.DeviceKey.ValueString())
+	// Device_key has 'requiresReplace()', so if it's not set in the state,
+	// then it's also not set in the config. Only fetch the serial number if
+	// the config is expecting a serial number.
+	if !state.DeviceKey.IsNull() {
+		newState.GetDeviceKey(ctx, o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// set state
@@ -246,41 +185,35 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	// Get current state
-	var state rManagedDevice
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Get plan values
-	var plan rManagedDevice
-	diags = req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	var plan systemAgents.ManagedDevice
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// update agent as needed
-	if state.AgentProfileId.ValueString() != plan.AgentProfileId.ValueString() {
-		err := o.client.AssignAgentProfile(ctx, &apstra.AssignAgentProfileRequest{
-			SystemAgents: []apstra.ObjectId{apstra.ObjectId(state.AgentId.ValueString())},
-			ProfileId:    apstra.ObjectId(plan.AgentProfileId.ValueString()),
-		})
-		if err != nil {
-			resp.Diagnostics.AddError(
-				"error updating managed device agent",
-				fmt.Sprintf("error while updating managed device agent %q (%s) - %s",
-					state.AgentId.ValueString(), state.ManagementIp.ValueString(), err.Error()),
-			)
-			return
-		}
+	// Check Agent Profile for credentials, etc...
+	plan.ValidateAgentProfile(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// agent profile ID is the only value permitted to change (others trigger replacement)
+	err := o.client.AssignAgentProfile(ctx, &apstra.AssignAgentProfileRequest{
+		SystemAgents: []apstra.ObjectId{apstra.ObjectId(plan.AgentId.ValueString())},
+		ProfileId:    apstra.ObjectId(plan.AgentProfileId.ValueString()),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error updating managed device agent",
+			fmt.Sprintf("error while updating managed device agent %q (%s) - %s",
+				plan.AgentId.ValueString(), plan.ManagementIp.ValueString(), err.Error()),
+		)
+		return
 	}
 
 	// set state to match plan
-	diags = resp.State.Set(ctx, plan)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -293,9 +226,8 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
-	var state rManagedDevice
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	var state systemAgents.ManagedDevice
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -312,7 +244,6 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 				"error pulling agent info",
 				fmt.Sprintf("could not get info about agent %q - %s", state.AgentId.ValueString(), err.Error()),
 			)
-			return
 		}
 	}
 
@@ -326,7 +257,6 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 				"error pulling system info",
 				fmt.Sprintf("could not get info about system %q - %s", state.SystemId.ValueString(), err.Error()),
 			)
-			return
 		}
 	}
 
@@ -356,69 +286,5 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 			}
 			return
 		}
-	}
-}
-
-type rManagedDevice struct {
-	AgentId        types.String `tfsdk:"agent_id"`
-	SystemId       types.String `tfsdk:"system_id"`
-	ManagementIp   types.String `tfsdk:"management_ip"`
-	DeviceKey      types.String `tfsdk:"device_key"`
-	AgentProfileId types.String `tfsdk:"agent_profile_id"`
-	OffBox         types.Bool   `tfsdk:"off_box"`
-}
-
-func (o *rManagedDevice) loadApiData(ctx context.Context, in *apstra.SystemAgent, diags *diag.Diagnostics) {
-	o.SystemId = types.StringValue(string(in.Status.SystemId))
-	o.ManagementIp = types.StringValue(in.Config.ManagementIp)
-	o.AgentProfileId = types.StringValue(string(in.Config.Profile))
-	o.OffBox = types.BoolValue(bool(in.Config.AgentTypeOffBox))
-	o.AgentId = types.StringValue(string(in.Id))
-}
-
-func (o *rManagedDevice) getDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	// Get SystemInfo from API
-	systemInfo, err := client.GetSystemInfo(ctx, apstra.SystemId(o.SystemId.ValueString()))
-	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-		} else {
-			diags.AddError(
-				"error reading managed device system info",
-				fmt.Sprintf("Could not Read %q (%s) - %s", o.SystemId.ValueString(), o.ManagementIp.ValueString(), err),
-			)
-			return
-		}
-	}
-
-	// record device key and location if possible
-	if systemInfo != nil {
-		o.DeviceKey = types.StringNull()
-	} else {
-		o.DeviceKey = types.StringValue(systemInfo.DeviceKey)
-	}
-}
-
-func (o *rManagedDevice) validateAgentProfile(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	agentProfile, err := client.GetAgentProfile(ctx, apstra.ObjectId(o.AgentProfileId.ValueString()))
-	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			diags.AddAttributeError(
-				path.Root("agent_profile_id"),
-				"agent profile not found",
-				fmt.Sprintf("agent profile %q does not exist", o.AgentProfileId.ValueString()))
-		}
-		diags.AddError("error validating agent profile", err.Error())
-		return
-	}
-
-	// require credentials (we can't automate login otherwise)
-	if !agentProfile.HasUsername || !agentProfile.HasPassword {
-		diags.AddAttributeError(
-			path.Root("agent_profile_id"),
-			"Agent Profile needs credentials",
-			fmt.Sprintf("selected agent_profile_id %q (%s) must have credentials - please fix via Web UI",
-				agentProfile.Label, agentProfile.Id))
 	}
 }
