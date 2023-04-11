@@ -45,6 +45,14 @@ configured with a trusted certificate, you might consider setting...
 
 ...in the provider configuration block.
 https://registry.terraform.io/providers/Juniper/apstra/%s/docs#tls_validation_disabled`
+
+	urlEncodeMsg = `
+Note that when the Username or Password fields contain special characters and are
+embedded in the URL, they must be URL-encoded by substituting '%%<hex-value>' in
+place of each special character. The following table demonstrates some common
+substitutions:
+
+%s`
 )
 
 var _ provider.Provider = &Provider{}
@@ -166,20 +174,17 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// Parse the URL.
 	parsedUrl, err := url.Parse(apstraUrl)
 	if err != nil {
-		urlEncodeMsg := fmt.Sprintf(
-			"Note that when the Username or Password fields contain special characters and are embedded\n"+
-				"in the URL, they must be URL-encoded by substituting '%%XX' in place of the special character.\n"+
-				"The following table demonstrates some common substitutions:\n\n%s", utils.UrlEscapeTable())
-
 		if urlErr, ok := err.(*url.Error); ok && strings.Contains(urlErr.Error(), "invalid userinfo") {
 			// don't print the actual error here because it likely contains a password
-			resp.Diagnostics.AddError("Error parsing userinfo from URL", urlEncodeMsg)
+			resp.Diagnostics.AddError(
+				"Error parsing userinfo from URL", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
 			return
 		}
 
 		var urlEE url.EscapeError
 		if errors.As(err, &urlEE) {
-			resp.Diagnostics.AddError("Error parsing URL", urlEncodeMsg)
+			resp.Diagnostics.AddError(
+				"Error parsing URL", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
 			return
 		}
 
@@ -193,11 +198,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		if val, ok := os.LookupEnv(envApstraUsername); ok {
 			user = val
 		} else {
-			resp.Diagnostics.AddError("unable to determine apstra username", fmt.Sprintf(
-				"Note that when the Username or Password fields contain special characters and are embedded\n"+
-					"in the URL, they must be URL-encoded by substituting '%%XX' in place of the special character.\n"+
-					"The following table might help:\n\n%s", utils.UrlEscapeTable(),
-			))
+			resp.Diagnostics.AddError(
+				"unable to determine apstra username", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
 			return
 		}
 	}
