@@ -27,6 +27,9 @@ func TestRosetta(t *testing.T) {
 
 		{string: "static", stringers: []fmt.Stringer{apstra.OverlayControlProtocolNone}},
 		{string: "evpn", stringers: []fmt.Stringer{apstra.OverlayControlProtocolEvpn}},
+
+		{string: "datacenter", stringers: []fmt.Stringer{apstra.RefDesignDatacenter}},
+		{string: "freeform", stringers: []fmt.Stringer{apstra.RefDesignFreeform}},
 	}
 
 	for i, tc := range testCases {
@@ -48,6 +51,13 @@ func TestRosetta(t *testing.T) {
 		case apstra.OverlayControlProtocol:
 			x := apstra.OverlayControlProtocol(-1)
 			target = &x
+		case apstra.RefDesign:
+			x := apstra.RefDesign(-1)
+			target = &x
+		}
+
+		if target == nil {
+			t.Fatalf("missing case above - target is nil")
 		}
 
 		// stringsWithContext is the []string sent to the rosetta function to populate target
