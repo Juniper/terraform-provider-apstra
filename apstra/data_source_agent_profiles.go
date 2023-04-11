@@ -1,11 +1,14 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfiles{}
@@ -31,34 +34,79 @@ func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaR
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
+			"platform": schema.StringAttribute{
+				MarkdownDescription: "Filter to select only Agent Profiles for the specified platform.",
+				Optional:            true,
+				Validators:          []validator.String{stringvalidator.OneOf(utils.AgentProfilePlatforms()...)},
+			},
+			"has_credentials": schema.BoolAttribute{
+				MarkdownDescription: "Filter to select only Agent Profiles configured with (or without) Username and Password.",
+				Optional:            true,
+			},
 		},
 	}
 }
 
-func (o *dataSourceAgentProfiles) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
 
-	ids, err := o.client.ListAgentProfileIds(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("Error retrieving Agent Profile IDs", err.Error())
+	config := struct {
+		Ids            types.Set    `tfsdk:"ids"`
+		Platform       types.String `tfsdk:"platform"`
+		HasCredentials types.Bool   `tfsdk:"has_credentials"`
+	}{}
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
+	var err error
+
+	// both of these slices start as nil...
+	var agentProfileIds []apstra.ObjectId
+	var agentProfiles []apstra.AgentProfile
+
+	// one of the slices from above will get populated, depending on whether the user included filters...
+	if config.Ids.IsNull() && config.Platform.IsNull() && config.HasCredentials.IsNull() {
+		agentProfileIds, err = o.client.ListAgentProfileIds(ctx)
+		if err != nil {
+			resp.Diagnostics.AddError("Error retrieving Agent Profile IDs", err.Error())
+			return
+		}
+	} else {
+		agentProfiles, err = o.client.GetAllAgentProfiles(ctx)
+		if err != nil {
+			resp.Diagnostics.AddError("Error retrieving Agent Profile IDs", err.Error())
+			return
+		}
+	}
+
+	// loop over agentProfiles unconditionally. If anything's in here, it's interesting.
+	for _, profile := range agentProfiles {
+		if !config.HasCredentials.IsNull() && config.HasCredentials.ValueBool() != profile.HasCredentials() {
+			continue
+		}
+
+		if !config.Platform.IsNull() && config.Platform.ValueString() != profile.Platform {
+			continue
+		}
+
+		agentProfileIds = append(agentProfileIds, profile.Id)
+	}
+
+	// convert agentProfileIds ([]apstra.ObjectId) to a types.Set of types.String
+	idSet, diags := types.SetValueFrom(ctx, types.StringType, agentProfileIds)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// create new state object
-	var state struct {
-		Ids types.Set `tfsdk:"ids"`
-	}
-	state.Ids = idSet
+	config.Ids = idSet
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

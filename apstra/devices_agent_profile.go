@@ -96,12 +96,8 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
 			Computed:            true,
 			Optional:            true,
-			Validators: []validator.String{stringvalidator.OneOf(
-				apstra.AgentPlatformNXOS.String(),
-				apstra.AgentPlatformJunos.String(),
-				apstra.AgentPlatformEOS.String(),
-			)},
-			Default: stringdefault.StaticString(apstra.AgentPlatformJunos.String()),
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AgentProfilePlatforms()...)},
+			Default:             stringdefault.StaticString(apstra.AgentPlatformJunos.String()),
 		},
 		"packages": resourceSchema.MapAttribute{
 			MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
