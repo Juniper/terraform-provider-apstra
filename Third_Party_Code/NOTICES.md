@@ -36,6 +36,7 @@
 |[cty (hashicorp)](https://github.com/hashicorp/go-cty)|[license](https://raw.githubusercontent.com/hashicorp/go-cty/master/LICENSE)|n/a|
 |[decimal](https://github.com/shopspring/decimal)|[license](https://raw.githubusercontent.com/shopspring/decimal/master/LICENSE)|n/a|
 |[errwrap](https://github.com/hashicorp/errwrap)|[license](https://raw.githubusercontent.com/hashicorp/errwrap/master/LICENSE)|n/a|
+|[hc-install](https://github.com/hashicorp/hc-install)|[license](https://raw.githubusercontent.com/hashicorp/hc-install/main/LICENSE)|n/a|
 |[gRPC-Go](https://google.golang.org/grpc)|[license](https://raw.githubusercontent.com/grpc/grpc-go/master/LICENSE)|[notice](https://raw.githubusercontent.com/grpc/grpc-go/master/NOTICE.txt)|
 |[go-colorable](https://github.com/mattn/go-colorable)|[license](https://raw.githubusercontent.com/mattn/go-colorable/master/LICENSE)|n/a|
 |[go-hclog](https://github.com/hashicorp/go-hclog)|[license](https://raw.githubusercontent.com/hashicorp/go-hclog/main/LICENSE)|n/a|
