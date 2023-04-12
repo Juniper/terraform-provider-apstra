@@ -1,9 +1,9 @@
 package blueprint
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"terraform-provider-apstra/apstra/design"
+	apstraplanmodifiers "terraform-provider-apstra/apstra/plan_modifiers"
 	"terraform-provider-apstra/apstra/resources"
 )
 
@@ -57,16 +58,18 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
 				"Leave this field blank to have it automatically assigned from a static pool in the " +
 				"range of 2-4094), or enter a specific value.",
-			Optional:   true,
-			Computed:   true,
-			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+			Optional:      true,
+			Computed:      true,
+			Validators:    []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UseUnknownWhenConfigChangedToNull()},
 		},
 		"vni_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
-			Optional:   true,
-			Computed:   true,
-			Validators: []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
+			Optional:      true,
+			Computed:      true,
+			Validators:    []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
+			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UseUnknownWhenConfigChangedToNull()},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
