@@ -1,4 +1,5 @@
 # Notices for third-party code/dependencies
+
 | Project | License | Notice |
 | :--- | :---: | :---: |
 |[Blackfriday](https://github.com/russross/blackfriday)|[license](https://raw.githubusercontent.com/russross/blackfriday/master/LICENSE.txt)|n/a|
@@ -10,17 +11,16 @@
 |[Go Plugin System over RPC](https://github.com/hashicorp/go-plugin)|[license](https://raw.githubusercontent.com/hashicorp/go-plugin/main/LICENSE)|n/a|
 |[Go Text](https://golang.org/x/text)|[license](https://cs.opensource.google/go/x/text/+/master:LICENSE)|n/a|
 |[Go generated proto packages](https://google.golang.org/genproto)|[license](https://raw.githubusercontent.com/googleapis/go-genproto/main/LICENSE)|n/a|
+|[Protocol Buffers - Google's data interchange format](https://github.com/golang/protobuf)|[license](https://raw.githubusercontent.com/golang/protobuf/master/LICENSE)|n/a|
 |[Go support for Protocol Buffers](https://github.com/protocolbuffers/protobuf-go)|[license](https://raw.githubusercontent.com/protocolbuffers/protobuf-go/master/LICENSE)|n/a|
 |[GoUtils](https://github.com/Masterminds/goutils)|[license](https://raw.githubusercontent.com/Masterminds/goutils/master/LICENSE.txt)|n/a|
 |[Mergo](https://github.com/imdario/mergo)|[license](https://raw.githubusercontent.com/imdario/mergo/master/LICENSE)|n/a|
 |[MessagePack encoding for Golang](https://github.com/vmihailenco/msgpack)|[license](https://raw.githubusercontent.com/vmihailenco/msgpack/v5/LICENSE)|n/a|
 |[Opinionated Golang tag parser](https://github.com/vmihailenco/tagparser)|[license](https://raw.githubusercontent.com/vmihailenco/tagparser/master/LICENSE)|n/a|
-|[Protocol Buffers - Google's data interchange format](https://github.com/golang/protobuf)|[license](https://raw.githubusercontent.com/golang/protobuf/master/LICENSE)|n/a|
 |[SemVer](https://github.com/Masterminds/semver)|[license](https://raw.githubusercontent.com/Masterminds/semver/master/LICENSE.txt)|n/a|
-|[Speakeasy](https://github.com/bgentry/speakeasy)|[license](https://raw.githubusercontent.com/bgentry/speakeasy/master/LICENSE)|n/a|
 |[Sprig: Template functions for Go templates](https://github.com/Masterminds/sprig)|[license](https://raw.githubusercontent.com/Masterminds/sprig/master/LICENSE.txt)|n/a|
-|[Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework/main/LICENSE)|n/a|
 |[Terraform Plugin Framework Validators](https://github.com/hashicorp/terraform-plugin-framework-validators)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework-validators/main/LICENSE)|n/a|
+|[Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework/main/LICENSE)|n/a|
 |[Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-sdk/main/LICENSE)|n/a|
 |[Versioning Library for Go](https://github.com/hashicorp/go-version)|[license](https://raw.githubusercontent.com/hashicorp/go-version/main/LICENSE)|n/a|
 |[Yamux](https://github.com/hashicorp/yamux)|[license](https://raw.githubusercontent.com/hashicorp/yamux/master/LICENSE)|n/a|
@@ -43,6 +43,7 @@
 |[hc-install](https://github.com/hashicorp/hc-install)|[license](https://raw.githubusercontent.com/hashicorp/hc-install/main/LICENSE)|n/a|
 |[reflectwalk](https://github.com/mitchellh/reflectwalk)|[license](https://raw.githubusercontent.com/mitchellh/reflectwalk/main/LICENSE)|n/a|
 |[run](https://github.com/oklog/run)|[license](https://raw.githubusercontent.com/oklog/run/master/LICENSE)|n/a|
+|[speakeasy](https://github.com/bgentry/speakeasy)|[license](https://raw.githubusercontent.com/bgentry/speakeasy/master/LICENSE)|n/a|
 |[sys](https://golang.org/x/sys)|[license](https://cs.opensource.google/go/x/sys/+/master:LICENSE)|n/a|
 |[terraform-exec](https://github.com/hashicorp/terraform-exec)|[license](https://raw.githubusercontent.com/hashicorp/terraform-exec/main/LICENSE)|n/a|
 |[terraform-json](https://github.com/hashicorp/terraform-json)|[license](https://raw.githubusercontent.com/hashicorp/terraform-json/main/LICENSE)|n/a|
