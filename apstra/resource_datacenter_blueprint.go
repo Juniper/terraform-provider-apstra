@@ -1,10 +1,10 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -183,6 +183,9 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 

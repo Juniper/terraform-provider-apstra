@@ -1,10 +1,10 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -61,6 +61,8 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	// Ensure the blueprint exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -115,7 +117,13 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		resp.State.RemoveResource(ctx)
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -133,6 +141,10 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 
 	// Create an allocation request (because it's got the ResourceGroup object inside)
 	allocationRequest := state.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	apiData, err := client.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -166,7 +178,13 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		resp.State.RemoveResource(ctx)
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -216,6 +234,9 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 
 	// No need to proceed if the blueprint no longer exists
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 

@@ -1,9 +1,9 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -53,6 +53,9 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	// Ensure the blueprint exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -111,6 +114,9 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	state.ReadSystemNode(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -161,6 +167,9 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 
 	// No need to proceed if the blueprint no longer exists
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
