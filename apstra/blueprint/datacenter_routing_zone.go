@@ -61,7 +61,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Optional:      true,
 			Computed:      true,
 			Validators:    []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
-			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UseUnknownWhenConfigChangedToNull()},
+			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UnknownWhenRemoved()},
 		},
 		"vni_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
@@ -69,7 +69,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Optional:      true,
 			Computed:      true,
 			Validators:    []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
-			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UseUnknownWhenConfigChangedToNull()},
+			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UnknownWhenRemoved()},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +

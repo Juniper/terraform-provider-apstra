@@ -38,7 +38,7 @@ type UnknownSetter struct{}
 //	in the terraform plan.
 //
 // https://discuss.hashicorp.com/t/schema-for-optional-computed-to-support-correct-removal-plan-in-framework/49055/5?u=hqnvylrx
-func (o UnknownSetter) setUnknown(configValue attr.Value, stateValue attr.Value) bool {
+func (o UnknownSetter) removed(configValue attr.Value, stateValue attr.Value) bool {
 	if !stateValue.IsNull() && configValue.IsNull() {
 		return true
 	}
@@ -54,59 +54,59 @@ func (o UnknownSetter) MarkdownDescription(ctx context.Context) string {
 }
 
 func (o UnknownSetter) PlanModifyBool(_ context.Context, req planmodifier.BoolRequest, resp *planmodifier.BoolResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.BoolUnknown()
 	}
 }
 
 func (o UnknownSetter) PlanModifyFloat64(_ context.Context, req planmodifier.Float64Request, resp *planmodifier.Float64Response) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.Float64Unknown()
 	}
 }
 
 func (o UnknownSetter) PlanModifyInt64(_ context.Context, req planmodifier.Int64Request, resp *planmodifier.Int64Response) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.Int64Unknown()
 	}
 }
 
 func (o UnknownSetter) PlanModifyList(ctx context.Context, req planmodifier.ListRequest, resp *planmodifier.ListResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.ListUnknown(req.ConfigValue.Type(ctx))
 	}
 }
 
 func (o UnknownSetter) PlanModifyMap(ctx context.Context, req planmodifier.MapRequest, resp *planmodifier.MapResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.MapUnknown(req.ConfigValue.Type(ctx))
 	}
 }
 
 func (o UnknownSetter) PlanModifyNumber(_ context.Context, req planmodifier.NumberRequest, resp *planmodifier.NumberResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.NumberUnknown()
 	}
 }
 
 func (o UnknownSetter) PlanModifyObject(ctx context.Context, req planmodifier.ObjectRequest, resp *planmodifier.ObjectResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.ObjectUnknown(req.ConfigValue.AttributeTypes(ctx))
 	}
 }
 
 func (o UnknownSetter) PlanModifySet(ctx context.Context, req planmodifier.SetRequest, resp *planmodifier.SetResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.SetUnknown(req.ConfigValue.Type(ctx))
 	}
 }
 
 func (o UnknownSetter) PlanModifyString(_ context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	if o.setUnknown(req.ConfigValue, req.StateValue) {
+	if o.removed(req.ConfigValue, req.StateValue) {
 		resp.PlanValue = types.StringUnknown()
 	}
 }
 
-func UseUnknownWhenConfigChangedToNull() NineTypesPlanModifier {
+func UnknownWhenRemoved() NineTypesPlanModifier {
 	return UnknownSetter{}
 }
