@@ -33,7 +33,7 @@ const (
 	blueprintMutexMessage = "locked by terraform at $DATE"
 
 	osxCertErrStringMatch = "certificate is not trusted"
-	winCertErrStringMatch = "todo - fill this in" // todo
+	winCertErrStringMatch = "x509: certificate signed by unknown authority"
 	linCertErrStringMatch = "x509: cannot validate certificate for"
 
 	disableTlsValidationMsg = `!!! BAD IDEA WARNING !!!
