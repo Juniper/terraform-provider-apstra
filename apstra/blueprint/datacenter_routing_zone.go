@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"terraform-provider-apstra/apstra/design"
-	apstraplanmodifiers "terraform-provider-apstra/apstra/plan_modifiers"
 	"terraform-provider-apstra/apstra/resources"
 )
 
@@ -24,12 +23,14 @@ const (
 )
 
 type DatacenterRoutingZone struct {
-	Id              types.String `tfsdk:"id"`
-	BlueprintId     types.String `tfsdk:"blueprint_id"`
-	Name            types.String `tfsdk:"name"`
-	VlanId          types.Int64  `tfsdk:"vlan_id"`
-	VniId           types.Int64  `tfsdk:"vni_id"`
-	RoutingPolicyId types.String `tfsdk:"routing_policy_id"`
+	Id                   types.String `tfsdk:"id"`
+	BlueprintId          types.String `tfsdk:"blueprint_id"`
+	Name                 types.String `tfsdk:"name"`
+	VlanId               types.Int64  `tfsdk:"vlan_id"`
+	HadPriorVlanIdConfig types.Bool   `tfsdk:"had_prior_vlan_id_config"`
+	Vni                  types.Int64  `tfsdk:"vni"`
+	HadPriorVniConfig    types.Bool   `tfsdk:"had_prior_vni_config"`
+	RoutingPolicyId      types.String `tfsdk:"routing_policy_id"`
 }
 
 func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -58,18 +59,24 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
 				"Leave this field blank to have it automatically assigned from a static pool in the " +
 				"range of 2-4094), or enter a specific value.",
-			Optional:      true,
-			Computed:      true,
-			Validators:    []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
-			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UnknownWhenRemoved()},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
 		},
-		"vni_id": resourceSchema.Int64Attribute{
+		"had_prior_vlan_id_config": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Used to trigger plan modification when `vlan_id` has been removed from the configuration.",
+			Computed:            true,
+		},
+		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
-			Optional:      true,
-			Computed:      true,
-			Validators:    []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
-			PlanModifiers: []planmodifier.Int64{apstraplanmodifiers.UnknownWhenRemoved()},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
+		},
+		"had_prior_vni_config": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the configuration.",
+			Computed:            true,
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
@@ -89,8 +96,8 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	}
 
 	var vni *int
-	if !o.VniId.IsNull() && !o.VniId.IsUnknown() {
-		v := int(o.VniId.ValueInt64())
+	if !o.Vni.IsNull() && !o.Vni.IsUnknown() {
+		v := int(o.Vni.ValueInt64())
 		vni = &v
 	}
 
@@ -129,8 +136,8 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.Secu
 	}
 
 	if sz.VniId != nil {
-		o.VniId = types.Int64Value(int64(*sz.VniId))
+		o.Vni = types.Int64Value(int64(*sz.VniId))
 	} else {
-		o.VniId = types.Int64Null()
+		o.Vni = types.Int64Null()
 	}
 }
