@@ -107,6 +107,11 @@ func (o UnknownSetter) PlanModifyString(_ context.Context, req planmodifier.Stri
 	}
 }
 
+// UnknownWhenRemoved is useful for Optional + Computed attributes. The default
+// behavior for these attributes is for them to *remain set* in the plan when
+// they're removed from the configuration, which is probably not what the
+// Terraform user intended. This plan modifier reverts them to <unknown> in
+// that case, which is probably closer to the expected behavior.
 func UnknownWhenRemoved() NineTypesPlanModifier {
 	return UnknownSetter{}
 }
