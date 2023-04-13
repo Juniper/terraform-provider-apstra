@@ -7,9 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var (
-	_ NineTypesPlanModifier = &UnknownSetter{}
-)
+var _ NineTypesPlanModifier = &UnknownSetter{}
 
 type NineTypesPlanModifier interface {
 	planmodifier.String
@@ -48,7 +46,7 @@ func (o UnknownSetter) setUnknown(configValue attr.Value, stateValue attr.Value)
 }
 
 func (o UnknownSetter) Description(_ context.Context) string {
-	return "value defaults to <null>"
+	return "value reverts to <unknown> when removed from config"
 }
 
 func (o UnknownSetter) MarkdownDescription(ctx context.Context) string {
