@@ -22,6 +22,7 @@
 |[Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework/main/LICENSE)|n/a|
 |[Terraform Plugin Framework Validators](https://github.com/hashicorp/terraform-plugin-framework-validators)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework-validators/main/LICENSE)|n/a|
 |[Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-sdk/main/LICENSE)|n/a|
+|[Unicode Text Segmentation for Go](https://github.com/apparentlymart/go-textseg)|[license](https://raw.githubusercontent.com/apparentlymart/go-textseg/master/LICENSE)|n/a|
 |[Versioning Library for Go](https://github.com/hashicorp/go-version)|[license](https://raw.githubusercontent.com/hashicorp/go-version/main/LICENSE)|n/a|
 |[Yamux](https://github.com/hashicorp/yamux)|[license](https://raw.githubusercontent.com/hashicorp/yamux/master/LICENSE)|n/a|
 |[cast](https://github.com/spf13/cast)|[license](https://raw.githubusercontent.com/spf13/cast/master/LICENSE)|n/a|
