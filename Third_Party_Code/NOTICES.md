@@ -208,3 +208,7 @@ Notice: https://raw.githubusercontent.com/grpc/grpc-go/master/NOTICE.txt
 Name: Go support for Protocol Buffers
 Project URL: https://google.golang.org/protobuf
 License: https://raw.githubusercontent.com/protocolbuffers/protobuf-go/master/LICENSE
+
+Name: Unicode Text Segmentation for Go
+Project URL: https://github.com/apparentlymart/go-textseg
+License: https://raw.githubusercontent.com/apparentlymart/go-textseg/master/LICENSE
