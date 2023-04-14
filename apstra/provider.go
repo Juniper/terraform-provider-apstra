@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -14,8 +15,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
+	"strings"
 	"sync"
 	"terraform-provider-apstra/apstra/compatibility"
+	"terraform-provider-apstra/apstra/utils"
 	"time"
 )
 
@@ -30,6 +34,28 @@ const (
 	envApstraUrl      = "APSTRA_URL"
 
 	blueprintMutexMessage = "locked by terraform at $DATE"
+
+	osxCertErrStringMatch = "certificate is not trusted"
+	winCertErrStringMatch = "todo - fill this in" // todo
+	linCertErrStringMatch = "x509: cannot validate certificate for"
+
+	disableTlsValidationMsg = `!!! BAD IDEA WARNING !!!
+
+If you expected TLS validation to fail because the Apstra server is not
+configured with a trusted certificate, you might consider setting...
+
+	tls_validation_disabled = true
+
+...in the provider configuration block.
+https://registry.terraform.io/providers/Juniper/apstra/%s/docs#tls_validation_disabled`
+
+	urlEncodeMsg = `
+Note that when the Username or Password fields contain special characters and are
+embedded in the URL, they must be URL-encoded by substituting '%%<hex-value>' in
+place of each special character. The following table demonstrates some common
+substitutions:
+
+%s`
 )
 
 var commit, tag string // populated by goreleaser
@@ -173,6 +199,20 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// Parse the URL.
 	parsedUrl, err := url.Parse(apstraUrl)
 	if err != nil {
+		if urlErr, ok := err.(*url.Error); ok && strings.Contains(urlErr.Error(), "invalid userinfo") {
+			// don't print the actual error here because it likely contains a password
+			resp.Diagnostics.AddError(
+				"Error parsing userinfo from URL", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
+			return
+		}
+
+		var urlEE url.EscapeError
+		if errors.As(err, &urlEE) {
+			resp.Diagnostics.AddError(
+				"Error parsing URL", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
+			return
+		}
+
 		resp.Diagnostics.AddError(fmt.Sprintf("error parsing URL '%s'", config.Url.ValueString()), err.Error())
 		return
 	}
@@ -183,7 +223,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		if val, ok := os.LookupEnv(envApstraUsername); ok {
 			user = val
 		} else {
-			resp.Diagnostics.AddError(errProviderInvalidConfig, "unable to determine apstra username")
+			resp.Diagnostics.AddError(
+				"unable to determine apstra username", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
 			return
 		}
 	}
@@ -241,10 +282,26 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// Create the Apstra client.
 	client, err := clientCfg.NewClient()
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"unable to create client",
-			fmt.Sprintf("error creating apstra client - %s", err),
-		)
+		ver := p.Version
+		if ver == "0.0.0" {
+			ver = "latest"
+		}
+		suggestion := fmt.Sprintf(disableTlsValidationMsg, ver)
+
+		var msg string
+		//goland:noinspection GoBoolExpressions // runtime.GOOS is not handled correctly
+		switch {
+		case runtime.GOOS == "windows" && strings.Contains(err.Error(), winCertErrStringMatch):
+			msg = fmt.Sprintf("error creating apstra client - %s\n\n%s", err.Error(), suggestion)
+		case runtime.GOOS == "darwin" && strings.Contains(err.Error(), osxCertErrStringMatch):
+			msg = fmt.Sprintf("error creating apstra client - %s\n\n%s", err.Error(), suggestion)
+		case runtime.GOOS == "linux" && strings.Contains(err.Error(), linCertErrStringMatch):
+			msg = fmt.Sprintf("error creating apstra client - %s\n\n%s", err.Error(), suggestion)
+		default:
+			msg = fmt.Sprintf("error creating apstra client - %s", err.Error())
+		}
+
+		resp.Diagnostics.AddError("unable to create client", msg)
 		return
 	}
 

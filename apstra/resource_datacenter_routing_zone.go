@@ -1,10 +1,10 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -12,6 +12,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
+var _ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
 
 type resourceDatacenterRoutingZone struct {
 	client   *apstra.Client
@@ -32,6 +33,78 @@ func (o *resourceDatacenterRoutingZone) Schema(_ context.Context, _ resource.Sch
 		MarkdownDescription: "This resource creates a Routing Zone within a Blueprint.",
 		Attributes:          blueprint.DatacenterRoutingZone{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// This plan modifier solves the same problem for two different
+	// `Optional` + `Computed` attributes:
+	//   - VlanId
+	//   - Vni
+	//
+	// The problem is terraform's ordinary handling of `Optional` + `Computed`
+	// attributes:
+	//
+	// https://discuss.hashicorp.com/t/schema-for-optional-computed-to-support-correct-removal-plan-in-framework/49055/5?u=hqnvylrx
+	//
+	//   The subject of what goes on behind the scenes of Terraform plan with
+	//   regards to providers is pretty nuanced. Without going too much into the
+	//   weeds, the behavior for Terraform for Optional + Computed attributes is
+	//   to copy the prior state if there is no configuration for it.
+	//
+	// This means that a manually-configured VLAN ID or VNI won't get backed-out
+	// via the API to allow Apstra to choose a new value from its pool.
+	//
+	// We work around that behavior by using trigger/tracker `Computed` boolean
+	// attributes for each `Computed` + `Optional` resource:
+	//   - HadPriorVlanIdConfig
+	//   - HadPriorVniConfig
+	//
+	// Whenever these attributes are found `true`, but the corresponding config
+	// element is `null`, we conclude that the attribute been removed from the
+	// configuration and set the attribute to `unknown` to achieve modification
+	// and record a new choice made by the API.
+
+	// No state means there couldn't have been a previous config.
+	// No plan means we're doing Delete().
+	// Both are un-interesting to this plan modifier.
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Retrieve values from config
+	var config blueprint.DatacenterRoutingZone
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	//Retrieve values from plan
+	var plan blueprint.DatacenterRoutingZone
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.DatacenterRoutingZone
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// null config with prior configured value means vlan id was removed
+	if config.VlanId.IsNull() && state.HadPriorVlanIdConfig.ValueBool() {
+		plan.VlanId = types.Int64Unknown()
+		plan.HadPriorVlanIdConfig = types.BoolValue(false)
+	}
+
+	// null config with prior configured value means vni was removed
+	if config.Vni.IsNull() && state.HadPriorVniConfig.ValueBool() {
+		plan.Vni = types.Int64Unknown()
+		plan.HadPriorVniConfig = types.BoolValue(false)
+	}
+
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 }
 
 func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -77,6 +150,10 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
 	}
+
+	// Set prior config trackers according to whether the plan knows a value (only possible in Create())
+	plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
+	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 
 	plan.Id = types.StringValue(id.String())
 	plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
@@ -167,6 +244,18 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
+	}
+
+	// if the plan modifier didn't take action...
+	if plan.HadPriorVlanIdConfig.IsUnknown() {
+		// ...then the trigger value is set according to whether a VLAN ID value is known.
+		plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
+	}
+
+	// if the plan modifier didn't take action...
+	if plan.HadPriorVniConfig.IsUnknown() {
+		// ...then the trigger value is set according to whether a VNI value is known.
+		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	}
 
 	plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
