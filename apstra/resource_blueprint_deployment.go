@@ -103,6 +103,9 @@ func (o *resourceBlueprintDeploy) Read(ctx context.Context, req resource.ReadReq
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Create a new state object so we don't overwrite the comment template in Read().
 	newState := blueprint.Deploy{BlueprintId: state.BlueprintId}
@@ -137,6 +140,9 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
 		resp.State.RemoveResource(ctx)
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -181,6 +187,9 @@ func (o *resourceBlueprintDeploy) Delete(ctx context.Context, req resource.Delet
 
 	// No need to proceed if the blueprint no longer exists
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		return
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
