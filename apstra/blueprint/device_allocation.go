@@ -1,14 +1,15 @@
 package blueprint
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -23,6 +24,7 @@ type DeviceAllocation struct {
 	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`       // computed + optional
 	NodeId                types.String `tfsdk:"node_id"`                // computed
 	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"` // computed
+	DeployMode            types.String `tfsdk:"deploy_mode"`            // optional
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -73,6 +75,12 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"device_profile_node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.",
 			Computed:            true,
+		},
+		"deploy_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: "", // todo
+			Optional:            true,
+			Default:             stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 	}
 }
