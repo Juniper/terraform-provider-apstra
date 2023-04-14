@@ -18,7 +18,7 @@ builds:
   flags:
     - -trimpath
   ldflags:
-    - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
+    - '-s -w -X terraform-provider-apstra/apstra.tag={{.Version}} -X terraform-provider-apstra/apstra.commit={{.Commit}}'
   goos:
 #    - freebsd
     - windows
@@ -58,7 +58,8 @@ release:
   extra_files:
     - glob: 'terraform-registry-manifest.json'
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
-  # If you want to manually examine the release before its live, uncomment this line:
+  # Setting `true` below allows us to manually examine the release before making it live.
+  # The final step then is to click buttons in the releases area of the github web UI.
   draft: true
 changelog:
   skip: true
