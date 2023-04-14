@@ -18,6 +18,8 @@ const (
 	overlayControlProtocolStatic = "static"
 
 	refDesignDataCenter = "datacenter"
+
+	nodeDeployModeNotSet = "not_set"
 )
 
 type StringerWithFromString interface {
@@ -40,6 +42,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return asnAllocationSchemeToFriendlyString(in[0].(apstra.AsnAllocationScheme))
 	case apstra.ConfigletSection:
 		return configletSectionToFriendlyString(in[0].(apstra.ConfigletSection), in[1:]...)
+	case apstra.NodeDeployMode:
+		return nodeDeployModeToFriendlyString(in[0].(apstra.NodeDeployMode))
 	case apstra.OverlayControlProtocol:
 		return overlayControlProtocolToFriendlyString(in[0].(apstra.OverlayControlProtocol))
 	case apstra.RefDesign:
@@ -66,6 +70,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return asnAllocationSchemeFromFriendlyString(target.(*apstra.AsnAllocationScheme), in...)
 	case *apstra.ConfigletSection:
 		return configletSectionFromFriendlyString(target.(*apstra.ConfigletSection), in...)
+	case *apstra.NodeDeployMode:
+		return nodeDeployModeFromFriendlyString(target.(*apstra.NodeDeployMode), in...)
 	case *apstra.OverlayControlProtocol:
 		return overlayControlProtocolFromFriendlyString(target.(*apstra.OverlayControlProtocol), in...)
 	case *apstra.RefDesign:
@@ -108,6 +114,15 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 		case apstra.ConfigletSectionInterface:
 			return junOSInterfaceLevelHierarchical
 		}
+	}
+
+	return in.String()
+}
+
+func nodeDeployModeToFriendlyString(in apstra.NodeDeployMode) string {
+	switch in {
+	case apstra.NodeDeployModeNone:
+		return nodeDeployModeNotSet
 	}
 
 	return in.String()
@@ -174,6 +189,21 @@ func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...s
 		*target = apstra.ConfigletSectionSetBasedInterface
 	default:
 		return target.FromString(section)
+	}
+
+	return nil
+}
+
+func nodeDeployModeFromFriendlyString(target *apstra.NodeDeployMode, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case nodeDeployModeNotSet:
+		*target = apstra.NodeDeployModeNone
+	default:
+		return target.FromString(in[0])
 	}
 
 	return nil
