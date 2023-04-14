@@ -1,6 +1,7 @@
 # Notices for third-party code/dependencies
 | Project | License | Notice |
 | :--- | :---: | :---: |
+|[A Go package for calculating the Levenshtein distance between two strings](https://github.com/agext/levenshtein)|[license](https://raw.githubusercontent.com/agext/levenshtein/master/LICENSE)|[notice](https://raw.githubusercontent.com/agext/levenshtein/master/NOTICE)|
 |[Blackfriday](https://github.com/russross/blackfriday)|[license](https://raw.githubusercontent.com/russross/blackfriday/master/LICENSE.txt)|n/a|
 |[Go App Engine packages](https://google.golang.org/appengine)|[license](https://raw.githubusercontent.com/golang/appengine/master/LICENSE)|n/a|
 |[Go CLI Library](https://github.com/mitchellh/cli)|[license](https://raw.githubusercontent.com/mitchellh/cli/main/LICENSE)|n/a|
@@ -12,6 +13,7 @@
 |[Go generated proto packages](https://google.golang.org/genproto)|[license](https://raw.githubusercontent.com/googleapis/go-genproto/main/LICENSE)|n/a|
 |[Go support for Protocol Buffers](https://github.com/protocolbuffers/protobuf-go)|[license](https://raw.githubusercontent.com/protocolbuffers/protobuf-go/master/LICENSE)|n/a|
 |[GoUtils](https://github.com/Masterminds/goutils)|[license](https://raw.githubusercontent.com/Masterminds/goutils/master/LICENSE.txt)|n/a|
+|[HCL](https://github.com/hashicorp/hcl)|[license](https://raw.githubusercontent.com/hashicorp/hcl/main/LICENSE)|n/a|
 |[Mergo](https://github.com/imdario/mergo)|[license](https://raw.githubusercontent.com/imdario/mergo/master/LICENSE)|n/a|
 |[MessagePack encoding for Golang](https://github.com/vmihailenco/msgpack)|[license](https://raw.githubusercontent.com/vmihailenco/msgpack/v5/LICENSE)|n/a|
 |[Opinionated Golang tag parser](https://github.com/vmihailenco/tagparser)|[license](https://raw.githubusercontent.com/vmihailenco/tagparser/master/LICENSE)|n/a|
@@ -30,7 +32,8 @@
 |[color](https://github.com/fatih/color)|[license](https://raw.githubusercontent.com/fatih/color/main/LICENSE.md)|n/a|
 |[complete](https://github.com/posener/complete)|[license](https://raw.githubusercontent.com/posener/complete/v1/LICENSE.txt)|n/a|
 |[copystructure](https://github.com/mitchellh/copystructure)|[license](https://raw.githubusercontent.com/mitchellh/copystructure/master/LICENSE)|n/a|
-|[cty](https://github.com/zclconf/go-cty)|[license](https://raw.githubusercontent.com/zclconf/go-cty/main/LICENSE)|n/a|
+|[cty (zclconf)](https://github.com/zclconf/go-cty)|[license](https://raw.githubusercontent.com/zclconf/go-cty/main/LICENSE)|n/a|
+|[cty (hashicorp)](https://github.com/hashicorp/go-cty)|[license](https://raw.githubusercontent.com/hashicorp/go-cty/master/LICENSE)|n/a|
 |[decimal](https://github.com/shopspring/decimal)|[license](https://raw.githubusercontent.com/shopspring/decimal/master/LICENSE)|n/a|
 |[errwrap](https://github.com/hashicorp/errwrap)|[license](https://raw.githubusercontent.com/hashicorp/errwrap/master/LICENSE)|n/a|
 |[gRPC-Go](https://google.golang.org/grpc)|[license](https://raw.githubusercontent.com/grpc/grpc-go/master/LICENSE)|[notice](https://raw.githubusercontent.com/grpc/grpc-go/master/NOTICE.txt)|
@@ -41,7 +44,11 @@
 |[go-multierror](https://github.com/hashicorp/go-multierror)|[license](https://raw.githubusercontent.com/hashicorp/go-multierror/master/LICENSE)|n/a|
 |[go-radix](https://github.com/armon/go-radix)|[license](https://raw.githubusercontent.com/armon/go-radix/master/LICENSE)|n/a|
 |[go-testing-interface](https://github.com/mitchellh/go-testing-interface)|[license](https://raw.githubusercontent.com/mitchellh/go-testing-interface/master/LICENSE)|n/a|
+|[go-wordwrap](https://github.com/mitchellh/go-wordwrap)|[license](https://raw.githubusercontent.com/mitchellh/go-wordwrap/master/LICENSE.md)|n/a|
 |[hc-install](https://github.com/hashicorp/hc-install)|[license](https://raw.githubusercontent.com/hashicorp/hc-install/main/LICENSE)|n/a|
+|[logutils](https://github.com/hashicorp/logutils)|[license](https://raw.githubusercontent.com/hashicorp/logutils/master/LICENSE)|n/a|
+|[mapstructure](https://github.com/mitchellh/mapstructure)|[license](https://raw.githubusercontent.com/mitchellh/mapstructure/main/LICENSE)|n/a|
+|[mod](golang.org/x/mod)|[license](https://cs.opensource.google/go/x/mod/+/master:LICENSE)|n/a|
 |[reflectwalk](https://github.com/mitchellh/reflectwalk)|[license](https://raw.githubusercontent.com/mitchellh/reflectwalk/main/LICENSE)|n/a|
 |[run](https://github.com/oklog/run)|[license](https://raw.githubusercontent.com/oklog/run/master/LICENSE)|n/a|
 |[sys](https://golang.org/x/sys)|[license](https://cs.opensource.google/go/x/sys/+/master:LICENSE)|n/a|
@@ -50,6 +57,7 @@
 |[terraform-plugin-docs](https://github.com/hashicorp/terraform-plugin-docs)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-docs/main/LICENSE)|n/a|
 |[terraform-plugin-go](https://github.com/hashicorp/terraform-plugin-go)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-go/main/LICENSE)|n/a|
 |[terraform-plugin-log](https://github.com/hashicorp/terraform-plugin-log)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-log/main/LICENSE)|n/a|
+|[terraform-plugin-testing](https://github.com/hashicorp/terraform-plugin-testing)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-testing/main/LICENSE)|n/a|
 |[terraform-registry-address](https://github.com/hashicorp/terraform-registry-address)|[license](https://raw.githubusercontent.com/hashicorp/terraform-registry-address/main/LICENSE)|n/a|
 |[terraform-svchost](https://github.com/hashicorp/terraform-svchost)|[license](https://raw.githubusercontent.com/hashicorp/terraform-svchost/main/LICENSE)|n/a|
 |[uuid (google)](https://github.com/google/uuid)|[license](https://raw.githubusercontent.com/google/uuid/master/LICENSE)|n/a|
