@@ -101,6 +101,12 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Default:             stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
+		"deploy_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: "", // todo
+			Optional:            true,
+			Default:             stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
+		},
 	}
 }
 
