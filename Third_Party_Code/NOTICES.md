@@ -1,214 +1,66 @@
-NOTICES FOR THIRD-PARTY CODE/DEPENDENCIES
-
-Name: Versioning Library for Go
-Project URL: https://github.com/hashicorp/go-version
-License: https://raw.githubusercontent.com/hashicorp/go-version/main/LICENSE
-
-Name: terraform-plugin-docs
-Project URL: https://github.com/hashicorp/terraform-plugin-docs
-License: https://raw.githubusercontent.com/hashicorp/terraform-plugin-docs/main/LICENSE
-
-Name: Terraform Plugin Framework
-Project URL: https://github.com/hashicorp/terraform-plugin-framework
-License: https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework/main/LICENSE
-
-Name: Terraform Plugin Framework Validators
-Project URL: https://github.com/hashicorp/terraform-plugin-framework-validators
-License: https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework-validators/main/LICENSE
-
-Name: go-homedir
-Project URL: https://github.com/mitchellh/go-homedir
-License: https://raw.githubusercontent.com/mitchellh/go-homedir/main/LICENSE
-
-Name: GoUtils
-Project URL: https://github.com/Masterminds/goutils
-License: https://raw.githubusercontent.com/Masterminds/goutils/master/LICENSE.txt
-
-Name: SemVer
-Project URL: https://github.com/Masterminds/semver
-License: https://raw.githubusercontent.com/Masterminds/semver/master/LICENSE.txt
-
-Name: Sprig: Template functions for Go templates
-Project URL: https://github.com/Masterminds/sprig
-License: https://raw.githubusercontent.com/Masterminds/sprig/master/LICENSE.txt
-
-Name: go-radix
-Project URL: https://github.com/armon/go-radix
-License: https://raw.githubusercontent.com/armon/go-radix/master/LICENSE
-
-Name: 
-Project URL: https://github.com/bgentry/speakeasy
-License: https://raw.githubusercontent.com/bgentry/speakeasy/master/LICENSE
-
-Name: Speakeasy
-Project URL: https://github.com/fatih/color
-License: https://raw.githubusercontent.com/fatih/color/main/LICENSE.md
-
-Name: Go support for Protocol Buffers
-Project URL: https://github.com/golang/protobuf
-License: https://raw.githubusercontent.com/golang/protobuf/master/LICENSE
-
-Name: uuid
-Project URL: https://github.com/google/uuid
-License: https://raw.githubusercontent.com/google/uuid/master/LICENSE
-
-Name: errwrap
-Project URL: https://github.com/hashicorp/errwrap
-License: https://raw.githubusercontent.com/hashicorp/errwrap/master/LICENSE
-
-Name: Go Checkpoint Client
-Project URL: https://github.com/hashicorp/go-checkpoint
-License: https://raw.githubusercontent.com/hashicorp/go-checkpoint/master/LICENSE
-
-Name: cleanhttp
-Project URL: https://github.com/hashicorp/go-cleanhttp
-License: https://raw.githubusercontent.com/hashicorp/go-cleanhttp/master/LICENSE
-
-Name: go-hclog
-Project URL: https://github.com/hashicorp/go-hclog
-License: https://raw.githubusercontent.com/hashicorp/go-hclog/main/LICENSE
-
-Name: go-multierror
-Project URL: https://github.com/hashicorp/go-multierror
-License: https://raw.githubusercontent.com/hashicorp/go-multierror/master/LICENSE
-
-Name: Go Plugin System over RPC
-Project URL: https://github.com/hashicorp/go-plugin
-License: https://raw.githubusercontent.com/hashicorp/go-plugin/main/LICENSE
-
-Name: uuid
-Project URL: https://github.com/hashicorp/go-uuid
-License: https://raw.githubusercontent.com/hashicorp/go-uuid/master/LICENSE
-
-Name: hc-install
-Project URL: https://github.com/hashicorp/hc-install
-License: https://raw.githubusercontent.com/hashicorp/hc-install/main/LICENSE
-
-Name: terraform-exec
-Project URL: https://github.com/hashicorp/terraform-exec
-License: https://raw.githubusercontent.com/hashicorp/terraform-exec/main/LICENSE
-
-Name: terraform-json
-Project URL: https://github.com/hashicorp/terraform-json
-License: https://raw.githubusercontent.com/hashicorp/terraform-json/main/LICENSE
-
-Name: terraform-plugin-go
-Project URL: https://github.com/hashicorp/terraform-plugin-go
-License: https://raw.githubusercontent.com/hashicorp/terraform-plugin-go/main/LICENSE
-
-Name: terraform-plugin-log
-Project URL: https://github.com/hashicorp/terraform-plugin-log
-License: https://raw.githubusercontent.com/hashicorp/terraform-plugin-log/main/LICENSE
-
-Name: terraform-registry-address
-Project URL: https://github.com/hashicorp/terraform-registry-address
-License: https://raw.githubusercontent.com/hashicorp/terraform-registry-address/main/LICENSE
-
-Name: terraform-svchost
-Project URL: https://github.com/hashicorp/terraform-svchost
-License: https://raw.githubusercontent.com/hashicorp/terraform-svchost/main/LICENSE
-
-Name: Yamux
-Project URL: https://github.com/hashicorp/yamux
-License: https://raw.githubusercontent.com/hashicorp/yamux/master/LICENSE
-
-Name: xstrings
-Project URL: https://github.com/huandu/xstrings
-License: https://raw.githubusercontent.com/huandu/xstrings/master/LICENSE
-
-Name: Mergo
-Project URL: https://github.com/imdario/mergo
-License: https://raw.githubusercontent.com/imdario/mergo/master/LICENSE
-
-Name: go-colorable
-Project URL: https://github.com/mattn/go-colorable
-License: https://raw.githubusercontent.com/mattn/go-colorable/master/LICENSE
-
-Name: go-isatty
-Project URL: https://github.com/mattn/go-isatty
-License: https://raw.githubusercontent.com/mattn/go-isatty/master/LICENSE
-
-Name: Go CLI Library
-Project URL: https://github.com/mitchellh/cli
-License: https://raw.githubusercontent.com/mitchellh/cli/main/LICENSE
-
-Name: copystructure
-Project URL: https://github.com/mitchellh/copystructure
-License: https://raw.githubusercontent.com/mitchellh/copystructure/master/LICENSE
-
-Name: go-testing-interface
-Project URL: https://github.com/mitchellh/go-testing-interface
-License: https://raw.githubusercontent.com/mitchellh/go-testing-interface/master/LICENSE
-
-Name: reflectwalk
-Project URL: https://github.com/mitchellh/reflectwalk
-License: https://raw.githubusercontent.com/mitchellh/reflectwalk/main/LICENSE
-
-Name: run
-Project URL: https://github.com/oklog/run
-License: https://raw.githubusercontent.com/oklog/run/master/LICENSE
-
-Name: complete
-Project URL: https://github.com/posener/complete
-License: https://raw.githubusercontent.com/posener/complete/v1/LICENSE.txt
-
-Name: Blackfriday
-Project URL: https://github.com/russross/blackfriday
-License: https://raw.githubusercontent.com/russross/blackfriday/master/LICENSE.txt
-
-Name: decimal
-Project URL: https://github.com/shopspring/decimal
-License: https://raw.githubusercontent.com/shopspring/decimal/master/LICENSE
-
-Name: cast
-Project URL: https://github.com/spf13/cast
-License: https://raw.githubusercontent.com/spf13/cast/master/LICENSE
-
-Name: MessagePack encoding for Golang
-Project URL: https://github.com/vmihailenco/msgpack
-License: https://raw.githubusercontent.com/vmihailenco/msgpack/v5/LICENSE
-
-Name: Opinionated Golang tag parser
-Project URL: https://github.com/vmihailenco/tagparser
-License: https://raw.githubusercontent.com/vmihailenco/tagparser/master/LICENSE
-
-Name: cty
-Project URL: https://github.com/zclconf/go-cty
-License: https://raw.githubusercontent.com/zclconf/go-cty/main/LICENSE
-
-Name: Go Cryptography
-Project URL: https://golang.org/x/crypto
-License: https://cs.opensource.google/go/x/crypto/+/master:LICENSE
-
-Name: Go Networking
-Project URL: https://golang.org/x/net
-License: https://cs.opensource.google/go/x/net/+/master:LICENSE
-
-Name: sys
-Project URL: https://golang.org/x/sys
-License: https://cs.opensource.google/go/x/sys/+/master:LICENSE
-
-Name: Go Text
-Project URL: https://golang.org/x/text
-License: https://cs.opensource.google/go/x/text/+/master:LICENSE
-
-Name: Go App Engine packages
-Project URL: https://google.golang.org/appengine
-License: https://raw.githubusercontent.com/golang/appengine/master/LICENSE
-
-Name: Go generated proto packages
-Project URL: https://google.golang.org/genproto
-License: https://raw.githubusercontent.com/googleapis/go-genproto/main/LICENSE
-
-Name: gRPC-Go
-Project URL: https://google.golang.org/grpc
-License: https://raw.githubusercontent.com/grpc/grpc-go/master/LICENSE
-Notice: https://raw.githubusercontent.com/grpc/grpc-go/master/NOTICE.txt
-
-Name: Go support for Protocol Buffers
-Project URL: https://google.golang.org/protobuf
-License: https://raw.githubusercontent.com/protocolbuffers/protobuf-go/master/LICENSE
-
-Name: Unicode Text Segmentation for Go
-Project URL: https://github.com/apparentlymart/go-textseg
-License: https://raw.githubusercontent.com/apparentlymart/go-textseg/master/LICENSE
+# Notices for third-party code/dependencies
+| Project | License | Notice |
+| :--- | :---: | :---: |
+|[A Go package for calculating the Levenshtein distance between two strings](https://github.com/agext/levenshtein)|[license](https://raw.githubusercontent.com/agext/levenshtein/master/LICENSE)|[notice](https://raw.githubusercontent.com/agext/levenshtein/master/NOTICE)|
+|[Blackfriday](https://github.com/russross/blackfriday)|[license](https://raw.githubusercontent.com/russross/blackfriday/master/LICENSE.txt)|n/a|
+|[Go App Engine packages](https://google.golang.org/appengine)|[license](https://raw.githubusercontent.com/golang/appengine/master/LICENSE)|n/a|
+|[Go CLI Library](https://github.com/mitchellh/cli)|[license](https://raw.githubusercontent.com/mitchellh/cli/main/LICENSE)|n/a|
+|[Go Checkpoint Client](https://github.com/hashicorp/go-checkpoint)|[license](https://raw.githubusercontent.com/hashicorp/go-checkpoint/master/LICENSE)|n/a|
+|[Go Cryptography](https://golang.org/x/crypto)|[license](https://cs.opensource.google/go/x/crypto/+/master:LICENSE)|n/a|
+|[Go Networking](https://golang.org/x/net)|[license](https://cs.opensource.google/go/x/net/+/master:LICENSE)|n/a|
+|[Go Plugin System over RPC](https://github.com/hashicorp/go-plugin)|[license](https://raw.githubusercontent.com/hashicorp/go-plugin/main/LICENSE)|n/a|
+|[Go Text](https://golang.org/x/text)|[license](https://cs.opensource.google/go/x/text/+/master:LICENSE)|n/a|
+|[Go generated proto packages](https://google.golang.org/genproto)|[license](https://raw.githubusercontent.com/googleapis/go-genproto/main/LICENSE)|n/a|
+|[Go support for Protocol Buffers](https://github.com/protocolbuffers/protobuf-go)|[license](https://raw.githubusercontent.com/protocolbuffers/protobuf-go/master/LICENSE)|n/a|
+|[GoUtils](https://github.com/Masterminds/goutils)|[license](https://raw.githubusercontent.com/Masterminds/goutils/master/LICENSE.txt)|n/a|
+|[HCL](https://github.com/hashicorp/hcl)|[license](https://raw.githubusercontent.com/hashicorp/hcl/main/LICENSE)|n/a|
+|[Mergo](https://github.com/imdario/mergo)|[license](https://raw.githubusercontent.com/imdario/mergo/master/LICENSE)|n/a|
+|[MessagePack encoding for Golang](https://github.com/vmihailenco/msgpack)|[license](https://raw.githubusercontent.com/vmihailenco/msgpack/v5/LICENSE)|n/a|
+|[Opinionated Golang tag parser](https://github.com/vmihailenco/tagparser)|[license](https://raw.githubusercontent.com/vmihailenco/tagparser/master/LICENSE)|n/a|
+|[Protocol Buffers - Google's data interchange format](https://github.com/golang/protobuf)|[license](https://raw.githubusercontent.com/golang/protobuf/master/LICENSE)|n/a|
+|[SemVer](https://github.com/Masterminds/semver)|[license](https://raw.githubusercontent.com/Masterminds/semver/master/LICENSE.txt)|n/a|
+|[Speakeasy](https://github.com/bgentry/speakeasy)|[license](https://raw.githubusercontent.com/bgentry/speakeasy/master/LICENSE)|n/a|
+|[Sprig: Template functions for Go templates](https://github.com/Masterminds/sprig)|[license](https://raw.githubusercontent.com/Masterminds/sprig/master/LICENSE.txt)|n/a|
+|[Terraform Plugin Framework](https://github.com/hashicorp/terraform-plugin-framework)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework/main/LICENSE)|n/a|
+|[Terraform Plugin Framework Validators](https://github.com/hashicorp/terraform-plugin-framework-validators)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-framework-validators/main/LICENSE)|n/a|
+|[Terraform Plugin SDK](https://github.com/hashicorp/terraform-plugin-sdk)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-sdk/main/LICENSE)|n/a|
+|[Unicode Text Segmentation for Go](https://github.com/apparentlymart/go-textseg)|[license](https://raw.githubusercontent.com/apparentlymart/go-textseg/master/LICENSE)|n/a|
+|[Versioning Library for Go](https://github.com/hashicorp/go-version)|[license](https://raw.githubusercontent.com/hashicorp/go-version/main/LICENSE)|n/a|
+|[Yamux](https://github.com/hashicorp/yamux)|[license](https://raw.githubusercontent.com/hashicorp/yamux/master/LICENSE)|n/a|
+|[cast](https://github.com/spf13/cast)|[license](https://raw.githubusercontent.com/spf13/cast/master/LICENSE)|n/a|
+|[cleanhttp](https://github.com/hashicorp/go-cleanhttp)|[license](https://raw.githubusercontent.com/hashicorp/go-cleanhttp/master/LICENSE)|n/a|
+|[color](https://github.com/fatih/color)|[license](https://raw.githubusercontent.com/fatih/color/main/LICENSE.md)|n/a|
+|[complete](https://github.com/posener/complete)|[license](https://raw.githubusercontent.com/posener/complete/v1/LICENSE.txt)|n/a|
+|[copystructure](https://github.com/mitchellh/copystructure)|[license](https://raw.githubusercontent.com/mitchellh/copystructure/master/LICENSE)|n/a|
+|[cty (zclconf)](https://github.com/zclconf/go-cty)|[license](https://raw.githubusercontent.com/zclconf/go-cty/main/LICENSE)|n/a|
+|[cty (hashicorp)](https://github.com/hashicorp/go-cty)|[license](https://raw.githubusercontent.com/hashicorp/go-cty/master/LICENSE)|n/a|
+|[decimal](https://github.com/shopspring/decimal)|[license](https://raw.githubusercontent.com/shopspring/decimal/master/LICENSE)|n/a|
+|[errwrap](https://github.com/hashicorp/errwrap)|[license](https://raw.githubusercontent.com/hashicorp/errwrap/master/LICENSE)|n/a|
+|[hc-install](https://github.com/hashicorp/hc-install)|[license](https://raw.githubusercontent.com/hashicorp/hc-install/main/LICENSE)|n/a|
+|[gRPC-Go](https://google.golang.org/grpc)|[license](https://raw.githubusercontent.com/grpc/grpc-go/master/LICENSE)|[notice](https://raw.githubusercontent.com/grpc/grpc-go/master/NOTICE.txt)|
+|[go-colorable](https://github.com/mattn/go-colorable)|[license](https://raw.githubusercontent.com/mattn/go-colorable/master/LICENSE)|n/a|
+|[go-hclog](https://github.com/hashicorp/go-hclog)|[license](https://raw.githubusercontent.com/hashicorp/go-hclog/main/LICENSE)|n/a|
+|[go-homedir](https://github.com/mitchellh/go-homedir)|[license](https://raw.githubusercontent.com/mitchellh/go-homedir/main/LICENSE)|n/a|
+|[go-isatty](https://github.com/mattn/go-isatty)|[license](https://raw.githubusercontent.com/mattn/go-isatty/master/LICENSE)|n/a|
+|[go-multierror](https://github.com/hashicorp/go-multierror)|[license](https://raw.githubusercontent.com/hashicorp/go-multierror/master/LICENSE)|n/a|
+|[go-radix](https://github.com/armon/go-radix)|[license](https://raw.githubusercontent.com/armon/go-radix/master/LICENSE)|n/a|
+|[go-testing-interface](https://github.com/mitchellh/go-testing-interface)|[license](https://raw.githubusercontent.com/mitchellh/go-testing-interface/master/LICENSE)|n/a|
+|[go-wordwrap](https://github.com/mitchellh/go-wordwrap)|[license](https://raw.githubusercontent.com/mitchellh/go-wordwrap/master/LICENSE.md)|n/a|
+|[hc-install](https://github.com/hashicorp/hc-install)|[license](https://raw.githubusercontent.com/hashicorp/hc-install/main/LICENSE)|n/a|
+|[logutils](https://github.com/hashicorp/logutils)|[license](https://raw.githubusercontent.com/hashicorp/logutils/master/LICENSE)|n/a|
+|[mapstructure](https://github.com/mitchellh/mapstructure)|[license](https://raw.githubusercontent.com/mitchellh/mapstructure/main/LICENSE)|n/a|
+|[mod](golang.org/x/mod)|[license](https://cs.opensource.google/go/x/mod/+/master:LICENSE)|n/a|
+|[reflectwalk](https://github.com/mitchellh/reflectwalk)|[license](https://raw.githubusercontent.com/mitchellh/reflectwalk/main/LICENSE)|n/a|
+|[run](https://github.com/oklog/run)|[license](https://raw.githubusercontent.com/oklog/run/master/LICENSE)|n/a|
+|[sys](https://golang.org/x/sys)|[license](https://cs.opensource.google/go/x/sys/+/master:LICENSE)|n/a|
+|[terraform-exec](https://github.com/hashicorp/terraform-exec)|[license](https://raw.githubusercontent.com/hashicorp/terraform-exec/main/LICENSE)|n/a|
+|[terraform-json](https://github.com/hashicorp/terraform-json)|[license](https://raw.githubusercontent.com/hashicorp/terraform-json/main/LICENSE)|n/a|
+|[terraform-plugin-docs](https://github.com/hashicorp/terraform-plugin-docs)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-docs/main/LICENSE)|n/a|
+|[terraform-plugin-go](https://github.com/hashicorp/terraform-plugin-go)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-go/main/LICENSE)|n/a|
+|[terraform-plugin-log](https://github.com/hashicorp/terraform-plugin-log)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-log/main/LICENSE)|n/a|
+|[terraform-plugin-testing](https://github.com/hashicorp/terraform-plugin-testing)|[license](https://raw.githubusercontent.com/hashicorp/terraform-plugin-testing/main/LICENSE)|n/a|
+|[terraform-registry-address](https://github.com/hashicorp/terraform-registry-address)|[license](https://raw.githubusercontent.com/hashicorp/terraform-registry-address/main/LICENSE)|n/a|
+|[terraform-svchost](https://github.com/hashicorp/terraform-svchost)|[license](https://raw.githubusercontent.com/hashicorp/terraform-svchost/main/LICENSE)|n/a|
+|[uuid (google)](https://github.com/google/uuid)|[license](https://raw.githubusercontent.com/google/uuid/master/LICENSE)|n/a|
+|[uuid (hashicorp)](https://github.com/hashicorp/go-uuid)|[license](https://raw.githubusercontent.com/hashicorp/go-uuid/master/LICENSE)|n/a|
+|[xstrings](https://github.com/huandu/xstrings)|[license](https://raw.githubusercontent.com/huandu/xstrings/master/LICENSE)|n/a|

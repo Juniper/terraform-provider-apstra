@@ -3,46 +3,34 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"log"
+	"os"
 	"terraform-provider-apstra/apstra"
 )
 
-const (
-	DefaultVersion = "0.0.0"
-	DefaultCommit  = "devel"
-)
-
-var commit, version string // populated by goreleaser
-
-// NewApstraProvider instantiates the provider in main
-func NewApstraProvider() provider.Provider {
-	l := len(commit)
-	switch {
-	case l == 0:
-		commit = DefaultCommit
-	case l > 7:
-		commit = commit[:8]
-	}
-
-	if len(version) == 0 {
-		version = DefaultVersion
-	}
-
-	return &tfapstra.Provider{
-		Version: version,
-		Commit:  commit,
-	}
-}
-
 func main() {
 	var debug bool
+	var printVersion bool
 
 	flag.BoolVar(&debug, "debug", false, "set to true to run the provider with support for debuggers like delve")
+	flag.BoolVar(&printVersion, "version", false, "print version and exit")
 	flag.Parse()
 
-	err := providerserver.Serve(context.Background(), NewApstraProvider, providerserver.ServeOpts{
+	if printVersion {
+		p := tfapstra.NewProvider()
+		mdr := provider.MetadataResponse{}
+		p.Metadata(context.Background(), provider.MetadataRequest{}, &mdr)
+		_, err := os.Stdout.WriteString(fmt.Sprintf("terraform-provider-%s %s\n", mdr.TypeName, mdr.Version))
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Exit(0)
+	}
+
+	err := providerserver.Serve(context.Background(), tfapstra.NewProvider, providerserver.ServeOpts{
 		Address: "registry.terraform.io/Juniper/apstra",
 		Debug:   debug,
 	})

@@ -24,6 +24,9 @@ import (
 )
 
 const (
+	defaultTag    = "v0.0.0"
+	defaultCommit = "devel"
+
 	envTlsKeyLogFile  = "SSLKEYLOGFILE"
 	envApstraUsername = "APSTRA_USER"
 	envApstraPassword = "APSTRA_PASS"
@@ -55,7 +58,29 @@ substitutions:
 %s`
 )
 
+var commit, tag string // populated by goreleaser
+
 var _ provider.Provider = &Provider{}
+
+// NewProvider instantiates the provider in main
+func NewProvider() provider.Provider {
+	l := len(commit)
+	switch {
+	case l == 0:
+		commit = defaultCommit
+	case l > 7:
+		commit = commit[:8]
+	}
+
+	if len(tag) == 0 {
+		tag = defaultTag
+	}
+
+	return &Provider{
+		Version: tag,
+		Commit:  commit,
+	}
+}
 
 // map of mutexes keyed by blueprint ID
 var blueprintMutexes map[string]apstra.Mutex
