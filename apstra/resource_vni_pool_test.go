@@ -20,23 +20,23 @@ resource "apstra_vni_pool" "test" {
 	resourceVniPoolRangeTemplateHCL = "{first = %d, last = %d}"
 )
 
-var (
-	testAccResourceVniPoolCfg1Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	testAccResourceVniPoolCfg1Ranges = strings.Join([]string{
-		fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10010, 10020),
-	}, ",")
-	testAccResourceVniPoolCfg1 = fmt.Sprintf(resourceVniPoolTemplateHCL, testAccResourceVniPoolCfg1Name, testAccResourceVniPoolCfg1Ranges)
-
-	testAccResourceVniPoolCfg2Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	testAccResourceVniPoolCfg2Ranges = strings.Join([]string{
-		fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10001, 10003),
-		fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10005, 10011),
-		fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10015, 10025),
-	}, ",")
-	testAccResourceVniPoolCfg2 = fmt.Sprintf(resourceVniPoolTemplateHCL, testAccResourceVniPoolCfg2Name, testAccResourceVniPoolCfg2Ranges)
-)
-
 func TestAccResourceVniPool_basic(t *testing.T) {
+	var (
+		testAccResourceVniPoolCfg1Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+		testAccResourceVniPoolCfg1Ranges = strings.Join([]string{
+			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10010, 10020),
+		}, ",")
+		testAccResourceVniPoolCfg1 = fmt.Sprintf(resourceVniPoolTemplateHCL, testAccResourceVniPoolCfg1Name, testAccResourceVniPoolCfg1Ranges)
+
+		testAccResourceVniPoolCfg2Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+		testAccResourceVniPoolCfg2Ranges = strings.Join([]string{
+			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10001, 10003),
+			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10005, 10011),
+			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10015, 10025),
+		}, ",")
+		testAccResourceVniPoolCfg2 = fmt.Sprintf(resourceVniPoolTemplateHCL, testAccResourceVniPoolCfg2Name, testAccResourceVniPoolCfg2Ranges)
+	)
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
