@@ -10,44 +10,41 @@ import (
 )
 
 const (
-	resourceIpv6PoolTemplateHCL = `
+	resourceIpv6PoolBasicCfg = `
+// provider config
+%s
+
 // resource config
 resource "apstra_ipv6_pool" "test" {
   name = "%s"
   subnets = [%s]
 }
 `
-	resourceIpv6PoolSubnetTemplateHCL = "{network = %q}"
+	resourceIpv6PoolSubnet = "{network = %q}"
 )
 
 func TestAccResourceIpv6Pool_basic(t *testing.T) {
-	var (
-		testAccResourceIpv6PoolCfg1Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-		testAccResourceIpv6PoolCfg1Subnets = strings.Join([]string{
-			fmt.Sprintf(resourceIpv6PoolSubnetTemplateHCL, "2001:db8::/66"),
-		}, ",")
-		testAccResourceIpv6PoolCfg1 = fmt.Sprintf(resourceIpv6PoolTemplateHCL, testAccResourceIpv6PoolCfg1Name, testAccResourceIpv6PoolCfg1Subnets)
+	name1 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	subnets1 := fmt.Sprintf(resourceIpv6PoolSubnet, "2001:db8::/66")
 
-		testAccResourceIpv6PoolCfg2Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-		testAccResourceIpv6PoolCfg2Subnets = strings.Join([]string{
-			fmt.Sprintf(resourceIpv6PoolSubnetTemplateHCL, "2001:db8:1::/96"),
-			fmt.Sprintf(resourceIpv6PoolSubnetTemplateHCL, "2001:db8:2::/96"),
-			fmt.Sprintf(resourceIpv6PoolSubnetTemplateHCL, "2001:db8:3::/96"),
-		}, ",")
-		testAccResourceIpv6PoolCfg2 = fmt.Sprintf(resourceIpv6PoolTemplateHCL, testAccResourceIpv6PoolCfg2Name, testAccResourceIpv6PoolCfg2Subnets)
-	)
+	name2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	subnets2 := strings.Join([]string{
+		fmt.Sprintf(resourceIpv6PoolSubnet, "2001:db8:1::/96"),
+		fmt.Sprintf(resourceIpv6PoolSubnet, "2001:db8:2::/96"),
+		fmt.Sprintf(resourceIpv6PoolSubnet, "2001:db8:3::/96"),
+	}, ",")
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: insecureProviderConfigHCL + testAccResourceIpv6PoolCfg1,
+				Config: fmt.Sprintf(resourceIpv6PoolBasicCfg, insecureProviderConfigHCL, name1, subnets1),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_ipv6_pool.test", "id"),
 					// Verify name and overall usage statistics
-					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "name", testAccResourceIpv6PoolCfg1Name),
+					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "name", name1),
 					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "status", "not_in_use"),
 					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "total", "4611686018427387904"),
 					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "used", "0"),
@@ -64,12 +61,12 @@ func TestAccResourceIpv6Pool_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: insecureProviderConfigHCL + testAccResourceIpv6PoolCfg2,
+				Config: fmt.Sprintf(resourceIpv6PoolBasicCfg, insecureProviderConfigHCL, name2, subnets2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_ipv6_pool.test", "id"),
 					// Verify name and overall usage statistics
-					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "name", testAccResourceIpv6PoolCfg2Name),
+					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "name", name2),
 					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "status", "not_in_use"),
 					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "total", "12884901888"),
 					resource.TestCheckResourceAttr("apstra_ipv6_pool.test", "used", "0"),

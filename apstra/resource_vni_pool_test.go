@@ -10,44 +10,41 @@ import (
 )
 
 const (
-	resourceVniPoolTemplateHCL = `
+	resourceVniPoolBasicCfg = `
+// provider config
+%s
+
 // resource config
 resource "apstra_vni_pool" "test" {
   name = "%s"
   ranges = [%s]
 }
 `
-	resourceVniPoolRangeTemplateHCL = "{first = %d, last = %d}"
+	resourceVniPoolRange = "{first = %d, last = %d}"
 )
 
 func TestAccResourceVniPool_basic(t *testing.T) {
-	var (
-		testAccResourceVniPoolCfg1Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-		testAccResourceVniPoolCfg1Ranges = strings.Join([]string{
-			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10010, 10020),
-		}, ",")
-		testAccResourceVniPoolCfg1 = fmt.Sprintf(resourceVniPoolTemplateHCL, testAccResourceVniPoolCfg1Name, testAccResourceVniPoolCfg1Ranges)
+	name1 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	ranges1 := fmt.Sprintf(resourceVniPoolRange, 10010, 10020)
 
-		testAccResourceVniPoolCfg2Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-		testAccResourceVniPoolCfg2Ranges = strings.Join([]string{
-			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10001, 10003),
-			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10005, 10011),
-			fmt.Sprintf(resourceVniPoolRangeTemplateHCL, 10015, 10025),
-		}, ",")
-		testAccResourceVniPoolCfg2 = fmt.Sprintf(resourceVniPoolTemplateHCL, testAccResourceVniPoolCfg2Name, testAccResourceVniPoolCfg2Ranges)
-	)
+	name2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	ranges2 := strings.Join([]string{
+		fmt.Sprintf(resourceVniPoolRange, 10001, 10003),
+		fmt.Sprintf(resourceVniPoolRange, 10005, 10011),
+		fmt.Sprintf(resourceVniPoolRange, 10015, 10025),
+	}, ",")
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: insecureProviderConfigHCL + testAccResourceVniPoolCfg1,
+				Config: fmt.Sprintf(resourceVniPoolBasicCfg, insecureProviderConfigHCL, name1, ranges1),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_vni_pool.test", "id"),
 					// Verify name and overall usage statistics
-					resource.TestCheckResourceAttr("apstra_vni_pool.test", "name", testAccResourceVniPoolCfg1Name),
+					resource.TestCheckResourceAttr("apstra_vni_pool.test", "name", name1),
 					resource.TestCheckResourceAttr("apstra_vni_pool.test", "status", "not_in_use"),
 					resource.TestCheckResourceAttr("apstra_vni_pool.test", "total", "11"),
 					resource.TestCheckResourceAttr("apstra_vni_pool.test", "used", "0"),
@@ -65,12 +62,12 @@ func TestAccResourceVniPool_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: insecureProviderConfigHCL + testAccResourceVniPoolCfg2,
+				Config: fmt.Sprintf(resourceVniPoolBasicCfg, insecureProviderConfigHCL, name2, ranges2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_vni_pool.test", "id"),
 					// Verify name and overall usage statistics
-					resource.TestCheckResourceAttr("apstra_vni_pool.test", "name", testAccResourceVniPoolCfg2Name),
+					resource.TestCheckResourceAttr("apstra_vni_pool.test", "name", name2),
 					resource.TestCheckResourceAttr("apstra_vni_pool.test", "status", "not_in_use"),
 					resource.TestCheckResourceAttr("apstra_vni_pool.test", "total", "21"),
 					resource.TestCheckResourceAttr("apstra_vni_pool.test", "used", "0"),
