@@ -10,41 +10,44 @@ import (
 )
 
 const (
-	resourceAsnPoolBasicCfg = `
-// provider config
-%s
-
+	resourceAsnPoolTemplateHCL = `
 // resource config
 resource "apstra_asn_pool" "test" {
   name = "%s"
   ranges = [%s]
 }
 `
-	resourceAsnPoolRange = "{first = %d, last = %d}"
+	resourceAsnPoolRangeTemplateHCL = "{first = %d, last = %d}"
+)
+
+var (
+	testAccResourceAsnPoolCfg1Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	testAccResourceAsnPoolCfg1Ranges = strings.Join([]string{
+		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 10, 20),
+	}, ",")
+	testAccResourceAsnPoolCfg1 = fmt.Sprintf(resourceAsnPoolTemplateHCL, testAccResourceAsnPoolCfg1Name, testAccResourceAsnPoolCfg1Ranges)
+
+	testAccResourceAsnPoolCfg2Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+	testAccResourceAsnPoolCfg2Ranges = strings.Join([]string{
+		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 1, 3),
+		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 5, 11),
+		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 15, 25),
+	}, ",")
+	testAccResourceAsnPoolCfg2 = fmt.Sprintf(resourceAsnPoolTemplateHCL, testAccResourceAsnPoolCfg2Name, testAccResourceAsnPoolCfg2Ranges)
 )
 
 func TestAccResourceAsnPool_basic(t *testing.T) {
-	name1 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	ranges1 := fmt.Sprintf(resourceAsnPoolRange, 10, 20)
-
-	name2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	ranges2 := strings.Join([]string{
-		fmt.Sprintf(resourceAsnPoolRange, 1, 3),
-		fmt.Sprintf(resourceAsnPoolRange, 5, 11),
-		fmt.Sprintf(resourceAsnPoolRange, 15, 25),
-	}, ",")
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: fmt.Sprintf(resourceAsnPoolBasicCfg, insecureProviderConfigHCL, name1, ranges1),
+				Config: insecureProviderConfigHCL + testAccResourceAsnPoolCfg1,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_asn_pool.test", "id"),
 					// Verify name and overall usage statistics
-					resource.TestCheckResourceAttr("apstra_asn_pool.test", "name", name1),
+					resource.TestCheckResourceAttr("apstra_asn_pool.test", "name", testAccResourceAsnPoolCfg1Name),
 					resource.TestCheckResourceAttr("apstra_asn_pool.test", "status", "not_in_use"),
 					resource.TestCheckResourceAttr("apstra_asn_pool.test", "total", "11"),
 					resource.TestCheckResourceAttr("apstra_asn_pool.test", "used", "0"),
@@ -62,12 +65,12 @@ func TestAccResourceAsnPool_basic(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: fmt.Sprintf(resourceAsnPoolBasicCfg, insecureProviderConfigHCL, name2, ranges2),
+				Config: insecureProviderConfigHCL + testAccResourceAsnPoolCfg2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_asn_pool.test", "id"),
 					// Verify name and overall usage statistics
-					resource.TestCheckResourceAttr("apstra_asn_pool.test", "name", name2),
+					resource.TestCheckResourceAttr("apstra_asn_pool.test", "name", testAccResourceAsnPoolCfg2Name),
 					resource.TestCheckResourceAttr("apstra_asn_pool.test", "status", "not_in_use"),
 					resource.TestCheckResourceAttr("apstra_asn_pool.test", "total", "21"),
 					resource.TestCheckResourceAttr("apstra_asn_pool.test", "used", "0"),
