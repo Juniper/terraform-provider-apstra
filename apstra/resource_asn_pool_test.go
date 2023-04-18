@@ -20,23 +20,23 @@ resource "apstra_asn_pool" "test" {
 	resourceAsnPoolRangeTemplateHCL = "{first = %d, last = %d}"
 )
 
-var (
-	testAccResourceAsnPoolCfg1Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	testAccResourceAsnPoolCfg1Ranges = strings.Join([]string{
-		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 10, 20),
-	}, ",")
-	testAccResourceAsnPoolCfg1 = fmt.Sprintf(resourceAsnPoolTemplateHCL, testAccResourceAsnPoolCfg1Name, testAccResourceAsnPoolCfg1Ranges)
-
-	testAccResourceAsnPoolCfg2Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	testAccResourceAsnPoolCfg2Ranges = strings.Join([]string{
-		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 1, 3),
-		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 5, 11),
-		fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 15, 25),
-	}, ",")
-	testAccResourceAsnPoolCfg2 = fmt.Sprintf(resourceAsnPoolTemplateHCL, testAccResourceAsnPoolCfg2Name, testAccResourceAsnPoolCfg2Ranges)
-)
-
 func TestAccResourceAsnPool_basic(t *testing.T) {
+	var (
+		testAccResourceAsnPoolCfg1Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+		testAccResourceAsnPoolCfg1Ranges = strings.Join([]string{
+			fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 10, 20),
+		}, ",")
+		testAccResourceAsnPoolCfg1 = fmt.Sprintf(resourceAsnPoolTemplateHCL, testAccResourceAsnPoolCfg1Name, testAccResourceAsnPoolCfg1Ranges)
+
+		testAccResourceAsnPoolCfg2Name   = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+		testAccResourceAsnPoolCfg2Ranges = strings.Join([]string{
+			fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 1, 3),
+			fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 5, 11),
+			fmt.Sprintf(resourceAsnPoolRangeTemplateHCL, 15, 25),
+		}, ",")
+		testAccResourceAsnPoolCfg2 = fmt.Sprintf(resourceAsnPoolTemplateHCL, testAccResourceAsnPoolCfg2Name, testAccResourceAsnPoolCfg2Ranges)
+	)
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
