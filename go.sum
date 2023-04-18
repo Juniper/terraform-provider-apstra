@@ -1,6 +1,6 @@
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-github.com/Juniper/apstra-go-sdk v0.0.0-20230418163258-701ab5828323 h1:6a2z9aZxB3eoT+TLCGkLgdaVMvWxeMsDvNMehPUFBsc=
-github.com/Juniper/apstra-go-sdk v0.0.0-20230418163258-701ab5828323/go.mod h1:EZtDsV2etSqm1OY3MbVGTCRXlRHnFQb2Lgz67tsdf60=
+github.com/Juniper/apstra-go-sdk v0.0.0-20230418174324-e6aa43fd421d h1:y7591m8ey/bQsvPxbWKkWssv5CgvWJw8B6nVy3yf92k=
+github.com/Juniper/apstra-go-sdk v0.0.0-20230418174324-e6aa43fd421d/go.mod h1:EZtDsV2etSqm1OY3MbVGTCRXlRHnFQb2Lgz67tsdf60=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
 github.com/Masterminds/goutils v1.1.1/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030IGemrRc=

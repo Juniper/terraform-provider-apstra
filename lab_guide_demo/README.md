@@ -3,9 +3,12 @@ This directory contains an example project which follows the [Apstra Lab Guide](
 currently published with the v4.1.1. Apstra CloudLabs "Juniper Customer Lab".
 
 ### Launch a CloudLabs Instance
-This project is tested only against Apstra 4.1.1. The correct CloudLabs template
-is *Juniper Customer Lab* with *Apstra Version: AOS_4.1.1_OB* on the CloudLabs
-"Experimental" tab.
+This demo is tested only against Apstra 4.1.1. The correct CloudLabs template is
+*Juniper Customer Lab* with *Apstra Version: AOS_4.1.1_OB* on the CloudLabs
+"Experimental" tab. The Terraform plugin works with Apstra 4.1.2, but some of
+the baked-in object names (logical devices, interface maps) changed between
+revisions of the CloudLabs topologies, so it's smoother sailing with the 4.1.1
+revision of the lab topology.
 
 ### Install the Provider
 Refer to the project's [main README](../README.md) to get the provider installed
@@ -14,7 +17,7 @@ on your system.
 ### Copy the files in this directory to your local system
 This might be the easiest way:
 ```shell
-git clone https://github.com/chrismarget-j/terraform-provider-apstra.git
+git clone https://github.com/Juniper/terraform-provider-apstra.git
 cd terraform-provider-apstra/lab_guide_demo
 ```
 
