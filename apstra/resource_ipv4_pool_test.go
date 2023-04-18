@@ -20,23 +20,23 @@ resource "apstra_ipv4_pool" "test" {
 	resourceIpv4PoolSubnetTemplateHCL = "{network = %q}"
 )
 
-var (
-	testAccResourceIpv4PoolCfg1Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	testAccResourceIpv4PoolCfg1Subnets = strings.Join([]string{
-		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.0.0/16"),
-	}, ",")
-	testAccResourceIpv4PoolCfg1 = fmt.Sprintf(resourceIpv4PoolTemplateHCL, testAccResourceIpv4PoolCfg1Name, testAccResourceIpv4PoolCfg1Subnets)
-
-	testAccResourceIpv4PoolCfg2Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	testAccResourceIpv4PoolCfg2Subnets = strings.Join([]string{
-		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.1.0/24"),
-		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.0.0/24"),
-		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.2.0/23"),
-	}, ",")
-	testAccResourceIpv4PoolCfg2 = fmt.Sprintf(resourceIpv4PoolTemplateHCL, testAccResourceIpv4PoolCfg2Name, testAccResourceIpv4PoolCfg2Subnets)
-)
-
 func TestAccResourceIpv4Pool_basic(t *testing.T) {
+	var (
+		testAccResourceIpv4PoolCfg1Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+		testAccResourceIpv4PoolCfg1Subnets = strings.Join([]string{
+			fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.0.0/16"),
+		}, ",")
+		testAccResourceIpv4PoolCfg1 = fmt.Sprintf(resourceIpv4PoolTemplateHCL, testAccResourceIpv4PoolCfg1Name, testAccResourceIpv4PoolCfg1Subnets)
+
+		testAccResourceIpv4PoolCfg2Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+		testAccResourceIpv4PoolCfg2Subnets = strings.Join([]string{
+			fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.1.0/24"),
+			fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.0.0/24"),
+			fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.2.0/23"),
+		}, ",")
+		testAccResourceIpv4PoolCfg2 = fmt.Sprintf(resourceIpv4PoolTemplateHCL, testAccResourceIpv4PoolCfg2Name, testAccResourceIpv4PoolCfg2Subnets)
+	)
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
