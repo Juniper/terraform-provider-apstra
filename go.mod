@@ -3,7 +3,7 @@ module terraform-provider-apstra
 go 1.19
 
 require (
-	github.com/Juniper/apstra-go-sdk v0.0.0-20230410201948-7215adc4554f
+	github.com/Juniper/apstra-go-sdk v0.0.0-20230418163258-701ab5828323
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-framework v1.2.0
