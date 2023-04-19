@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"log"
 	"net/http"
@@ -124,7 +126,8 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 					envApstraPassword + "`.\n\nIf `url` is omitted, environment variable `" + envApstraUrl + "` can " +
 					"be used to in its place.\n\nWhen the username or password are embedded in the URL string, any " +
 					"special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`.",
-				Optional: true,
+				Optional:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"tls_validation_disabled": schema.BoolAttribute{
 				MarkdownDescription: "Set 'true' to disable TLS certificate validation.",
@@ -143,7 +146,8 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 					"Terraform)  should wait before beginning to make changes of their own. The mutexes embed a "+
 					"human-readable field to reduce confusion in the event a mutex needs to be cleared manually. "+
 					"This attribute overrides the default message in that field: %q.", blueprintMutexMessage),
-				Optional: true,
+				Optional:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"experimental": schema.BoolAttribute{
 				MarkdownDescription: fmt.Sprintf("Sets a flag in the underlying Apstra SDK client object "+
