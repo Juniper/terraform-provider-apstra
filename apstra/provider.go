@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -111,7 +112,7 @@ type providerData struct {
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "apstra"
-	resp.Version = p.Version + "_" + p.Commit
+	resp.Version = p.Version + "-" + p.Commit
 }
 
 func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
@@ -182,30 +183,20 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		config.MutexMessage = types.StringValue(fmt.Sprintf(blueprintMutexMessage))
 	}
 
+	// Create the Apstra client configuration from the URL and the environment.
 	clientCfg, err := NewClientConfig(config.Url.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Apstra client configuration", err.Error())
 		return
 	}
 
-	// Set the experimental flag according to the config
+	// Set the experimental flag according to the configuration
 	clientCfg.Experimental = config.Experimental.ValueBool()
 
-	// Create the client's httpClient with(out) TLS verification.
-	clientCfg.HttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: config.TlsNoVerify.ValueBool(),
-			}}}
-
-	// Set up the TLS session key log.
-	if fileName, ok := os.LookupEnv(envTlsKeyLogFile); ok {
-		klw, err := newKeyLogWriter(fileName)
-		if err != nil {
-			resp.Diagnostics.AddError("error setting up TLS key log", err.Error())
-			return
-		}
-		clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.KeyLogWriter = klw
+	// Set the TLS InsecureSkipVerify according to the configuration
+	if transport, ok := clientCfg.HttpClient.Transport.(*http.Transport); ok {
+		transport.TLSClientConfig.InsecureSkipVerify = config.TlsNoVerify.ValueBool()
+		clientCfg.HttpClient.Transport = transport
 	}
 
 	// Create the Apstra client.
@@ -240,13 +231,6 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	if err != nil {
 		resp.Diagnostics.AddError("apstra login failure", err.Error())
 		return
-	}
-
-	var version string
-	if p.Commit == "" {
-		version = p.Version
-	} else {
-		version = p.Version + "-" + p.Commit
 	}
 
 	if !config.MutexDisable.ValueBool() {
@@ -311,7 +295,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// data passed to Resource and DataSource Configure() methods
 	pd := &providerData{
 		client:           client,
-		providerVersion:  version,
+		providerVersion:  p.Version + "-" + p.Commit,
 		terraformVersion: req.TerraformVersion,
 		bpLockFunc:       bpLockFunc,
 		bpUnlockFunc:     bpUnlockFunc,
@@ -341,7 +325,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceRackType{} },
 		func() datasource.DataSource { return &dataSourceRackTypes{} },
 		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
-		////func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
+		//func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
 		func() datasource.DataSource { return &dataSourceTemplateRackBased{} },
 		func() datasource.DataSource { return &dataSourceTemplates{} },
 		func() datasource.DataSource { return &dataSourceDatacenterBlueprint{} },
@@ -369,8 +353,8 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceManagedDevice{} },
 		func() resource.Resource { return &resourcePoolAllocation{} },
 		func() resource.Resource { return &resourceRackType{} },
-		////func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
-		////func() resource.Resource { return &resourceSourceTemplatePodBased{} },
+		//func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
+		//func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
@@ -437,11 +421,30 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 		logger = log.New(logFile, "", 0)
 	}
 
+	// Set up the TLS session key log.
+	var klw io.Writer
+	if fileName, ok := os.LookupEnv(envTlsKeyLogFile); ok {
+		klw, err = newKeyLogWriter(fileName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Create the client's httpClient
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				KeyLogWriter: klw,
+			},
+		},
+	}
+
 	// Create the clientCfg
 	return &apstra.ClientCfg{
-		Url:    parsedUrl.String(),
-		User:   user,
-		Pass:   pass,
-		Logger: logger,
+		Url:        parsedUrl.String(),
+		User:       user,
+		Pass:       pass,
+		Logger:     logger,
+		HttpClient: httpClient,
 	}, nil
 }
