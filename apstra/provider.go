@@ -182,89 +182,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		config.MutexMessage = types.StringValue(fmt.Sprintf(blueprintMutexMessage))
 	}
 
-	// Populate raw URL string from config or environment.
-	var apstraUrl string
-	var ok bool
-	if config.Url.IsNull() {
-		if apstraUrl, ok = os.LookupEnv(envApstraUrl); !ok {
-			resp.Diagnostics.AddError(errInvalidConfig, "missing Apstra URL")
-			return
-		}
-	} else {
-		apstraUrl = config.Url.ValueString()
-	}
-
-	// Either config or env could have sent us an empty string.
-	if apstraUrl == "" {
-		resp.Diagnostics.AddError(errInvalidConfig, "Apstra URL: empty string")
-		return
-	}
-
-	// Parse the URL.
-	parsedUrl, err := url.Parse(apstraUrl)
+	clientCfg, err := NewClientConfig(config.Url.ValueString())
 	if err != nil {
-		if urlErr, ok := err.(*url.Error); ok && strings.Contains(urlErr.Error(), "invalid userinfo") {
-			// don't print the actual error here because it likely contains a password
-			resp.Diagnostics.AddError(
-				"Error parsing userinfo from URL", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
-			return
-		}
-
-		var urlEE url.EscapeError
-		if errors.As(err, &urlEE) {
-			resp.Diagnostics.AddError(
-				"Error parsing URL", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
-			return
-		}
-
-		resp.Diagnostics.AddError(fmt.Sprintf("error parsing URL '%s'", config.Url.ValueString()), err.Error())
+		resp.Diagnostics.AddError("Error creating Apstra client configuration", err.Error())
 		return
 	}
 
-	// Determine the Apstra username.
-	user := parsedUrl.User.Username()
-	if user == "" {
-		if val, ok := os.LookupEnv(envApstraUsername); ok {
-			user = val
-		} else {
-			resp.Diagnostics.AddError(
-				"unable to determine apstra username", fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
-			return
-		}
-	}
-
-	// Determine  the Apstra password.
-	pass, found := parsedUrl.User.Password()
-	if !found {
-		if val, ok := os.LookupEnv(envApstraPassword); ok {
-			pass = val
-		} else {
-			resp.Diagnostics.AddError(errProviderInvalidConfig, "unable to determine apstra password")
-			return
-		}
-	}
-
-	// Remove credentials from the URL prior to rendering it into ClientCfg.
-	parsedUrl.User = nil
-
-	// Create the clientCfg
-	clientCfg := &apstra.ClientCfg{
-		Url:          parsedUrl.String(),
-		User:         user,
-		Pass:         pass,
-		Experimental: config.Experimental.ValueBool(),
-	}
-
-	// Set up a logger.
-	if logFileName, ok := os.LookupEnv(envApstraLogfile); ok {
-		logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-		if err != nil {
-			resp.Diagnostics.AddError("error opening logfile", err.Error())
-			return
-		}
-		logger := log.New(logFile, "", 0)
-		clientCfg.Logger = logger
-	}
+	// Set the experimental flag according to the config
+	clientCfg.Experimental = config.Experimental.ValueBool()
 
 	// Create the client's httpClient with(out) TLS verification.
 	clientCfg.HttpClient = &http.Client{
@@ -450,4 +375,73 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
 	}
+}
+
+func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
+	// Populate raw URL string from config or environment.
+	if apstraUrl == "" {
+		apstraUrl = os.Getenv(envApstraUrl)
+	}
+
+	if apstraUrl == "" {
+		return nil, errors.New("missing Apstra URL")
+	}
+
+	// Parse the URL.
+	parsedUrl, err := url.Parse(apstraUrl)
+	if err != nil {
+		if urlErr, ok := err.(*url.Error); ok && strings.Contains(urlErr.Error(), "invalid userinfo") {
+			// don't print the actual error here because it likely contains a password
+			return nil, errors.New(
+				"error parsing userinfo from URL - " + fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
+		}
+
+		var urlEE url.EscapeError
+		if errors.As(err, &urlEE) {
+			return nil, errors.New("error parsing URL - " + fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
+		}
+
+		return nil, fmt.Errorf("error parsing URL %q - %w", apstraUrl, err)
+	}
+
+	// Determine the Apstra username.
+	user := parsedUrl.User.Username()
+	if user == "" {
+		if val, ok := os.LookupEnv(envApstraUsername); ok {
+			user = val
+		} else {
+			return nil, errors.New("unable to determine apstra username - " + fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
+		}
+	}
+
+	// Determine  the Apstra password.
+	pass, found := parsedUrl.User.Password()
+	if !found {
+		if val, ok := os.LookupEnv(envApstraPassword); ok {
+			pass = val
+		} else {
+			return nil, errors.New("unable to determine apstra password")
+		}
+	}
+
+	// Remove credentials from the URL prior to rendering it into ClientCfg.
+	parsedUrl.User = nil
+
+	// Set up a logger.
+	var logger *log.Logger
+	if logFileName, ok := os.LookupEnv(envApstraLogfile); ok {
+		logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err != nil {
+			return nil, err
+		}
+		logger = log.New(logFile, "", 0)
+	}
+
+	// Create the clientCfg
+	return &apstra.ClientCfg{
+		Url:    parsedUrl.String(),
+		User:   user,
+		Pass:   pass,
+		Logger: logger,
+	}, nil
 }
