@@ -1,11 +1,11 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -369,7 +369,7 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *apstra.L
 	var bogusPortNames []string
 	var n int
 	for i = range plannedPortNames {
-		requiredPortNames, n = sliceWithoutString(requiredPortNames, plannedPortNames[i])
+		requiredPortNames, n = sliceWithoutElement(requiredPortNames, plannedPortNames[i])
 		if n == 0 {
 			bogusPortNames = append(bogusPortNames, plannedPortNames[i])
 		}
@@ -515,7 +515,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 		if transformInterfacesUnused, found := portIdToUnusedInterfaces[portId]; found {
 			// we've already been tracking this port+transform interfaces
 			// remove this interface ID from the per-transform list of unused interfaces
-			unused, _ := sliceWithoutInt(transformInterfacesUnused.interfaces, transformInterface.InterfaceId)
+			unused, _ := sliceWithoutElement(transformInterfacesUnused.interfaces, transformInterface.InterfaceId)
 			portIdToUnusedInterfaces[portId] = unusedInterfaces{
 				transformId: transformId,
 				interfaces:  unused,
@@ -524,7 +524,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 		} else {
 			// New port+transform.
 			// Add it to the tracking map with this interface ID removed from the list
-			unused, _ := sliceWithoutInt(transformation.InterfaceIds(), transformInterface.InterfaceId)
+			unused, _ := sliceWithoutElement(transformation.InterfaceIds(), transformInterface.InterfaceId)
 			portIdToUnusedInterfaces[portId] = unusedInterfaces{
 				transformId: transformId,
 				interfaces:  unused,

@@ -1,72 +1,96 @@
 package tfapstra
 
-//func TestSliceAttrValueToSliceString(t *testing.T) {
-//	test := []attr.Value{
-//		types.String{Value: "foo"},
-//		types.Int64{Value: 6},
-//	}
-//	expected := []string{
-//		"foo",
-//		"6",
-//	}
-//	result := sliceAttrValueToSliceString(test)
-//	if len(expected) != len(result) {
-//		t.Fatalf("expected %d results, got %d results", len(expected), len(result))
-//	}
-//	for i := 0; i < len(expected); i++ {
-//		if expected[i] != result[i] {
-//			t.Fatalf("expected '%s', got '%s'", expected[i], result[i])
-//		}
-//	}
-//}
+import (
+	"terraform-provider-apstra/apstra/utils"
+	"testing"
+)
 
-//func TestSliceAttrValueToSliceObjectId(t *testing.T) {
-//	test := []attr.Value{
-//		types.String{Value: "foo"},
-//		types.Int64{Value: 6},
-//	}
-//	expected := []apstra.ObjectId{
-//		"foo",
-//		"6",
-//	}
-//	result := sliceAttrValueToSliceObjectId(test)
-//	if len(expected) != len(result) {
-//		t.Fatalf("expected %d results, got %d results", len(expected), len(result))
-//	}
-//	for i := 0; i < len(expected); i++ {
-//		if expected[i] != result[i] {
-//			t.Fatalf("expected '%s', got '%s'", expected[i], result[i])
-//		}
-//	}
-//}
+func TestSliceWithoutElement(t *testing.T) {
+	type intTestCase struct {
+		in              []int
+		e               int
+		expectedSlice   []int
+		expectedRemoved int
+	}
 
-//func TestSliceWithoutString(t *testing.T) {
-//	type testDatum struct {
-//		test     []string
-//		target   string
-//		expected []string
-//		n        int
-//	}
-//	var testData []testDatum
-//	testData = append(testData, testDatum{[]string{"foo", "bar", "baz"}, "bogus", []string{"foo", "bar", "baz"}, 0})
-//	testData = append(testData, testDatum{[]string{"foo", "bar", "baz"}, "bar", []string{"foo", "baz"}, 1})
-//	testData = append(testData, testDatum{[]string{"foo", "bar", "bar", "baz"}, "bar", []string{"foo", "baz"}, 2})
-//	testData = append(testData, testDatum{[]string{"bar", "foo", "bar", "bar", "baz", "bar"}, "bar", []string{"foo", "baz"}, 4})
-//	testData = append(testData, testDatum{[]string{"bar", "bar", "bar", "bar", "bar", "bar"}, "bar", []string{}, 6})
-//	testData = append(testData, testDatum{[]string{"foo", "bazbarbaz", "baz"}, "bar", []string{"foo", "bazbarbaz", "baz"}, 0})
-//
-//	for i, td := range testData {
-//		result, n := sliceWithoutString(td.test, td.target)
-//		if len(td.expected) != len(result) {
-//			t.Fatalf("testData[%d] expected '%s', got '%s'", i, strings.Join(td.expected, ","), strings.Join(result, ","))
-//		}
-//		for i := range result {
-//			if td.expected[i] != result[i] {
-//				t.Fatalf("testData[%d] expected '%s', got '%s'", i, strings.Join(td.expected, ","), strings.Join(result, ","))
-//			}
-//		}
-//		if td.n != n {
-//			t.Fatalf("testData[%d] expected '%d', got '%d'", i, td.n, n)
-//		}
-//	}
-//}
+	type stringTestCase struct {
+		in              []string
+		e               string
+		expectedSlice   []string
+		expectedRemoved int
+	}
+
+	testCases := []any{
+		intTestCase{
+			in:              []int{0, 1, 2, 3, 4},
+			e:               1,
+			expectedSlice:   []int{0, 2, 3, 4},
+			expectedRemoved: 1,
+		},
+		intTestCase{
+			in:              []int{0, 1, 2, 3, 4},
+			e:               5,
+			expectedSlice:   []int{0, 1, 2, 3, 4},
+			expectedRemoved: 0,
+		},
+		intTestCase{
+			in:              []int{0, 1, 1, 1, 4},
+			e:               1,
+			expectedSlice:   []int{0, 4},
+			expectedRemoved: 3,
+		},
+		intTestCase{
+			in:              []int{1, 1, 1, 1, 1},
+			e:               1,
+			expectedSlice:   []int{},
+			expectedRemoved: 5,
+		},
+		stringTestCase{
+			in:              []string{"a", "b", "c", "d", "e"},
+			e:               "b",
+			expectedSlice:   []string{"a", "c", "d", "e"},
+			expectedRemoved: 1,
+		},
+		stringTestCase{
+			in:              []string{"a", "b", "c", "d", "e"},
+			e:               "f",
+			expectedSlice:   []string{"a", "b", "c", "d", "e"},
+			expectedRemoved: 0,
+		},
+		stringTestCase{
+			in:              []string{"a", "b", "b", "b", "e"},
+			e:               "b",
+			expectedSlice:   []string{"a", "e"},
+			expectedRemoved: 3,
+		},
+		stringTestCase{
+			in:              []string{"a", "a", "a", "a", "a"},
+			e:               "a",
+			expectedSlice:   []string{},
+			expectedRemoved: 5,
+		},
+	}
+
+	for i := range testCases {
+		if tc, ok := testCases[i].(intTestCase); ok {
+			result, removed := sliceWithoutElement(tc.in, tc.e)
+			if !utils.SlicesMatch(tc.expectedSlice, result) {
+				t.Fatalf("expected: %v\ngot:      %v", tc.expectedSlice, result)
+			}
+			if tc.expectedRemoved != removed {
+				t.Fatalf("expected %d removals, got %d removals", tc.expectedRemoved, removed)
+			}
+			continue
+		}
+		if tc, ok := testCases[i].(stringTestCase); ok {
+			result, removed := sliceWithoutElement(tc.in, tc.e)
+			if !utils.SlicesMatch(tc.expectedSlice, result) {
+				t.Fatalf("expected: %v\ngot:      %v", tc.expectedSlice, result)
+			}
+			if tc.expectedRemoved != removed {
+				t.Fatalf("expected %d removals, got %d removals", tc.expectedRemoved, removed)
+			}
+			continue
+		}
+	}
+}
