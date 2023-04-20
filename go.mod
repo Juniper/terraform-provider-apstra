@@ -14,7 +14,7 @@ require (
 )
 
 //                                                                                          HHMMSS
-//replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230418174324-e6aa43fd421d
+replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230420184348-80b77df46d17
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
