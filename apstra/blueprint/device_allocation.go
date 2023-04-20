@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -87,6 +88,12 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 				stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("device_key")),
 				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
 			},
+		},
+		"deploy_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: "", // todo
+			Optional:            true,
+			Default:             stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 	}
 }
