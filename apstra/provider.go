@@ -2,8 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -13,10 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"io"
-	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -29,12 +24,6 @@ import (
 const (
 	defaultTag    = "v0.0.0"
 	defaultCommit = "devel"
-
-	envTlsKeyLogFile  = "SSLKEYLOGFILE"
-	envApstraUsername = "APSTRA_USER"
-	envApstraPassword = "APSTRA_PASS"
-	envApstraLogfile  = "APSTRA_LOG"
-	envApstraUrl      = "APSTRA_URL"
 
 	blueprintMutexMessage = "locked by terraform at $DATE"
 
@@ -51,14 +40,6 @@ configured with a trusted certificate, you might consider setting...
 
 ...in the provider configuration block.
 https://registry.terraform.io/providers/Juniper/apstra/%s/docs#tls_validation_disabled`
-
-	urlEncodeMsg = `
-Note that when the Username or Password fields contain special characters and are
-embedded in the URL, they must be URL-encoded by substituting '%%<hex-value>' in
-place of each special character. The following table demonstrates some common
-substitutions:
-
-%s`
 )
 
 var commit, tag string // populated by goreleaser
@@ -119,14 +100,15 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
-				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n\n" +
-					"It is possible to include Apstra API credentials in the URL using [standard syntax]" +
-					"(https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure " +
-					"that these credentials aren't accidentally committed to version control, etc... The preferred " +
-					"approach is to pass the credentials as environment variables `" + envApstraUsername + "` and `" +
-					envApstraPassword + "`.\n\nIf `url` is omitted, environment variable `" + envApstraUrl + "` can " +
-					"be used to in its place.\n\nWhen the username or password are embedded in the URL string, any " +
-					"special characters must be URL-encoded. For example, `pass^word` would become `pass%5eword`.",
+				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n\nIt is possible " +
+					"to include Apstra API credentials in the URL using " +
+					"[standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be " +
+					"taken to ensure that these credentials aren't accidentally committed to version control, etc... " +
+					"The preferred approach is to pass the credentials as environment variables `" +
+					utils.EnvApstraUsername + "`  and `" + utils.EnvApstraPassword + "`.\n\nIf `url` is omitted, " +
+					"environment variable `" + utils.EnvApstraUrl + "` can be used to in its place.\n\nWhen the " +
+					"username or password are embedded in the URL string, any special characters must be " +
+					"URL-encoded. For example, `pass^word` would become `pass%5eword`.",
 				Optional:   true,
 				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
@@ -184,7 +166,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// Create the Apstra client configuration from the URL and the environment.
-	clientCfg, err := NewClientConfig(config.Url.ValueString())
+	clientCfg, err := utils.NewClientConfig(config.Url.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Apstra client configuration", err.Error())
 		return
@@ -359,92 +341,4 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
 	}
-}
-
-func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
-	// Populate raw URL string from config or environment.
-	if apstraUrl == "" {
-		apstraUrl = os.Getenv(envApstraUrl)
-	}
-
-	if apstraUrl == "" {
-		return nil, errors.New("missing Apstra URL")
-	}
-
-	// Parse the URL.
-	parsedUrl, err := url.Parse(apstraUrl)
-	if err != nil {
-		if urlErr, ok := err.(*url.Error); ok && strings.Contains(urlErr.Error(), "invalid userinfo") {
-			// don't print the actual error here because it likely contains a password
-			return nil, errors.New(
-				"error parsing userinfo from URL - " + fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
-		}
-
-		var urlEE url.EscapeError
-		if errors.As(err, &urlEE) {
-			return nil, errors.New("error parsing URL - " + fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
-		}
-
-		return nil, fmt.Errorf("error parsing URL %q - %w", apstraUrl, err)
-	}
-
-	// Determine the Apstra username.
-	user := parsedUrl.User.Username()
-	if user == "" {
-		if val, ok := os.LookupEnv(envApstraUsername); ok {
-			user = val
-		} else {
-			return nil, errors.New("unable to determine apstra username - " + fmt.Sprintf(urlEncodeMsg, utils.UrlEscapeTable()))
-		}
-	}
-
-	// Determine  the Apstra password.
-	pass, found := parsedUrl.User.Password()
-	if !found {
-		if val, ok := os.LookupEnv(envApstraPassword); ok {
-			pass = val
-		} else {
-			return nil, errors.New("unable to determine apstra password")
-		}
-	}
-
-	// Remove credentials from the URL prior to rendering it into ClientCfg.
-	parsedUrl.User = nil
-
-	// Set up a logger.
-	var logger *log.Logger
-	if logFileName, ok := os.LookupEnv(envApstraLogfile); ok {
-		logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-		if err != nil {
-			return nil, err
-		}
-		logger = log.New(logFile, "", 0)
-	}
-
-	// Set up the TLS session key log.
-	var klw io.Writer
-	if fileName, ok := os.LookupEnv(envTlsKeyLogFile); ok {
-		klw, err = newKeyLogWriter(fileName)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Create the client's httpClient
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				KeyLogWriter: klw,
-			},
-		},
-	}
-
-	// Create the clientCfg
-	return &apstra.ClientCfg{
-		Url:        parsedUrl.String(),
-		User:       user,
-		Pass:       pass,
-		Logger:     logger,
-		HttpClient: httpClient,
-	}, nil
 }

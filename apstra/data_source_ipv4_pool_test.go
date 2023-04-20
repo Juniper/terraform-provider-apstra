@@ -3,12 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"net/http"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	testutils "terraform-provider-apstra/apstra/test_utils"
+	"testing"
 )
 
 const (
@@ -25,55 +22,15 @@ data "apstra_ipv4_pool" "test" {
 `
 )
 
-func testClient(t *testing.T) *apstra.Client {
-	clientCfg, err := NewClientConfig("")
+func TestAccDataSourceIpv4Pool_A(t *testing.T) {
+	ctx := context.Background()
+	pool, deleteFunc, err := testutils.Ipv4PoolA(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		t.Fatal(deleteFunc(ctx))
 	}
-	clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
-
-	client, err := clientCfg.NewClient()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return client
-}
-
-func TestAccDataSourceIpv4Pool_ById(t *testing.T) {
-	client := testClient(t)
-
-	name1 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	name2 := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-
-	id1, err := client.CreateIp4Pool(context.Background(), &apstra.NewIpPoolRequest{
-		DisplayName: name1,
-		Subnets: []apstra.NewIpSubnet{
-			{Network: "192.168.0.0/16"},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	id2, err := client.CreateIp4Pool(context.Background(), &apstra.NewIpPoolRequest{
-		DisplayName: name2,
-		Subnets: []apstra.NewIpSubnet{
-			{Network: "192.168.0.0/24"},
-			{Network: "192.168.1.0/24"},
-			{Network: "192.168.2.0/23"},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	defer func() {
-		err = client.DeleteIp4Pool(context.Background(), id1)
-		if err != nil {
-			t.Error(err)
-		}
-		err = client.DeleteIp4Pool(context.Background(), id2)
+		err := deleteFunc(ctx)
 		if err != nil {
 			t.Error(err)
 		}
@@ -83,74 +40,96 @@ func TestAccDataSourceIpv4Pool_ById(t *testing.T) {
 		//PreCheck:                 setup,
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Read by ID testing 1
+			// Read by ID
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByIdHCL, string(id1)),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByIdHCL, string(pool.Id)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(id1)),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", name1),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", "not_in_use"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", "65536"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", "0"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", "0"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(pool.Id)),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", pool.DisplayName),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", pool.Status.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", pool.Total.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", pool.Used.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", fmt.Sprintf("%0.f", pool.UsedPercentage)),
 
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", "1"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", fmt.Sprintf("%d", len(pool.Subnets))),
 
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.status", "pool_element_available"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.total", "65536"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used", "0"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used_percentage", "0"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.status", pool.Subnets[0].Status),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.total", pool.Subnets[0].Total.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used", pool.Subnets[0].Used.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used_percentage", fmt.Sprintf("%0.f", pool.Subnets[0].UsedPercentage)),
 				),
 			},
-			// Read by ID testing 2
+			// Read by Name
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByIdHCL, id2),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByNameHCL, pool.DisplayName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(id2)),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", name2),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", "not_in_use"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", "1024"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", "0"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", "0"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(pool.Id)),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", pool.DisplayName),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", pool.Status.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", pool.Total.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", pool.Used.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", fmt.Sprintf("%0.f", pool.UsedPercentage)),
 
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", "3"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", fmt.Sprintf("%d", len(pool.Subnets))),
+
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.status", pool.Subnets[0].Status),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.total", pool.Subnets[0].Total.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used", pool.Subnets[0].Used.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used_percentage", fmt.Sprintf("%0.f", pool.Subnets[0].UsedPercentage)),
 				),
 			},
-			// Read by Name testing 1
+		},
+	})
+}
+
+func TestAccDataSourceIpv4Pool_B(t *testing.T) {
+	ctx := context.Background()
+	pool, deleteFunc, err := testutils.Ipv4PoolB(ctx)
+	if err != nil {
+		t.Error(err)
+		t.Fatal(deleteFunc(ctx))
+	}
+	defer func() {
+		err := deleteFunc(ctx)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	resource.Test(t, resource.TestCase{
+		//PreCheck:                 setup,
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Read by ID
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByNameHCL, name1),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByIdHCL, string(pool.Id)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(id1)),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", name1),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", "not_in_use"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", "65536"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", "0"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", "0"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(pool.Id)),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", pool.DisplayName),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", pool.Status.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", pool.Total.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", pool.Used.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", fmt.Sprintf("%0.f", pool.UsedPercentage)),
 
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", "1"),
-
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.status", "pool_element_available"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.total", "65536"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used", "0"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.0.used_percentage", "0"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", fmt.Sprintf("%d", len(pool.Subnets))),
 				),
 			},
-			// Read by Name testing 2
+			// Read by Name
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByNameHCL, name2),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIpv4PoolTemplateByNameHCL, pool.DisplayName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(id2)),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", name2),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", "not_in_use"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", "1024"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", "0"),
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", "0"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "id", string(pool.Id)),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "name", pool.DisplayName),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "status", pool.Status.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "total", pool.Total.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used", pool.Used.String()),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "used_percentage", fmt.Sprintf("%0.f", pool.UsedPercentage)),
 
-					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", "3"),
+					resource.TestCheckResourceAttr("data.apstra_ipv4_pool.test", "subnets.#", fmt.Sprintf("%d", len(pool.Subnets))),
 				),
 			},
 		},
