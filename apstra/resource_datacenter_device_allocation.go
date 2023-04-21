@@ -68,7 +68,8 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// Ensure the following are populated:o//   - SystemNodeId (from node_name)
+	// Ensure the following are populated:
+	//   - SystemNodeId (from node_name)
 	//   - plan.SystemNodeId
 	//   - plan.InterfaceMapCatalogId
 	//   - plan.DeviceProfileNodeId
@@ -89,6 +90,11 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	}
 
 	plan.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.SetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -145,11 +151,42 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
+	state.GetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDeviceAllocation) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
-	// Update not needed because any change triggers replacement
+func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
+	// Retrieve values from plan
+	var plan blueprint.DeviceAllocation
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.DeviceAllocation
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	state.DeployMode = plan.DeployMode
+
+	state.SetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

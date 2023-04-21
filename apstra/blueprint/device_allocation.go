@@ -1,9 +1,9 @@
 package blueprint
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -23,6 +23,7 @@ type DeviceAllocation struct {
 	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`       // computed + optional
 	NodeId                types.String `tfsdk:"node_id"`                // computed
 	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"` // computed
+	DeployMode            types.String `tfsdk:"deploy_mode"`            // optional
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -59,10 +60,13 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 				"is omitted, or when `device_key` is supplied, but does not provide enough information to`. " +
 				"select an Interface Map. This field represents the Blueprint graphDB node ID, which is " +
 				"the same string as the global ID used in the design API global catalog.",
-			Optional:      true,
-			Computed:      true,
-			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
+			Optional: true,
+			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+				stringplanmodifier.UseStateForUnknown(),
+			},
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "GraphDB Node ID of the fabric node to which we're allocating an Interface Map " +
@@ -73,6 +77,16 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"device_profile_node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"deploy_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: "Set the *Deploy Mode* of the associated fabric node.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.String{
+				stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("device_key")),
+				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
+			},
 		},
 	}
 }
@@ -589,4 +603,88 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 	}
 
 	o.DeviceProfileNodeId = types.StringValue(result.Items[0].DeviceProfile.Id)
+}
+
+func (o *DeviceAllocation) SetNodeDeployMode(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	if o.DeployMode.IsNull() {
+		return
+	}
+
+	if o.DeployMode.IsUnknown() {
+		o.GetNodeDeployMode(ctx, client, diags)
+		return
+	}
+
+	var deployMode apstra.NodeDeployMode
+	err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing deploy mode %q", o.DeployMode.ValueString()), err.Error())
+		return
+	}
+
+	type patch struct {
+		Id         string  `json:"id"`
+		DeployMode *string `json:"deploy_mode"`
+	}
+
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing deploy mode %q", o.DeployMode.ValueString()), err.Error())
+		return
+	}
+
+	var stringPtr *string
+	if deployMode == apstra.NodeDeployModeNone {
+		stringPtr = nil
+	} else {
+		s := deployMode.String()
+		stringPtr = &s
+	}
+
+	setDeployMode := patch{
+		Id:         o.NodeId.ValueString(),
+		DeployMode: stringPtr,
+	}
+	deployModeResponse := patch{}
+
+	err = client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.ObjectId(o.NodeId.ValueString()), &setDeployMode, &deployModeResponse)
+	if err != nil {
+		diags.AddError("error setting deploy mode", err.Error())
+		return
+	}
+}
+
+func (o *DeviceAllocation) GetNodeDeployMode(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
+	if err != nil {
+		diags.AddError("error creating blueprint client", err.Error())
+		return
+	}
+
+	var nodesResponse struct {
+		Nodes map[string]struct {
+			Id         string `json:"id"`
+			Type       string `json:"type"`
+			DeployMode string `json:"deploy_mode"`
+		} `json:"nodes"`
+	}
+	err = bpClient.GetNodes(ctx, apstra.NodeTypeSystem, &nodesResponse)
+	if err != nil {
+		diags.AddError("error fetching blueprint nodes", err.Error())
+		return
+	}
+
+	node, ok := nodesResponse.Nodes[o.NodeId.ValueString()]
+	if !ok {
+		o.DeployMode = types.StringNull()
+		return
+	}
+
+	var deployMode apstra.NodeDeployMode
+	err = deployMode.FromString(node.DeployMode)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing deploy mode %q", node.DeployMode), err.Error())
+		return
+	}
+
+	o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
 }
