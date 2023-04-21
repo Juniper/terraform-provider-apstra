@@ -623,8 +623,8 @@ func (o *DeviceAllocation) SetNodeDeployMode(ctx context.Context, client *apstra
 	}
 
 	type patch struct {
-		Id         string `json:"id"`
-		DeployMode string `json:"deploy_mode,omitempty"`
+		Id         string  `json:"id"`
+		DeployMode *string `json:"deploy_mode"`
 	}
 
 	if err != nil {
@@ -632,9 +632,17 @@ func (o *DeviceAllocation) SetNodeDeployMode(ctx context.Context, client *apstra
 		return
 	}
 
+	var stringPtr *string
+	if deployMode == apstra.NodeDeployModeNone {
+		stringPtr = nil
+	} else {
+		s := deployMode.String()
+		stringPtr = &s
+	}
+
 	setDeployMode := patch{
 		Id:         o.NodeId.ValueString(),
-		DeployMode: deployMode.String(),
+		DeployMode: stringPtr,
 	}
 	deployModeResponse := patch{}
 
@@ -642,16 +650,6 @@ func (o *DeviceAllocation) SetNodeDeployMode(ctx context.Context, client *apstra
 	if err != nil {
 		diags.AddError("error setting deploy mode", err.Error())
 		return
-	}
-
-	if setDeployMode.Id != deployModeResponse.Id {
-		diags.AddError("inconsistent response while setting deploy mode",
-			fmt.Sprintf("request ID: %q, response ID: %q", setDeployMode.Id, deployModeResponse.Id))
-	}
-
-	if setDeployMode.DeployMode != deployModeResponse.DeployMode {
-		diags.AddError("inconsistent response while setting deploy mode",
-			fmt.Sprintf("request DeployMode: %q, response DeployMode: %q", setDeployMode.DeployMode, deployModeResponse.DeployMode))
 	}
 }
 
