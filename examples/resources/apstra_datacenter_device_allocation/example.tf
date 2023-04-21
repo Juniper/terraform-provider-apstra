@@ -20,27 +20,27 @@ resource "apstra_datacenter_blueprint" "r" {
 locals {
   switches = {
     spine1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
     }
     spine2 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
     }
     l2_virtual_001_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
     l2_virtual_002_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
     l2_virtual_003_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
     l2_virtual_004_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
   }
@@ -52,4 +52,5 @@ resource "apstra_datacenter_device_allocation" "r" {
   blueprint_id     = apstra_datacenter_blueprint.r.id
   interface_map_id = each.value["interface_map_id"]
   node_name        = each.key
+  deploy_mode      = "deploy"
 }

@@ -34,27 +34,27 @@ resource "apstra_datacenter_blueprint" "r" {
 locals {
   switches = {
     spine1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
     }
     spine2 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Spine"
     }
     l2_virtual_001_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
     l2_virtual_002_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
     l2_virtual_003_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
     l2_virtual_004_leaf1 = {
-#     device_key       = "<serial-number-goes-here>"
+      #     device_key       = "<serial-number-goes-here>"
       interface_map_id = "Juniper_vQFX__AOS-7x10-Leaf"
     }
   }
@@ -66,6 +66,7 @@ resource "apstra_datacenter_device_allocation" "r" {
   blueprint_id     = apstra_datacenter_blueprint.r.id
   interface_map_id = each.value["interface_map_id"]
   node_name        = each.key
+  deploy_mode      = "deploy"
 }
 ```
 
@@ -79,6 +80,7 @@ resource "apstra_datacenter_device_allocation" "r" {
 
 ### Optional
 
+- `deploy_mode` (String) Set the *Deploy Mode* of the associated fabric node.
 - `device_key` (String) Unique ID for a Managed Device, generally the serial number, used to. assign a Managed Device to a fabric role.
 - `interface_map_id` (String) Interface Maps link a Logical Device (fabric design element) to a Device Profile which describes a hardware model. This field is required when `device_key` is omitted, or when `device_key` is supplied, but does not provide enough information to`. select an Interface Map. This field represents the Blueprint graphDB node ID, which is the same string as the global ID used in the design API global catalog.
 

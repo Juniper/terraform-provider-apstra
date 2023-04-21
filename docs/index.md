@@ -44,7 +44,7 @@ APSTRA_PASS=password
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
 - `url` (String) URL of the apstra server, e.g. `https://apstra.example.com`
 
-It is possible to include Apstra API credentials in the URL using [standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure that these credentials aren't accidentally committed to version control, etc... The preferred approach is to pass the credentials as environment variables `APSTRA_USER` and `APSTRA_PASS`.
+It is possible to include Apstra API credentials in the URL using [standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure that these credentials aren't accidentally committed to version control, etc... The preferred approach is to pass the credentials as environment variables `APSTRA_USER`  and `APSTRA_PASS`.
 
 If `url` is omitted, environment variable `APSTRA_URL` can be used to in its place.
 
