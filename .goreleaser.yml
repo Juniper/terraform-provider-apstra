@@ -8,7 +8,7 @@ before:
   hooks:
     - rm -rf Third_Party_Code docs
     - go run github.com/google/go-licenses save --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk --save_path=./Third_Party_Code ./...
-    - go run github.com/google/go-licenses report ./... --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk/apstra --template .notices.tpl > Third_Party_Code/NOTICES.md
+    - sh -c "go run github.com/google/go-licenses report ./... --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk/apstra --template .notices.tpl > Third_Party_Code/NOTICES.md"
     - go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
     - git update-index --refresh && git diff-index --quiet HEAD --
 builds:
