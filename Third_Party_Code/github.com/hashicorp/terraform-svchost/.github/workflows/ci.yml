@@ -1,0 +1,47 @@
+name: CI Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Get dependences
+        run: go mod download
+
+      - name: Verify go.mod and go.sum are consistent
+        run: go mod tidy
+
+      - name: Ensure nothing changed
+        run: git diff --exit-code
+
+      - name: Check format
+        run: |
+          go fmt ./...
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "Formatting is consistent with 'go fmt'."
+          else
+            echo "Run 'go fmt ./...' to automatically apply standard Go style to all packages."
+            git status --porcelain
+            exit 1
+          fi
+
+      - name: Run tests
+        run: go test -v -race ./...
