@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -381,12 +382,14 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *apstra.L
 	}
 
 	if len(bogusPortNames) > 0 {
+		sort.Strings(bogusPortNames)
 		diags.AddError(errInvalidConfig,
 			fmt.Sprintf("ports '%s' not defined by logical device '%s'",
 				strings.Join(bogusPortNames, ","), ld.Id))
 	}
 
 	if len(requiredPortNames) != 0 {
+		sort.Strings(requiredPortNames)
 		diags.AddError(errInvalidConfig,
 			fmt.Sprintf("ports '%s' required by logical device '%s' must be specified",
 				strings.Join(requiredPortNames, ","), ld.Id))
@@ -542,7 +545,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 				LDPort:        ldPort,
 			},
 			ActiveState: transformInterface.State == "active",
-			Position:    i + 1,
+			Position:    portId,
 			Speed:       transformInterface.Speed,
 			Setting: apstra.InterfaceMapInterfaceSetting{
 				Param: transformation.Interfaces[interfaceIdx].Setting,
@@ -851,7 +854,7 @@ func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp 
 				LDPort:        -1,
 			},
 			ActiveState: true, // unclear what this is, UI sets "active"
-			Position:    allocatedPortCount + i + 1,
+			Position:    dpPort.PortId,
 			Speed:       transformation.Interfaces[0].Speed,
 			Setting:     apstra.InterfaceMapInterfaceSetting{Param: transformation.Interfaces[0].Setting},
 		}
