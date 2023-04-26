@@ -854,7 +854,7 @@ func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp 
 				LDPort:        -1,
 			},
 			ActiveState: true, // unclear what this is, UI sets "active"
-			Position:    allocatedPortCount + i + 1,
+			Position:    dpPort.PortId,
 			Speed:       transformation.Interfaces[0].Speed,
 			Setting:     apstra.InterfaceMapInterfaceSetting{Param: transformation.Interfaces[0].Setting},
 		}
