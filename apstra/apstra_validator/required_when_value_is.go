@@ -49,37 +49,41 @@ func (o RequiredWhenValueIsValidator) Validate(ctx context.Context, req Required
 		return
 	}
 
-	matchedPaths, diags := req.Config.PathMatches(ctx, o.expression)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
-	}
+	mergedExpressions := req.PathExpression.MergeExpressions(o.expression)
 
-	for _, mp := range matchedPaths {
-		// If the user specifies the same attribute this apstra_validator is applied to,
-		// also as part of the input, skip it
-		if mp.Equal(req.Path) {
-			continue
-		}
-
-		var mpVal attr.Value
-		diags = req.Config.GetAttribute(ctx, mp, &mpVal)
+	for _, expression := range mergedExpressions {
+		matchedPaths, diags := req.Config.PathMatches(ctx, expression)
 		resp.Diagnostics.Append(diags...)
 		if diags.HasError() {
-			continue // Collect all errors
-		}
-
-		// Unknown and Null attributes can't satisfy the valueIs condition
-		if mpVal.IsNull() || mpVal.IsUnknown() {
 			return
 		}
 
-		if mpVal.String() == o.value {
-			resp.Diagnostics.AddAttributeError(
-				req.Path,
-				"Missing required attribute",
-				fmt.Sprintf("Attribute required when %q has value %q", mp.String(), mpVal.String()),
-			)
+		for _, mp := range matchedPaths {
+			// If the user specifies the same attribute this apstra_validator is applied to,
+			// also as part of the input, skip it
+			if mp.Equal(req.Path) {
+				continue
+			}
+
+			var mpVal attr.Value
+			diags = req.Config.GetAttribute(ctx, mp, &mpVal)
+			resp.Diagnostics.Append(diags...)
+			if diags.HasError() {
+				continue // Collect all errors
+			}
+
+			// Unknown and Null attributes can't satisfy the valueIs condition
+			if mpVal.IsNull() || mpVal.IsUnknown() {
+				return
+			}
+
+			if mpVal.String() == o.value {
+				resp.Diagnostics.AddAttributeError(
+					req.Path,
+					"Missing required attribute",
+					fmt.Sprintf("Attribute %q required when %q has value %q", req.Path, mp.String(), mpVal.String()),
+				)
+			}
 		}
 	}
 }
