@@ -1,6 +1,9 @@
 package design
 
 const (
+	AlphaNumericChars  = "[A-Za-z0-9_-]"
+	AlphaNumericRegexp = "^" + AlphaNumericChars + "*$"
+
 	errProviderBug           = "Provider Bug. Please report this issue to the provider maintainers."
 	errApiGetWithTypeAndId   = "API error getting %s %q"
 	errApiPatchWithTypeAndId = "API error patching %s %q"
