@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type Systems struct {
@@ -51,15 +52,19 @@ node(type='system', name='n_system', role='spine').in_(type='tag').node(type='ta
 
 func (o Systems) Query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
 	var filters SystemNode
-	diags.Append(o.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
-	if diags.HasError() {
-		return nil
+	if utils.Known(o.Filters) {
+		diags.Append(o.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return nil
+		}
 	}
 
 	var tagIds []string
-	diags.Append(filters.TagIds.ElementsAs(ctx, &tagIds, false)...)
-	if diags.HasError() {
-		return nil
+	if utils.Known(filters.TagIds) {
+		diags.Append(filters.TagIds.ElementsAs(ctx, &tagIds, false)...)
+		if diags.HasError() {
+			return nil
+		}
 	}
 
 	systemNodeBaseAttributes := []apstra.QEEAttribute{

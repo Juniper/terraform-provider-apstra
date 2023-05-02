@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"terraform-provider-apstra/apstra/blueprint"
 )
 
@@ -41,12 +40,6 @@ func (o *dataSourceBlueprintSystemNodes) Read(ctx context.Context, req datasourc
 
 	var config blueprint.Systems
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var filters blueprint.SystemNode
-	resp.Diagnostics.Append(config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
