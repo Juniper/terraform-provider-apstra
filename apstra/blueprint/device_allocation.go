@@ -100,9 +100,10 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *a
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetType(apstra.BlueprintTypeStaging).
-		SetContext(ctx).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("system")},
 			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
@@ -123,7 +124,7 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *a
 			{"id", apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
 		})
 
-	err := query.Do(&result)
+	err := query.Do(ctx, &result)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
@@ -151,9 +152,10 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetContext(ctx).
-		SetType(apstra.BlueprintTypeStaging).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("system")},
 			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
@@ -173,7 +175,7 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 			{"id", apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
 		})
 
-	err := query.Do(&result)
+	err := query.Do(ctx, &result)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
@@ -210,16 +212,17 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *apstr
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetType(apstra.BlueprintTypeStaging).
-		SetContext(ctx).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("system")},
 			{"label", apstra.QEStringVal(o.NodeName.ValueString())},
 			{"name", apstra.QEStringVal("n_system")},
 		})
 
-	err := query.Do(&result)
+	err := query.Do(ctx, &result)
 	if err != nil {
 		diags.AddError("error running system node query", err.Error())
 		return
@@ -375,16 +378,17 @@ func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *apstra.Cl
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetContext(ctx).
-		SetType(apstra.BlueprintTypeStaging).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("system")},
 			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
 			{"name", apstra.QEStringVal("n_system")},
 		})
 
-	err := query.Do(&result)
+	err := query.Do(ctx, &result)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
@@ -421,8 +425,10 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 		} `json:"items"`
 	}
 
-	err := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetContext(ctx).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("system")},
 			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
@@ -431,8 +437,9 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("interface_map")},
 			{"name", apstra.QEStringVal("n_interface_map")},
-		}).
-		Do(&result)
+		})
+
+	err := query.Do(ctx, &result)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
@@ -466,8 +473,10 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetContext(ctx).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("system")},
 			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
@@ -484,7 +493,7 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 			{"name", apstra.QEStringVal("n_device_profile")},
 		})
 
-	err := query.Do(&result)
+	err := query.Do(ctx, &result)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
@@ -518,9 +527,10 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 		} `json:"items"`
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetType(apstra.BlueprintTypeStaging).
-		SetContext(ctx).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("interface_map")},
 			{"id", apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
@@ -531,7 +541,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 			{"name", apstra.QEStringVal("n_device_profile")},
 		})
 
-	err := query.Do(&response)
+	err := query.Do(ctx, &response)
 
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -544,11 +554,13 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 
 	switch len(response.Items) {
 	case 0:
-		diags.AddError("no results when querying for Device Profile", fmt.Sprintf("query string %q", query.String()))
+		diags.AddError("no results when querying for Device Profile",
+			fmt.Sprintf("query string %q", query.String()))
 	case 1:
 		o.DeviceProfileNodeId = types.StringValue(response.Items[0].DeviceProfile.Id)
 	default:
-		diags.AddError("multiple matches when querying for Device Profile", fmt.Sprintf("query string %q", query.String()))
+		diags.AddError("multiple matches when querying for Device Profile",
+			fmt.Sprintf("query string %q", query.String()))
 	}
 }
 
@@ -568,9 +580,10 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 		return
 	}
 
-	query := client.NewQuery(apstra.ObjectId(o.BlueprintId.ValueString())).
-		SetContext(ctx).
-		SetType(apstra.BlueprintTypeStaging).
+	query := new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{"type", apstra.QEStringVal("device_profile")},
 			{"device_profile_id", apstra.QEStringVal(si.Facts.AosHclModel.String())},
@@ -585,7 +598,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 		} `json:"items"`
 	}
 
-	err := query.Do(&result)
+	err := query.Do(ctx, &result)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
