@@ -8,6 +8,7 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type NodeTypeSystem struct {
@@ -101,12 +102,12 @@ func (o *NodeTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client,
 	}
 
 	o.Attributes = types.ObjectValueMust(NodeTypeSystemAttributes{}.AttrTypes(), map[string]attr.Value{
-		"id":          types.StringValue(desiredNode.Id),
-		"hostname":    types.StringValue(desiredNode.Hostname),
-		"label":       types.StringValue(desiredNode.Label),
-		"role":        types.StringValue(desiredNode.Role),
-		"system_id":   types.StringValue(desiredNode.SystemId),
-		"system_type": types.StringValue(desiredNode.SystemType),
-		"tag_ids":     types.SetValueMust(types.StringType, tags),
+		"id":          utils.StringValueOrNull(ctx, desiredNode.Id, diags),
+		"hostname":    utils.StringValueOrNull(ctx, desiredNode.Hostname, diags),
+		"label":       utils.StringValueOrNull(ctx, desiredNode.Label, diags),
+		"role":        utils.StringValueOrNull(ctx, desiredNode.Role, diags),
+		"system_id":   utils.StringValueOrNull(ctx, desiredNode.SystemId, diags),
+		"system_type": utils.StringValueOrNull(ctx, desiredNode.SystemType, diags),
+		"tag_ids":     utils.SetValueOrNull(ctx, types.StringType, tags, diags),
 	})
 }
