@@ -35,6 +35,7 @@ import (
 //}
 
 type SystemNode struct {
+	Id         types.String `tfsdk:"id"`
 	Hostname   types.String `tfsdk:"hostname"`
 	Label      types.String `tfsdk:"label"`
 	Role       types.String `tfsdk:"role"`
@@ -75,6 +76,11 @@ func (o SystemNode) DataSourceAttributesAsFilter() map[string]dataSourceSchema.A
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Graph DB node ID",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
 		"label": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Graph DB node `label`",
 			Optional:            true,
@@ -104,6 +110,7 @@ func (o SystemNode) DataSourceAttributesAsFilter() map[string]dataSourceSchema.A
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 				setvalidator.AtLeastOneOf(
 					path.MatchRoot("filters").AtName("hostname"),
+					path.MatchRoot("filters").AtName("id"),
 					path.MatchRoot("filters").AtName("label"),
 					path.MatchRoot("filters").AtName("role"),
 					path.MatchRoot("filters").AtName("system_id"),
@@ -150,6 +157,10 @@ func (o SystemNode) QEEAttributes() []apstra.QEEAttribute {
 
 	if utils.Known(o.Hostname) {
 		result = append(result, apstra.QEEAttribute{Key: "hostname", Value: apstra.QEStringVal(o.Hostname.ValueString())})
+	}
+
+	if utils.Known(o.Id) {
+		result = append(result, apstra.QEEAttribute{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())})
 	}
 
 	if utils.Known(o.Label) {

@@ -53,6 +53,7 @@ output "qfx_spines" {
 Optional:
 
 - `hostname` (String) Apstra Graph DB node `hostname`
+- `id` (String) Apstra Graph DB node ID
 - `label` (String) Apstra Graph DB node `label`
 - `role` (String) Apstra Graph DB node `role`
 - `system_id` (String) Apstra ID of the physical system (not to be confused with its fabric role)
