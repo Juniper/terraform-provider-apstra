@@ -43,13 +43,6 @@ func (o Systems) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-/*
-match (
-node(type='system', name='n_system', role='spine').in_(type='tag').node(type='tag', label='spine', name='tag_spine'),
-node(type='system', name='n_system', role='spine').in_(type='tag').node(type='tag', label='qfx', name='tag_qfx'),
-)
-*/
-
 func (o Systems) Query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
 	var filters SystemNode
 	if utils.Known(o.Filters) {
