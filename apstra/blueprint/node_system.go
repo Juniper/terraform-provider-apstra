@@ -1,183 +1,112 @@
 package blueprint
 
 import (
+	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/utils"
 )
 
-//type System struct {
-//	BlueprintId types.String `tfsdk:"blueprint_id"`
-//	Id          types.String `tfsdk:"id"`
-//	Attributes  types.Object `tfsdk:"attributes"`
-//}
-
-//func (o System) DataSourceSchemaNested() map[string]dataSourceSchema.Attribute {
-//	return map[string]dataSourceSchema.Attribute{
-//		"blueprint_id": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Blueprint ID",
-//			Computed:            true,
-//		},
-//		"id": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `ID`",
-//			Computed:            true,
-//		},
-//		"attributes": dataSourceSchema.SingleNestedAttribute{
-//			MarkdownDescription: "Attributes of a `system` Graph DB node.",
-//			Attributes:          SystemNode{}.DataSourceAttributes(),
-//		},
-//	}
-//}
-
-type SystemNode struct {
-	Id         types.String `tfsdk:"id"`
-	Hostname   types.String `tfsdk:"hostname"`
-	Label      types.String `tfsdk:"label"`
-	Role       types.String `tfsdk:"role"`
-	SystemId   types.String `tfsdk:"system_id"`
-	SystemType types.String `tfsdk:"system_type"`
-	TagIds     types.Set    `tfsdk:"tag_ids"`
+type NodeTypeSystem struct {
+	BlueprintId types.String `tfsdk:"blueprint_id"`
+	Id          types.String `tfsdk:"id"`
+	Attributes  types.Object `tfsdk:"attributes"`
 }
 
-//func (o SystemNode) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
-//	return map[string]dataSourceSchema.Attribute{
-//		"hostname": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `hostname`",
-//			Computed:            true,
-//		},
-//		"label": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `label`",
-//			Computed:            true,
-//		},
-//		"role": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `role`",
-//			Computed:            true,
-//		},
-//		"system_type": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `system_type`",
-//			Computed:            true,
-//		},
-//		"type": dataSourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `type`",
-//			Computed:            true,
-//		},
-//	}
-//}
-
-func (o SystemNode) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
+func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"hostname": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `hostname`",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Blueprint ID",
+			Required:            true,
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node ID",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Apstra Graph DB node `ID`",
+			Required:            true,
 		},
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `label`",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"role": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `role`",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"system_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID of the physical system (not to be confused with its fabric role)",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"system_type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `system_type`",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"tag_ids": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "Set of Tag IDs (labels) - only nodes with all tags will match this filter",
-			ElementType:         types.StringType,
-			Optional:            true,
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
-				setvalidator.AtLeastOneOf(
-					path.MatchRoot("filters").AtName("hostname"),
-					path.MatchRoot("filters").AtName("id"),
-					path.MatchRoot("filters").AtName("label"),
-					path.MatchRoot("filters").AtName("role"),
-					path.MatchRoot("filters").AtName("system_id"),
-					path.MatchRoot("filters").AtName("system_type"),
-					path.MatchRoot("filters").AtName("tag_ids"),
-				),
-			},
+		"attributes": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Attributes of a `system` Graph DB node.",
+			Computed:            true,
+			Attributes:          NodeTypeSystemAttributes{}.DataSourceAttributes(),
 		},
 	}
 }
 
-//func (o SystemNode) ResourceAttributes() map[string]resourceSchema.Attribute {
-//	return map[string]resourceSchema.Attribute{
-//		"hostname": resourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `hostname`",
-//			Optional:            true,
-//			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-//		},
-//		"label": resourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `label`",
-//			Optional:            true,
-//			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-//		},
-//		"role": resourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `role`",
-//			Optional:            true,
-//			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-//		},
-//		"system_type": resourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `system_type`",
-//			Optional:            true,
-//			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-//		},
-//		"type": resourceSchema.StringAttribute{
-//			MarkdownDescription: "Apstra Graph DB node `type`",
-//			Optional:            true,
-//			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-//		},
-//	}
-//}
+func (o *NodeTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	type node struct {
+		Id         string `json:"id"`
+		Hostname   string `json:"hostname"`
+		Label      string `json:"label"`
+		Role       string `json:"role"`
+		SystemId   string `json:"system_id"`
+		SystemType string `json:"system_type"`
+	}
+	nodeResponse := &struct {
+		Nodes map[string]node `json:"nodes"`
+	}{}
 
-func (o SystemNode) QEEAttributes() []apstra.QEEAttribute {
-	var result []apstra.QEEAttribute
-
-	if utils.Known(o.Hostname) {
-		result = append(result, apstra.QEEAttribute{Key: "hostname", Value: apstra.QEStringVal(o.Hostname.ValueString())})
+	err := client.GetNodes(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.NodeTypeSystem, nodeResponse)
+	if err != nil {
+		diags.AddError("error fetching blueprint nodes", err.Error())
+		return
 	}
 
-	if utils.Known(o.Id) {
-		result = append(result, apstra.QEEAttribute{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())})
+	// pick out the desired node from the node slice in the response object
+	desiredNode := new(node)
+	for _, n := range nodeResponse.Nodes {
+		if n.Id == o.Id.ValueString() {
+			desiredNode = &n
+			break
+		}
 	}
 
-	if utils.Known(o.Label) {
-		result = append(result, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Label.ValueString())})
+	if desiredNode == nil {
+		diags.AddError("node not found",
+			fmt.Sprintf("node %q not found in blueprint %q",
+				o.Id.ValueString(), o.BlueprintId.ValueString()))
+		return
 	}
 
-	if utils.Known(o.Role) {
-		result = append(result, apstra.QEEAttribute{Key: "role", Value: apstra.QEStringVal(o.Role.ValueString())})
+	tagResponse := &struct {
+		Items []struct {
+			Tag struct {
+				Label string `json:"label"`
+			} `json:"n_tag"`
+		} `json:"items"`
+	}{}
+
+	err = new(apstra.PathQuery).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(desiredNode.Id)}}).
+		In([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("tag")}}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("tag")},
+			{Key: "name", Value: apstra.QEStringVal("n_tag")},
+		}).
+		Do(ctx, tagResponse)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("error querying graph db tags for node %q", desiredNode.Id),
+			err.Error())
+		return
 	}
 
-	if utils.Known(o.SystemId) {
-		result = append(result, apstra.QEEAttribute{Key: "system_id", Value: apstra.QEStringVal(o.SystemId.ValueString())})
+	tags := make([]attr.Value, len(tagResponse.Items))
+	for i := range tagResponse.Items {
+		tags[i] = types.StringValue(tagResponse.Items[i].Tag.Label)
 	}
 
-	if utils.Known(o.SystemType) {
-		result = append(result, apstra.QEEAttribute{Key: "system_type", Value: apstra.QEStringVal(o.SystemType.ValueString())})
-	}
-
-	return result
+	o.Attributes = types.ObjectValueMust(NodeTypeSystemAttributes{}.AttrTypes(), map[string]attr.Value{
+		"id":          types.StringValue(desiredNode.Id),
+		"hostname":    types.StringValue(desiredNode.Hostname),
+		"label":       types.StringValue(desiredNode.Label),
+		"role":        types.StringValue(desiredNode.Role),
+		"system_id":   types.StringValue(desiredNode.SystemId),
+		"system_type": types.StringValue(desiredNode.SystemType),
+		"tag_ids":     types.SetValueMust(types.StringType, tags),
+	})
 }

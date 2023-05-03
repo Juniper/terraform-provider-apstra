@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -12,14 +13,14 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-type Systems struct {
+type NodesTypeSystem struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Filters     types.Object `tfsdk:"filters"`
 	Ids         types.Set    `tfsdk:"ids"`
 	QueryString types.String `tfsdk:"query_string"`
 }
 
-func (o Systems) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o NodesTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint to search.",
@@ -29,7 +30,7 @@ func (o Systems) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"filters": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Filters used to select only desired node IDs.",
 			Optional:            true,
-			Attributes:          SystemNode{}.DataSourceAttributesAsFilter(),
+			Attributes:          NodeTypeSystemAttributes{}.DataSourceAttributesAsFilter(),
 		},
 		"query_string": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Graph DB query string based on the supplied filters; possibly useful for troubleshooting.",
@@ -43,8 +44,40 @@ func (o Systems) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o Systems) Query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
-	var filters SystemNode
+func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	var queryResponse struct {
+		Items []struct {
+			System struct {
+				Id string `json:"id"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}
+
+	query := o.query(ctx, diags).
+		SetClient(client).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetBlueprintType(apstra.BlueprintTypeStaging)
+	if diags.HasError() { // catch errors fro
+		return
+	}
+
+	err := query.Do(ctx, &queryResponse)
+	if err != nil {
+		diags.AddError("Error executing Blueprint query", err.Error())
+		return
+	}
+
+	ids := make([]attr.Value, len(queryResponse.Items))
+	for i := range queryResponse.Items {
+		ids[i] = types.StringValue(queryResponse.Items[i].System.Id)
+	}
+
+	o.Ids = types.SetValueMust(types.StringType, ids)
+	o.QueryString = types.StringValue(query.String())
+}
+
+func (o *NodesTypeSystem) query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
+	var filters NodeTypeSystemAttributes
 	if utils.Known(o.Filters) {
 		diags.Append(o.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
 		if diags.HasError() {
