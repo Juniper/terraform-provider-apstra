@@ -314,6 +314,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceTag{} },
 		func() datasource.DataSource { return &dataSourceVniPool{} },
 		func() datasource.DataSource { return &dataSourceVniPools{} },
+		func() datasource.DataSource { return &dataSourcePropertySet{} },
 	}
 }
 
@@ -340,5 +341,6 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
+		func() resource.Resource { return &resourcePropertySet{} },
 	}
 }
