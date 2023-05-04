@@ -306,6 +306,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceIpv6Pool{} },
 		func() datasource.DataSource { return &dataSourceIpv6Pools{} },
 		func() datasource.DataSource { return &dataSourceLogicalDevice{} },
+		func() datasource.DataSource { return &dataSourcePropertySet{} },
 		func() datasource.DataSource { return &dataSourceRackType{} },
 		func() datasource.DataSource { return &dataSourceRackTypes{} },
 		//func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
@@ -316,7 +317,6 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceTag{} },
 		func() datasource.DataSource { return &dataSourceVniPool{} },
 		func() datasource.DataSource { return &dataSourceVniPools{} },
-		func() datasource.DataSource { return &dataSourcePropertySet{} },
 	}
 }
 
@@ -337,12 +337,12 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceLogicalDevice{} },
 		func() resource.Resource { return &resourceManagedDevice{} },
 		func() resource.Resource { return &resourcePoolAllocation{} },
+		func() resource.Resource { return &resourcePropertySet{} },
 		func() resource.Resource { return &resourceRackType{} },
 		//func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
 		//func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
-		func() resource.Resource { return &resourcePropertySet{} },
 	}
 }
