@@ -12,13 +12,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/utils"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 )
 
 type PropertySet struct {
 	Id         types.String `tfsdk:"id"`
 	Label      types.String `tfsdk:"name"`
-	Values     types.String `tfsdk:"keys"`
+	Values     types.String `tfsdk:"data"`
 	Blueprints types.Set    `tfsdk:"blueprints"`
 }
 
@@ -42,12 +42,12 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"keys": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "A map of values in the property set",
+		"data": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "A map of values in the property set in JSON format",
 			Computed:            true,
 		},
 		"blueprints": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "List of blueprints that this property set might be associated with.",
+			MarkdownDescription: "Set of blueprints that this property set might be associated with.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -68,13 +68,13 @@ func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"keys": resourceSchema.StringAttribute{
-			MarkdownDescription: "A map of values in the property set",
+		"data": resourceSchema.StringAttribute{
+			MarkdownDescription: "A map of values in the property set in JSON format",
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators:          []validator.String{apstravalidator.ParseJson()},
 		},
 		"blueprints": resourceSchema.SetAttribute{
-			MarkdownDescription: "List of blueprints that this property set might be associated with.",
+			MarkdownDescription: "Set of blueprints that this property set might be associated with.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -90,9 +90,6 @@ func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetDat
 }
 
 func (o *PropertySet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.PropertySetData {
-	if !utils.IsJSON(o.Values) {
-		diags.AddError("error Marshalling to JSON", o.Values.ValueString())
-	}
 	return &apstra.PropertySetData{
 		Label:  o.Label.ValueString(),
 		Values: []byte(o.Values.ValueString()),

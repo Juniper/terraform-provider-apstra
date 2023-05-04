@@ -13,15 +13,23 @@ func JSONEqual(m1, m2 types.String, d *diag.Diagnostics) bool {
 	var map2 interface{}
 
 	var err error
-	err = json.Unmarshal([]byte(m1.ValueString()), &map1)
-	if err != nil {
-		d.AddError("error unmarshalling string", err.Error())
-		return false
+	if m1.ValueString() == "" {
+		json.Unmarshal([]byte("{}"), &map1)
+	} else {
+		err = json.Unmarshal([]byte(m1.ValueString()), &map1)
+		if err != nil {
+			d.AddError("error unmarshalling string", err.Error())
+			return false
+		}
 	}
-	err = json.Unmarshal([]byte(m2.ValueString()), &map2)
-	if err != nil {
-		d.AddError("error unmarshalling string", err.Error())
-		return false
+	if m2.ValueString() == "" {
+		json.Unmarshal([]byte("{}"), &map2)
+	} else {
+		err = json.Unmarshal([]byte(m2.ValueString()), &map2)
+		if err != nil {
+			d.AddError("error unmarshalling string", err.Error())
+			return false
+		}
 	}
 	return reflect.DeepEqual(map1, map2)
 }

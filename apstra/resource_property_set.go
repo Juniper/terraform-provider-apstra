@@ -29,7 +29,7 @@ func (o *resourcePropertySet) Configure(ctx context.Context, req resource.Config
 
 func (o *resourcePropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Tag in the Apstra Design tab.",
+		MarkdownDescription: "This resource creates a Property Set in the Apstra Design tab.",
 		Attributes:          design.PropertySet{}.ResourceAttributes(),
 	}
 }
@@ -68,8 +68,8 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
-	var config design.PropertySet
-	resp.Diagnostics.Append(req.State.Get(ctx, &config)...)
+	var state design.PropertySet
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -78,27 +78,12 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 	var api *apstra.PropertySet
 	var ace apstra.ApstraClientErr
 
-	switch {
-	case !config.Label.IsNull():
-		api, err = o.client.GetPropertySetByLabel(ctx, config.Label.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("name"),
-				"PropertySet not found",
-				fmt.Sprintf("PropertySet with label %q not found", config.Label.ValueString()))
-			return
-		}
-	case !config.Id.IsNull():
-		api, err = o.client.GetPropertySet(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"PropertySet not found",
-				fmt.Sprintf("PropertySet with ID %q not found", config.Id.ValueString()))
-			return
-		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
+	api, err = o.client.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("id"),
+			"PropertySet not found",
+			fmt.Sprintf("PropertySet with ID %q not found", state.Id.ValueString()))
 		return
 	}
 	if err != nil { // catch errors other than 404 from above
@@ -107,22 +92,21 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 	}
 
 	// create new state object
-	var state design.PropertySet
-	state.Id = types.StringValue(api.Id.String())
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	var newstate design.PropertySet
+	newstate.Id = types.StringValue(api.Id.String())
+	newstate.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if utils.JSONEqual(state.Values, config.Values, &resp.Diagnostics) {
-
-		state.Values = config.Values
+	if utils.JSONEqual(newstate.Values, state.Values, &resp.Diagnostics) {
+		newstate.Values = state.Values
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	// Set state
 	//
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newstate)...)
 }
 
 // Update resource
@@ -147,7 +131,6 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 	// Update Property Set
 	err := o.client.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), psReq)
 	if err != nil {
-		resp.Diagnostics.AddError("Request Made to ::", plan.Id.ValueString())
 		resp.Diagnostics.AddError("error updating Property Set", err.Error())
 		return
 	}
@@ -163,14 +146,10 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 	}
 	var d design.PropertySet
 	d.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-	if !utils.JSONEqual(d.Values, plan.Values, &resp.Diagnostics) {
-		resp.Diagnostics.AddError("Error Update seems to have failed. Keys Not Updated.", plan.Values.ValueString())
+	if resp.Diagnostics.HasError() {
 		return
 	}
-	if d.Label != plan.Label {
-		resp.Diagnostics.AddError("Error Update seems to have failed. Name Not Updated.", plan.Label.ValueString())
-		return
-	}
+
 	plan.Blueprints = d.Blueprints
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
