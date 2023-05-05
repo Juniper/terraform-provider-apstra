@@ -35,7 +35,6 @@ func JSONEqual(m1, m2 types.String, d *diag.Diagnostics) bool {
 }
 
 // IsJSON takes a string and returns true if json, false if not
-
 func IsJSON(str types.String) bool {
 	var m interface{}
 	err := json.Unmarshal([]byte(str.ValueString()), &m)
