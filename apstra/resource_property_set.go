@@ -80,10 +80,7 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 
 	api, err = o.client.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("id"),
-			"PropertySet not found",
-			fmt.Sprintf("PropertySet with ID %q not found", state.Id.ValueString()))
+		resp.State.RemoveResource(ctx)
 		return
 	}
 	if err != nil { // catch errors other than 404 from above

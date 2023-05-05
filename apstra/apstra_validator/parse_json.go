@@ -3,25 +3,13 @@ package apstravalidator
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ validator.String = ParseJsonValidator{}
 
 type ParseJsonValidator struct{}
-
-type ParseJsonValidatorRequest struct {
-	Config      tfsdk.Config
-	ConfigValue attr.Value
-}
-
-type ParseJsonValidatorResponse struct {
-	Diagnostics diag.Diagnostics
-}
 
 func (o ParseJsonValidator) Description(_ context.Context) string {
 	return "Ensures that the supplied value is a valid JSON"

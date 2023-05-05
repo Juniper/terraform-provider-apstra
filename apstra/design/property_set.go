@@ -37,17 +37,17 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a property set by name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Property Set by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"data": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "A map of values in the property set in JSON format",
+			MarkdownDescription: "A map of values in the Property Set in JSON format",
 			Computed:            true,
 		},
 		"blueprints": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "Set of blueprints that this property set might be associated with.",
+			MarkdownDescription: "Set of blueprints that this Property Set might be associated with.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -57,24 +57,24 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a PropertySet by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Property Set by ID. Required when `name` is omitted.",
 			Computed:            true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a property set by name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Property Set by name. Required when `id` is omitted.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"data": resourceSchema.StringAttribute{
-			MarkdownDescription: "A map of values in the property set in JSON format",
+			MarkdownDescription: "A map of values in the Property Set in JSON format",
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseJson()},
 		},
 		"blueprints": resourceSchema.SetAttribute{
-			MarkdownDescription: "Set of blueprints that this property set might be associated with.",
+			MarkdownDescription: "Set of blueprints that this Property Set might be associated with.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -89,7 +89,7 @@ func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetDat
 	o.Values = types.StringValue(string(in.Values))
 }
 
-func (o *PropertySet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.PropertySetData {
+func (o *PropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.PropertySetData {
 	return &apstra.PropertySetData{
 		Label:  o.Label.ValueString(),
 		Values: []byte(o.Values.ValueString()),
