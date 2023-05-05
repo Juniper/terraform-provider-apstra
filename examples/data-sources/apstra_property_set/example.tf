@@ -3,19 +3,20 @@
 # List all Apstra Property Set Ids
 data "apstra_property_sets" "all" {}
 
-# Loop over pool IDs, creating an instance of `apstra_property_set` for each.
-data "apstra_property_set" "each" {
-  for_each = toset(data.apstra_property_sets.all.ids)
-    id = each.value
+# Loop over Property Set IDs, creating an instance of `apstra_property_set` for each.
+data "apstra_property_set" "each_ps" {
+#  for_each = toset(data.apstra_property_sets.all.ids)
+  //for_each = ["foo", "bar"]
+ id       = "0a2f4768-7312-4512-b544-f17de1dc155a"
 }
 
 # Output the property set report
 output "apstra_property_set_report" {
-  value = {for k, v in data.apstra_property_set.each : k => {
-    name = v.name
-    data = jsondecode(v.data)
+  value = { for k, v in data.apstra_property_set.each_ps : k => {
+    name       = v.name
+    data       = jsondecode(v.data)
     blueprints = v.blueprints
-  }}
+  } }
 }
 
 ################################################################################
