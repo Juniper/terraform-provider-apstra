@@ -86,7 +86,7 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				Required:            true,
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: rInterfaceMapInterface{}.attributes(&resp.Diagnostics),
+					Attributes: rInterfaceMapInterface{}.attributes(),
 				},
 			},
 			"unused_interfaces": schema.SetNestedAttribute{
@@ -666,14 +666,8 @@ type rInterfaceMapInterface struct {
 	TransformationId      types.Int64  `tfsdk:"transformation_id"`
 }
 
-func (o rInterfaceMapInterface) attributes(diags *diag.Diagnostics) map[string]schema.Attribute {
-	ldpValidator, err := regexp.Compile("^[1-9][0-9]*" + ldInterfaceSep + "[1-9][0-9]*$")
-	if err != nil {
-		diags.AddError(
-			errProviderBug,
-			"error compiling regular expression for resource_interface_map logical_device_port string validation")
-		return nil
-	}
+func (o rInterfaceMapInterface) attributes() map[string]schema.Attribute {
+	ldpValidator := regexp.MustCompile("^[1-9][0-9]*" + ldInterfaceSep + "[1-9][0-9]*$")
 
 	return map[string]schema.Attribute{
 		"physical_interface_name": schema.StringAttribute{

@@ -1,9 +1,9 @@
 package blueprint
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -38,7 +38,7 @@ type DatacenterRoutingPolicy struct {
 }
 
 func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute {
-	nameRE, _ := regexp.Compile("^[A-Za-z0-9_-]+$")
+	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
