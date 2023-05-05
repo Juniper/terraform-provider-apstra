@@ -34,7 +34,7 @@ type DatacenterRoutingZone struct {
 }
 
 func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.Attribute {
-	nameRE, _ := regexp.Compile("^[A-Za-z0-9_-]+$")
+	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
