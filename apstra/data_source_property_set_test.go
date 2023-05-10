@@ -27,7 +27,7 @@ data "apstra_property_set" "test" {
 
 func TestAccDataSourcePropertySet(t *testing.T) {
 	ctx := context.Background()
-	ps, deleteFunc, err := testutils.PropertySetTestA(ctx)
+	ps, deleteFunc, err := testutils.PropertySetA(ctx)
 	if err != nil {
 		t.Error(err)
 		t.Fatal(deleteFunc(ctx))

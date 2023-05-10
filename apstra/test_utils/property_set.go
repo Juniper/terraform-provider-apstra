@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 )
 
-func PropertySetTestA(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
+func PropertySetA(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
 	client, err := GetTestClient()
 	EmptyDeleteFunc := func(_ context.Context) error { return nil }
 	if err != nil {
