@@ -6,10 +6,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 )
 
-func PropertySetTest(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
+func PropertySetTestA(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
 	client, err := GetTestClient()
+	EmptyDeleteFunc := func(_ context.Context) error { return nil }
 	if err != nil {
-		return nil, nil, err
+		return nil, EmptyDeleteFunc, err
 	}
 
 	name := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
@@ -20,11 +21,11 @@ func PropertySetTest(ctx context.Context) (*apstra.PropertySet, func(context.Con
 
 	id, err := client.CreatePropertySet(ctx, &request)
 	if err != nil {
-		return nil, nil, err
+		return nil, EmptyDeleteFunc, err
 	}
 	ps, err := client.GetPropertySet(ctx, id)
 	if err != nil {
-		return nil, nil, err
+		return nil, EmptyDeleteFunc, err
 	}
 
 	deleteFunc := func(ctx context.Context) error {
