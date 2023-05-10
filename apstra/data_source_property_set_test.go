@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	dataSourcePropertuSetTemplateByNameHCL = `
+	dataSourcePropertySetTemplateByNameHCL = `
 data "apstra_property_set" "test" {
   name = "%s"
 }
@@ -61,7 +61,7 @@ func TestAccDataSourcePropertySet(t *testing.T) {
 			},
 			// Read by Name
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourcePropertuSetTemplateByNameHCL, ps.Data.Label),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourcePropertySetTemplateByNameHCL, ps.Data.Label),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
 					resource.TestCheckResourceAttr("data.apstra_property_set.test", "id", ps.Id.String()),
