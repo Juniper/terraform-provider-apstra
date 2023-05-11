@@ -53,3 +53,93 @@ func TestItemInSlice(t *testing.T) {
 		}
 	}
 }
+
+func TestUniq(t *testing.T) {
+	type testCase struct {
+		t []any
+		e []any
+	}
+
+	testCases := []testCase{
+		{
+			t: []any{},
+			e: []any{},
+		},
+		{
+			t: []any{"foo", "bar", "baz"},
+			e: []any{"foo", "bar", "baz"},
+		},
+		{
+			t: []any{"foo", "bar", "baz", "baz"},
+			e: []any{"foo", "bar", "baz"},
+		},
+
+		{
+			t: []any{"foo", "bar", "foo", "baz"},
+			e: []any{"baz", "bar", "foo"},
+		},
+		{
+			t: []any{1, 2, 3},
+			e: []any{1, 2, 3},
+		},
+		{
+			t: []any{1, 1, 2, 3},
+			e: []any{3, 1, 2},
+		},
+	}
+
+	for i, tc := range testCases {
+		r := Uniq(tc.t)
+		if !SlicesMatch(r, tc.e) {
+			t.Fatalf("test case %d, expected %v, got %v", i, tc.e, r)
+		}
+	}
+}
+
+func TestElementsFromANotInB(t *testing.T) {
+	type testCase struct {
+		a []any // slice 'a' which may have extra members
+		b []any // slice 'b' is the baseline against which 'a' is compared
+		e []any // slice 'e' is the expected result
+	}
+
+	testCases := []testCase{
+		{
+			a: []any{1, 2, 3},
+			b: []any{1, 2, 3},
+			e: []any{},
+		},
+		{
+			a: []any{1, 2, 3},
+			b: []any{1, 2, 3, 4},
+			e: []any{},
+		},
+		{
+			a: []any{1, 2, 3, 2},
+			b: []any{1, 2, 3},
+			e: []any{},
+		},
+		{
+			a: []any{1, 2, 5, 2},
+			b: []any{1, 2, 3},
+			e: []any{5},
+		},
+		{
+			a: []any{"a", "b", "c"},
+			b: []any{"a", "b", "c"},
+			e: []any{},
+		},
+		{
+			a: []any{"a", "d", "c"},
+			b: []any{"a", "b", "c"},
+			e: []any{"d"},
+		},
+	}
+
+	for i, tc := range testCases {
+		r := UniqueElementsFromA(tc.a, tc.b)
+		if !SlicesMatch(tc.e, r) {
+			t.Fatalf("test case %d, expectd %v, got %v", i, tc.e, r)
+		}
+	}
+}

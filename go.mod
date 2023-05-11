@@ -1,6 +1,6 @@
 module terraform-provider-apstra
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Juniper/apstra-go-sdk v0.0.0-20230503163619-313f5d6e0957
@@ -15,7 +15,7 @@ require (
 )
 
 //                                                                                          HHMMSS
-replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230504202632-53de4c1a16fb
+replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230509204747-ac2db8d83d8b
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect

@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterVirtualNetwork struct {
@@ -153,3 +154,570 @@ func (o *DatacenterVirtualNetwork) LoadApiData(_ context.Context, in *apstra.Vir
 //		"blueprint_id": datasourceSchema.StringAttribute{},
 //	}
 //}
+
+func includeRedundancyPeers(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) ([]string, error) {
+	// figure out which switches are part of redundancy groups and which are not
+	groupIds, nonRedundantIds, err := identifyRedundantSystems(ctx, in, client)
+	if err != nil {
+		return nil, err
+	}
+
+	// Now use the group IDs to work backward to redundant system IDs.
+	// Note that redundant IDs may include systems not cited by the caller
+	// because expanding the group ID -> member IDs will catch *all* members,
+	// even those omitted by the caller. This is deliberate.
+	redundantIds, err := redundancyGroupToMembers(ctx, groupIds, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(redundantIds, nonRedundantIds...), nil
+}
+
+func redundancyPeersFromIds(in []string, redundancyInfo map[string]*redundancyGroup) []string {
+	peers := make(map[string]struct{})
+	nonRedundant := make(map[string]struct{})
+
+	for _, switchId := range in {
+		if rgInfo, ok := redundancyInfo[switchId]; ok {
+			for _, memberId := range rgInfo.memberIds {
+				peers[memberId] = struct{}{}
+			}
+		} else {
+			nonRedundant[switchId] = struct{}{}
+		}
+	}
+
+	result := make([]string, len(peers)+len(nonRedundant))
+	i := 0
+	for peerId := range peers {
+		result[i] = peerId
+		i++
+	}
+	for nonRedundantId := range nonRedundant { // continue looping with accumulated 'i' value
+		result[i] = nonRedundantId
+		i++
+	}
+
+	return result
+}
+
+func accessSwitchIdsToParentLeafIds(ctx context.Context, ids []string, client *apstra.TwoStageL3ClosClient) (map[string][]string, error) {
+	pathQuery := new(apstra.PathQuery).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "role", Value: apstra.QEStringVal("access")},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+			{Key: "id", Value: apstra.QEStringValIsIn(ids)},
+		}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("hosted_interfaces")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("interface")},
+		}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("link")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("link")},
+			{Key: "link_type", Value: apstra.QEStringVal("ethernet")},
+		}).
+		In([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("link")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("interface")},
+		}).
+		In([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("hosted_interfaces")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "role", Value: apstra.QEStringVal("leaf")},
+			{Key: "name", Value: apstra.QEStringVal("n_leaf")},
+		})
+
+	queryResponse := &struct {
+		Items []struct {
+			Access struct {
+				Id string `json:"id"`
+			} `json:"n_access"`
+			Leaf struct {
+				Id string `json:"id"`
+			} `json:"n_leaf"`
+		} `json:"items"`
+	}{}
+
+	err := new(apstra.MatchQuery).
+		Match(pathQuery).
+		Distinct(apstra.MatchQueryDistinct{"n_leaf"}).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Do(ctx, queryResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string][]string)
+	for _, item := range queryResponse.Items {
+		if element, ok := result[item.Access.Id]; ok {
+			element = append(element, item.Leaf.Id)
+		} else {
+			result[item.Access.Id] = []string{item.Leaf.Id}
+		}
+	}
+
+	// filter duplicates from result
+	for k, v := range result {
+		result[k] = utils.Uniq(v)
+	}
+
+	return result, nil
+}
+
+func switchIdsToBindings(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) ([]apstra.VnBinding, error) {
+	// create two maps of redundancy group info: One keyed by redundancy group
+	// id and one keyed by redundancy group member id.
+	rgIdToRgInfo, err := redunancyGroupIdToRedundancyGroupInfo(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	memberIdToRgInfo := make(map[string]*redundancyGroup)
+	for k, v := range rgIdToRgInfo {
+		for i := range v.memberIds {
+			memberIdToRgInfo[v.memberIds[i]] = rgIdToRgInfo[k]
+		}
+	}
+
+	// filter `in` into two slices: accessSwitchIds and leafSwitchIds. This is
+	// where we'll produce an error if the ID is bogus or belongs to a different
+	// type of graph db node.
+	sysIdToRole, err := getSystemRoles(ctx, in, client)
+	if err != nil {
+		return nil, err
+	}
+	var leafSwitchIds, accessSwitchIds []string
+	for k, v := range sysIdToRole {
+		switch v {
+		case apstra.SystemRoleAccess:
+			accessSwitchIds = append(accessSwitchIds, k)
+		case apstra.SystemRoleLeaf:
+			leafSwitchIds = append(leafSwitchIds, k)
+		default:
+			return nil, fmt.Errorf("unhandled system role %q for node id %q, only 'access' and 'leaf' are expected", v, k)
+		}
+	}
+
+	// Expand the list of access switches to include redundancy group peers in
+	// case any are missing from the caller-supplied list.
+	accessSwitchIds = redundancyPeersFromIds(accessSwitchIds, memberIdToRgInfo)
+
+	// Identify leaf switches upstream of access switches
+	//parentLeafIds, err := accessSwitchesUpstreamLeafs(ctx, accessSwitchIds, client)
+	//if err != nil {
+	//	return nil, err
+	//}
+	parentLeafMap, err := accessSwitchIdsToParentLeafIds(ctx, accessSwitchIds, client)
+	if err != nil {
+		return nil, err
+	}
+	var parentLeafIds []string
+	for _, v := range parentLeafMap {
+		parentLeafIds = append(parentLeafIds, v...)
+	}
+
+	tempMap := make(map[string]apstra.VnBinding)
+	for _, accessId := range accessSwitchIds {
+		var accessIds []string
+		if accessRG, ok := memberIdToRgInfo[accessId]; ok {
+			accessIds
+		}
+		parentIds := ac
+	}
+
+	//// Expand the list of parent leaf switches to include redundancy group peers
+	//// missed due to single-homed access switches
+	//parentLeafIds = redundancyPeersFromIds(parentLeafIds, memberIdToRgInfo)
+	//
+	//// Expand the list of leaf switches to include redundancy group peers in
+	//// case any are missing from the caller-supplied list.
+	//leafSwitchIds = redundancyPeersFromIds(append(leafSwitchIds, parentLeafIds...), memberIdToRgInfo)
+	//
+	////accessRedundancyGroups, nonRedundantAccess, err := redundancyGroupAndMembersFromSwitchIds(ctx, accessSwitchIds, client)
+	////if err != nil {
+	////	return err
+	////}
+	////
+	////leafRedundancyGroups, nonRedundantLeafs, err := redundancyGroupAndMembersFromSwitchIds(ctx, leafSwitchIds, client)
+	////if err != nil {
+	////	return err
+	////}
+	////
+	////_ = leafRedundancyGroups
+	////_ = nonRedundantLeafs
+	////_ = accessRedundancyGroups
+	////_ = nonRedundantAccess
+
+	return nil, nil
+}
+
+//type identifyRedundantSystemsRequest struct {
+//	systemIds []string
+//	client    *apstra.TwoStageL3ClosClient
+//}
+//
+//type identifyRedundantSystemsResponse struct {
+//	redundancyGroupIds []string
+//	nonRedundantIds    []string
+//}
+
+func redundancyGroupToMembers(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) ([]string, error) {
+	query := new(apstra.PathQuery).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("redundancy_group")},
+			{Key: "id", Value: apstra.QEStringValIsIn(in)},
+		}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("composed_of_systems")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+		})
+
+	queryResult := &struct {
+		Items []struct {
+			System struct {
+				Id string `json:"id"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}{}
+
+	err := query.Do(ctx, queryResult)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]string, len(queryResult.Items))
+	for i := range queryResult.Items {
+		result[i] = queryResult.Items[i].System.Id
+	}
+
+	return result, nil
+}
+
+// identifyRedundantSystems accepts a []string representing graph DB nodes of
+// type 'system' and returns a []string representing redundancy_group IDs
+// including those IDs and another []string including IDs which were not found
+// to be part of a redundancy_group.
+// func identifyRedundantSystems(ctx context.Context, req identifyRedundantSystemsRequest) (*identifyRedundantSystemsResponse, error) {
+func identifyRedundantSystems(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) ([]string, []string, error) {
+	query := new(apstra.PathQuery).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringValIsIn(in)},
+		}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("part_of_redundancy_group")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("redundancy_group")},
+			{Key: "name", Value: apstra.QEStringVal("n_redundancy_group")},
+		}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("composed_of_systems")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+		})
+
+	queryResult := &struct {
+		Items []struct {
+			RedundancyGroup struct {
+				Id string `json:"id"`
+			} `json:"n_redundancy_group"`
+			System struct {
+				Id string `json:"id"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}{}
+
+	err := query.Do(ctx, queryResult)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// store the discovered redundancy group and group member IDs as a map for easy lookup
+	redundancyGroupIds := make(map[string]struct{})
+	redundancyGroupMemberIds := make(map[string]struct{})
+	for i := range queryResult.Items {
+		redundancyGroupIds[queryResult.Items[i].RedundancyGroup.Id] = struct{}{}
+		redundancyGroupMemberIds[queryResult.Items[i].System.Id] = struct{}{}
+	}
+
+	// loop through the group ID map, populate the returned group ID slice
+	groupIdResult := make([]string, len(redundancyGroupIds))
+	i := 0
+	for id := range redundancyGroupIds {
+		groupIdResult[i] = id
+		i++
+	}
+
+	// loop through the supplied switch IDs, add IDs which are not group
+	// members to the returned non-redundant slice
+	var nonRedundantIdResult []string
+	for i := range in {
+		if _, ok := redundancyGroupMemberIds[in[i]]; !ok {
+			nonRedundantIdResult = append(nonRedundantIdResult, in[i])
+		}
+	}
+
+	return groupIdResult, nonRedundantIdResult, nil
+}
+
+// redundancyGroupAndMembersFromSwitchIds accepts a slice of switch IDs and
+// organizes them into a map keyed by redundancy group ID, with values being
+// all switch IDs participating in the redundancy group (even those not part
+// of the supplied slice).
+//
+// The returned []string includes IDs which are not found to represent switches
+// participating in a redundancy group.
+func redundancyGroupAndMembersFromSwitchIds(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) (map[string][]string, []string, error) {
+	result := make(map[string][]string)
+	var nonRedundantIds []string
+	for i := range in {
+		query, queryResponse := redundancyGroupQueryAndResponse(in[i])
+		err := query.SetClient(client.Client()).
+			SetBlueprintType(apstra.BlueprintTypeStaging).
+			SetBlueprintId(client.Id()).
+			Do(ctx, queryResponse)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		var groupMembers []string
+		for _, item := range queryResponse.Items {
+			groupMembers = append(groupMembers, item.System.Id)
+		}
+
+		if len(queryResponse.Items) == 0 {
+			nonRedundantIds = append(nonRedundantIds, in[i])
+		} else {
+			result[queryResponse.Items[0].RedundancyGroup.Id] = groupMembers
+		}
+	}
+	return result, nonRedundantIds, nil
+}
+
+func getSystemRoles(ctx context.Context, systemIds []string, client *apstra.TwoStageL3ClosClient) (map[string]apstra.SystemRole, error) {
+	nodesResponse := new(struct {
+		Nodes map[string]struct {
+			Role string `json:"role"`
+		} `json:"nodes"`
+	})
+	err := client.GetNodes(ctx, apstra.NodeTypeSystem, nodesResponse)
+	if err != nil {
+		return nil, fmt.Errorf("error querying for system nodes - %w", err)
+	}
+
+	result := make(map[string]apstra.SystemRole, len(systemIds))
+	for i, systemId := range systemIds {
+		if node, ok := nodesResponse.Nodes[systemId]; ok {
+			role := new(apstra.SystemRole)
+			err = role.FromString(node.Role)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing %q as system role - %w", systemId, err)
+			}
+			result[systemIds[i]] = *role
+		} else {
+			return nil, fmt.Errorf("system node with ID %q not found in blueprint %q", systemIds, client.Id())
+		}
+	}
+	return result, nil
+}
+
+func redundancyGroupQueryAndResponse(switchId string) (*apstra.PathQuery, *struct {
+	Items []struct {
+		RedundancyGroup struct {
+			Id string `json:"id"`
+		} `json:"n_redundancy_group"`
+		System struct {
+			Id string `json:"id"`
+		} `json:"n_system"`
+	} `json:"items"`
+}) {
+	query := new(apstra.PathQuery).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringVal(switchId)},
+			{Key: "system_type", Value: apstra.QEStringVal("switch")},
+			{Key: "role", Value: apstra.QEStringValIsIn{"access", "leaf"}},
+		}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("part_of_redundancy_group")}}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("redundancy_group")},
+			{Key: "name", Value: apstra.QEStringVal("n_redundancy_group")},
+		}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("composed_of_systems")}}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "system_type", Value: apstra.QEStringVal("switch")},
+			{Key: "role", Value: apstra.QEStringValIsIn{"access", "leaf"}},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+		})
+
+	queryResponse := &struct {
+		Items []struct {
+			RedundancyGroup struct {
+				Id string `json:"id"`
+			} `json:"n_redundancy_group"`
+			System struct {
+				Id string `json:"id"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}{}
+
+	return query, queryResponse
+}
+
+//func accessSwitchesUpstreamLeafs(ctx context.Context, ids []string, client *apstra.TwoStageL3ClosClient) ([]string, error) {
+//	pathQuery := new(apstra.PathQuery).
+//		SetClient(client.Client()).
+//		SetBlueprintId(client.Id()).
+//		SetBlueprintType(apstra.BlueprintTypeStaging).
+//		Node([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("system")},
+//			{Key: "role", Value: apstra.QEStringVal("access")},
+//			{Key: "id", Value: apstra.QEStringValIsIn(ids)},
+//		}).
+//		Out([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("hosted_interfaces")},
+//		}).
+//		Node([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("interface")},
+//		}).
+//		Out([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("link")},
+//		}).
+//		Node([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("link")},
+//			{Key: "link_type", Value: apstra.QEStringVal("ethernet")},
+//		}).
+//		In([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("hosted_interfaces")},
+//		}).
+//		Node([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("interface")},
+//		}).
+//		In([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("hosted_interfaces")},
+//		}).
+//		Node([]apstra.QEEAttribute{
+//			{Key: "type", Value: apstra.QEStringVal("system")},
+//			{Key: "role", Value: apstra.QEStringVal("leaf")},
+//			{Key: "name", Value: apstra.QEStringVal("n_leaf")},
+//		})
+//
+//	queryResponse := &struct {
+//		Items []struct {
+//			Leaf struct {
+//				Id string `json:"id"`
+//			} `json:"n_leaf"`
+//		} `json:"items"`
+//	}{}
+//
+//	err := new(apstra.MatchQuery).
+//		Match(pathQuery).
+//		Distinct(apstra.MatchQueryDistinct{"n_leaf"}).
+//		SetClient(client.Client()).
+//		SetBlueprintId(client.Id()).
+//		SetBlueprintType(apstra.BlueprintTypeStaging).
+//		Do(ctx, queryResponse)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	result := make([]string, len(queryResponse.Items))
+//	for i := range queryResponse.Items {
+//		result[i] = queryResponse.Items[i].Leaf.Id
+//	}
+//
+//	return result, nil
+//}
+
+type redundancyGroup struct {
+	role      string   // access / generic
+	id        string   // redundancy_group graph db node id
+	memberIds []string // id of leaf/access nodes in the group
+}
+
+func redunancyGroupIdToRedundancyGroupInfo(ctx context.Context, client *apstra.TwoStageL3ClosClient) (map[string]*redundancyGroup, error) {
+	pathQuery := new(apstra.PathQuery).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("redundancy_group")},
+			{Key: "name", Value: apstra.QEStringVal("n_redundancy_group")},
+		}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("composed_of_systems")},
+		}).
+		Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "system_type", Value: apstra.QEStringVal("switch")},
+			{Key: "role", Value: apstra.QEStringValIsIn{"access", "leaf"}},
+		})
+
+	queryResponse := &struct {
+		Items []struct {
+			RedundancyGroup struct {
+				Id string `json:"id"`
+			} `json:"n_redundancy_group"`
+			System struct {
+				Id   string `json:"id"`
+				Role string `json:"role"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}{}
+
+	err := new(apstra.MatchQuery).
+		Match(pathQuery).
+		Distinct(apstra.MatchQueryDistinct{"n_leaf"}).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Do(ctx, queryResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]*redundancyGroup)
+	for _, item := range queryResponse.Items {
+		id := item.RedundancyGroup.Id
+		if rg, ok := result[id]; ok {
+			rg.memberIds = append(rg.memberIds, item.System.Id)
+			result[id] = rg
+		} else {
+			result[id] = &redundancyGroup{
+				role:      item.System.Role,
+				id:        item.RedundancyGroup.Id,
+				memberIds: []string{item.System.Id},
+			}
+		}
+	}
+
+	return result, nil
+}
