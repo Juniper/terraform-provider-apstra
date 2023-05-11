@@ -11,12 +11,12 @@ import (
 )
 
 func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error, error) {
-	EmptyDeleteFunc := func(_ context.Context) error { return nil }
+	deleteFunc := func(_ context.Context) error { return nil }
 
 	client, err := GetTestClient()
 
 	if err != nil {
-		return nil, EmptyDeleteFunc, err
+		return nil, deleteFunc, err
 	}
 
 	name := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
@@ -28,7 +28,10 @@ func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	}
 	id, err := client.CreateIp4Pool(ctx, &request)
 	if err != nil {
-		return nil, EmptyDeleteFunc, err
+		return nil, deleteFunc, err
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return client.DeleteIp4Pool(ctx, id)
 	}
 
 	var z *big.Int
@@ -37,7 +40,7 @@ func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	bigZero := new(big.Int)
 	z, ok = bigZero.SetString("0", 10)
 	if z == nil || !ok {
-		return nil, EmptyDeleteFunc, errors.New("error setting 'bigZero' value")
+		return nil, deleteFunc, errors.New("error setting 'bigZero' value")
 	}
 
 	subnets := make([]apstra.IpSubnet, len(request.Subnets))
@@ -45,7 +48,7 @@ func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	for i := range request.Subnets {
 		_, net, err := net.ParseCIDR(request.Subnets[i].Network)
 		if err != nil {
-			return nil, EmptyDeleteFunc, err
+			return nil, deleteFunc, err
 		}
 		subnets[i] = apstra.IpSubnet{
 			Network:        net,
@@ -68,22 +71,14 @@ func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 		Subnets:        subnets,
 	}
 
-	deleteFunc := func(ctx context.Context) error {
-		err := client.DeleteIp4Pool(ctx, id)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
-
 	return &pool, deleteFunc, nil
 }
 
 func Ipv4PoolB(ctx context.Context) (*apstra.IpPool, func(context.Context) error, error) {
-	EmptyDeleteFunc := func(_ context.Context) error { return nil }
+	deleteFunc := func(_ context.Context) error { return nil }
 	client, err := GetTestClient()
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
 
 	name := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
@@ -97,7 +92,10 @@ func Ipv4PoolB(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	}
 	id, err := client.CreateIp4Pool(ctx, &request)
 	if err != nil {
-		return nil, EmptyDeleteFunc, err
+		return nil, deleteFunc, err
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return client.DeleteIp4Pool(ctx, id)
 	}
 
 	var z *big.Int
@@ -106,7 +104,7 @@ func Ipv4PoolB(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	bigZero := new(big.Int)
 	z, ok = bigZero.SetString("0", 10)
 	if z == nil || !ok {
-		return nil, EmptyDeleteFunc, errors.New("error setting 'bigZero' value")
+		return nil, deleteFunc, errors.New("error setting 'bigZero' value")
 	}
 
 	subnets := make([]apstra.IpSubnet, len(request.Subnets))
@@ -114,7 +112,7 @@ func Ipv4PoolB(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	for i := range request.Subnets {
 		_, net, err := net.ParseCIDR(request.Subnets[i].Network)
 		if err != nil {
-			return nil, EmptyDeleteFunc, err
+			return nil, deleteFunc, err
 		}
 		subnets[i] = apstra.IpSubnet{
 			Network:        net,
@@ -135,14 +133,6 @@ func Ipv4PoolB(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 		Total:          *total,
 		UsedPercentage: 0,
 		Subnets:        subnets,
-	}
-
-	deleteFunc := func(ctx context.Context) error {
-		err := client.DeleteIp4Pool(ctx, id)
-		if err != nil {
-			return err
-		}
-		return nil
 	}
 
 	return &pool, deleteFunc, nil

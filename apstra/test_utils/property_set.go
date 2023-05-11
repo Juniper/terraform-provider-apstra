@@ -8,9 +8,9 @@ import (
 
 func PropertySetA(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
 	client, err := GetTestClient()
-	EmptyDeleteFunc := func(_ context.Context) error { return nil }
+	deleteFunc := func(_ context.Context) error { return nil }
 	if err != nil {
-		return nil, EmptyDeleteFunc, err
+		return nil, deleteFunc, err
 	}
 
 	name := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
@@ -21,19 +21,16 @@ func PropertySetA(ctx context.Context) (*apstra.PropertySet, func(context.Contex
 
 	id, err := client.CreatePropertySet(ctx, &request)
 	if err != nil {
-		return nil, EmptyDeleteFunc, err
+		return nil, deleteFunc, err
 	}
-	ps, err := client.GetPropertySet(ctx, id)
-	if err != nil {
-		return nil, EmptyDeleteFunc, err
+	deleteFunc = func(ctx context.Context) error {
+		return client.DeletePropertySet(ctx, id)
 	}
 
-	deleteFunc := func(ctx context.Context) error {
-		err := client.DeletePropertySet(ctx, id)
-		if err != nil {
-			return err
-		}
-		return nil
+	ps, err := client.GetPropertySet(ctx, id)
+	if err != nil {
+		return nil, deleteFunc, err
 	}
+
 	return ps, deleteFunc, nil
 }
