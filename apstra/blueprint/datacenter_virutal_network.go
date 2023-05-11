@@ -280,7 +280,7 @@ func accessSwitchIdsToParentLeafIds(ctx context.Context, ids []string, client *a
 	return result, nil
 }
 
-func switchIdsToBindings(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) ([]apstra.VnBinding, error) {
+func switchIdsToBindings(ctx context.Context, in []string, vlan *apstra.Vlan, client *apstra.TwoStageL3ClosClient) ([]apstra.VnBinding, error) {
 	// create two maps of redundancy group info: One keyed by redundancy group
 	// id and one keyed by redundancy group member id.
 	rgIdToRgInfo, err := redunancyGroupIdToRedundancyGroupInfo(ctx, client)
@@ -318,63 +318,106 @@ func switchIdsToBindings(ctx context.Context, in []string, client *apstra.TwoSta
 	accessSwitchIds = redundancyPeersFromIds(accessSwitchIds, memberIdToRgInfo)
 
 	// Identify leaf switches upstream of access switches
-	//parentLeafIds, err := accessSwitchesUpstreamLeafs(ctx, accessSwitchIds, client)
-	//if err != nil {
-	//	return nil, err
-	//}
 	parentLeafMap, err := accessSwitchIdsToParentLeafIds(ctx, accessSwitchIds, client)
 	if err != nil {
 		return nil, err
 	}
-	var parentLeafIds []string
-	for _, v := range parentLeafMap {
-		parentLeafIds = append(parentLeafIds, v...)
-	}
 
-	tempMap := make(map[string]apstra.VnBinding)
-	for _, accessId := range accessSwitchIds {
-		var accessIds []string
-		if accessRG, ok := memberIdToRgInfo[accessId]; ok {
-			accessIds
+	// leafToVnBinding is a map keyed by either leaf node ID (non-redundant
+	// leafs) or leaf redundancy group ID
+	leafToVnBinding := make(map[apstra.ObjectId]apstra.VnBinding)
+
+	// loop over access switches, create or update leafToVnBinding entry for each
+	for _, accessSwitchId := range accessSwitchIds {
+		var redundantAccess bool
+		var redundantAccessID string
+		if rg, ok := memberIdToRgInfo[accessSwitchId]; ok {
+			if rg.role != "access" {
+				return nil, fmt.Errorf("access switch %q is a member of %q redundancy group %q", accessSwitchId, rg.role, rg.id)
+			}
+			redundantAccess = true
+			redundantAccessID = rg.id
 		}
-		parentIds := ac
+
+		// find all parent switches of this access switch
+		var parentLeafIDs []string
+		if s, ok := parentLeafMap[accessSwitchId]; ok {
+			parentLeafIDs = s
+		}
+		if len(parentLeafIDs) == 0 {
+			return nil, fmt.Errorf("access switch %q doesn't have any parent leafs", accessSwitchId)
+		}
+
+		// swap each parent leaf ID for its redundancy group ID (if any), and
+		// then reduce the list to a single ID representing all parents. That
+		// single ID will be either a leaf ID (standalone leaf) or a redundancy
+		// group ID (ESI leaf)
+		for i, plID := range parentLeafIDs {
+			if rg, ok := memberIdToRgInfo[plID]; ok {
+				parentLeafIDs[i] = rg.id
+			}
+		}
+		parentLeafIDs = utils.Uniq(parentLeafIDs)
+		if len(parentLeafIDs) != 1 {
+			return nil, fmt.Errorf("failed to reduce access switch %q parents to a single ID, got '%v'", accessSwitchId, parentLeafIDs)
+		}
+
+		// our desired IDs for the bindings are now scattered around. Pick 'em
+		// out and turn them into apstra.ObjectId for use in the VnBinding{}
+		var leafBindingId, accessBindingId apstra.ObjectId
+		leafBindingId = apstra.ObjectId(parentLeafIDs[0])
+		if redundantAccess {
+			accessBindingId = apstra.ObjectId(redundantAccessID)
+		} else {
+			accessBindingId = apstra.ObjectId(accessSwitchId)
+		}
+
+		// We may have already created a binding for this leaf...
+		if vnb, ok := leafToVnBinding[leafBindingId]; ok {
+			// binding exists, add our access ID to the list
+			vnb.AccessSwitchNodeIds = utils.Uniq(append(vnb.AccessSwitchNodeIds, accessBindingId))
+			leafToVnBinding[leafBindingId] = vnb
+		} else {
+			// binding not found, create a new one
+			leafToVnBinding[leafBindingId] = apstra.VnBinding{
+				AccessSwitchNodeIds: []apstra.ObjectId{accessBindingId},
+				SystemId:            leafBindingId,
+				VlanId:              vlan,
+			}
+		}
 	}
 
-	//// Expand the list of parent leaf switches to include redundancy group peers
-	//// missed due to single-homed access switches
-	//parentLeafIds = redundancyPeersFromIds(parentLeafIds, memberIdToRgInfo)
-	//
-	//// Expand the list of leaf switches to include redundancy group peers in
-	//// case any are missing from the caller-supplied list.
-	//leafSwitchIds = redundancyPeersFromIds(append(leafSwitchIds, parentLeafIds...), memberIdToRgInfo)
-	//
-	////accessRedundancyGroups, nonRedundantAccess, err := redundancyGroupAndMembersFromSwitchIds(ctx, accessSwitchIds, client)
-	////if err != nil {
-	////	return err
-	////}
-	////
-	////leafRedundancyGroups, nonRedundantLeafs, err := redundancyGroupAndMembersFromSwitchIds(ctx, leafSwitchIds, client)
-	////if err != nil {
-	////	return err
-	////}
-	////
-	////_ = leafRedundancyGroups
-	////_ = nonRedundantLeafs
-	////_ = accessRedundancyGroups
-	////_ = nonRedundantAccess
+	// loop over leaf switches, create a leafToVnBinding entry as required
+	for _, leafSwitchId := range leafSwitchIds {
+		var leafBindingId apstra.ObjectId
+		if rg, ok := memberIdToRgInfo[leafSwitchId]; ok {
+			if rg.role != "leaf" {
+				return nil, fmt.Errorf("leaf switch %q is a member of %q redundancy group %q", leafSwitchId, rg.role, rg.id)
+			}
+			leafBindingId = apstra.ObjectId(rg.id)
+		} else {
+			leafBindingId = apstra.ObjectId(leafSwitchId)
+		}
 
-	return nil, nil
+		// We may have already created a binding for this leaf...
+		if _, ok := leafToVnBinding[leafBindingId]; !ok {
+			// binding not found. create one.
+			leafToVnBinding[leafBindingId] = apstra.VnBinding{
+				SystemId: leafBindingId,
+				VlanId:   vlan,
+			}
+		}
+	}
+
+	result := make([]apstra.VnBinding, len(leafToVnBinding))
+	i := 0
+	for _, v := range leafToVnBinding {
+		result[i] = v
+		i++
+	}
+
+	return result, nil
 }
-
-//type identifyRedundantSystemsRequest struct {
-//	systemIds []string
-//	client    *apstra.TwoStageL3ClosClient
-//}
-//
-//type identifyRedundantSystemsResponse struct {
-//	redundancyGroupIds []string
-//	nonRedundantIds    []string
-//}
 
 func redundancyGroupToMembers(ctx context.Context, in []string, client *apstra.TwoStageL3ClosClient) ([]string, error) {
 	query := new(apstra.PathQuery).
