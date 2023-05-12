@@ -3,11 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"net"
 )
 
@@ -16,17 +12,6 @@ var _ validator.String = ParseIpValidator{}
 type ParseIpValidator struct {
 	requireIpv4 bool
 	requireIpv6 bool
-}
-
-type ParseIpValidatorRequest struct {
-	Config         tfsdk.Config
-	ConfigValue    attr.Value
-	Path           path.Path
-	PathExpression path.Expression
-}
-
-type ParseIpValidatorResponse struct {
-	Diagnostics diag.Diagnostics
 }
 
 func (o ParseIpValidator) Description(_ context.Context) string {
