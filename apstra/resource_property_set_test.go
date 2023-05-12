@@ -15,47 +15,30 @@ const (
 // resource config
 resource "apstra_property_set" "test" {
   name = "%s"
-  data = %s
+  data = jsonencode(%s)
 }
 `
-	data1_tf_snippet = `jsonencode({
-		value_str  = "str"
-		value_int  = 42
-		value_json = {
-			inner_value_str = "innerstr"
-			inner_value_int = 4242
-		}
-	})
-`
-	data2_tf_snippet = `jsonencode({
-				value_str  = "str"
-				value_int  = 42
-				})`
 
-	data2_string = `
-				{ 
+	data2_string = `{ 
 					"value_str":"str",
 					"value_int":42
-				}
-	`
-	data1_string = `
-				{ 
+				}`
+	data1_string = `{ 
 					"value_str":"str",
 					"value_int":42,
 					"value_json" :{
 						"inner_value_str":"innerstr",
 						"inner_value_int":4242
 					}	
-				}
-	`
+				}`
 )
 
 func TestAccResourcePropertySet(t *testing.T) {
 	var (
 		testAccResourcePropertySet1Name = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-		testAccResourcePropertySetCfg1  = fmt.Sprintf(resourcePropertySetTemplateHCL, testAccResourcePropertySet1Name, data1_tf_snippet)
+		testAccResourcePropertySetCfg1  = fmt.Sprintf(resourcePropertySetTemplateHCL, testAccResourcePropertySet1Name, data1_string)
 		testAccResourcePropertySet2Name = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-		testAccResourcePropertySetCfg2  = fmt.Sprintf(resourcePropertySetTemplateHCL, testAccResourcePropertySet2Name, data2_tf_snippet)
+		testAccResourcePropertySetCfg2  = fmt.Sprintf(resourcePropertySetTemplateHCL, testAccResourcePropertySet2Name, data2_string)
 	)
 
 	d := diag.Diagnostics{}
