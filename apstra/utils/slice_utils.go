@@ -1,5 +1,7 @@
 package utils
 
+import "fmt"
+
 func ItemInSlice[A comparable](item A, slice []A) bool {
 	for i := range slice {
 		if item == slice[i] {
@@ -38,6 +40,23 @@ func UniqueElementsFromA[E comparable](a, b []E) []E {
 		if _, ok := bMap[a[i]]; !ok {
 			result = append(result, a[i])
 		}
+	}
+	return result
+}
+
+func SliceContains[A comparable](a A, s []A) bool {
+	for i := range s {
+		if s[i] == a {
+			return true
+		}
+	}
+	return false
+}
+
+func StringersToStrings[A fmt.Stringer](in []A) []string {
+	result := make([]string, len(in))
+	for i := range in {
+		result[i] = in[i].String()
 	}
 	return result
 }
