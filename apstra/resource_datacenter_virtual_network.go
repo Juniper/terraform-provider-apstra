@@ -56,16 +56,16 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
-	// create a request object
-	request := plan.Request(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		return
+	}
+
+	// create a request object
+	request := plan.Request(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -116,7 +116,10 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 	}
 
 	// load the API response and set the state
-	state.LoadApiData(ctx, vn.Data, &resp.Diagnostics)
+	// note that it is important that LoadApiData be run only against a
+	// pre-existing "state" object because the method needs access to the prior
+	// configuration.
+	state.LoadApiData(ctx, vn.Data, bp, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
@@ -142,16 +145,16 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		return
 	}
 
-	// create a request object
-	request := plan.Request(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		return
+	}
+
+	// create a request object
+	request := plan.Request(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
