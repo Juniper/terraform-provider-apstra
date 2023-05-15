@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/defaults"
 )
 
@@ -59,7 +60,7 @@ func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSch
 			Required:            true,
 			MarkdownDescription: "Port speed.",
 			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(2),
+				apstravalidator.ParseSpeed(),
 			},
 		},
 		"port_roles": resourceSchema.SetAttribute{

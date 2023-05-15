@@ -1,8 +1,8 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -10,6 +10,7 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -79,6 +80,7 @@ func (o Spine) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"super_spine_link_speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of links to super Spine switches.",
 			Optional:            true,
+			Validators:          []validator.String{apstravalidator.ParseSpeed()},
 		},
 		"super_spine_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Count of links to each super Spine switch.",
