@@ -1,8 +1,8 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -75,7 +75,7 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"peer_link_speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of links between MLAG devices.",
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators:          []validator.String{apstravalidator.ParseSpeed()},
 		},
 		"peer_link_port_channel_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel number used for L2 Peer Link.",
@@ -100,7 +100,7 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Speed of l3 links between MLAG devices.",
 			Optional:            true,
 			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
+				apstravalidator.ParseSpeed(),
 				stringvalidator.AlsoRequires(
 					path.MatchRelative().AtParent().AtName("l3_peer_link_count"),
 					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id"),

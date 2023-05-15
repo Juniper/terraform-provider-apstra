@@ -136,7 +136,7 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Speed of Spine-facing links, something like '10G'",
 			Optional:            true,
 			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
+				apstravalidator.ParseSpeed(),
 				apstravalidator.StringFabricConnectivityDesignMustBe(apstra.FabricConnectivityDesignL3Clos),
 				apstravalidator.StringFabricConnectivityDesignMustBeWhenNull(apstra.FabricConnectivityDesignL3Collapsed),
 			},
