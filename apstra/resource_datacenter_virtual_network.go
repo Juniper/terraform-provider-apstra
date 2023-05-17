@@ -64,7 +64,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	}
 
 	// create a request object
-	request := plan.Request(ctx, bp, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -73,10 +73,24 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	id, err := bp.CreateVirtualNetwork(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating virtual network", err.Error())
+		return
 	}
 
-	// update the plan with the received ObjectId and set the state
+	// update the plan with the received ObjectId and set the partial state
 	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+
+	// fetch the virtual network to learn apstra-assigned VLAN assignments
+	api, err := bp.GetVirtualNetwork(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error fetching just-created virtual network %q", id),
+			err.Error())
+		return
+	}
+
+	// update the plan with the received VN data (need VLAN assignment) and set the state
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
@@ -116,10 +130,7 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 	}
 
 	// load the API response and set the state
-	// note that it is important that LoadApiData be run only against a
-	// pre-existing "state" object because the method needs access to the prior
-	// configuration.
-	state.LoadApiData(ctx, vn.Data, bp, &resp.Diagnostics)
+	state.LoadApiData(ctx, vn.Data, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
@@ -153,7 +164,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 
 	// create a request object
-	request := plan.Request(ctx, bp, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -164,6 +175,17 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		resp.Diagnostics.AddError("error updating virtual network", err.Error())
 	}
 
+	// fetch the virtual network to learn apstra-assigned VLAN assignments
+	api, err := bp.GetVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error fetching just-updated virtual network %q", plan.Id.ValueString()),
+			err.Error())
+		return
+	}
+
+	// update the plan with the received VN data (need VLAN assignment) and set the state
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 

@@ -73,7 +73,7 @@ func (df DifferentFromValidator) Validate(ctx context.Context, req DifferentFrom
 			}
 
 			var mpVal attr.Value
-			diags := req.Config.GetAttribute(ctx, mp, &mpVal)
+			diags = req.Config.GetAttribute(ctx, mp, &mpVal)
 			resp.Diagnostics.Append(diags...)
 
 			// Collect all errors

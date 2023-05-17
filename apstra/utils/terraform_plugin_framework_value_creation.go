@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -89,6 +90,8 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 	}
 
 	switch in.(type) {
+	case *apstra.Vlan:
+		return types.Int64Value(int64(*in.(*apstra.Vlan)))
 	case *int:
 		return types.Int64Value(int64(*in.(*int)))
 	case *int8:
@@ -109,6 +112,8 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 		return types.Int64Value(int64(*in.(*uint32)))
 	case *uint64:
 		return types.Int64Value(int64(*in.(*uint64)))
+	case apstra.Vlan:
+		return types.Int64Value(int64(in.(apstra.Vlan)))
 	case int:
 		return types.Int64Value(int64(in.(int)))
 	case int8:

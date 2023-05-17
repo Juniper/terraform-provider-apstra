@@ -179,6 +179,11 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}

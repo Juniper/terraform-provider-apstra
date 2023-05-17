@@ -16,7 +16,7 @@ var (
 
 type RequiredWhenValueIsValidator struct {
 	expression path.Expression
-	value      string
+	value      attr.Value
 }
 
 type RequiredWhenValueIsRequest struct {
@@ -77,7 +77,7 @@ func (o RequiredWhenValueIsValidator) Validate(ctx context.Context, req Required
 				return
 			}
 
-			if mpVal.String() == o.value {
+			if mpVal.Equal(o.value) {
 				resp.Diagnostics.AddAttributeError(
 					req.Path,
 					"Missing required attribute",
@@ -223,56 +223,56 @@ func (o RequiredWhenValueIsValidator) ValidateString(ctx context.Context, req va
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func BoolRequiredWhenValueIs(expression path.Expression, value string) validator.Bool {
+func BoolRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Bool {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func Float64RequiredWhenValueIs(expression path.Expression, value string) validator.Float64 {
+func Float64RequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Float64 {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func Int64RequiredWhenValueIs(expression path.Expression, value string) validator.Int64 {
+func Int64RequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Int64 {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func MapRequiredWhenValueIs(expression path.Expression, value string) validator.Map {
+func MapRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Map {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func NumberRequiredWhenValueIs(expression path.Expression, value string) validator.Number {
+func NumberRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Number {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func ObjectRequiredWhenValueIs(expression path.Expression, value string) validator.Object {
+func ObjectRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Object {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func SetRequiredWhenValueIs(expression path.Expression, value string) validator.Set {
+func SetRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Set {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
 	}
 }
 
-func StringRequiredWhenValueIs(expression path.Expression, value string) validator.String {
+func StringRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.String {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,
