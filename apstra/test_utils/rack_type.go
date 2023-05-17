@@ -363,3 +363,54 @@ func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) err
 	result, err := client.GetRackType(ctx, id)
 	return result, deleteFunc, err
 }
+
+// RackTypeF has:
+// - 1 leaf switch with 10G uplink
+// - 1 access switch
+func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
+	deleteFunc := func(ctx context.Context) error { return nil }
+	client, err := GetTestClient()
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+
+	leafLabel := "leaf"
+
+	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
+		DisplayName:              "F-" + acctest.RandString(10),
+		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
+			{
+				Label:             leafLabel,
+				LinkPerSpineCount: 1,
+				LinkPerSpineSpeed: "10G",
+				LogicalDeviceId:   "AOS-9x10-Leaf",
+			},
+		},
+		AccessSwitches: []apstra.RackElementAccessSwitchRequest{
+			{
+				Label:           "access",
+				InstanceCount:   1,
+				LogicalDeviceId: "AOS-9x10-Leaf",
+				Links: []apstra.RackLinkRequest{
+					{
+						Label:              acctest.RandString(10),
+						TargetSwitchLabel:  leafLabel,
+						LinkPerSwitchCount: 1,
+						LinkSpeed:          "10G",
+						LagMode:            apstra.RackLinkLagModeActive,
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return client.DeleteRackType(ctx, id)
+	}
+
+	result, err := client.GetRackType(ctx, id)
+	return result, deleteFunc, err
+}

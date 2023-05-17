@@ -263,3 +263,60 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 	template, err := client.GetRackBasedTemplate(ctx, id)
 	return template, deleteFunc, err
 }
+
+func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
+	deleteFunc := func(ctx context.Context) error { return nil }
+	client, err := GetTestClient()
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+
+	rackTypeF, rackTypeFDelete, err := RackTypeF(ctx)
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return rackTypeFDelete(ctx)
+	}
+
+	rfid := rackTypeF.Id
+
+	templateRequest := &apstra.CreateRackBasedTemplateRequest{
+		DisplayName: acctest.RandString(10),
+		Capability:  apstra.TemplateCapabilityBlueprint,
+		Spine: &apstra.TemplateElementSpineRequest{
+			Count:         1,
+			LogicalDevice: "AOS-8x10-1",
+		},
+		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
+			rfid: {Count: 1},
+		},
+		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+			SpineSuperspineLinks: apstra.AddressingSchemeIp46,
+			SpineLeafLinks:       apstra.AddressingSchemeIp46,
+		},
+		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
+			Algorithm:                apstra.AlgorithmHeuristic,
+			MaxLinksPerPort:          1,
+			MaxLinksPerSlot:          1,
+			MaxPerSystemLinksPerPort: 1,
+			MaxPerSystemLinksPerSlot: 1,
+			Mode:                     apstra.AntiAffinityModeDisabled,
+		},
+		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
+		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
+	}
+	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return errors.Join(
+			rackTypeFDelete(ctx),
+			client.DeleteTemplate(ctx, id),
+		)
+	}
+
+	template, err := client.GetRackBasedTemplate(ctx, id)
+	return template, deleteFunc, err
+}
