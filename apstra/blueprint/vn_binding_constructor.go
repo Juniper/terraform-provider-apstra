@@ -20,7 +20,7 @@ type VnBindingConstructor struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	VlanId      types.Int64  `tfsdk:"vlan_id"`
 	SwitchIds   types.Set    `tfsdk:"switch_ids"`
-	Bindings    types.Set    `tfsdk:"bindings"`
+	Bindings    types.Map    `tfsdk:"bindings"`
 }
 
 func (o VnBindingConstructor) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -46,9 +46,9 @@ func (o VnBindingConstructor) DataSourceAttributes() map[string]dataSourceSchema
 			ElementType: types.StringType,
 			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
-		"bindings": dataSourceSchema.SetNestedAttribute{
-			MarkdownDescription: "A set of bindings appropriate for use " +
-				"in a `apstra_datacenter_virtual_network` resource",
+		"bindings": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "A map of bindings appropriate for use " +
+				"in a `apstra_datacenter_virtual_network` resource.",
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: VnBinding{}.DataSourceAttributesConstructorOutput(),
@@ -138,7 +138,7 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Clien
 
 	// leafToVnBinding is a map keyed by either leaf node ID (non-redundant
 	// leafs) or leaf redundancy group ID
-	leafToVnBinding := make(map[apstra.ObjectId]apstra.VnBinding)
+	leafToVnBinding := make(map[string]apstra.VnBinding)
 
 	// loop over access switches, create or update leafToVnBinding entry for each
 	for _, accessSwitchId := range accessSwitchIds {
@@ -188,24 +188,24 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Clien
 
 		// our desired IDs for the bindings are now scattered around. Pick 'em
 		// out and turn them into apstra.ObjectId for use in the VnBinding{}
-		var leafBindingId, accessBindingId apstra.ObjectId
-		leafBindingId = apstra.ObjectId(parentLeafIDs[0])
+		var leafBindingId, accessBindingId string
+		leafBindingId = parentLeafIDs[0]
 		if redundantAccess {
-			accessBindingId = apstra.ObjectId(redundantAccessID)
+			accessBindingId = redundantAccessID
 		} else {
-			accessBindingId = apstra.ObjectId(accessSwitchId)
+			accessBindingId = accessSwitchId
 		}
 
 		// We may have already created a binding for this leaf...
 		if vnb, ok := leafToVnBinding[leafBindingId]; ok {
 			// binding exists, add our access ID to the list
-			vnb.AccessSwitchNodeIds = utils.Uniq(append(vnb.AccessSwitchNodeIds, accessBindingId))
+			vnb.AccessSwitchNodeIds = utils.Uniq(append(vnb.AccessSwitchNodeIds, apstra.ObjectId(accessBindingId)))
 			leafToVnBinding[leafBindingId] = vnb
 		} else {
 			// binding not found, create a new one
 			leafToVnBinding[leafBindingId] = apstra.VnBinding{
-				AccessSwitchNodeIds: []apstra.ObjectId{accessBindingId},
-				SystemId:            leafBindingId,
+				AccessSwitchNodeIds: []apstra.ObjectId{apstra.ObjectId(accessBindingId)},
+				SystemId:            apstra.ObjectId(leafBindingId),
 				VlanId:              vlanId,
 			}
 		}
@@ -213,7 +213,7 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Clien
 
 	// loop over leaf switches, create a leafToVnBinding entry as required
 	for _, leafSwitchId := range leafSwitchIds {
-		var leafBindingId apstra.ObjectId
+		var leafBindingId string
 		if rg, ok := memberIdToRgInfo[leafSwitchId]; ok {
 			if rg.role != "leaf" {
 				diags.AddError("redundancy group type mismatch",
@@ -222,24 +222,23 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Clien
 				)
 				return
 			}
-			leafBindingId = apstra.ObjectId(rg.id)
+			leafBindingId = rg.id
 		} else {
-			leafBindingId = apstra.ObjectId(leafSwitchId)
+			leafBindingId = leafSwitchId
 		}
 
 		// We may have already created a binding for this leafBindingId...
 		if _, ok := leafToVnBinding[leafBindingId]; !ok {
 			// binding not found. create one.
 			leafToVnBinding[leafBindingId] = apstra.VnBinding{
-				SystemId: leafBindingId,
+				SystemId: apstra.ObjectId(leafBindingId),
 				VlanId:   vlanId,
 			}
 		}
 	}
 
-	bindings := make([]attr.Value, len(leafToVnBinding))
-	i := 0
-	for _, v := range leafToVnBinding {
+	bindings := make(map[string]attr.Value, len(leafToVnBinding))
+	for k, v := range leafToVnBinding {
 		var b VnBinding
 		b.LoadApiData(ctx, v, diags)
 		if diags.HasError() {
@@ -247,15 +246,14 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Clien
 		}
 
 		var d diag.Diagnostics
-		bindings[i], d = types.ObjectValueFrom(ctx, VnBinding{}.attrTypes(), b)
+		bindings[k], d = types.ObjectValueFrom(ctx, VnBinding{}.attrTypes(), b)
 		diags.Append(d...)
 		if diags.HasError() {
 			return
 		}
-		i++
 	}
 
-	o.Bindings = types.SetValueMust(types.ObjectType{AttrTypes: VnBinding{}.attrTypes()}, bindings)
+	o.Bindings = types.MapValueMust(types.ObjectType{AttrTypes: VnBinding{}.attrTypes()}, bindings)
 }
 
 // accessSwitchIdsToParentLeafIds returns a map keyed by graph db 'system' node

@@ -60,3 +60,17 @@ func StringersToStrings[A fmt.Stringer](in []A) []string {
 	}
 	return result
 }
+
+func UniqStringers[A fmt.Stringer](in []A) []A {
+	m := make(map[string]struct{})      // unique string results from 'A' key this map
+	for i := len(in) - 1; i >= 0; i-- { // work backwards through the slice
+		if _, ok := m[in[i].String()]; ok {
+			in[i] = in[len(in)-1] // overwrite duplicate with item from end of slice
+			in = in[:len(in)-1]   // shorten slice to eliminate newly dup'ed last item
+			continue
+		}
+		m[in[i].String()] = struct{}{} // unique element used as map key
+	}
+
+	return in
+}

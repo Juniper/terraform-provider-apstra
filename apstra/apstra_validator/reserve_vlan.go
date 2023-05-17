@@ -10,37 +10,36 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-var _ validator.Bool = ReserveVlanValidator{}
+var _ validator.Bool = reserveVlanOkValidator{}
 
-type ReserveVlanValidator struct {
+type reserveVlanOkValidator struct {
 	expression path.Expression
 	value      string
 }
 
-func (o ReserveVlanValidator) Description(_ context.Context) string {
+func (o reserveVlanOkValidator) Description(_ context.Context) string {
 	return fmt.Sprintf("Ensures that no value is supplied when attribute at %q has value %q", o.expression.String(), o.value)
 }
 
-func (o ReserveVlanValidator) MarkdownDescription(ctx context.Context) string {
+func (o reserveVlanOkValidator) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o ReserveVlanValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
+func (o reserveVlanOkValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
 	// nothing to do when value is false, null or unknown (the last two rely on bool zero value)
 	if !req.ConfigValue.ValueBool() {
 		return
 	}
 
 	bindingPath := req.Path.ParentPath().AtName("bindings")
-	var bindingsVal types.Set
+	var bindingsVal types.Map
 	req.Config.GetAttribute(ctx, bindingPath, &bindingsVal)
 
 	foundVlans := make(map[int64]struct{})
 	for _, val := range bindingsVal.Elements() {
 		var binding struct {
-			VlanId    types.Int64  `tfsdk:"vlan_id"`
-			LeafId    types.String `tfsdk:"leaf_id"`
-			AccessIds types.Set    `tfsdk:"access_ids"`
+			VlanId    types.Int64 `tfsdk:"vlan_id"`
+			AccessIds types.Set   `tfsdk:"access_ids"`
 		}
 
 		resp.Diagnostics.Append(val.(types.Object).As(ctx, &binding, basetypes.ObjectAsOptions{})...)
@@ -70,9 +69,11 @@ func (o ReserveVlanValidator) ValidateBool(ctx context.Context, req validator.Bo
 	resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 		bindingPath, fmt.Sprintf("bindings must all use the same \"vlan_id\" value when %q is set", req.Path),
 	))
-
 }
 
-func ReserveVlan() validator.Bool {
-	return ReserveVlanValidator{}
+// ReserveVlanOK looks through the `bindings` to ensure that each binding
+// specifies the same VLAN ID. This is the only condition under which VLAN
+// reservation is permitted by Apstra.
+func ReserveVlanOK() validator.Bool {
+	return reserveVlanOkValidator{}
 }

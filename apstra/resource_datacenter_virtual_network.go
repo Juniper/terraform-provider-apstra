@@ -159,6 +159,11 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}

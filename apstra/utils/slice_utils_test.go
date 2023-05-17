@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"testing"
 )
 
@@ -140,6 +142,39 @@ func TestElementsFromANotInB(t *testing.T) {
 		r := UniqueElementsFromA(tc.a, tc.b)
 		if !SlicesMatch(tc.e, r) {
 			t.Fatalf("test case %d, expectd %v, got %v", i, tc.e, r)
+		}
+	}
+}
+
+func TestUniqStringers(t *testing.T) {
+	type testCase struct {
+		t []fmt.Stringer
+		e []fmt.Stringer
+	}
+
+	testCases := []testCase{
+		{
+			t: []fmt.Stringer{},
+			e: []fmt.Stringer{},
+		},
+		{
+			t: []fmt.Stringer{types.StringValue("foo"), types.StringValue("bar"), types.StringValue("baz")},
+			e: []fmt.Stringer{types.StringValue("foo"), types.StringValue("bar"), types.StringValue("baz")},
+		},
+		{
+			t: []fmt.Stringer{types.StringValue("foo"), types.StringValue("bar"), types.StringValue("baz"), types.StringValue("baz")},
+			e: []fmt.Stringer{types.StringValue("foo"), types.StringValue("bar"), types.StringValue("baz")},
+		},
+		{
+			t: []fmt.Stringer{types.StringValue("foo"), types.StringValue("bar"), types.StringValue("foo"), types.StringValue("baz")},
+			e: []fmt.Stringer{types.StringValue("baz"), types.StringValue("bar"), types.StringValue("foo")},
+		},
+	}
+
+	for i, tc := range testCases {
+		r := UniqStringers(tc.t)
+		if !SliceStringersMatch(r, tc.e) {
+			t.Fatalf("test case %d, expected %v, got %v", i, tc.e, r)
 		}
 	}
 }

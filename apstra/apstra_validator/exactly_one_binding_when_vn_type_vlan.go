@@ -9,19 +9,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ validator.Set = VnVlanBindingsValidator{}
+var _ validator.Map = ExactlyOneBindingWhenVnTypeVlanValidator{}
 
-type VnVlanBindingsValidator struct{}
+type ExactlyOneBindingWhenVnTypeVlanValidator struct{}
 
-func (o VnVlanBindingsValidator) Description(_ context.Context) string {
+func (o ExactlyOneBindingWhenVnTypeVlanValidator) Description(_ context.Context) string {
 	return fmt.Sprintf("Ensure that when the VN type is %q, only a single binding is configured", apstra.VnTypeVlan)
 }
 
-func (o VnVlanBindingsValidator) MarkdownDescription(ctx context.Context) string {
+func (o ExactlyOneBindingWhenVnTypeVlanValidator) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o VnVlanBindingsValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+func (o ExactlyOneBindingWhenVnTypeVlanValidator) ValidateMap(ctx context.Context, req validator.MapRequest, resp *validator.MapResponse) {
 	if req.ConfigValue.IsUnknown() {
 		return
 	}
@@ -42,6 +42,9 @@ func (o VnVlanBindingsValidator) ValidateSet(ctx context.Context, req validator.
 	}
 }
 
-func OneBindingWhenVlan() validator.Set {
-	return VnVlanBindingsValidator{}
+// ExactlyOneBindingWhenVnTypeVlan ensures that exactly one leaf node binding
+// exists when the attribute at the neighboring `type` attribute matches
+// apstra.VnTypeVlan
+func ExactlyOneBindingWhenVnTypeVlan() validator.Map {
+	return ExactlyOneBindingWhenVnTypeVlanValidator{}
 }

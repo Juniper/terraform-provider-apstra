@@ -6,7 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -33,7 +33,7 @@ type DatacenterVirtualNetwork struct {
 	RoutingZoneId           types.String `tfsdk:"routing_zone_id"`
 	Vni                     types.Int64  `tfsdk:"vni"`
 	ReserveVlan             types.Bool   `tfsdk:"reserve_vlan"`
-	Bindings                types.Set    `tfsdk:"bindings"`
+	Bindings                types.Map    `tfsdk:"bindings"`
 	DhcpServiceEnabled      types.Bool   `tfsdk:"dhcp_service_enabled"`
 	IPv4ConnectivityEnabled types.Bool   `tfsdk:"ipv4_connectivity_enabled"`
 	IPv6ConnectivityEnabled types.Bool   `tfsdk:"ipv6_connectivity_enabled"`
@@ -57,6 +57,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Blueprint ID",
 			Required:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"type": resourceSchema.StringAttribute{
@@ -82,6 +83,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 					types.StringValue(apstra.VnTypeVxlan.String()),
 				),
 			},
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associatd with this Virtual "+
@@ -98,26 +100,34 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"reserve_vlan": resourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all `bindings` "+
-				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the"+
-				" Virtual Network has not yet been deployed.", apstra.VnTypeVxlan),
+			MarkdownDescription: "For use only with `%s` type Virtual networks when all `bindings` " +
+				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the" +
+				" Virtual Network has not yet been deployed. The only accepted values is `true`.",
 			Optional: true,
+			Computed: true,
 			Validators: []validator.Bool{
-				apstravalidator.BoolForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("type"),
-					fmt.Sprintf("%q", apstra.VnTypeVlan)),
-				apstravalidator.ReserveVlan(),
+				apstravalidator.WhenValueIsBool(types.BoolValue(true),
+					apstravalidator.ReserveVlanOK(),
+					apstravalidator.ValueAtMustBeBool(
+						path.MatchRelative().AtParent().AtName("type"),
+						types.StringValue(apstra.VnTypeVxlan.String()),
+						false,
+					),
+				),
 			},
 		},
-		"bindings": resourceSchema.SetNestedAttribute{
+		"bindings": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Bindings make a Virtual Network available on Leaf Switches and Access Switches. " +
-				"Practitioners are encouraged to consider using the [`_datacenter_virtual_network_binding_constructor`]" +
+				"At least one binding entry is required. The value is a map keyed by graph db node IDs of *either* " +
+				"Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf " +
+				"Switches). Practitioners are encouraged to consider using the " +
+				"[`_datacenter_virtual_network_binding_constructor`]" +
 				"(../data-sources/apstra_datacenter_virtual_network_binding_constructor) data source to populate " +
-				"these values.",
+				"this map.",
 			Required: true,
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-				apstravalidator.OneBindingWhenVlan(),
+			Validators: []validator.Map{
+				mapvalidator.SizeAtLeast(1),
+				apstravalidator.ExactlyOneBindingWhenVnTypeVlan(),
 			},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: VnBinding{}.ResourceAttributes(),
@@ -130,8 +140,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Default:             booldefault.StaticBool(false),
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueIsBool(types.BoolValue(true),
-					apstravalidator.AlsoRequiresNOf(1, path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled")),
-					apstravalidator.AlsoRequiresNOf(1, path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled")),
+					apstravalidator.AlsoRequiresNOf(1,
+						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
+						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
+					),
 				),
 			},
 		},
@@ -160,14 +172,16 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		return nil
 	}
 
-	var b []VnBinding
+	b := make(map[string]VnBinding)
 	diags.Append(o.Bindings.ElementsAs(ctx, &b, false)...)
 	if diags.HasError() {
 		return nil
 	}
 	vnBindings := make([]apstra.VnBinding, len(b))
-	for i := range b {
-		vnBindings[i] = *b[i].Request(ctx, diags)
+	var i int
+	for leafId, binding := range b {
+		vnBindings[i] = *binding.Request(ctx, leafId, diags)
+		i++
 	}
 	if diags.HasError() {
 		return nil
@@ -234,7 +248,7 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.Name = types.StringValue(in.Label)
 	o.Type = types.StringValue(in.VnType.String())
 	o.RoutingZoneId = types.StringValue(in.SecurityZoneId.String())
-	o.Bindings = types.SetValueMust(types.ObjectType{AttrTypes: VnBinding{}.attrTypes()}, bindings)
+	o.Bindings = newBindingMap(ctx, in.VnBindings, diags)
 	o.Vni = utils.Int64ValueOrNull(ctx, in.VnId, diags)
 	o.DhcpServiceEnabled = types.BoolValue(bool(in.DhcpService))
 	o.IPv4ConnectivityEnabled = types.BoolValue(in.Ipv4Enabled)

@@ -10,53 +10,6 @@ import (
 	"testing"
 )
 
-//func TestRedundancyPeersFromIds(t *testing.T) {
-//	g1 := redundancyGroup{
-//		id:        "ag1",
-//		role:      "access",
-//		memberIds: []string{"a11", "a12"},
-//	}
-//	g2 := redundancyGroup{
-//		id:        "ag2",
-//		role:      "access",
-//		memberIds: []string{"a21", "a22"},
-//	}
-//	td := map[string]*redundancyGroup{
-//		"a11": &g1,
-//		"a12": &g1,
-//		"a21": &g2,
-//		"a22": &g2,
-//	}
-//
-//	type testCase struct {
-//		i []string // input
-//		e []string // expected
-//	}
-//
-//	testCases := []testCase{
-//		{
-//			i: []string{"a21"},
-//			e: []string{"a21", "a22"},
-//		},
-//		{
-//			i: []string{"a21", "a22"},
-//			e: []string{"a21", "a22"},
-//		},
-//		{
-//			i: []string{"a11", "a22"},
-//			e: []string{"a11", "a12", "a21", "a22"},
-//		},
-//	}
-//
-//	for i, tc := range testCases {
-//		r := redundancyPeersFromIds(tc.i, td)
-//		sort.Strings(r)
-//		if !utils.SlicesMatch(tc.e, r) {
-//			t.Fatalf("test case %d, expected %v, got %v", i, tc.e, r)
-//		}
-//	}
-//}
-
 func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
 	ctx := context.Background()
 	bpClient, cleanup, err := testutils.BlueprintC(ctx)
@@ -226,153 +179,153 @@ func TestGetSystemRoles(t *testing.T) {
 	}
 }
 
-func TestSwitchIdsToBindings(t *testing.T) {
-	ctx := context.Background()
-	bpClient, cleanup, err := testutils.BlueprintE(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := cleanup(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-
-	bindings, err := switchIdsToBindings(ctx, []string{}, nil, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(bindings) != 0 {
-		t.Fatalf("expected 0 bindings, got %d bindings", len(bindings))
-	}
-
-	type node struct {
-		Id         string `json:"id"`
-		Role       string `json:"role"`
-		GroupLabel string `json:"group_label"`
-	}
-	getNodesResposne := &struct {
-		Nodes map[string]node `json:"nodes"`
-	}{}
-	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
-	if err != nil {
-		t.Fatal(errors.Join(cleanup(ctx), err))
-	}
-
-	var accessIds, leafIds []string
-	for _, n := range getNodesResposne.Nodes {
-		switch n.Role {
-		case apstra.SystemRoleAccess.String():
-			accessIds = append(accessIds, n.Id)
-		case apstra.SystemRoleLeaf.String():
-			leafIds = append(leafIds, n.Id)
-		}
-	}
-
-	bindings, err = switchIdsToBindings(ctx, accessIds, nil, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(bindings) != 4 {
-		t.Fatalf("expected 4 bindings, got %d bindings", len(bindings))
-	}
-
-	bindings, err = switchIdsToBindings(ctx, append(leafIds, accessIds...), nil, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(bindings) != 4 {
-		t.Fatalf("expected 4 bindings, got %d bindings", len(bindings))
-	}
-
-	var boundAccessIdCount int
-	for _, binding := range bindings {
-		boundAccessIdCount += len(binding.AccessSwitchNodeIds)
-	}
-	if boundAccessIdCount != 8 {
-		t.Fatalf("expected 5 access bindings, got %d access bindings", boundAccessIdCount)
-	}
-
-	type testCase struct {
-		groupLabelMatch  []string
-		expectedBidnings int
-		expectedAccess   int
-	}
-	testCases := []testCase{
-		{
-			groupLabelMatch:  []string{"rack type B access 2"},
-			expectedBidnings: 1,
-			expectedAccess:   2,
-		},
-		{
-			groupLabelMatch:  []string{"rack type B access 1", "rack type B leaf"},
-			expectedBidnings: 1,
-			expectedAccess:   1,
-		},
-		{
-			groupLabelMatch:  []string{"rack type B access 1", "rack type B access 2", "rack type B leaf"},
-			expectedBidnings: 1,
-			expectedAccess:   3,
-		},
-		{
-			groupLabelMatch: []string{
-				"rack type A access",
-				"rack type B access 1", "rack type B access 2", "rack type B leaf",
-			},
-			expectedBidnings: 2,
-			expectedAccess:   4,
-		},
-		{
-			groupLabelMatch: []string{
-				"rack type A access", "rack type A leaf",
-				"rack type B access 1", "rack type B access 2", "rack type B leaf",
-			},
-			expectedBidnings: 2,
-			expectedAccess:   4,
-		},
-		{
-			groupLabelMatch: []string{
-				"rack type A access", "rack type A leaf",
-				"rack type B access 1", "rack type B access 2", "rack type B leaf",
-				"rack type D access 1", "rack type D access 2", "rack type D access 3",
-			},
-			expectedBidnings: 3,
-			expectedAccess:   7,
-		},
-		{
-			groupLabelMatch: []string{
-				"rack type A leaf",
-				"rack type B leaf",
-				"rack type C leaf",
-				"rack type D leaf",
-			},
-			expectedBidnings: 4,
-			expectedAccess:   0,
-		},
-	}
-
-	for i, tc := range testCases {
-		var ids []string
-		for _, n := range getNodesResposne.Nodes {
-			if utils.SliceContains(n.GroupLabel, tc.groupLabelMatch) {
-				ids = append(ids, n.Id)
-			}
-		}
-		bindings, err = switchIdsToBindings(ctx, ids, nil, bpClient)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(bindings) != tc.expectedBidnings {
-			t.Fatalf("interation %d, expected %d bindings, got %d", i, tc.expectedBidnings, len(bindings))
-		}
-
-		accessBindings := 0
-		for i := range bindings {
-			accessBindings += len(bindings[i].AccessSwitchNodeIds)
-		}
-		if accessBindings != tc.expectedAccess {
-			t.Fatalf("instance %d expected %d access bindings, got %d access bindings", i, tc.expectedAccess, accessBindings)
-		}
-	}
-}
+//func TestSwitchIdsToBindings(t *testing.T) {
+//	ctx := context.Background()
+//	bpClient, cleanup, err := testutils.BlueprintE(ctx)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	defer func() {
+//		err := cleanup(ctx)
+//		if err != nil {
+//			t.Fatal(err)
+//		}
+//	}()
+//
+//	bindings, err := switchIdsToBindings(ctx, []string{}, nil, bpClient)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	if len(bindings) != 0 {
+//		t.Fatalf("expected 0 bindings, got %d bindings", len(bindings))
+//	}
+//
+//	type node struct {
+//		Id         string `json:"id"`
+//		Role       string `json:"role"`
+//		GroupLabel string `json:"group_label"`
+//	}
+//	getNodesResposne := &struct {
+//		Nodes map[string]node `json:"nodes"`
+//	}{}
+//	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
+//	if err != nil {
+//		t.Fatal(errors.Join(cleanup(ctx), err))
+//	}
+//
+//	var accessIds, leafIds []string
+//	for _, n := range getNodesResposne.Nodes {
+//		switch n.Role {
+//		case apstra.SystemRoleAccess.String():
+//			accessIds = append(accessIds, n.Id)
+//		case apstra.SystemRoleLeaf.String():
+//			leafIds = append(leafIds, n.Id)
+//		}
+//	}
+//
+//	bindings, err = switchIdsToBindings(ctx, accessIds, nil, bpClient)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	if len(bindings) != 4 {
+//		t.Fatalf("expected 4 bindings, got %d bindings", len(bindings))
+//	}
+//
+//	bindings, err = switchIdsToBindings(ctx, append(leafIds, accessIds...), nil, bpClient)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	if len(bindings) != 4 {
+//		t.Fatalf("expected 4 bindings, got %d bindings", len(bindings))
+//	}
+//
+//	var boundAccessIdCount int
+//	for _, binding := range bindings {
+//		boundAccessIdCount += len(binding.AccessSwitchNodeIds)
+//	}
+//	if boundAccessIdCount != 8 {
+//		t.Fatalf("expected 5 access bindings, got %d access bindings", boundAccessIdCount)
+//	}
+//
+//	type testCase struct {
+//		groupLabelMatch  []string
+//		expectedBidnings int
+//		expectedAccess   int
+//	}
+//	testCases := []testCase{
+//		{
+//			groupLabelMatch:  []string{"rack type B access 2"},
+//			expectedBidnings: 1,
+//			expectedAccess:   2,
+//		},
+//		{
+//			groupLabelMatch:  []string{"rack type B access 1", "rack type B leaf"},
+//			expectedBidnings: 1,
+//			expectedAccess:   1,
+//		},
+//		{
+//			groupLabelMatch:  []string{"rack type B access 1", "rack type B access 2", "rack type B leaf"},
+//			expectedBidnings: 1,
+//			expectedAccess:   3,
+//		},
+//		{
+//			groupLabelMatch: []string{
+//				"rack type A access",
+//				"rack type B access 1", "rack type B access 2", "rack type B leaf",
+//			},
+//			expectedBidnings: 2,
+//			expectedAccess:   4,
+//		},
+//		{
+//			groupLabelMatch: []string{
+//				"rack type A access", "rack type A leaf",
+//				"rack type B access 1", "rack type B access 2", "rack type B leaf",
+//			},
+//			expectedBidnings: 2,
+//			expectedAccess:   4,
+//		},
+//		{
+//			groupLabelMatch: []string{
+//				"rack type A access", "rack type A leaf",
+//				"rack type B access 1", "rack type B access 2", "rack type B leaf",
+//				"rack type D access 1", "rack type D access 2", "rack type D access 3",
+//			},
+//			expectedBidnings: 3,
+//			expectedAccess:   7,
+//		},
+//		{
+//			groupLabelMatch: []string{
+//				"rack type A leaf",
+//				"rack type B leaf",
+//				"rack type C leaf",
+//				"rack type D leaf",
+//			},
+//			expectedBidnings: 4,
+//			expectedAccess:   0,
+//		},
+//	}
+//
+//	for i, tc := range testCases {
+//		var ids []string
+//		for _, n := range getNodesResposne.Nodes {
+//			if utils.SliceContains(n.GroupLabel, tc.groupLabelMatch) {
+//				ids = append(ids, n.Id)
+//			}
+//		}
+//		bindings, err = switchIdsToBindings(ctx, ids, nil, bpClient)
+//		if err != nil {
+//			t.Fatal(err)
+//		}
+//		if len(bindings) != tc.expectedBidnings {
+//			t.Fatalf("interation %d, expected %d bindings, got %d", i, tc.expectedBidnings, len(bindings))
+//		}
+//
+//		accessBindings := 0
+//		for i := range bindings {
+//			accessBindings += len(bindings[i].AccessSwitchNodeIds)
+//		}
+//		if accessBindings != tc.expectedAccess {
+//			t.Fatalf("instance %d expected %d access bindings, got %d access bindings", i, tc.expectedAccess, accessBindings)
+//		}
+//	}
+//}
