@@ -37,6 +37,10 @@ func (o diagnosticWrapper) Detail() string {
 	return strings.Join(append(details, o.diagnostic.Detail()), o.separator)
 }
 
+// Equal compares the embedded diag.Diagnostic against 'in'. Note that
+// "equality" now is no longer commutative. a.Equal(b) != b.Equal(a).
+// ...
+// yeah.
 func (o diagnosticWrapper) Equal(in diag.Diagnostic) bool {
 	return o.diagnostic.Equal(in)
 }
