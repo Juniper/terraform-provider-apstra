@@ -18,7 +18,6 @@ type valueAtMustBeValidator struct {
 	expression path.Expression
 	value      attr.Value
 	nullOk     bool
-	reason     string
 }
 
 type valueAtMustBeValidatorRequest struct {
@@ -68,21 +67,15 @@ func (o valueAtMustBeValidator) validate(ctx context.Context, req valueAtMustBeV
 				return
 			}
 
-			if !o.nullOk && mpVal.IsNull() {
-				resp.Diagnostics.Append(
-					validatordiag.InvalidAttributeValueDiagnostic(
-						mp,
-						fmt.Sprintf("value cannot be null when %s", o.reason),
-						mpVal.String(),
-					),
-				)
+			if o.nullOk && mpVal.IsNull() {
+				return
 			}
 
 			if !o.value.Equal(mpVal) {
 				resp.Diagnostics.Append(
 					validatordiag.InvalidAttributeValueDiagnostic(
 						mp,
-						fmt.Sprintf("value must be %q when %s", o.value.String(), o.reason),
+						fmt.Sprintf("must be %s", o.value),
 						mpVal.String()),
 				)
 			}
@@ -199,91 +192,82 @@ func (o valueAtMustBeValidator) ValidateString(ctx context.Context, req validato
 }
 
 // ValueAtMustBeBool ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeBool(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Bool {
+func ValueAtMustBeBool(e path.Expression, v attr.Value, nullOk bool) validator.Bool {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeFloat64 ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeFloat64(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Float64 {
+func ValueAtMustBeFloat64(e path.Expression, v attr.Value, nullOk bool) validator.Float64 {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeInt64 ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeInt64(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Int64 {
+func ValueAtMustBeInt64(e path.Expression, v attr.Value, nullOk bool) validator.Int64 {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeList ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeList(e path.Expression, v attr.Value, nullOk bool, reason string) validator.List {
+func ValueAtMustBeList(e path.Expression, v attr.Value, nullOk bool) validator.List {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeMap ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeMap(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Map {
+func ValueAtMustBeMap(e path.Expression, v attr.Value, nullOk bool) validator.Map {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeNumber ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeNumber(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Number {
+func ValueAtMustBeNumber(e path.Expression, v attr.Value, nullOk bool) validator.Number {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeObject ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeObject(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Object {
+func ValueAtMustBeObject(e path.Expression, v attr.Value, nullOk bool) validator.Object {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeSet ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeSet(e path.Expression, v attr.Value, nullOk bool, reason string) validator.Set {
+func ValueAtMustBeSet(e path.Expression, v attr.Value, nullOk bool) validator.Set {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }
 
 // ValueAtMustBeString ensures that the value configured for a different attribute has the specified value.
-func ValueAtMustBeString(e path.Expression, v attr.Value, nullOk bool, reason string) validator.String {
+func ValueAtMustBeString(e path.Expression, v attr.Value, nullOk bool) validator.String {
 	return valueAtMustBeValidator{
 		expression: e,
 		value:      v,
 		nullOk:     nullOk,
-		reason:     reason,
 	}
 }

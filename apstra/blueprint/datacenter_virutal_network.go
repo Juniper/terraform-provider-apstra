@@ -116,7 +116,6 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 						path.MatchRelative().AtParent().AtName("type"),
 						types.StringValue(apstra.VnTypeVxlan.String()),
 						false,
-						"\"reserve_vlan\" is \"true\"",
 					),
 				),
 			},

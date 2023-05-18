@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-const diagnosticWrapperDefaultSeparator = " : "
+const diagnosticWrapperDefaultSeparator = ", "
 
 var _ diag.Diagnostic = diagnosticWrapper{}
 
@@ -66,7 +66,7 @@ func WrapDiagnostic(in diag.Diagnostic, detail string) diag.Diagnostic {
 	}
 }
 
-func WrapEachDiagnostic(in diag.Diagnostics, prefix string) diag.Diagnostics {
+func WrapEachDiagnostic(prefix string, in ...diag.Diagnostic) diag.Diagnostics {
 	for i, d := range in {
 		in[i] = WrapDiagnostic(d, prefix)
 	}

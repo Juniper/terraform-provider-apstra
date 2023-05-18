@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ NineTypesValidator = whenValueIsValidator{}
@@ -77,6 +78,7 @@ func (o whenValueIsValidator) ValidateBool(ctx context.Context, req validator.Bo
 	for _, v := range o.boolValidators {
 		vResponse := new(validator.BoolResponse)
 		v.ValidateBool(ctx, req, vResponse)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }

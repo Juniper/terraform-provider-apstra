@@ -161,7 +161,7 @@ func (o whenValueAtMustBeValidator) validate(ctx context.Context, req whenValueA
 			}
 
 			diagWrapMsg := fmt.Sprintf("When %q has value %s", mp, o.triggerValue)
-			utils.WrapEachDiagnostic(vd, diagWrapMsg)
+			utils.WrapEachDiagnostic(diagWrapMsg, vd...)
 			resp.Diagnostics.Append(vd...)
 		}
 	}
