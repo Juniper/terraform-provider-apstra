@@ -112,11 +112,11 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Computed: true,
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueIsBool(types.BoolValue(true),
-					apstravalidator.ReserveVlanOK(),
 					apstravalidator.ValueAtMustBeBool(
 						path.MatchRelative().AtParent().AtName("type"),
 						types.StringValue(apstra.VnTypeVxlan.String()),
 						false,
+						"\"reserve_vlan\" is \"true\"",
 					),
 				),
 			},
@@ -132,7 +132,11 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Required: true,
 			Validators: []validator.Map{
 				mapvalidator.SizeAtLeast(1),
-				apstravalidator.ExactlyOneBindingWhenVnTypeVlan(),
+				apstravalidator.WhenValueAtMustBeMap(
+					path.MatchRelative().AtParent().AtName("type"),
+					types.StringValue(apstra.VnTypeVlan.String()),
+					mapvalidator.SizeAtMost(1),
+				),
 			},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: VnBinding{}.ResourceAttributes(),
