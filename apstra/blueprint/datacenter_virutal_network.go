@@ -32,6 +32,7 @@ type DatacenterVirtualNetwork struct {
 	Type                    types.String `tfsdk:"type"`
 	RoutingZoneId           types.String `tfsdk:"routing_zone_id"`
 	Vni                     types.Int64  `tfsdk:"vni"`
+	HadPriorVniConfig       types.Bool   `tfsdk:"had_prior_vni_config"`
 	ReserveVlan             types.Bool   `tfsdk:"reserve_vlan"`
 	Bindings                types.Map    `tfsdk:"bindings"`
 	DhcpServiceEnabled      types.Bool   `tfsdk:"dhcp_service_enabled"`
@@ -99,6 +100,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				),
 			},
 		},
+		"had_prior_vni_config": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the configuration.",
+			Computed:            true,
+		},
 		"reserve_vlan": resourceSchema.BoolAttribute{
 			MarkdownDescription: "For use only with `%s` type Virtual networks when all `bindings` " +
 				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the" +
@@ -148,13 +153,13 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"ipv4_connectivity_enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables IPv4 within the Virtual Network",
+			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
 			Optional:            true,
 			Computed:            true,
-			Default:             booldefault.StaticBool(false),
+			Default:             booldefault.StaticBool(true),
 		},
 		"ipv6_connectivity_enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables IPv6 within the Virtual Network",
+			MarkdownDescription: "Enables IPv6 within the Virtual Network. Default: false",
 			Optional:            true,
 			Computed:            true,
 			Default:             booldefault.StaticBool(false),

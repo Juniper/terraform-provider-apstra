@@ -20,7 +20,7 @@ func (o PortRolesDefault) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o PortRolesDefault) DefaultSet(ctx context.Context, req defaults.SetRequest, resp *defaults.SetResponse) {
+func (o PortRolesDefault) DefaultSet(ctx context.Context, _ defaults.SetRequest, resp *defaults.SetResponse) {
 	var allRoleFlagsSet apstra.LogicalDevicePortRoleFlags
 	allRoleFlagsSet.SetAll()
 

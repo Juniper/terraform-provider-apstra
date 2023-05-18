@@ -35,11 +35,6 @@ func (o VnBinding) DataSourceAttributesConstructorOutput() map[string]dataSource
 				"configuration, if any. May be `null`, in which case Apstra will choose.",
 			Computed: true,
 		},
-		//"leaf_id": dataSourceSchema.StringAttribute{
-		//	MarkdownDescription: "A graph db node ID representing a leaf switch `system` node or " +
-		//		"`redundancy_group` node.",
-		//	Computed: true,
-		//},
 		"access_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "A set of zero or more graph db node IDs representing Access " +
 				"Lwitch `system` nodes or a `redundancy_group` nodes.",
@@ -57,13 +52,6 @@ func (o VnBinding) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 			Validators:          []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
 		},
-		//"leaf_id": resourceSchema.StringAttribute{
-		//	MarkdownDescription: "The graph db node ID of the leaf switch `system` node (nonredundant " +
-		//		"leaf switch) or `redundancy_group` node (MLAG or ESI LAG leaf switches) to which this " +
-		//		"VN should be bound.",
-		//	Required:   true,
-		//	Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
-		//},
 		"access_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "The graph db node ID of the access switch `system` node (nonredundant " +
 				"access switch) or `redundancy_group` node (ESI LAG access switches) beneath `leaf_id` " +
@@ -71,7 +59,7 @@ func (o VnBinding) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:    true,
 			Computed:    true,
 			ElementType: types.StringType,
-			Default:     apstradefault.EmptyStringSet(),
+			Default:     apstradefault.StaticDefaultAny(types.SetValueMust(types.StringType, []attr.Value{})),
 		},
 	}
 }

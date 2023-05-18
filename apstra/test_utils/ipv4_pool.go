@@ -40,17 +40,17 @@ func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	subnets := make([]apstra.IpSubnet, len(request.Subnets))
 	total := new(big.Int)
 	for i := range request.Subnets {
-		_, net, err := net.ParseCIDR(request.Subnets[i].Network)
+		_, n, err := net.ParseCIDR(request.Subnets[i].Network)
 		if err != nil {
 			return nil, nil, err
 		}
 		subnets[i] = apstra.IpSubnet{
-			Network:        net,
+			Network:        n,
 			Status:         "pool_element_available",
 			Used:           *bigZero,
 			UsedPercentage: 0,
 		}
-		maskOnes, maskBits := net.Mask.Size()
+		maskOnes, maskBits := n.Mask.Size()
 		subnets[i].Total.SetInt64(int64(math.Pow(2, float64(maskBits-maskOnes))))
 		total.Add(total, &subnets[i].Total)
 	}
@@ -108,17 +108,17 @@ func Ipv4PoolB(ctx context.Context) (*apstra.IpPool, func(context.Context) error
 	subnets := make([]apstra.IpSubnet, len(request.Subnets))
 	total := new(big.Int)
 	for i := range request.Subnets {
-		_, net, err := net.ParseCIDR(request.Subnets[i].Network)
+		_, n, err := net.ParseCIDR(request.Subnets[i].Network)
 		if err != nil {
 			return nil, nil, err
 		}
 		subnets[i] = apstra.IpSubnet{
-			Network:        net,
+			Network:        n,
 			Status:         "pool_element_available",
 			Used:           *bigZero,
 			UsedPercentage: 0,
 		}
-		maskOnes, maskBits := net.Mask.Size()
+		maskOnes, maskBits := n.Mask.Size()
 		subnets[i].Total.SetInt64(int64(math.Pow(2, float64(maskBits-maskOnes))))
 		total.Add(total, &subnets[i].Total)
 	}

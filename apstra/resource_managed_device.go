@@ -37,7 +37,7 @@ func (o *resourceManagedDevice) Configure(_ context.Context, req resource.Config
 	}
 }
 
-func (o *resourceManagedDevice) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceManagedDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates/installs an Agent for an Apstra Managed Device." +
 			"Optionally, it will 'Acknolwedge' the discovered system if the `device key` (serial number)" +

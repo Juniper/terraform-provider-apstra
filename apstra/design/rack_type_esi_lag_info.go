@@ -1,8 +1,8 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -53,7 +53,7 @@ func (o EsiLagInfo) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *EsiLagInfo) LoadApiData(_ context.Context, in *apstra.EsiLagInfo, diags *diag.Diagnostics) {
+func (o *EsiLagInfo) LoadApiData(_ context.Context, in *apstra.EsiLagInfo, _ *diag.Diagnostics) {
 	o.L3PeerLinkCount = types.Int64Value(int64(in.AccessAccessLinkCount))
 	o.L3PeerLinkSpeed = types.StringValue(string(in.AccessAccessLinkSpeed))
 }

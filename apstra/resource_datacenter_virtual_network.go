@@ -34,6 +34,72 @@ func (o *resourceDatacenterVirtualNetwork) Schema(_ context.Context, _ resource.
 	}
 }
 
+func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// This plan modifier solves the same problem for two different
+	// `Optional` + `Computed` attributes:
+	//   - VlanId
+	//   - Vni
+	//
+	// The problem is terraform's ordinary handling of `Optional` + `Computed`
+	// attributes:
+	//
+	// https://discuss.hashicorp.com/t/schema-for-optional-computed-to-support-correct-removal-plan-in-framework/49055/5?u=hqnvylrx
+	//
+	//   The subject of what goes on behind the scenes of Terraform plan with
+	//   regards to providers is pretty nuanced. Without going too much into the
+	//   weeds, the behavior for Terraform for Optional + Computed attributes is
+	//   to copy the prior state if there is no configuration for it.
+	//
+	// This means that a manually-configured VLAN ID or VNI won't get backed-out
+	// via the API to allow Apstra to choose a new value from its pool.
+	//
+	// We work around that behavior by using trigger/tracker `Computed` boolean
+	// attributes for each `Computed` + `Optional` resource:
+	//   - HadPriorVlanIdConfig
+	//   - HadPriorVniConfig
+	//
+	// Whenever these attributes are found `true`, but the corresponding config
+	// element is `null`, we conclude that the attribute been removed from the
+	// configuration and set the attribute to `unknown` to achieve modification
+	// and record a new choice made by the API.
+
+	// No state means there couldn't have been a previous config.
+	// No plan means we're doing Delete().
+	// Both are un-interesting to this plan modifier.
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Retrieve values from config
+	var config blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	//Retrieve values from plan
+	var plan blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// null config with prior configured value means vni was removed
+	if config.Vni.IsNull() && state.HadPriorVniConfig.ValueBool() {
+		plan.Vni = types.Int64Unknown()
+		plan.HadPriorVniConfig = types.BoolValue(false)
+	}
+
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
+}
+
 func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
@@ -77,6 +143,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	}
 
 	// update the plan with the received ObjectId and set the partial state
+	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
@@ -187,6 +254,12 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 			fmt.Sprintf("error fetching just-updated virtual network %q", plan.Id.ValueString()),
 			err.Error())
 		return
+	}
+
+	// if the plan modifier didn't take action...
+	if plan.HadPriorVniConfig.IsUnknown() {
+		// ...then the trigger value is set according to whether a VNI value is known.
+		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	}
 
 	// update the plan with the received VN data (need VLAN assignment) and set the state
