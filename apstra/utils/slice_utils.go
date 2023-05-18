@@ -1,6 +1,8 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func ItemInSlice[A comparable](item A, slice []A) bool {
 	for i := range slice {
@@ -73,4 +75,16 @@ func UniqStringers[A fmt.Stringer](in []A) []A {
 	}
 
 	return in
+}
+
+func Swap[A any](a, b int, in []A) {
+	x := in[a]
+	in[a] = in[b]
+	in[b] = x
+}
+
+func Reverse[A any](in []A) {
+	for i := 0; i < len(in)/2; i++ {
+		Swap(i, len(in)-1-i, in)
+	}
 }

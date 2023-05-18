@@ -178,3 +178,79 @@ func TestUniqStringers(t *testing.T) {
 		}
 	}
 }
+
+func TestSwap(t *testing.T) {
+	type testCase struct {
+		t    []any
+		e    []any
+		swap []int
+	}
+
+	testCases := []testCase{
+		{
+			t:    []any{"a", "b", "c"},
+			e:    []any{"a", "c", "b"},
+			swap: []int{1, 2},
+		},
+		{
+			t:    []any{"a", "b", "c"},
+			e:    []any{"b", "a", "c"},
+			swap: []int{0, 1},
+		},
+		{
+			t:    []any{"a", "b", "c"},
+			e:    []any{"a", "b", "c"},
+			swap: []int{1, 1},
+		},
+		{
+			t:    []any{5, 6, 7},
+			e:    []any{7, 6, 5},
+			swap: []int{0, 2},
+		},
+		{
+			t:    []any{5, 6, 7},
+			e:    []any{7, 6, 5},
+			swap: []int{2, 0},
+		},
+	}
+
+	for i, tc := range testCases {
+		Swap(tc.swap[0], tc.swap[1], tc.t)
+		if !SlicesMatch(tc.t, tc.e) {
+			t.Fatalf("test case %d, expected %v got %v", i, tc.e, tc.t)
+		}
+	}
+}
+
+func TestRevers(t *testing.T) {
+	type testCase struct {
+		t []any
+		e []any
+	}
+
+	testCases := []testCase{
+		{
+			t: []any{"a", "b", "c"},
+			e: []any{"c", "b", "a"},
+		},
+		{
+			t: []any{"a", "b", "c", "d"},
+			e: []any{"d", "c", "b", "a"},
+		},
+		{
+			t: []any{4, 5, 6},
+			e: []any{6, 5, 4},
+		},
+		{
+			t: []any{4, 5, 6, 7},
+			e: []any{7, 6, 5, 4},
+		},
+	}
+
+	for i, tc := range testCases {
+		Reverse(tc.t)
+		if !SlicesMatch(tc.t, tc.e) {
+			t.Fatalf("test case %d, expected %v got %v", i, tc.e, tc.t)
+		}
+	}
+}
