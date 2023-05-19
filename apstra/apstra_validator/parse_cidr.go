@@ -71,14 +71,13 @@ func (o ParseCidrValidator) ValidateString(_ context.Context, req validator.Stri
 		))
 	}
 
-	if o.requireIpv4 && len(ip) != 4 {
+	switch {
+	case o.requireIpv4 && len(ip.To4()) != net.IPv4len:
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
-			req.Path, "value is not an IPv4 address", value))
-	}
-
-	if o.requireIpv6 && len(ip) != 16 {
+			req.Path, "value is not an IPv4 CIDR prefix", value))
+	case o.requireIpv6 && len(ip) != net.IPv6len:
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
-			req.Path, "value is not an IPv6 address", value))
+			req.Path, "value is not an IPv6 CIDR prefix", value))
 	}
 }
 
