@@ -59,8 +59,10 @@ cloud.google.com/go/storage v1.22.1/go.mod h1:S8N1cAStu7BOeFfE8KAQzmyyLkK8p/vmRq
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/Juniper/apstra-go-sdk v0.0.0-20230519143708-8d985b5a79ba h1:nMfJ6vcqr8LFqXjkqHQKMaUW2YCuwsffS2JK+3jNfFI=
-github.com/Juniper/apstra-go-sdk v0.0.0-20230519143708-8d985b5a79ba/go.mod h1:PKQO0TF/UB7vSaD3KtIlNT6VlYSuJRfPVE2loT9C/lM=
+github.com/IBM/netaddr v1.5.0 h1:IJlFZe1+nFs09TeMB/HOP4+xBnX2iM/xgiDOgZgTJq0=
+github.com/IBM/netaddr v1.5.0/go.mod h1:DDBPeYgbFzoXHjSz9Jwk7K8wmWV4+a/Kv0LqRnb8we4=
+github.com/Juniper/apstra-go-sdk v0.0.0-20230519195104-ffe154323e91 h1:coD+gZfLJj1Zfu2ZWqRcni9Zm/E0pMd6u87F5fTz61E=
+github.com/Juniper/apstra-go-sdk v0.0.0-20230519195104-ffe154323e91/go.mod h1:PKQO0TF/UB7vSaD3KtIlNT6VlYSuJRfPVE2loT9C/lM=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
 github.com/Masterminds/goutils v1.1.1/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030IGemrRc=
@@ -429,6 +431,7 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
+github.com/stretchr/testify v1.2.1/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=

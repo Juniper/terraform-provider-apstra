@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"net"
 	"regexp"
 	"terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/design"
@@ -38,6 +39,12 @@ type DatacenterVirtualNetwork struct {
 	DhcpServiceEnabled      types.Bool   `tfsdk:"dhcp_service_enabled"`
 	IPv4ConnectivityEnabled types.Bool   `tfsdk:"ipv4_connectivity_enabled"`
 	IPv6ConnectivityEnabled types.Bool   `tfsdk:"ipv6_connectivity_enabled"`
+	IPv4Subnet              types.String `tfsdk:"ipv4_subnet"`
+	IPv6Subnet              types.String `tfsdk:"ipv6_subnet"`
+	IPv4GatewayEnabled      types.Bool   `tfsdk:"ipv4_virtual_gateway_enabled"`
+	IPv6GatewayEnabled      types.Bool   `tfsdk:"ipv6_virtual_gateway_enabled"`
+	IPv4Gateway             types.String `tfsdk:"ipv4_virtual_gateway"`
+	IPv6Gateway             types.String `tfsdk:"ipv6_virtual_gateway"`
 }
 
 func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -167,6 +174,98 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Computed:            true,
 			Default:             booldefault.StaticBool(false),
 		},
+		"ipv4_subnet": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("IPv4 subnet associated with the "+
+				"Virtual Network. When not specified, a prefix from within the IPv4 "+
+				"Resource Pool assigned to the `%s` role will be automatically a"+
+				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv4),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				apstravalidator.ParseCidr(true, false),
+				apstravalidator.WhenValueSetString(
+					apstravalidator.ValueAtMustBeString(
+						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
+						types.BoolValue(true), false,
+					),
+				),
+			},
+		},
+		"ipv6_subnet": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("IPv6 subnet associated with the "+
+				"Virtual Network. When not specified, a prefix from within the IPv6 "+
+				"Resource Pool assigned to the `%s` role will be automatically a"+
+				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv6),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				apstravalidator.ParseCidr(true, false),
+				apstravalidator.WhenValueSetString(
+					apstravalidator.ValueAtMustBeString(
+						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
+						types.BoolValue(true), false,
+					),
+				),
+			},
+		},
+		"ipv4_virtual_gateway_enabled": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Controls and indicates whether the IPv4 gateway within the " +
+				"Virtual Network is enabled. Requires `ipv4_connectivity_enabled` to be `true`",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Bool{
+				apstravalidator.WhenValueIsBool(
+					types.BoolValue(true),
+					apstravalidator.ValueAtMustBeBool(
+						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
+						types.BoolValue(true),
+						false,
+					),
+				),
+			},
+		},
+		"ipv6_virtual_gateway_enabled": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Controls and indicates whether the IPv6 gateway within the " +
+				"Virtual Network is enabled. Requires `ipv6_connectivity_enabled` to be `true`",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Bool{
+				apstravalidator.WhenValueIsBool(
+					types.BoolValue(true),
+					apstravalidator.ValueAtMustBeBool(
+						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
+						types.BoolValue(true),
+						false,
+					),
+				),
+			},
+		},
+		"ipv4_virtual_gateway": resourceSchema.StringAttribute{
+			MarkdownDescription: "Specifies the IPv4 virtual gateway address within the " +
+				"Virtual Network. The configured value must be a valid IPv4 host address " +
+				"configured value within range specified by `ipv4_subnet`",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				apstravalidator.ParseIp(true, false),
+				apstravalidator.FallsWithinCidr(
+					path.MatchRelative().AtParent().AtName("ipv4_subnet"),
+					false, false),
+			},
+		},
+		"ipv6_virtual_gateway": resourceSchema.StringAttribute{
+			MarkdownDescription: "Specifies the IPv6 virtual gateway address within the " +
+				"Virtual Network. The configured value must be a valid IPv6 host address " +
+				"configured value within range specified by `ipv6_subnet`",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				apstravalidator.ParseIp(true, false),
+				apstravalidator.FallsWithinCidr(
+					path.MatchRelative().AtParent().AtName("ipv6_subnet"),
+					true, true),
+			},
+		},
 	}
 }
 
@@ -215,22 +314,44 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		reservedVlanId = vnBindings[0].VlanId
 	}
 
+	var ipv4Subnet, ipv6Subnet *net.IPNet
+	if utils.Known(o.IPv4Subnet) {
+		_, ipv4Subnet, err = net.ParseCIDR(o.IPv4Subnet.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing attribute ipv4_subnet value %q", o.IPv4Subnet.ValueString()), err.Error())
+		}
+	}
+	if utils.Known(o.IPv6Subnet) {
+		_, ipv6Subnet, err = net.ParseCIDR(o.IPv6Subnet.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing attribute ipv6_subnet value %q", o.IPv6Subnet.ValueString()), err.Error())
+		}
+	}
+
+	var ipv4Gateway, ipv6Gateway net.IP
+	if utils.Known(o.IPv4Gateway) {
+		ipv4Gateway = net.ParseIP(o.IPv4Gateway.ValueString())
+	}
+	if utils.Known(o.IPv6Gateway) {
+		ipv6Gateway = net.ParseIP(o.IPv6Gateway.ValueString())
+	}
+
 	return &apstra.VirtualNetworkData{
 		DhcpService:               apstra.DhcpServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
 		Ipv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
-		Ipv4Subnet:                nil,
+		Ipv4Subnet:                ipv4Subnet,
 		Ipv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
-		Ipv6Subnet:                nil,
+		Ipv6Subnet:                ipv6Subnet,
 		Label:                     o.Name.ValueString(),
 		ReservedVlanId:            reservedVlanId,
 		RouteTarget:               "",
 		RtPolicy:                  nil,
 		SecurityZoneId:            apstra.ObjectId(o.RoutingZoneId.ValueString()),
 		SviIps:                    nil,
-		VirtualGatewayIpv4:        nil,
-		VirtualGatewayIpv6:        nil,
-		VirtualGatewayIpv4Enabled: false,
-		VirtualGatewayIpv6Enabled: false,
+		VirtualGatewayIpv4:        ipv4Gateway,
+		VirtualGatewayIpv6:        ipv6Gateway,
+		VirtualGatewayIpv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
+		VirtualGatewayIpv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
 		VnBindings:                vnBindings,
 		VnId:                      vnId,
 		VnType:                    vnType,
@@ -255,6 +376,14 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 		return
 	}
 
+	var virtualGatewayIpv4, virtualGatewayIpv6 string
+	if len(in.VirtualGatewayIpv4.To4()) == net.IPv4len {
+		virtualGatewayIpv4 = in.VirtualGatewayIpv4.String()
+	}
+	if len(in.VirtualGatewayIpv6) == net.IPv6len {
+		virtualGatewayIpv6 = in.VirtualGatewayIpv6.String()
+	}
+
 	o.Name = types.StringValue(in.Label)
 	o.Type = types.StringValue(in.VnType.String())
 	o.RoutingZoneId = types.StringValue(in.SecurityZoneId.String())
@@ -264,4 +393,18 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.IPv4ConnectivityEnabled = types.BoolValue(in.Ipv4Enabled)
 	o.IPv6ConnectivityEnabled = types.BoolValue(in.Ipv6Enabled)
 	o.ReserveVlan = types.BoolValue(in.ReservedVlanId != nil)
+	if in.Ipv4Subnet == nil {
+		o.IPv4Subnet = types.StringNull()
+	} else {
+		o.IPv4Subnet = types.StringValue(in.Ipv4Subnet.String())
+	}
+	if in.Ipv6Subnet == nil {
+		o.IPv6Subnet = types.StringNull()
+	} else {
+		o.IPv6Subnet = types.StringValue(in.Ipv6Subnet.String())
+	}
+	o.IPv4GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv4Enabled)
+	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv6Enabled)
+	o.IPv4Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv4, diags)
+	o.IPv6Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv6, diags)
 }
