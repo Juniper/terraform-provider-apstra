@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"strconv"
 	"strings"
 	testutils "terraform-provider-apstra/apstra/test_utils"
 	"testing"
@@ -114,6 +115,19 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 		{
 			name:          acctest.RandString(10),
 			blueprintId:   bp.Id().String(),
+			vnType:        apstra.VnTypeVlan.String(),
+			vni:           "null",
+			routingZoneId: szId.String(),
+			bindings: []bindingParams{
+				{
+					leafId: labelToNodeId["l2_one_access_001_leaf1"],
+					vlanId: "7",
+				},
+			},
+		},
+		{
+			name:          acctest.RandString(10),
+			blueprintId:   bp.Id().String(),
 			vnType:        apstra.VnTypeVxlan.String(),
 			vni:           "null",
 			routingZoneId: szId.String(),
@@ -170,16 +184,30 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: insecureProviderConfigHCL + resourceHCL[0],
+				Config: insecureProviderConfigHCL + resourceHCL[1],
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_datacenter_virtual_network.test", "id"),
-					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "name", params[0].name),
-					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "blueprint_id", params[0].blueprintId),
-					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "type", params[0].vnType),
-					resource.TestCheckResourceAttrSet("apstra_datacenter_virtual_network.test", "vni"),
-					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "routing_zone_id", params[0].routingZoneId),
-					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "bindings.%", fmt.Sprintf("%d", len(params[0].bindings))),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "name", params[1].name),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "blueprint_id", params[1].blueprintId),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "type", params[1].vnType),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "vni", params[1].bindings[0].vlanId),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "routing_zone_id", params[1].routingZoneId),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "bindings.%", strconv.Itoa(len(params[1].bindings))),
+				),
+			},
+			// Update and Read testing
+			{
+				Config: insecureProviderConfigHCL + resourceHCL[2],
+				Check: resource.ComposeAggregateTestCheckFunc(
+					// Verify ID has any value set
+					resource.TestCheckResourceAttrSet("apstra_datacenter_virtual_network.test", "id"),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "name", params[2].name),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "blueprint_id", params[2].blueprintId),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "type", params[2].vnType),
+					resource.TestCheckNoResourceAttr("apstra_datacenter_virtual_network.test", "vni"),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "routing_zone_id", params[2].routingZoneId),
+					resource.TestCheckResourceAttr("apstra_datacenter_virtual_network.test", "bindings.%", fmt.Sprintf("%d", len(params[2].bindings))),
 				),
 			},
 		},
