@@ -57,7 +57,7 @@ func (o whenValueIsValidator) Description(ctx context.Context) string {
 		descriptions = append(descriptions, v.Description(ctx))
 	}
 
-	return fmt.Sprintf("element must satisfy all validations: %s when value is %q", strings.Join(descriptions, " + "), o.trigger)
+	return fmt.Sprintf("element must satisfy all validations: %s becuase value is %q", strings.Join(descriptions, " + "), o.trigger)
 }
 
 func (o whenValueIsValidator) MarkdownDescription(ctx context.Context) string {
