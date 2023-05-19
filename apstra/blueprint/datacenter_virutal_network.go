@@ -204,8 +204,10 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	if o.Type.ValueString() == apstra.VnTypeVlan.String() {
 		// Exactly one binding is required when type==vlan.
 		// Apstra requires vlan == vni when creating a "vlan" type VN.
-		v := apstra.VNI(*vnBindings[0].VlanId)
-		vnId = &v
+		if vnBindings[0].VlanId != nil {
+			v := apstra.VNI(*vnBindings[0].VlanId)
+			vnId = &v
+		}
 	}
 
 	var reservedVlanId *apstra.Vlan
