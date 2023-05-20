@@ -1,8 +1,8 @@
 package design
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -17,11 +17,6 @@ type TemplateRackInfo struct {
 	RackType types.Object `tfsdk:"rack_type"`
 }
 
-func (o TemplateRackInfo) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
-	panic("TemplateRackInfo.DataSourceAttributes() should never be used")
-	return map[string]dataSourceSchema.Attribute{}
-}
-
 func (o TemplateRackInfo) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"count": dataSourceSchema.Int64Attribute{
@@ -34,11 +29,6 @@ func (o TemplateRackInfo) DataSourceAttributesNested() map[string]dataSourceSche
 			Attributes:          RackType{}.DataSourceAttributesNested(),
 		},
 	}
-}
-
-func (o TemplateRackInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
-	panic("TemplateRackInfo.ResourceAttributes() should never be used")
-	return map[string]resourceSchema.Attribute{}
 }
 
 func (o TemplateRackInfo) ResourceAttributesNested() map[string]resourceSchema.Attribute {
