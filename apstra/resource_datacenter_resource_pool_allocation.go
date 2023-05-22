@@ -147,6 +147,11 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 
 	apiData, err := client.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
 	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error getting %q resource allocation", allocationRequest.ResourceGroup.Name.String()),
 			err.Error())

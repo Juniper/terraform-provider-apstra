@@ -14,7 +14,7 @@ func JSONEqual(m1, m2 types.String, d *diag.Diagnostics) bool {
 
 	var err error
 	if m1.ValueString() == "" {
-		json.Unmarshal([]byte("{}"), &map1)
+		_ = json.Unmarshal([]byte("{}"), &map1)
 	} else {
 		err = json.Unmarshal([]byte(m1.ValueString()), &map1)
 		if err != nil {
@@ -23,7 +23,7 @@ func JSONEqual(m1, m2 types.String, d *diag.Diagnostics) bool {
 		}
 	}
 	if m2.ValueString() == "" {
-		json.Unmarshal([]byte("{}"), &map2)
+		_ = json.Unmarshal([]byte("{}"), &map2)
 	} else {
 		err = json.Unmarshal([]byte(m2.ValueString()), &map2)
 		if err != nil {

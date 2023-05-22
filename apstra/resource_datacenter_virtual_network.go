@@ -11,31 +11,30 @@ import (
 	"terraform-provider-apstra/apstra/blueprint"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
-var _ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
+var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
 
-type resourceDatacenterRoutingZone struct {
+type resourceDatacenterVirtualNetwork struct {
 	client   *apstra.Client
 	lockFunc func(context.Context, string) error
 }
 
-func (o *resourceDatacenterRoutingZone) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_routing_zone"
+func (o *resourceDatacenterVirtualNetwork) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_virtual_network"
 }
 
-func (o *resourceDatacenterRoutingZone) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterVirtualNetwork) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourceDatacenterRoutingZone) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterVirtualNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Routing Zone within a Blueprint.",
-		Attributes:          blueprint.DatacenterRoutingZone{}.ResourceAttributes(),
+		MarkdownDescription: "This resource creates a Virtual Network within a Blueprint.",
+		Attributes:          blueprint.DatacenterVirtualNetwork{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	// This plan modifier solves the same problem for two different
 	// `Optional` + `Computed` attributes:
 	//   - VlanId
@@ -72,30 +71,24 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 	}
 
 	// Retrieve values from config
-	var config blueprint.DatacenterRoutingZone
+	var config blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	//Retrieve values from plan
-	var plan blueprint.DatacenterRoutingZone
+	var plan blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Retrieve values from state
-	var state blueprint.DatacenterRoutingZone
+	var state blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// null config with prior configured value means vlan id was removed
-	if config.VlanId.IsNull() && state.HadPriorVlanIdConfig.ValueBool() {
-		plan.VlanId = types.Int64Unknown()
-		plan.HadPriorVlanIdConfig = types.BoolValue(false)
 	}
 
 	// null config with prior configured value means vni was removed
@@ -107,14 +100,14 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
 
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterRoutingZone
+	var plan blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -129,54 +122,59 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		return
 	}
 
+	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	request := plan.Request(ctx, o.client, &resp.Diagnostics)
+	// create a request object
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	id, err := bp.CreateSecurityZone(ctx, request)
+	// create the virtual network
+	id, err := bp.CreateVirtualNetwork(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating security zone", err.Error())
+		resp.Diagnostics.AddError("error creating virtual network", err.Error())
 		return
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
-	}
-
-	// Set prior config trackers according to whether the plan knows a value (only possible in Create())
-	plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
+	// update the plan with the received ObjectId and set the partial state
 	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
-
 	plan.Id = types.StringValue(id.String())
-	plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+
+	// fetch the virtual network to learn apstra-assigned VLAN assignments
+	api, err := bp.GetVirtualNetwork(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error fetching just-created virtual network %q", id),
+			err.Error())
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// update the plan with the received VN data (need VLAN assignment) and set the state
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
 		return
 	}
 
 	// Retrieve values from state.
-	var state blueprint.DatacenterRoutingZone
+	var state blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
@@ -188,33 +186,29 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
+	// retrieve the virtual network
+	vn, err := bp.GetVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
-		return
 	}
 
-	state.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	// load the API response and set the state
+	state.LoadApiData(ctx, vn.Data, &resp.Diagnostics)
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
-func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
 		return
 	}
 
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterRoutingZone
+	var plan blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -229,32 +223,37 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
+	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	request := plan.Request(ctx, o.client, &resp.Diagnostics)
+	// create a request object
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	// update the virtual network according to the plan
+	err = bp.UpdateVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating security zone", err.Error())
+		resp.Diagnostics.AddError("error updating virtual network", err.Error())
+	}
+
+	// fetch the virtual network to learn apstra-assigned VLAN assignments
+	api, err := bp.GetVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error fetching just-updated virtual network %q", plan.Id.ValueString()),
+			err.Error())
 		return
-	}
-
-	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
-	}
-
-	// if the plan modifier didn't take action...
-	if plan.HadPriorVlanIdConfig.IsUnknown() {
-		// ...then the trigger value is set according to whether a VLAN ID value is known.
-		plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
 	}
 
 	// if the plan modifier didn't take action...
@@ -263,48 +262,42 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	}
 
-	plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// update the plan with the received VN data (need VLAN assignment) and set the state
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (o *resourceDatacenterRoutingZone) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
 
 	// Retrieve values from state.
-	var state blueprint.DatacenterRoutingZone
+	var state blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
-			err.Error())
-		return
-	}
-
+	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
-	err = bp.DeleteSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
-			return // 404 is okay
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			return
 		}
-		resp.Diagnostics.AddError("error deleting routing zone", err.Error())
+		resp.Diagnostics.AddError("error deleting virtual network", err.Error())
 	}
 }

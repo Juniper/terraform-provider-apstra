@@ -727,7 +727,7 @@ func (o rInterfaceMapInterface) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *rInterfaceMapInterface) loadApiData(ctx context.Context, in *apstra.InterfaceMapInterface, diags *diag.Diagnostics) {
+func (o *rInterfaceMapInterface) loadApiData(_ context.Context, in *apstra.InterfaceMapInterface, _ *diag.Diagnostics) {
 	o.PhysicalInterfaceName = types.StringValue(in.Name)
 	o.TransformationId = types.Int64Value(int64(in.Mapping.DPTransformId))
 

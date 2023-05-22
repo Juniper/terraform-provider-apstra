@@ -125,7 +125,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	}
 }
 
-func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.SecurityZoneData, diags *diag.Diagnostics) {
+func (o *DatacenterRoutingZone) LoadApiData(_ context.Context, sz *apstra.SecurityZoneData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(sz.VrfName)
 	o.VlanId = types.Int64Value(int64(*sz.VlanId))
 
