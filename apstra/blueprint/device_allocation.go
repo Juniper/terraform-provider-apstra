@@ -105,23 +105,23 @@ func (o *DeviceAllocation) validateInterfaceMapId(ctx context.Context, client *a
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("system")},
-			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("logical_device")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("logical_device")},
+			{Key: "type", Value: apstra.QEStringVal("logical_device")},
 		}).
-		In([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		In([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("logical_device")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("interface_map")},
-			{"name", apstra.QEStringVal("n_interface_map")},
-			{"id", apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("interface_map")},
+			{Key: "name", Value: apstra.QEStringVal("n_interface_map")},
+			{Key: "id", Value: apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("device_profile")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("device_profile")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("device_profile")},
-			{"id", apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("device_profile")},
+			{Key: "id", Value: apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
 		})
 
 	err := query.Do(ctx, &result)
@@ -157,22 +157,22 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("system")},
-			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("logical_device")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("logical_device")},
+			{Key: "type", Value: apstra.QEStringVal("logical_device")},
 		}).
-		In([]apstra.QEEAttribute{{"type", apstra.QEStringVal("logical_device")}}).
+		In([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("logical_device")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("interface_map")},
-			{"name", apstra.QEStringVal("n_interface_map")},
+			{Key: "type", Value: apstra.QEStringVal("interface_map")},
+			{Key: "name", Value: apstra.QEStringVal("n_interface_map")},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("device_profile")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("device_profile")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("device_profile")},
-			{"id", apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("device_profile")},
+			{Key: "id", Value: apstra.QEStringVal(o.DeviceProfileNodeId.ValueString())},
 		})
 
 	err := query.Do(ctx, &result)
@@ -217,9 +217,9 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *apstr
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("system")},
-			{"label", apstra.QEStringVal(o.NodeName.ValueString())},
-			{"name", apstra.QEStringVal("n_system")},
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "label", Value: apstra.QEStringVal(o.NodeName.ValueString())},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
 		})
 
 	err := query.Do(ctx, &result)
@@ -383,9 +383,9 @@ func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *apstra.Cl
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("system")},
-			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
-			{"name", apstra.QEStringVal("n_system")},
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
 		})
 
 	err := query.Do(ctx, &result)
@@ -430,13 +430,13 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("system")},
-			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("interface_map")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("interface_map")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("interface_map")},
-			{"name", apstra.QEStringVal("n_interface_map")},
+			{Key: "type", Value: apstra.QEStringVal("interface_map")},
+			{Key: "name", Value: apstra.QEStringVal("n_interface_map")},
 		})
 
 	err := query.Do(ctx, &result)
@@ -478,19 +478,19 @@ func (o *DeviceAllocation) GetCurrentDeviceProfileId(ctx context.Context, client
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("system")},
-			{"id", apstra.QEStringVal(o.NodeId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("system")},
+			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("interface_map")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("interface_map")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("interface_map")},
+			{Key: "type", Value: apstra.QEStringVal("interface_map")},
 		}).
 		Out([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("device_profile")},
+			{Key: "type", Value: apstra.QEStringVal("device_profile")},
 		}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("device_profile")},
-			{"name", apstra.QEStringVal("n_device_profile")},
+			{Key: "type", Value: apstra.QEStringVal("device_profile")},
+			{Key: "name", Value: apstra.QEStringVal("n_device_profile")},
 		})
 
 	err := query.Do(ctx, &result)
@@ -532,13 +532,13 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("interface_map")},
-			{"id", apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+			{Key: "type", Value: apstra.QEStringVal("interface_map")},
+			{Key: "id", Value: apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{"type", apstra.QEStringVal("device_profile")}}).
+		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("device_profile")}}).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("device_profile")},
-			{"name", apstra.QEStringVal("n_device_profile")},
+			{Key: "type", Value: apstra.QEStringVal("device_profile")},
+			{Key: "name", Value: apstra.QEStringVal("n_device_profile")},
 		})
 
 	err := query.Do(ctx, &response)
@@ -585,9 +585,9 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{"type", apstra.QEStringVal("device_profile")},
-			{"device_profile_id", apstra.QEStringVal(si.Facts.AosHclModel.String())},
-			{"name", apstra.QEStringVal("n_device_profile")},
+			{Key: "type", Value: apstra.QEStringVal("device_profile")},
+			{Key: "device_profile_id", Value: apstra.QEStringVal(si.Facts.AosHclModel.String())},
+			{Key: "name", Value: apstra.QEStringVal("n_device_profile")},
 		})
 
 	var result struct {
