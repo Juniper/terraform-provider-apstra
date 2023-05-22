@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
