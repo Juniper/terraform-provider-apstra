@@ -238,7 +238,7 @@ func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *d
 	}
 
 	type node struct {
-		Label string            `json:"label,omitempty"`
+		Label string          `json:"label,omitempty"`
 		Id    apstra.ObjectId `json:"id,omitempty"`
 	}
 	response := &struct {
