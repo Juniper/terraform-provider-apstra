@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"errors"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func IsApstra404(err error) bool {
