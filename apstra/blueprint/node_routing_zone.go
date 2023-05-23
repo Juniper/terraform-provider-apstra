@@ -62,14 +62,14 @@ func (o *NodeTypeSecurityZone) ReadFromApi(ctx context.Context, client *apstra.C
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
-			{Key: "type", Value: apstra.QEStringVal("security_zone")},
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeSecurityZone.String())},
 			{Key: "name", Value: apstra.QEStringVal("n_security_zone")},
 		}).
 		Out([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("policy")},
 		}).
 		Node([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal("routing_policy")},
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeRoutingPolicy.String())},
 			{Key: "name", Value: apstra.QEStringVal("n_routing_policy")},
 		})
 
@@ -86,14 +86,13 @@ func (o *NodeTypeSecurityZone) ReadFromApi(ctx context.Context, client *apstra.C
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
-			{Key: "type", Value: apstra.QEStringVal("security_zone")},
-			//{Key: "name", Value: apstra.QEStringVal("n_security_zone")},
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeSecurityZone.String())},
 		}).
 		Out([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("policy")},
 		}).
 		Node([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal("policy")},
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypePolicy.String())},
 			{Key: "name", Value: apstra.QEStringVal("n_dhcp_policy")},
 		})
 
