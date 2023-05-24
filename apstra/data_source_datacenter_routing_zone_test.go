@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"net"
 	testutils "terraform-provider-apstra/apstra/test_utils"
 	"testing"
 )
@@ -18,7 +19,7 @@ data "apstra_datacenter_routing_zone" "test" {
 `
 )
 
-func TestDatacenterRoutingZone_A(t *testing.T) {
+func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 	ctx := context.Background()
 
 	// BlueprintB returns a bpClient and the template from which the blueprint was created
@@ -49,6 +50,10 @@ func TestDatacenterRoutingZone_A(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	ip1 := net.ParseIP("1.1.1.1")
+	ip2 := net.ParseIP("2.2.2.2")
+	bpClient.SetSecurityZoneDhcpServers(ctx, sz.Id, []net.IP{ip1, ip2})
+
 	rp, err := bpClient.GetDefaultRoutingPolicy(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -69,10 +74,11 @@ func TestDatacenterRoutingZone_A(t *testing.T) {
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "id", szId.String()),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "blueprint_id", bpClient.Id().String()),
 
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.id", szId.String()),
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.name", sz.Data.Label),
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.routing_policy_id", rp.Id.String()),
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.dhcp_servers.#", "0"),
+						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "name", sz.Data.Label),
+						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "routing_policy_id", rp.Id.String()),
+						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "dhcp_servers.#", "2"),
+						resource.TestCheckTypeSetElemAttr("data.apstra_datacenter_routing_zone.test", "dhcp_servers.*", "1.1.1.1"),
+						resource.TestCheckTypeSetElemAttr("data.apstra_datacenter_routing_zone.test", "dhcp_servers.*", "2.2.2.2"),
 					}...,
 				),
 			},
