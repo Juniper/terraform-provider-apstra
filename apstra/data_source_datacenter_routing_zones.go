@@ -87,10 +87,7 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 		Items []struct {
 			SecurityZone struct {
 				Id string `json:"id"`
-			} `json:"n_security_zone""`
-			//Policy struct {
-			//	Id string `json:"id"`
-			//} `json:"n_policy""`
+			} `json:"n_security_zone"`
 		} `json:"items"`
 	})
 
