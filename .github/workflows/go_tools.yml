@@ -19,3 +19,6 @@ jobs:
 
       - name: go vet
         run: make govet
+
+      - name: tfplugindocs
+        run: make docs
