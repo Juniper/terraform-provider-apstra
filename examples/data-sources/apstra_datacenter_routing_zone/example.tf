@@ -26,7 +26,6 @@ output "routing_zone" {
 #     "id" = "b03V9dIBBqeQkcV69nY"
 #     "name" = "bar"
 #     "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
-#     "type" = "evpn"
 #     "vlan_id" = 43
 #     "vni" = 10043
 #     "vrf_id" = 2

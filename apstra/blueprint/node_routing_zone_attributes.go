@@ -17,7 +17,6 @@ import (
 type NodeTypeRoutingZoneAttributes struct {
 	Id               types.String `tfsdk:"id"`
 	Name             types.String `tfsdk:"name"`
-	Type             types.String `tfsdk:"type"`
 	VlanID           types.Int64  `tfsdk:"vlan_id"`
 	Vni              types.Int64  `tfsdk:"vni"`
 	VrfID            types.Int64  `tfsdk:"vrf_id"`
@@ -30,7 +29,6 @@ func (o NodeTypeRoutingZoneAttributes) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":                types.StringType,
 		"name":              types.StringType,
-		"type":              types.StringType,
 		"vlan_id":           types.Int64Type,
 		"vni":               types.Int64Type,
 		"vrf_id":            types.Int64Type,
@@ -48,10 +46,6 @@ func (o NodeTypeRoutingZoneAttributes) DataSourceAttributes() map[string]dataSou
 		},
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph datastore node `label` field",
-			Computed:            true,
-		},
-		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra graph datastore node `sz_type` field",
 			Computed:            true,
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -91,11 +85,6 @@ func (o NodeTypeRoutingZoneAttributes) DataSourceAttributesAsFilter() map[string
 		},
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph datastore node `label` field",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
-		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra graph datastore node `sz_type` field",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -141,10 +130,6 @@ func (o NodeTypeRoutingZoneAttributes) QEEAttributes() []apstra.QEEAttribute {
 
 	if utils.Known(o.Name) {
 		result = append(result, apstra.QEEAttribute{Key: "name", Value: apstra.QEStringVal(o.Name.ValueString())})
-	}
-
-	if utils.Known(o.Type) {
-		result = append(result, apstra.QEEAttribute{Key: "sz_type", Value: apstra.QEStringVal(o.Type.ValueString())})
 	}
 
 	if utils.Known(o.VlanID) {

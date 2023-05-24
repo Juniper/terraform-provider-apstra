@@ -41,7 +41,6 @@ func (o *NodeTypeSecurityZone) ReadFromApi(ctx context.Context, client *apstra.C
 	type securityZoneNode struct {
 		Id      string `json:"id"`
 		Label   string `json:"label"`
-		SzType  string `json:"sz_type"`
 		VlanId  int64  `json:"vlan_id"`
 		VniId   int64  `json:"vni_id"`
 		VrfId   int64  `json:"vrf_id"`
@@ -140,7 +139,6 @@ func (o *NodeTypeSecurityZone) ReadFromApi(ctx context.Context, client *apstra.C
 	o.Attributes = types.ObjectValueMust(NodeTypeRoutingZoneAttributes{}.AttrTypes(), map[string]attr.Value{
 		"id":                types.StringValue(sz.Id),
 		"name":              types.StringValue(sz.Label),
-		"type":              types.StringValue(sz.SzType),
 		"vlan_id":           types.Int64Value(sz.VlanId),
 		"vni":               types.Int64Value(sz.VniId),
 		"vrf_id":            types.Int64Value(sz.VrfId),

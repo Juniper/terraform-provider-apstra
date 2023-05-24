@@ -40,7 +40,6 @@ output "routing_zone" {
 #     "id" = "b03V9dIBBqeQkcV69nY"
 #     "name" = "bar"
 #     "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
-#     "type" = "evpn"
 #     "vlan_id" = 43
 #     "vni" = 10043
 #     "vrf_id" = 2
@@ -75,7 +74,6 @@ Read-Only:
 - `dhcp_servers` (Set of String) Set of DHCP servers used by the Routing Zone
 - `name` (String) Apstra graph datastore node `label` field
 - `routing_policy_id` (String) Apstra graph datastore node ID of the Routing Policy applied to this Routing Zone
-- `type` (String) Apstra graph datastore node `sz_type` field
 - `vlan_id` (Number) Apstra graph datastore node `vlan_id` field
 - `vni` (Number) Apstra graph datastore node `vni_id` field
 - `vrf_id` (Number) Apstra graph datastore node `vrf_id` field

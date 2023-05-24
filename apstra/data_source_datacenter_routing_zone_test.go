@@ -72,7 +72,6 @@ func TestDatacenterRoutingZone_A(t *testing.T) {
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.id", szId.String()),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.name", sz.Data.Label),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.routing_policy_id", rp.Id.String()),
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.type", "evpn"),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "attributes.dhcp_servers.#", "0"),
 					}...,
 				),
