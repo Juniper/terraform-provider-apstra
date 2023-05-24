@@ -18,20 +18,17 @@ output "routing_zone" {
 # The output looks like this:
 
 # routing_zone = {
-#   "attributes" = {
-#     "dhcp_servers" = toset([
-#       "192.168.10.100",
-#       "192.168.20.100",
-#     ])
-#     "id" = "b03V9dIBBqeQkcV69nY"
-#     "name" = "bar"
-#     "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
-#     "vlan_id" = 43
-#     "vni" = 10043
-#     "vrf_id" = 2
-#     "vrf_name" = "terraform-vrf"
-#   }
 #   "blueprint_id" = "13b8ddb4-f230-4727-ab0f-aa829551a129"
+#   "dhcp_servers" = toset([
+#     "192.168.10.100",
+#     "192.168.20.100",
+#   ])
 #   "id" = "b03V9dIBBqeQkcV69nY"
+#   "name" = "bar"
+#   "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
+#   "vlan_id" = 43
+#   "vni" = 10043
+#   "vrf_id" = 2
+#   "vrf_name" = "terraform-vrf"
 #
 

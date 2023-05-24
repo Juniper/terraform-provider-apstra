@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_routing_zone Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source returns details of a specific security zone (graph datastore term for routing zone) node within a Datacenter Blueprint's graph DB.
+  This resource returns details of a Routing Zone within a Datacenter Blueprint.
 ---
 
 # apstra_datacenter_routing_zone (Data Source)
 
-This data source returns details of a specific *security zone* (graph datastore term for *routing zone*) node within a Datacenter Blueprint's graph DB.
+This resource returns details of a Routing Zone within a Datacenter Blueprint.
 
 ## Example Usage
 
@@ -32,21 +32,18 @@ output "routing_zone" {
 # The output looks like this:
 
 # routing_zone = {
-#   "attributes" = {
-#     "dhcp_servers" = toset([
-#       "192.168.10.100",
-#       "192.168.20.100",
-#     ])
-#     "id" = "b03V9dIBBqeQkcV69nY"
-#     "name" = "bar"
-#     "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
-#     "vlan_id" = 43
-#     "vni" = 10043
-#     "vrf_id" = 2
-#     "vrf_name" = "terraform-vrf"
-#   }
 #   "blueprint_id" = "13b8ddb4-f230-4727-ab0f-aa829551a129"
+#   "dhcp_servers" = toset([
+#     "192.168.10.100",
+#     "192.168.20.100",
+#   ])
 #   "id" = "b03V9dIBBqeQkcV69nY"
+#   "name" = "bar"
+#   "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
+#   "vlan_id" = 43
+#   "vni" = 10043
+#   "vrf_id" = 2
+#   "vrf_name" = "terraform-vrf"
 #
 ```
 
@@ -55,26 +52,15 @@ output "routing_zone" {
 
 ### Required
 
-- `blueprint_id` (String) Apstra Blueprint ID
-- `id` (String) Apstra graph datastore node `id`
+- `blueprint_id` (String) Apstra Blueprint ID.
+- `id` (String) Apstra graph node ID.
 
 ### Read-Only
 
-- `attributes` (Attributes) Attributes of a `security_zone` (graph datastore term for `routing_zone`) graph node. (see [below for nested schema](#nestedatt--attributes))
-
-<a id="nestedatt--attributes"></a>
-### Nested Schema for `attributes`
-
-Required:
-
-- `id` (String) Apstra graph datastore node `id` field
-
-Read-Only:
-
-- `dhcp_servers` (Set of String) Set of DHCP servers used by the Routing Zone
-- `name` (String) Apstra graph datastore node `label` field
-- `routing_policy_id` (String) Apstra graph datastore node ID of the Routing Policy applied to this Routing Zone
-- `vlan_id` (Number) Apstra graph datastore node `vlan_id` field
-- `vni` (Number) Apstra graph datastore node `vni_id` field
-- `vrf_id` (Number) Apstra graph datastore node `vrf_id` field
-- `vrf_name` (String) Apstra graph datastore node `vrf_name` field
+- `dhcp_servers` (Set of String) Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.
+- `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration in managed resource context, this attribute will always be `false` and should be ignored in data source context.
+- `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration in managed resource context, this attribute will always be `false` and should be ignored in data source context.
+- `name` (String) VRF name displayed in thw Apstra web UI.
+- `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
+- `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
+- `vni` (Number) VxLAN VNI associated with the routing zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.

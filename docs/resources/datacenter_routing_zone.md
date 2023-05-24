@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_routing_zone Resource - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This resource creates a Routing Zone within a Blueprint.
+  This resource creates a Routing Zone within a Datacenter Blueprint.
 ---
 
 # apstra_datacenter_routing_zone (Resource)
 
-This resource creates a Routing Zone within a Blueprint.
+This resource creates a Routing Zone within a Datacenter Blueprint.
 
 ## Example Usage
 
@@ -19,6 +19,7 @@ resource "apstra_datacenter_routing_zone" "blue" {
   blueprint_id      = "<blueprint-id-goes-here>"
   vlan_id           = 5                                     # optional
   vni               = 5000                                  # optional
+  dhcp_servers      = ["192.168.100.10", "192.168.200.10"]  # optional
 #  routing_policy_id = "<routing-policy-node-id-goes-here>" # optional
 }
 ```
@@ -33,12 +34,13 @@ resource "apstra_datacenter_routing_zone" "blue" {
 
 ### Optional
 
+- `dhcp_servers` (Set of String) Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
 - `vni` (Number) VxLAN VNI associated with the routing zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.
 
 ### Read-Only
 
-- `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration.
-- `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration.
+- `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration, this attribute can be ignored.
+- `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration, this attribute can be ignored.
 - `id` (String) Apstra graph node ID.
