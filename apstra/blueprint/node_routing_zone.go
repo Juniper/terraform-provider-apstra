@@ -39,12 +39,10 @@ func (o *NodeTypeSecurityZone) ReadFromApi(ctx context.Context, client *apstra.C
 	var err error
 
 	type securityZoneNode struct {
-		Id      string `json:"id"`
-		Label   string `json:"label"`
-		VlanId  int64  `json:"vlan_id"`
-		VniId   int64  `json:"vni_id"`
-		VrfId   int64  `json:"vrf_id"`
-		VrfName string `json:"vrf_name"`
+		Id     string `json:"id"`
+		Label  string `json:"label"`
+		VlanId int64  `json:"vlan_id"`
+		VniId  int64  `json:"vni_id"`
 	}
 
 	type dhcpPolicyNode struct {
@@ -141,8 +139,6 @@ func (o *NodeTypeSecurityZone) ReadFromApi(ctx context.Context, client *apstra.C
 		"name":              types.StringValue(sz.Label),
 		"vlan_id":           types.Int64Value(sz.VlanId),
 		"vni":               types.Int64Value(sz.VniId),
-		"vrf_id":            types.Int64Value(sz.VrfId),
-		"vrf_name":          types.StringValue(sz.VrfName),
 		"dhcp_servers":      utils.SetValueOrNull(ctx, types.StringType, dhcpServers, diags),
 		"routing_policy_id": types.StringValue(rp.Id),
 	})

@@ -136,6 +136,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	}
 
 	request := plan.Request(ctx, o.client, &resp.Diagnostics)
+	dhcpServerRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -143,6 +144,15 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	id, err := bp.CreateSecurityZone(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating security zone", err.Error())
+		return
+	}
+	// partial state set
+	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+
+	err = bp.SetSecurityZoneDhcpServers(ctx, id, dhcpServerRequest)
+	if err != nil {
+		resp.Diagnostics.AddError("error setting security zone dhcp servers", err.Error())
 		return
 	}
 
@@ -204,6 +214,22 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
+	dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, sz.Id)
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
+		return
+	}
+
+	state.LoadApiDhcpServers(ctx, dhcpServers, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -243,6 +269,17 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating security zone", err.Error())
+		return
+	}
+
+	dhcpRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err = bp.SetSecurityZoneDhcpServers(ctx, apstra.ObjectId(plan.Id.ValueString()), dhcpRequest)
+	if err != nil {
+		resp.Diagnostics.AddError("error updating security zone dhcp servers", err.Error())
 		return
 	}
 
