@@ -24,7 +24,7 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			Required:            true,
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `ID`",
+			MarkdownDescription: "Apstra Graph DB node `id`",
 			Required:            true,
 		},
 		"attributes": dataSourceSchema.SingleNestedAttribute{

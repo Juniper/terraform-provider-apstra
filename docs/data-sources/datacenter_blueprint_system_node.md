@@ -47,7 +47,7 @@ locals {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID
-- `id` (String) Apstra Graph DB node `ID`
+- `id` (String) Apstra Graph DB node `id`
 
 ### Read-Only
 

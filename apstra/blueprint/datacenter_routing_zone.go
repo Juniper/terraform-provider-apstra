@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,9 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"net"
 	"regexp"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/design"
 	"terraform-provider-apstra/apstra/resources"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 const (
@@ -30,7 +35,60 @@ type DatacenterRoutingZone struct {
 	HadPriorVlanIdConfig types.Bool   `tfsdk:"had_prior_vlan_id_config"`
 	Vni                  types.Int64  `tfsdk:"vni"`
 	HadPriorVniConfig    types.Bool   `tfsdk:"had_prior_vni_config"`
+	DhcpServers          types.Set    `tfsdk:"dhcp_servers"`
 	RoutingPolicyId      types.String `tfsdk:"routing_policy_id"`
+}
+
+func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra graph node ID.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Blueprint ID.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			Computed:            true,
+		},
+		"vlan_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
+				"Leave this field blank to have it automatically assigned from a static pool in the " +
+				"range of 2-4094), or enter a specific value.",
+			Computed: true,
+		},
+		"had_prior_vlan_id_config": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Used to trigger plan modification when `vlan_id` has been removed from the " +
+				"configuration in managed resource context, this attribute will always be `false` and should be " +
+				"ignored in data source context.",
+			Computed: true,
+		},
+		"vni": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
+				"automatically assigned from an allocated resource pool, or enter a specific value.",
+			Computed: true,
+		},
+		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the " +
+				"configuration in managed resource context, this attribute will always be `false` and should be " +
+				"ignored in data source context.",
+			Computed: true,
+		},
+		"dhcp_servers": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.",
+			ElementType:         types.StringType,
+			Computed:            true,
+		},
+		"routing_policy_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
+				"Set this attribute in an EVPN blueprint to use a non-default policy.",
+			Computed: true,
+		},
+	}
 }
 
 func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -64,8 +122,9 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
 		},
 		"had_prior_vlan_id_config": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Used to trigger plan modification when `vlan_id` has been removed from the configuration.",
-			Computed:            true,
+			MarkdownDescription: "Used to trigger plan modification when `vlan_id` has been removed from the " +
+				"configuration, this attribute can be ignored.",
+			Computed: true,
 		},
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
@@ -75,8 +134,18 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators: []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
 		},
 		"had_prior_vni_config": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the configuration.",
-			Computed:            true,
+			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the " +
+				"configuration, this attribute can be ignored.",
+			Computed: true,
+		},
+		"dhcp_servers": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(apstravalidator.ParseIp(false, false)),
+			},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
@@ -112,7 +181,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		diags.AddAttributeError(
 			path.Root("blueprint_id"),
 			errInvalidConfig,
-			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosettta treatment
+			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosetta treatment
 	}
 
 	return &apstra.SecurityZoneData{
@@ -123,6 +192,15 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		VlanId:          vlan,
 		VniId:           vni,
 	}
+}
+
+func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Diagnostics) []net.IP {
+	dhcpServers := o.DhcpServers.Elements()
+	request := make([]net.IP, len(dhcpServers))
+	for i, dhcpServer := range dhcpServers {
+		request[i] = net.ParseIP(dhcpServer.(types.String).ValueString())
+	}
+	return request
 }
 
 func (o *DatacenterRoutingZone) LoadApiData(_ context.Context, sz *apstra.SecurityZoneData, _ *diag.Diagnostics) {
@@ -140,4 +218,12 @@ func (o *DatacenterRoutingZone) LoadApiData(_ context.Context, sz *apstra.Securi
 	} else {
 		o.Vni = types.Int64Null()
 	}
+}
+
+func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []net.IP, diags *diag.Diagnostics) {
+	dhcpServers := make([]string, len(IPs))
+	for i, ip := range IPs {
+		dhcpServers[i] = ip.String()
+	}
+	o.DhcpServers = utils.SetValueOrNull(ctx, types.StringType, dhcpServers, diags)
 }
