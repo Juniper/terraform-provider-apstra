@@ -30,7 +30,7 @@ func (o *resourceDatacenterRoutingZone) Configure(ctx context.Context, req resou
 
 func (o *resourceDatacenterRoutingZone) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Routing Zone within a Blueprint.",
+		MarkdownDescription: "This resource creates a Routing Zone within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterRoutingZone{}.ResourceAttributes(),
 	}
 }
@@ -230,6 +230,7 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
