@@ -122,7 +122,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"dhcp_servers": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "Set of DHCP server IPv4 or IPv6 addresses of DHCP servers which must be configured " +
+			MarkdownDescription: "Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured " +
 				"in the Routing Zone. This is a list of *required* servers, not an exact-match list.",
 			ElementType: types.StringType,
 			Optional:    true,
