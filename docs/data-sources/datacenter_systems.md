@@ -6,7 +6,7 @@ description: |-
   Optional attributes filter the result list so that it only contains IDs of nodes which match the filters.
 ---
 
-# apstra_datacenter_blueprint_system_nodes (Data Source)
+# apstra_datacenter_systems (Data Source)
 
 This data source returns Graph DB node IDs of *system* nodes within a Blueprint.
 
@@ -27,7 +27,7 @@ data "apstra_datacenter_systems" "juniper_spines" {
 }
 
 output "qfx_spines" {
-  value = data.apstra_datacenter_blueprint_system_nodes.juniper_spines.ids
+  value = data.apstra_datacenter_systems.juniper_spines.ids
 }
 ```
 

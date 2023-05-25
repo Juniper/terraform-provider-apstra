@@ -15,7 +15,7 @@ type dataSourceDatacenterSystemNodes struct {
 }
 
 func (o *dataSourceDatacenterSystemNodes) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_system"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_systems"
 }
 
 func (o *dataSourceDatacenterSystemNodes) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {

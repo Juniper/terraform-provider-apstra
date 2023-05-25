@@ -1,5 +1,5 @@
 # This example determines the hostname of the lowest numbered system using
-# apstra_datacenter_systems data source with a filter to select
+# apstra_datacenter_system data source with a filter to select
 # system ID 1.
 #
 # It then uses the returned ID to do a second lookup to get the full details
