@@ -1,4 +1,7 @@
-all: gofmt govet unit-tests integration-tests device-integration-tests
+all: docs gofmt govet unit-tests integration-tests device-integration-tests
+
+docs:
+	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh"
 
 gofmt:
 	@sh -c "$(CURDIR)/scripts/gofmtcheck.sh"
@@ -15,4 +18,4 @@ integration-tests:
 device-integration-tests:
 	go test -tags device-integration -v ./...
 
-.PHONY: all gofmt govet unit-tests integration-tests device-integration-tests
+.PHONY: all docs gofmt govet unit-tests integration-tests device-integration-tests
