@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20230524142438-5959c7771c90
+	github.com/Juniper/apstra-go-sdk v0.0.0-20230525181310-bbaf3065d735
 	github.com/chrismarget-j/go-licenses v0.0.0-20230424163011-d60082a506e0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
@@ -16,7 +16,7 @@ require (
 )
 
 //                                                                                          HHMMSS
-replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230524182305-eec4bb728c2b
+//replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230524182305-eec4bb728c2b
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
