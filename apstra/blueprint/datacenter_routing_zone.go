@@ -91,6 +91,50 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 	}
 }
 
+func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			Optional:            true,
+		},
+		"vlan_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections.",
+			Optional:            true,
+		},
+		"had_prior_vlan_id_config": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"vni": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "VxLAN VNI associated with the routing zone.",
+			Optional:            true,
+		},
+		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"dhcp_servers": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured " +
+				"in the Routing Zone. This is a list of *required* servers, not an exact-match list.",
+			ElementType: types.StringType,
+			Optional:    true,
+		},
+		"routing_policy_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
+				"Set this attribute in an EVPN blueprint to use a non-default policy.",
+			Optional: true,
+		},
+	}
+}
+
 func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.Attribute {
 	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]resourceSchema.Attribute{
@@ -226,4 +270,66 @@ func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []ne
 		dhcpServers[i] = ip.String()
 	}
 	o.DhcpServers = utils.SetValueOrNull(ctx, types.StringType, dhcpServers, diags)
+}
+
+func (o *DatacenterRoutingZone) Query(szResultName, policyResultName string) *apstra.PathQuery {
+	query := new(apstra.PathQuery)
+
+	if utils.Known(o.RoutingPolicyId) {
+		query.Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeRoutingPolicy.String())},
+			{Key: "id", Value: apstra.QEStringVal(o.RoutingPolicyId.ValueString())},
+		})
+		query.In([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("policy")},
+		})
+	}
+
+	query.Node(o.szNodeQueryAttributes(szResultName))
+
+	if utils.Known(o.DhcpServers) {
+		query.Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("policy")},
+		})
+		query.Node([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypePolicy.String())},
+			{Key: "policy_type", Value: apstra.QEStringVal("dhcp_relay")},
+			{Key: "name", Value: apstra.QEStringVal(policyResultName)},
+		})
+	}
+
+	for _, dhcpServerVal := range o.DhcpServers.Elements() {
+		query.Where("lambda " +
+			policyResultName +
+			": '" +
+			dhcpServerVal.(types.String).ValueString() +
+			"' in " +
+			policyResultName +
+			".dhcp_servers")
+	}
+	return query
+}
+
+func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEAttribute {
+	result := []apstra.QEEAttribute{
+		{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeSecurityZone.String())},
+	}
+
+	if name != "" {
+		result = append(result, apstra.QEEAttribute{Key: "name", Value: apstra.QEStringVal(name)})
+	}
+
+	if utils.Known(o.Name) {
+		result = append(result, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Name.ValueString())})
+	}
+
+	if utils.Known(o.Vni) {
+		result = append(result, apstra.QEEAttribute{Key: "vni_id", Value: apstra.QEIntVal(int(o.Vni.ValueInt64()))})
+	}
+
+	if utils.Known(o.VlanId) {
+		result = append(result, apstra.QEEAttribute{Key: "vlan_id", Value: apstra.QEIntVal(int(o.VlanId.ValueInt64()))})
+	}
+
+	return result
 }
