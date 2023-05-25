@@ -1,6 +1,6 @@
 # This example outputs a set of graph db node IDs representing all spine
 # switches with tag 'junos' and tag 'qfx'
-data "apstra_datacenter_blueprint_system_nodes" "juniper_spines" {
+data "apstra_datacenter_systems" "juniper_spines" {
   blueprint_id = apstra_datacenter_blueprint.example.id
   filters = {
     role        = "spine"
@@ -10,5 +10,5 @@ data "apstra_datacenter_blueprint_system_nodes" "juniper_spines" {
 }
 
 output "qfx_spines" {
-  value = data.apstra_datacenter_blueprint_system_nodes.juniper_spines.ids
+  value = data.apstra_datacenter_systems.juniper_spines.ids
 }

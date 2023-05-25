@@ -1,5 +1,5 @@
 ---
-page_title: "apstra_datacenter_blueprint_system_nodes Data Source - terraform-provider-apstra"
+page_title: "apstra_datacenter_systems Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source returns Graph DB node IDs of system nodes within a Blueprint.
@@ -17,7 +17,7 @@ Optional attributes filter the result list so that it only contains IDs of nodes
 ```terraform
 # This example outputs a set of graph db node IDs representing all spine
 # switches with tag 'junos' and tag 'qfx'
-data "apstra_datacenter_blueprint_system_nodes" "juniper_spines" {
+data "apstra_datacenter_systems" "juniper_spines" {
   blueprint_id = apstra_datacenter_blueprint.example.id
   filters = {
     role        = "spine"

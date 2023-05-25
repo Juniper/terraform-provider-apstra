@@ -12,15 +12,15 @@ import (
 )
 
 const (
-	dataSourceDataCenterBlueprintSystemNodeHCL = `
-data "apstra_datacenter_blueprint_system_node" "test" {
-  blueprint_id = "%s" 
+	dataSourceDataCenterSystemHCL = `
+data "apstra_datacenter_system" "test" {
+  blueprint_id = "%s"
   id = "%s"
 }
 `
 )
 
-func TestDatacenterBlueprintSystemNode_A(t *testing.T) {
+func TestDatacenterSystem_A(t *testing.T) {
 	ctx := context.Background()
 	client, err := testutils.GetTestClient()
 	if err != nil {
@@ -75,21 +75,21 @@ func TestDatacenterBlueprintSystemNode_A(t *testing.T) {
 	}
 
 	// generate the terraform config
-	dataSourceHCL := fmt.Sprintf(dataSourceDataCenterBlueprintSystemNodeHCL, bpClient.Id(), spine1.Id)
+	dataSourceHCL := fmt.Sprintf(dataSourceDataCenterSystemHCL, bpClient.Id(), spine1.Id)
 
 	// test check functions
 	testCheckFuncs := []resource.TestCheckFunc{
-		resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "id", spine1.Id),
-		resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "attributes.hostname", spine1.Hostname),
-		resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "attributes.label", spine1.Label),
-		resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "attributes.role", spine1.Role),
-		resource.TestCheckNoResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "attributes.system_id"),
-		resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "attributes.system_type", spine1.SystemType),
-		resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint_system_node.test", "attributes.tag_ids.#", strconv.Itoa(len(template.Data.Spine.Tags))),
+		resource.TestCheckResourceAttr("data.apstra_datacenter_system.test", "id", spine1.Id),
+		resource.TestCheckResourceAttr("data.apstra_datacenter_system.test", "attributes.hostname", spine1.Hostname),
+		resource.TestCheckResourceAttr("data.apstra_datacenter_system.test", "attributes.label", spine1.Label),
+		resource.TestCheckResourceAttr("data.apstra_datacenter_system.test", "attributes.role", spine1.Role),
+		resource.TestCheckNoResourceAttr("data.apstra_datacenter_system.test", "attributes.system_id"),
+		resource.TestCheckResourceAttr("data.apstra_datacenter_system.test", "attributes.system_type", spine1.SystemType),
+		resource.TestCheckResourceAttr("data.apstra_datacenter_system.test", "attributes.tag_ids.#", strconv.Itoa(len(template.Data.Spine.Tags))),
 	}
 	for i := range template.Data.Spine.Tags {
 		testCheckFuncs = append(testCheckFuncs, resource.TestCheckTypeSetElemAttr(
-			"data.apstra_datacenter_blueprint_system_node.test",
+			"data.apstra_datacenter_system.test",
 			"attributes.tag_ids.*",
 			template.Data.Spine.Tags[i].Label,
 		))
