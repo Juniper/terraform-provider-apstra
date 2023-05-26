@@ -19,7 +19,7 @@ This resource creates a Virtual Network within a Blueprint.
 # relationship between leaf and access switches, ESI/MLAG redundancy group
 # relationships and graph db node IDs of switch and group nodes.
 #
-# Users are encouraged to use the `apstra_datacenter_blueprint_system_nodes`
+# Users are encouraged to use the `apstra_datacenter_systems`
 # and `apstra_datacenter_virtual_network_binding_constructor` data sources to
 # produce the 'bindings' data.
 

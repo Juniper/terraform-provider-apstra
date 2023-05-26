@@ -8,21 +8,21 @@ import (
 	"terraform-provider-apstra/apstra/blueprint"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintSystemNode{}
+var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSystemNode{}
 
-type dataSourceBlueprintSystemNode struct {
+type dataSourceDatacenterSystemNode struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceBlueprintSystemNode) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_blueprint_system_node"
+func (o *dataSourceDatacenterSystemNode) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_system"
 }
 
-func (o *dataSourceBlueprintSystemNode) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceDatacenterSystemNode) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceBlueprintSystemNode) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceDatacenterSystemNode) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns details of a specific " +
 			"*system* Graph DB node (identified by ID) *system* nodes within " +
@@ -31,7 +31,7 @@ func (o *dataSourceBlueprintSystemNode) Schema(_ context.Context, _ datasource.S
 	}
 }
 
-func (o *dataSourceBlueprintSystemNode) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceDatacenterSystemNode) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
