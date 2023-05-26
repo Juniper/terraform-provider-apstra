@@ -41,7 +41,7 @@ func (o Ipv6Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "(Non unique) name of the IPv6 pool.",
+			MarkdownDescription: "Name of the IPv6 pool.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
