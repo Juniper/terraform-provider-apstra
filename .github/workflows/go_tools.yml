@@ -21,4 +21,7 @@ jobs:
         run: make govet
 
       - name: tfplugindocs
-        run: make docs
+        run: make docs-check
+
+      - name: compliance
+        run: make compliance-check
