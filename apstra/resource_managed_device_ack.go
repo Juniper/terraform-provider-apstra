@@ -81,6 +81,9 @@ func (o *resourceManagedDeviceAck) Create(ctx context.Context, req resource.Crea
 
 	plan.SystemId = types.StringValue(string(agentInfo.Status.SystemId))
 	plan.Acknowledge(ctx, systemInfo, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
