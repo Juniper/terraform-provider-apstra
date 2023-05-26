@@ -52,8 +52,10 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 
 	// Ensure the blueprint exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
-		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
-		return
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		resp.Diagnostics.AddError("no such blueprint", fmt.Sprintf("blueprint %s not found", plan.BlueprintId))
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -117,6 +119,9 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
+		if resp.Diagnostics.HasError() {
+			return
+		}
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -176,6 +181,15 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 	var state blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 
