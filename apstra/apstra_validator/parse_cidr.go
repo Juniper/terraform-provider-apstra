@@ -40,7 +40,7 @@ func (o ParseCidrValidator) ValidateString(_ context.Context, req validator.Stri
 	value := req.ConfigValue.ValueString()
 
 	ip, ipNet, err := net.ParseCIDR(value)
-	if err != nil {
+	if err != nil || ip == nil || ipNet == nil {
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
 			req.Path,
 			"value is not a valid CIDR notation prefix",
