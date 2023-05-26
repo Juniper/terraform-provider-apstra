@@ -341,6 +341,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceIpv6Pool{} },
 		func() resource.Resource { return &resourceLogicalDevice{} },
 		func() resource.Resource { return &resourceManagedDevice{} },
+		func() resource.Resource { return &resourceManagedDeviceAck{} },
 		func() resource.Resource { return &resourcePoolAllocation{} },
 		func() resource.Resource { return &resourcePropertySet{} },
 		func() resource.Resource { return &resourceRackType{} },
