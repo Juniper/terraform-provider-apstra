@@ -1,6 +1,18 @@
-all: docs gofmt govet unit-tests integration-tests device-integration-tests
+all: compliance-check docs-check gofmt govet unit-tests integration-tests device-integration-tests
+
+check-repo-clean:
+	git update-index --refresh && git diff-index --quiet HEAD --
+
+compliance:
+	go run github.com/chrismarget-j/go-licenses save --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk --save_path=./Third_Party_Code --force ./... || exit 1 ;\
+	go run github.com/chrismarget-j/go-licenses report ./... --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk/apstra --template .notices.tpl > Third_Party_Code/NOTICES.md || exit 1 ;\
+
+compliance-check: compliance check-repo-clean
 
 docs:
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+
+docs-check:
 	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh"
 
 gofmt:
@@ -18,4 +30,4 @@ integration-tests:
 device-integration-tests:
 	go test -tags device-integration -v ./...
 
-.PHONY: all docs gofmt govet unit-tests integration-tests device-integration-tests
+.PHONY: all compliance compliance-check docs docs-check gofmt govet unit-tests integration-tests device-integration-tests
