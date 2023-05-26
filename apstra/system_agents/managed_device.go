@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -33,6 +34,40 @@ func (o *ManagedDevice) Request(_ context.Context, _ *diag.Diagnostics) *apstra.
 		ManagementIp:    o.ManagementIp.ValueString(),
 		Profile:         apstra.ObjectId(o.AgentProfileId.ValueString()),
 		OperationMode:   apstra.AgentModeFull,
+	}
+}
+
+func (o ManagedDevice) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"agent_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID for the Managed Device Agent.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"system_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID for the System onboarded by the Managed Device Agent.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"management_ip": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Management IP address of the System.",
+			Optional:            true,
+			Validators:          []validator.String{apstravalidator.ParseIpOrCidr(false, false)},
+		},
+		"device_key": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Key which uniquely identifies a System asset, probably a serial number.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"agent_profile_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Agent Profile associated with the Agent.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"off_box": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether the agent runs on the switch (true) or on an Apstra node (false).",
+			Optional:            true,
+		},
 	}
 }
 
