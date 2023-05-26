@@ -344,10 +344,10 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourcePoolAllocation{} },
 		func() resource.Resource { return &resourcePropertySet{} },
 		func() resource.Resource { return &resourceRackType{} },
+		func() resource.Resource { return &resourceTag{} },
 		//func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
 		//func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		func() resource.Resource { return &resourceTemplateRackBased{} },
-		func() resource.Resource { return &resourceTag{} },
 		func() resource.Resource { return &resourceVniPool{} },
 	}
 }
