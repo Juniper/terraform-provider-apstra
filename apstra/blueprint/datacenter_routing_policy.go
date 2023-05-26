@@ -249,7 +249,7 @@ func (o *DatacenterRoutingPolicy) LoadApiData(ctx context.Context, policyData *a
 	}
 
 	o.Name = types.StringValue(policyData.Label)
-	o.Description = types.StringValue(policyData.Description)
+	o.Description = utils.StringValueOrNull(ctx, policyData.Description, diags)
 	o.ImportPolicy = types.StringValue(policyData.ImportPolicy.String())
 	o.ExportPolicy = exportPolicyObj
 	o.ExpectV4Default = types.BoolValue(policyData.ExpectDefaultIpv4Route)
