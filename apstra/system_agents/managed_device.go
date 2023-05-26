@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -32,6 +33,36 @@ func (o *ManagedDevice) Request(_ context.Context, _ *diag.Diagnostics) *apstra.
 		ManagementIp:    o.ManagementIp.ValueString(),
 		Profile:         apstra.ObjectId(o.AgentProfileId.ValueString()),
 		OperationMode:   apstra.AgentModeFull,
+	}
+}
+
+func (o ManagedDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"agent_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID for the Managed Device Agent.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"system_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID for the System managed by the Agent.",
+			Computed:            true,
+		},
+		"management_ip": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Management IP address of the system managed by the Agent.",
+			Computed:            true,
+		},
+		"device_key": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Key which uniquely identifies a System asset probably the serial number.",
+			Computed:            true,
+		},
+		"agent_profile_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Agent Profile ID associated with the Agent.",
+			Computed:            true,
+		},
+		"off_box": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether the agent runs on the switch (true) or on an Apstra node (false).",
+			Computed:            true,
+		},
 	}
 }
 

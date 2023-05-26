@@ -289,6 +289,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 // DataSources defines provider data sources
 func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		func() datasource.DataSource { return &dataSourceAgent{} },
 		func() datasource.DataSource { return &dataSourceAgentProfile{} },
 		func() datasource.DataSource { return &dataSourceAgentProfiles{} },
 		func() datasource.DataSource { return &dataSourceAsnPool{} },
