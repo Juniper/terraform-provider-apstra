@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"net"
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 )
 
@@ -151,5 +152,56 @@ func (o *ManagedDevice) GetDeviceKey(ctx context.Context, client *apstra.Client,
 		o.DeviceKey = types.StringNull()
 	} else {
 		o.DeviceKey = types.StringValue(systemInfo.DeviceKey)
+	}
+}
+
+// IpNetFromManagementIp is generally called when a ManagedDevice object is used
+// as a filter for matching other ManagedDevice objects. In that case, the
+// ManagementIp element might contain a CIDR block rather than an individual
+// host address. In either case, returns a *net.IPNet representing the
+// ManagementIp element. nil is returned if the ManagementIp element is null.
+func (o *ManagedDevice) IpNetFromManagementIp(_ context.Context, diags *diag.Diagnostics) *net.IPNet {
+	var err error
+	var ip net.IP
+	var mgmtPrefix *net.IPNet
+
+	if o.ManagementIp.IsNull() {
+		return nil
+	}
+
+	// we don't know if we got a single host address (192.168.10.10) or a cidr
+	// block (192.168.10.0/24). Try parsing as CIDR first. Not generating diags
+	// on err because we don't necessarily expect this to work.
+	_, mgmtPrefix, err = net.ParseCIDR(o.ManagementIp.ValueString())
+	if err == nil && mgmtPrefix != nil {
+		return mgmtPrefix
+	}
+
+	// parsing as CIDR failed. Parse as IP.
+	ip = net.ParseIP(o.ManagementIp.ValueString())
+	if ip == nil {
+		diags.AddError(
+			"failed to parse management IP",
+			fmt.Sprintf("couldn't parse: %q", o.ManagementIp.ValueString()),
+		)
+		return nil
+	}
+
+	// construct a mask of the appropriate size
+	var mask net.IPMask
+	switch {
+	case len(ip.To4()) == net.IPv4len:
+		mask = net.CIDRMask(32, 32)
+	case len(ip) == net.IPv6len:
+		mask = net.CIDRMask(128, 128)
+	default:
+		diags.AddError(
+			"unable to determine appropriate mask size for ip address",
+			fmt.Sprintf("%q didn't match IPv4 nor IPv6 detection strategy", ip.String()))
+	}
+
+	return &net.IPNet{
+		IP:   ip,
+		Mask: mask,
 	}
 }
