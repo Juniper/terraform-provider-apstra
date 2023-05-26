@@ -41,7 +41,9 @@ func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource
 		return
 	}
 
-	// extract []LogicalDevicePanel from the resourceLogicalDevice
+	if config.Panels.IsUnknown() {
+		return // cannot validate unknown panels
+	}
 	panels := config.GetPanels(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
