@@ -74,10 +74,8 @@ var blueprintMutexesMutex sync.Mutex
 
 // Provider fulfils the provider.Provider interface
 type Provider struct {
-	Version    string
-	Commit     string
-	configured bool
-	client     *apstra.Client
+	Version string
+	Commit  string
 }
 
 // providerData gets instantiated in Provider's Configure() method and
