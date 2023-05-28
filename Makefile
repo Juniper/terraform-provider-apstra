@@ -30,4 +30,9 @@ integration-tests:
 device-integration-tests:
 	go test -tags device-integration -v ./...
 
-.PHONY: all compliance compliance-check docs docs-check gofmt govet unit-tests integration-tests device-integration-tests
+staticcheck:
+	go run honnef.co/go/tools/cmd/staticcheck ./...
+
+staticcheck-check: staticcheck check-repo-clean
+
+.PHONY: all compliance compliance-check docs docs-check gofmt govet unit-tests integration-tests device-integration-tests staticcheck staticcheck-check
