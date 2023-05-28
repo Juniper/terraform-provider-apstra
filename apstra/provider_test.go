@@ -6,12 +6,6 @@ import (
 )
 
 const (
-	providerConfigHCL = `
-provider "apstra" {
-  blueprint_mutex_disabled = true
-}
-`
-
 	insecureProviderConfigHCL = `
 provider "apstra" {
   tls_validation_disabled = true
