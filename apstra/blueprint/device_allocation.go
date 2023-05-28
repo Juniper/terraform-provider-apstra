@@ -292,13 +292,14 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	}
 
 	if o.InterfaceMapCatalogId.IsUnknown() {
-		o.populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx, client, diags)
+		o.populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx, client, diags) // this will clear BlueprintId on 404
 	}
 	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
 
 	o.validateInterfaceMapId(ctx, client, diags) // this will clear BlueprintId on 404
+	//lint:ignore SA4017 IsNull() output not ignored.
 	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
