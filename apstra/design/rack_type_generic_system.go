@@ -234,8 +234,7 @@ func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackT
 		i++
 	}
 
-	var tagIds []apstra.ObjectId
-	tagIds = make([]apstra.ObjectId, len(o.TagIds.Elements()))
+	tagIds := make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	return &apstra.RackElementGenericSystemRequest{

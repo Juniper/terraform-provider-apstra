@@ -233,8 +233,7 @@ func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackTy
 		i++
 	}
 
-	var tagIds []apstra.ObjectId
-	tagIds = make([]apstra.ObjectId, len(o.TagIds.Elements()))
+	tagIds := make([]apstra.ObjectId, len(o.TagIds.Elements()))
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	var esiLagInfo *apstra.EsiLagInfo
