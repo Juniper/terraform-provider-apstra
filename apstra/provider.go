@@ -162,7 +162,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 	// Default the mutex message if needed.
 	if config.MutexMessage.IsNull() {
-		config.MutexMessage = types.StringValue(fmt.Sprintf(blueprintMutexMessage))
+		config.MutexMessage = types.StringValue(blueprintMutexMessage)
 	}
 
 	// Create the Apstra client configuration from the URL and the environment.

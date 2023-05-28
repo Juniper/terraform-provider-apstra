@@ -26,7 +26,7 @@ type ConfigletGenerator struct {
 func (o ConfigletGenerator) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"config_style": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Indicates Platform Specific Configuration Style"),
+			MarkdownDescription: "Indicates Platform Specific Configuration Style",
 			Computed:            true,
 		},
 		"section": dataSourceSchema.StringAttribute{

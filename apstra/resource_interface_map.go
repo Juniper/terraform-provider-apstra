@@ -312,7 +312,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	if err != nil {
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
-				fmt.Sprintf(fmt.Sprintf("logical device'%s' not found", o.DeviceProfileId.ValueString())))
+				fmt.Sprintf("logical device'%s' not found", o.DeviceProfileId.ValueString()))
 		}
 		diags.AddError("error while fetching logical device", err.Error())
 	}
@@ -322,7 +322,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	if err != nil {
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
-				fmt.Sprintf(fmt.Sprintf("device profile '%s' not found", o.DeviceProfileId.ValueString())))
+				fmt.Sprintf("device profile '%s' not found", o.DeviceProfileId.ValueString()))
 		}
 		diags.AddError("error while fetching device profile", err.Error())
 	}
