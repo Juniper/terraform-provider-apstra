@@ -21,7 +21,7 @@ jobs:
         run: make govet
 
       - name: staticcheck
-        run: make staticcheck-check
+        run: make staticcheck
 
       - name: tfplugindocs
         run: make docs-check
