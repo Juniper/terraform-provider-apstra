@@ -835,6 +835,7 @@ func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp 
 		transformation := dpPort.DefaultTransform()
 		if transformation == nil {
 			diags.AddError(errProviderBug, "port has no default transformation")
+			return nil
 		}
 
 		result[i] = apstra.InterfaceMapInterface{
