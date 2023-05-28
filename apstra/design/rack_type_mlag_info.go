@@ -136,6 +136,7 @@ func (o MlagInfo) AttrTypes() map[string]attr.Type {
 func (o *MlagInfo) LoadApiData(_ context.Context, in *apstra.LeafMlagInfo, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load MlagInfo from nil pointer")
+		return
 	}
 
 	var l3PeerLinkPortChannelId, l3PeerLinkCount types.Int64
