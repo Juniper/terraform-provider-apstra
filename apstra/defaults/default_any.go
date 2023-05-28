@@ -31,7 +31,7 @@ func (o StaticAnyTypeDefaulter) Description(_ context.Context) string {
 }
 
 func (o StaticAnyTypeDefaulter) MarkdownDescription(ctx context.Context) string {
-	return o.MarkdownDescription(ctx)
+	return o.Description(ctx)
 }
 
 func (o StaticAnyTypeDefaulter) DefaultBool(_ context.Context, _ defaults.BoolRequest, resp *defaults.BoolResponse) {
