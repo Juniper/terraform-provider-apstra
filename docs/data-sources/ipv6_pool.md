@@ -55,7 +55,7 @@ output "ipv6_pool_report" {
 ### Optional
 
 - `id` (String) ID of the desired IPv6 Pool.
-- `name` (String) (Non unique) name of the IPv6 pool.
+- `name` (String) Name of the IPv6 pool.
 
 ### Read-Only
 
