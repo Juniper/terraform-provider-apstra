@@ -60,7 +60,7 @@ func (o VnBindingConstructor) DataSourceAttributes() map[string]dataSourceSchema
 func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
-		diags.AddError("error creating blueprint client", err.Error())
+		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.BlueprintId), err.Error())
 		return
 	}
 

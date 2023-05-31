@@ -66,7 +66,7 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
@@ -122,7 +122,8 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
+
 		return
 	}
 
@@ -171,7 +172,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	// Create a blueprint client
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
@@ -236,7 +237,7 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	// Create a blueprint client
 	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 	}
 
 	// Create a resource allocation request

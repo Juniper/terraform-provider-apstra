@@ -121,7 +121,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
@@ -187,7 +187,7 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
 
@@ -222,7 +222,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
@@ -287,7 +287,7 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
 

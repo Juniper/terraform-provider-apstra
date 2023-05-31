@@ -233,7 +233,7 @@ func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *d
 	// create a client specific to the reference design
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.Id.ValueString()))
 	if err != nil {
-		diags.AddError("error creating Blueprint client", err.Error())
+		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.Id), err.Error())
 		return
 	}
 

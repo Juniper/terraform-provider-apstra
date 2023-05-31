@@ -56,7 +56,7 @@ func (o *resourceDatacenterRoutingPolicy) Create(ctx context.Context, req resour
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
@@ -109,7 +109,7 @@ func (o *resourceDatacenterRoutingPolicy) Read(ctx context.Context, req resource
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
 
@@ -148,7 +148,7 @@ func (o *resourceDatacenterRoutingPolicy) Update(ctx context.Context, req resour
 	// Create a blueprint client
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
@@ -207,7 +207,7 @@ func (o *resourceDatacenterRoutingPolicy) Delete(ctx context.Context, req resour
 
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
 
