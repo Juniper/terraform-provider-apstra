@@ -319,7 +319,8 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.C
 			o.BlueprintId = types.StringNull()
 			return
 		}
-		diags.AddError("error creating blueprint client", err.Error())
+		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.BlueprintId), err.Error())
+
 		return
 	}
 
@@ -669,7 +670,7 @@ func (o *DeviceAllocation) SetNodeDeployMode(ctx context.Context, client *apstra
 func (o *DeviceAllocation) GetNodeDeployMode(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
-		diags.AddError("error creating blueprint client", err.Error())
+		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.BlueprintId), err.Error())
 		return
 	}
 

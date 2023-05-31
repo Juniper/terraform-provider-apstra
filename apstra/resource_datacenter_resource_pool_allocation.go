@@ -58,27 +58,25 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// Ensure the blueprint exists.
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
-		resp.Diagnostics.AddError("blueprint not found", fmt.Sprintf("blueprint %q not found", plan.BlueprintId.ValueString()))
-	}
-	if resp.Diagnostics.HasError() {
+	// create a client for the datacenter reference design
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
-	}
-
-	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 	}
 
 	// Create a resource allocation request
@@ -90,12 +88,13 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	// Set the new allocation
 	switch {
 	case !plan.RoutingZoneId.IsNull():
-		err = client.SetResourceAllocation(ctx, request)
+		err = bp.SetResourceAllocation(ctx, request)
 	default:
-		err = client.SetResourceAllocation(ctx, request)
+		err = bp.SetResourceAllocation(ctx, request)
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
+		return
 	}
 
 	// Set state
@@ -115,27 +114,16 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
+
 		return
 	}
 
@@ -145,7 +133,7 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	apiData, err := client.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
+	apiData, err := bp.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
@@ -181,31 +169,20 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if resp.Diagnostics.HasError() {
+	// Create a blueprint client
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
-	}
-
-	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
 	}
 
 	// Create a resource allocation request
@@ -215,7 +192,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	}
 
 	// Set the new allocation
-	err = client.SetResourceAllocation(ctx, request)
+	err = bp.SetResourceAllocation(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
 	}
@@ -260,7 +237,7 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	// Create a blueprint client
 	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error creating client for Apstra Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 	}
 
 	// Create a resource allocation request
