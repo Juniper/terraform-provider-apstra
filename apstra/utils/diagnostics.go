@@ -30,9 +30,7 @@ func (o diagnosticWrapper) Summary() string {
 // the underlying diagnostic event separated by diagnosticWrapperDefaultSeparator
 func (o diagnosticWrapper) Detail() string {
 	details := make([]string, len(o.wrapMessages))
-	for i := range o.wrapMessages {
-		details[i] = o.wrapMessages[i]
-	}
+	copy(details, o.wrapMessages)
 	Reverse(details)
 	return strings.Join(append(details, o.diagnostic.Detail()), o.separator)
 }

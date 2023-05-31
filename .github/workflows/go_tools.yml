@@ -20,6 +20,9 @@ jobs:
       - name: go vet
         run: make govet
 
+      - name: staticcheck
+        run: make staticcheck
+
       - name: tfplugindocs
         run: make docs-check
 

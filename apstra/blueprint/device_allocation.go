@@ -292,13 +292,14 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	}
 
 	if o.InterfaceMapCatalogId.IsUnknown() {
-		o.populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx, client, diags)
+		o.populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx, client, diags) // this will clear BlueprintId on 404
 	}
 	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
 
 	o.validateInterfaceMapId(ctx, client, diags) // this will clear BlueprintId on 404
+	//lint:ignore SA4017 IsNull() output not ignored.
 	if diags.HasError() || o.BlueprintId.IsNull() {
 		return
 	}
@@ -332,7 +333,6 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.C
 		}
 		diags.AddError(fmt.Sprintf("error (re)setting interface map for node %q", o.NodeId.ValueString()), err.Error())
 	}
-	return
 }
 
 // SetNodeSystemId assigns a managed device 'device_key' (serial number) to a
@@ -360,7 +360,6 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.C
 		}
 		diags.AddError(fmt.Sprintf("failed to (re)assign system_id for node '%s'", nodeId), err.Error())
 	}
-	return
 }
 
 // ReadSystemNode uses the BlueprintId and NodeId to determine the current

@@ -74,10 +74,8 @@ var blueprintMutexesMutex sync.Mutex
 
 // Provider fulfils the provider.Provider interface
 type Provider struct {
-	Version    string
-	Commit     string
-	configured bool
-	client     *apstra.Client
+	Version string
+	Commit  string
 }
 
 // providerData gets instantiated in Provider's Configure() method and
@@ -162,7 +160,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 	// Default the mutex message if needed.
 	if config.MutexMessage.IsNull() {
-		config.MutexMessage = types.StringValue(fmt.Sprintf(blueprintMutexMessage))
+		config.MutexMessage = types.StringValue(blueprintMutexMessage)
 	}
 
 	// Create the Apstra client configuration from the URL and the environment.

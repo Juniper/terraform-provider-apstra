@@ -13,12 +13,14 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.14.3
 	github.com/hashicorp/terraform-plugin-testing v1.2.0
 	github.com/mitchellh/go-homedir v1.1.0
+	honnef.co/go/tools v0.4.3
 )
 
 //                                                                                          HHMMSS
 replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230526032236-a96567c7a1fb
 
 require (
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
@@ -84,6 +86,7 @@ require (
 	github.com/zclconf/go-cty v1.13.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20221208152030-732eee02a75a // indirect
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect

@@ -9,7 +9,6 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -111,24 +110,24 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 }
 
 func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
-	return map[string]schema.Attribute{
-		"id": schema.StringAttribute{
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Blueprint ID assigned by Apstra.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
-		"name": schema.StringAttribute{
+		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Blueprint name.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"template_id": schema.StringAttribute{
+		"template_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of Rack Based Template used to instantiate the Blueprint.",
 			Required:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"fabric_addressing": schema.StringAttribute{
+		"fabric_addressing": resourceSchema.StringAttribute{
 			MarkdownDescription: "Addressing scheme for both superspine/spine and spine/leaf  links. Only " +
 				"applicable to Apstra versions 4.1.1 and later.",
 			Optional: true,

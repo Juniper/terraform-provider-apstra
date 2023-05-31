@@ -150,6 +150,7 @@ func (o *Spine) LoadApiData(ctx context.Context, in *apstra.Spine, diags *diag.D
 func (o *Spine) CopyWriteOnlyElements(ctx context.Context, src *Spine, diags *diag.Diagnostics) {
 	if src == nil {
 		diags.AddError(errProviderBug, "Spine.CopyWriteOnlyElements: attempt to copy from nil source")
+		return
 	}
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)

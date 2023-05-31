@@ -65,6 +65,7 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return errors.New("ApiStringerFromFriendlyString called with no string input")
 	}
 
+	//lint:ignore S1034 see issue #127
 	switch target.(type) {
 	case *apstra.AsnAllocationScheme:
 		return asnAllocationSchemeFromFriendlyString(target.(*apstra.AsnAllocationScheme), in...)

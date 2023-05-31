@@ -8,4 +8,7 @@ import (
 
 	// license compliance
 	_ "github.com/chrismarget-j/go-licenses"
+
+	// staticcheck
+	_ "honnef.co/go/tools/cmd/staticcheck"
 )

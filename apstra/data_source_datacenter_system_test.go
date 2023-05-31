@@ -63,7 +63,7 @@ func TestDatacenterSystem_A(t *testing.T) {
 	}
 
 	// find spine1
-	spine1 := new(node)
+	var spine1 *node
 	for _, n := range nodeResponse.Nodes {
 		if n.Label == "spine1" {
 			spine1 = &n
