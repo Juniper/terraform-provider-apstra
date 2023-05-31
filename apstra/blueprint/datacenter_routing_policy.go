@@ -82,14 +82,14 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 		},
 		"expect_default_ipv4": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv4 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.'",
+				"policy. Used for rendering route expectations.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
 		},
 		"expect_default_ipv6": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv6 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.'",
+				"policy. Used for rendering route expectations.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
@@ -249,7 +249,7 @@ func (o *DatacenterRoutingPolicy) LoadApiData(ctx context.Context, policyData *a
 	}
 
 	o.Name = types.StringValue(policyData.Label)
-	o.Description = types.StringValue(policyData.Description)
+	o.Description = utils.StringValueOrNull(ctx, policyData.Description, diags)
 	o.ImportPolicy = types.StringValue(policyData.ImportPolicy.String())
 	o.ExportPolicy = exportPolicyObj
 	o.ExpectV4Default = types.BoolValue(policyData.ExpectDefaultIpv4Route)

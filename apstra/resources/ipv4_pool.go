@@ -41,7 +41,7 @@ func (o Ipv4Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "(Non unique) name of the IPv4 pool.",
+			MarkdownDescription: "Name of the IPv4 pool.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

@@ -160,7 +160,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 		"vlan_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
 				"Leave this field blank to have it automatically assigned from a static pool in the " +
-				"range of 2-4094), or enter a specific value.",
+				"range of 2-4094, or enter a specific value.",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},

@@ -75,7 +75,7 @@ output "ipv4_pool_report" {
 ### Optional
 
 - `id` (String) ID of the desired IPv4 Pool.
-- `name` (String) (Non unique) name of the IPv4 pool.
+- `name` (String) Name of the IPv4 pool.
 
 ### Read-Only
 

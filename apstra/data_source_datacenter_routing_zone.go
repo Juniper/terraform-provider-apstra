@@ -52,7 +52,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 				config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
 		return
 	}
 
