@@ -53,8 +53,10 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 			},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Optional:            true,
+			MarkdownDescription: "Used to allocate a resource pool to a role associated with specific Routing Zone " +
+				"within a Blueprint, rather than to the Blueprint at large. This feature is intended for binding IP" +
+				"address pools to the per-Routing-Zone Leaf Switch Loopback IP addressing role.",
+			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.AtMostNOf(1,
