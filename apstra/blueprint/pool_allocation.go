@@ -84,7 +84,7 @@ func (o *PoolAllocation) LoadApiData(ctx context.Context, in *apstra.ResourceGro
 func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ResourceGroupAllocation {
 	// Parse 'role' into a ResourceGroupName
 	var rgName apstra.ResourceGroupName
-	err := rgName.FromString(o.Role.ValueString())
+	err := utils.ApiStringerFromFriendlyString(&rgName, o.Role.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()), err.Error())
 		return nil
