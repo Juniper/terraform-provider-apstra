@@ -332,6 +332,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceBlueprintDeploy{} },
 		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
+		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
 		func() resource.Resource { return &resourceDatacenterRoutingPolicy{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
