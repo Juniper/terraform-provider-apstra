@@ -20,6 +20,8 @@ const (
 	refDesignDataCenter = "datacenter"
 
 	nodeDeployModeNotSet = "not_set"
+
+	resourceGroupNameVxlanVniIds = "vni_virtual_network_ids"
 )
 
 type StringerWithFromString interface {
@@ -48,6 +50,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return overlayControlProtocolToFriendlyString(in[0].(apstra.OverlayControlProtocol))
 	case apstra.RefDesign:
 		return refDesignToFriendlyString(in[0].(apstra.RefDesign))
+	case apstra.ResourceGroupName:
+		return resourceGroupNameToFriendlyString(in[0].(apstra.ResourceGroupName))
 	}
 
 	return in[0].String()
@@ -77,6 +81,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return overlayControlProtocolFromFriendlyString(target.(*apstra.OverlayControlProtocol), in...)
 	case *apstra.RefDesign:
 		return refDesignFromFriendlyString(target.(*apstra.RefDesign), in...)
+	case *apstra.ResourceGroupName:
+		return resourceGroupNameFromFriendlyString(target.(*apstra.ResourceGroupName), in...)
 	}
 
 	return target.FromString(in[0])
@@ -142,6 +148,15 @@ func refDesignToFriendlyString(in apstra.RefDesign) string {
 	switch in {
 	case apstra.RefDesignDatacenter:
 		return refDesignDataCenter
+	}
+
+	return in.String()
+}
+
+func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
+	switch in {
+	case apstra.ResourceGroupNameVxlanVnIds:
+		return resourceGroupNameVxlanVniIds
 	}
 
 	return in.String()
@@ -233,6 +248,21 @@ func refDesignFromFriendlyString(target *apstra.RefDesign, in ...string) error {
 	switch in[0] {
 	case refDesignDataCenter:
 		*target = apstra.RefDesignDatacenter
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case resourceGroupNameVxlanVniIds:
+		*target = apstra.ResourceGroupNameVxlanVnIds
 	default:
 		return target.FromString(in[0])
 	}
