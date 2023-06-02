@@ -12,5 +12,9 @@ func TestAllResourceGroupNameStrings(t *testing.T) {
 			t.Fatal("AllResourceGroupNameStrings() returned an empty string")
 		}
 	}
+	expectedRgnCount := 20
+	if len(argns) != expectedRgnCount {
+		t.Fatalf("expected %d resource group names, got %d", expectedRgnCount, len(argns))
+	}
 	log.Println(argns)
 }
