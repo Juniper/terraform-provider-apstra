@@ -181,7 +181,7 @@ func (o *DatacenterGenericSystem) PopulateLinkInfo(ctx context.Context, client *
 		if digest == nil {
 			diags.AddError(
 				"incomplete link endpoint?",
-				fmt.Sprintf("cabling map link %q endpoint on system %s missing required fields", linkInfo, o.Id))
+				fmt.Sprintf("cabling map link %v endpoint on system %s missing required fields", linkInfo, o.Id))
 			return
 		}
 
