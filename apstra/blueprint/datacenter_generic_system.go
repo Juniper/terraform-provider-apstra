@@ -501,29 +501,11 @@ func (o *DatacenterGenericSystem) ReadTags(ctx context.Context, bp *apstra.TwoSt
 //
 //}
 
-func linkIndex(links []DatacenterGenericSystemLink, linkId apstra.ObjectId) int {
-	for i, link := range links {
-		if link.Id.ValueString() == linkId.String() {
-			return i
-		}
-	}
-	return -1
-}
-
-type key struct {
-	ThingOne types.String `tfsdk:"thing_one"`
-	ThingTwo types.Int64  `tfsdk:"thing_two"`
-}
-
-func (o key) attrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"thing_one": types.StringType,
-		"thing_two": types.Int64Type,
-	}
-}
-
-func keySliceToList(ctx context.Context, keysSliceIn []key, diags *diag.Diagnostics) types.List {
-	keys, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: key{}.attrTypes()}, keysSliceIn)
-	diags.Append(d...)
-	return keys
-}
+//func linkIndex(links []DatacenterGenericSystemLink, linkId apstra.ObjectId) int {
+//	for i, link := range links {
+//		if link.Id.ValueString() == linkId.String() {
+//			return i
+//		}
+//	}
+//	return -1
+//}
