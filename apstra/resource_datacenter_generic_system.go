@@ -69,26 +69,36 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		return
 	}
 
+	// prep a generic system creation request
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// unfortunately we only learn the link IDs, not the generic system ID
 	linkIds, err := bp.CreateLinksWithNewServer(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating generic system", err.Error())
 		return
 	}
 
-	plan.PopulateLinkInfo(ctx, linkIds, bp, &resp.Diagnostics)
+	// use link IDs to learn the generic system ID
+	genericSystemId, err := bp.SystemNodeFromLinkIds(ctx, linkIds, apstra.SystemNodeRoleGeneric)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to determine new generic system ID from links", err.Error())
+	}
+	plan.Id = types.StringValue(genericSystemId.String())
+
+	// populate apstra-assigned link info into the correct terraform structure
+	plan.PopulateLinkInfo(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.PopulateGenericSystemInfo(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	//plan.PopulateGenericSystemInfo(ctx, bp, &resp.Diagnostics)
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -119,12 +129,9 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 	}
 
 	var node struct {
-		Label            string `json:"label"`
-		Hostname         string `json:"hostname"`
-		PortChannelIdMax int    `json:"port_channel_id_max"`
-		PortChannelIdMin int    `json:"port_channel_id_min"`
+		Label    string `json:"label"`
+		Hostname string `json:"hostname"`
 	}
-
 	err = bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(state.Id.ValueString()), &node)
 	if err != nil {
 		var ace apstra.ApstraClientErr
@@ -133,11 +140,14 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 			return
 		}
 	}
+	state.Label = types.StringValue(node.Label)
+	state.Hostname = types.StringValue(node.Hostname)
+	state.ReadLogicalDevice(ctx, bp, &resp.Diagnostics)
+	state.ReadTags(ctx, bp, &resp.Diagnostics)
+	//state.ReadLinks(ctx, bp, &resp.Diagnostics)
 
 	//tags := blueprint.NodeTags(ctx, state.Id.ValueString(), bp, &resp.Diagnostics)
 
-	state.Label = types.StringValue(node.Label)
-	state.Hostname = types.StringValue(node.Hostname)
 	//state.Tags = utils.SetValueOrNull(ctx, types.StringType, blueprint.NodeTags(ctx, state.Id.ValueString(), bp, &resp.Diagnostics))
 
 	//sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
