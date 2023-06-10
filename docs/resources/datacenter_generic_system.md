@@ -32,7 +32,6 @@ data "apstra_datacenter_systems" "rack_11_leafs" {
 
 resource "apstra_datacenter_generic_system" "example" {
   blueprint_id      = local.blueprint_id
-  logical_device_id = "AOS-4x10-1"
   label             = "Terraform Did This"
   hostname          = "terraformdidthis.example.com"
   tags              = ["terraform"]
@@ -79,8 +78,7 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `links` (Attributes List) Generic System link details (see [below for nested schema](#nestedatt--links))
-- `logical_device_id` (String) Global Catalog ID of the logical device used to model this Generic System.
+- `links` (Attributes Set) Generic System link details (see [below for nested schema](#nestedatt--links))
 
 ### Optional
 
@@ -103,10 +101,6 @@ Required:
 
 Optional:
 
-- `group_label` (String) This field is used to collect multiple links into aggregation groups. For example, to create two LAG pairs from four physical links, you might use `group_label` value "bond0" on two links and "bond1" on the other two links
+- `group_label` (String) This field is used to collect multiple links into aggregation groups. For example, to create two LAG pairs from four physical links, you might use `group_label` value "bond0" on two links and "bond1" on the other two links. Apstra assigns a unique group ID to each link by default.
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `tags` (Set of String) Names of Tag to be applied to this Link. If a Tag doesn't exist in the Blueprint it will be created automatically.
-
-Read-Only:
-
-- `id` (String) Graph datastore ID of the link node.

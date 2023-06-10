@@ -18,7 +18,6 @@ data "apstra_datacenter_systems" "rack_11_leafs" {
 
 resource "apstra_datacenter_generic_system" "example" {
   blueprint_id      = local.blueprint_id
-  logical_device_id = "AOS-4x10-1"
   label             = "Terraform Did This"
   hostname          = "terraformdidthis.example.com"
   tags              = ["terraform"]
