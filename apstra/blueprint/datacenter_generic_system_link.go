@@ -82,8 +82,8 @@ func (o DatacenterGenericSystemLink) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o DatacenterGenericSystemLink) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinksWithNewServerRequestLink {
-	result := apstra.CreateLinksWithNewServerRequestLink{
+func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinkRequest {
+	result := apstra.CreateLinkRequest{
 		SwitchEndpoint: apstra.SwitchLinkEndpoint{
 			TransformationId: int(o.TargetSwitchIfTransformId.ValueInt64()),
 			SystemId:         apstra.ObjectId(o.TargetSwitchId.ValueString()),

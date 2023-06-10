@@ -151,79 +151,57 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//if o.client == nil {
-	//	resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-	//	return
-	//}
-	//
-	//// Retrieve values from plan.
-	//var plan blueprint.DatacenterGenericSystem
-	//resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//// Create a blueprint client
-	//bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	//if err != nil {
-	//	resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
-	//	return
-	//}
-	//
-	//// Lock the blueprint mutex.
-	//err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
-	//if err != nil {
-	//	resp.Diagnostics.AddError(
-	//		fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
-	//		err.Error())
-	//	return
-	//}
-	//
-	//request := plan.Request(ctx, o.client, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error updating security zone", err.Error())
-	//	return
-	//}
-	//
-	//dhcpRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//err = bp.SetSecurityZoneDhcpServers(ctx, apstra.ObjectId(plan.Id.ValueString()), dhcpRequest)
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error updating security zone dhcp servers", err.Error())
-	//	return
-	//}
-	//
-	//sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	//if err != nil {
-	//	resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
-	//}
-	//
-	//// if the plan modifier didn't take action...
-	//if plan.HadPriorVlanIdConfig.IsUnknown() {
-	//	// ...then the trigger value is set according to whether a VLAN ID value is known.
-	//	plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
-	//}
-	//
-	//// if the plan modifier didn't take action...
-	//if plan.HadPriorVniConfig.IsUnknown() {
-	//	// ...then the trigger value is set according to whether a VNI value is known.
-	//	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
-	//}
-	//
-	//plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
+	// Retrieve values from plan.
+	var plan blueprint.DatacenterGenericSystem
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from state.
+	var state blueprint.DatacenterGenericSystem
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create a blueprint client
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
+		return
+	}
+
+	plan.UpdateLabelAndHostname(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.UpdateTags(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.UpdateLinks(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

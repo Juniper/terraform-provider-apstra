@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"sort"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterGenericSystem struct {
@@ -100,7 +102,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 
 	// start building the request object
 	request := apstra.CreateLinksWithNewServerRequest{
-		Links: make([]apstra.CreateLinksWithNewServerRequestLink, len(planLinks)),
+		Links: make([]apstra.CreateLinkRequest, len(planLinks)),
 		Server: apstra.CreateLinksWithNewServerRequestServer{
 			Hostname:      o.Hostname.ValueString(),
 			Label:         o.Label.ValueString(),
@@ -113,7 +115,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 
 	// populate each link in the request object
 	for i, link := range planLinks {
-		request.Links[i] = *link.Request(ctx, diags)
+		request.Links[i] = *link.request(ctx, diags)
 	}
 
 	return &request
@@ -181,8 +183,10 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 		// specified `group_label`. The `group_label` attribute is not
 		// "Computed", so we must return `null` to avoid state churn if the
 		// user opted for `null` by not setting it.
-		if stateLinksMap[dcgsl.digest()].GroupLabel.IsNull() {
-			dcgsl.GroupLabel = types.StringNull()
+		if link, ok := stateLinksMap[dcgsl.digest()]; ok {
+			if link.GroupLabel.IsNull() {
+				dcgsl.GroupLabel = types.StringNull()
+			}
 		}
 
 		// read the switch interface transform ID from the API
@@ -208,14 +212,119 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 // based on the error type.
 func (o *DatacenterGenericSystem) GetLabelAndHostname(ctx context.Context, bp *apstra.TwoStageL3ClosClient) error {
 	var node struct {
-		Label    string `json:"label"`
 		Hostname string `json:"hostname"`
+		Label    string `json:"label"`
 	}
 	err := bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(o.Id.ValueString()), &node)
 	if err != nil {
 		return err
 	}
-	o.Label = types.StringValue(node.Label)
 	o.Hostname = types.StringValue(node.Hostname)
+	o.Label = types.StringValue(node.Label)
 	return nil
+}
+
+// UpdateLabelAndHostname uses the node patch API to update the label and
+// hostname fields.
+func (o *DatacenterGenericSystem) UpdateLabelAndHostname(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	if o.Hostname.Equal(state.Hostname) && o.Label.Equal(state.Label) {
+		return
+	}
+
+	node := struct {
+		Hostname string `json:"hostname"`
+		Label    string `json:"label"`
+	}{
+		Hostname: o.Hostname.ValueString(),
+		Label:    o.Label.ValueString(),
+	}
+
+	err := bp.Client().PatchNode(ctx, bp.Id(), apstra.ObjectId(o.Id.ValueString()), &node, nil)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("error patching node %s with hostname: %s and label %s", o.Id, o.Hostname, o.Label),
+			err.Error())
+	}
+}
+
+func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var planTags, stateTags []string
+	diags.Append(o.Tags.ElementsAs(ctx, &planTags, false)...)
+	diags.Append(state.Tags.ElementsAs(ctx, &stateTags, false)...)
+
+	sort.Strings(planTags)
+	sort.Strings(stateTags)
+
+	if utils.SlicesMatch(planTags, stateTags) {
+		return
+	}
+
+	err := bp.SetNodeTags(ctx, apstra.ObjectId(o.Id.ValueString()), planTags)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to update tags on %s", o.Id), err.Error())
+	}
+}
+
+func (o *DatacenterGenericSystem) UpdateLinks(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var planLinks, stateLinks []DatacenterGenericSystemLink
+	diags.Append(o.Links.ElementsAs(ctx, &planLinks, false)...)
+	diags.Append(state.Links.ElementsAs(ctx, &stateLinks, false)...)
+
+	planLinksMap := make(map[string]*DatacenterGenericSystemLink, len(planLinks))
+	for i, link := range planLinks {
+		planLinksMap[link.digest()] = &planLinks[i]
+	}
+
+	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
+	for i, link := range stateLinks {
+		stateLinksMap[link.digest()] = &stateLinks[i]
+	}
+
+	var addLinks, checkLinks, delLinks []*DatacenterGenericSystemLink
+	for digest := range planLinksMap {
+		if _, ok := stateLinksMap[digest]; !ok {
+			addLinks = append(addLinks, planLinksMap[digest])
+		} else {
+			checkLinks = append(checkLinks, planLinksMap[digest])
+		}
+	}
+	for digest := range stateLinksMap {
+		if _, ok := planLinksMap[digest]; !ok {
+			delLinks = append(delLinks, stateLinksMap[digest])
+		}
+	}
+
+	o.addLinks(ctx, addLinks, bp, diags)
+	if diags.HasError() {
+		return
+	}
+
+}
+
+func (o *DatacenterGenericSystem) addLinks(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	if len(links) == 0 {
+		return
+	}
+
+	linkRequests := make([]apstra.CreateLinkRequest, len(links))
+	for i, link := range links {
+		linkRequests[i] = *link.request(ctx, diags)
+		if diags.HasError() {
+			return
+		}
+		linkRequests[i].SystemEndpoint.SystemId = apstra.ObjectId(o.Id.ValueString())
+		err := linkRequests[i].LagMode.FromString(link.LagMode.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed parsing lag mode %s", link.LagMode), err.Error())
+		}
+	}
+	if diags.HasError() {
+		return
+	}
+
+	ids, err := bp.AddLinksToSystem(ctx, linkRequests)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed adding links to generic system %s", o.Id), err.Error())
+	}
+	_ = ids
 }
