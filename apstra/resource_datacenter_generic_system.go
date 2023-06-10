@@ -70,7 +70,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 
 	// prep a generic system creation request
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.CreateRequest(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -89,16 +89,12 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 	plan.Id = types.StringValue(genericSystemId.String())
 
-	// populate apstra-assigned link info into the correct terraform structure
-	plan.PopulateLinkInfo(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	err = plan.GetLabelAndHostname(ctx, bp) //todo make this conditional based on hostname/label either one null
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error parsing labels from new generic server %s", plan.Id), err.Error())
+		// don't return here - still want to set the state
 	}
-
-	//plan.PopulateGenericSystemInfo(ctx, bp, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -128,62 +124,26 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 		return
 	}
 
-	var node struct {
-		Label    string `json:"label"`
-		Hostname string `json:"hostname"`
-	}
-	err = bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(state.Id.ValueString()), &node)
+	// read string fields directly from the graph node. This has the side
+	// effect of discovering whether the generic system has been deleted.
+	err = state.GetLabelAndHostname(ctx, bp)
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
 			return
 		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed reading labels from generic server %s", state.Id), err.Error())
+		return
 	}
-	state.Label = types.StringValue(node.Label)
-	state.Hostname = types.StringValue(node.Hostname)
-	state.ReadLogicalDevice(ctx, bp, &resp.Diagnostics)
+
+	// read tags and link info using other combinations of API calls
 	state.ReadTags(ctx, bp, &resp.Diagnostics)
-	//state.ReadLinks(ctx, bp, &resp.Diagnostics)
+	state.ReadLinks(ctx, bp, &resp.Diagnostics)
 
-	//tags := blueprint.NodeTags(ctx, state.Id.ValueString(), bp, &resp.Diagnostics)
-
-	//state.Tags = utils.SetValueOrNull(ctx, types.StringType, blueprint.NodeTags(ctx, state.Id.ValueString(), bp, &resp.Diagnostics))
-
-	//sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
-	//if err != nil {
-	//	var ace apstra.ApstraClientErr
-	//	if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-	//		resp.State.RemoveResource(ctx)
-	//		return
-	//	}
-	//	resp.Diagnostics.AddError("error retrieving security zone", err.Error())
-	//	return
-	//}
-	//
-	//state.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, sz.Id)
-	//if err != nil {
-	//	var ace apstra.ApstraClientErr
-	//	if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-	//		resp.State.RemoveResource(ctx)
-	//		return
-	//	}
-	//	resp.Diagnostics.AddError("error retrieving security zone", err.Error())
-	//	return
-	//}
-	//
-	//state.LoadApiDhcpServers(ctx, dhcpServers, &resp.Diagnostics)
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
-	//
-	//// set state
-	//resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	// set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
