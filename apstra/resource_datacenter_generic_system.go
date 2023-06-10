@@ -89,13 +89,17 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 	plan.Id = types.StringValue(genericSystemId.String())
 
-	err = plan.GetLabelAndHostname(ctx, bp) //todo make this conditional based on hostname/label either one null
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error parsing labels from new generic server %s", plan.Id), err.Error())
-		// don't return here - still want to set the state
+	// pull Apstra-generated strings if not specified by the user
+	if plan.Label.IsNull() || plan.Hostname.IsNull() {
+		err = plan.GetLabelAndHostname(ctx, bp)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("error parsing labels from new generic server %s", plan.Id), err.Error())
+			// don't return here - still want to set the state
+		}
 	}
 
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
