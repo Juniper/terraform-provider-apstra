@@ -266,20 +266,22 @@ func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, state *Datacen
 }
 
 func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	// extract links from plan (o) and state objects
 	var planLinks, stateLinks []DatacenterGenericSystemLink
 	diags.Append(o.Links.ElementsAs(ctx, &planLinks, false)...)
 	diags.Append(state.Links.ElementsAs(ctx, &stateLinks, false)...)
 
+	// transform plan and state links into a map keyed by link digest (device:port)
 	planLinksMap := make(map[string]*DatacenterGenericSystemLink, len(planLinks))
 	for i, link := range planLinks {
 		planLinksMap[link.digest()] = &planLinks[i]
 	}
-
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
 		stateLinksMap[link.digest()] = &stateLinks[i]
 	}
 
+	// compare plan and state, make lists of links to add / check+update / delete
 	var addLinks, checkLinks, delLinks []*DatacenterGenericSystemLink
 	for digest := range planLinksMap {
 		if _, ok := stateLinksMap[digest]; !ok {
@@ -299,11 +301,15 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 		return
 	}
 
-	o.delLinksFromSystem(ctx, delLinks, bp, diags)
+	o.deleteLinksFromSystem(ctx, delLinks, bp, diags)
 	if diags.HasError() {
 		return
 	}
 
+	o.updateLinkParams(ctx, checkLinks, bp, diags)
+	if diags.HasError() {
+		return
+	}
 }
 
 func (o *DatacenterGenericSystem) addLinksToSystem(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -334,9 +340,48 @@ func (o *DatacenterGenericSystem) addLinksToSystem(ctx context.Context, links []
 	_ = ids
 }
 
-func (o *DatacenterGenericSystem) delLinksFromSystem(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	if len(links) == 0 {
 		return
+	}
+
+	linkIdsToDelete := o.linkIds(ctx, links, bp, diags)
+	if diags.HasError() {
+		return
+	}
+
+	err := bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
+			err.Error())
+	}
+}
+
+func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	if len(links) == 0 {
+		return
+	}
+
+	for _, link := range links {
+		linkIds := o.linkIds(ctx, []*DatacenterGenericSystemLink{link}, bp, diags)
+		if diags.HasError() {
+			return
+		}
+		if len(linkIds) != 1 {
+			diags.AddError(
+				"failed querying for link ID",
+				fmt.Sprintf("expected exactly 1 link ID from query, got %d link IDs", len(linkIds)))
+			return
+		}
+
+		link.updateParams(ctx, linkIds[0], diags)
+	}
+}
+
+func (o *DatacenterGenericSystem) linkIds(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []apstra.ObjectId {
+	if len(links) == 0 {
+		return nil
 	}
 
 	// make a map keyed by switch ID to facilitate graph queries:
@@ -356,8 +401,8 @@ func (o *DatacenterGenericSystem) delLinksFromSystem(ctx context.Context, links 
 		} `json:"items"`
 	}
 
-	// get link IDs to delete from each switch
-	var linkIdsToDelete []apstra.ObjectId
+	// get link IDs from each switch
+	var result []apstra.ObjectId
 	for switchId, ifNames := range swIdToIfNames {
 		query := new(apstra.PathQuery).
 			SetBlueprintType(apstra.BlueprintTypeStaging).
@@ -386,16 +431,13 @@ func (o *DatacenterGenericSystem) delLinksFromSystem(ctx context.Context, links 
 				{Key: "id", Value: apstra.QEStringVal(switchId)},
 			})
 
-		qs := query.String()
-		_ = qs
-
 		err := query.Do(ctx, &queryResponse)
 		if err != nil {
 			diags.AddError(
-				fmt.Sprintf("failed querying for link IDs to delete from node %s: %q ports %v",
+				fmt.Sprintf("failed querying for link IDs from node %s: %q ports %v",
 					o.Id, switchId, ifNames),
 				err.Error())
-			return
+			return nil
 		}
 
 		resultLinkIds := make([]apstra.ObjectId, len(queryResponse.Items))
@@ -407,16 +449,11 @@ func (o *DatacenterGenericSystem) delLinksFromSystem(ctx context.Context, links 
 			diags.AddError(
 				fmt.Sprintf("link ID query for node %s interfaces %v returned only %d link IDs", switchId, ifNames, len(resultLinkIds)),
 				fmt.Sprintf("got the following link IDs: %v", resultLinkIds))
-			return
+			return nil
 		}
 
-		linkIdsToDelete = append(linkIdsToDelete, resultLinkIds...)
+		result = append(result, resultLinkIds...)
 	}
 
-	err := bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
-	if err != nil {
-		diags.AddError(
-			fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
-			err.Error())
-	}
+	return result
 }
