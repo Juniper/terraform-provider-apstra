@@ -265,7 +265,7 @@ func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, state *Datacen
 	}
 }
 
-func (o *DatacenterGenericSystem) UpdateLinks(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	var planLinks, stateLinks []DatacenterGenericSystemLink
 	diags.Append(o.Links.ElementsAs(ctx, &planLinks, false)...)
 	diags.Append(state.Links.ElementsAs(ctx, &stateLinks, false)...)
@@ -294,19 +294,19 @@ func (o *DatacenterGenericSystem) UpdateLinks(ctx context.Context, state *Datace
 		}
 	}
 
-	o.addLinks(ctx, addLinks, bp, diags)
+	o.addLinksToSystem(ctx, addLinks, bp, diags)
 	if diags.HasError() {
 		return
 	}
 
-	o.delLinks(ctx, delLinks, bp, diags)
+	o.delLinksFromSystem(ctx, delLinks, bp, diags)
 	if diags.HasError() {
 		return
 	}
 
 }
 
-func (o *DatacenterGenericSystem) addLinks(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) addLinksToSystem(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	if len(links) == 0 {
 		return
 	}
@@ -334,7 +334,7 @@ func (o *DatacenterGenericSystem) addLinks(ctx context.Context, links []*Datacen
 	_ = ids
 }
 
-func (o *DatacenterGenericSystem) delLinks(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) delLinksFromSystem(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	if len(links) == 0 {
 		return
 	}

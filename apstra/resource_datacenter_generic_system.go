@@ -196,7 +196,7 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 		return
 	}
 
-	plan.UpdateLinks(ctx, &state, bp, &resp.Diagnostics)
+	plan.UpdateLinkSet(ctx, &state, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
