@@ -299,6 +299,11 @@ func (o *DatacenterGenericSystem) UpdateLinks(ctx context.Context, state *Datace
 		return
 	}
 
+	o.delLinks(ctx, delLinks, bp, diags)
+	if diags.HasError() {
+		return
+	}
+
 }
 
 func (o *DatacenterGenericSystem) addLinks(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -327,4 +332,91 @@ func (o *DatacenterGenericSystem) addLinks(ctx context.Context, links []*Datacen
 		diags.AddError(fmt.Sprintf("failed adding links to generic system %s", o.Id), err.Error())
 	}
 	_ = ids
+}
+
+func (o *DatacenterGenericSystem) delLinks(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	if len(links) == 0 {
+		return
+	}
+
+	// make a map keyed by switch ID to facilitate graph queries:
+	//   switchId123 -> []string{"xe-0/0/1", "xe-0/0/5"}
+	//   switchId456 -> []string{"xe-0/0/3", "xe-0/0/6"}
+	swIdToIfNames := make(map[string][]string)
+	for _, link := range links {
+		swIdToIfNames[link.TargetSwitchId.ValueString()] = append(
+			swIdToIfNames[link.TargetSwitchId.ValueString()], link.TargetSwitchIfName.ValueString())
+	}
+
+	var queryResponse struct {
+		Items []struct {
+			Link struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_link"`
+		} `json:"items"`
+	}
+
+	// get link IDs to delete from each switch
+	var linkIdsToDelete []apstra.ObjectId
+	for switchId, ifNames := range swIdToIfNames {
+		query := new(apstra.PathQuery).
+			SetBlueprintType(apstra.BlueprintTypeStaging).
+			SetBlueprintId(bp.Id()).
+			SetClient(bp.Client()).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeSystem.QEEAttribute(),
+				{Key: "id", Value: apstra.QEStringVal(switchId)},
+			}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{apstra.NodeTypeInterface.QEEAttribute()}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeLink.QEEAttribute(),
+				{Key: "link_type", Value: apstra.QEStringVal("ethernet")},
+				{Key: "name", Value: apstra.QEStringVal("n_link")},
+			}).
+			In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeInterface.QEEAttribute(),
+				{Key: "if_name", Value: apstra.QEStringValIsIn(ifNames)},
+			}).
+			In([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeSystem.QEEAttribute(),
+				{Key: "id", Value: apstra.QEStringVal(switchId)},
+			})
+
+		qs := query.String()
+		_ = qs
+
+		err := query.Do(ctx, &queryResponse)
+		if err != nil {
+			diags.AddError(
+				fmt.Sprintf("failed querying for link IDs to delete from node %s: %q ports %v",
+					o.Id, switchId, ifNames),
+				err.Error())
+			return
+		}
+
+		resultLinkIds := make([]apstra.ObjectId, len(queryResponse.Items))
+		for i, item := range queryResponse.Items {
+			resultLinkIds[i] = item.Link.Id
+		}
+
+		if len(ifNames) != len(resultLinkIds) {
+			diags.AddError(
+				fmt.Sprintf("link ID query for node %s interfaces %v returned only %d link IDs", switchId, ifNames, len(resultLinkIds)),
+				fmt.Sprintf("got the following link IDs: %v", resultLinkIds))
+			return
+		}
+
+		linkIdsToDelete = append(linkIdsToDelete, resultLinkIds...)
+	}
+
+	err := bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
+			err.Error())
+	}
 }
