@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"reflect"
@@ -42,4 +43,24 @@ func IsJSON(str types.String) bool {
 		return false
 	}
 	return true
+}
+
+func getKeysfromMap(m map[string]interface{}) []attr.Value {
+	keys := make([]attr.Value, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = types.StringValue(k)
+		i++
+	}
+	return keys
+}
+
+// Pull Keys From Json String
+func KeysFromJSON(str types.String) []attr.Value {
+	m := make(map[string]interface{})
+	err := json.Unmarshal([]byte(str.ValueString()), &m)
+	if err != nil {
+		return nil
+	}
+	return getKeysfromMap(m)
 }
