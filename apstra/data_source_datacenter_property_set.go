@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	datacenter "terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/blueprint"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterPropertySet{}
@@ -30,7 +30,7 @@ func (o *dataSourceDatacenterPropertySet) Schema(_ context.Context, _ datasource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific PropertySet imported into a blueprint.\n\n" +
 			"At least one optional attribute is required. ",
-		Attributes: datacenter.DatacenterPropertySet{}.DataSourceAttributes(),
+		Attributes: blueprint.DatacenterPropertySet{}.DataSourceAttributes(),
 	}
 }
 
@@ -39,7 +39,7 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
-	var config datacenter.DatacenterPropertySet
+	var config blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -78,9 +78,10 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 	}
 
 	// create new state object
-	var state datacenter.DatacenterPropertySet
+	var state blueprint.DatacenterPropertySet
+	state.BlueprintId = config.BlueprintId
 	state.Id = types.StringValue(string(api.Id))
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	state.LoadApiData(ctx, api, true, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

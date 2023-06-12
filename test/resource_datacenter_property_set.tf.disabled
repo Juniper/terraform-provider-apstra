@@ -1,0 +1,18 @@
+#reference a blueprint
+data "apstra_datacenter_blueprint" "b" {
+	name = "raj1"
+}
+#reference a property set from the global catalog
+data "apstra_property_set" "ps" {
+	name = "MGMT VRF"
+}
+#import property set into the blueprint, import only one key
+resource "apstra_datacenter_property_set" "r" {
+	blueprint_id = data.apstra_datacenter_blueprint.b.id
+	id = data.apstra_property_set.ps.id
+# uncomment below to import only one key. If no keys are mentioned, all keys are imported
+#	keys = toset(["junos_mgmt_vrf"])
+}
+output "p" {
+	value = resource.apstra_datacenter_property_set.r
+}
