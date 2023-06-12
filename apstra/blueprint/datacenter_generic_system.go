@@ -358,27 +358,31 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 	}
 }
 
+// updateLinkParams is a method on DatacenterGenericSystem (which has links
+// embedded), but it does not operate on those links (all of the links). Rather
+// it operates only on the links passed as a function argument because only
+// those links need to be updated/validated.
 func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	if len(links) == 0 {
 		return
 	}
 
+	// one at a time, check/update each link
 	for _, link := range links {
-		linkIds := o.linkIds(ctx, []*DatacenterGenericSystemLink{link}, bp, diags)
+		// we don't keep the link ID, but we have each link's target switch and
+		// interface name. That's enough to uniquely identify the link from the
+		// graph data store
+		linkId := o.linkId(ctx, link, bp, diags)
 		if diags.HasError() {
 			return
 		}
-		if len(linkIds) != 1 {
-			diags.AddError(
-				"failed querying for link ID",
-				fmt.Sprintf("expected exactly 1 link ID from query, got %d link IDs", len(linkIds)))
-			return
-		}
 
-		link.updateParams(ctx, linkIds[0], diags)
+		link.updateParams(ctx, linkId, bp, diags)
 	}
 }
 
+// linkIds performs the graph queries necessary to return the link IDs which
+// connect this Generic System (o) to the systems+interfaces specified by links.
 func (o *DatacenterGenericSystem) linkIds(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []apstra.ObjectId {
 	if len(links) == 0 {
 		return nil
@@ -456,4 +460,18 @@ func (o *DatacenterGenericSystem) linkIds(ctx context.Context, links []*Datacent
 	}
 
 	return result
+}
+
+// linkId performs the graph queries necessary to return the link IDs which
+// connect this Generic System (o) to the systems+interfaces specified by links.
+func (o *DatacenterGenericSystem) linkId(ctx context.Context, link *DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) apstra.ObjectId {
+	linkIds := o.linkIds(ctx, []*DatacenterGenericSystemLink{link}, bp, diags)
+	if diags.HasError() {
+		return ""
+	}
+	if len(linkIds) != 1 {
+		diags.AddError("provider bug", fmt.Sprintf("expected 1 link ID, got %d", len(linkIds)))
+		return ""
+	}
+	return linkIds[0]
 }

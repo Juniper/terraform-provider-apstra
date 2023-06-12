@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -43,6 +44,7 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			MarkdownDescription: "Transformation ID sets the operational mode of an interface.",
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 		},
 		"group_label": resourceSchema.StringAttribute{
 			MarkdownDescription: "This field is used to collect multiple links into aggregation " +
@@ -185,58 +187,47 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 		return
 	}
 
-	query := new(apstra.PathQuery).
-		SetBlueprintType(apstra.BlueprintTypeStaging).
-		SetBlueprintId(client.Id()).
-		SetClient(client.Client()).
-		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(o.TargetSwitchId.ValueString())}}).
-		Out([]apstra.QEEAttribute{apstra.RelationshipTypeInterfaceMap.QEEAttribute()}).
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeInterfaceMap.QEEAttribute(),
-			{Key: "name", Value: apstra.QEStringVal("n_interface_map")},
-		})
-
-	var queryResponse struct {
-		Items []struct {
-			InterfaceMap struct {
-				Id         string `json:"id"`
-				Interfaces []struct {
-					Mapping []int  `json:"mapping"`
-					Name    string `json:"name"`
-				} `json:"interfaces"`
-			} `json:"n_interface_map"`
-		} `json:"items"`
-	}
-
-	err := query.Do(ctx, &queryResponse)
+	transformId, err := client.GetTransformationIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()), o.TargetSwitchIfName.ValueString())
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed querying for node %s interface map", o.TargetSwitchId), err.Error())
-		return
-	}
-	if len(queryResponse.Items) != 1 {
-		diags.AddError(fmt.Sprintf("query found %d results, expected 1", len(queryResponse.Items)), query.String())
+		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.digest()), err.Error())
 		return
 	}
 
-	for _, iMapInterface := range queryResponse.Items[0].InterfaceMap.Interfaces {
-		if iMapInterface.Name != o.TargetSwitchIfName.ValueString() {
-			continue
-		}
-
-		o.TargetSwitchIfTransformId = types.Int64Value(int64(iMapInterface.Mapping[1]))
-		return
-	}
-
-	diags.AddError(
-		fmt.Sprintf("failed to find in-use transform ID for interface %s", o.TargetSwitchIfName),
-		fmt.Sprintf("interface map %q has %d interfaces, but none are named %s",
-			queryResponse.Items[0].InterfaceMap.Id,
-			len(queryResponse.Items[0].InterfaceMap.Interfaces),
-			o.TargetSwitchIfName,
-		),
-	)
+	o.TargetSwitchIfTransformId = types.Int64Value(int64(transformId))
 }
 
-func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, linkId apstra.ObjectId, diags *diag.Diagnostics) {
-	panic("todo")
+// updateParams checks/updates the following link parameters.
+// - transform ID
+// - group label
+// - LAG mode
+// - tags
+// Because the // DatacenterGenericSystemLink object doesn't know the link ID,
+// the ID of the link's graph node is passed as a function argument.
+func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstra.ObjectId, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	err := client.SetTransformIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()),
+		o.TargetSwitchIfName.ValueString(), int(o.TargetSwitchIfTransformId.ValueInt64()))
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrCannotChangeTransform {
+			diags.AddWarning("could not change interface transform", err.Error())
+		} else {
+			diags.AddError("failed to set interface transform", err.Error())
+			return
+		}
+	}
+
+	llp := apstra.LinkLagParams{GroupLabel: o.GroupLabel.ValueString()}
+	diags.Append(o.Tags.ElementsAs(ctx, &llp.Tags, false)...)
+	err = llp.LagMode.FromString(o.LagMode.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to parse lag mode %s", o.LagMode), err.Error())
+	}
+	if diags.HasError() {
+		return
+	}
+
+	err = client.SetLinkLagParams(ctx, &apstra.SetLinkLagParamsRequest{id: llp})
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to set link %s LAG parameters", id), err.Error())
+	}
 }
