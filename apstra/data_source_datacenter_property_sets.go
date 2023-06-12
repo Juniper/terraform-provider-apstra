@@ -77,7 +77,7 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 		resp.Diagnostics.AddError("Error retrieving PropertySet", err.Error())
 		return
 	}
-	psSet := utils.SetValueOrNull(ctx, types.ObjectType{blueprint.DatacenterPropertySet{}.AttrTypes()}, ps, &resp.Diagnostics)
+	psSet := utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: blueprint.DatacenterPropertySet{}.AttrTypes()}, ps, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
