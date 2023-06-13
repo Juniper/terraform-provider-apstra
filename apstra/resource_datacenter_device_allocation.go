@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"terraform-provider-apstra/apstra/blueprint"
 	"terraform-provider-apstra/apstra/utils"
 )
@@ -72,9 +73,9 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 
 	// Ensure the following are populated:
 	//   - SystemNodeId (from node_name)
-	//   - plan.SystemNodeId
-	//   - plan.InterfaceMapCatalogId
-	//   - plan.DeviceProfileNodeId
+	//   - SystemNodeId
+	//   - InterfaceMapCatalogId
+	//   - DeviceProfileNodeId
 	plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -116,6 +117,9 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// make a copy of the state so we can look at changes
+	previousState := state.Clone()
 
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
@@ -159,6 +163,23 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	state.GetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	state.GetInterfaceMapName(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// special handling for FFE gyrations. The interface map ID might change,
+	// but we shouldn't surface that difference in Read() if the interface map
+	// map label (web UI "name") suggests the ID change is due to FFE.
+	if state.InterfaceMapCatalogId != previousState.InterfaceMapCatalogId {
+		// ID is has changed.
+		nameRE := regexp.MustCompile(fmt.Sprintf("^%s_v[0-9]+$", previousState.InterfaceMapName.ValueString()))
+		if nameRE.MatchString(state.InterfaceMapName.ValueString()) {
+			// The change is due to FFE
+			state.InterfaceMapCatalogId = types.StringValue(previousState.InterfaceMapCatalogId.ValueString())
+		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
