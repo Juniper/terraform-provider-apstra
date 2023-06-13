@@ -47,6 +47,27 @@ Other cases like the `apstra_datacenter_blueprint_deployment` resource are less 
 
 The `rosetta` mechanism in the `utils` package is useful for making these translations and should be used even for string types which don't require translation (we are not consistent about this) because it's hard to track down these occurrences when we inevitably need to add translation for a new type.
 
+### Tagged struct elements
+Where the user-facing schema strings manifest as `tfsdk` Go struct tags, the tagged elements should match the config schema. This:
+
+```go
+type thing struct {
+	BlueprintId types.String `tfsdk:"blueprint_id"`
+	Name        types.String `tfsdk:"name"`
+}
+```
+
+Not this:
+
+```go
+type thing struct {
+    Id    types.String `tfsdk:"blueprint_id"`
+    Label types.String `tfsdk:"name"`
+}
+```
+
+The inevitable translation between API terminology and terraform terminology should be as close to the package boundary as possible: When reading data from or writing data to an SDK object the names might not match. Use consistent names within each repo even if the repos don't agree with each other.
+
 ### Diagnostics
 
 Diagnostic Error and Warning messages are automatically prefixed with `Error: ` and `Warning: `. The `summary` field shouldn't start with "error" and should aspire to be concise.
