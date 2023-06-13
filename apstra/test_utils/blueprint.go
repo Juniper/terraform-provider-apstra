@@ -207,3 +207,42 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 	return bpClient, deleteFunc, nil
 }
+
+func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
+	client, err := GetTestClient()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	template, templateDelete, err := TemplateE(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	deleteFunc := func(ctx context.Context) error {
+		return templateDelete(ctx)
+	}
+
+	name := acctest.RandString(10)
+	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:  apstra.RefDesignDatacenter,
+		Label:      name,
+		TemplateId: template.Id,
+		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
+			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		},
+	})
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return errors.Join(client.DeleteBlueprint(ctx, id), templateDelete(ctx))
+	}
+
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+
+	return bpClient, deleteFunc, nil
+}
