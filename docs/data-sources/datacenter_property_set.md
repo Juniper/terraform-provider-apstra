@@ -2,13 +2,13 @@
 page_title: "apstra_datacenter_property_set Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source provides details of a specific PropertySet imported into a blueprint.
+  This data source provides details of a specific Property Set imported into a Blueprint.
   At least one optional attribute is required.
 ---
 
 # apstra_datacenter_property_set (Data Source)
 
-This data source provides details of a specific PropertySet imported into a blueprint.
+This data source provides details of a specific Property Set imported into a Blueprint.
 
 At least one optional attribute is required.
 
