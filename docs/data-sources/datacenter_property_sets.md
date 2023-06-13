@@ -64,22 +64,4 @@ output "o" {
 
 ### Read-Only
 
-- `property_sets` (Attributes Set) A set of Apstra Imported Property Sets Imported into the Blueprint (see [below for nested schema](#nestedatt--property_sets))
-
-<a id="nestedatt--property_sets"></a>
-### Nested Schema for `property_sets`
-
-Required:
-
-- `blueprint_id` (String) Apstra Blueprint ID. Used to identify the blueprint that the property set has been imported into.
-
-Optional:
-
-- `id` (String) Populate this field to look up an imported Property Set by ID. Required when `name` is omitted.
-- `name` (String) Populate this field to look up an imported Property Set by name. Required when `id` is omitted.
-
-Read-Only:
-
-- `data` (String) A map of values in the Property Set in JSON format
-- `keys` (Set of String) List of Keys that have been imported.
-- `stale` (Boolean) This is true if the imported Property Set does not match the global property set.
+- `property_sets` (Set of String) Set of Ids of Property Sets that have been imported.

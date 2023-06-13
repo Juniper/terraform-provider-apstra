@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/blueprint"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -35,12 +34,10 @@ func (o *dataSourceDatacenterPropertySets) Schema(_ context.Context, _ datasourc
 				Required:            true,
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"property_sets": schema.SetNestedAttribute{
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: blueprint.DatacenterPropertySet{}.DataSourceAttributes(),
-				},
+			"property_sets": schema.SetAttribute{
+				MarkdownDescription: "Set of Ids of Property Sets that have been imported.",
 				Computed:            true,
-				MarkdownDescription: "A set of Apstra Imported Property Sets Imported into the Blueprint",
+				ElementType:         types.StringType,
 			},
 		},
 	}
@@ -68,16 +65,15 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 		return
 	}
 	dps, err := bpClient.GetAllPropertySets(ctx)
-	ps := make([]blueprint.DatacenterPropertySet, len(dps))
+	psids := make([]apstra.ObjectId, len(dps))
 	for i, j := range dps {
-		ps[i].LoadApiData(ctx, &j, &resp.Diagnostics)
-		ps[i].BlueprintId = config.BlueprintId
+		psids[i] = j.Id
 	}
 	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving PropertySet", err.Error())
 		return
 	}
-	psSet := utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: blueprint.DatacenterPropertySet{}.AttrTypes()}, ps, &resp.Diagnostics)
+	psSet := utils.SetValueOrNull(ctx, types.StringType, psids, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
