@@ -46,7 +46,7 @@ output "p" {
 
 ### Required
 
-- `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the property set is imported into.
+- `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.
 
 ### Optional
 
