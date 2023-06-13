@@ -28,7 +28,7 @@ func (o *dataSourceDatacenterPropertySet) Configure(ctx context.Context, req dat
 
 func (o *dataSourceDatacenterPropertySet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific PropertySet imported into a blueprint.\n\n" +
+		MarkdownDescription: "This data source provides details of a specific Property Set imported into a Blueprint.\n\n" +
 			"At least one optional attribute is required. ",
 		Attributes: blueprint.DatacenterPropertySet{}.DataSourceAttributes(),
 	}
@@ -45,7 +45,10 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 		return
 	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
-
+	if err != nil { // catch errors other than 404 from above
+		resp.Diagnostics.AddError("Error making a Two Stage L3 Clos Client", err.Error())
+		return
+	}
 	var api *apstra.TwoStageL3ClosPropertySet
 	var ace apstra.ApstraClientErr
 
@@ -81,7 +84,7 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 	var state blueprint.DatacenterPropertySet
 	state.BlueprintId = config.BlueprintId
 	state.Id = types.StringValue(string(api.Id))
-	state.LoadApiData(ctx, api, true, &resp.Diagnostics)
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
 )
 
@@ -72,10 +71,9 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	}
 	// create new state object
 	var state blueprint.DatacenterPropertySet
-	state.Id = types.StringValue(string(api.Id))
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
 	state.Keys = plan.Keys
-	state.LoadApiData(ctx, api, false, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -127,11 +125,11 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 
 	// create new state object
 	var state blueprint.DatacenterPropertySet
-	state.Id = types.StringValue(string(api.Id))
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
+
 	state.BlueprintId = plan.BlueprintId
 	//If the user uses a blank set of keys, we are importing everything, so, we do not want to update the list.
 	state.Keys = plan.Keys
-	state.LoadApiData(ctx, api, false, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -152,9 +150,6 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 
 	var api *apstra.TwoStageL3ClosPropertySet
@@ -169,21 +164,22 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 		resp.Diagnostics.AddError("error updating Property Set", err.Error())
 		return
 	}
-	var ace apstra.ApstraClientErr
-	// set state
 	api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("id"),
-			"DatacenterPropertySet not found",
-			fmt.Sprintf("DatacenterPropertySet with ID %q not found. This should not happen", plan.Id.ValueString()))
-		return
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"DatacenterPropertySet not found",
+				fmt.Sprintf("DatacenterPropertySet with ID %q not found. This should not happen", plan.Id.ValueString()))
+			return
+		}
+		resp.Diagnostics.AddAttributeError(path.Root("id"), "error getting Property Set", err.Error())
 	}
 	var state blueprint.DatacenterPropertySet
-	state.Id = types.StringValue(string(api.Id))
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
 	state.Keys = plan.Keys
-	state.LoadApiData(ctx, api, false, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -204,7 +200,13 @@ func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource
 		return
 	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
-
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
+			resp.Diagnostics.AddError("error deleting Property Set", err.Error())
+			return
+		}
+	}
 	// Delete Property Set by calling API
 	err = bpClient.DeletePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {

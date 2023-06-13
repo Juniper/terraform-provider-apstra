@@ -63,14 +63,14 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 		return
 	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
-	if err != nil { // catch errors other than 404 from above
-		resp.Diagnostics.AddError("Error retrieving PropertySet", err.Error())
+	if err != nil {
+		resp.Diagnostics.AddError("Error Creating Blueprint Client", err.Error())
 		return
 	}
 	dps, err := bpClient.GetAllPropertySets(ctx)
 	ps := make([]blueprint.DatacenterPropertySet, len(dps))
 	for i, j := range dps {
-		ps[i].LoadApiData(ctx, &j, true, &resp.Diagnostics)
+		ps[i].LoadApiData(ctx, &j, &resp.Diagnostics)
 		ps[i].BlueprintId = config.BlueprintId
 	}
 	if err != nil { // catch errors other than 404 from above

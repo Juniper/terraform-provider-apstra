@@ -82,7 +82,7 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Used to identify the blueprint that the property set is imported into.",
+			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the property set is imported into.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -112,22 +112,24 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"data": resourceSchema.StringAttribute{
-			MarkdownDescription: "A map of values in the Property Set in JSON format",
+			MarkdownDescription: "A map of values in the Property Set in JSON format.",
 			Computed:            true,
 		},
 		"stale": resourceSchema.BoolAttribute{
-			MarkdownDescription: "This is true if the Property Set does not match the global property set",
+			MarkdownDescription: "Stale as reported in the Web UI.",
 			Computed:            true,
 		},
 	}
 }
 
-func (o *DatacenterPropertySet) LoadApiData(ctx context.Context, in *apstra.TwoStageL3ClosPropertySet, loadkeys bool, diags *diag.Diagnostics) {
+func (o *DatacenterPropertySet) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosPropertySet, d *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Label = types.StringValue(in.Label)
 	o.Values = types.StringValue(string(in.Values))
 	o.Stale = types.BoolValue(in.Stale)
-	if loadkeys {
-		o.Keys = types.SetValueMust(types.StringType, utils.KeysFromJSON(o.Values))
+	keys, err := utils.KeysFromJSON(o.Values)
+	if err != nil {
+		d.AddError("Error parsing Values", err.Error())
 	}
+	o.Keys = types.SetValueMust(types.StringType, keys)
 }
