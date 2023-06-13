@@ -72,12 +72,12 @@ func getKeysfromMap(m map[string]interface{}) []attr.Value {
 	return keys
 }
 
-// Pull Keys From Json String
-func KeysFromJSON(str types.String) []attr.Value {
+// KeysFromJSON returns a list of keys from a Json string
+func KeysFromJSON(str types.String) ([]attr.Value, error) {
 	m := make(map[string]interface{})
 	err := json.Unmarshal([]byte(str.ValueString()), &m)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return getKeysfromMap(m)
+	return getKeysfromMap(m), nil
 }
