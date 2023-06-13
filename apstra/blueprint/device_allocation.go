@@ -36,7 +36,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"node_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "GraphDB node 'label which identifies the switch. Strings like 'spine1' " +
+			MarkdownDescription: "GraphDB node label which identifies the switch. Strings like 'spine1' " +
 				"and 'rack_2_leaf_1' are appropriate here.",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
@@ -81,8 +81,11 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "GraphDB Node ID of the fabric node to which we're allocating an Interface Map " +
 				"and Managed Device.",
-			Computed:      true,
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Computed: true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+				stringplanmodifier.UseStateForUnknown(),
+			},
 		},
 		"device_profile_node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device Profiles specify attributes of specific hardware models.",
@@ -146,11 +149,13 @@ func (o *DeviceAllocation) GetInterfaceMapName(ctx context.Context, client *apst
 	}
 
 	if len(result.Items) != 1 {
-		diags.AddError("error querying graph for interface map",
+		diags.AddError(fmt.Sprintf("interface map %s not compatible with node %s (%s)",
+			o.InterfaceMapCatalogId, o.NodeName, o.NodeId.ValueString()),
 			fmt.Sprintf(
 				"expected 1 path linking system %q, logical device (any), interface map %q and device profile %q, got %d\nquery: %q",
 				o.NodeName.ValueString(), o.InterfaceMapCatalogId.ValueString(),
 				o.DeviceProfileNodeId.ValueString(), len(result.Items), query.String()))
+		return
 	}
 
 	o.InterfaceMapName = types.StringValue(result.Items[0].InterfaceMap.Label)
@@ -375,11 +380,11 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.C
 	}
 }
 
-// ReadSystemNode uses the BlueprintId and NodeId to determine the current
+// GetDeviceKey uses the BlueprintId and NodeId to determine the current
 // DeviceKey value in the blueprint.
-func (o *DeviceAllocation) ReadSystemNode(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) GetDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.NodeId.IsNull() {
-		diags.AddError(errProviderBug, "ReadSystemNode invoked with null NodeId")
+		diags.AddError(errProviderBug, "GetDeviceKey invoked with null NodeId")
 		return
 	}
 
@@ -473,7 +478,8 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 			iMaps[i] = result.Items[i].InterfaceMap.Id
 		}
 		diags.AddError("cannot proceed: graphdb links system node to multiple interface maps",
-			fmt.Sprintf("%q matches %q", o.NodeName.ValueString(), strings.Join(iMaps, "\", \"")))
+			fmt.Sprintf("%q matches: %q\nquery: %q",
+				o.NodeName.ValueString(), strings.Join(iMaps, "\", \""), query.String()))
 	}
 }
 
@@ -715,8 +721,8 @@ func (o *DeviceAllocation) GetNodeDeployMode(ctx context.Context, client *apstra
 	o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
 }
 
-func (o *DeviceAllocation) Clone() *DeviceAllocation {
-	return &DeviceAllocation{
+func (o *DeviceAllocation) Clone() DeviceAllocation {
+	return DeviceAllocation{
 		BlueprintId:           types.StringValue(o.BlueprintId.ValueString()),
 		NodeName:              types.StringValue(o.NodeName.ValueString()),
 		DeviceKey:             types.StringValue(o.DeviceKey.ValueString()),

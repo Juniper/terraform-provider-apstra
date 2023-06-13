@@ -133,11 +133,11 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.ReadSystemNode(ctx, o.client, &resp.Diagnostics)
+	state.GetDeviceKey(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if state.BlueprintId.IsNull() || state.NodeId.IsNull() {
+	if state.BlueprintId.IsNull() || state.NodeId.IsNull() { // not found?
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -146,7 +146,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if state.BlueprintId.IsNull() || state.NodeId.IsNull() {
+	if state.BlueprintId.IsNull() || state.NodeId.IsNull() { // not found?
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -155,7 +155,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if state.BlueprintId.IsNull() || state.NodeId.IsNull() {
+	if state.BlueprintId.IsNull() || state.NodeId.IsNull() { // not found?
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -181,6 +181,9 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 			state.InterfaceMapCatalogId = types.StringValue(previousState.InterfaceMapCatalogId.ValueString())
 		}
 	}
+
+	// InterfaceMapName must be immutable in order to be useful in detecting FFE modifications
+	state.InterfaceMapName = types.StringValue(previousState.InterfaceMapName.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
