@@ -41,7 +41,7 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
-				"the blueprint that the property set has been imported into.",
+				"the Blueprint that the Property Set has been imported into.",
 			Required:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -73,7 +73,7 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 			ElementType:         types.StringType,
 		},
 		"stale": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "This is true if the imported Property Set does not match the global property set.",
+			MarkdownDescription: "Stale as reported in the Web UI.",
 			Computed:            true,
 		},
 	}
@@ -82,7 +82,7 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the property set is imported into.",
+			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
