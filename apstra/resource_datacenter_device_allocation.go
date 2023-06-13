@@ -173,11 +173,17 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	// special handling for FFE gyrations. The interface map ID might change,
 	// but we shouldn't surface that difference in Read() if the interface map
 	// map label (web UI "name") suggests the ID change is due to FFE.
-	if state.InterfaceMapCatalogId != previousState.InterfaceMapCatalogId {
-		// ID is has changed.
+	if !state.InterfaceMapCatalogId.Equal(previousState.InterfaceMapCatalogId) {
+		// Interface map ID in blueprint doesn't match the one used to create it.
+		// Is it a manual change or the result of an FFE event?
+		// Based on `aos/reference_design/fabric_expansion_util.py`:
+		//     regex = '^(.+?)(_v([0-9]+))?$'
+		// Note that the total name length is limited to 64 characters. Long
+		// names are trimmed down to 64. The trimming happens in the chunk
+		// preceding "_v[0-9]".
 		nameRE := regexp.MustCompile(fmt.Sprintf("^%s_v[0-9]+$", previousState.InterfaceMapName.ValueString()))
 		if nameRE.MatchString(state.InterfaceMapName.ValueString()) {
-			// The change is due to FFE
+			// The change of InterfaceMapCatalogId seems to be due to FFE
 			state.InterfaceMapCatalogId = types.StringValue(previousState.InterfaceMapCatalogId.ValueString())
 		}
 	}
