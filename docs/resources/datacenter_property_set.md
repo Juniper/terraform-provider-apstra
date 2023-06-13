@@ -46,7 +46,7 @@ output "p" {
 
 ### Required
 
-- `blueprint_id` (String) Apstra Blueprint ID. Used to identify the blueprint that the property set is imported into.
+- `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the property set is imported into.
 
 ### Optional
 
@@ -56,5 +56,5 @@ output "p" {
 
 ### Read-Only
 
-- `data` (String) A map of values in the Property Set in JSON format
-- `stale` (Boolean) This is true if the Property Set does not match the global property set
+- `data` (String) A map of values in the Property Set in JSON format.
+- `stale` (Boolean) Stale as reported in the Web UI.
