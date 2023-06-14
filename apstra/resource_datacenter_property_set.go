@@ -44,6 +44,10 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		return
 	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error creating the Blueprint client", err.Error())
+		return
+	}
 	// Convert the plan into an API Request
 	var keys []string
 	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keys, false)...)
