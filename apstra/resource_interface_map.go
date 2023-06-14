@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 const (
@@ -311,7 +312,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	// fetch the logical device
 	ld, err := client.GetLogicalDevice(ctx, apstra.ObjectId(o.LogicalDeviceId.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
 				fmt.Sprintf("logical device %q not found", o.DeviceProfileId))
 		} else {
@@ -322,7 +323,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	// fetch the device profile specified by the user
 	dp, err := client.GetDeviceProfile(ctx, apstra.ObjectId(o.DeviceProfileId.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
 				fmt.Sprintf("device profile %q not found", o.DeviceProfileId))
 		} else {
