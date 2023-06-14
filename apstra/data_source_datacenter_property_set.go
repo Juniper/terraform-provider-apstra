@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
 )
 
@@ -83,7 +82,6 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 	// create new state object
 	var state blueprint.DatacenterPropertySet
 	state.BlueprintId = config.BlueprintId
-	state.Id = types.StringValue(string(api.Id))
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
