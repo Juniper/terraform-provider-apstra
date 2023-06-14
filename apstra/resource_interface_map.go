@@ -307,8 +307,6 @@ type rInterfaceMap struct {
 }
 
 func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) (*apstra.LogicalDevice, *apstra.DeviceProfile) {
-	var ace apstra.ApstraClientErr
-
 	// fetch the logical device
 	ld, err := client.GetLogicalDevice(ctx, apstra.ObjectId(o.LogicalDeviceId.ValueString()))
 	if err != nil {
