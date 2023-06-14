@@ -315,7 +315,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
 				fmt.Sprintf("logical device %q not found", o.DeviceProfileId))
 		} else {
-			diags.AddError("error while fetching logical device", err.Error())
+			diags.AddError("failed to fetch logical device", err.Error())
 		}
 	}
 
@@ -326,7 +326,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
 				fmt.Sprintf("device profile %q not found", o.DeviceProfileId))
 		} else {
-			diags.AddError("error while fetching device profile", err.Error())
+			diags.AddError("failed to fetch device profile", err.Error())
 		}
 	}
 
