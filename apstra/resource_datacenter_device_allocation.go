@@ -74,7 +74,7 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	// Ensure the following are populated:
 	//   - SystemNodeId (from node_name)
 	//   - SystemNodeId
-	//   - InterfaceMapCatalogId
+	//   - InitialInterfaceMapId
 	//   - DeviceProfileNodeId
 	plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -118,8 +118,9 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	// make a copy of the state so we can look at changes
-	previousState := state.Clone()
+	// copy details from the state so we can look for changes due to FFE
+	previousInterfaceMapCatalogId := state.InitialInterfaceMapId
+	previousInterfaceMapName := state.InterfaceMapName
 
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
@@ -173,7 +174,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	// special handling for FFE gyrations. The interface map ID might change,
 	// but we shouldn't surface that difference in Read() if the interface map
 	// map label (web UI "name") suggests the ID change is due to FFE.
-	if !state.InterfaceMapCatalogId.Equal(previousState.InterfaceMapCatalogId) {
+	if !state.InitialInterfaceMapId.Equal(previousInterfaceMapCatalogId) {
 		// Interface map ID in blueprint doesn't match the one used to create it.
 		// Is it a manual change or the result of an FFE event?
 		// Based on `aos/reference_design/fabric_expansion_util.py`:
@@ -181,15 +182,15 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		// Note that the total name length is limited to 64 characters. Long
 		// names are trimmed down to 64. The trimming happens in the chunk
 		// preceding "_v[0-9]".
-		nameRE := regexp.MustCompile(fmt.Sprintf("^%s_v[0-9]+$", previousState.InterfaceMapName.ValueString()))
+		nameRE := regexp.MustCompile(fmt.Sprintf("^%s_v[0-9]+$", previousInterfaceMapName.ValueString()))
 		if nameRE.MatchString(state.InterfaceMapName.ValueString()) {
-			// The change of InterfaceMapCatalogId seems to be due to FFE
-			state.InterfaceMapCatalogId = types.StringValue(previousState.InterfaceMapCatalogId.ValueString())
+			// The change of InitialInterfaceMapId seems to be due to FFE
+			state.InitialInterfaceMapId = types.StringValue(previousInterfaceMapCatalogId.ValueString())
 		}
 	}
 
 	// InterfaceMapName must be immutable in order to be useful in detecting FFE modifications
-	state.InterfaceMapName = types.StringValue(previousState.InterfaceMapName.ValueString())
+	state.InterfaceMapName = types.StringValue(previousInterfaceMapName.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -224,8 +225,13 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 	}
 
 	state.DeployMode = plan.DeployMode
-
 	state.SetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	state.DeviceKey = plan.DeviceKey
+	state.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -263,9 +269,9 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	state.InterfaceMapCatalogId = types.StringNull()
+	state.InitialInterfaceMapId = types.StringNull()
 	state.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
 
-	state.DeviceKey = types.StringNull()
+	state.DeviceKey = types.StringUnknown()
 	state.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
 }

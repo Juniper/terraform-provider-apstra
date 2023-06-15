@@ -17,14 +17,14 @@ import (
 )
 
 type DeviceAllocation struct {
-	BlueprintId           types.String `tfsdk:"blueprint_id"`           // required
-	NodeName              types.String `tfsdk:"node_name"`              // required
-	DeviceKey             types.String `tfsdk:"device_key"`             // optional
-	InterfaceMapCatalogId types.String `tfsdk:"interface_map_id"`       // computed + optional
-	InterfaceMapName      types.String `tfsdk:"interface_map_name"`     // computed
-	NodeId                types.String `tfsdk:"node_id"`                // computed
-	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"` // computed
-	DeployMode            types.String `tfsdk:"deploy_mode"`            // optional
+	BlueprintId           types.String `tfsdk:"blueprint_id"`             // required
+	NodeName              types.String `tfsdk:"node_name"`                // required
+	DeviceKey             types.String `tfsdk:"device_key"`               // optional
+	InitialInterfaceMapId types.String `tfsdk:"initial_interface_map_id"` // computed + optional
+	InterfaceMapName      types.String `tfsdk:"interface_map_name"`       // computed
+	NodeId                types.String `tfsdk:"node_id"`                  // computed
+	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`   // computed
+	DeployMode            types.String `tfsdk:"deploy_mode"`              // optional
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -43,27 +43,27 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"device_key": resourceSchema.StringAttribute{
-			MarkdownDescription: "Unique ID for a Managed Device, generally the serial number, used to. " +
+			MarkdownDescription: "Unique ID for a Managed Device, generally the serial number, used to " +
 				"assign a Managed Device to a fabric role.",
-			Optional:      true,
-			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.AtLeastOneOf(path.Expressions{
-					path.MatchRelative(),
-					path.MatchRoot("interface_map_id"),
+					path.MatchRelative(), // including MatchRelative improves the error message
+					path.MatchRoot("initial_interface_map_id"),
 				}...),
 			},
 		},
-		"interface_map_id": resourceSchema.StringAttribute{
+		"initial_interface_map_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) to a " +
 				"Device Profile (description of a specific hardware model). The value of this field " +
-				"must be the global catalog ID of an Interface Map. A value is required when " +
-				"`device_key` is omitted, or when `device_key` is supplied, but does not provide " +
-				"enough information to automatically select an Interface Map. The catalog ID is " +
-				"only at resource creation (in the initial `apply` operation) and for replacement " +
-				"when Terraform determines that the interface map has been manually changed. " +
-				"Changes to this parameter require replacemnt of the resource.",
+				"must be the graph node ID (bootstrapped from global catalog ID) of an Interface " +
+				"Map. A value is required when `device_key` is omitted, or when `device_key` is " +
+				"supplied, but does not provide enough information to automatically select an " +
+				"Interface Map. The ID is used only at resource creation (in the initial `apply` " +
+				"operation) and for replacement when the configuration is modified. Apstra flexible " +
+				"fabric expansion operations should not trigger state churn due to the current " +
+				"Interface Map ID being inconsistent with the configured value.",
 			Optional: true,
 			Computed: true,
 			PlanModifiers: []planmodifier.String{
@@ -74,9 +74,9 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		},
 		"interface_map_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "The Interface Map Name is recorded at creation time to aid in " +
-				"detection of manual changes to the Interface Map allocated to a System in the " +
-				"fabric.",
-			Computed: true,
+				"detection of changes to the Interface Map made outside of Terraform.",
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"node_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "GraphDB Node ID of the fabric node to which we're allocating an Interface Map " +
@@ -97,7 +97,6 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
-				stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("device_key")),
 				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
 			},
 		},
@@ -130,7 +129,7 @@ func (o *DeviceAllocation) GetInterfaceMapName(ctx context.Context, client *apst
 		Node([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("interface_map")},
 			{Key: "name", Value: apstra.QEStringVal("n_interface_map")},
-			{Key: "id", Value: apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+			{Key: "id", Value: apstra.QEStringVal(o.InitialInterfaceMapId.ValueString())},
 		}).
 		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("device_profile")}}).
 		Node([]apstra.QEEAttribute{
@@ -150,10 +149,10 @@ func (o *DeviceAllocation) GetInterfaceMapName(ctx context.Context, client *apst
 
 	if len(result.Items) != 1 {
 		diags.AddError(fmt.Sprintf("interface map %s not compatible with node %s (%s)",
-			o.InterfaceMapCatalogId, o.NodeName, o.NodeId.ValueString()),
+			o.InitialInterfaceMapId, o.NodeName, o.NodeId.ValueString()),
 			fmt.Sprintf(
 				"expected 1 path linking system %q, logical device (any), interface map %q and device profile %q, got %d\nquery: %q",
-				o.NodeName.ValueString(), o.InterfaceMapCatalogId.ValueString(),
+				o.NodeName.ValueString(), o.InitialInterfaceMapId.ValueString(),
 				o.DeviceProfileNodeId.ValueString(), len(result.Items), query.String()))
 		return
 	}
@@ -209,7 +208,7 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 			fmt.Sprintf("no interface_map links system '%s' to device profile '%s'\nquery: %q",
 				o.NodeName.ValueString(), o.DeviceProfileNodeId.ValueString(), query.String()))
 	case 1:
-		o.InterfaceMapCatalogId = types.StringValue(result.Items[0].InterfaceMap.Id)
+		o.InitialInterfaceMapId = types.StringValue(result.Items[0].InterfaceMap.Id)
 	default:
 		candidates := make([]string, len(result.Items))
 		for i := range result.Items {
@@ -264,10 +263,10 @@ func (o *DeviceAllocation) nodeIdFromNodeName(ctx context.Context, client *apstr
 
 // PopulateDataFromGraphDb attempts to set
 //   - NodeId (from node_name)
-//   - InterfaceMapCatalogId (when not set)
+//   - InitialInterfaceMapId (when not set)
 //   - DeviceProfileNodeId
 //   - from DeviceKey when set
-//   - from InterfaceMapCatalogId when DeviceKey not set
+//   - from InitialInterfaceMapId when DeviceKey not set
 func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.NodeId.IsUnknown() {
 		// this should only be true once, in Create()
@@ -278,14 +277,14 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	}
 
 	switch {
-	case (!o.InterfaceMapCatalogId.IsUnknown() && !o.InterfaceMapCatalogId.IsNull()) && o.DeviceKey.IsNull():
-		// interface_map_id known, device_key not supplied
+	case utils.Known(o.InitialInterfaceMapId) && o.DeviceKey.IsNull():
+		// initial_interface_map_id known, device_key not supplied
 		o.deviceProfileNodeIdFromInterfaceMapCatalogId(ctx, client, diags) // this will clear BlueprintId on 404
-	case !o.DeviceKey.IsNull() && o.InterfaceMapCatalogId.IsUnknown():
-		// device_key known, interface_map_id not supplied
+	case !o.DeviceKey.IsNull() && o.InitialInterfaceMapId.IsUnknown():
+		// device_key known, initial_interface_map_id not supplied
 		o.deviceProfileNodeIdFromDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
-	case !o.InterfaceMapCatalogId.IsNull() && !o.InterfaceMapCatalogId.IsUnknown() && !o.DeviceKey.IsNull():
-		// device_key and interface_map_id both supplied
+	case utils.Known(o.InitialInterfaceMapId) && !o.DeviceKey.IsNull():
+		// device_key and initial_interface_map_id both supplied
 		o.deviceProfileNodeIdFromDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
 		if o.BlueprintId.IsNull() {
 			return
@@ -299,9 +298,9 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 			errProviderBug,
 			fmt.Sprintf("cannot proceed\n"+
 				"  device_key null: %t, device_key unknown: %t\n"+
-				"  interface_map_id null: %t, interface_map_id known: %t",
+				"  initial_interface_map_id null: %t, initial_interface_map_id known: %t",
 				o.DeviceKey.IsNull(), o.DeviceKey.IsUnknown(),
-				o.InterfaceMapCatalogId.IsNull(), o.InterfaceMapCatalogId.IsUnknown(),
+				o.InitialInterfaceMapId.IsNull(), o.InitialInterfaceMapId.IsUnknown(),
 			),
 		)
 	}
@@ -309,7 +308,7 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 		return
 	}
 
-	if o.InterfaceMapCatalogId.IsUnknown() {
+	if o.InitialInterfaceMapId.IsUnknown() {
 		o.populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeId(ctx, client, diags) // this will clear BlueprintId on 404
 	}
 	if diags.HasError() || o.BlueprintId.IsNull() {
@@ -327,10 +326,10 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 // 'system' node and its interface map.
 func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	assignments := make(apstra.SystemIdToInterfaceMapAssignment, 1)
-	if o.InterfaceMapCatalogId.IsNull() {
+	if o.InitialInterfaceMapId.IsNull() {
 		assignments[o.NodeId.ValueString()] = nil
 	} else {
-		assignments[o.NodeId.ValueString()] = o.InterfaceMapCatalogId.ValueString()
+		assignments[o.NodeId.ValueString()] = o.InitialInterfaceMapId.ValueString()
 	}
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
@@ -353,19 +352,31 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.C
 	}
 }
 
-// SetNodeSystemId assigns a managed device 'device_key' (serial number) to a
-// switch 'system' node in the blueprint graphdb. Returns false when Apstra
-// returns a 404 to the blueprint operation, indicating the blueprint doesn't
-// exist and resources depending on the blueprint's existence should be removed.
+// SetNodeSystemId assigns a managed device 'device_key' (serial number) to
+// the `system_id` field of a switch 'system' node in the blueprint graph based
+// on the value of o.DeviceKey. When Sets o.DeviceKey is <null>, as would be the
+// case when it's not provided in the Terraform config, SetNodeSystemId returns
+// immediately without making any changes. When o.DeviceKey is <unknown>,
+// SetNodeSystemId clears the graph node's `system_id` field.
+//
+// If Apstra returns 404 to any blueprint operation, indicating the blueprint
+// doesn't exist, SetNodeSystemId sets o.BlueprintId to <null> to indicate that
+// resources which depend on the blueprint's existence should be removed.
 func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.DeviceKey.IsNull() {
 		return
 	}
 
+	var deviceKeyPtr *string
+	if !o.DeviceKey.IsUnknown() {
+		dk := o.DeviceKey.ValueString()
+		deviceKeyPtr = &dk
+	}
+
 	patch := &struct {
-		SystemId string `json:"system_id"`
+		SystemId *string `json:"system_id"`
 	}{
-		SystemId: o.DeviceKey.ValueString(),
+		SystemId: deviceKeyPtr,
 	}
 
 	nodeId := apstra.ObjectId(o.NodeId.ValueString())
@@ -469,9 +480,9 @@ func (o *DeviceAllocation) GetCurrentInterfaceMapId(ctx context.Context, client 
 
 	switch len(result.Items) {
 	case 0:
-		o.InterfaceMapCatalogId = types.StringNull()
+		o.InitialInterfaceMapId = types.StringNull()
 	case 1:
-		o.InterfaceMapCatalogId = types.StringValue(result.Items[0].InterfaceMap.Id)
+		o.InitialInterfaceMapId = types.StringValue(result.Items[0].InterfaceMap.Id)
 	default:
 		iMaps := make([]string, len(result.Items))
 		for i := range result.Items {
@@ -552,7 +563,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("interface_map")},
-			{Key: "id", Value: apstra.QEStringVal(o.InterfaceMapCatalogId.ValueString())},
+			{Key: "id", Value: apstra.QEStringVal(o.InitialInterfaceMapId.ValueString())},
 		}).
 		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("device_profile")}}).
 		Node([]apstra.QEEAttribute{
@@ -719,17 +730,4 @@ func (o *DeviceAllocation) GetNodeDeployMode(ctx context.Context, client *apstra
 	}
 
 	o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
-}
-
-func (o *DeviceAllocation) Clone() DeviceAllocation {
-	return DeviceAllocation{
-		BlueprintId:           types.StringValue(o.BlueprintId.ValueString()),
-		NodeName:              types.StringValue(o.NodeName.ValueString()),
-		DeviceKey:             types.StringValue(o.DeviceKey.ValueString()),
-		InterfaceMapCatalogId: types.StringValue(o.InterfaceMapCatalogId.ValueString()),
-		InterfaceMapName:      types.StringValue(o.InterfaceMapName.ValueString()),
-		NodeId:                types.StringValue(o.NodeId.ValueString()),
-		DeviceProfileNodeId:   types.StringValue(o.DeviceProfileNodeId.ValueString()),
-		DeployMode:            types.StringValue(o.DeployMode.ValueString()),
-	}
 }

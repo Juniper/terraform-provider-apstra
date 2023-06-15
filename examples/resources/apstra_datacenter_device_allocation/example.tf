@@ -48,9 +48,9 @@ locals {
 
 # Assign switches to fabric roles
 resource "apstra_datacenter_device_allocation" "r" {
-  for_each         = local.switches
-  blueprint_id     = apstra_datacenter_blueprint.r.id
-  interface_map_id = each.value["interface_map_id"]
-  node_name        = each.key
-  deploy_mode      = "deploy"
+  for_each                 = local.switches
+  blueprint_id             = apstra_datacenter_blueprint.r.id
+  initial_interface_map_id = each.value["interface_map_id"]
+  node_name                = each.key
+  deploy_mode              = "deploy"
 }

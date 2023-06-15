@@ -62,11 +62,11 @@ locals {
 
 # Assign switches to fabric roles
 resource "apstra_datacenter_device_allocation" "r" {
-  for_each         = local.switches
-  blueprint_id     = apstra_datacenter_blueprint.r.id
-  interface_map_id = each.value["interface_map_id"]
-  node_name        = each.key
-  deploy_mode      = "deploy"
+  for_each                 = local.switches
+  blueprint_id             = apstra_datacenter_blueprint.r.id
+  initial_interface_map_id = each.value["interface_map_id"]
+  node_name                = each.key
+  deploy_mode              = "deploy"
 }
 ```
 
@@ -76,15 +76,16 @@ resource "apstra_datacenter_device_allocation" "r" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `node_name` (String) GraphDB node 'label which identifies the switch. Strings like 'spine1' and 'rack_2_leaf_1' are appropriate here.
+- `node_name` (String) GraphDB node label which identifies the switch. Strings like 'spine1' and 'rack_2_leaf_1' are appropriate here.
 
 ### Optional
 
 - `deploy_mode` (String) Set the *Deploy Mode* of the associated fabric node.
-- `device_key` (String) Unique ID for a Managed Device, generally the serial number, used to. assign a Managed Device to a fabric role.
-- `interface_map_id` (String) Interface Maps link a Logical Device (fabric design element) to a Device Profile which describes a hardware model. This field is required when `device_key` is omitted, or when `device_key` is supplied, but does not provide enough information to`. select an Interface Map. This field represents the Blueprint graphDB node ID, which is the same string as the global ID used in the design API global catalog.
+- `device_key` (String) Unique ID for a Managed Device, generally the serial number, used to assign a Managed Device to a fabric role.
+- `initial_interface_map_id` (String) Interface Maps link a Logical Device (fabric design element) to a Device Profile (description of a specific hardware model). The value of this field must be the graph node ID (bootstrapped from global catalog ID) of an Interface Map. A value is required when `device_key` is omitted, or when `device_key` is supplied, but does not provide enough information to automatically select an Interface Map. The ID is used only at resource creation (in the initial `apply` operation) and for replacement when the configuration is modified. Apstra flexible fabric expansion operations should not trigger state churn due to the current Interface Map ID being inconsistent with the configured value.
 
 ### Read-Only
 
 - `device_profile_node_id` (String) Device Profiles specify attributes of specific hardware models.
+- `interface_map_name` (String) The Interface Map Name is recorded at creation time to aid in detection of changes to the Interface Map made outside of Terraform.
 - `node_id` (String) GraphDB Node ID of the fabric node to which we're allocating an Interface Map and Managed Device.
