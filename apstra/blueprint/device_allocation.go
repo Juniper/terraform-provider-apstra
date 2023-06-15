@@ -36,7 +36,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"node_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "GraphDB node label which identifies the switch. Strings like 'spine1' " +
+			MarkdownDescription: "Graph node label which identifies the switch. Strings like 'spine1' " +
 				"and 'rack_2_leaf_1' are appropriate here.",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
@@ -57,7 +57,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"initial_interface_map_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Interface Maps link a Logical Device (fabric design element) to a " +
 				"Device Profile (description of a specific hardware model). The value of this field " +
-				"must be the graph node ID (bootstrapped from global catalog ID) of an Interface " +
+				"must be the graph node ID (bootstrapped from Global Catalog ID) of an Interface " +
 				"Map. A value is required when `device_key` is omitted, or when `device_key` is " +
 				"supplied, but does not provide enough information to automatically select an " +
 				"Interface Map. The ID is used only at resource creation (in the initial `apply` " +
@@ -73,14 +73,14 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"interface_map_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "The Interface Map Name is recorded at creation time to aid in " +
-				"detection of changes to the Interface Map made outside of Terraform.",
+			MarkdownDescription: "The Interface Map Name is recorded only at creation time to" +
+				"aid in detection of changes to the Interface Map made outside of Terraform.",
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"node_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "GraphDB Node ID of the fabric node to which we're allocating an Interface Map " +
-				"and Managed Device.",
+			MarkdownDescription: "Graph node ID of the fabric node to which we're allocating " +
+				"an Interface Map (and possibly a Managed Device.)",
 			Computed: true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
@@ -93,9 +93,10 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"deploy_mode": resourceSchema.StringAttribute{
-			MarkdownDescription: "Set the *Deploy Mode* of the associated fabric node.",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: "Set the [deploy mode](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/datacenter-deploy-mode-set.html) " +
+				"of the associated fabric node.",
+			Optional: true,
+			Computed: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
 			},
@@ -107,7 +108,6 @@ func (o *DeviceAllocation) GetInterfaceMapName(ctx context.Context, client *apst
 	var result struct {
 		Items []struct {
 			InterfaceMap struct {
-				Id    string `json:"id"`
 				Label string `json:"label"`
 			} `json:"n_interface_map"`
 		} `json:"items"`
@@ -174,10 +174,12 @@ func (o *DeviceAllocation) populateInterfaceMapIdFromNodeIdAndDeviceProfileNodeI
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		Node([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal("system")},
+			apstra.NodeTypeSystem.QEEAttribute(),
 			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
 		}).
-		Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("logical_device")}}).
+		Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal("logical_device")},
+		}).
 		Node([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("logical_device")},
 		}).
@@ -578,7 +580,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 			o.BlueprintId = types.StringNull()
 			return
 		}
-		diags.AddError("error querying graphDB for device profile", err.Error())
+		diags.AddError("error querying graph for device profile", err.Error())
 		return
 	}
 
@@ -634,13 +636,13 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 			o.BlueprintId = types.StringNull()
 			return
 		}
-		diags.AddError("error querying graphDB for device profile", err.Error())
+		diags.AddError("error querying graph for device profile", err.Error())
 		return
 	}
 
 	if len(result.Items) != 1 {
 		diags.AddError(fmt.Sprintf(
-			"expected 1 graphDB query result, got %d", len(result.Items)),
+			"expected 1 graph query result, got %d", len(result.Items)),
 			fmt.Sprintf("query: %q", query.String()))
 		return
 	}
