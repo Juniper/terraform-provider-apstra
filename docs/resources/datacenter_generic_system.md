@@ -82,7 +82,7 @@ resource "apstra_datacenter_generic_system" "example" {
 
 ### Optional
 
-- `hostname` (String) Name displayed in thw Apstra web UI.
+- `hostname` (String) System hostname.
 - `label` (String) Name displayed in thw Apstra web UI.
 - `tags` (Set of String) Tag labels to be applied to this Generic System. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
