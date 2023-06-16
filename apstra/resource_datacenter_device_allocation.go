@@ -230,7 +230,7 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	state.DeviceKey = plan.DeviceKey
+	state.DeviceKey = plan.DeviceKey // copy user input directly from plan
 	state.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -272,6 +272,6 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 	state.InitialInterfaceMapId = types.StringNull()
 	state.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
 
-	state.DeviceKey = types.StringUnknown()
+	state.DeviceKey = types.StringUnknown() // 'unknown' triggers clearing the 'system_id' field.
 	state.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
 }
