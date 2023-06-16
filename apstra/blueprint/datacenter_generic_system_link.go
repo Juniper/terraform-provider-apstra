@@ -158,7 +158,7 @@ func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Di
 //	//o.LagMode = types.StringValue(in.)
 //}
 
-func (o *DatacenterGenericSystemLink) digest() string {
+func (o *DatacenterGenericSystemLink) Digest() string {
 	return o.TargetSwitchId.ValueString() + ":" + o.TargetSwitchIfName.ValueString()
 }
 
@@ -189,7 +189,7 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 
 	transformId, err := client.GetTransformationIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()), o.TargetSwitchIfName.ValueString())
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.digest()), err.Error())
+		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.Digest()), err.Error())
 		return
 	}
 
