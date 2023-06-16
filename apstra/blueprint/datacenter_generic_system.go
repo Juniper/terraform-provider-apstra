@@ -15,8 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
-	"sort"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterGenericSystem struct {
@@ -225,16 +223,12 @@ func (o *DatacenterGenericSystem) GetLabelAndHostname(ctx context.Context, bp *a
 	return nil
 }
 
-// UpdateLabelAndHostname uses the node patch API to update the label and
+// UpdateLabelAndHostname uses the node patch API to set the label and
 // hostname fields.
-func (o *DatacenterGenericSystem) UpdateLabelAndHostname(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	if o.Hostname.Equal(state.Hostname) && o.Label.Equal(state.Label) {
-		return
-	}
-
+func (o *DatacenterGenericSystem) UpdateLabelAndHostname(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	node := struct {
-		Hostname string `json:"hostname"`
-		Label    string `json:"label"`
+		Hostname string `json:"hostname,omitempty"`
+		Label    string `json:"label,omitempty"`
 	}{
 		Hostname: o.Hostname.ValueString(),
 		Label:    o.Label.ValueString(),
@@ -248,17 +242,10 @@ func (o *DatacenterGenericSystem) UpdateLabelAndHostname(ctx context.Context, st
 	}
 }
 
-func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	var planTags, stateTags []string
+// UpdateTags uses the tagging API to set the tag set
+func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var planTags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &planTags, false)...)
-	diags.Append(state.Tags.ElementsAs(ctx, &stateTags, false)...)
-
-	sort.Strings(planTags)
-	sort.Strings(stateTags)
-
-	if utils.SlicesMatch(planTags, stateTags) {
-		return
-	}
 
 	err := bp.SetNodeTags(ctx, apstra.ObjectId(o.Id.ValueString()), planTags)
 	if err != nil {
@@ -266,6 +253,9 @@ func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, state *Datacen
 	}
 }
 
+// UpdateLinkSet uses the old state to determine which links in the plan should
+// be added, removed and kept. Individual links are then added or removed and
+// the "keeper" links are updated with the correct tags, modes, etc...
 func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *DatacenterGenericSystem, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// extract links from plan (o) and state objects
 	var planLinks, stateLinks []DatacenterGenericSystemLink
