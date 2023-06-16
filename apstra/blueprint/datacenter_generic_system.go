@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -15,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"sort"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -72,7 +72,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			},
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
-				apstravalidator.GenericSystemLinksNoOverlap(),
+				genericSystemLinkSetValidator{},
 			},
 		},
 	}
@@ -475,4 +475,42 @@ func (o *DatacenterGenericSystem) linkId(ctx context.Context, link *DatacenterGe
 		return ""
 	}
 	return linkIds[0]
+}
+
+// this validator is here because (a) it's just for one attribute of this
+// resource and (2) it uses structs from the blueprint package and would cause
+// an import cycle if we put it there.
+var _ validator.Set = genericSystemLinkSetValidator{}
+
+type genericSystemLinkSetValidator struct{}
+
+func (o genericSystemLinkSetValidator) Description(_ context.Context) string {
+	return "ensures that links each use a unique combination of system_id + interface_name"
+}
+
+func (o genericSystemLinkSetValidator) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	var links []DatacenterGenericSystemLink
+	resp.Diagnostics.Append(req.ConfigValue.ElementsAs(ctx, &links, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	digests := make(map[string]bool, len(links))
+	for _, link := range links {
+		digest := link.digest()
+		if digests[digest] {
+			resp.Diagnostics.Append(
+				validatordiag.InvalidAttributeCombinationDiagnostic(
+					req.Path,
+					fmt.Sprintf("multiple links claim interface %s on switch %s",
+						link.TargetSwitchIfName, link.TargetSwitchId),
+				),
+			)
+			return
+		}
+	}
 }
