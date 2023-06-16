@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -151,6 +152,8 @@ type providerConfig struct {
 }
 
 func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	terraformVersionWarnings(ctx, req.TerraformVersion, &resp.Diagnostics)
+
 	// Retrieve provider data from configuration
 	var config providerConfig
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -350,5 +353,19 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		//func() resource.Resource { return &resourceSourceTemplatePodBased{} },
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceVniPool{} },
+	}
+}
+
+func terraformVersionWarnings(ctx context.Context, version string, diags *diag.Diagnostics) {
+	const tf150warning = "" +
+		"You're using Terraform %s. Terraform 1.5.0 has a known issue calculating " +
+		"plans in certain situations. More info at: https://github.com/hashicorp/terraform/issues/33371"
+
+	warnings := map[string]string{
+		"1.5.0": tf150warning,
+	}
+
+	if w, ok := warnings[version]; ok {
+		diags.AddWarning("known compatibility issue", fmt.Sprintf(w, version))
 	}
 }
