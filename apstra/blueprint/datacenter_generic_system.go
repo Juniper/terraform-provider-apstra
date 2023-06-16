@@ -155,7 +155,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	}
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
-		stateLinksMap[link.Digest()] = &stateLinks[i]
+		stateLinksMap[link.digest()] = &stateLinks[i]
 	}
 
 	// get the list of links from the API and filter out non-Ethernet links
@@ -184,7 +184,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 		// specified `group_label`. The `group_label` attribute is not
 		// "Computed", so we must return `null` to avoid state churn if the
 		// user opted for `null` by not setting it.
-		if link, ok := stateLinksMap[dcgsl.Digest()]; ok {
+		if link, ok := stateLinksMap[dcgsl.digest()]; ok {
 			if link.GroupLabel.IsNull() {
 				dcgsl.GroupLabel = types.StringNull()
 			}
@@ -272,14 +272,14 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	diags.Append(o.Links.ElementsAs(ctx, &planLinks, false)...)
 	diags.Append(state.Links.ElementsAs(ctx, &stateLinks, false)...)
 
-	// transform plan and state links into a map keyed by link Digest (device:port)
+	// transform plan and state links into a map keyed by link digest (device:port)
 	planLinksMap := make(map[string]*DatacenterGenericSystemLink, len(planLinks))
 	for i, link := range planLinks {
-		planLinksMap[link.Digest()] = &planLinks[i]
+		planLinksMap[link.digest()] = &planLinks[i]
 	}
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
-		stateLinksMap[link.Digest()] = &stateLinks[i]
+		stateLinksMap[link.digest()] = &stateLinks[i]
 	}
 
 	// compare plan and state, make lists of links to add / check+update / delete

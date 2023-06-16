@@ -27,18 +27,30 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		return
 	}
 
-	linkDigests := make(map[string]bool, len(links))
+	switchIdToInterfaces := make(map[string]map[string]bool, len(links))
 	for _, link := range links {
-		digest := link.Digest()
-		if linkDigests[digest] {
+		sid := link.TargetSwitchId.ValueString()
+		ifn := link.TargetSwitchIfName.ValueString()
+
+		if switchIdToInterfaces[sid] == nil {
+			// first time we've seen this switch, create a new interface map to keep track of it.
+			switchIdToInterfaces[sid] = map[string]bool{ifn: true}
+			continue
+		}
+
+		if switchIdToInterfaces[sid][ifn] {
+			// this is the second link claiming this combination of switch + interface!
 			resp.Diagnostics.Append(
 				validatordiag.InvalidAttributeCombinationDiagnostic(
 					req.Path,
 					fmt.Sprintf("multiple links use system %s and interface %s", link.TargetSwitchId, link.TargetSwitchIfName),
 				),
 			)
+			return
 		}
-		linkDigests[link.Digest()] = true
+
+		// this is the first link claiming this interface
+		switchIdToInterfaces[sid][ifn] = true
 	}
 }
 
