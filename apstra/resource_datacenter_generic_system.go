@@ -90,7 +90,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	plan.Id = types.StringValue(genericSystemId.String())
 
 	// pull Apstra-generated strings if not specified by the user
-	if plan.Label.IsUnknown() || plan.Hostname.IsUnknown() {
+	if plan.Name.IsUnknown() || plan.Hostname.IsUnknown() {
 		err = plan.GetLabelAndHostname(ctx, bp)
 		if err != nil {
 			resp.Diagnostics.AddError(
@@ -186,12 +186,12 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 		return
 	}
 
-	plan.UpdateLabelAndHostname(ctx, bp, &resp.Diagnostics)
+	plan.UpdateHostnameAndName(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.UpdateTags(ctx, bp, &resp.Diagnostics)
+	plan.UpdateTags(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

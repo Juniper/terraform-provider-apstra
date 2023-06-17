@@ -55,8 +55,9 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"lag_mode": resourceSchema.StringAttribute{
-			MarkdownDescription: "LAG negotiation mode of the Link.",
-			Optional:            true,
+			MarkdownDescription: "LAG negotiation mode of the Link. All links with the same " +
+				"`group_label` must use the value.",
+			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					apstra.RackLinkLagModeActive.String(),
@@ -106,58 +107,6 @@ func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Di
 	return &result
 }
 
-//func (o *DatacenterGenericSystemLink) GenericSystemQuery() *apstra.PathQuery {
-//	query := new(apstra.PathQuery).
-//		Node([]apstra.QEEAttribute{apstra.NodeTypeLink.QEEAttribute(),
-//			{"id", apstra.QEStringVal(o.Id.ValueString())},
-//		}).
-//		In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
-//		Node([]apstra.QEEAttribute{apstra.NodeTypeInterface.QEEAttribute()}).
-//		In([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-//		Node([]apstra.QEEAttribute{apstra.NodeTypeSystem.QEEAttribute(),
-//			{"role", apstra.QEStringVal("generic")},
-//			{"name", apstra.QEStringVal("n_generic")},
-//		})
-//
-//	return query
-//}
-
-//func (o DatacenterGenericSystemLink) GenericSystemQueryResponse() struct {
-//	Items []struct {
-//		Generic struct {
-//			Hostname string `json:"hostname"`
-//			Id       string `json:"id"`
-//			Label    string `json:"label"`
-//		} `json:"n_generic"`
-//	} `json:"items"`
-//} {
-//	return struct {
-//		Items []struct {
-//			Generic struct {
-//				Hostname string `json:"hostname"`
-//				Id       string `json:"id"`
-//				Label    string `json:"label"`
-//			} `json:"n_generic"`
-//		} `json:"items"`
-//	}{}
-//}
-
-//func (o *DatacenterGenericSystemLink) endpoint(ctx context.Context, diags *diag.Diagnostics) *DatacenterGenericSystemLinkEndpoint {
-//	var result DatacenterGenericSystemLinkEndpoint
-//	diags.Append(o.SwitchEndpoint.As(ctx, &result, basetypes.ObjectAsOptions{})...)
-//	return &result
-//}
-
-//func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in apstra.CablingMapLink, diags *diag.Diagnostics) {
-//	//SwitchEndpoint types.Object `tfsdk:"switch_endpoint"`
-//	//LagMode        types.String `tfsdk:"lag_mode"`
-//
-//	o.Id = types.StringValue(in.Id.String())
-//	o.GroupLabel = utils.StringValueOrNull(ctx, in.GroupLabel, diags)
-//	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.TagLabels, diags)
-//	//o.LagMode = types.StringValue(in.)
-//}
-
 func (o *DatacenterGenericSystemLink) digest() string {
 	return o.TargetSwitchId.ValueString() + ":" + o.TargetSwitchIfName.ValueString()
 }
@@ -201,9 +150,10 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 // - group label
 // - LAG mode
 // - tags
-// Because the // DatacenterGenericSystemLink object doesn't know the link ID,
+// Because the DatacenterGenericSystemLink object doesn't know the link ID,
 // the ID of the link's graph node is passed as a function argument.
 func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstra.ObjectId, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	// set the transform ID
 	err := client.SetTransformIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()),
 		o.TargetSwitchIfName.ValueString(), int(o.TargetSwitchIfTransformId.ValueInt64()))
 	if err != nil {
@@ -216,17 +166,25 @@ func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstr
 		}
 	}
 
-	llp := apstra.LinkLagParams{GroupLabel: o.GroupLabel.ValueString()}
-	diags.Append(o.Tags.ElementsAs(ctx, &llp.Tags, false)...)
-	err = llp.LagMode.FromString(o.LagMode.ValueString())
+	var tags []string
+	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+	if tags == nil {
+		tags = []string{} // convert nil -> empty slice to clear tags
+	}
+
+	var lagMode apstra.RackLinkLagMode
+	err = lagMode.FromString(o.LagMode.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse lag mode %s", o.LagMode), err.Error())
-	}
-	if diags.HasError() {
 		return
 	}
 
-	err = client.SetLinkLagParams(ctx, &apstra.SetLinkLagParamsRequest{id: llp})
+	// set lag params + tag set
+	err = client.SetLinkLagParams(ctx, &apstra.SetLinkLagParamsRequest{id: apstra.LinkLagParams{
+		GroupLabel: o.GroupLabel.ValueString(),
+		LagMode:    lagMode,
+		Tags:       tags,
+	}})
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to set link %s LAG parameters", id), err.Error())
 	}

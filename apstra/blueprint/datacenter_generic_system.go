@@ -15,12 +15,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"sort"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterGenericSystem struct {
 	Id          types.String `tfsdk:"id"`
 	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Label       types.String `tfsdk:"label"`
+	Name        types.String `tfsdk:"name"`
 	Hostname    types.String `tfsdk:"hostname"`
 	Tags        types.Set    `tfsdk:"tags"`
 	Links       types.Set    `tfsdk:"links"`
@@ -39,16 +41,18 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"label": resourceSchema.StringAttribute{
+		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name displayed in thw Apstra web UI.",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators:          []validator.String{stringvalidator.LengthBetween(0, 65)},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "System hostname.",
 			Optional:            true,
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9.]+$"),
 					"only underscore, dash and alphanumeric characters allowed."),
@@ -104,17 +108,17 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 		Links: make([]apstra.CreateLinkRequest, len(planLinks)),
 		Server: apstra.CreateLinksWithNewServerRequestServer{
 			Hostname:      o.Hostname.ValueString(),
-			Label:         o.Label.ValueString(),
+			Label:         o.Name.ValueString(),
 			LogicalDevice: &bogusLdTemplateUsedInEveryRequest,
 		},
 	}
 
-	// populate the tags in the request object
+	// populate the tags in the request object without checking diags for errors
 	diags.Append(o.Tags.ElementsAs(ctx, &request.Server.Tags, false)...)
 
 	// populate each link in the request object
 	for i, link := range planLinks {
-		request.Links[i] = *link.request(ctx, diags)
+		request.Links[i] = *link.request(ctx, diags) // collect all errors
 	}
 
 	return &request
@@ -133,9 +137,7 @@ func (o *DatacenterGenericSystem) ReadTags(ctx context.Context, bp *apstra.TwoSt
 		return
 	}
 
-	var d diag.Diagnostics
-	o.Tags, d = types.SetValueFrom(ctx, types.StringType, tags)
-	diags.Append(d...)
+	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)
 }
 
 func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -196,7 +198,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 
 		var d diag.Diagnostics
 		oLinks[i], d = types.ObjectValueFrom(ctx, dcgsl.attrTypes(), &dcgsl)
-		diags.Append(d...)
+		diags.Append(d...) // collect all errors
 	}
 	if diags.HasError() {
 		return
@@ -219,34 +221,73 @@ func (o *DatacenterGenericSystem) GetLabelAndHostname(ctx context.Context, bp *a
 		return err
 	}
 	o.Hostname = types.StringValue(node.Hostname)
-	o.Label = types.StringValue(node.Label)
+	o.Name = types.StringValue(node.Label)
 	return nil
 }
 
-// UpdateLabelAndHostname uses the node patch API to set the label and
+// UpdateHostnameAndName uses the node patch API to set the label and
 // hostname fields.
-func (o *DatacenterGenericSystem) UpdateLabelAndHostname(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) UpdateHostnameAndName(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
+	if o.Hostname.Equal(state.Hostname) && o.Name.Equal(state.Name) {
+		// no planned changes to hostname or name attributes
+		return
+	}
+
+	// node is an apstra-compatible system struct fragment suitable for patching
 	node := struct {
 		Hostname string `json:"hostname,omitempty"`
 		Label    string `json:"label,omitempty"`
 	}{
 		Hostname: o.Hostname.ValueString(),
-		Label:    o.Label.ValueString(),
+		Label:    o.Name.ValueString(),
 	}
 
+	// update the system node
 	err := bp.Client().PatchNode(ctx, bp.Id(), apstra.ObjectId(o.Id.ValueString()), &node, nil)
 	if err != nil {
 		diags.AddError(
-			fmt.Sprintf("error patching node %s with hostname: %s and label %s", o.Id, o.Hostname, o.Label),
+			fmt.Sprintf("error patching blueprint %q node %s with hostname: %s and label %s",
+				bp.Id(), o.Id, o.Hostname, o.Name),
 			err.Error())
+		return
 	}
+
+	if !o.Hostname.IsUnknown() && !o.Name.IsUnknown() {
+		// no need to retrieve learned values from Apstra
+		return
+	}
+
+	// retrieve values from Apstra
+	err = bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(o.Id.ValueString()), &node)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("error fetching blueprint %q node %s", bp.Id(), o.Id),
+			err.Error())
+		return
+	}
+
+	o.Hostname = types.StringValue(node.Hostname)
+	o.Name = types.StringValue(node.Label)
 }
 
 // UpdateTags uses the tagging API to set the tag set
-func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	var planTags []string
+func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
+	var planTags, stateTags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &planTags, false)...)
+	diags.Append(state.Tags.ElementsAs(ctx, &stateTags, false)...)
+	if diags.HasError() {
+		return
+	}
 
+	sort.Strings(planTags)
+	sort.Strings(stateTags)
+
+	if utils.SlicesMatch(planTags, stateTags) {
+		// no planned changes to tag set
+		return
+	}
+
+	// update node tags
 	err := bp.SetNodeTags(ctx, apstra.ObjectId(o.Id.ValueString()), planTags)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to update tags on %s", o.Id), err.Error())
@@ -261,6 +302,9 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	var planLinks, stateLinks []DatacenterGenericSystemLink
 	diags.Append(o.Links.ElementsAs(ctx, &planLinks, false)...)
 	diags.Append(state.Links.ElementsAs(ctx, &stateLinks, false)...)
+	if diags.HasError() {
+		return
+	}
 
 	// transform plan and state links into a map keyed by link digest (device:port)
 	planLinksMap := make(map[string]*DatacenterGenericSystemLink, len(planLinks))
@@ -273,12 +317,12 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	}
 
 	// compare plan and state, make lists of links to add / check+update / delete
-	var addLinks, checkLinks, delLinks []*DatacenterGenericSystemLink
+	var addLinks, updateLinks, delLinks []*DatacenterGenericSystemLink
 	for digest := range planLinksMap {
 		if _, ok := stateLinksMap[digest]; !ok {
 			addLinks = append(addLinks, planLinksMap[digest])
 		} else {
-			checkLinks = append(checkLinks, planLinksMap[digest])
+			updateLinks = append(updateLinks, planLinksMap[digest])
 		}
 	}
 	for digest := range stateLinksMap {
@@ -297,7 +341,8 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 		return
 	}
 
-	o.updateLinkParams(ctx, checkLinks, bp, diags)
+	// passing prior link state here could speed things up because we won't need to call every set operation
+	o.updateLinkParams(ctx, updateLinks, bp, diags)
 	if diags.HasError() {
 		return
 	}
@@ -314,6 +359,7 @@ func (o *DatacenterGenericSystem) addLinksToSystem(ctx context.Context, links []
 		if diags.HasError() {
 			return
 		}
+
 		linkRequests[i].SystemEndpoint.SystemId = apstra.ObjectId(o.Id.ValueString())
 		err := linkRequests[i].LagMode.FromString(link.LagMode.ValueString())
 		if err != nil {
@@ -324,11 +370,10 @@ func (o *DatacenterGenericSystem) addLinksToSystem(ctx context.Context, links []
 		return
 	}
 
-	ids, err := bp.AddLinksToSystem(ctx, linkRequests)
+	_, err := bp.AddLinksToSystem(ctx, linkRequests)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed adding links to generic system %s", o.Id), err.Error())
 	}
-	_ = ids
 }
 
 func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -368,7 +413,7 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []
 			return
 		}
 
-		link.updateParams(ctx, linkId, bp, diags)
+		link.updateParams(ctx, linkId, bp, diags) // collect all errors
 	}
 }
 
@@ -475,7 +520,7 @@ var _ validator.Set = genericSystemLinkSetValidator{}
 type genericSystemLinkSetValidator struct{}
 
 func (o genericSystemLinkSetValidator) Description(_ context.Context) string {
-	return "ensures that links each use a unique combination of system_id + interface_name"
+	return "ensures that link sets use a valid combination of values"
 }
 
 func (o genericSystemLinkSetValidator) MarkdownDescription(ctx context.Context) string {
@@ -489,7 +534,8 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		return
 	}
 
-	digests := make(map[string]bool, len(links))
+	digests := make(map[string]bool, len(links))      // track switch interfaces in use
+	groupModes := make(map[string]string, len(links)) // track lag modes per group
 	for _, link := range links {
 		digest := link.digest()
 		if digests[digest] {
@@ -501,6 +547,23 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 				),
 			)
 			return
+		}
+
+		lagMode := link.LagMode.ValueString()
+		groupLabel := link.GroupLabel.ValueString()
+		if m, ok := groupModes[groupLabel]; ok {
+			if m != lagMode {
+				resp.Diagnostics.Append(
+					validatordiag.InvalidAttributeCombinationDiagnostic(
+						req.Path,
+						fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
+							groupLabel, m, lagMode),
+					),
+				)
+				return
+			}
+		} else {
+			groupModes[groupLabel] = lagMode
 		}
 	}
 }
