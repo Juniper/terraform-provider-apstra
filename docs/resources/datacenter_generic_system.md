@@ -32,7 +32,7 @@ data "apstra_datacenter_systems" "rack_11_leafs" {
 
 resource "apstra_datacenter_generic_system" "example" {
   blueprint_id      = local.blueprint_id
-  label             = "Terraform Did This"
+  name              = "Terraform Did This"
   hostname          = "terraformdidthis.example.com"
   tags              = ["terraform"]
   links = [
@@ -83,7 +83,7 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Optional
 
 - `hostname` (String) System hostname.
-- `label` (String) Name displayed in thw Apstra web UI.
+- `name` (String) Name displayed in thw Apstra web UI.
 - `tags` (Set of String) Tag labels to be applied to this Generic System. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
 ### Read-Only
@@ -102,5 +102,5 @@ Required:
 Optional:
 
 - `group_label` (String) This field is used to collect multiple links into aggregation groups. For example, to create two LAG pairs from four physical links, you might use `group_label` value "bond0" on two links and "bond1" on the other two links. Apstra assigns a unique group ID to each link by default.
-- `lag_mode` (String) LAG negotiation mode of the Link.
+- `lag_mode` (String) LAG negotiation mode of the Link. All links with the same `group_label` must use the value.
 - `tags` (Set of String) Names of Tag to be applied to this Link. If a Tag doesn't exist in the Blueprint it will be created automatically.
