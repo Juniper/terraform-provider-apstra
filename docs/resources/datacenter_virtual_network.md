@@ -66,7 +66,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `reserve_vlan` (Boolean) For use only with `%s` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed. The only accepted values is `true`.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
 - `type` (String) Virtual Network Type
-- `vni` (Number) EVPN Virtual Network ID to be associatd with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../apstra_datacenter_resource_pool_allocation) to role `evpn_l3_vnis`.
+- `vni` (Number) EVPN Virtual Network ID to be associatd with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../apstra_datacenter_resource_pool_allocation) to role `vni_virtual_network_ids`.
 
 ### Read-Only
 

@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 const (
@@ -306,25 +307,26 @@ type rInterfaceMap struct {
 }
 
 func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) (*apstra.LogicalDevice, *apstra.DeviceProfile) {
-	var ace apstra.ApstraClientErr
 	// fetch the logical device
 	ld, err := client.GetLogicalDevice(ctx, apstra.ObjectId(o.LogicalDeviceId.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
-				fmt.Sprintf("logical device'%s' not found", o.DeviceProfileId.ValueString()))
+				fmt.Sprintf("logical device %q not found", o.DeviceProfileId))
+		} else {
+			diags.AddError("failed to fetch logical device", err.Error())
 		}
-		diags.AddError("error while fetching logical device", err.Error())
 	}
 
 	// fetch the device profile specified by the user
 	dp, err := client.GetDeviceProfile(ctx, apstra.ObjectId(o.DeviceProfileId.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
-				fmt.Sprintf("device profile '%s' not found", o.DeviceProfileId.ValueString()))
+				fmt.Sprintf("device profile %q not found", o.DeviceProfileId))
+		} else {
+			diags.AddError("failed to fetch device profile", err.Error())
 		}
-		diags.AddError("error while fetching device profile", err.Error())
 	}
 
 	return ld, dp
@@ -346,6 +348,7 @@ func (o *rInterfaceMap) ldPortNames(ctx context.Context, diags *diag.Diagnostics
 	for i, planIntf := range interfaces {
 		result[i] = planIntf.LogicalDevicePort.ValueString()
 	}
+
 	return result
 }
 

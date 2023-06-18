@@ -53,8 +53,10 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 			},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Optional:            true,
+			MarkdownDescription: "Used to allocate a resource pool to a role associated with specific Routing Zone " +
+				"within a Blueprint, rather than to the Blueprint at large. This feature is intended for binding IP " +
+				"address pools to the per-Routing-Zone Leaf Switch Loopback IP addressing role.",
+			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.AtMostNOf(1,
@@ -82,7 +84,7 @@ func (o *PoolAllocation) LoadApiData(ctx context.Context, in *apstra.ResourceGro
 func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ResourceGroupAllocation {
 	// Parse 'role' into a ResourceGroupName
 	var rgName apstra.ResourceGroupName
-	err := rgName.FromString(o.Role.ValueString())
+	err := utils.ApiStringerFromFriendlyString(&rgName, o.Role.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()), err.Error())
 		return nil
