@@ -48,9 +48,9 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
 				config.BlueprintId), err.Error())
-		} else {
-			resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+			return
 		}
+		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
 		return
 	}
 
@@ -64,12 +64,12 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 					path.Root("name"),
 					"DatacenterPropertySet not found",
 					fmt.Sprintf("DatacenterPropertySet with label %q not found", config.Label.ValueString()))
-			} else {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"Error Getting DatacenterPropertySet",
-					fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", config.Label.ValueString(), err.Error()))
+				return
 			}
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"Error Getting DatacenterPropertySet",
+				fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", config.Label.ValueString(), err.Error()))
 			return
 		}
 	case !config.Id.IsNull():
@@ -80,23 +80,18 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 					path.Root("id"),
 					"DatacenterPropertySet not found",
 					fmt.Sprintf("DatacenterPropertySet with ID %q not found", config.Id.ValueString()))
-			} else {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with ID %q failed with error %q", config.Id.ValueString(), err.Error()))
+				return
 			}
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"DatacenterPropertySet not found",
+				fmt.Sprintf("DatacenterPropertySet with ID %q failed with error %q", config.Id.ValueString(), err.Error()))
 			return
 		}
 	default:
 		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
 		return
 	}
-	if err != nil { // catch errors other than 404 from above
-		resp.Diagnostics.AddError("Error retrieving DatacenterPropertySet", err.Error())
-		return
-	}
-
 	// create new state object
 	var state blueprint.DatacenterPropertySet
 	state.BlueprintId = config.BlueprintId
