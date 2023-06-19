@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -61,9 +62,15 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("Error Creating Blueprint Client", err.Error())
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
+				config.BlueprintId), err.Error())
+		} else {
+			resp.Diagnostics.AddError("error retrieving imported Property Set", err.Error())
+		}
 		return
 	}
+
 	dps, err := bpClient.GetAllPropertySets(ctx)
 	psids := make([]apstra.ObjectId, len(dps))
 	for i, j := range dps {

@@ -2,13 +2,13 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterPropertySet{}
@@ -44,30 +44,48 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 		return
 	}
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
-	if err != nil { // catch errors other than 404 from above
-		resp.Diagnostics.AddError("Error making a Two Stage L3 Clos Client", err.Error())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
+				config.BlueprintId), err.Error())
+		} else {
+			resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		}
 		return
 	}
-	var api *apstra.TwoStageL3ClosPropertySet
-	var ace apstra.ApstraClientErr
 
+	var api *apstra.TwoStageL3ClosPropertySet
 	switch {
 	case !config.Label.IsNull():
 		api, err = bpClient.GetPropertySetByName(ctx, config.Label.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("name"),
-				"DatacenterPropertySet not found",
-				fmt.Sprintf("DatacenterPropertySet with label %q not found", config.Label.ValueString()))
+		if err != nil {
+			if utils.IsApstra404(err) {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("name"),
+					"DatacenterPropertySet not found",
+					fmt.Sprintf("DatacenterPropertySet with label %q not found", config.Label.ValueString()))
+			} else {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("name"),
+					"Error Getting DatacenterPropertySet",
+					fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", config.Label.ValueString(), err.Error()))
+			}
 			return
 		}
 	case !config.Id.IsNull():
 		api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"DatacenterPropertySet not found",
-				fmt.Sprintf("DatacenterPropertySet with ID %q not found", config.Id.ValueString()))
+		if err != nil {
+			if utils.IsApstra404(err) {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("id"),
+					"DatacenterPropertySet not found",
+					fmt.Sprintf("DatacenterPropertySet with ID %q not found", config.Id.ValueString()))
+			} else {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("id"),
+					"DatacenterPropertySet not found",
+					fmt.Sprintf("DatacenterPropertySet with ID %q failed with error %q", config.Id.ValueString(), err.Error()))
+			}
 			return
 		}
 	default:
