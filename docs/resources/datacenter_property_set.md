@@ -51,7 +51,7 @@ output "p" {
 ### Optional
 
 - `id` (String) Populate this field to look up an imported Property Set by ID. Required when `name` is omitted.
-- `keys` (Set of String) Subset of Keys to import. Empty set implies all keys imported.
+- `keys` (Set of String) Subset of Keys to import. Omit to import all keys.
 - `name` (String) Populate this field to look up an imported Property Set by name. Required when `id` is omitted.
 
 ### Read-Only
