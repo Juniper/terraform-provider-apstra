@@ -105,7 +105,7 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"keys": resourceSchema.SetAttribute{
-			MarkdownDescription: "Subset of Keys to import. Empty set implies all keys imported.",
+			MarkdownDescription: "Subset of Keys to import. Omit to import all keys.",
 			Optional:            true,
 			ElementType:         types.StringType,
 			PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
