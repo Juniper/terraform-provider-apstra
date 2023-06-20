@@ -263,3 +263,60 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 	template, err := client.GetRackBasedTemplate(ctx, id)
 	return template, deleteFunc, err
 }
+
+func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
+	client, err := GetTestClient()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rackTypeF, rackTypeFDelete, err := RackTypeF(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	deleteFunc := func(ctx context.Context) error {
+		return rackTypeFDelete(ctx)
+	}
+
+	templateRequest := &apstra.CreateRackBasedTemplateRequest{
+		DisplayName: acctest.RandString(10),
+		Capability:  apstra.TemplateCapabilityBlueprint,
+		Spine: &apstra.TemplateElementSpineRequest{
+			Count:         1,
+			LogicalDevice: "AOS-32x40-1",
+		},
+		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
+			rackTypeF.Id: {Count: 1},
+		},
+		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
+			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		},
+		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
+			Algorithm:                apstra.AlgorithmHeuristic,
+			MaxLinksPerPort:          1,
+			MaxLinksPerSlot:          1,
+			MaxPerSystemLinksPerPort: 1,
+			MaxPerSystemLinksPerSlot: 1,
+			Mode:                     apstra.AntiAffinityModeDisabled,
+		},
+		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
+		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
+	}
+	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+	deleteFunc = func(ctx context.Context) error {
+		return errors.Join(
+			rackTypeFDelete(ctx),
+			client.DeleteTemplate(ctx, id),
+		)
+	}
+
+	template, err := client.GetRackBasedTemplate(ctx, id)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+	return template, deleteFunc, err
+}
