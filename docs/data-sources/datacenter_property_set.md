@@ -50,7 +50,7 @@ output "o" {
 ### Optional
 
 - `id` (String) Populate this field to look up an imported Property Set by ID. Required when `name` is omitted.
-- `name` (String) Populate this field to look up an imported Property Set by name. Required when `id` is omitted.
+- `name` (String) Populate this field to look up an imported Property Set by `name`. Required when `id` is omitted.
 
 ### Read-Only
 

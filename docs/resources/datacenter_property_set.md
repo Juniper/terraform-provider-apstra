@@ -47,14 +47,14 @@ output "p" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.
+- `id` (String) ID of the Property Set ID to be imported.
 
 ### Optional
 
-- `id` (String) Populate this field to look up an imported Property Set by ID. Required when `name` is omitted.
 - `keys` (Set of String) Subset of Keys to import. Omit to import all keys.
-- `name` (String) Populate this field to look up an imported Property Set by name. Required when `id` is omitted.
 
 ### Read-Only
 
 - `data` (String) A map of values in the Property Set in JSON format.
+- `name` (String) Property Set name as shown in the Web UI.
 - `stale` (Boolean) Stale as reported in the Web UI.
