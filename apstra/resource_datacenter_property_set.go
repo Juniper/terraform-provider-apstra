@@ -98,20 +98,20 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	var api *apstra.TwoStageL3ClosPropertySet
 	switch {
-	case !plan.Label.IsNull():
-		api, err = bpClient.GetPropertySetByName(ctx, plan.Label.ValueString())
+	case !plan.Name.IsNull():
+		api, err = bpClient.GetPropertySetByName(ctx, plan.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("name"),
 					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with label %q not found", plan.Label.ValueString()))
+					fmt.Sprintf("DatacenterPropertySet with label %q not found", plan.Name.ValueString()))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Error Getting DatacenterPropertySet",
-				fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", plan.Label.ValueString(), err.Error()))
+				fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", plan.Name.ValueString(), err.Error()))
 			return
 		}
 	case !plan.Id.IsNull():

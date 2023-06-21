@@ -10,8 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/utils"
@@ -20,8 +18,8 @@ import (
 type DatacenterPropertySet struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Id          types.String `tfsdk:"id"`
-	Label       types.String `tfsdk:"name"`
-	Values      types.String `tfsdk:"data"`
+	Name        types.String `tfsdk:"name"`
+	Data        types.String `tfsdk:"data"`
 	Stale       types.Bool   `tfsdk:"stale"`
 	Keys        types.Set    `tfsdk:"keys"`
 }
@@ -58,7 +56,7 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an imported Property Set by name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up an imported Property Set by `name`. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -87,28 +85,20 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an imported Property Set by ID. Required when `name` is omitted.",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: "ID of the Property Set ID to be imported.",
+			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.ExactlyOneOf(path.Expressions{
-					path.MatchRelative(),
-					path.MatchRoot("name"),
-				}...),
 			},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an imported Property Set by name. Required when `id` is omitted.",
-			Optional:            true,
+			MarkdownDescription: "Property Set name as shown in the Web UI.",
 			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"keys": resourceSchema.SetAttribute{
 			MarkdownDescription: "Subset of Keys to import. Omit to import all keys.",
 			Optional:            true,
 			ElementType:         types.StringType,
-			PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"data": resourceSchema.StringAttribute{
@@ -122,14 +112,14 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 	}
 }
 
-func (o *DatacenterPropertySet) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosPropertySet, d *diag.Diagnostics) {
+func (o *DatacenterPropertySet) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosPropertySet, diags *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
-	o.Label = types.StringValue(in.Label)
-	o.Values = types.StringValue(string(in.Values))
+	o.Name = types.StringValue(in.Label)
+	o.Data = types.StringValue(string(in.Values))
 	o.Stale = types.BoolValue(in.Stale)
-	keys, err := utils.KeysFromJSON(o.Values)
+	keys, err := utils.KeysFromJSON(o.Data)
 	if err != nil {
-		d.AddError("Error parsing Values", err.Error())
+		diags.AddError("Error parsing Keys from API response", err.Error())
 	}
 	o.Keys = types.SetValueMust(types.StringType, keys)
 }
