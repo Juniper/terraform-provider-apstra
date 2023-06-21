@@ -64,7 +64,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			fmt.Sprintf("failed to lock blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -78,7 +78,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	// unfortunately we only learn the link IDs, not the generic system ID
 	linkIds, err := bp.CreateLinksWithNewServer(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating generic system", err.Error())
+		resp.Diagnostics.AddError("failed to create generic system", err.Error())
 		return
 	}
 
@@ -94,7 +94,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		err = plan.GetLabelAndHostname(ctx, bp)
 		if err != nil {
 			resp.Diagnostics.AddError(
-				fmt.Sprintf("error parsing labels from new generic server %s", plan.Id), err.Error())
+				fmt.Sprintf("failed to retrieve labels from new generic system %s", plan.Id), err.Error())
 			// don't return here - still want to set the state
 		}
 	}
@@ -138,7 +138,7 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed reading labels from generic server %s", state.Id), err.Error())
+			fmt.Sprintf("failed to retrieve labels from generic system %s", state.Id), err.Error())
 		return
 	}
 
@@ -181,7 +181,7 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			fmt.Sprintf("failed to lock blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -229,7 +229,7 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			fmt.Sprintf("failed to lock blueprint %q mutex", state.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -246,6 +246,6 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting generic system", err.Error())
+		resp.Diagnostics.AddError("failed to delete generic system", err.Error())
 	}
 }
