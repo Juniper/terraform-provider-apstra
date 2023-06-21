@@ -141,14 +141,13 @@ func (o *DatacenterGenericSystem) ReadTags(ctx context.Context, bp *apstra.TwoSt
 }
 
 func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	// Extract the prior state into a map of links keyed by endpoint digest.
-	// We need quick access to the prior data so that we know whether to
-	// populate `group_label` into our result. The `group_label` field is an
-	// "Optional" but NOT "Computed" attribute because of the complexity of
-	// dealing with "Unknown" values in terraform SetNested attributes.
-	//
-	// If the user didn't set "group_label", we want to return `null`, rather
-	// than the Apstra-assigned value. This map is how we tell the difference.
+	// Extract the prior state into a map (stateLinks) of links keyed by
+	// endpoint digest (switch_id:interface_name).
+	// We use a map for quick access to the prior data. We're looking at prior
+	// state data so that we know whether to populate the `group_label` (an
+	// optional field) in our result. If `group_label` isn't found in the
+	// prior state, that means the user omitted it, so we should leave it `null`
+	// regardless of the value returned by the API.
 	stateLinks := o.links(ctx, diags)
 	if diags.HasError() {
 		return
@@ -171,10 +170,10 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 		}
 	}
 
-	oLinks := make([]attr.Value, len(apiLinks))
+	oLinks := make([]attr.Value, len(apiLinks)) // oLinks will populate o.Links
 	for i, apiLink := range apiLinks {
 		var dcgsl DatacenterGenericSystemLink
-		// loadApiData gets everything except for the transform ID
+		// loadApiData handles every detail except for the transform ID
 		dcgsl.loadApiData(ctx, &apiLink, apstra.ObjectId(o.Id.ValueString()), diags)
 		if diags.HasError() {
 			return
