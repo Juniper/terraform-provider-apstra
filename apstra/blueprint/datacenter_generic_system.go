@@ -398,10 +398,6 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 // it operates only on the links passed as a function argument because only
 // those links need to be updated/validated.
 func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	if len(links) == 0 {
-		return
-	}
-
 	// one at a time, check/update each link
 	for _, link := range links {
 		// we don't keep the link ID, but we have each link's target switch and
