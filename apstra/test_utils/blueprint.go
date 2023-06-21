@@ -128,17 +128,16 @@ func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 }
 
 func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
 	client, err := GetTestClient()
 	if err != nil {
-		return nil, deleteFunc, err
+		return nil, nil, err
 	}
 
 	template, templateDelete, err := TemplateC(ctx)
 	if err != nil {
-		return nil, deleteFunc, err
+		return nil, nil, err
 	}
-	deleteFunc = func(ctx context.Context) error {
+	deleteFunc := func(ctx context.Context) error {
 		return templateDelete(ctx)
 	}
 
@@ -153,16 +152,77 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		},
 	})
 	if err != nil {
-		return nil, deleteFunc, fmt.Errorf("error creating blueprint %w", err)
+		err2 := deleteFunc(ctx)
+		return nil, nil, errors.Join(err, err2)
 	}
 
 	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteBlueprint(ctx, id)
+		return errors.Join(templateDelete(ctx), client.DeleteBlueprint(ctx, id))
 	}
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
 	if err != nil {
-		return nil, deleteFunc, err
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+
+	leafQuery := new(apstra.PathQuery).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		SetBlueprintId(bpClient.Id()).
+		SetClient(bpClient.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "role", Value: apstra.QEStringVal("leaf")},
+			{Key: "name", Value: apstra.QEStringVal("n_leaf")},
+		})
+	var leafQueryResult struct {
+		Items []struct {
+			Leaf struct {
+				Id string `json:"id"`
+			} `json:"n_leaf"`
+		} `json:"items"`
+	}
+	err = leafQuery.Do(ctx, &leafQueryResult)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+
+	accessQuery := new(apstra.PathQuery).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		SetBlueprintId(bpClient.Id()).
+		SetClient(bpClient.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "role", Value: apstra.QEStringVal("access")},
+			{Key: "name", Value: apstra.QEStringVal("n_access")},
+		})
+	var accessQueryResult struct {
+		Items []struct {
+			Access struct {
+				Id string `json:"id"`
+			} `json:"n_access"`
+		} `json:"items"`
+	}
+	err = accessQuery.Do(ctx, &accessQueryResult)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
+
+	leafIds := make([]string, len(leafQueryResult.Items))
+	accessIds := make([]string, len(accessQueryResult.Items))
+	assignments := make(apstra.SystemIdToInterfaceMapAssignment, len(leafIds)+len(accessIds))
+
+	for i, item := range leafQueryResult.Items {
+		leafIds[i] = item.Leaf.Id
+		assignments[item.Leaf.Id] = "Juniper_vQFX__AOS-7x10-Leaf"
+	}
+	for i, item := range accessQueryResult.Items {
+		accessIds[i] = item.Access.Id
+		assignments[item.Access.Id] = "Juniper_vQFX__AOS-8x10-1"
+	}
+
+	err = bpClient.SetInterfaceMapAssignments(ctx, assignments)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
 	}
 
 	return bpClient, deleteFunc, nil
