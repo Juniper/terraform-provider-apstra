@@ -82,14 +82,14 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 		},
 		"expect_default_ipv4": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv4 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.'",
+				"policy. Used for rendering route expectations.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
 		},
 		"expect_default_ipv6": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv6 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.'",
+				"policy. Used for rendering route expectations.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),

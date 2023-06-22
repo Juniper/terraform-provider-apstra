@@ -55,7 +55,7 @@ func (o *NodeTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client,
 	}
 
 	// pick out the desired node from the node slice in the response object
-	desiredNode := new(node)
+	var desiredNode *node
 	for _, n := range nodeResponse.Nodes {
 		if n.Id == o.Id.ValueString() {
 			desiredNode = &n

@@ -59,7 +59,7 @@ func (o *EsiLagInfo) LoadApiData(_ context.Context, in *apstra.EsiLagInfo, _ *di
 }
 
 func (o *EsiLagInfo) Request(_ context.Context, diags *diag.Diagnostics) *apstra.EsiLagInfo {
-	if o.L3PeerLinkSpeed.IsNull() && o.L3PeerLinkSpeed.IsNull() {
+	if o.L3PeerLinkSpeed.IsNull() && o.L3PeerLinkCount.IsNull() {
 		return nil
 	}
 

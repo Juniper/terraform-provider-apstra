@@ -52,11 +52,7 @@ func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
 	resultData := make(map[int]int)
 	for _, v := range result {
 		parentCount := len(v)
-		if _, ok := resultData[parentCount]; ok {
-			resultData[parentCount]++
-		} else {
-			resultData[parentCount] = 1
-		}
+		resultData[parentCount]++
 	}
 
 	// expecting 3 switches to have 1 parent and 4 switch to have 2 parents

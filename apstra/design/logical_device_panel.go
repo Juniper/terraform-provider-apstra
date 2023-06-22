@@ -101,9 +101,7 @@ func (o LogicalDevicePanel) AttrTypes() map[string]attr.Type {
 }
 
 func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePanel, diags *diag.Diagnostics) {
-	var portGroups []LogicalDevicePanelPortGroup
-
-	portGroups = make([]LogicalDevicePanelPortGroup, len(in.PortGroups))
+	portGroups := make([]LogicalDevicePanelPortGroup, len(in.PortGroups))
 	for i := range in.PortGroups {
 		portGroups[i].LoadApiData(ctx, &in.PortGroups[i], diags)
 		if diags.HasError() {

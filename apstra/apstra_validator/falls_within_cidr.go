@@ -6,10 +6,8 @@ import (
 	"github.com/IBM/netaddr"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 )
@@ -20,17 +18,6 @@ type fallsWithinCidrValidator struct {
 	expression path.Expression
 	allZerosOk bool
 	allOnesOk  bool
-}
-
-type fallsWithinCidrValidatorRequest struct {
-	Config         tfsdk.Config
-	ConfigValue    attr.Value
-	Path           path.Path
-	PathExpression path.Expression
-}
-
-type fallsWithinCidrValidatorResponse struct {
-	Diagnostics diag.Diagnostics
 }
 
 func (o fallsWithinCidrValidator) Description(_ context.Context) string {

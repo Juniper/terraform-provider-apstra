@@ -13,7 +13,7 @@ var _ validator.String = LeafSwitchMlagInfoValidator{}
 type LeafSwitchMlagInfoValidator struct{}
 
 func (o LeafSwitchMlagInfoValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Validates sibling attributes 'mlag_info' and 'redundancy_mode' are aligned.")
+	return "Validates sibling attributes 'mlag_info' and 'redundancy_mode' are aligned."
 }
 
 func (o LeafSwitchMlagInfoValidator) MarkdownDescription(ctx context.Context) string {

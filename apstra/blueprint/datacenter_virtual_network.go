@@ -96,7 +96,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associatd with this Virtual "+
 				"Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated]"+
-				"(../apstra_datacenter_resource_pool_allocation) to role `%s`.", apstra.ResourceGroupNameEvpnL3Vni),
+				"(../apstra_datacenter_resource_pool_allocation) to role `%s`.",
+				utils.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{

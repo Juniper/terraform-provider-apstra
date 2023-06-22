@@ -5,6 +5,5 @@ const (
 	errApiPatchWithTypeAndId = "API error patching %s %q"
 	errProviderBug           = "Provider Bug. Please report this issue to the provider maintainers."
 
-	vrfIdMin = 1
-	vrfIdMax = 4999
+	ErrDCBlueprintCreate = "Failed to create client for Datacenter Blueprint %s"
 )

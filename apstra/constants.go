@@ -25,9 +25,4 @@ const (
 	errDataSourceReadFail         = "Data Source Read() failure'"
 	errResourceReadFail           = "Resource Read() failure'"
 	errInsufficientConfigElements = "Available configuration elements did provide a solution. Please report this issue to the provider maintainers"
-
-	warnUnwantedResourceSummary = "ignoring attempt to set resource allocation because it is not needed by Blueprint"
-	warnUnwantedResourceDetail  = "not allocating resources for '%s' please remove element from the configuration"
-	warnMissingResourceSummary  = "Blueprint staged with missing resources"
-	warnMissingResourceDetail   = "the following resource assignments should be added to the configuration: %s"
 )

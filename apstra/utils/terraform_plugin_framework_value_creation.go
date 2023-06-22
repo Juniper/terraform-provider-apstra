@@ -89,6 +89,7 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 		return types.Int64Null()
 	}
 
+	//lint:ignore S1034 see issue #127
 	switch in.(type) {
 	case *apstra.VNI:
 		return types.Int64Value(int64(*in.(*apstra.VNI)))
