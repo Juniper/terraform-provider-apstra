@@ -2,8 +2,10 @@ package tfapstra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -47,8 +49,22 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		return
 	}
 
+	// extract the keys to be imported from the plan
+	var keysToImport []string
+	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create a blueprint client
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
@@ -56,26 +72,14 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
-
-	// extract the keys to be imported
-	var keysToImport []string
-	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+	// Perform the import
 	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing DatacenterPropertySet", err.Error())
 		return
 	}
 
-	// check our assumption that the ID returned from an import call matches the
+	// Check our assumption that the ID returned from an import call matches the
 	// ID of the imported Property Set because this feels like something which
 	// might change.
 	if id.String() != plan.Id.ValueString() {
@@ -184,8 +188,42 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 		return
 	}
 
+	// extract the keys to be imported from the plan
+	var keysToImport []string
+	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// fetch available keys from the property set to be re-imported from the global catalog
+	availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// ensure that keys configured to be imported actually exist in the Global
+	// Catalog's copy of the Property Set
+
+	missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
+	if len(missingRequiredKeys) != 0 {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("keys"),
+			fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
+			fmt.Sprintf("the following keys are configured for import, but are not "+
+				"available for import from the Global Catalog: %v", missingRequiredKeys),
+		)
+		return
+	}
+
+	// create a blueprint client
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
@@ -193,20 +231,8 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
-		return
-	}
-
-	keys := make([]string, len(plan.Keys.Elements()))
-	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keys, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Update Property Set
-	err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keys...)
+	err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error updating Blueprint %s Property Set %s", plan.BlueprintId, plan.Id),
@@ -214,6 +240,7 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 		return
 	}
 
+	// Read it back
 	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -265,4 +292,39 @@ func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource
 			fmt.Sprintf("unable to delete Property Set %s from Blueprint %s", state.Id, state.BlueprintId),
 			err.Error())
 	}
+}
+
+func globalCatalogKeys(ctx context.Context, id apstra.ObjectId, client *apstra.Client, diags *diag.Diagnostics) []string {
+	propertySet, err := client.GetPropertySet(ctx, id)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			diags.AddAttributeError(
+				path.Root("id"),
+				"not found",
+				fmt.Sprintf("Property Set %q not found in Global Catalog", id),
+			)
+			return nil
+		}
+		diags.AddError(
+			fmt.Sprintf("unable to fetch Property Set %q from Global Catalog", id),
+			err.Error(),
+		)
+		return nil
+	}
+
+	m := make(map[string]interface{})
+	err = json.Unmarshal(propertySet.Data.Values, &m)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed parsing Property Set %q JSON data", id), err.Error())
+		return nil
+	}
+
+	result := make([]string, len(m))
+	var i int
+	for k := range m {
+		result[i] = k
+		i++
+	}
+
+	return result
 }
