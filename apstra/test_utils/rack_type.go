@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 )
@@ -361,5 +362,37 @@ func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) err
 	}
 
 	result, err := client.GetRackType(ctx, id)
+	return result, deleteFunc, err
+}
+
+func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
+	client, err := GetTestClient()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
+		DisplayName:              "rack type F",
+		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
+			{
+				Label:             "rack type F leaf",
+				LinkPerSpineCount: 1,
+				LinkPerSpineSpeed: "40G",
+				LogicalDeviceId:   "AOS-48x10_6x40-1",
+			},
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	deleteFunc := func(ctx context.Context) error {
+		return client.DeleteRackType(ctx, id)
+	}
+
+	result, err := client.GetRackType(ctx, id)
+	if err != nil {
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
+	}
 	return result, deleteFunc, err
 }

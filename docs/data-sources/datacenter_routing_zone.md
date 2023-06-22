@@ -42,8 +42,6 @@ output "routing_zone" {
 #   "routing_policy_id" = "6QVA7utPgvPDWe0-vLs"
 #   "vlan_id" = 43
 #   "vni" = 10043
-#   "vrf_id" = 2
-#   "vrf_name" = "terraform-vrf"
 #
 ```
 

@@ -6,14 +6,12 @@ import (
 	"log"
 	"math/rand"
 	"testing"
-	"time"
 	"unsafe"
 )
 
 func TestInt64ValueOrNull(t *testing.T) {
 	ctx := context.Background()
 	diags := diag.Diagnostics{}
-	rand.Seed(time.Now().UnixNano())
 
 	r := rand.Intn(127) + 1 // 1 - 128 to avoid zero and fit in a int8
 	log.Println(r)

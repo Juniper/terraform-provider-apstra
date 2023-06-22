@@ -9,7 +9,7 @@ func AllResourceGroupNameStrings() []string {
 		if rgn == apstra.ResourceGroupNameNone {
 			continue
 		}
-		result = append(result, rgn.String())
+		result = append(result, StringersToFriendlyString(rgn))
 	}
 	return result
 }

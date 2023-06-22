@@ -16,7 +16,7 @@ type ConfigletGeneratorValidator struct {
 }
 
 func (o ConfigletGeneratorValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that the section names matches the config style.")
+	return "Ensures that the section names matches the config style."
 }
 
 func (o ConfigletGeneratorValidator) MarkdownDescription(ctx context.Context) string {

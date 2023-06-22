@@ -145,13 +145,12 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError(
-			"error fetching Blueprint",
-			fmt.Sprintf("Could not read %q - %s", state.Id.ValueString(), err.Error()),
+			fmt.Sprintf("fetching blueprint %q", state.Id.ValueString()),
+			err.Error(),
 		)
 		return
 	}
@@ -182,8 +181,10 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 
 	// Ensure the blueprint still exists.
 	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
-		resp.State.RemoveResource(ctx)
-		return
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		resp.Diagnostics.AddError("no such blueprint", fmt.Sprintf("blueprint %s not found", plan.Id))
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -204,7 +205,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 
 	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
+		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after update", err.Error())
 	}
 
 	// Create new state object
