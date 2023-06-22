@@ -166,8 +166,6 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 	var newState blueprint.DatacenterPropertySet
 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
 	newState.BlueprintId = state.BlueprintId
-	// If the user uses a blank set of keys, we are importing everything, so we do not want to update the list.
-	newState.Keys = state.Keys
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
