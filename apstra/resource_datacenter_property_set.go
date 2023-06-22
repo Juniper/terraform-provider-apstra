@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -15,7 +14,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
 
 type resourceDatacenterPropertySet struct {
-	client *apstra.Client
+	client   *apstra.Client
+	lockFunc func(context.Context, string) error
 }
 
 func (o *resourceDatacenterPropertySet) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -24,6 +24,7 @@ func (o *resourceDatacenterPropertySet) Metadata(_ context.Context, req resource
 
 func (o *resourceDatacenterPropertySet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
 func (o *resourceDatacenterPropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -38,50 +39,68 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
 		return
 	}
+
 	// Retrieve values from plan
 	var plan blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("error creating the Blueprint client", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
-	// Convert the plan into an API Request
+
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
+	// extract the keys to be imported
 	var keys []string
 	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keys, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	ps_id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keys...)
+	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keys...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing DatacenterPropertySet", err.Error())
 		return
 	}
 
-	// Read it back
-	var api *apstra.TwoStageL3ClosPropertySet
-	var ace apstra.ApstraClientErr
+	// check our assumption that the ID returned from an import call matches the
+	// ID of the imported Property Set because this feels like something which
+	// might change.
+	if id.String() != plan.Id.ValueString() {
+		resp.Diagnostics.AddWarning("provider bug",
+			fmt.Sprintf("when importing Property Set %s imported into Blueprint %s, API returned unexpected ID %q",
+				plan.Id, plan.BlueprintId, id))
+		// we probably don't need to return here
+	}
 
-	api, err = bpClient.GetPropertySet(ctx, ps_id)
-	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("id"),
-			"DatacenterPropertySet not found",
-			fmt.Sprintf("DatacenterPropertySet with ID %q not found", plan.Id.ValueString()))
+	// Read it back
+	api, err := bpClient.GetPropertySet(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("failed reading just-imported Property Set %s from Blueprint %s",
+			plan.Id, plan.BlueprintId), err.Error())
 		return
 	}
+
 	// create new state object
 	var state blueprint.DatacenterPropertySet
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
+	// If the user uses a blank set of keys, we are importing everything, so we do not want to update the list.
 	state.Keys = plan.Keys
-	if resp.Diagnostics.HasError() {
-		return
-	}
+
+	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -90,48 +109,94 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
-	var plan blueprint.DatacenterPropertySet
-	resp.Diagnostics.Append(req.State.Get(ctx, &plan)...)
+
+	// Retrieve values from state
+	var state blueprint.DatacenterPropertySet
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("failed to crreate blueprint client", err.Error())
+	}
+
+	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddAttributeError(path.Root("name"),
+			fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
+		return
+	}
+
+	// create new state object
+	var newState blueprint.DatacenterPropertySet
+	newState.LoadApiData(ctx, api, &resp.Diagnostics)
+	newState.BlueprintId = state.BlueprintId
+	// If the user uses a blank set of keys, we are importing everything, so we do not want to update the list.
+	newState.Keys = state.Keys
+
+	// Set state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+}
+
+func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	if o.client == nil {
+		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
+		return
+	}
+
+	// Retrieve values from plan
+	var plan blueprint.DatacenterPropertySet
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
+		return
+	}
+
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	var api *apstra.TwoStageL3ClosPropertySet
-	switch {
-	case !plan.Name.IsNull():
-		api, err = bpClient.GetPropertySetByName(ctx, plan.Name.ValueString())
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with label %q not found", plan.Name.ValueString()))
-				return
-			}
-			resp.Diagnostics.AddAttributeError(
-				path.Root("name"),
-				"Error Getting DatacenterPropertySet",
-				fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", plan.Name.ValueString(), err.Error()))
-			return
-		}
-	case !plan.Id.IsNull():
-		api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with ID %q not found", plan.Id.ValueString()))
-				return
-			}
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"DatacenterPropertySet not found",
-				fmt.Sprintf("DatacenterPropertySet with ID %q failed with error %q", plan.Id.ValueString(), err.Error()))
-			return
-		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
+	if err != nil {
+		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		return
+	}
+
+	keys := make([]string, len(plan.Keys.Elements()))
+	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keys, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update Property Set
+	err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keys...)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error updating Blueprint %s Property Set %s", plan.BlueprintId, plan.Id),
+			err.Error())
+		return
+	}
+
+	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failure reading just-updated Property Set %s in Blueprint %s",
+				plan.Id, plan.BlueprintId),
+			err.Error())
 		return
 	}
 
@@ -139,98 +204,42 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 	var state blueprint.DatacenterPropertySet
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
-	//If the user uses a blank set of keys, we are importing everything, so, we do not want to update the list.
 	state.Keys = plan.Keys
-	if resp.Diagnostics.HasError() {
-		return
-	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update resource
-func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
-	// Get plan values
-	var plan blueprint.DatacenterPropertySet
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-
-	var api *apstra.TwoStageL3ClosPropertySet
-	keys := make([]string, len(plan.Keys.Elements()))
-	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keys, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Update Property Set
-	err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keys...)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating Property Set", err.Error())
-		return
-	}
-	api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"DatacenterPropertySet not found",
-				fmt.Sprintf("DatacenterPropertySet with ID %q not found", plan.Id.ValueString()))
-		} else {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"DatacenterPropertySet not found",
-				fmt.Sprintf("DatacenterPropertySet with ID %q failed with error %q", plan.Id.ValueString(), err.Error()))
-		}
-		return
-	}
-
-	var state blueprint.DatacenterPropertySet
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
-	state.BlueprintId = plan.BlueprintId
-	state.Keys = plan.Keys
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-// Delete resource
 func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	if o.client == nil {
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
 
+	// Retrieve values from state
 	var state blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddWarning("blueprint not found", "blueprint not found")
-			return
-		} else {
-			resp.Diagnostics.AddError("unable to get blueprint client", err.Error())
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("unable to get blueprint client", err.Error())
+		return
 	}
+
 	// Delete Property Set by calling API
 	err = bpClient.DeletePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddWarning("datacenter property set not found", "datacenter property set not found")
-			return
-		} else {
-			resp.Diagnostics.AddError("unable to delete datacenter prpperty set", err.Error())
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("unable to delete Property Set %s from Blueprint %s", state.Id, state.BlueprintId),
+			err.Error())
 	}
 }
