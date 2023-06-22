@@ -63,13 +63,13 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	}
 
 	// extract the keys to be imported
-	var keys []string
-	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keys, false)...)
+	var keysToImport []string
+	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keys...)
+	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing DatacenterPropertySet", err.Error())
 		return
@@ -95,10 +95,35 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 
 	// create new state object
 	var state blueprint.DatacenterPropertySet
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
-	// If the user uses a blank set of keys, we are importing everything, so we do not want to update the list.
-	state.Keys = plan.Keys
+	state.LoadApiData(ctx, api, &resp.Diagnostics) // this
+
+	// extract keys which actually got imported
+	var importedKeys []string
+	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &importedKeys, false)...)
+	if resp.Diagnostics.HasError() {
+		// set the state prior to returning because the PS has been imported
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
+
+	// keysToImport and importedKeys should match...
+	extraImportedKeys, failedImportedKeys := utils.DiffSliceSets(keysToImport, importedKeys)
+	if len(extraImportedKeys) != 0 {
+		resp.Diagnostics.AddWarning(
+			fmt.Sprintf("import of PropertySet %s produced unexpected Keys", plan.Id),
+			fmt.Sprintf("extra Keys: %v", extraImportedKeys))
+		// do not return without setting state
+	}
+
+	if len(failedImportedKeys) != 0 {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("keys"),
+			fmt.Sprintf("failed to import all desired Keys from PropertySet %s", plan.Id),
+			fmt.Sprintf("the following Keys could not be imported: %v", failedImportedKeys),
+		)
+		// do not return without setting state
+	}
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
