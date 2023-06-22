@@ -38,11 +38,13 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
 		return
 	}
+
 	var config blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -50,26 +52,25 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 				config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("error creating blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
 	var api *apstra.TwoStageL3ClosPropertySet
 	switch {
-	case !config.Label.IsNull():
-		api, err = bpClient.GetPropertySetByName(ctx, config.Label.ValueString())
+	case !config.Name.IsNull():
+		api, err = bpClient.GetPropertySetByName(ctx, config.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("name"),
 					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with label %q not found", config.Label.ValueString()))
+					fmt.Sprintf("DatacenterPropertySet with label %s not found", config.Name))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"),
-				"Error Getting DatacenterPropertySet",
-				fmt.Sprintf("DatacenterPropertySet with label %q failed with error %q", config.Label.ValueString(), err.Error()))
+				path.Root("name"), "Failed reading DatacenterPropertySet", err.Error(),
+			)
 			return
 		}
 	case !config.Id.IsNull():
@@ -79,19 +80,19 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
 					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with ID %q not found", config.Id.ValueString()))
+					fmt.Sprintf("DatacenterPropertySet with ID %s not found", config.Id))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"DatacenterPropertySet not found",
-				fmt.Sprintf("DatacenterPropertySet with ID %q failed with error %q", config.Id.ValueString(), err.Error()))
+				path.Root("name"), "Failed reading DatacenterPropertySet", err.Error(),
+			)
 			return
 		}
 	default:
 		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
 		return
 	}
+
 	// create new state object
 	var state blueprint.DatacenterPropertySet
 	state.BlueprintId = config.BlueprintId
@@ -99,6 +100,7 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

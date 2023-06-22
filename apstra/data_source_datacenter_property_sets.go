@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -35,8 +36,8 @@ func (o *dataSourceDatacenterPropertySets) Schema(_ context.Context, _ datasourc
 				Required:            true,
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
-			"property_sets": schema.SetAttribute{
-				MarkdownDescription: "Set of Ids of Property Sets that have been imported.",
+			"ids": schema.SetAttribute{
+				MarkdownDescription: "Set of IDs of Property Sets imported into the Blueprint.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
@@ -51,8 +52,8 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 	}
 
 	var config struct {
-		BlueprintId  types.String `tfsdk:"blueprint_id"`
-		PropertySets types.Set    `tfsdk:"property_sets"`
+		BlueprintId types.String `tfsdk:"blueprint_id"`
+		Ids         types.Set    `tfsdk:"ids"`
 	}
 
 	// get the configuration
@@ -60,37 +61,32 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
 				config.BlueprintId), err.Error())
 		} else {
-			resp.Diagnostics.AddError("error retrieving imported Property Set", err.Error())
+			resp.Diagnostics.AddError("failed creating blueprint client", err.Error())
 		}
 		return
 	}
 
-	dps, err := bpClient.GetAllPropertySets(ctx)
-	psids := make([]apstra.ObjectId, len(dps))
-	for i, j := range dps {
-		psids[i] = j.Id
-	}
-	if err != nil { // catch errors other than 404 from above
-		resp.Diagnostics.AddError("Error retrieving PropertySet", err.Error())
+	// read all PropertySets from the API because there's no ID-list-only API option
+	propertySets, err := bpClient.GetAllPropertySets(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("failed retrieving property sets", err.Error())
 		return
 	}
-	psSet := utils.SetValueOrNull(ctx, types.StringType, psids, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+
+	// organize the property set IDs into a set, shove 'em into the "config" object
+	psIds := make([]attr.Value, len(propertySets))
+	for i, propertySet := range propertySets {
+		psIds[i] = types.StringValue(propertySet.Id.String())
 	}
-	// create new state object
-	var state struct {
-		BlueprintId  types.String `tfsdk:"blueprint_id"`
-		PropertySets types.Set    `tfsdk:"property_sets"`
-	}
-	state.BlueprintId = config.BlueprintId
-	state.PropertySets = psSet
+	config.Ids = types.SetValueMust(types.StringType, psIds)
+
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
