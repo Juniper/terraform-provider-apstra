@@ -117,7 +117,7 @@ func (o *DatacenterPropertySet) LoadApiData(_ context.Context, in *apstra.TwoSta
 	o.Name = types.StringValue(in.Label)
 	o.Data = types.StringValue(string(in.Values))
 	o.Stale = types.BoolValue(in.Stale)
-	keys, err := utils.KeysFromJSON(o.Data)
+	keys, err := utils.GetKeysFromJSON(o.Data)
 	if err != nil {
 		diags.AddError("Error parsing Keys from API response", err.Error())
 	}
