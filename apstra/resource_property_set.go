@@ -55,7 +55,6 @@ func (o *resourcePropertySet) Create(ctx context.Context, req resource.CreateReq
 		resp.Diagnostics.AddError("error creating new PropertySet", err.Error())
 		return
 	}
-	// Save the tag ID
 	plan.Id = types.StringValue(psid.String())
 	plan.Blueprints = types.SetNull(types.StringType)
 	k, err := utils.GetKeysFromJSON(plan.Values)
@@ -147,9 +146,14 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 			fmt.Sprintf("PropertySet with ID %q not found. This should not happen", plan.Id.ValueString()))
 		return
 	}
+	// save the old data
+	d := plan.Values
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+	if utils.JSONEqual(plan.Values, d, &resp.Diagnostics) {
+		plan.Values = d
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
