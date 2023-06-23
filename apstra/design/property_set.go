@@ -13,13 +13,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type PropertySet struct {
 	Id         types.String `tfsdk:"id"`
-	Label      types.String `tfsdk:"name"`
-	Values     types.String `tfsdk:"data"`
+	Name       types.String `tfsdk:"name"`
+	Data       types.String `tfsdk:"data"`
 	Blueprints types.Set    `tfsdk:"blueprints"`
+	Keys       types.Set    `tfsdk:"keys"`
 }
 
 func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -41,6 +43,11 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"keys": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of keys defined in the Property Set.",
+			Computed:            true,
+			ElementType:         types.StringType,
 		},
 		"data": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "A map of values in the Property Set in JSON format",
@@ -68,6 +75,11 @@ func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
+		"keys": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of keys defined in the Property Set.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 		"data": resourceSchema.StringAttribute{
 			MarkdownDescription: "A map of values in the Property Set in JSON format",
 			Required:            true,
@@ -82,16 +94,22 @@ func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 }
 
 func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetData, diags *diag.Diagnostics) {
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 	var d diag.Diagnostics
 	o.Blueprints, d = types.SetValueFrom(ctx, types.StringType, in.Blueprints)
 	diags.Append(d...)
-	o.Values = types.StringValue(string(in.Values))
+	o.Data = types.StringValue(string(in.Values))
+	k, err := utils.GetKeysFromJSON(o.Data)
+	if err != nil {
+		diags.AddError("failed to load keys", err.Error())
+		return
+	}
+	o.Keys = types.SetValueMust(types.StringType, k)
 }
 
 func (o *PropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.PropertySetData {
 	return &apstra.PropertySetData{
-		Label:  o.Label.ValueString(),
-		Values: []byte(o.Values.ValueString()),
+		Label:  o.Name.ValueString(),
+		Values: []byte(o.Data.ValueString()),
 	}
 }

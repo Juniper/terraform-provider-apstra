@@ -51,13 +51,13 @@ func (o *dataSourcePropertySet) Read(ctx context.Context, req datasource.ReadReq
 	var ace apstra.ApstraClientErr
 
 	switch {
-	case !config.Label.IsNull():
-		api, err = o.client.GetPropertySetByLabel(ctx, config.Label.ValueString())
+	case !config.Name.IsNull():
+		api, err = o.client.GetPropertySetByLabel(ctx, config.Name.ValueString())
 		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"PropertySet not found",
-				fmt.Sprintf("PropertySet with label %q not found", config.Label.ValueString()))
+				fmt.Sprintf("PropertySet with label %q not found", config.Name.ValueString()))
 			return
 		}
 	case !config.Id.IsNull():

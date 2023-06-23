@@ -55,9 +55,14 @@ func (o *resourcePropertySet) Create(ctx context.Context, req resource.CreateReq
 		resp.Diagnostics.AddError("error creating new PropertySet", err.Error())
 		return
 	}
-	// Save the tag ID
 	plan.Id = types.StringValue(psid.String())
 	plan.Blueprints = types.SetNull(types.StringType)
+	k, err := utils.GetKeysFromJSON(plan.Data)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to load keys", err.Error())
+		return
+	}
+	plan.Keys = types.SetValueMust(types.StringType, k)
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -95,8 +100,8 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if utils.JSONEqual(newstate.Values, state.Values, &resp.Diagnostics) {
-		newstate.Values = state.Values
+	if utils.JSONEqual(newstate.Data, state.Data, &resp.Diagnostics) {
+		newstate.Data = state.Data
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -141,13 +146,15 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 			fmt.Sprintf("PropertySet with ID %q not found. This should not happen", plan.Id.ValueString()))
 		return
 	}
-	var d design.PropertySet
-	d.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	// save the old data
+	d := plan.Data
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	plan.Blueprints = d.Blueprints
+	if utils.JSONEqual(plan.Data, d, &resp.Diagnostics) {
+		plan.Data = d
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
