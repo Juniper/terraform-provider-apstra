@@ -18,8 +18,8 @@ import (
 
 type PropertySet struct {
 	Id         types.String `tfsdk:"id"`
-	Label      types.String `tfsdk:"name"`
-	Values     types.String `tfsdk:"data"`
+	Name       types.String `tfsdk:"name"`
+	Data       types.String `tfsdk:"data"`
 	Blueprints types.Set    `tfsdk:"blueprints"`
 	Keys       types.Set    `tfsdk:"keys"`
 }
@@ -94,12 +94,12 @@ func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 }
 
 func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetData, diags *diag.Diagnostics) {
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 	var d diag.Diagnostics
 	o.Blueprints, d = types.SetValueFrom(ctx, types.StringType, in.Blueprints)
 	diags.Append(d...)
-	o.Values = types.StringValue(string(in.Values))
-	k, err := utils.GetKeysFromJSON(o.Values)
+	o.Data = types.StringValue(string(in.Values))
+	k, err := utils.GetKeysFromJSON(o.Data)
 	if err != nil {
 		diags.AddError("failed to load keys", err.Error())
 		return
@@ -109,7 +109,7 @@ func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetDat
 
 func (o *PropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.PropertySetData {
 	return &apstra.PropertySetData{
-		Label:  o.Label.ValueString(),
-		Values: []byte(o.Values.ValueString()),
+		Label:  o.Name.ValueString(),
+		Values: []byte(o.Data.ValueString()),
 	}
 }
