@@ -46,3 +46,4 @@ resource "apstra_property_set" "r" {
 
 - `blueprints` (Set of String) Set of blueprints that this Property Set might be associated with.
 - `id` (String) Populate this field to look up a Property Set by ID. Required when `name` is omitted.
+- `keys` (Set of String) Set of keys defined in the Property Set.

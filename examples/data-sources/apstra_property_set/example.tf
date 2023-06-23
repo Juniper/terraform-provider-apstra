@@ -16,9 +16,9 @@ output "apstra_property_set_report" {
     name       = v.name
     data       = jsondecode(v.data)
     blueprints = v.blueprints
+    keys       = v.keys
   } }
 }
-
 ################################################################################
 # The output object above will produce something like the following:
 # apstra_property_set_report = {
@@ -27,7 +27,11 @@ output "apstra_property_set_report" {
 #    "data"       = {
 #      "nameserver1" = "10.155.191.252"
 #      "nameserver2" = "172.21.200.60"
-#    }
+#    },
+#    "keys"       = toset([
+#      "nameserver1",
+#      "nameserver2",
+#     ])
 #    "name" = "nameservers"
 #  }
 #  "7d68daeb-b8f5-4512-9417-9e5812d87783" = {
@@ -40,6 +44,10 @@ output "apstra_property_set_report" {
 #      "snmp_collector_01" = "10.6.1.87/32"
 #      "snmp_collector_02" = "10.6.1.88/32"
 #    }
+#    "keys" = toset([
+#      "snmp_collector_01",
+#      "snmp_collector_02",
+#    ])
 #    "name" = "MUST_SNMP_D42"
 #  }
 # }

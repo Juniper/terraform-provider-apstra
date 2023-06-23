@@ -58,6 +58,12 @@ func (o *resourcePropertySet) Create(ctx context.Context, req resource.CreateReq
 	// Save the tag ID
 	plan.Id = types.StringValue(psid.String())
 	plan.Blueprints = types.SetNull(types.StringType)
+	k, err := utils.GetKeysFromJSON(plan.Values)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to load keys", err.Error())
+		return
+	}
+	plan.Keys = types.SetValueMust(types.StringType, k)
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -146,7 +152,7 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
+	plan.Keys = d.Keys
 	plan.Blueprints = d.Blueprints
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

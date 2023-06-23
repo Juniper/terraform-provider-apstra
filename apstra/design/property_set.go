@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type PropertySet struct {
@@ -20,6 +21,7 @@ type PropertySet struct {
 	Label      types.String `tfsdk:"name"`
 	Values     types.String `tfsdk:"data"`
 	Blueprints types.Set    `tfsdk:"blueprints"`
+	Keys       types.Set    `tfsdk:"keys"`
 }
 
 func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -43,7 +45,7 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"keys": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "This field will have the set of keys defined in the Property Set.",
+			MarkdownDescription: "Set of keys defined in the Property Set.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -74,7 +76,7 @@ func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"keys": resourceSchema.SetAttribute{
-			MarkdownDescription: "This field will have the set of keys defined in the Property Set.",
+			MarkdownDescription: "Set of keys defined in the Property Set.",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -97,7 +99,12 @@ func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetDat
 	o.Blueprints, d = types.SetValueFrom(ctx, types.StringType, in.Blueprints)
 	diags.Append(d...)
 	o.Values = types.StringValue(string(in.Values))
-
+	k, err := utils.GetKeysFromJSON(o.Values)
+	if err != nil {
+		diags.AddError("failed to load keys", err.Error())
+		return
+	}
+	o.Keys = types.SetValueMust(types.StringType, k)
 }
 
 func (o *PropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.PropertySetData {
