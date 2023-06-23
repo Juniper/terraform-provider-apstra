@@ -48,10 +48,7 @@ output "p" {
 
 - `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.
 - `id` (String) ID of the Property Set ID to be imported.
-
-### Optional
-
-- `keys` (Set of String) Subset of Keys to import. Omit to import all keys.
+- `keys` (Set of String) Subset of Keys to import, at least one Key is required.
 
 ### Read-Only
 
