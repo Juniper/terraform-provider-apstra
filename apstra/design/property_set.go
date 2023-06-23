@@ -42,6 +42,11 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
+		"keys": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "This field will have the set of keys defined in the Property Set.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 		"data": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "A map of values in the Property Set in JSON format",
 			Computed:            true,
@@ -68,6 +73,11 @@ func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
+		"keys": resourceSchema.SetAttribute{
+			MarkdownDescription: "This field will have the set of keys defined in the Property Set.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 		"data": resourceSchema.StringAttribute{
 			MarkdownDescription: "A map of values in the Property Set in JSON format",
 			Required:            true,
@@ -87,6 +97,7 @@ func (o *PropertySet) LoadApiData(ctx context.Context, in *apstra.PropertySetDat
 	o.Blueprints, d = types.SetValueFrom(ctx, types.StringType, in.Blueprints)
 	diags.Append(d...)
 	o.Values = types.StringValue(string(in.Values))
+
 }
 
 func (o *PropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.PropertySetData {
