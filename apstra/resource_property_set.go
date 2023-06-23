@@ -147,13 +147,10 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 			fmt.Sprintf("PropertySet with ID %q not found. This should not happen", plan.Id.ValueString()))
 		return
 	}
-	var d design.PropertySet
-	d.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	plan.Keys = d.Keys
-	plan.Blueprints = d.Blueprints
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
