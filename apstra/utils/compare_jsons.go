@@ -61,23 +61,3 @@ func getKeysFromMap(m map[string]interface{}) []attr.Value {
 	}
 	return keys
 }
-
-func getKeysfromMap(m map[string]interface{}) []attr.Value {
-	keys := make([]attr.Value, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = types.StringValue(k)
-		i++
-	}
-	return keys
-}
-
-// KeysFromJSON returns a list of keys from a Json string
-func KeysFromJSON(str types.String) ([]attr.Value, error) {
-	m := make(map[string]interface{})
-	err := json.Unmarshal([]byte(str.ValueString()), &m)
-	if err != nil {
-		return nil, err
-	}
-	return getKeysfromMap(m), nil
-}
