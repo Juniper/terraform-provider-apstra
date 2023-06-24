@@ -294,6 +294,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceAgents{} },
 		func() datasource.DataSource { return &dataSourceAgentProfile{} },
 		func() datasource.DataSource { return &dataSourceAgentProfiles{} },
+		func() datasource.DataSource { return &dataSourceAnomalies{} },
 		func() datasource.DataSource { return &dataSourceAsnPool{} },
 		func() datasource.DataSource { return &dataSourceAsnPools{} },
 		func() datasource.DataSource { return &dataSourceBlueprintDeploy{} },
