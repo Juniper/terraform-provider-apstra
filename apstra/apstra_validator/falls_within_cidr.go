@@ -88,11 +88,13 @@ func (o fallsWithinCidrValidator) ValidateString(ctx context.Context, req valida
 						mp, fmt.Sprintf("error parsing CIDR block %q",
 							mpString.ValueString()), err.Error(),
 					)
+					return
 				}
 			} else {
 				resp.Diagnostics.Append(validatordiag.BugInProviderDiagnostic(
 					fmt.Sprintf("attribute at %q must be types.String got %t",
 						o.expression, mpVal)))
+				return
 			}
 
 			ip := net.ParseIP(req.ConfigValue.ValueString())
@@ -101,6 +103,7 @@ func (o fallsWithinCidrValidator) ValidateString(ctx context.Context, req valida
 					req.Path,
 					fmt.Sprintf("value must fall within %s", subnet.String()),
 					req.ConfigValue.ValueString()))
+				return
 			}
 
 			if ip.Equal(allZeros) && !o.allZerosOk {
@@ -108,6 +111,7 @@ func (o fallsWithinCidrValidator) ValidateString(ctx context.Context, req valida
 					req.Path,
 					"value must not be the all-zeros address %s",
 					req.ConfigValue.ValueString()))
+				return
 			}
 
 			allOnes := netaddr.BroadcastAddr(subnet)
@@ -116,6 +120,7 @@ func (o fallsWithinCidrValidator) ValidateString(ctx context.Context, req valida
 					req.Path,
 					"value must not be the all-ones address %s",
 					req.ConfigValue.ValueString()))
+				return
 			}
 		}
 	}
