@@ -54,8 +54,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9.]+$"),
-					"only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9.-]+$"),
+					"only alphanumeric characters, '.' and '-' allowed."),
 				stringvalidator.LengthBetween(0, 33),
 			},
 		},
@@ -523,6 +523,10 @@ func (o genericSystemLinkSetValidator) MarkdownDescription(ctx context.Context) 
 }
 
 func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	if req.ConfigValue.IsUnknown() {
+		return // cannot validate an unknown value
+	}
+
 	var links []DatacenterGenericSystemLink
 	resp.Diagnostics.Append(req.ConfigValue.ElementsAs(ctx, &links, false)...)
 	if resp.Diagnostics.HasError() {
