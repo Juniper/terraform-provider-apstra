@@ -53,9 +53,12 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 			},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Used to allocate a resource pool to a role associated with specific Routing Zone " +
-				"within a Blueprint, rather than to the Blueprint at large. This feature is intended for binding IP " +
-				"address pools to the per-Routing-Zone Leaf Switch Loopback IP addressing role.",
+			MarkdownDescription: fmt.Sprintf("Used to allocate a Resource Pool to a "+
+				"`role` associated with specific Routing Zone within a Blueprint, rather than "+
+				"to a fabric-wide `role`. `%s` and `%s` are examples of roles which can be "+
+				"allocaated to a specific Routing Zone. When omitted, the specified Resource "+
+				"Pools are allocated to a fabric-wide `role`.",
+				apstra.ResourceGroupNameLeafIp4, apstra.ResourceGroupNameVirtualNetworkSviIpv4),
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
