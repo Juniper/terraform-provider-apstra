@@ -163,7 +163,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	}
 
 	// Create a new state object and load the current state from the API. We're
-	// instantiating a new object here because #171 (a creation race condition
+	// instantiating a new object here because #170 (a creation race condition
 	// in the API) means we can't completely rely on the API response.
 	var state blueprint.DatacenterVirtualNetwork
 	state.Id = types.StringValue(id.String())
@@ -171,7 +171,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	state.HadPriorVniConfig = plan.HadPriorVniConfig
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
-	// Don't rely on the API response for these values (#171). If the config
+	// Don't rely on the API response for these values (#170). If the config
 	// supplied a value, use it when setting state.
 	if !plan.IPv4Subnet.IsUnknown() {
 		state.IPv4Subnet = plan.IPv4Subnet
@@ -284,7 +284,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 
 	// Create a new state object and load the current state from the API. We're
-	// instantiating a new object here because #171 (a creation race condition
+	// instantiating a new object here because #170 (a creation race condition
 	// in the API) means we can't completely rely on the API response.
 	var state blueprint.DatacenterVirtualNetwork
 	state.Id = plan.Id
@@ -292,7 +292,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	state.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
-	// Don't rely on the API response for these values (#171). If the config
+	// Don't rely on the API response for these values (#170). If the config
 	// supplied a value, use that when setting state.
 	if !plan.IPv4Subnet.IsUnknown() {
 		state.IPv4Subnet = plan.IPv4Subnet
