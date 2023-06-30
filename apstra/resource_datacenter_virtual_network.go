@@ -147,7 +147,8 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
-	// update the plan with the received ObjectId and set the partial state
+	// update the plan with the received ObjectId and set the partial state in
+	// case we have to bail due to error soon.
 	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
@@ -161,9 +162,35 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
-	// update the plan with the received VN data (need VLAN assignment) and set the state
-	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	// Create a new state object and load the current state from the API. We're
+	// instantiating a new object here because #171 (a creation race condition
+	// in the API) means we can't completely rely on the API response.
+	var state blueprint.DatacenterVirtualNetwork
+	state.Id = types.StringValue(id.String())
+	state.BlueprintId = plan.BlueprintId
+	state.HadPriorVniConfig = plan.HadPriorVniConfig
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+
+	// Don't rely on the API response for these values (#171). If the config
+	// supplied a value, use it when setting state.
+	if !plan.IPv4Subnet.IsUnknown() {
+		state.IPv4Subnet = plan.IPv4Subnet
+	}
+	if !plan.IPv6Subnet.IsUnknown() {
+		state.IPv6Subnet = plan.IPv6Subnet
+	}
+	if !plan.IPv4Gateway.IsUnknown() {
+		state.IPv4Gateway = plan.IPv4Gateway
+	}
+	if !plan.IPv6Gateway.IsUnknown() {
+		state.IPv6Gateway = plan.IPv6Gateway
+	}
+	if !plan.Vni.IsUnknown() {
+		state.Vni = plan.Vni
+	}
+
+	// set the state
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -256,15 +283,39 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		return
 	}
 
+	// Create a new state object and load the current state from the API. We're
+	// instantiating a new object here because #171 (a creation race condition
+	// in the API) means we can't completely rely on the API response.
+	var state blueprint.DatacenterVirtualNetwork
+	state.Id = plan.Id
+	state.BlueprintId = plan.BlueprintId
+	state.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+
+	// Don't rely on the API response for these values (#171). If the config
+	// supplied a value, use that when setting state.
+	if !plan.IPv4Subnet.IsUnknown() {
+		state.IPv4Subnet = plan.IPv4Subnet
+	}
+	if !plan.IPv6Subnet.IsUnknown() {
+		state.IPv6Subnet = plan.IPv6Subnet
+	}
+	if !plan.IPv4Gateway.IsUnknown() {
+		state.IPv4Gateway = plan.IPv4Gateway
+	}
+	if !plan.IPv6Gateway.IsUnknown() {
+		state.IPv6Gateway = plan.IPv6Gateway
+	}
+
 	// if the plan modifier didn't take action...
 	if plan.HadPriorVniConfig.IsUnknown() {
 		// ...then the trigger value is set according to whether a VNI value is known.
-		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+		state.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+	} else {
+		state.HadPriorVniConfig = plan.HadPriorVniConfig
 	}
 
-	// update the plan with the received VN data (need VLAN assignment) and set the state
-	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
