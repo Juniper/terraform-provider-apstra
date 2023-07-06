@@ -72,19 +72,23 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 		return
 	}
 
-	var err error
-	var api *apstra.Configlet
-	var ace apstra.ApstraClientErr
-	api, err = o.client.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
-	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-		resp.State.RemoveResource(ctx)
+	api, err := o.client.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("failed to read Configlet", err.Error())
 		return
 	}
+
 	state.Id = types.StringValue(string(api.Id))
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
