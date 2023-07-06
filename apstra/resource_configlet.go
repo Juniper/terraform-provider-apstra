@@ -37,7 +37,8 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 	}
 }
 func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	validMap := map[apstra.PlatformOS][]string{
+	// create a map of each friendly (aligned with the web UI) config section names keyed by platform
+	platformToAllowedSectionsMap := map[apstra.PlatformOS][]string{
 		apstra.PlatformOSJunos: {
 			utils.StringersToFriendlyString(apstra.ConfigletSectionSystem, apstra.PlatformOSJunos),
 			utils.StringersToFriendlyString(apstra.ConfigletSectionSetBasedSystem, apstra.PlatformOSJunos),
@@ -71,45 +72,50 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 		},
 	}
 
-	// Retrieve values from plan
+	// Retrieve values from config
 	var config design.Configlet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// extract generators from config
 	var generators []design.ConfigletGenerator
 	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// validate each generator
 	for i, generator := range generators {
+		// extract the platform/config_style from the generator object as an SDK iota type
 		var platform apstra.PlatformOS
 		err := platform.FromString(generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
-				path.Root("generators").AtListIndex(i).AtName("config_style"),
+				path.Root("generators").AtListIndex(i),
 				fmt.Sprintf("unknown config style %q validation should have caught this", platform),
 				err.Error())
 			return
 		}
 
-		var validSections []string
+		// ensure that the validation map has an entry for this platform
 		var ok bool
-		if validSections, ok = validMap[platform]; !ok {
+		if _, ok = platformToAllowedSectionsMap[platform]; !ok {
 			resp.Diagnostics.AddAttributeError(
-				path.Root("generators").AtListIndex(i).AtName("config_style"),
+				path.Root("generators").AtListIndex(i),
 				fmt.Sprintf("cannot validate config style %q config sections - this is a provider issue", platform),
 				fmt.Sprintf("cannot validate config style %q config sections - this is a provider issue", platform))
 			return
 		}
 
-		if !utils.SliceContains(generator.Section.ValueString(), validSections) {
+		// ensure that the configured section is valid for the specified platform
+		if !utils.SliceContains(generator.Section.ValueString(), platformToAllowedSectionsMap[platform]) {
 			resp.Diagnostics.Append(
 				validatordiag.InvalidAttributeCombinationDiagnostic(
-					path.Root("generators").AtListIndex(i).AtName("section"),
-					fmt.Sprintf("config style %q allows sections \"%s\"", platform, strings.Join(validSections, "\", \"")),
+					path.Root("generators").AtListIndex(i),
+					fmt.Sprintf("config style %q allows sections \"%s\", got %s",
+						platform, strings.Join(platformToAllowedSectionsMap[platform], "\", \""), generator.Section),
 				),
 			)
 		}
