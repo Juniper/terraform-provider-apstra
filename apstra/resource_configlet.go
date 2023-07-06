@@ -3,14 +3,20 @@ package tfapstra
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
+var _ resource.ResourceWithValidateConfig = &resourceConfiglet{}
 
 type resourceConfiglet struct {
 	client *apstra.Client
@@ -30,6 +36,85 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 		Attributes:          design.Configlet{}.ResourceAttributes(),
 	}
 }
+func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	validMap := map[apstra.PlatformOS][]string{
+		apstra.PlatformOSJunos: {
+			utils.StringersToFriendlyString(apstra.ConfigletSectionSystem, apstra.PlatformOSJunos),
+			utils.StringersToFriendlyString(apstra.ConfigletSectionSetBasedSystem, apstra.PlatformOSJunos),
+			utils.StringersToFriendlyString(apstra.ConfigletSectionSetBasedInterface, apstra.PlatformOSJunos),
+			utils.StringersToFriendlyString(apstra.ConfigletSectionDeleteBasedInterface, apstra.PlatformOSJunos),
+			utils.StringersToFriendlyString(apstra.ConfigletSectionInterface, apstra.PlatformOSJunos),
+		},
+		apstra.PlatformOSCumulus: {
+			apstra.ConfigletSectionFRR.String(),
+			apstra.ConfigletSectionInterface.String(),
+			apstra.ConfigletSectionFile.String(),
+			apstra.ConfigletSectionOSPF.String(),
+		},
+		apstra.PlatformOSNxos: {
+			apstra.ConfigletSectionSystem.String(),
+			apstra.ConfigletSectionInterface.String(),
+			apstra.ConfigletSectionSystemTop.String(),
+			apstra.ConfigletSectionOSPF.String(),
+		},
+		apstra.PlatformOSEos: {
+			apstra.ConfigletSectionSystem.String(),
+			apstra.ConfigletSectionInterface.String(),
+			apstra.ConfigletSectionSystemTop.String(),
+			apstra.ConfigletSectionOSPF.String(),
+		},
+		apstra.PlatformOSSonic: {
+			apstra.ConfigletSectionSystem.String(),
+			apstra.ConfigletSectionFile.String(),
+			apstra.ConfigletSectionOSPF.String(),
+			apstra.ConfigletSectionFRR.String(),
+		},
+	}
+
+	// Retrieve values from plan
+	var config design.Configlet
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var generators []design.ConfigletGenerator
+	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for i, generator := range generators {
+		var platform apstra.PlatformOS
+		err := platform.FromString(generator.ConfigStyle.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("generators").AtListIndex(i).AtName("config_style"),
+				fmt.Sprintf("unknown config style %q validation should have caught this", platform),
+				err.Error())
+			return
+		}
+
+		var validSections []string
+		var ok bool
+		if validSections, ok = validMap[platform]; !ok {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("generators").AtListIndex(i).AtName("config_style"),
+				fmt.Sprintf("cannot validate config style %q config sections - this is a provider issue", platform),
+				fmt.Sprintf("cannot validate config style %q config sections - this is a provider issue", platform))
+			return
+		}
+
+		if !utils.SliceContains(generator.Section.ValueString(), validSections) {
+			resp.Diagnostics.Append(
+				validatordiag.InvalidAttributeCombinationDiagnostic(
+					path.Root("generators").AtListIndex(i).AtName("section"),
+					fmt.Sprintf("config style %q allows sections \"%s\"", platform, strings.Join(validSections, "\", \"")),
+				),
+			)
+		}
+	}
+}
 
 func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	if o.client == nil {
@@ -39,7 +124,6 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 
 	// Retrieve values from plan
 	var plan design.Configlet
-	req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -128,8 +212,7 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 	}
 	var state design.Configlet
 
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
