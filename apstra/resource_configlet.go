@@ -106,18 +106,16 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Create request
 	c := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Update Configlet
 	err := o.client.UpdateConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()), c)
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddError("error updating Configlet", err.Error())
 		return
 	}
@@ -130,13 +128,13 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
 		return
 	}
-	var state design.Configlet
 
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	var state design.Configlet
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Delete Configlet by calling API
 	err := o.client.DeleteConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
