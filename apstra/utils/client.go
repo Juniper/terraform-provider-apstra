@@ -42,10 +42,12 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 	// Parse the URL.
 	parsedUrl, err := url.Parse(apstraUrl)
 	if err != nil {
-		if urlErr, ok := err.(*url.Error); ok && strings.Contains(urlErr.Error(), "invalid userinfo") {
+		if urlErr, ok := err.(*url.Error); ok &&
+			(strings.Contains(urlErr.Error(), "invalid userinfo") ||
+				strings.Contains(urlErr.Error(), "invalid port")) {
 			// don't print the actual error here because it likely contains a password
 			return nil, errors.New(
-				"error parsing userinfo from URL - " + fmt.Sprintf(urlEncodeMsg, UrlEscapeTable()))
+				"error parsing URL\n" + fmt.Sprintf(urlEncodeMsg, UrlEscapeTable()))
 		}
 
 		var urlEE url.EscapeError
