@@ -7,7 +7,7 @@ import (
 )
 
 func PropertySetA(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	deleteFunc := func(_ context.Context) error { return nil }
 	if err != nil {
 		return nil, deleteFunc, err

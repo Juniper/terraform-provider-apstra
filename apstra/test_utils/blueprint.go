@@ -10,7 +10,7 @@ import (
 
 func BlueprintA(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -47,7 +47,7 @@ func BlueprintA(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.ObjectId, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, "", deleteFunc, err
 	}
@@ -88,7 +88,7 @@ func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.Objec
 
 func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -128,7 +128,7 @@ func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 }
 
 func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -230,7 +230,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -269,7 +269,7 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 }
 
 func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
