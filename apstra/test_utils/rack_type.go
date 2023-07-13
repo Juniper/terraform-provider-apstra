@@ -366,9 +366,11 @@ func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) err
 }
 
 func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	client, err := GetTestClient(ctx)
+	deleteFunc := func(ctx context.Context) error { return nil }
+
+  client, err := GetTestClient(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
 
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
@@ -386,7 +388,7 @@ func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) err
 	if err != nil {
 		return nil, nil, err
 	}
-	deleteFunc := func(ctx context.Context) error {
+	deleteFunc = func(ctx context.Context) error {
 		return client.DeleteRackType(ctx, id)
 	}
 
