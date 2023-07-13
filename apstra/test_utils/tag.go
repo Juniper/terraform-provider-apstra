@@ -8,7 +8,7 @@ import (
 
 func TagA(ctx context.Context) (*apstra.DesignTag, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}

@@ -12,7 +12,7 @@ import (
 // - 1 access switch
 func RackTypeA(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -64,7 +64,7 @@ func RackTypeA(ctx context.Context) (*apstra.RackType, func(context.Context) err
 // - 1 pair (count = 2) access switches single-homed to ESI leaf "B"
 func RackTypeB(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -132,7 +132,7 @@ func RackTypeB(ctx context.Context) (*apstra.RackType, func(context.Context) err
 // - 1 access switch dual-homed to both ESI leaf switches
 func RackTypeC(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -187,7 +187,7 @@ func RackTypeC(ctx context.Context) (*apstra.RackType, func(context.Context) err
 // - 1 access switch single homed to ESI leaf "B"
 func RackTypeD(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -279,7 +279,7 @@ func RackTypeD(ctx context.Context) (*apstra.RackType, func(context.Context) err
 // - 1 access switch homed to both MLAG peers
 func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -367,7 +367,8 @@ func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) err
 
 func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}

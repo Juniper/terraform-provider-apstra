@@ -22,7 +22,7 @@ data "apstra_datacenter_system" "test" {
 
 func TestDatacenterSystem_A(t *testing.T) {
 	ctx := context.Background()
-	client, err := testutils.GetTestClient()
+	client, err := testutils.GetTestClient(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
