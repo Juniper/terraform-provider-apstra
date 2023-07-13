@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/utils"
 )
@@ -14,6 +17,7 @@ import (
 type NodeTypeSystem struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Id          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
 	Attributes  types.Object `tfsdk:"attributes"`
 }
 
@@ -24,8 +28,16 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			Required:            true,
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `id`",
-			Required:            true,
+			MarkdownDescription: "Apstra Graph DB node `id` field",
+			Optional:            true,
+			Validators: []validator.String{stringvalidator.ExactlyOneOf(path.Expressions{
+				path.MatchRelative(),
+				path.MatchRoot("name"),
+			}...)},
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Web UI `name` field / Graph DB `label` field",
+			Optional:            true,
 		},
 		"attributes": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Attributes of a `system` Graph DB node.",
@@ -56,10 +68,20 @@ func (o *NodeTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client,
 
 	// pick out the desired node from the node slice in the response object
 	var desiredNode *node
-	for _, n := range nodeResponse.Nodes {
-		if n.Id == o.Id.ValueString() {
-			desiredNode = &n
-			break
+	switch {
+	case !o.Id.IsNull():
+		for _, n := range nodeResponse.Nodes {
+			if n.Id == o.Id.ValueString() {
+				desiredNode = &n
+				break
+			}
+		}
+	case !o.Name.IsNull():
+		for _, n := range nodeResponse.Nodes {
+			if n.Label == o.Name.ValueString() {
+				desiredNode = &n
+				break
+			}
 		}
 	}
 

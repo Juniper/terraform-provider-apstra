@@ -25,8 +25,7 @@ func (o *dataSourceDatacenterSystemNode) Configure(ctx context.Context, req data
 func (o *dataSourceDatacenterSystemNode) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns details of a specific " +
-			"*system* Graph DB node (identified by ID) *system* nodes within " +
-			"a Blueprint.",
+			"*system* Graph DB node within a Blueprint.",
 		Attributes: blueprint.NodeTypeSystem{}.DataSourceAttributes(),
 	}
 }
