@@ -12,7 +12,6 @@ import (
 
 func Ipv4PoolA(ctx context.Context) (*apstra.IpPool, func(context.Context) error, error) {
 	deleteFunc := func(_ context.Context) error { return nil }
-
 	client, err := GetTestClient()
 
 	if err != nil {
