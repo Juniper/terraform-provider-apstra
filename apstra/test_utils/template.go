@@ -267,7 +267,7 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
 
-  client, err := GetTestClient(ctx)
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
