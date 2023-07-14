@@ -342,6 +342,15 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 		return
 	}
 
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			err.Error())
+		return
+	}
+
 	err = bp.DeleteVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
