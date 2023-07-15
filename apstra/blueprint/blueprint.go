@@ -274,10 +274,8 @@ func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *d
 func (o *Blueprint) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
 	var min, max *version.Version
 	var err error
-	if o.FabricAddressing.IsNull() {
+	if !o.FabricAddressing.IsNull() {
 		min, err = version.NewVersion("4.1.1")
-	} else {
-		max, err = version.NewVersion("4.1.0")
 	}
 	if err != nil {
 		diags.AddError(errProviderBug,
