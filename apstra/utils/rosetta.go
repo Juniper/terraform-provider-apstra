@@ -21,7 +21,8 @@ const (
 
 	nodeDeployModeNotSet = "not_set"
 
-	resourceGroupNameVxlanVnIds = "vni_virtual_network_ids"
+	resourceGroupNameVxlanVnIds      = "vni_virtual_network_ids"
+	resourceGroupNameLeafL3PeerLinks = "leaf_l3_peer_links"
 )
 
 type StringerWithFromString interface {
@@ -155,6 +156,8 @@ func refDesignToFriendlyString(in apstra.RefDesign) string {
 
 func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 	switch in {
+	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIps:
+		return resourceGroupNameLeafL3PeerLinks
 	case apstra.ResourceGroupNameVxlanVnIds:
 		return resourceGroupNameVxlanVnIds
 	}
@@ -261,6 +264,8 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 	}
 
 	switch in[0] {
+	case resourceGroupNameLeafL3PeerLinks:
+		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIps
 	case resourceGroupNameVxlanVnIds:
 		*target = apstra.ResourceGroupNameVxlanVnIds
 	default:
