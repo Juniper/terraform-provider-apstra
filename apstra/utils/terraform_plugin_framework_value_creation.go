@@ -89,56 +89,55 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 		return types.Int64Null()
 	}
 
-	//lint:ignore S1034 see issue #127
-	switch in.(type) {
+	switch in := in.(type) {
 	case *apstra.VNI:
-		return types.Int64Value(int64(*in.(*apstra.VNI)))
+		return types.Int64Value(int64(*in))
 	case *apstra.Vlan:
-		return types.Int64Value(int64(*in.(*apstra.Vlan)))
+		return types.Int64Value(int64(*in))
 	case *int:
-		return types.Int64Value(int64(*in.(*int)))
+		return types.Int64Value(int64(*in))
 	case *int8:
-		return types.Int64Value(int64(*in.(*int8)))
+		return types.Int64Value(int64(*in))
 	case *int16:
-		return types.Int64Value(int64(*in.(*int16)))
+		return types.Int64Value(int64(*in))
 	case *int32:
-		return types.Int64Value(int64(*in.(*int32)))
+		return types.Int64Value(int64(*in))
 	case *int64:
-		return types.Int64Value(*in.(*int64))
+		return types.Int64Value(*in)
 	case *uint:
-		return types.Int64Value(int64(*in.(*uint)))
+		return types.Int64Value(int64(*in))
 	case *uint8:
-		return types.Int64Value(int64(*in.(*uint8)))
+		return types.Int64Value(int64(*in))
 	case *uint16:
-		return types.Int64Value(int64(*in.(*uint16)))
+		return types.Int64Value(int64(*in))
 	case *uint32:
-		return types.Int64Value(int64(*in.(*uint32)))
+		return types.Int64Value(int64(*in))
 	case *uint64:
-		return types.Int64Value(int64(*in.(*uint64)))
+		return types.Int64Value(int64(*in))
 	case apstra.VNI:
-		return types.Int64Value(int64(in.(apstra.VNI)))
+		return types.Int64Value(int64(in))
 	case apstra.Vlan:
-		return types.Int64Value(int64(in.(apstra.Vlan)))
+		return types.Int64Value(int64(in))
 	case int:
-		return types.Int64Value(int64(in.(int)))
+		return types.Int64Value(int64(in))
 	case int8:
-		return types.Int64Value(int64(in.(int8)))
+		return types.Int64Value(int64(in))
 	case int16:
-		return types.Int64Value(int64(in.(int16)))
+		return types.Int64Value(int64(in))
 	case int32:
-		return types.Int64Value(int64(in.(int32)))
+		return types.Int64Value(int64(in))
 	case int64:
-		return types.Int64Value(in.(int64))
+		return types.Int64Value(in)
 	case uint:
-		return types.Int64Value(int64(in.(uint)))
+		return types.Int64Value(int64(in))
 	case uint8:
-		return types.Int64Value(int64(in.(uint8)))
+		return types.Int64Value(int64(in))
 	case uint16:
-		return types.Int64Value(int64(in.(uint16)))
+		return types.Int64Value(int64(in))
 	case uint32:
-		return types.Int64Value(int64(in.(uint32)))
+		return types.Int64Value(int64(in))
 	case uint64:
-		return types.Int64Value(int64(in.(uint64)))
+		return types.Int64Value(int64(in))
 
 	default:
 		diags.AddError("cannot convert interface to int64",
