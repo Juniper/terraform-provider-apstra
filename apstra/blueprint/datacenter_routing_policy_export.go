@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
@@ -60,6 +61,39 @@ func (o datacenterRoutingPolicyExport) resourceAttributes() map[string]resourceS
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(false),
+		},
+	}
+}
+
+func (o datacenterRoutingPolicyExport) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"export_loopbacks": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all loopbacks within a routing zone (VRF) across spine, leaf, and L3 servers.",
+			Computed:            true,
+		},
+		"export_spine_superspine_links": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all spine-leaf (fabric) links within a VRF. EVPN routing zones do not have " +
+				"spine-leaf addressing, so this generated list may be empty. For routing zones of type Virtual L3 " +
+				"Fabric, subinterfaces between spine-leaf will be included.",
+			Computed: true,
+		},
+		"export_spine_leaf_links": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all spine-supersine (fabric) links within the default routing zone (VRF)",
+			Computed:            true,
+		},
+		"export_l3_edge_server_links": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all leaf to L3 server links within a routing zone (VRF). This will be an " +
+				"empty list on a layer2 based blueprint",
+			Computed: true,
+		},
+		"export_l2_edge_subnets": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all virtual networks (VLANs) that have L3 addresses within a routing zone (VRF).",
+			Computed:            true,
+		},
+		"export_static_routes": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all subnets in a VRF associated with static routes from all fabric systems " +
+				"to external routers associated with this routing policy",
+			Computed: true,
 		},
 	}
 }

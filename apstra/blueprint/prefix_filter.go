@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -58,6 +59,38 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:   true,
 			Default:    stringdefault.StaticString(apstra.PrefixFilterActionPermit.String()),
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllValidPrefixFilterActions()...)},
+		},
+	}
+}
+
+func (o prefixFilter) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"prefix": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "IPv4 or IPv6 network address specified in the form of network/prefixlen.",
+			Computed:            true,
+		},
+		"ge_mask": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Match less-specific prefixes from a parent prefix, up from `ge_mask` to the prefix " +
+				"length of the route. Range is 0-32 for IPv4, 0-128 for IPv6. If not specified, implies the " +
+				"prefix-list entry should be an exact match. The option can be optionally be used in combination " +
+				"with `le_mask`. `ge_mask` must be longer than the subnet prefix length. If `le_mask` and `ge_mask` " +
+				"are both specified, then `le_mask` must be greater than `ge_mask`.",
+			Computed: true,
+		},
+		"le_mask": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Match more-specific prefixes from a parent prefix, up until `le_mask` prefix len. " +
+				"Range is 0-32 for IPv4, 0-128 for IPv6. If not specified, implies the prefix-list entry should be " +
+				"an exact match. The option can be optionally be used in combination with `ge_mask`. `le_mask` must " +
+				"be longer than the subnet prefix length. If `le_mask` and `ge_mask` are both specified, then " +
+				"`le_mask` must be greater than `ge_mask`.",
+			Computed: true,
+		},
+		"action": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("If the action is %q, match the route. If the action is %q, do "+
+				"not match the route. For composing complex policies, all prefix-list items will be processed in the "+
+				"order specified, top-down. This allows the user to deny a subset of a route that may otherwise be "+
+				"permitted.", apstra.PrefixFilterActionPermit, apstra.PrefixFilterActionDeny),
+			Computed: true,
 		},
 	}
 }
