@@ -36,11 +36,6 @@ func (o *dataSourcePropertySets) Schema(_ context.Context, _ datasource.SchemaRe
 }
 
 func (o *dataSourcePropertySets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config struct {
 		Ids types.Set `tfsdk:"ids"`
 	}

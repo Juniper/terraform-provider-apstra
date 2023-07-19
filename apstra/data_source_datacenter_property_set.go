@@ -34,11 +34,6 @@ func (o *dataSourceDatacenterPropertySet) Schema(_ context.Context, _ datasource
 }
 
 func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

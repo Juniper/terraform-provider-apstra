@@ -59,11 +59,6 @@ func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource
 }
 
 func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan design.LogicalDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -87,11 +82,6 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 }
 
 func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Get current state
 	var state design.LogicalDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -128,11 +118,6 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 }
 
 func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Get plan values
 	var plan design.LogicalDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -162,11 +147,6 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 }
 
 func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state design.LogicalDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

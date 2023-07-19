@@ -76,11 +76,6 @@ func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req re
 }
 
 func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -128,11 +123,6 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 }
 
 func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Get current state.
 	var state blueprint.Blueprint
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -167,11 +157,6 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 
 // Update resource
 func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve plan.
 	var plan blueprint.Blueprint
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -224,11 +209,6 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 
 // Delete resource
 func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state blueprint.Blueprint
 	diags := req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)

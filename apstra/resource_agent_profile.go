@@ -35,11 +35,6 @@ func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaReques
 }
 
 func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan agentProfile
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -67,11 +62,6 @@ func (o *resourceAgentProfile) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Get current state
 	var state agentProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -107,11 +97,6 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 }
 
 func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Get plan values
 	var plan agentProfile
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -154,11 +139,6 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 }
 
 func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state agentProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

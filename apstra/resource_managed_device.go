@@ -47,11 +47,6 @@ func (o *resourceManagedDevice) Schema(_ context.Context, _ resource.SchemaReque
 }
 
 func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -130,11 +125,6 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 }
 
 func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Get current state
 	var state systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -180,11 +170,6 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 
 // Update resource
 func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Get plan values
 	var plan systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -221,11 +206,6 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 
 // Delete resource
 func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

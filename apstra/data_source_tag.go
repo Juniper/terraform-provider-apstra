@@ -35,11 +35,6 @@ func (o *dataSourceTag) Schema(_ context.Context, _ datasource.SchemaRequest, re
 }
 
 func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config design.Tag
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

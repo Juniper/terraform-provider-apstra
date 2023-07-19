@@ -37,11 +37,6 @@ func (o *resourceDatacenterPropertySet) Schema(_ context.Context, _ resource.Sch
 }
 
 func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -134,11 +129,6 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -176,11 +166,6 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 }
 
 func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -260,11 +245,6 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state blueprint.DatacenterPropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

@@ -85,11 +85,6 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 }
 
 func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan resources.VniPool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -141,11 +136,6 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 }
 
 func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Get current state
 	var state resources.VniPool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -179,11 +169,6 @@ func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, re
 }
 
 func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Get plan values
 	var plan resources.VniPool
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -234,11 +219,6 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 }
 
 func (o *resourceVniPool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state resources.VniPool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

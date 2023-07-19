@@ -37,11 +37,6 @@ func (o *dataSourceVirtualNetworkBindingConstructor) Schema(_ context.Context, _
 }
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config blueprint.VnBindingConstructor
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

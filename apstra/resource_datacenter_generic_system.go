@@ -36,11 +36,6 @@ func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.S
 }
 
 func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterGenericSystem
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -104,11 +99,6 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 }
 
 func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterGenericSystem
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -151,11 +141,6 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterGenericSystem
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -205,11 +190,6 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 }
 
 func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterGenericSystem
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

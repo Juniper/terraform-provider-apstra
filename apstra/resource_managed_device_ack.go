@@ -39,11 +39,6 @@ func (o *resourceManagedDeviceAck) Schema(_ context.Context, _ resource.SchemaRe
 }
 
 func (o *resourceManagedDeviceAck) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan systemAgents.SystemAck
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)

@@ -46,11 +46,6 @@ func (o *dataSourceDatacenterPropertySets) Schema(_ context.Context, _ datasourc
 }
 
 func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		Ids         types.Set    `tfsdk:"ids"`

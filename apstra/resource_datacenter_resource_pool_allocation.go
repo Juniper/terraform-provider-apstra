@@ -44,11 +44,6 @@ func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequ
 //}
 
 func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -100,11 +95,6 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 }
 
 func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -155,11 +145,6 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 }
 
 func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -200,11 +185,6 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 }
 
 func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

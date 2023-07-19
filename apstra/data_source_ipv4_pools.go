@@ -36,11 +36,6 @@ func (o *dataSourceIpv4Pools) Schema(_ context.Context, _ datasource.SchemaReque
 }
 
 func (o *dataSourceIpv4Pools) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	ids, err := o.client.ListIp4PoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving IPv4 Pool IDs", err.Error())

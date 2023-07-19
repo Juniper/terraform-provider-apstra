@@ -36,11 +36,6 @@ func (o *dataSourceVniPools) Schema(_ context.Context, _ datasource.SchemaReques
 }
 
 func (o *dataSourceVniPools) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	ids, err := o.client.ListVniPoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving VNI Pool IDs", err.Error())

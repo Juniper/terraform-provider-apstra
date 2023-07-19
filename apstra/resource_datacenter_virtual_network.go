@@ -101,11 +101,6 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 }
 
 func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -194,11 +189,6 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 }
 
 func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -234,11 +224,6 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 }
 
 func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -319,11 +304,6 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 }
 
 func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

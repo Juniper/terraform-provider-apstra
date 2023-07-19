@@ -37,11 +37,6 @@ func (o *resourceDeviceAllocation) Schema(_ context.Context, _ resource.SchemaRe
 }
 
 func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -104,11 +99,6 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 }
 
 func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -194,11 +184,6 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 }
 
 func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -238,11 +223,6 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 }
 
 func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state blueprint.DeviceAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

@@ -123,11 +123,6 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 }
 
 func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan design.Configlet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -151,11 +146,6 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	var state design.Configlet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -185,11 +175,6 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 
 // Update resource
 func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Get plan values
 	var plan design.Configlet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -214,11 +199,6 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 
 // Delete resource
 func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state design.Configlet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
