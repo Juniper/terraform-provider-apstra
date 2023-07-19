@@ -10,7 +10,7 @@ import (
 
 func BlueprintA(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -47,7 +47,7 @@ func BlueprintA(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.ObjectId, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, "", deleteFunc, err
 	}
@@ -88,7 +88,7 @@ func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.Objec
 
 func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -128,16 +128,17 @@ func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 }
 
 func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
+	deleteFunc := func(ctx context.Context) error { return nil }
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
 
 	template, templateDelete, err := TemplateC(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
-	deleteFunc := func(ctx context.Context) error {
+	deleteFunc = func(ctx context.Context) error {
 		return templateDelete(ctx)
 	}
 
@@ -152,8 +153,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		},
 	})
 	if err != nil {
-		err2 := deleteFunc(ctx)
-		return nil, nil, errors.Join(err, err2)
+		return nil, nil, errors.Join(err, deleteFunc(ctx))
 	}
 
 	deleteFunc = func(ctx context.Context) error {
@@ -230,7 +230,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -269,16 +269,17 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 }
 
 func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
+	deleteFunc := func(ctx context.Context) error { return nil }
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
 
 	template, templateDelete, err := TemplateE(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
-	deleteFunc := func(ctx context.Context) error {
+	deleteFunc = func(ctx context.Context) error {
 		return templateDelete(ctx)
 	}
 

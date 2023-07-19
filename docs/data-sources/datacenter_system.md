@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_system Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source returns details of a specific system Graph DB node (identified by ID) system nodes within a Blueprint.
+  This data source returns details of a specific system Graph DB node within a Blueprint.
 ---
 
 # apstra_datacenter_system (Data Source)
 
-This data source returns details of a specific *system* Graph DB node (identified by ID) *system* nodes within a Blueprint.
+This data source returns details of a specific *system* Graph DB node within a Blueprint.
 
 ## Example Usage
 
@@ -47,7 +47,11 @@ locals {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID
-- `id` (String) Apstra Graph DB node `id`
+
+### Optional
+
+- `id` (String) Apstra Graph DB node `id` field
+- `name` (String) Apstra Web UI `name` field / Graph DB `label` field
 
 ### Read-Only
 

@@ -9,7 +9,7 @@ import (
 
 func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -75,7 +75,7 @@ func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 func TemplateB(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -120,7 +120,7 @@ func TemplateB(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 func TemplateC(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -164,7 +164,7 @@ func TemplateC(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient()
+	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
@@ -265,16 +265,18 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 }
 
 func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
-	client, err := GetTestClient()
+	deleteFunc := func(ctx context.Context) error { return nil }
+
+	client, err := GetTestClient(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, deleteFunc, err
 	}
 
 	rackTypeF, rackTypeFDelete, err := RackTypeF(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	deleteFunc := func(ctx context.Context) error {
+	deleteFunc = func(ctx context.Context) error {
 		return rackTypeFDelete(ctx)
 	}
 

@@ -21,7 +21,8 @@ const (
 
 	nodeDeployModeNotSet = "not_set"
 
-	resourceGroupNameVxlanVnIds = "vni_virtual_network_ids"
+	resourceGroupNameVxlanVnIds      = "vni_virtual_network_ids"
+	resourceGroupNameLeafL3PeerLinks = "leaf_l3_peer_links"
 )
 
 type StringerWithFromString interface {
@@ -39,19 +40,19 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return ""
 	}
 
-	switch in[0].(type) {
+	switch in0 := in[0].(type) {
 	case apstra.AsnAllocationScheme:
-		return asnAllocationSchemeToFriendlyString(in[0].(apstra.AsnAllocationScheme))
+		return asnAllocationSchemeToFriendlyString(in0)
 	case apstra.ConfigletSection:
-		return configletSectionToFriendlyString(in[0].(apstra.ConfigletSection), in[1:]...)
+		return configletSectionToFriendlyString(in0, in[1:]...)
 	case apstra.NodeDeployMode:
-		return nodeDeployModeToFriendlyString(in[0].(apstra.NodeDeployMode))
+		return nodeDeployModeToFriendlyString(in0)
 	case apstra.OverlayControlProtocol:
-		return overlayControlProtocolToFriendlyString(in[0].(apstra.OverlayControlProtocol))
+		return overlayControlProtocolToFriendlyString(in0)
 	case apstra.RefDesign:
-		return refDesignToFriendlyString(in[0].(apstra.RefDesign))
+		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
-		return resourceGroupNameToFriendlyString(in[0].(apstra.ResourceGroupName))
+		return resourceGroupNameToFriendlyString(in0)
 	}
 
 	return in[0].String()
@@ -69,20 +70,19 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return errors.New("ApiStringerFromFriendlyString called with no string input")
 	}
 
-	//lint:ignore S1034 see issue #127
-	switch target.(type) {
+	switch target := target.(type) {
 	case *apstra.AsnAllocationScheme:
-		return asnAllocationSchemeFromFriendlyString(target.(*apstra.AsnAllocationScheme), in...)
+		return asnAllocationSchemeFromFriendlyString(target, in...)
 	case *apstra.ConfigletSection:
-		return configletSectionFromFriendlyString(target.(*apstra.ConfigletSection), in...)
+		return configletSectionFromFriendlyString(target, in...)
 	case *apstra.NodeDeployMode:
-		return nodeDeployModeFromFriendlyString(target.(*apstra.NodeDeployMode), in...)
+		return nodeDeployModeFromFriendlyString(target, in...)
 	case *apstra.OverlayControlProtocol:
-		return overlayControlProtocolFromFriendlyString(target.(*apstra.OverlayControlProtocol), in...)
+		return overlayControlProtocolFromFriendlyString(target, in...)
 	case *apstra.RefDesign:
-		return refDesignFromFriendlyString(target.(*apstra.RefDesign), in...)
+		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
-		return resourceGroupNameFromFriendlyString(target.(*apstra.ResourceGroupName), in...)
+		return resourceGroupNameFromFriendlyString(target, in...)
 	}
 
 	return target.FromString(in[0])
@@ -155,6 +155,8 @@ func refDesignToFriendlyString(in apstra.RefDesign) string {
 
 func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 	switch in {
+	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIps:
+		return resourceGroupNameLeafL3PeerLinks
 	case apstra.ResourceGroupNameVxlanVnIds:
 		return resourceGroupNameVxlanVnIds
 	}
@@ -261,6 +263,8 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 	}
 
 	switch in[0] {
+	case resourceGroupNameLeafL3PeerLinks:
+		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIps
 	case resourceGroupNameVxlanVnIds:
 		*target = apstra.ResourceGroupNameVxlanVnIds
 	default:

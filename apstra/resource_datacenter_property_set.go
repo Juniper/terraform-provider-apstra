@@ -188,7 +188,6 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 
 	// ensure that keys configured to be imported actually exist in the Global
 	// Catalog's copy of the Property Set
-
 	missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
 	if len(missingRequiredKeys) != 0 {
 		resp.Diagnostics.AddAttributeError(
@@ -253,12 +252,22 @@ func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource
 		return
 	}
 
+	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("unable to get blueprint client", err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			err.Error())
 		return
 	}
 

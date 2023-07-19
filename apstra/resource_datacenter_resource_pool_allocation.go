@@ -15,9 +15,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourcePoolAllocation{}
 
 type resourcePoolAllocation struct {
-	client     *apstra.Client
-	lockFunc   func(context.Context, string) error
-	unlockFunc func(context.Context, string) error
+	client   *apstra.Client
+	lockFunc func(context.Context, string) error
 }
 
 func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -27,7 +26,6 @@ func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.Metada
 func (o *resourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
-	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
 }
 
 func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
