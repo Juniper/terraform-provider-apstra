@@ -34,11 +34,6 @@ func (o *dataSourceDatacenterRoutingPolicy) Schema(_ context.Context, _ datasour
 }
 
 func (o *dataSourceDatacenterRoutingPolicy) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	// Retrieve values from config.
 	var config blueprint.DatacenterRoutingPolicy
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
