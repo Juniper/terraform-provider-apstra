@@ -36,11 +36,6 @@ func (o *dataSourceRackTypes) Schema(_ context.Context, _ datasource.SchemaReque
 }
 
 func (o *dataSourceRackTypes) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	ids, err := o.client.ListRackTypeIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving Rack Type IDs", err.Error())

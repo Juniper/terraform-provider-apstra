@@ -48,11 +48,6 @@ func (o *dataSourceAgentProfiles) Schema(_ context.Context, _ datasource.SchemaR
 }
 
 func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	config := struct {
 		Ids            types.Set    `tfsdk:"ids"`
 		Platform       types.String `tfsdk:"platform"`

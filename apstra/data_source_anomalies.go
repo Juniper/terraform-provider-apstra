@@ -32,11 +32,6 @@ func (o *dataSourceAnomalies) Schema(_ context.Context, _ datasource.SchemaReque
 }
 
 func (o *dataSourceAnomalies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config blueprint.Anomalies
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

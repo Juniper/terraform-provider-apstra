@@ -36,11 +36,6 @@ func (o *resourceDatacenterRoutingPolicy) Schema(_ context.Context, _ resource.S
 }
 
 func (o *resourceDatacenterRoutingPolicy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterRoutingPolicy
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -89,11 +84,6 @@ func (o *resourceDatacenterRoutingPolicy) Create(ctx context.Context, req resour
 }
 
 func (o *resourceDatacenterRoutingPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterRoutingPolicy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -133,11 +123,6 @@ func (o *resourceDatacenterRoutingPolicy) Read(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterRoutingPolicy) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterRoutingPolicy
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -176,11 +161,6 @@ func (o *resourceDatacenterRoutingPolicy) Update(ctx context.Context, req resour
 }
 
 func (o *resourceDatacenterRoutingPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterRoutingPolicy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

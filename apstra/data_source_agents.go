@@ -47,11 +47,6 @@ func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest,
 }
 
 func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	type systems struct {
 		IDs     types.Set    `tfsdk:"ids"`
 		Filters types.Object `tfsdk:"filters"`

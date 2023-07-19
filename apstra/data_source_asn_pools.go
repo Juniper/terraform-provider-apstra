@@ -36,11 +36,6 @@ func (o *dataSourceAsnPools) Schema(_ context.Context, _ datasource.SchemaReques
 }
 
 func (o *dataSourceAsnPools) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	ids, err := o.client.ListAsnPoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving ASN Pool IDs", err.Error())

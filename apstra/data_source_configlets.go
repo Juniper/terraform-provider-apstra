@@ -50,11 +50,6 @@ func (o *dataSourceConfiglets) Schema(_ context.Context, _ datasource.SchemaRequ
 }
 
 func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config struct {
 		Ids                types.Set `tfsdk:"ids"`
 		SupportedPlatforms types.Set `tfsdk:"supported_platforms"`

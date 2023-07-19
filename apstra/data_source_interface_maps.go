@@ -50,11 +50,6 @@ func (o *dataSourceInterfaceMaps) Schema(_ context.Context, _ datasource.SchemaR
 }
 
 func (o *dataSourceInterfaceMaps) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config interfaceMaps
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

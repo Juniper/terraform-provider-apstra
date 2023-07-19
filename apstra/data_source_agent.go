@@ -32,11 +32,6 @@ func (o *dataSourceAgent) Schema(_ context.Context, _ datasource.SchemaRequest, 
 }
 
 func (o *dataSourceAgent) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	// Retrieve values from config.
 	var config systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)

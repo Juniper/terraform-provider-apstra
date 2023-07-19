@@ -74,11 +74,6 @@ func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req reso
 }
 
 func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// retrieve values from plan
 	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -119,11 +114,6 @@ func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.Cre
 }
 
 func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Get current state
 	var state design.TemplateRackBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -165,11 +155,6 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 
 // Update resource
 func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// retrieve values from plan
 	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -219,11 +204,6 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 
 // Delete resource
 func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state design.TemplateRackBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

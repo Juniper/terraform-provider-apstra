@@ -36,11 +36,6 @@ func (o *dataSourceIpv6Pools) Schema(_ context.Context, _ datasource.SchemaReque
 }
 
 func (o *dataSourceIpv6Pools) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	ids, err := o.client.ListIp6PoolIds(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving IPv6 Pool IDs", err.Error())

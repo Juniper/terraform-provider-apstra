@@ -31,11 +31,6 @@ func (o *dataSourceBlueprintDeploy) Schema(_ context.Context, _ datasource.Schem
 }
 
 func (o *dataSourceBlueprintDeploy) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var config blueprint.Deploy
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

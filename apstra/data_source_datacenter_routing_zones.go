@@ -56,11 +56,6 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 }
 
 func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	type routingZones struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		IDs         types.Set    `tfsdk:"ids"`

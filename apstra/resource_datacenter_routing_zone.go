@@ -109,11 +109,6 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 }
 
 func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterRoutingZone
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -182,11 +177,6 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterRoutingZone
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -243,11 +233,6 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 }
 
 func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from plan.
 	var plan blueprint.DatacenterRoutingZone
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -319,11 +304,6 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 }
 
 func (o *resourceDatacenterRoutingZone) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Retrieve values from state.
 	var state blueprint.DatacenterRoutingZone
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

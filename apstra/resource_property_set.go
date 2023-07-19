@@ -35,10 +35,6 @@ func (o *resourcePropertySet) Schema(_ context.Context, _ resource.SchemaRequest
 }
 
 func (o *resourcePropertySet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
 	// Retrieve values from plan
 	var plan design.PropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -68,11 +64,6 @@ func (o *resourcePropertySet) Create(ctx context.Context, req resource.CreateReq
 }
 
 func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errDataSourceUnconfiguredSummary, errDatasourceUnconfiguredDetail)
-		return
-	}
-
 	var state design.PropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -113,11 +104,6 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 
 // Update resource
 func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredUpdateDetail)
-		return
-	}
-
 	// Get plan values
 	var plan design.PropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -160,11 +146,6 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 
 // Delete resource
 func (o *resourcePropertySet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	var state design.PropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

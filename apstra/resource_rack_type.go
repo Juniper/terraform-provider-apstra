@@ -32,11 +32,6 @@ func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, r
 }
 
 func (o *resourceRackType) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredCreateDetail)
-		return
-	}
-
 	// Retrieve values from plan
 	var plan design.RackType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -86,11 +81,6 @@ func (o *resourceRackType) Create(ctx context.Context, req resource.CreateReques
 }
 
 func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state design.RackType
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -132,11 +122,6 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredReadDetail)
-		return
-	}
-
 	// Retrieve plan
 	var plan design.RackType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -186,11 +171,6 @@ func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateReques
 }
 
 func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if o.client == nil {
-		resp.Diagnostics.AddError(errResourceUnconfiguredSummary, errResourceUnconfiguredDeleteDetail)
-		return
-	}
-
 	// Retrieve values from state
 	var state design.RackType
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
