@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"reflect"
 	"testing"
 )
 
@@ -63,7 +64,7 @@ func TestRosetta(t *testing.T) {
 		}
 
 		if target == nil {
-			t.Fatalf("missing case above - target is nil")
+			t.Fatalf("missing case above - %q target is nil", reflect.TypeOf(tc.stringers[0]))
 		}
 
 		// stringsWithContext is the []string sent to the rosetta function to populate target
