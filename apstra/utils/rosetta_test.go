@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"reflect"
 	"testing"
 )
 
@@ -30,6 +31,9 @@ func TestRosetta(t *testing.T) {
 
 		{string: "datacenter", stringers: []fmt.Stringer{apstra.RefDesignDatacenter}},
 		{string: "freeform", stringers: []fmt.Stringer{apstra.RefDesignFreeform}},
+
+		{string: "vni_virtual_network_ids", stringers: []fmt.Stringer{apstra.ResourceGroupNameVxlanVnIds}},
+		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIps}},
 	}
 
 	for i, tc := range testCases {
@@ -54,10 +58,13 @@ func TestRosetta(t *testing.T) {
 		case apstra.RefDesign:
 			x := apstra.RefDesign(-1)
 			target = &x
+		case apstra.ResourceGroupName:
+			x := apstra.ResourceGroupName(-1)
+			target = &x
 		}
 
 		if target == nil {
-			t.Fatalf("missing case above - target is nil")
+			t.Fatalf("missing case above - %q target is nil", reflect.TypeOf(tc.stringers[0]))
 		}
 
 		// stringsWithContext is the []string sent to the rosetta function to populate target
