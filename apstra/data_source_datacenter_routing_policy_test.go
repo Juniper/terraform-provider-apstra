@@ -60,9 +60,6 @@ func TestDataSourceDatacenterRoutingPolicy_A(t *testing.T) {
 	dataSourceByIdHCL := fmt.Sprintf(dataSourceDataCenterRoutingPolicyByIdHCL, bpClient.Id(), rpId)
 	dataSourceByNameHCL := fmt.Sprintf(dataSourceDataCenterRoutingPolicyByNameHCL, bpClient.Id(), rp.Data.Label)
 
-	_ = rp
-	_ = dataSourceByNameHCL
-
 	// test check functions
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
