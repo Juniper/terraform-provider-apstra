@@ -135,7 +135,6 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 }
 
 func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
-	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
@@ -151,10 +150,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Web UI 'name' field.",
 			Optional:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthBetween(1, 18),
-				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
-			},
+			Validators:          []validator.String{stringvalidator.LengthBetween(1, 18)},
 		},
 		"description": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Web UI 'description' field.",

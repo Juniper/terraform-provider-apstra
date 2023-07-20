@@ -51,14 +51,17 @@ output "routing_zone" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
+
+### Optional
+
 - `id` (String) Apstra graph node ID.
+- `name` (String) VRF name displayed in thw Apstra web UI.
 
 ### Read-Only
 
 - `dhcp_servers` (Set of String) Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.
 - `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration in managed resource context, this attribute will always be `false` and should be ignored in data source context.
 - `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration in managed resource context, this attribute will always be `false` and should be ignored in data source context.
-- `name` (String) VRF name displayed in thw Apstra web UI.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
 - `vni` (Number) VxLAN VNI associated with the routing zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.

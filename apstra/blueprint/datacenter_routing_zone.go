@@ -40,11 +40,19 @@ type DatacenterRoutingZone struct {
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Computed:            true,
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.ExactlyOneOf(path.Expressions{
+					path.MatchRelative(),
+					path.MatchRoot("name"),
+				}...),
+			},
 		},
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -54,6 +62,11 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
 			Computed:            true,
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthBetween(1, 18),
+				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
+			},
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +

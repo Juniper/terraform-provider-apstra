@@ -67,6 +67,7 @@ func (o *dataSourceDatacenterRoutingPolicy) Read(ctx context.Context, req dataso
 			resp.Diagnostics.AddError(
 				"Failed reading Routing Policy", err.Error(),
 			)
+			return
 		}
 	case !config.Name.IsNull():
 		api, err = bpClient.GetRoutingPolicyByName(ctx, config.Name.ValueString())
@@ -81,6 +82,7 @@ func (o *dataSourceDatacenterRoutingPolicy) Read(ctx context.Context, req dataso
 			resp.Diagnostics.AddError(
 				"Failed reading Routing Policy", err.Error(),
 			)
+			return
 		}
 	}
 
