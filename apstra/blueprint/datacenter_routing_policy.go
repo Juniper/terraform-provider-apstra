@@ -150,7 +150,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Web UI 'name' field.",
+			MarkdownDescription: "Web UI `name` field.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
