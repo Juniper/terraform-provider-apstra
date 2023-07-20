@@ -69,11 +69,12 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 		return
 	}
 
-	filters := &blueprint.DatacenterRoutingZone{}
-	d := config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})
-	resp.Diagnostics.Append(d...)
-	if resp.Diagnostics.HasError() {
-		return
+	filters := blueprint.DatacenterRoutingZone{}
+	if !config.Filters.IsNull() {
+		resp.Diagnostics.Append(config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	query := filters.Query("n_security_zone", "n_policy")

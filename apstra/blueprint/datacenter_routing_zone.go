@@ -275,24 +275,19 @@ func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []ne
 func (o *DatacenterRoutingZone) Query(szResultName, policyResultName string) *apstra.PathQuery {
 	query := new(apstra.PathQuery)
 
-	var rz DatacenterRoutingZone // o may be nil, so we work with rz instead
-	if o != nil {
-		rz = *o // rz is a copy of o when o is not nil
-	}
-
-	if utils.Known(rz.RoutingPolicyId) {
+	if utils.Known(o.RoutingPolicyId) {
 		query.Node([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeRoutingPolicy.String())},
-			{Key: "id", Value: apstra.QEStringVal(rz.RoutingPolicyId.ValueString())},
+			{Key: "id", Value: apstra.QEStringVal(o.RoutingPolicyId.ValueString())},
 		})
 		query.In([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("policy")},
 		})
 	}
 
-	query.Node(rz.szNodeQueryAttributes(szResultName))
+	query.Node(o.szNodeQueryAttributes(szResultName))
 
-	if utils.Known(rz.DhcpServers) {
+	if utils.Known(o.DhcpServers) {
 		query.Out([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal("policy")},
 		})
@@ -303,7 +298,7 @@ func (o *DatacenterRoutingZone) Query(szResultName, policyResultName string) *ap
 		})
 	}
 
-	for _, dhcpServerVal := range rz.DhcpServers.Elements() {
+	for _, dhcpServerVal := range o.DhcpServers.Elements() {
 		query.Where("lambda " +
 			policyResultName +
 			": '" +
