@@ -1,4 +1,0 @@
-resource "apstra_tag" "r" {
-  name = "terraform test"
-  description = "this is description"
-}

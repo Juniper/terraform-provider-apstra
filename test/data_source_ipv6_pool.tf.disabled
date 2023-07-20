@@ -1,3 +1,0 @@
-data "apstra_ipv6_pool" "d" {
-  name = "Private-fc01:a05:fab::/48"
-}
