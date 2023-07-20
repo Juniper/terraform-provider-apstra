@@ -99,13 +99,13 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 
 	if status.BuildErrorsCount > 0 {
 		diags.AddError("Blueprint has build errors",
-			fmt.Sprintf("%d build errors must be resolved", status.BuildErrorsCount))
+			fmt.Sprintf("Blueprint has %d build errors which must be resolved prior to deployment", status.BuildErrorsCount))
 		return
 	}
 
 	if status.BuildWarningsCount > 0 {
 		diags.AddWarning("Blueprint has build warnings",
-			fmt.Sprintf("%d build warnings must be resolved", status.BuildWarningsCount))
+			fmt.Sprintf("Blueprint has %d build warnings, but deployment may proceed", status.BuildWarningsCount))
 
 	}
 
