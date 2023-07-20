@@ -7,7 +7,9 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZone{}
@@ -39,7 +41,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
@@ -51,24 +53,43 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		return
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(config.Id.ValueString()))
-	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.Diagnostics.AddError(fmt.Sprintf("security zone %s in blueprint %s not found",
-				config.Id, config.BlueprintId), err.Error())
-			return
+	var api *apstra.SecurityZone
+	switch {
+	case !config.Id.IsNull():
+		api, err = bpClient.GetSecurityZone(ctx, apstra.ObjectId(config.Id.ValueString()))
+		if err != nil {
+			if utils.IsApstra404(err) {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("id"),
+					"Routing Zone  not found",
+					fmt.Sprintf("Routing Zone with ID %s not found", config.Id))
+				return
+			}
+			resp.Diagnostics.AddError(
+				"Failed reading Routing Zone", err.Error(),
+			)
 		}
-		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
-		return
+	case !config.Name.IsNull():
+		api, err = bpClient.GetSecurityZoneByVrfName(ctx, config.Name.ValueString())
+		if err != nil {
+			if utils.IsApstra404(err) {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("name"),
+					"Routing Zone not found",
+					fmt.Sprintf("Routing Zone with Name %s not found", config.Name))
+				return
+			}
+			resp.Diagnostics.AddError(
+				"Failed reading Routing Zone", err.Error(),
+			)
+		}
 	}
-
-	config.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
+	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, sz.Id)
+	dhcpServers, err := bpClient.GetSecurityZoneDhcpServers(ctx, api.Id)
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
