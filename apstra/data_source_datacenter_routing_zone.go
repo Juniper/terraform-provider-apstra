@@ -68,6 +68,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 			resp.Diagnostics.AddError(
 				"Failed reading Routing Zone", err.Error(),
 			)
+			return
 		}
 	case !config.Name.IsNull():
 		api, err = bpClient.GetSecurityZoneByVrfName(ctx, config.Name.ValueString())
@@ -82,6 +83,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 			resp.Diagnostics.AddError(
 				"Failed reading Routing Zone", err.Error(),
 			)
+			return
 		}
 	}
 	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
