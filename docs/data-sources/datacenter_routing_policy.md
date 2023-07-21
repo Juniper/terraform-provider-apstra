@@ -133,7 +133,7 @@ output "test_policy" { value = data.apstra_datacenter_routing_policy.test }
 ### Optional
 
 - `id` (String) Apstra graph node ID.
-- `name` (String) Web UI 'name' field.
+- `name` (String) Web UI `name` field.
 
 ### Read-Only
 

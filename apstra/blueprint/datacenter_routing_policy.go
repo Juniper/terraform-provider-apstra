@@ -138,6 +138,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
+			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
@@ -148,7 +149,8 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Web UI 'name' field.",
+			MarkdownDescription: "Web UI `name` field.",
+			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthBetween(1, 18)},
 		},
