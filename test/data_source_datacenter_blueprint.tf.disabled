@@ -1,8 +1,0 @@
-data "apstra_blueprints" "d" {
-  reference_design = "datacenter"
-}
-
-data "apstra_datacenter_blueprint" "d" {
-  for_each = data.apstra_blueprints.d.ids
-  id = each.key
-}
