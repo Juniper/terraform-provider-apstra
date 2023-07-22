@@ -220,7 +220,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// Create the Apstra client.
-	client, err := clientCfg.NewClient()
+	client, err := clientCfg.NewClient(ctx)
 	if err != nil {
 		ver := p.Version
 		if ver == "0.0.0" {
@@ -339,6 +339,9 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceConfiglet{} },
 		func() datasource.DataSource { return &dataSourceConfiglets{} },
 		func() datasource.DataSource { return &dataSourceDatacenterBlueprint{} },
+		func() datasource.DataSource { return &dataSourceDatacenterCtIpLink{} },
+		func() datasource.DataSource { return &dataSourceDatacenterCtStaticRoute{} },
+		func() datasource.DataSource { return &dataSourceDatacenterCtVnSingle{} },
 		func() datasource.DataSource { return &dataSourceDatacenterPropertySet{} },
 		func() datasource.DataSource { return &dataSourceDatacenterPropertySets{} },
 		func() datasource.DataSource { return &dataSourceDatacenterRoutingPolicy{} },
@@ -376,6 +379,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceBlueprintDeploy{} },
 		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
+		func() resource.Resource { return &resourceDatacenterConnectivityTemplate{} },
 		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterPropertySet{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZone{} },

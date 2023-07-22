@@ -25,7 +25,7 @@ func GetTestClient(ctx context.Context) (*apstra.Client, error) {
 		// https://github.com/Juniper/apstra-go-sdk/issues/53
 		// sharedClient, err = clientCfg.NewClient(ctx)
 		_ = ctx
-		sharedClient, err = clientCfg.NewClient()
+		sharedClient, err = clientCfg.NewClient(ctx)
 		if err != nil {
 			return nil, err
 		}

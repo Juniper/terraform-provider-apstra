@@ -1,0 +1,169 @@
+package connectivitytemplate
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
+	"terraform-provider-apstra/apstra/design"
+)
+
+var _ Primitive = &IpLink{}
+
+type IpLink struct {
+	RoutingZoneId      types.String `tfsdk:"routing_zone_id"`
+	VlanId             types.Int64  `tfsdk:"vlan_id"`
+	Ipv4AddressingType types.String `tfsdk:"ipv4_addressing_type"`
+	Ipv6AddressingType types.String `tfsdk:"ipv6_addressing_type"`
+	Primitive          types.String `tfsdk:"primitive"`
+	Children           types.List   `tfsdk:"children"`
+}
+
+func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	ipv4AddressingTypes := []string{
+		apstra.CtPrimitiveIPv4AddressingTypeNumbered.String(),
+		apstra.CtPrimitiveIPv4AddressingTypeNone.String(),
+	}
+	ipv6AddressingTypes := []string{
+		apstra.CtPrimitiveIPv6AddressingTypeLinkLocal.String(),
+		apstra.CtPrimitiveIPv6AddressingTypeNumbered.String(),
+		apstra.CtPrimitiveIPv6AddressingTypeNone.String(),
+	}
+	return map[string]dataSourceSchema.Attribute{
+		"routing_zone_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID of the Routing Zone to which this IP Link belongs",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"vlan_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "When set, selects the 802.1Q VLAN ID to use for the link's traffic. " +
+				"Omit for an untagged link.",
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+		},
+		"ipv4_addressing_type": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("One of `%s` (or omit)",
+				strings.Join(ipv4AddressingTypes, "`, `"),
+			),
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.OneOf(ipv4AddressingTypes...)},
+		},
+		"ipv6_addressing_type": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("One of `%s` (or omit)",
+				strings.Join(ipv6AddressingTypes, "`, `"),
+			),
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.OneOf(ipv6AddressingTypes...)},
+		},
+		"primitive": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "JSON output for use in the `primitives` field of an " +
+				"`apstra_datacenter_connectivity_template` resource or a different Connectivity " +
+				"Template Primitive data source",
+			Computed: true,
+		},
+		"children": dataSourceSchema.ListAttribute{
+			MarkdownDescription: "A list of JSON strings describing Connectivity Template Primitives " +
+				"which are children of this Connectivity Template Primitive. Use the `primitive` " +
+				"attribute of other Connectivity Template Primitives data sources here.",
+			ElementType: types.StringType,
+			Optional:    true,
+		},
+	}
+}
+
+func (o IpLink) Render(ctx context.Context, diags *diag.Diagnostics) string {
+	var children []string
+	diags.Append(o.Children.ElementsAs(ctx, &children, false)...)
+	if diags.HasError() {
+		return ""
+	}
+
+	obj := ipLinkPrototype{
+		RoutingZoneId:      o.RoutingZoneId.ValueString(),
+		Tagged:             false,
+		VlanId:             nil,
+		Ipv4AddressingType: o.Ipv4AddressingType.ValueString(),
+		Ipv6AddressingType: o.Ipv6AddressingType.ValueString(),
+		Children:           children,
+	}
+
+	if !o.VlanId.IsNull() {
+		obj.Tagged = true
+		vlan := o.VlanId.ValueInt64()
+		obj.VlanId = &vlan
+	}
+
+	if o.Ipv4AddressingType.IsNull() {
+		obj.Ipv4AddressingType = apstra.CtPrimitiveIPv4AddressingTypeNone.String()
+	}
+
+	if o.Ipv6AddressingType.IsNull() {
+		obj.Ipv6AddressingType = apstra.CtPrimitiveIPv6AddressingTypeNone.String()
+	}
+
+	data, err := json.Marshal(&obj)
+	if err != nil {
+		diags.AddError("failed marshaling IpLink primitive data", err.Error())
+		return ""
+	}
+
+	data, err = json.Marshal(&RenderedPrimitive{
+		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachLogicalLink.String(),
+		Data:          data,
+	})
+	if err != nil {
+		diags.AddError("failed marshaling primitive", err.Error())
+		return ""
+	}
+
+	return string(data)
+}
+
+func (o IpLink) connectivityTemplateAttributes() (apstra.ConnectivityTemplateAttributes, error) {
+	routingZoneId := apstra.ObjectId(o.RoutingZoneId.ValueString())
+
+	var tagged bool
+	var vlan *apstra.Vlan
+	if !o.VlanId.IsNull() {
+		tagged = true
+		v := apstra.Vlan(o.VlanId.ValueInt64())
+		vlan = &v
+	}
+
+	var err error
+	var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
+	err = ipv4AddressingType.FromString(o.Ipv4AddressingType.ValueString())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing ipv4 addressing type %s - %w", o.Ipv4AddressingType, err)
+	}
+
+	var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
+	err = ipv6AddressingType.FromString(o.Ipv6AddressingType.ValueString())
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing ipv6 addressing type %s - %w", o.Ipv6AddressingType, err)
+	}
+
+	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
+		SecurityZone:       &routingZoneId,
+		Tagged:             tagged,
+		Vlan:               vlan,
+		IPv4AddressingType: ipv4AddressingType,
+		IPv6AddressingType: ipv6AddressingType,
+	}, nil
+}
+
+type ipLinkPrototype struct {
+	RoutingZoneId      string   `json:"routing_zone_id"`
+	Tagged             bool     `json:"tagged"`
+	VlanId             *int64   `json:"vlan_id,omitempty"`
+	Ipv4AddressingType string   `json:"ipv4_addressing_type"`
+	Ipv6AddressingType string   `json:"ipv6_addressing_type"`
+	Children           []string `json:"children,omitempty"`
+}
