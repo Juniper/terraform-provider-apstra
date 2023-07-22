@@ -17,7 +17,7 @@ require (
 )
 
 //                                                                                          HHMMSS
-replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230721205750-eb123f08479c
+replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230722233544-de4bd056c1b1
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect

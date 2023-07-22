@@ -7,13 +7,12 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 )
-
-var _ Primitive = &StaticRoute{}
 
 type StaticRoute struct {
 	Network         types.String `tfsdk:"network"`
@@ -36,13 +35,13 @@ func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 		"primitive": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "JSON output for use in the `primitives` field of an " +
 				"`apstra_datacenter_connectivity_template` resource or a different Connectivity " +
-				"Template Primitive data source",
+				"Template JsonPrimitive data source",
 			Computed: true,
 		},
 	}
 }
 
-func (o StaticRoute) Render(_ context.Context, diags *diag.Diagnostics) string {
+func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 	obj := staticRoutePrototype{
 		Network:         o.Network.ValueString(),
 		ShareIpEndpoint: o.ShareIpEndpoint.ValueBool(),
@@ -54,7 +53,7 @@ func (o StaticRoute) Render(_ context.Context, diags *diag.Diagnostics) string {
 		return ""
 	}
 
-	data, err = json.Marshal(&RenderedPrimitive{
+	data, err = json.Marshal(&TfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachStaticRoute.String(),
 		Data:          data,
 	})
@@ -66,19 +65,37 @@ func (o StaticRoute) Render(_ context.Context, diags *diag.Diagnostics) string {
 	return string(data)
 }
 
-func (o StaticRoute) connectivityTemplateAttributes() (apstra.ConnectivityTemplateAttributes, error) {
-	_, network, err := net.ParseCIDR(o.Network.ValueString())
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing network CIDR string %q - %w", o.Network.ValueString(), err)
-	}
-
-	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute{
-		ShareIpEndpoint: o.ShareIpEndpoint.ValueBool(),
-		Network:         network,
-	}, nil
-}
+var _ JsonPrimitive = &staticRoutePrototype{}
 
 type staticRoutePrototype struct {
 	Network         string `json:"network"`
 	ShareIpEndpoint bool   `json:"share_ip_endpoint"`
+}
+
+func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+	_, network, err := net.ParseCIDR(o.Network)
+	if err != nil {
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %s", o.Network), err.Error())
+		return nil
+	}
+
+	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute{
+		ShareIpEndpoint: o.ShareIpEndpoint,
+		Network:         network,
+	}
+}
+
+func (o staticRoutePrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	attributes := o.attributes(ctx, path, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &apstra.ConnectivityTemplatePrimitive{
+		Id:          nil, // calculated later
+		Attributes:  attributes,
+		Subpolicies: nil, // this primitive has no children
+		BatchId:     nil, // this primitive has no children
+		PipelineId:  nil, // calculated later
+	}
 }

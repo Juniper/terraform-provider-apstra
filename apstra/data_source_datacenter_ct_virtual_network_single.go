@@ -18,9 +18,9 @@ func (o *dataSourceDatacenterCtVnSingle) Metadata(_ context.Context, req datasou
 
 func (o *dataSourceDatacenterCtVnSingle) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source composes a Connectivity Template Primitive suitable " +
+		MarkdownDescription: "This data source composes a Connectivity Template JsonPrimitive suitable " +
 			"for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` " +
-			"resource or the `children` attribute of a Different Connectivity Template Primitive.",
+			"resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.",
 		Attributes: connectivitytemplate.VnSingle{}.DataSourceAttributes(),
 	}
 }
@@ -32,7 +32,7 @@ func (o *dataSourceDatacenterCtVnSingle) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	rendered := config.Render(ctx, &resp.Diagnostics)
+	rendered := config.Marshal(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

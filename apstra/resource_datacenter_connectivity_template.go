@@ -2,13 +2,13 @@ package tfapstra
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
 	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
 	"terraform-provider-apstra/apstra/utils"
@@ -56,7 +56,6 @@ func (o *resourceDatacenterConnectivityTemplate) Create(ctx context.Context, req
 		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
-	_ = bp
 
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
@@ -67,32 +66,44 @@ func (o *resourceDatacenterConnectivityTemplate) Create(ctx context.Context, req
 		return
 	}
 
-	var primitives []string
-	resp.Diagnostics.Append(plan.Primitives.ElementsAs(ctx, &primitives, false)...)
+	var childPrimitivesAsJson []string
+	resp.Diagnostics.Append(plan.Primitives.ElementsAs(ctx, &childPrimitivesAsJson, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	for i := range primitives {
-		var rp connectivitytemplate.RenderedPrimitive
-		err = json.Unmarshal([]byte(primitives[i]), &rp)
-		if err != nil {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("primitives").AtListIndex(i),
-				"failed to marshal primitive",
-				err.Error(),
-			)
-		}
-		primitive, err := rp.Parse()
-		if err != nil {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("primitives").AtListIndex(i),
-				"failed parsting primitive",
-				err.Error(),
-			)
-		}
+	subpolicies := connectivitytemplate.ChildPrimitivesFromListOfJsonStrings(ctx, childPrimitivesAsJson, path.Root("primitives"), &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
+	var tags []string
+	resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ct := apstra.ConnectivityTemplate{
+		Label:       plan.Name.ValueString(),
+		Description: plan.Description.ValueString(),
+		Subpolicies: subpolicies,
+		Tags:        tags,
+	}
+	err = ct.SetIds()
+	if err != nil {
+		resp.Diagnostics.AddError("failed to set CT IDs", err.Error())
+		return
+	}
+
+	ct.SetUserData()
+
+	err = bp.CreateConnectivityTemplate(ctx, &ct)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create Connectivity Template", err.Error())
+		return
+	}
+
+	plan.Id = types.StringValue(string(*ct.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -116,6 +127,9 @@ func (o *resourceDatacenterConnectivityTemplate) Read(ctx context.Context, req r
 		return
 	}
 	_ = bp
+
+	resp.State.RemoveResource(ctx)
+	return
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

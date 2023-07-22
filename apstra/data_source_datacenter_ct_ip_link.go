@@ -18,9 +18,9 @@ func (o *dataSourceDatacenterCtIpLink) Metadata(_ context.Context, req datasourc
 
 func (o *dataSourceDatacenterCtIpLink) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source composes a Connectivity Template Primitive suitable " +
+		MarkdownDescription: "This data source composes a Connectivity Template JsonPrimitive suitable " +
 			"for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` " +
-			"resource or the `children` attribute of a Different Connectivity Template Primitive.",
+			"resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.",
 		Attributes: connectivitytemplate.IpLink{}.DataSourceAttributes(),
 	}
 }
@@ -32,7 +32,7 @@ func (o *dataSourceDatacenterCtIpLink) Read(ctx context.Context, req datasource.
 		return
 	}
 
-	rendered := config.Render(ctx, &resp.Diagnostics)
+	rendered := config.Marshal(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

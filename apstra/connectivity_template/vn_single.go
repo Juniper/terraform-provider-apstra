@@ -7,11 +7,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-var _ Primitive = &VnSingle{}
 
 type VnSingle struct {
 	VnId      types.String `tfsdk:"vn_id"`
@@ -34,13 +33,13 @@ func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"primitive": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "JSON output for use in the `primitives` field of an " +
 				"`apstra_datacenter_connectivity_template` resource or a different Connectivity " +
-				"Template Primitive data source",
+				"Template JsonPrimitive data source",
 			Computed: true,
 		},
 	}
 }
 
-func (o VnSingle) Render(_ context.Context, diags *diag.Diagnostics) string {
+func (o VnSingle) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 	obj := vnSinglePrototype{
 		VnId:   o.VnId.ValueString(),
 		Tagged: o.Tagged.ValueBool(),
@@ -52,7 +51,7 @@ func (o VnSingle) Render(_ context.Context, diags *diag.Diagnostics) string {
 		return ""
 	}
 
-	data, err = json.Marshal(&RenderedPrimitive{
+	data, err = json.Marshal(&TfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachSingleVlan.String(),
 		Data:          data,
 	})
@@ -60,15 +59,32 @@ func (o VnSingle) Render(_ context.Context, diags *diag.Diagnostics) string {
 	return string(data)
 }
 
-func (o VnSingle) connectivityTemplateAttributes() (apstra.ConnectivityTemplateAttributes, error) {
-	vnId := apstra.ObjectId(o.VnId.ValueString())
-	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan{
-		Tagged:   o.Tagged.ValueBool(),
-		VnNodeId: &vnId,
-	}, nil
-}
+var _ JsonPrimitive = &vnSinglePrototype{}
 
 type vnSinglePrototype struct {
 	VnId   string `json:"vn_id"`
 	Tagged bool   `json:"tagged"`
+}
+
+func (o vnSinglePrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+	vnId := apstra.ObjectId(o.VnId)
+	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan{
+		Tagged:   o.Tagged,
+		VnNodeId: &vnId,
+	}
+}
+
+func (o vnSinglePrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	attributes := o.attributes(ctx, path, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &apstra.ConnectivityTemplatePrimitive{
+		Id:          nil, // calculated later
+		Attributes:  attributes,
+		Subpolicies: nil, // this primitive has no children
+		BatchId:     nil, // this primitive has no children
+		PipelineId:  nil, // calculated later
+	}
 }

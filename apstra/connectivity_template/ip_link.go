@@ -9,13 +9,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 	"terraform-provider-apstra/apstra/design"
 )
-
-var _ Primitive = &IpLink{}
 
 type IpLink struct {
 	RoutingZoneId      types.String `tfsdk:"routing_zone_id"`
@@ -65,12 +64,12 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"primitive": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "JSON output for use in the `primitives` field of an " +
 				"`apstra_datacenter_connectivity_template` resource or a different Connectivity " +
-				"Template Primitive data source",
+				"Template JsonPrimitive data source",
 			Computed: true,
 		},
 		"children": dataSourceSchema.ListAttribute{
 			MarkdownDescription: "A list of JSON strings describing Connectivity Template Primitives " +
-				"which are children of this Connectivity Template Primitive. Use the `primitive` " +
+				"which are children of this Connectivity Template JsonPrimitive. Use the `primitive` " +
 				"attribute of other Connectivity Template Primitives data sources here.",
 			ElementType: types.StringType,
 			Optional:    true,
@@ -78,7 +77,7 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o IpLink) Render(ctx context.Context, diags *diag.Diagnostics) string {
+func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 	var children []string
 	diags.Append(o.Children.ElementsAs(ctx, &children, false)...)
 	if diags.HasError() {
@@ -114,7 +113,7 @@ func (o IpLink) Render(ctx context.Context, diags *diag.Diagnostics) string {
 		return ""
 	}
 
-	data, err = json.Marshal(&RenderedPrimitive{
+	data, err = json.Marshal(&TfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachLogicalLink.String(),
 		Data:          data,
 	})
@@ -126,38 +125,7 @@ func (o IpLink) Render(ctx context.Context, diags *diag.Diagnostics) string {
 	return string(data)
 }
 
-func (o IpLink) connectivityTemplateAttributes() (apstra.ConnectivityTemplateAttributes, error) {
-	routingZoneId := apstra.ObjectId(o.RoutingZoneId.ValueString())
-
-	var tagged bool
-	var vlan *apstra.Vlan
-	if !o.VlanId.IsNull() {
-		tagged = true
-		v := apstra.Vlan(o.VlanId.ValueInt64())
-		vlan = &v
-	}
-
-	var err error
-	var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
-	err = ipv4AddressingType.FromString(o.Ipv4AddressingType.ValueString())
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing ipv4 addressing type %s - %w", o.Ipv4AddressingType, err)
-	}
-
-	var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
-	err = ipv6AddressingType.FromString(o.Ipv6AddressingType.ValueString())
-	if err != nil {
-		return nil, fmt.Errorf("failed parsing ipv6 addressing type %s - %w", o.Ipv6AddressingType, err)
-	}
-
-	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-		SecurityZone:       &routingZoneId,
-		Tagged:             tagged,
-		Vlan:               vlan,
-		IPv4AddressingType: ipv4AddressingType,
-		IPv6AddressingType: ipv6AddressingType,
-	}, nil
-}
+var _ JsonPrimitive = &ipLinkPrototype{}
 
 type ipLinkPrototype struct {
 	RoutingZoneId      string   `json:"routing_zone_id"`
@@ -166,4 +134,53 @@ type ipLinkPrototype struct {
 	Ipv4AddressingType string   `json:"ipv4_addressing_type"`
 	Ipv6AddressingType string   `json:"ipv6_addressing_type"`
 	Children           []string `json:"children,omitempty"`
+}
+
+func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+	routingZoneId := apstra.ObjectId(o.RoutingZoneId)
+
+	vlanId := apstra.Vlan(*o.VlanId)
+
+	var err error
+	var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
+	err = ipv4AddressingType.FromString(o.Ipv4AddressingType)
+	if err != nil {
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv4 addressing type %s", o.Ipv4AddressingType), err.Error())
+		return nil
+	}
+
+	var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
+	err = ipv6AddressingType.FromString(o.Ipv6AddressingType)
+	if err != nil {
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv6 addressing type %s", o.Ipv6AddressingType), err.Error())
+		return nil
+	}
+
+	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
+		SecurityZone:       &routingZoneId,
+		Tagged:             o.Tagged,
+		Vlan:               &vlanId,
+		IPv4AddressingType: ipv4AddressingType,
+		IPv6AddressingType: ipv6AddressingType,
+	}
+}
+
+func (o ipLinkPrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	attributes := o.attributes(ctx, path, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	children := ChildPrimitivesFromListOfJsonStrings(ctx, o.Children, path, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	return &apstra.ConnectivityTemplatePrimitive{
+		Id:          nil, // calculated later
+		Attributes:  attributes,
+		Subpolicies: children,
+		BatchId:     nil, // this primitive has no children
+		PipelineId:  nil, // calculated later
+	}
 }

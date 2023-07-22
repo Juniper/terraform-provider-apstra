@@ -10,6 +10,7 @@ import (
 )
 
 type ConnectivityTemplate struct {
+	Id          types.String `tfsdk:"id"`
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
@@ -19,6 +20,10 @@ type ConnectivityTemplate struct {
 
 func (o ConnectivityTemplate) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID.",
+			Computed:            true,
+		},
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
