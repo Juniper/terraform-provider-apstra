@@ -180,7 +180,7 @@ func (o ipLinkPrototype) SdkPrimitive(ctx context.Context, path path.Path, diags
 		Id:          nil, // calculated later
 		Attributes:  attributes,
 		Subpolicies: children,
-		BatchId:     nil, // this primitive has no children
+		BatchId:     nil, // calculated later
 		PipelineId:  nil, // calculated later
 	}
 }
