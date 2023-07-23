@@ -128,8 +128,7 @@ func (o *resourceDatacenterConnectivityTemplate) Read(ctx context.Context, req r
 	}
 	_ = bp
 
-	resp.State.RemoveResource(ctx)
-	return
+	resp.State.RemoveResource(ctx) // todo delete me
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
