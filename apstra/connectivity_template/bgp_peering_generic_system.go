@@ -153,8 +153,7 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 		return ""
 	}
 
-	var ttl uint8
-	ttl = uint8(o.Ttl.ValueInt64())
+	ttl := uint8(o.Ttl.ValueInt64())
 
 	var keepaliveTime *uint16
 	if !o.KeepaliveTime.IsNull() {

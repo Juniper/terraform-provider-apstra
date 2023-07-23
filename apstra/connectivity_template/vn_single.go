@@ -55,6 +55,10 @@ func (o VnSingle) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachSingleVlan.String(),
 		Data:          data,
 	})
+	if err != nil {
+		diags.AddError("failed marshaling primitive", err.Error())
+		return ""
+	}
 
 	return string(data)
 }
