@@ -1,6 +1,6 @@
-# The following example shows how a module might accept a Logical Device's name
-# as an input variable and then use it to retrieve the Logical Device ID when
-# provisioning a Rack Type.
+# The following example shows how a module might accept a Logical Device's
+# name as an input variable and then use it to retrieve the Logical Device
+# ID when provisioning a Rack Type.
 
 # module input variable has the Logical Device name
 variable "logical_device_name" {
@@ -9,8 +9,8 @@ variable "logical_device_name" {
 }
 
 # Data lookup using the Logical Device name. Name collisions are possible,
-# will produce an error. Apstra permits name collisions for many object types.
-# It's probably best to avoid creating them.
+# will produce an error. Apstra permits name collisions for many object
+# types. It's probably best to avoid creating them.
 data "apstra_logical_device" "selected" {
     name = var.logical_device_name
 }

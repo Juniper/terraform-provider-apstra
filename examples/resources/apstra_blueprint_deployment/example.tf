@@ -30,7 +30,8 @@ locals {
   }
 }
 
-# Assign interface maps to fabric roles to eliminate build errors so we can deploy
+# Assign interface maps to fabric roles to eliminate build errors so we
+# can deploy
 resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   for_each         = local.switches
   blueprint_id     = apstra_datacenter_blueprint.instantiation.id
@@ -38,7 +39,8 @@ resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   interface_map_id = each.value
 }
 
-# Assign ASN pools to fabric roles to eliminate build errors so we can deploy
+# Assign ASN pools to fabric roles to eliminate build errors so we
+# can deploy
 resource "apstra_datacenter_resource_pool_allocation" "asn" {
   for_each     = local.asn_pools
   blueprint_id = apstra_datacenter_blueprint.instantiation.id
@@ -46,7 +48,8 @@ resource "apstra_datacenter_resource_pool_allocation" "asn" {
   pool_ids     = each.value
 }
 
-# Assign IPv4 pools to fabric roles to eliminate build errors so we can deploy
+# Assign IPv4 pools to fabric roles to eliminate build errors so we
+# can deploy
 resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   for_each     = local.ipv4_pools
   blueprint_id = apstra_datacenter_blueprint.instantiation.id

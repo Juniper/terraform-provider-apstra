@@ -1,4 +1,5 @@
-# The following example shows outputting a report of free space across all ASN resource pools:
+# The following example shows outputting a report of free space across all
+# ASN resource pools:
 
 data "apstra_asn_pools" "all" {}
 
@@ -14,7 +15,7 @@ output "asn_report" {
   }}
 }
 
-################################################################################
+############################################################################
 # The output object above will produce something like the following:
 #
 #   asn_report = {
@@ -35,4 +36,4 @@ output "asn_report" {
 #       "name" = "leaf"
 #     }
 #   }
-################################################################################
+############################################################################

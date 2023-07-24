@@ -1,13 +1,14 @@
 # This example uses the 'apstra_blueprints' and 'apstra_blueprint_deployment'
-# data sources to output a report comparing the staging and active blueprints.
+# data sources to output a report comparing the staging and active
+# blueprints.
 
 # First, get a list of all blueprint IDs
 data "apstra_blueprints" "blueprint_ids" {
   reference_design = "datacenter"
 }
 
-# Next, use the 'one()' function to assert that only one blueprint exists, and
-# pull the commit info for that blueprint.
+# Next, use the 'one()' function to assert that only one blueprint exists,
+# and pull the commit info for that blueprint.
 data "apstra_blueprint_deployment" "time_voyager" {
   blueprint_id = one(data.apstra_blueprints.blueprint_ids.ids)
 }
