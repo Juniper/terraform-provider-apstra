@@ -12,8 +12,8 @@ This data source returns the IDs of Managed Device Agents. All of the `filters` 
 ## Example Usage
 
 ```terraform
-# This example returns the IDs of all Off-Box Agents responsible for Systems in
-# with management IP addresses in the 192.168.100.0/24 subnet.
+# This example returns the IDs of all Off-Box Agents responsible for Systems
+# in with management IP addresses in the 192.168.100.0/24 subnet.
 
 data "apstra_agents" "agents" {
   filters = {

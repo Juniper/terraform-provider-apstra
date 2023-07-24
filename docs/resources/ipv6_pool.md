@@ -13,8 +13,8 @@ This resource creates an IPv6 resource pool
 
 ```terraform
 # This example creates IPv6 pools with subnets from an IPv6 allocation with
-# configuration options for pool count, pool size, subnet count and subnet size.
-#
+# configuration options for pool count, pool size, subnet count and
+# subnet size.
 # Configurable options in this block
 locals {
   allocation       = "2001:db8::/32" # RFC3849
@@ -40,7 +40,8 @@ locals {
   pool_bits       = parseint(split("/", local.pool_size)[1], 10)
   subnet_bits     = parseint(split("/", local.subnet_size)[1], 10)
 
-  # a little bit of subtraction gets us the 'new bits' format needed by `cidrsubnet()`
+  # a little bit of subtraction gets us the 'new bits' format needed
+  # by `cidrsubnet()`
   new_bits_per_pool   = local.pool_bits - local.allocation_bits
   new_bits_per_subnet = local.subnet_bits - local.pool_bits
 
