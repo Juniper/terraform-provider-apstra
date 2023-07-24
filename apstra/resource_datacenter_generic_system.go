@@ -128,7 +128,7 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed to retrieve labels from generic system %s", state.Id), err.Error())
+			fmt.Sprintf("failed to retrieve generic system %s", state.Id), err.Error())
 		return
 	}
 
