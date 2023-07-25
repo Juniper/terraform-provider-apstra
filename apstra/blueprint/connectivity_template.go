@@ -99,7 +99,7 @@ func (o ConnectivityTemplate) Request(ctx context.Context, diags *diag.Diagnosti
 }
 
 func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
-	var tags []string
+	tags := make([]string, len(in.Tags))
 	for i, tag := range in.Tags {
 		tags[i] = tag
 	}
