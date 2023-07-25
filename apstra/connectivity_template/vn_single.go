@@ -74,7 +74,7 @@ func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityT
 			return
 		}
 	default:
-		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %t", in))
+		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %T", in))
 		return
 	}
 }
