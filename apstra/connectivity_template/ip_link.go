@@ -115,7 +115,7 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 		return ""
 	}
 
-	data, err = json.Marshal(&TfCfgPrimitive{
+	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachLogicalLink.String(),
 		Data:          data,
 	})

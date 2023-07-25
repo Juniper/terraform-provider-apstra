@@ -23,21 +23,21 @@ type JsonPrimitive interface {
 	ToSdkPrimitive(context.Context, path.Path, *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive
 }
 
-// TfCfgPrimitive is a Terraform Config Primitive. it's the JSON structure used
+// tfCfgPrimitive is a Terraform Config Primitive. it's the JSON structure used
 // as a Connectivity Template Primitive (Single VN, IP Link, etc...) in a
 // terraform config file (usually written by one of the primitive-specific data
 // sources:
 //   - apstra_datacenter_ct_virtual_network_single
 //   - apstra_datacenter_ct_ip_link
 //   - etc...
-type TfCfgPrimitive struct { // todo make private
+type tfCfgPrimitive struct {
 	PrimitiveType string          `json:"type"`
 	Data          json.RawMessage `json:"data"`
 }
 
-// Rehydrate expands the TfCfgPrimitive (a type with raw json) into a type
+// Rehydrate expands the tfCfgPrimitive (a type with raw json) into a type
 // specific implementation of JsonPrimitive. // todo take ctx and diags
-func (o TfCfgPrimitive) Rehydrate() (JsonPrimitive, error) { // todo make private
+func (o tfCfgPrimitive) Rehydrate() (JsonPrimitive, error) { // todo make private
 	var pType apstra.CtPrimitivePolicyTypeName
 	err := pType.FromString(o.PrimitiveType)
 	if err != nil {
@@ -82,7 +82,7 @@ func (o TfCfgPrimitive) Rehydrate() (JsonPrimitive, error) { // todo make privat
 func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path path.Path, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
 	result := make([]*apstra.ConnectivityTemplatePrimitive, len(in))
 	for i, s := range in {
-		var rp TfCfgPrimitive // todo rename
+		var rp tfCfgPrimitive // todo rename
 		err := json.Unmarshal([]byte(s), &rp)
 		if err != nil {
 			diags.AddAttributeError(path.AtListIndex(i), "failed to marshal primitive", err.Error())

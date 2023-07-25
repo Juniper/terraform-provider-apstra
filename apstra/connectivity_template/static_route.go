@@ -55,7 +55,7 @@ func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string 
 		return ""
 	}
 
-	data, err = json.Marshal(&TfCfgPrimitive{
+	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachStaticRoute.String(),
 		Data:          data,
 	})
