@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.14.3
 	github.com/hashicorp/terraform-plugin-testing v1.2.0
 	github.com/mitchellh/go-homedir v1.1.0
+	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	honnef.co/go/tools v0.4.3
 )
 
@@ -87,7 +88,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20221208152030-732eee02a75a // indirect
-	golang.org/x/mod v0.9.0 // indirect
+	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
