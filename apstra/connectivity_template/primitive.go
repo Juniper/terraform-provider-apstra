@@ -92,12 +92,12 @@ func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path
 			return nil
 		}
 
-		primitive := rp.rehydrate(ctx, path.AtListIndex(i), diags) // todo rename jsonPrimitive
+		jsonPrimitive := rp.rehydrate(ctx, path.AtListIndex(i), diags)
 		if diags.HasError() {
 			return nil
 		}
 
-		sdkPrimitive := primitive.ToSdkPrimitive(ctx, path.AtListIndex(i), diags)
+		sdkPrimitive := jsonPrimitive.ToSdkPrimitive(ctx, path.AtListIndex(i), diags)
 		if diags.HasError() {
 			return nil
 		}
