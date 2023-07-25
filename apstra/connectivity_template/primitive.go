@@ -36,12 +36,13 @@ type tfCfgPrimitive struct {
 }
 
 // rehydrate expands the tfCfgPrimitive (a type with raw json) into a type
-// specific implementation of JsonPrimitive. // todo take ctx and diags
-func (o tfCfgPrimitive) rehydrate() (JsonPrimitive, error) { // todo make private
+// specific implementation of JsonPrimitive.
+func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag.Diagnostics) JsonPrimitive {
 	var pType apstra.CtPrimitivePolicyTypeName
 	err := pType.FromString(o.PrimitiveType)
 	if err != nil {
-		return nil, err
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing primitive type string %q", o.PrimitiveType), err.Error())
+		return nil
 	}
 
 	var jsonPrimitive JsonPrimitive
@@ -70,13 +71,15 @@ func (o tfCfgPrimitive) rehydrate() (JsonPrimitive, error) { // todo make privat
 	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
 	//	primitive = new(RoutingZoneConstraint)
 	default:
-		return nil, fmt.Errorf("unhandled primitive type %q", pType.String())
+		diags.AddAttributeError(path, "primitive rehydration failed", fmt.Sprintf("unhandled primitive type %q", pType.String()))
+		return nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal rendered primitive data - %w", err)
+		diags.AddAttributeError(path, "primitive rehydration failed", err.Error())
+		return nil
 	}
 
-	return jsonPrimitive, nil
+	return jsonPrimitive
 }
 
 func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path path.Path, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
@@ -89,9 +92,8 @@ func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path
 			return nil
 		}
 
-		primitive, err := rp.rehydrate() // todo rename jsonPrimitive
-		if err != nil {
-			diags.AddAttributeError(path.AtListIndex(i), "failed parsing primitive", err.Error())
+		primitive := rp.rehydrate(ctx, path.AtListIndex(i), diags) // todo rename jsonPrimitive
+		if diags.HasError() {
 			return nil
 		}
 
