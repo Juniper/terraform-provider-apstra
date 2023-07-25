@@ -3,6 +3,7 @@ package connectivitytemplate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -11,6 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
+
+var _ Primitive = &VnSingle{}
 
 type VnSingle struct {
 	VnId      types.String `tfsdk:"vn_id"`
@@ -63,6 +66,24 @@ func (o VnSingle) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 	return string(data)
 }
 
+func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
+	switch attributes := in.Attributes.(type) {
+	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan:
+		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
+		if diags.HasError() {
+			return
+		}
+	default:
+		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %t", in))
+		return
+	}
+}
+
+func (o *VnSingle) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan, _ *diag.Diagnostics) {
+	o.VnId = types.StringValue(in.VnNodeId.String())
+	o.Tagged = types.BoolValue(in.Tagged)
+}
+
 var _ JsonPrimitive = &vnSinglePrototype{}
 
 type vnSinglePrototype struct {
@@ -78,7 +99,7 @@ func (o vnSinglePrototype) attributes(_ context.Context, _ path.Path, _ *diag.Di
 	}
 }
 
-func (o vnSinglePrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o vnSinglePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	attributes := o.attributes(ctx, path, diags)
 	if diags.HasError() {
 		return nil

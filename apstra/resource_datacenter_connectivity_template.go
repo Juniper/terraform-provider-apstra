@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
-	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -66,44 +64,18 @@ func (o *resourceDatacenterConnectivityTemplate) Create(ctx context.Context, req
 		return
 	}
 
-	var childPrimitivesAsJson []string
-	resp.Diagnostics.Append(plan.Primitives.ElementsAs(ctx, &childPrimitivesAsJson, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// create an API request
+	request := plan.Request(ctx, &resp.Diagnostics)
 
-	subpolicies := connectivitytemplate.ChildPrimitivesFromListOfJsonStrings(ctx, childPrimitivesAsJson, path.Root("primitives"), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var tags []string
-	resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	ct := apstra.ConnectivityTemplate{
-		Label:       plan.Name.ValueString(),
-		Description: plan.Description.ValueString(),
-		Subpolicies: subpolicies,
-		Tags:        tags,
-	}
-	err = ct.SetIds()
-	if err != nil {
-		resp.Diagnostics.AddError("failed to set CT IDs", err.Error())
-		return
-	}
-
-	ct.SetUserData()
-
-	err = bp.CreateConnectivityTemplate(ctx, &ct)
+	// send the request to Apstra
+	err = bp.CreateConnectivityTemplate(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create Connectivity Template", err.Error())
 		return
 	}
 
-	plan.Id = types.StringValue(string(*ct.Id))
+	// set the state
+	plan.Id = types.StringValue(string(*request.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -126,9 +98,23 @@ func (o *resourceDatacenterConnectivityTemplate) Read(ctx context.Context, req r
 		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
-	_ = bp
 
-	resp.State.RemoveResource(ctx) // todo delete me
+	api, err := bp.GetConnectivityTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed to retrieve Connectivity Template %s", state.Id), err.Error())
+		return
+	}
+
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

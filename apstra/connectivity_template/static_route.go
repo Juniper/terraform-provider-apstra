@@ -14,6 +14,8 @@ import (
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 )
 
+var _ Primitive = &StaticRoute{}
+
 type StaticRoute struct {
 	Network         types.String `tfsdk:"network"`
 	ShareIpEndpoint types.Bool   `tfsdk:"share_ip_endpoint"`
@@ -65,6 +67,27 @@ func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string 
 	return string(data)
 }
 
+func (o *StaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
+	switch attributes := in.Attributes.(type) {
+	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute:
+		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
+		if diags.HasError() {
+			return
+		}
+	default:
+		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %t", in))
+		return
+	}
+}
+
+func (o *StaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute, _ *diag.Diagnostics) {
+	o.Network = types.StringNull()
+	if in.Network != nil {
+		o.Network = types.StringValue(in.Network.String())
+	}
+	o.ShareIpEndpoint = types.BoolValue(in.ShareIpEndpoint)
+}
+
 var _ JsonPrimitive = &staticRoutePrototype{}
 
 type staticRoutePrototype struct {
@@ -85,7 +108,7 @@ func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diag
 	}
 }
 
-func (o staticRoutePrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o staticRoutePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	attributes := o.attributes(ctx, path, diags)
 	if diags.HasError() {
 		return nil

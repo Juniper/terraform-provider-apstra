@@ -16,6 +16,8 @@ import (
 	"terraform-provider-apstra/apstra/design"
 )
 
+var _ Primitive = &IpLink{}
+
 type IpLink struct {
 	RoutingZoneId      types.String `tfsdk:"routing_zone_id"`
 	VlanId             types.Int64  `tfsdk:"vlan_id"`
@@ -125,6 +127,42 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 	return string(data)
 }
 
+func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
+	switch attributes := in.Attributes.(type) {
+	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink:
+		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
+		if diags.HasError() {
+			return
+		}
+	default:
+		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %t", in))
+		return
+	}
+
+	o.loadSdkPrimitiveChildren(ctx, in.Subpolicies, diags)
+	if diags.HasError() {
+		return
+	}
+}
+
+func (o *IpLink) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink, _ *diag.Diagnostics) {
+	routingZone := types.StringNull()
+	if in.SecurityZone != nil {
+		routingZone = types.StringValue(in.SecurityZone.String())
+	}
+
+	o.RoutingZoneId = routingZone
+	o.VlanId = types.Int64Value(int64(*in.Vlan))
+	o.Ipv4AddressingType = types.StringValue(in.IPv4AddressingType.String())
+	o.Ipv6AddressingType = types.StringValue(in.IPv6AddressingType.String())
+}
+
+// loadSdkPrimitiveChildren imports the child policies into o.Children as JSON strings
+func (o *IpLink) loadSdkPrimitiveChildren(ctx context.Context, in []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
+	children := SdkPrimitivesToJsonStrings(ctx, in, diags)
+	o.Children = types.ListValueMust(types.StringType, children)
+}
+
 var _ JsonPrimitive = &ipLinkPrototype{}
 
 type ipLinkPrototype struct {
@@ -165,7 +203,7 @@ func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *di
 	}
 }
 
-func (o ipLinkPrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o ipLinkPrototype) ToSdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	attributes := o.attributes(ctx, path, diags)
 	if diags.HasError() {
 		return nil

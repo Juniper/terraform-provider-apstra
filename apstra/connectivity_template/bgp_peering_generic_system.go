@@ -301,7 +301,7 @@ func (o bgpPeeringGenericSystemPrototype) attributes(_ context.Context, path pat
 	}
 }
 
-func (o bgpPeeringGenericSystemPrototype) SdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o bgpPeeringGenericSystemPrototype) ToSdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	attributes := o.attributes(ctx, path, diags)
 	if diags.HasError() {
 		return nil

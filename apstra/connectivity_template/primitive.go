@@ -5,15 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+type Primitive interface {
+	Marshal(context.Context, *diag.Diagnostics) string
+	DataSourceAttributes() map[string]dataSourceSchema.Attribute
+	loadSdkPrimitive(context.Context, apstra.ConnectivityTemplatePrimitive, *diag.Diagnostics)
+}
+
 type JsonPrimitive interface {
-	//Marshal(context.Context, *diag.Diagnostics) string
-	//DataSourceAttributes() map[string]dataSourceSchema.Attribute
 	attributes(context.Context, path.Path, *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes
-	SdkPrimitive(context.Context, path.Path, *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive
+	ToSdkPrimitive(context.Context, path.Path, *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive
 }
 
 // TfCfgPrimitive is a Terraform Config Primitive. it's the JSON structure used
@@ -29,7 +36,7 @@ type TfCfgPrimitive struct { // todo make private
 }
 
 // Rehydrate expands the TfCfgPrimitive (a type with raw json) into a type
-// specific implementation of JsonPrimitive.
+// specific implementation of JsonPrimitive. // todo take ctx and diags
 func (o TfCfgPrimitive) Rehydrate() (JsonPrimitive, error) { // todo make private
 	var pType apstra.CtPrimitivePolicyTypeName
 	err := pType.FromString(o.PrimitiveType)
@@ -41,15 +48,15 @@ func (o TfCfgPrimitive) Rehydrate() (JsonPrimitive, error) { // todo make privat
 	switch pType {
 	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
 		jsonPrimitive = new(vnSinglePrototype)
-		err = json.Unmarshal(o.Data, jsonPrimitive.(*vnSinglePrototype))
+		err = json.Unmarshal(o.Data, jsonPrimitive.(*vnSinglePrototype)) // todo move lower
 	//case apstra.CtPrimitivePolicyTypeNameAttachMultipleVLAN:
 	//	primitive = new(VnMultiplePrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
 		jsonPrimitive = new(ipLinkPrototype)
-		err = json.Unmarshal(o.Data, jsonPrimitive.(*ipLinkPrototype))
+		err = json.Unmarshal(o.Data, jsonPrimitive.(*ipLinkPrototype)) // todo move lower
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
 		jsonPrimitive = new(staticRoutePrototype)
-		err = json.Unmarshal(o.Data, jsonPrimitive.(*staticRoutePrototype))
+		err = json.Unmarshal(o.Data, jsonPrimitive.(*staticRoutePrototype)) // todo move lower
 	//case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
 	//	primitive = new(CustomStaticRoute)
 	//case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
@@ -88,7 +95,7 @@ func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path
 			return nil
 		}
 
-		sdkPrimitive := primitive.SdkPrimitive(ctx, path.AtListIndex(i), diags)
+		sdkPrimitive := primitive.ToSdkPrimitive(ctx, path.AtListIndex(i), diags)
 		if diags.HasError() {
 			return nil
 		}
@@ -96,5 +103,51 @@ func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path
 		result[i] = sdkPrimitive
 	}
 
+	return result
+}
+
+func PrimitiveFromSdk(ctx context.Context, in *apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) Primitive {
+	var primitive Primitive
+
+	switch in.Attributes.PolicyTypeName() {
+	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
+		primitive = new(VnSingle)
+	//case apstra.CtPrimitivePolicyTypeNameAttachMultipleVLAN:
+	//	jsonPrimitive = new(VnMultiple)
+	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
+		primitive = new(IpLink)
+	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
+		primitive = new(StaticRoute)
+		//case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
+		//	jsonPrimitive = new(CustomStaticRoute)
+		//case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
+		//	jsonPrimitive = new(BgpPeeringIpEndpoint)
+		//case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
+		//	jsonPrimitive = new(BgpPeeringGenericSystem)
+		//case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
+		//	jsonPrimitive = new(DynamicBgpPeering)
+		//case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
+		//	jsonPrimitive = new(RoutingPolicy)
+		//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
+		//	jsonPrimitive = new(RoutingZoneConstraint)
+	}
+
+	primitive.loadSdkPrimitive(ctx, *in, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	return primitive
+}
+
+func SdkPrimitivesToJsonStrings(ctx context.Context, in []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) []attr.Value {
+	result := make([]attr.Value, len(in))
+	for i := range in {
+		p := PrimitiveFromSdk(ctx, in[i], diags)
+		result[i] = types.StringValue(p.Marshal(ctx, diags))
+		if diags.HasError() {
+			return nil
+		}
+	}
 	return result
 }
