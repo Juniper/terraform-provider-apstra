@@ -35,9 +35,9 @@ type tfCfgPrimitive struct {
 	Data          json.RawMessage `json:"data"`
 }
 
-// Rehydrate expands the tfCfgPrimitive (a type with raw json) into a type
+// rehydrate expands the tfCfgPrimitive (a type with raw json) into a type
 // specific implementation of JsonPrimitive. // todo take ctx and diags
-func (o tfCfgPrimitive) Rehydrate() (JsonPrimitive, error) { // todo make private
+func (o tfCfgPrimitive) rehydrate() (JsonPrimitive, error) { // todo make private
 	var pType apstra.CtPrimitivePolicyTypeName
 	err := pType.FromString(o.PrimitiveType)
 	if err != nil {
@@ -89,7 +89,7 @@ func ChildPrimitivesFromListOfJsonStrings(ctx context.Context, in []string, path
 			return nil
 		}
 
-		primitive, err := rp.Rehydrate() // todo rename jsonPrimitive
+		primitive, err := rp.rehydrate() // todo rename jsonPrimitive
 		if err != nil {
 			diags.AddAttributeError(path.AtListIndex(i), "failed parsing primitive", err.Error())
 			return nil
