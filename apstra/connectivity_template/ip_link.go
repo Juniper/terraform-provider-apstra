@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ Primitive = &IpLink{}
@@ -130,39 +131,25 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 }
 
 func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	switch attributes := in.Attributes.(type) {
-	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink:
-		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
-		if diags.HasError() {
-			return
-		}
-	default:
+	attributes, ok := in.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink)
+	if !ok {
 		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %T", in))
 		return
 	}
 
-	o.loadSdkPrimitiveChildren(ctx, in.Subpolicies, diags)
-	if diags.HasError() {
-		return
+	if attributes.SecurityZone != nil {
+		o.RoutingZoneId = types.StringValue(attributes.SecurityZone.String())
+	} else {
+		o.RoutingZoneId = types.StringNull()
 	}
-}
-
-func (o *IpLink) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink, _ *diag.Diagnostics) {
-	routingZone := types.StringNull()
-	if in.SecurityZone != nil {
-		routingZone = types.StringValue(in.SecurityZone.String())
+	if attributes.Vlan != nil {
+		o.VlanId = types.Int64Value(int64(*attributes.Vlan))
+	} else {
+		o.VlanId = types.Int64Null()
 	}
-
-	o.RoutingZoneId = routingZone
-	o.VlanId = types.Int64Value(int64(*in.Vlan))
-	o.Ipv4AddressingType = types.StringValue(in.IPv4AddressingType.String())
-	o.Ipv6AddressingType = types.StringValue(in.IPv6AddressingType.String())
-}
-
-// loadSdkPrimitiveChildren imports the child policies into o.Children as JSON strings
-func (o *IpLink) loadSdkPrimitiveChildren(ctx context.Context, in []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	children := SdkPrimitivesToJsonStrings(ctx, in, diags)
-	o.Children = types.SetValueMust(types.StringType, children)
+	o.Ipv4AddressingType = types.StringValue(attributes.IPv4AddressingType.String())
+	o.Ipv6AddressingType = types.StringValue(attributes.IPv6AddressingType.String())
+	o.Children = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}

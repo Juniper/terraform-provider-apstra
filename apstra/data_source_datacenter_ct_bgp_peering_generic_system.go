@@ -37,7 +37,7 @@ func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) Read(ctx context.Context
 		return
 	}
 
-	config.Primitive = types.StringValue(string(rendered))
+	config.Primitive = types.StringValue(rendered)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

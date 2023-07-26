@@ -66,6 +66,9 @@ func (o *resourceDatacenterConnectivityTemplate) Create(ctx context.Context, req
 
 	// create an API request
 	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// send the request to Apstra
 	err = bp.CreateConnectivityTemplate(ctx, request)

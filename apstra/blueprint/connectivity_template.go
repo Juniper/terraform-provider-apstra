@@ -135,7 +135,7 @@ func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.Conne
 
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags) // safe to ignore diagnostic result here
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)   // safe to ignore diagnostic result here
-	o.Primitives = types.SetValueMust(types.StringType, oPrimitives)
+	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)            // safe to ignore diagnostic here
+	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)              // safe to ignore diagnostic here
+	o.Primitives = utils.SetValueOrNull(ctx, types.StringType, oPrimitives, diags) // safe to ignore diagnostic here
 }
