@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,7 +25,7 @@ type IpLink struct {
 	Ipv4AddressingType types.String `tfsdk:"ipv4_addressing_type"`
 	Ipv6AddressingType types.String `tfsdk:"ipv6_addressing_type"`
 	Primitive          types.String `tfsdk:"primitive"`
-	Children           types.List   `tfsdk:"children"`
+	Children           types.Set    `tfsdk:"children"`
 }
 
 func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -69,11 +70,12 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 				"Template JsonPrimitive data source",
 			Computed: true,
 		},
-		"children": dataSourceSchema.ListAttribute{
-			MarkdownDescription: "A list of JSON strings describing Connectivity Template Primitives " +
+		"children": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of JSON strings describing Connectivity Template Primitives " +
 				"which are children of this Connectivity Template JsonPrimitive. Use the `primitive` " +
 				"attribute of other Connectivity Template Primitives data sources here.",
 			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
 			Optional:    true,
 		},
 	}
@@ -160,7 +162,7 @@ func (o *IpLink) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.Connec
 // loadSdkPrimitiveChildren imports the child policies into o.Children as JSON strings
 func (o *IpLink) loadSdkPrimitiveChildren(ctx context.Context, in []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
 	children := SdkPrimitivesToJsonStrings(ctx, in, diags)
-	o.Children = types.ListValueMust(types.StringType, children)
+	o.Children = types.SetValueMust(types.StringType, children)
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}

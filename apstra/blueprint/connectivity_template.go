@@ -3,7 +3,6 @@ package blueprint
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -23,7 +22,7 @@ type ConnectivityTemplate struct {
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	Tags        types.Set    `tfsdk:"tags"`
-	Primitives  types.List   `tfsdk:"primitives"`
+	Primitives  types.Set    `tfsdk:"primitives"`
 }
 
 func (o ConnectivityTemplate) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -54,11 +53,11 @@ func (o ConnectivityTemplate) ResourceAttributes() map[string]resourceSchema.Att
 			Optional:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
-		"primitives": resourceSchema.ListAttribute{
-			MarkdownDescription: "List of Connectivity Template Primitives expressed as JSON strings.",
+		"primitives": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Connectivity Template Primitives expressed as JSON strings.",
 			ElementType:         types.StringType,
 			Required:            true,
-			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -138,5 +137,5 @@ func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.Conne
 	o.Name = types.StringValue(in.Label)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags) // safe to ignore diagnostic result here
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)   // safe to ignore diagnostic result here
-	o.Primitives = types.ListValueMust(types.StringType, oPrimitives)
+	o.Primitives = types.SetValueMust(types.StringType, oPrimitives)
 }
