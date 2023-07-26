@@ -13,7 +13,7 @@ var _ datasource.DataSource = &dataSourceDatacenterCtBgpPeeringGenericSystem{}
 type dataSourceDatacenterCtBgpPeeringGenericSystem struct{}
 
 func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_bgp_peering_generic_system"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_ct_bgp_peering_generic_system"
 }
 
 func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
