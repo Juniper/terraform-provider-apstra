@@ -17,9 +17,7 @@ At least one optional attribute is required. It is incumbent on the user to ensu
 ```terraform
 # This example uses the 'apstra_templates' data source to create
 # a list of template IDs of all evpn-enabled pod-based templates.
-#
 # The IDs are used to pull full details about each of those templates.
-#
 # Finally a report is ouput indicating the name associated with
 # each ID.
 

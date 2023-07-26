@@ -1,9 +1,10 @@
-# The following example creates a VXLAN Virtual Network and makes it available
-# on 3 switches in rack "a" and one switch in rack "b".
+# The following example creates a VXLAN Virtual Network and makes it
+# available on 3 switches in rack "a" and one switch in rack "b".
 #
-# Note that computing the 'bindings' data requires knowledge of the topological
-# relationship between leaf and access switches, ESI/MLAG redundancy group
-# relationships and graph db node IDs of switch and group nodes.
+# Note that computing the 'bindings' data requires knowledge of the
+# topological relationship between leaf and access switches, ESI/MLAG
+# redundancy group relationships and graph db node IDs of switch and
+# group nodes.
 #
 # Users are encouraged to use the `apstra_datacenter_systems`
 # and `apstra_datacenter_virtual_network_binding_constructor` data sources to
