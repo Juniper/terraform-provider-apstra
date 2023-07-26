@@ -80,7 +80,11 @@ func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityT
 }
 
 func (o *VnSingle) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan, _ *diag.Diagnostics) {
-	o.VnId = types.StringValue(in.VnNodeId.String())
+	if in.VnNodeId != nil {
+		o.VnId = types.StringValue(in.VnNodeId.String())
+	} else {
+		o.VnId = types.StringNull()
+	}
 	o.Tagged = types.BoolValue(in.Tagged)
 }
 
