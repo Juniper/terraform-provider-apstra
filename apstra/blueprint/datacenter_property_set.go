@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/utils"
@@ -83,6 +85,7 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Property Set ID to be imported.",
