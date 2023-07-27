@@ -86,6 +86,10 @@ func (o ConnectivityTemplate) Request(ctx context.Context, diags *diag.Diagnosti
 		Subpolicies: subpolicies,
 		Tags:        tags,
 	}
+	if !o.Id.IsNull() {
+		id := apstra.ObjectId(o.Id.ValueString())
+		ct.Id = &id
+	}
 	err := ct.SetIds()
 	if err != nil {
 		diags.AddError("failed to set CT IDs", err.Error())

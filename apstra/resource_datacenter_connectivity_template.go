@@ -137,7 +137,6 @@ func (o *resourceDatacenterConnectivityTemplate) Update(ctx context.Context, req
 		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
-	_ = bp
 
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
@@ -145,6 +144,19 @@ func (o *resourceDatacenterConnectivityTemplate) Update(ctx context.Context, req
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
+		return
+	}
+
+	// create an API request
+	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// send the request to Apstra
+	err = bp.UpdateConnectivityTemplate(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create Connectivity Template", err.Error())
 		return
 	}
 
