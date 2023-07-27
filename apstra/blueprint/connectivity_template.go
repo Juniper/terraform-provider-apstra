@@ -102,11 +102,6 @@ func (o ConnectivityTemplate) Request(ctx context.Context, diags *diag.Diagnosti
 }
 
 func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
-	tags := make([]string, len(in.Tags))
-	for i, tag := range in.Tags {
-		tags[i] = tag
-	}
-
 	// JSON string primitives already part of this object (state)
 	oPrimitives := o.Primitives.Elements()
 
@@ -140,6 +135,6 @@ func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.Conne
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)            // safe to ignore diagnostic here
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)              // safe to ignore diagnostic here
+	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)           // safe to ignore diagnostic here
 	o.Primitives = utils.SetValueOrNull(ctx, types.StringType, oPrimitives, diags) // safe to ignore diagnostic here
 }
