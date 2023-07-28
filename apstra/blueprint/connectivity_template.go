@@ -86,10 +86,14 @@ func (o ConnectivityTemplate) Request(ctx context.Context, diags *diag.Diagnosti
 		Subpolicies: subpolicies,
 		Tags:        tags,
 	}
-	if !o.Id.IsNull() {
+
+	// try to set the root batch policy ID from o.Id
+	if !o.Id.IsUnknown() {
 		id := apstra.ObjectId(o.Id.ValueString())
 		ct.Id = &id
 	}
+
+	// set remaining policy IDs
 	err := ct.SetIds()
 	if err != nil {
 		diags.AddError("failed to set CT IDs", err.Error())
