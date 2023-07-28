@@ -1,16 +1,21 @@
 package connectivitytemplate
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"sort"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ Primitive = &VnSingle{}
@@ -19,6 +24,7 @@ type VnSingle struct {
 	VnId      types.String `tfsdk:"vn_id"`
 	Tagged    types.Bool   `tfsdk:"tagged"`
 	Primitive types.String `tfsdk:"primitive"`
+	Children  types.Set    `tfsdk:"children"`
 }
 
 func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -39,13 +45,35 @@ func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 				"Template JsonPrimitive data source",
 			Computed: true,
 		},
+		"children": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of JSON strings describing Connectivity Template Primitives " +
+				"which are children of this Connectivity Template JsonPrimitive. Use the `primitive` " +
+				"attribute of other Connectivity Template Primitives data sources here.",
+			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
+			Optional:    true,
+		},
 	}
 }
 
-func (o VnSingle) Marshal(_ context.Context, diags *diag.Diagnostics) string {
+func (o VnSingle) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
+	var children []string
+	diags.Append(o.Children.ElementsAs(ctx, &children, false)...)
+	if diags.HasError() {
+		return ""
+	}
+
+	// sort the children by their SHA1 sums for easier comparison of nested strings
+	sort.Slice(children, func(i, j int) bool {
+		sum1 := sha1.Sum([]byte(children[i]))
+		sum2 := sha1.Sum([]byte(children[j]))
+		return bytes.Compare(sum1[:], sum2[:]) >= 0
+	})
+
 	obj := vnSinglePrototype{
-		VnId:   o.VnId.ValueString(),
-		Tagged: o.Tagged.ValueBool(),
+		VnId:     o.VnId.ValueString(),
+		Tagged:   o.Tagged.ValueBool(),
+		Children: children,
 	}
 
 	data, err := json.Marshal(&obj)
@@ -67,32 +95,27 @@ func (o VnSingle) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 }
 
 func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	switch attributes := in.Attributes.(type) {
-	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan:
-		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
-		if diags.HasError() {
-			return
-		}
-	default:
+	attributes, ok := in.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan)
+	if !ok {
 		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %T", in))
 		return
 	}
-}
 
-func (o *VnSingle) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan, _ *diag.Diagnostics) {
-	if in.VnNodeId != nil {
-		o.VnId = types.StringValue(in.VnNodeId.String())
+	if attributes.VnNodeId != nil {
+		o.VnId = types.StringValue(attributes.VnNodeId.String())
 	} else {
 		o.VnId = types.StringNull()
 	}
-	o.Tagged = types.BoolValue(in.Tagged)
+	o.Tagged = types.BoolValue(attributes.Tagged)
+	o.Children = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 }
 
 var _ JsonPrimitive = &vnSinglePrototype{}
 
 type vnSinglePrototype struct {
-	VnId   string `json:"vn_id"`
-	Tagged bool   `json:"tagged"`
+	VnId     string   `json:"vn_id"`
+	Tagged   bool     `json:"tagged"`
+	Children []string `json:"children,omitempty"`
 }
 
 func (o vnSinglePrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
@@ -109,11 +132,16 @@ func (o vnSinglePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, d
 		return nil
 	}
 
+	children := ChildPrimitivesFromListOfJsonStrings(ctx, o.Children, path, diags)
+	if diags.HasError() {
+		return nil
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
 		Attributes:  attributes,
-		Subpolicies: nil, // this primitive has no children
-		BatchId:     nil, // this primitive has no children
+		Subpolicies: children,
+		BatchId:     nil, // calculated later
 		PipelineId:  nil, // calculated later
 	}
 }
