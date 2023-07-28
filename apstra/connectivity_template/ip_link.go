@@ -1,7 +1,9 @@
 package connectivitytemplate
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -13,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"sort"
 	"strings"
 	"terraform-provider-apstra/apstra/design"
 	"terraform-provider-apstra/apstra/utils"
@@ -88,6 +91,13 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 	if diags.HasError() {
 		return ""
 	}
+
+	// sort the children by their SHA1 sums for easier comparison of nested strings
+	sort.Slice(children, func(i, j int) bool {
+		sum1 := sha1.Sum([]byte(children[i]))
+		sum2 := sha1.Sum([]byte(children[j]))
+		return bytes.Compare(sum1[:], sum2[:]) >= 0
+	})
 
 	obj := ipLinkPrototype{
 		RoutingZoneId:      o.RoutingZoneId.ValueString(),

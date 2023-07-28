@@ -1,7 +1,9 @@
 package connectivitytemplate
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -15,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math"
+	"sort"
 	"strings"
 	"terraform-provider-apstra/apstra/utils"
 )
@@ -209,6 +212,14 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 	if diags.HasError() {
 		return ""
 	}
+
+	// sort the children by their SHA1 sums for easier comparison of nested strings
+	sort.Slice(children, func(i, j int) bool {
+		sum1 := sha1.Sum([]byte(children[i]))
+		sum2 := sha1.Sum([]byte(children[j]))
+		return bytes.Compare(sum1[:], sum2[:]) >= 0
+	})
+
 	obj.Children = children
 
 	data, err := json.Marshal(&obj)
