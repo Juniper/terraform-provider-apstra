@@ -63,8 +63,8 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 		jsonPrimitive = new(bgpPeeringGenericSystemPrototype)
 	//case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
 	//	jsonPrimitive = new(dynamicBgpPeeringPrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
-	//	jsonPrimitive = new(routingPolicyPrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
+		jsonPrimitive = new(routingPolicyPrototype)
 	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
 	//	jsonPrimitive = new(routingZoneConstraintPrototype)
 	default:
@@ -126,8 +126,8 @@ func PrimitiveFromSdk(ctx context.Context, in *apstra.ConnectivityTemplatePrimit
 		primitive = new(BgpPeeringGenericSystem)
 	//case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
 	//	primitive = new(DynamicBgpPeering)
-	//case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
-	//	primitive = new(RoutingPolicy)
+	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
+		primitive = new(RoutingPolicy)
 	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
 	//	primitive = new(RoutingZoneConstraint)
 	default:
