@@ -11,7 +11,27 @@
 # - as a child of another Primitive (as constrained by the accepts/produces
 #   relationship between Primitives)
 
-# Declare a "BGP Peering (Generic System)" Connectivity Template Primitive:
+# Look up the details of the desired routing policy
+data "apstra_datacenter_routing_policy" "default" {
+  blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
+  name         = "Default_immutable"
+}
+
+# Declare a "Routing Policy" Connectivity Template Primitive:
+data "apstra_datacenter_ct_routing_policy" "default" {
+  routing_policy_id = data.apstra_datacenter_ct_routing_policy.default.id
+}
+
+# This data source's `primitive` attribute produces JSON like this:
+# {
+#   "type": "AttachExistingRoutingPolicy",
+#   "data": {
+#     "routing_policy_id": "Xd5Uoo8qUjCqhihGafQ"
+#   }
+# }
+
+# Declare a "BGP Peering (Generic System)" Connectivity Template Primitive
+# which uses the "Routing Policy" primitive:
 data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
   ipv4_afi_enabled     = true
   ipv6_afi_enabled     = true
@@ -20,11 +40,15 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
   bfd_enabled          = true
   ttl                  = 1
   password             = "big secret"
+  children = [
+    data.apstra_datacenter_routing_policy.default.primitive
+  ]
 }
 
-# This data source's `primitive` attribute produces JSON like this:
+# The BGP Peering data source's `primitive` field has the routing policy
+# data source (child primitive) as an embedded string:
 # {
-#   "type": "AttachLogicalLink",
+#   "type": "AttachBgpOverSubinterfacesOrSvi",
 #   "data": {
 #     "ipv4_afi_enabled": true,
 #     "ipv6_afi_enabled": true,
@@ -39,7 +63,9 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 #     "neighbor_asn_dynamic": false,
 #     "peer_from_loopback": false,
 #     "peer_to": "interface_or_ip_endpoint",
-#     "children": null
+#     "children": [
+#       "{\"type\":\"AttachExistingRoutingPolicy\",\"data\":{\"routing_policy_id\":\"Xd5Uoo8qUjCqhihGafQ\"}}"
+#     ]
 #   }
 # }
 
@@ -54,7 +80,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
   ]
 }
 
-# The IP Link data source's `primitive` field has the BGP data
+# The IP Link data source's `primitive` field has the primitive the BGP data
 # source (child primitive) as an embedded string:
 # {
 #   "type": "AttachLogicalLink",
@@ -65,7 +91,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
 #     "children": [
-#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":null}}"
+#       "{\"type\":\"AttachBgpOverSubinterfacesOrSvi\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":[\"{\\\"type\\\":\\\"AttachExistingRoutingPolicy\\\",\\\"data\\\":{\\\"routing_policy_id\\\":\\\"Xd5Uoo8qUjCqhihGafQ\\\"}}\"]}}"
 #     ]
 #   }
 # }
@@ -75,11 +101,11 @@ resource "apstra_datacenter_connectivity_template" "t" {
   blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
   name         = "test-net-handoff"
   description  = "ip handoff with static routes to test nets"
-  tags         = [
+  tags = [
     "test",
     "terraform",
   ]
-  primitives   = [
-    data.apstra_datacenter_ct_ip_link.ip_link_with_bgp.primitive
+  primitives = [
+    data.apstra_datacenter_ct_ip_link.ip_link_with_static_routes.primitive
   ]
 }

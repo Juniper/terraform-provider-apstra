@@ -1,11 +1,11 @@
 ---
-page_title: "apstra_datacenter_ct_bgp_peering_generic_system Data Source - terraform-provider-apstra"
+page_title: "apstra_datacenter_ct_routing_policy Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the children attribute of a Different Connectivity Template JsonPrimitive.
 ---
 
-# apstra_datacenter_ct_bgp_peering_generic_system (Data Source)
+# apstra_datacenter_ct_routing_policy (Data Source)
 
 This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.
 
@@ -25,7 +25,27 @@ This data source composes a Connectivity Template Primitive as a JSON string, su
 # - as a child of another Primitive (as constrained by the accepts/produces
 #   relationship between Primitives)
 
-# Declare a "BGP Peering (Generic System)" Connectivity Template Primitive:
+# Look up the details of the desired routing policy
+data "apstra_datacenter_routing_policy" "default" {
+  blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
+  name         = "Default_immutable"
+}
+
+# Declare a "Routing Policy" Connectivity Template Primitive:
+data "apstra_datacenter_ct_routing_policy" "default" {
+  routing_policy_id = data.apstra_datacenter_ct_routing_policy.default.id
+}
+
+# This data source's `primitive` attribute produces JSON like this:
+# {
+#   "type": "AttachExistingRoutingPolicy",
+#   "data": {
+#     "routing_policy_id": "Xd5Uoo8qUjCqhihGafQ"
+#   }
+# }
+
+# Declare a "BGP Peering (Generic System)" Connectivity Template Primitive
+# which uses the "Routing Policy" primitive:
 data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
   ipv4_afi_enabled     = true
   ipv6_afi_enabled     = true
@@ -34,11 +54,15 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
   bfd_enabled          = true
   ttl                  = 1
   password             = "big secret"
+  children = [
+    data.apstra_datacenter_routing_policy.default.primitive
+  ]
 }
 
-# This data source's `primitive` attribute produces JSON like this:
+# The BGP Peering data source's `primitive` field has the routing policy
+# data source (child primitive) as an embedded string:
 # {
-#   "type": "AttachLogicalLink",
+#   "type": "AttachBgpOverSubinterfacesOrSvi",
 #   "data": {
 #     "ipv4_afi_enabled": true,
 #     "ipv6_afi_enabled": true,
@@ -53,7 +77,9 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 #     "neighbor_asn_dynamic": false,
 #     "peer_from_loopback": false,
 #     "peer_to": "interface_or_ip_endpoint",
-#     "children": null
+#     "children": [
+#       "{\"type\":\"AttachExistingRoutingPolicy\",\"data\":{\"routing_policy_id\":\"Xd5Uoo8qUjCqhihGafQ\"}}"
+#     ]
 #   }
 # }
 
@@ -68,7 +94,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
   ]
 }
 
-# The IP Link data source's `primitive` field has the BGP data
+# The IP Link data source's `primitive` field has the primitive the BGP data
 # source (child primitive) as an embedded string:
 # {
 #   "type": "AttachLogicalLink",
@@ -79,7 +105,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
 #     "children": [
-#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":null}}"
+#       "{\"type\":\"AttachBgpOverSubinterfacesOrSvi\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":[\"{\\\"type\\\":\\\"AttachExistingRoutingPolicy\\\",\\\"data\\\":{\\\"routing_policy_id\\\":\\\"Xd5Uoo8qUjCqhihGafQ\\\"}}\"]}}"
 #     ]
 #   }
 # }
@@ -89,12 +115,12 @@ resource "apstra_datacenter_connectivity_template" "t" {
   blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
   name         = "test-net-handoff"
   description  = "ip handoff with static routes to test nets"
-  tags         = [
+  tags = [
     "test",
     "terraform",
   ]
-  primitives   = [
-    data.apstra_datacenter_ct_ip_link.ip_link_with_bgp.primitive
+  primitives = [
+    data.apstra_datacenter_ct_ip_link.ip_link_with_static_routes.primitive
   ]
 }
 ```
@@ -102,22 +128,9 @@ resource "apstra_datacenter_connectivity_template" "t" {
 <!-- schema generated by tfplugindocs -->
 ## Schema
 
-### Optional
+### Required
 
-- `bfd_enabled` (Boolean) Enable BFD.
-- `children` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template JsonPrimitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
-- `hold_time` (Number) BGP hold time (seconds).
-- `ipv4_addressing_type` (String) One of `none`, `addressed` (or omit)
-- `ipv4_afi_enabled` (Boolean) IPv4 Address Family Identifier
-- `ipv6_addressing_type` (String) One of `none`, `addressed`, `link_local` (or omit)
-- `ipv6_afi_enabled` (Boolean) IPv6 Address Family Identifier
-- `keepalive_time` (Number) BGP keepalive time (seconds).
-- `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
-- `neighbor_asn_dynamic` (Boolean) Default behavior is `static`
-- `password` (String)
-- `peer_from_loopback` (Boolean) Enable to peer from loopback interface. Default behavior peers from physical interface.
-- `peer_to` (String) One of `loopback`, `interface_or_ip_endpoint`, `interface_or_shared_ip_endpoint` (or omit)
-- `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+- `routing_policy_id` (String) Apstra Object ID of Routing Policy to be attached.
 
 ### Read-Only
 
