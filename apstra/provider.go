@@ -220,7 +220,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// Create the Apstra client.
-	client, err := clientCfg.NewClient()
+	client, err := clientCfg.NewClient(ctx)
 	if err != nil {
 		ver := p.Version
 		if ver == "0.0.0" {

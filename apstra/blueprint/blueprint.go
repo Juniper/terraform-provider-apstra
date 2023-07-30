@@ -5,15 +5,20 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	apstraplanmodifier "terraform-provider-apstra/apstra/apstra_plan_modifier"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type Blueprint struct {
@@ -32,6 +37,8 @@ type Blueprint struct {
 	Version               types.Int64  `tfsdk:"version"`
 	BuildWarningsCount    types.Int64  `tfsdk:"build_warnings_count"`
 	BuildErrorsCount      types.Int64  `tfsdk:"build_errors_count"`
+	EsiMacMsb             types.Int64  `tfsdk:"esi_mac_msb"`
+	Ipv6Applications      types.Bool   `tfsdk:"ipv6_applications"`
 }
 
 func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -105,6 +112,17 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		"build_errors_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of build errors.",
 			Computed:            true,
+		},
+		"esi_mac_msb": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "ESI MAC address most significant byte.",
+			Computed:            true,
+		},
+		"ipv6_applications": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
+				"connectivity points. This adds resource requirements and device configurations, " +
+				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
+				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links.",
+			Computed: true,
 		},
 	}
 }
@@ -181,6 +199,31 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Number of build errors.",
 			Computed:            true,
 		},
+		"esi_mac_msb": resourceSchema.Int64Attribute{
+			MarkdownDescription: "ESI MAC address most significant byte. Must be an even number " +
+				"between 0 and 254 inclusive.",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.AtLeast(0),
+				int64validator.AtMost(254),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
+		"ipv6_applications": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
+				"connectivity points. This adds resource requirements and device configurations, " +
+				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
+				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot " +
+				"be disabled without re-creating the Blueprint.",
+			Optional: true,
+			Computed: true,
+			PlanModifiers: []planmodifier.Bool{boolplanmodifier.RequiresReplaceIf(
+				apstraplanmodifier.BoolRequiresReplaceWhenSwitchingTo(false),
+				"Switching from \"false\" to \"true\" requires the Blueprint to be replaced",
+				"Switching from `false` to `true` requires the Blueprint to be replaced",
+			)},
+		},
 	}
 }
 
@@ -210,11 +253,27 @@ func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *apstra.C
 	}
 }
 
+func (o Blueprint) FabricAddressingRequest(_ context.Context, _ *diag.Diagnostics) *apstra.TwoStageL3ClosFabricAddressingPolicy {
+	if !utils.Known(o.Ipv6Applications) && !utils.Known(o.EsiMacMsb) {
+		return nil
+	}
+
+	var result apstra.TwoStageL3ClosFabricAddressingPolicy
+
+	if utils.Known(o.Ipv6Applications) {
+		result.Ipv6Enabled = o.Ipv6Applications.ValueBool()
+	}
+
+	if utils.Known(o.EsiMacMsb) {
+		result.EsiMacMsb = uint8(o.EsiMacMsb.ValueInt64())
+	}
+
+	return &result
+}
+
 func (o *Blueprint) LoadApiData(_ context.Context, in *apstra.BlueprintStatus, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
-	o.TemplateId = types.StringNull()
-	o.FabricAddressing = types.StringNull()
 	o.Status = types.StringValue(in.Status)
 	o.SuperspineCount = types.Int64Value(int64(in.SuperspineCount))
 	o.SpineCount = types.Int64Value(int64(in.SpineCount))
@@ -228,11 +287,14 @@ func (o *Blueprint) LoadApiData(_ context.Context, in *apstra.BlueprintStatus, _
 	o.BuildWarningsCount = types.Int64Value(int64(in.BuildWarningsCount))
 }
 
-func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	// create a client specific to the reference design
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.Id.ValueString()))
-	if err != nil {
-		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.Id), err.Error())
+func (o *Blueprint) LoadFabricAddressingPolicy(_ context.Context, in *apstra.TwoStageL3ClosFabricAddressingPolicy, _ *diag.Diagnostics) {
+	o.EsiMacMsb = types.Int64Value(int64(in.EsiMacMsb))
+	o.Ipv6Applications = types.BoolValue(in.Ipv6Enabled)
+}
+
+func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3ClosClient, state *Blueprint, diags *diag.Diagnostics) {
+	if o.Name.Equal(state.Name) {
+		// nothing to do
 		return
 	}
 
@@ -244,7 +306,7 @@ func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *d
 		Nodes map[string]node `json:"nodes"`
 	}{}
 
-	err = bpClient.GetNodes(ctx, apstra.NodeTypeMetadata, response)
+	err := bpClient.GetNodes(ctx, apstra.NodeTypeMetadata, response)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf(errApiGetWithTypeAndId, "Blueprint Node", bpClient.Id()),
@@ -267,6 +329,29 @@ func (o *Blueprint) SetName(ctx context.Context, client *apstra.Client, diags *d
 			fmt.Sprintf(errApiPatchWithTypeAndId, bpClient.Id(), nodeId),
 			err.Error(),
 		)
+		return
+	}
+}
+
+func (o *Blueprint) SetFabricAddressingPolicy(ctx context.Context, bpClient *apstra.TwoStageL3ClosClient, state *Blueprint, diags *diag.Diagnostics) {
+	fapRequest := o.FabricAddressingRequest(ctx, diags)
+	if diags.HasError() {
+		return
+	}
+
+	if fapRequest == nil {
+		// nothing to do
+		return
+	}
+
+	if state != nil && o.EsiMacMsb.Equal(state.EsiMacMsb) && o.Ipv6Applications.Equal(state.EsiMacMsb) {
+		// nothing to do
+		return
+	}
+
+	err := bpClient.SetFabricAddressingPolicy(ctx, fapRequest)
+	if err != nil {
+		diags.AddError("failed setting blueprint fabric addressing policy", err.Error())
 		return
 	}
 }
