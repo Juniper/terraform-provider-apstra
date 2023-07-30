@@ -100,7 +100,9 @@ resource "apstra_blueprint_deployment" "deploy" {
 
 ### Optional
 
+- `esi_mac_msb` (Number) ESI MAC address most significant byte. Must be an even number between 0 and 254 inclusive.
 - `fabric_addressing` (String) Addressing scheme for both superspine/spine and spine/leaf  links. Only applicable to Apstra versions 4.1.1 and later.
+- `ipv6_applications` (Boolean) Enables support for IPv6 virtual networks and IPv6 external connectivity points. This adds resource requirements and device configurations, including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled without re-creating the Blueprint.
 
 ### Read-Only
 
