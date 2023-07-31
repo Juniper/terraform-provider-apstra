@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_ct_virtual_network_single Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the children attribute of a Different Connectivity Template JsonPrimitive.
+  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the child_primitives attribute of a Different Connectivity Template Primitive.
 ---
 
 # apstra_datacenter_ct_virtual_network_single (Data Source)
 
-This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.
+This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.
 
 ## Example Usage
 
@@ -64,7 +64,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 
 ### Optional
 
-- `children` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template JsonPrimitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
+- `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `tagged` (Boolean) Indicates whether the VN should mark frames belonging to the VN with 802.1Q tags. Default: `false`
 
 ### Read-Only

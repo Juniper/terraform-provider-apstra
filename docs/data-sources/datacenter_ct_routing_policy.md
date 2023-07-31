@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_ct_routing_policy Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the children attribute of a Different Connectivity Template JsonPrimitive.
+  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the child_primitives attribute of a Different Connectivity Template Primitive.
 ---
 
 # apstra_datacenter_ct_routing_policy (Data Source)
 
-This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.
+This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.
 
 ## Example Usage
 
@@ -54,7 +54,7 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
   bfd_enabled          = true
   ttl                  = 1
   password             = "big secret"
-  children = [
+  child_primitives = [
     data.apstra_datacenter_routing_policy.default.primitive
   ]
 }
@@ -77,7 +77,7 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 #     "neighbor_asn_dynamic": false,
 #     "peer_from_loopback": false,
 #     "peer_to": "interface_or_ip_endpoint",
-#     "children": [
+#     "child_primitives": [
 #       "{\"type\":\"AttachExistingRoutingPolicy\",\"data\":{\"routing_policy_id\":\"Xd5Uoo8qUjCqhihGafQ\"}}"
 #     ]
 #   }
@@ -89,7 +89,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
   vlan_id              = 3
   ipv4_addressing_type = "numbered"
   ipv6_addressing_type = "link_local"
-  children = [
+  child_primitives = [
     data.apstra_datacenter_ct_bgp_peering_generic_system.bgp_server.primitive,
   ]
 }
@@ -104,8 +104,8 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 #     "vlan_id": 3,
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
-#     "children": [
-#       "{\"type\":\"AttachBgpOverSubinterfacesOrSvi\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":[\"{\\\"type\\\":\\\"AttachExistingRoutingPolicy\\\",\\\"data\\\":{\\\"routing_policy_id\\\":\\\"Xd5Uoo8qUjCqhihGafQ\\\"}}\"]}}"
+#     "child_primitives": [
+#       "{\"type\":\"AttachBgpOverSubinterfacesOrSvi\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"child_primitives\":[\"{\\\"type\\\":\\\"AttachExistingRoutingPolicy\\\",\\\"data\\\":{\\\"routing_policy_id\\\":\\\"Xd5Uoo8qUjCqhihGafQ\\\"}}\"]}}"
 #     ]
 #   }
 # }
@@ -134,4 +134,4 @@ resource "apstra_datacenter_connectivity_template" "t" {
 
 ### Read-Only
 
-- `primitive` (String) JSON output for use in the `primitives` field of an `apstra_datacenter_connectivity_template` resource or a different Connectivity Template JsonPrimitive data source
+- `primitive` (String) JSON output for use in the `primitives` field of an `apstra_datacenter_connectivity_template` resource or a different Connectivity Template Primitive data source

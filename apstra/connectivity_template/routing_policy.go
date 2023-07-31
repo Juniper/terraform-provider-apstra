@@ -30,7 +30,7 @@ func (o RoutingPolicy) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 		"primitive": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "JSON output for use in the `primitives` field of an " +
 				"`apstra_datacenter_connectivity_template` resource or a different Connectivity " +
-				"Template JsonPrimitive data source",
+				"Template Primitive data source",
 			Computed: true,
 		},
 	}

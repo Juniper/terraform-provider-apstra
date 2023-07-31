@@ -21,10 +21,10 @@ import (
 var _ Primitive = &VnSingle{}
 
 type VnSingle struct {
-	VnId      types.String `tfsdk:"vn_id"`
-	Tagged    types.Bool   `tfsdk:"tagged"`
-	Primitive types.String `tfsdk:"primitive"`
-	Children  types.Set    `tfsdk:"children"`
+	VnId            types.String `tfsdk:"vn_id"`
+	Tagged          types.Bool   `tfsdk:"tagged"`
+	Primitive       types.String `tfsdk:"primitive"`
+	ChildPrimitives types.Set    `tfsdk:"child_primitives"`
 }
 
 func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -45,9 +45,9 @@ func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 				"Template JsonPrimitive data source",
 			Computed: true,
 		},
-		"children": dataSourceSchema.SetAttribute{
+		"child_primitives": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of JSON strings describing Connectivity Template Primitives " +
-				"which are children of this Connectivity Template JsonPrimitive. Use the `primitive` " +
+				"which are children of this Connectivity Template Primitive. Use the `primitive` " +
 				"attribute of other Connectivity Template Primitives data sources here.",
 			ElementType: types.StringType,
 			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
@@ -57,23 +57,23 @@ func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 }
 
 func (o VnSingle) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
-	var children []string
-	diags.Append(o.Children.ElementsAs(ctx, &children, false)...)
+	var childPrimitives []string
+	diags.Append(o.ChildPrimitives.ElementsAs(ctx, &childPrimitives, false)...)
 	if diags.HasError() {
 		return ""
 	}
 
-	// sort the children by their SHA1 sums for easier comparison of nested strings
-	sort.Slice(children, func(i, j int) bool {
-		sum1 := sha1.Sum([]byte(children[i]))
-		sum2 := sha1.Sum([]byte(children[j]))
+	// sort the childPrimitives by their SHA1 sums for easier comparison of nested strings
+	sort.Slice(childPrimitives, func(i, j int) bool {
+		sum1 := sha1.Sum([]byte(childPrimitives[i]))
+		sum2 := sha1.Sum([]byte(childPrimitives[j]))
 		return bytes.Compare(sum1[:], sum2[:]) >= 0
 	})
 
 	obj := vnSinglePrototype{
-		VnId:     o.VnId.ValueString(),
-		Tagged:   o.Tagged.ValueBool(),
-		Children: children,
+		VnId:            o.VnId.ValueString(),
+		Tagged:          o.Tagged.ValueBool(),
+		ChildPrimitives: childPrimitives,
 	}
 
 	data, err := json.Marshal(&obj)
@@ -107,15 +107,15 @@ func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityT
 		o.VnId = types.StringNull()
 	}
 	o.Tagged = types.BoolValue(attributes.Tagged)
-	o.Children = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 }
 
 var _ JsonPrimitive = &vnSinglePrototype{}
 
 type vnSinglePrototype struct {
-	VnId     string   `json:"vn_id"`
-	Tagged   bool     `json:"tagged"`
-	Children []string `json:"children,omitempty"`
+	VnId            string   `json:"vn_id"`
+	Tagged          bool     `json:"tagged"`
+	ChildPrimitives []string `json:"child_primitives,omitempty"`
 }
 
 func (o vnSinglePrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
@@ -132,7 +132,7 @@ func (o vnSinglePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, d
 		return nil
 	}
 
-	children := ChildPrimitivesFromListOfJsonStrings(ctx, o.Children, path, diags)
+	childPrimitives := ChildPrimitivesFromListOfJsonStrings(ctx, o.ChildPrimitives, path, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -140,7 +140,7 @@ func (o vnSinglePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, d
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
 		Attributes:  attributes,
-		Subpolicies: children,
+		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later
 		PipelineId:  nil, // calculated later
 	}

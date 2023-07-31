@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_ct_ip_link Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the children attribute of a Different Connectivity Template JsonPrimitive.
+  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the child_primitives attribute of a Different Connectivity Template Primitive.
 ---
 
 # apstra_datacenter_ct_ip_link (Data Source)
 
-This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.
+This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.
 
 ## Example Usage
 
@@ -49,14 +49,14 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_static_routes" {
   vlan_id              = 3
   ipv4_addressing_type = "numbered"
   ipv6_addressing_type = "link_local"
-  children = [
+  child_primitives = [
     data.apstra_datacenter_ct_static_route.test-net-1.primitive,
     data.apstra_datacenter_ct_static_route.test-net-2.primitive,
   ]
 }
 
 # The IP Link data source's `primitive` field has the primitives of two static
-# routes (children) as embedded strings:
+# routes (child_primitives) as embedded strings:
 # {
 #   "type": "AttachLogicalLink",
 #   "data": {
@@ -65,7 +65,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_static_routes" {
 #     "vlan_id": 3,
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
-#     "children": [
+#     "child_primitives": [
 #       "{\"type\":\"AttachStaticRoute\",\"data\":{\"network\":\"192.0.2.0/24\",\"share_ip_endpoint\":false}}",
 #       "{\"type\":\"AttachStaticRoute\",\"data\":{\"network\":\"198.51.100.0/24\",\"share_ip_endpoint\":false}}"
 #     ]
@@ -96,7 +96,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 
 ### Optional
 
-- `children` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template JsonPrimitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
+- `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `ipv4_addressing_type` (String) One of `numbered`, `none` (or omit)
 - `ipv6_addressing_type` (String) One of `link_local`, `numbered`, `none` (or omit)
 - `vlan_id` (Number) When set, selects the 802.1Q VLAN ID to use for the link's traffic. Omit for an untagged link.

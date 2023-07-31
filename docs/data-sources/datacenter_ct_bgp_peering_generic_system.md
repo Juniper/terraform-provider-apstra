@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_ct_bgp_peering_generic_system Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the children attribute of a Different Connectivity Template JsonPrimitive.
+  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the child_primitives attribute of a Different Connectivity Template Primitive.
 ---
 
 # apstra_datacenter_ct_bgp_peering_generic_system (Data Source)
 
-This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.
+This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.
 
 ## Example Usage
 
@@ -53,7 +53,7 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 #     "neighbor_asn_dynamic": false,
 #     "peer_from_loopback": false,
 #     "peer_to": "interface_or_ip_endpoint",
-#     "children": null
+#     "child_primitives": null
 #   }
 # }
 
@@ -63,7 +63,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
   vlan_id              = 3
   ipv4_addressing_type = "numbered"
   ipv6_addressing_type = "link_local"
-  children = [
+  child_primitives = [
     data.apstra_datacenter_ct_bgp_peering_generic_system.bgp_server.primitive,
   ]
 }
@@ -78,8 +78,8 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 #     "vlan_id": 3,
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
-#     "children": [
-#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":null}}"
+#     "child_primitives": [
+#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"child_primitives\":null}}"
 #     ]
 #   }
 # }
@@ -105,7 +105,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 ### Optional
 
 - `bfd_enabled` (Boolean) Enable BFD.
-- `children` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template JsonPrimitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
+- `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `hold_time` (Number) BGP hold time (seconds).
 - `ipv4_addressing_type` (String) One of `none`, `addressed` (or omit)
 - `ipv4_afi_enabled` (Boolean) IPv4 Address Family Identifier

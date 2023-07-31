@@ -39,7 +39,7 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 #     "neighbor_asn_dynamic": false,
 #     "peer_from_loopback": false,
 #     "peer_to": "interface_or_ip_endpoint",
-#     "children": null
+#     "child_primitives": null
 #   }
 # }
 
@@ -49,7 +49,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
   vlan_id              = 3
   ipv4_addressing_type = "numbered"
   ipv6_addressing_type = "link_local"
-  children = [
+  child_primitives = [
     data.apstra_datacenter_ct_bgp_peering_generic_system.bgp_server.primitive,
   ]
 }
@@ -64,8 +64,8 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 #     "vlan_id": 3,
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
-#     "children": [
-#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"children\":null}}"
+#     "child_primitives": [
+#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"child_primitives\":null}}"
 #     ]
 #   }
 # }

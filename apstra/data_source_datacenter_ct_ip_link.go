@@ -20,7 +20,7 @@ func (o *dataSourceDatacenterCtIpLink) Schema(_ context.Context, _ datasource.Sc
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source composes a Connectivity Template Primitive as a JSON string, " +
 			"suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` " +
-			"resource or the `children` attribute of a Different Connectivity Template JsonPrimitive.",
+			"resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.",
 		Attributes: connectivitytemplate.IpLink{}.DataSourceAttributes(),
 	}
 }

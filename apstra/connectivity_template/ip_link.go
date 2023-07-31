@@ -29,7 +29,7 @@ type IpLink struct {
 	Ipv4AddressingType types.String `tfsdk:"ipv4_addressing_type"`
 	Ipv6AddressingType types.String `tfsdk:"ipv6_addressing_type"`
 	Primitive          types.String `tfsdk:"primitive"`
-	Children           types.Set    `tfsdk:"children"`
+	ChildPrimitives    types.Set    `tfsdk:"child_primitives"`
 }
 
 func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -74,9 +74,9 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 				"Template JsonPrimitive data source",
 			Computed: true,
 		},
-		"children": dataSourceSchema.SetAttribute{
+		"child_primitives": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of JSON strings describing Connectivity Template Primitives " +
-				"which are children of this Connectivity Template JsonPrimitive. Use the `primitive` " +
+				"which are children of this Connectivity Template Primitive. Use the `primitive` " +
 				"attribute of other Connectivity Template Primitives data sources here.",
 			ElementType: types.StringType,
 			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
@@ -86,16 +86,16 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 }
 
 func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
-	var children []string
-	diags.Append(o.Children.ElementsAs(ctx, &children, false)...)
+	var childPrimitives []string
+	diags.Append(o.ChildPrimitives.ElementsAs(ctx, &childPrimitives, false)...)
 	if diags.HasError() {
 		return ""
 	}
 
-	// sort the children by their SHA1 sums for easier comparison of nested strings
-	sort.Slice(children, func(i, j int) bool {
-		sum1 := sha1.Sum([]byte(children[i]))
-		sum2 := sha1.Sum([]byte(children[j]))
+	// sort the childPrimitives by their SHA1 sums for easier comparison of nested strings
+	sort.Slice(childPrimitives, func(i, j int) bool {
+		sum1 := sha1.Sum([]byte(childPrimitives[i]))
+		sum2 := sha1.Sum([]byte(childPrimitives[j]))
 		return bytes.Compare(sum1[:], sum2[:]) >= 0
 	})
 
@@ -105,7 +105,7 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 		VlanId:             nil,
 		Ipv4AddressingType: o.Ipv4AddressingType.ValueString(),
 		Ipv6AddressingType: o.Ipv6AddressingType.ValueString(),
-		Children:           children,
+		ChildPrimitives:    childPrimitives,
 	}
 
 	if !o.VlanId.IsNull() {
@@ -159,7 +159,7 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 	}
 	o.Ipv4AddressingType = types.StringValue(attributes.IPv4AddressingType.String())
 	o.Ipv6AddressingType = types.StringValue(attributes.IPv6AddressingType.String())
-	o.Children = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}
@@ -170,7 +170,7 @@ type ipLinkPrototype struct {
 	VlanId             *int64   `json:"vlan_id,omitempty"`
 	Ipv4AddressingType string   `json:"ipv4_addressing_type"`
 	Ipv6AddressingType string   `json:"ipv6_addressing_type"`
-	Children           []string `json:"children,omitempty"`
+	ChildPrimitives    []string `json:"child_primitives,omitempty"`
 }
 
 func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
@@ -208,7 +208,7 @@ func (o ipLinkPrototype) ToSdkPrimitive(ctx context.Context, path path.Path, dia
 		return nil
 	}
 
-	children := ChildPrimitivesFromListOfJsonStrings(ctx, o.Children, path, diags)
+	childPrimitives := ChildPrimitivesFromListOfJsonStrings(ctx, o.ChildPrimitives, path, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -216,7 +216,7 @@ func (o ipLinkPrototype) ToSdkPrimitive(ctx context.Context, path path.Path, dia
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
 		Attributes:  attributes,
-		Subpolicies: children,
+		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later
 		PipelineId:  nil, // calculated later
 	}
