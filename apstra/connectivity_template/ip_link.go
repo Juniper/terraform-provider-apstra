@@ -110,7 +110,7 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 
 	if !o.VlanId.IsNull() {
 		obj.Tagged = true
-		vlan := o.VlanId.ValueInt64()
+		vlan := apstra.Vlan(o.VlanId.ValueInt64())
 		obj.VlanId = &vlan
 	}
 
@@ -165,18 +165,16 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 var _ JsonPrimitive = &ipLinkPrototype{}
 
 type ipLinkPrototype struct {
-	RoutingZoneId      string   `json:"routing_zone_id"`
-	Tagged             bool     `json:"tagged"`
-	VlanId             *int64   `json:"vlan_id,omitempty"`
-	Ipv4AddressingType string   `json:"ipv4_addressing_type"`
-	Ipv6AddressingType string   `json:"ipv6_addressing_type"`
-	ChildPrimitives    []string `json:"child_primitives,omitempty"`
+	RoutingZoneId      string       `json:"routing_zone_id"`
+	Tagged             bool         `json:"tagged"`
+	VlanId             *apstra.Vlan `json:"vlan_id,omitempty"`
+	Ipv4AddressingType string       `json:"ipv4_addressing_type"`
+	Ipv6AddressingType string       `json:"ipv6_addressing_type"`
+	ChildPrimitives    []string     `json:"child_primitives,omitempty"`
 }
 
 func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
 	routingZoneId := apstra.ObjectId(o.RoutingZoneId)
-
-	vlanId := apstra.Vlan(*o.VlanId)
 
 	var err error
 	var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
@@ -196,7 +194,7 @@ func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *di
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
 		SecurityZone:       &routingZoneId,
 		Tagged:             o.Tagged,
-		Vlan:               &vlanId,
+		Vlan:               o.VlanId,
 		IPv4AddressingType: ipv4AddressingType,
 		IPv6AddressingType: ipv6AddressingType,
 	}
