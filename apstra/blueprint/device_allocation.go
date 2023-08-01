@@ -99,6 +99,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Computed: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
+				stringvalidator.AlsoRequires(path.MatchRoot("device_key")),
 			},
 		},
 	}
