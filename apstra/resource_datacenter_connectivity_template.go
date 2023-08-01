@@ -12,32 +12,32 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
+var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplate{}
 
-type resourceDatacenterGenericSystem struct {
+type resourceDatacenterConnectivityTemplate struct {
 	client   *apstra.Client
 	lockFunc func(context.Context, string) error
 }
 
-func (o *resourceDatacenterGenericSystem) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_generic_system"
+func (o *resourceDatacenterConnectivityTemplate) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_connectivity_template"
 }
 
-func (o *resourceDatacenterGenericSystem) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterConnectivityTemplate) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterConnectivityTemplate) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Generic System within a Datacenter Blueprint.",
-		Attributes:          blueprint.DatacenterGenericSystem{}.ResourceAttributes(),
+		MarkdownDescription: "This resource creates a Connectivity Template within a Datacenter Blueprint.",
+		Attributes:          blueprint.ConnectivityTemplate{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterConnectivityTemplate) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterGenericSystem
+	var plan blueprint.ConnectivityTemplate
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -59,48 +59,32 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed to lock blueprint %q mutex", plan.BlueprintId.ValueString()),
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
 
-	// prep a generic system creation request
-	request := plan.CreateRequest(ctx, &resp.Diagnostics)
+	// create an API request
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// unfortunately we only learn the link IDs, not the generic system ID
-	linkIds, err := bp.CreateLinksWithNewServer(ctx, request)
+	// send the request to Apstra
+	err = bp.CreateConnectivityTemplate(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("failed to create generic system", err.Error())
+		resp.Diagnostics.AddError("failed to create Connectivity Template", err.Error())
 		return
 	}
 
-	// use link IDs to learn the generic system ID
-	genericSystemId, err := bp.SystemNodeFromLinkIds(ctx, linkIds, apstra.SystemNodeRoleGeneric)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to determine new generic system ID from links", err.Error())
-	}
-	plan.Id = types.StringValue(genericSystemId.String())
-
-	// pull Apstra-generated strings if not specified by the user
-	if plan.Name.IsUnknown() || plan.Hostname.IsUnknown() {
-		err = plan.GetLabelAndHostname(ctx, bp)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("failed to retrieve labels from new generic system %s", plan.Id), err.Error())
-			// don't return here - still want to set the state
-		}
-	}
-
-	// set state
+	// set the state
+	plan.Id = types.StringValue(string(*request.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterConnectivityTemplate) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
-	var state blueprint.DatacenterGenericSystem
+	var state blueprint.ConnectivityTemplate
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -118,9 +102,7 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 		return
 	}
 
-	// read string fields directly from the graph node. This has the side
-	// effect of discovering whether the generic system has been deleted.
-	err = state.GetLabelAndHostname(ctx, bp)
+	api, err := bp.GetConnectivityTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
@@ -128,29 +110,23 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed to retrieve generic system %s", state.Id), err.Error())
+			fmt.Sprintf("failed to retrieve Connectivity Template %s", state.Id), err.Error())
 		return
 	}
 
-	// read tags and link info using other combinations of API calls
-	state.ReadTags(ctx, bp, &resp.Diagnostics)
-	state.ReadLinks(ctx, bp, &resp.Diagnostics)
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterConnectivityTemplate) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterGenericSystem
+	var plan blueprint.ConnectivityTemplate
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve values from state.
-	var state blueprint.DatacenterGenericSystem
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -166,32 +142,30 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed to lock blueprint %q mutex", plan.BlueprintId.ValueString()),
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
 
-	plan.UpdateHostnameAndName(ctx, bp, &state, &resp.Diagnostics)
+	// create an API request
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.UpdateTags(ctx, bp, &state, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.UpdateLinkSet(ctx, &state, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	// send the request to Apstra
+	err = bp.UpdateConnectivityTemplate(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create Connectivity Template", err.Error())
 		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterConnectivityTemplate) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
-	var state blueprint.DatacenterGenericSystem
+	var state blueprint.ConnectivityTemplate
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -209,7 +183,7 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed to lock blueprint %q mutex", state.BlueprintId.ValueString()),
+			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -220,12 +194,12 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 		return
 	}
 
-	err = bp.DeleteGenericSystem(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteConnectivityTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("failed to delete generic system", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("failed while deleting Connectivity Template %s", state.Id), err.Error())
 	}
 }
