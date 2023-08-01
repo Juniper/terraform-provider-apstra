@@ -25,7 +25,8 @@ locals {
   sorted_numbers   = [for s in local.sorted_strings : tonumber(s)]
 }
 
-# generate a VNI pool with ranges equal to the number of begin/end pairs available.
+# generate a VNI pool with ranges equal to the number
+# of begin/end pairs available.
 resource "apstra_vni_pool" "five_random_ranges" {
   name = "five random ranges"
   ranges = [for i in range(local.pair_count) : {

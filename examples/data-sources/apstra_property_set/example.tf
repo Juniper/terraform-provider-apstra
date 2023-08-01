@@ -1,9 +1,11 @@
-# The following example shows outputting a report of all the Apstra Property Sets.
+# The following example shows outputting a report of all the
+#Apstra Property Sets.
 
 # List all Apstra Property Set Ids
 data "apstra_property_sets" "all" {}
 
-# Loop over Property Set IDs, creating an instance of `apstra_property_set` for each.
+# Loop over Property Set IDs, creating an instance of `apstra_property_set`
+# for each.
 data "apstra_property_set" "each_ps" {
 #  for_each = toset(data.apstra_property_sets.all.ids)
   //for_each = ["foo", "bar"]
@@ -19,7 +21,7 @@ output "apstra_property_set_report" {
     keys       = v.keys
   } }
 }
-################################################################################
+############################################################################
 # The output object above will produce something like the following:
 # apstra_property_set_report = {
 #  "0a2f4768-7312-4512-b544-f17de1dc155a" = {
@@ -51,4 +53,4 @@ output "apstra_property_set_report" {
 #    "name" = "MUST_SNMP_D42"
 #  }
 # }
-################################################################################
+############################################################################

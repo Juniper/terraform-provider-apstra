@@ -9,8 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
@@ -92,34 +92,60 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	// Create the blueprint.
 	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating Rack Based Blueprint", err.Error())
+		resp.Diagnostics.AddError("failed creating Rack Based Blueprint", err.Error())
+		return
+	}
+
+	// commit the ID to the state
+	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, id.String())
 	if err != nil {
-		resp.Diagnostics.AddError("error locking blueprint mutex", err.Error())
+		resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
 		return
 	}
 
+	// Create blueprint client
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("failed creating blueprint client", err.Error())
+	}
+
+	// set the fabric addressing policy
+	plan.SetFabricAddressingPolicy(ctx, bpClient, nil, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// retrieve blueprint status
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
 
-	// Create new state object.
-	var state blueprint.Blueprint
-	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	fapData, err := bpClient.GetFabricAddressingPolicy(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy after creation", err.Error())
+	}
+
+	// load blueprint status
+	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	state.FabricAddressing = plan.FabricAddressing // blindly copy because resource.RequiresReplace()
-	state.TemplateId = plan.TemplateId             // blindly copy because resource.RequiresReplace()
+	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state.
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -145,14 +171,23 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// Create new state object with some obvious values.
-	var newState blueprint.Blueprint
-	newState.LoadApiData(ctx, apiData, &resp.Diagnostics)
-	newState.FabricAddressing = state.FabricAddressing // blindly copy because resource.RequiresReplace()
-	newState.TemplateId = state.TemplateId             // blindly copy because resource.RequiresReplace()
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apiData.Id)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
+	fapData, err := bpClient.GetFabricAddressingPolicy(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to read fabric addressing policy", err.Error())
+		return
+	}
+
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
 
 	// Set state.
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Update resource
@@ -164,47 +199,60 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.Id.ValueString()), &resp.Diagnostics) {
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		resp.Diagnostics.AddError("no such blueprint", fmt.Sprintf("blueprint %s not found", plan.Id))
-	}
+	// Retrieve state.
+	var state blueprint.Blueprint
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create a blueprint client
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("failed creating blueprint client", err.Error())
 		return
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.Id.ValueString())
+	err = o.lockFunc(ctx, plan.Id.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("error locking blueprint mutex", err.Error())
+		resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
 		return
 	}
 
-	// Name change is the only possible update method (other attributes trigger replace).
-	plan.SetName(ctx, o.client, &resp.Diagnostics)
+	// set the blueprint name
+	plan.SetName(ctx, bpClient, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// set the fabric addressing policy
+	plan.SetFabricAddressingPolicy(ctx, bpClient, &state, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// fetch and load blueprint info
 	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after update", err.Error())
+		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint after update", err.Error())
 	}
-
-	// Create new state object
-	var state blueprint.Blueprint
-	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	state.FabricAddressing = plan.FabricAddressing // blindly copy because resource.RequiresReplace()
-	state.TemplateId = plan.TemplateId             // blindly copy because resource.RequiresReplace()
+	fapData, err := bpClient.GetFabricAddressingPolicy(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric AddressingPolicy after update", err.Error())
+	}
+	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete resource

@@ -1,5 +1,5 @@
-# The following example shows outputting a report of free space across all IPv6
-# resource pools using `apstra_ip4_pools` (to collect pool IDs) and
+# The following example shows outputting a report of free space across all
+# IPv6 resource pools using `apstra_ip4_pools` (to collect pool IDs) and
 # `apstra_ip4_pool` to query for pool details
 
 # List all pool IDs
@@ -19,7 +19,7 @@ output "ipv6_pool_report" {
   }}
 }
 
-################################################################################
+############################################################################
 # The output object above will produce something like the following:
 #
 #   ipv6_pool_report = {
@@ -29,4 +29,4 @@ output "ipv6_pool_report" {
 #     }
 #   }
 #
-################################################################################
+############################################################################

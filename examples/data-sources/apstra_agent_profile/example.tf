@@ -1,5 +1,5 @@
-# The following example grabs the ID numbers of all agent profiles, uses those
-# IDs to grab the details of each agent profile, and then
+# The following example grabs the ID numbers of all agent profiles, uses
+# those IDs to grab the details of each agent profile, and then
 
 data "apstra_agent_profiles" "all" {}
 

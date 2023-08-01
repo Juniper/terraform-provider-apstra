@@ -44,7 +44,8 @@ locals {
   }
 }
 
-# Assign interface maps to fabric roles to eliminate build errors so we can deploy
+# Assign interface maps to fabric roles to eliminate build errors so we
+# can deploy
 resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   for_each         = local.switches
   blueprint_id     = apstra_datacenter_blueprint.instantiation.id
@@ -52,7 +53,8 @@ resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   interface_map_id = each.value
 }
 
-# Assign ASN pools to fabric roles to eliminate build errors so we can deploy
+# Assign ASN pools to fabric roles to eliminate build errors so we
+# can deploy
 resource "apstra_datacenter_resource_pool_allocation" "asn" {
   for_each     = local.asn_pools
   blueprint_id = apstra_datacenter_blueprint.instantiation.id
@@ -60,7 +62,8 @@ resource "apstra_datacenter_resource_pool_allocation" "asn" {
   pool_ids     = each.value
 }
 
-# Assign IPv4 pools to fabric roles to eliminate build errors so we can deploy
+# Assign IPv4 pools to fabric roles to eliminate build errors so we
+# can deploy
 resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   for_each     = local.ipv4_pools
   blueprint_id = apstra_datacenter_blueprint.instantiation.id
@@ -97,7 +100,9 @@ resource "apstra_blueprint_deployment" "deploy" {
 
 ### Optional
 
+- `esi_mac_msb` (Number) ESI MAC address most significant byte. Must be an even number between 0 and 254 inclusive.
 - `fabric_addressing` (String) Addressing scheme for both superspine/spine and spine/leaf  links. Only applicable to Apstra versions 4.1.1 and later.
+- `ipv6_applications` (Boolean) Enables support for IPv6 virtual networks and IPv6 external connectivity points. This adds resource requirements and device configurations, including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled without re-creating the Blueprint.
 
 ### Read-Only
 

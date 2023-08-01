@@ -12,9 +12,9 @@ This resource creates an Interface Map
 ## Example Usage
 
 ```terraform
-# Interface Maps have an "interfaces" section which can get tedious because it
-# involves spelling out the relationship between each Logical Device interface
-# with the corresponding Device Profile interface.
+# Interface Maps have an "interfaces" section which can get tedious because
+# it involves spelling out the relationship between each Logical Device
+# interface with the corresponding Device Profile interface.
 
 # We'll create two interface maps here:
 # - QFX5120-48T -> AOS-7x10-Spine (typing out all of the details)
@@ -83,8 +83,10 @@ locals {
       count          = 6
     },
   ]
-  # local.interfaces loops over the elements of if_map (panel 1 and panel 2).
-  # within each iteration, it loops 'count' times (every interface in the panel)
+  # local.interfaces loops over the elements of if_map
+  # (panel 1 and panel 2).
+  # within each iteration, it loops 'count' times
+  # (every interface in the panel)
   # to build up the detailed mapping between logical and physical ports.
   interfaces = [
     for map in local.if_map : [
@@ -96,7 +98,7 @@ locals {
   ]
 }
 
-# second example: interfacemappings are calculated
+# second example: interface mappings are calculated
 # using the local variables above.
 resource "apstra_interface_map" "with_loops" {
   name              = "example interface map 2"

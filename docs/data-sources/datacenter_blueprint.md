@@ -53,10 +53,12 @@ resource "apstra_blueprint_deployment" "as_needed" {
 - `access_switch_count` (Number) The count of access switches in the topology.
 - `build_errors_count` (Number) Number of build errors.
 - `build_warnings_count` (Number) Number of build warnings.
+- `esi_mac_msb` (Number) ESI MAC address most significant byte.
 - `external_router_count` (Number) The count of external routers attached to the topology.
 - `fabric_addressing` (String) Fabric Addressing will always be null in 'data source' context.
 - `generic_system_count` (Number) The count of generic systems in the topology.
 - `has_uncommitted_changes` (Boolean) Indicates whether the staging blueprint has uncommitted changes.
+- `ipv6_applications` (Boolean) Enables support for IPv6 virtual networks and IPv6 external connectivity points. This adds resource requirements and device configurations, including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links.
 - `leaf_switch_count` (Number) The count of leaf switches in the topology.
 - `spine_count` (Number) The count of spine devices in the topology.
 - `status` (String) Deployment status of the Blueprint
