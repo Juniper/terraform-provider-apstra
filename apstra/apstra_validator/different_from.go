@@ -101,7 +101,7 @@ func (o DifferentFromValidator) Validate(ctx context.Context, req DifferentFromV
 //
 // Relative path.Expression will be resolved using the attribute being
 // validated.
-func DifferentFrom(expressions ...path.Expression) validator.Int64 {
+func DifferentFrom(expressions ...path.Expression) *DifferentFromValidator {
 	return &DifferentFromValidator{
 		PathExpressions: expressions,
 	}
