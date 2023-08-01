@@ -83,7 +83,7 @@ func (o DifferentFromValidator) Validate(ctx context.Context, req DifferentFromV
 
 			// Unknown and Null attributes can't have value collisions
 			if mpVal.IsNull() || mpVal.IsUnknown() {
-				return
+				continue
 			}
 
 			if req.ConfigValue.Equal(mpVal) {
