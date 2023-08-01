@@ -49,8 +49,8 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 	switch pType {
 	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
 		jsonPrimitive = new(vnSinglePrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachMultipleVLAN:
-	//	jsonPrimitive = new(vnMultiplePrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachMultipleVLAN:
+		jsonPrimitive = new(vnMultiplePrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
 		jsonPrimitive = new(ipLinkPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
@@ -112,8 +112,8 @@ func PrimitiveFromSdk(ctx context.Context, in *apstra.ConnectivityTemplatePrimit
 	switch in.Attributes.PolicyTypeName() {
 	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
 		primitive = new(VnSingle)
-	//case apstra.CtPrimitivePolicyTypeNameAttachMultipleVLAN:
-	//	jsonPrimitive = new(VnMultiple)
+	case apstra.CtPrimitivePolicyTypeNameAttachMultipleVLAN:
+		primitive = new(VnMultiple)
 	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
 		primitive = new(IpLink)
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
