@@ -19,7 +19,7 @@ func (o *dataSourceDatacenterCtRoutingPolicy) Metadata(_ context.Context, req da
 func (o *dataSourceDatacenterCtRoutingPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source composes a Connectivity Template Primitive as a JSON string, " +
-			"suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` " +
+			"suitable for use in the `primitives` attribute of an `apstra_datacenter_connectivity_template` " +
 			"resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.",
 		Attributes: connectivitytemplate.RoutingPolicy{}.DataSourceAttributes(),
 	}

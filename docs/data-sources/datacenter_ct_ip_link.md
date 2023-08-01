@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_ct_ip_link Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of either an apstra_datacenter_connectivity_template resource or the child_primitives attribute of a Different Connectivity Template Primitive.
+  This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the primitives attribute of an apstra_datacenter_connectivity_template resource or the child_primitives attribute of a Different Connectivity Template Primitive.
 ---
 
 # apstra_datacenter_ct_ip_link (Data Source)
 
-This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of either an `apstra_datacenter_connectivity_template` resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.
+This data source composes a Connectivity Template Primitive as a JSON string, suitable for use in the `primitives` attribute of an `apstra_datacenter_connectivity_template` resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.
 
 ## Example Usage
 
