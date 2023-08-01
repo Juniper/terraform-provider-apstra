@@ -39,21 +39,21 @@ type DifferentFromValidatorResponse struct {
 	Diagnostics diag.Diagnostics
 }
 
-func (df DifferentFromValidator) Description(ctx context.Context) string {
-	return df.MarkdownDescription(ctx)
+func (o DifferentFromValidator) Description(ctx context.Context) string {
+	return o.MarkdownDescription(ctx)
 }
 
-func (df DifferentFromValidator) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("Ensure that if an attribute is set, these don't share the same value: %q", df.PathExpressions)
+func (o DifferentFromValidator) MarkdownDescription(_ context.Context) string {
+	return fmt.Sprintf("Ensure that if an attribute is set, these don't share the same value: %q", o.PathExpressions)
 }
 
-func (df DifferentFromValidator) Validate(ctx context.Context, req DifferentFromValidatorRequest, resp *DifferentFromValidatorResponse) {
+func (o DifferentFromValidator) Validate(ctx context.Context, req DifferentFromValidatorRequest, resp *DifferentFromValidatorResponse) {
 	// If attribute configuration is null, there is nothing else to validate
 	if req.ConfigValue.IsNull() {
 		return
 	}
 
-	expressions := req.PathExpression.MergeExpressions(df.PathExpressions...)
+	expressions := req.PathExpression.MergeExpressions(o.PathExpressions...)
 
 	for _, expression := range expressions {
 		matchedPaths, diags := req.Config.PathMatches(ctx, expression)
@@ -107,7 +107,7 @@ func DifferentFrom(expressions ...path.Expression) validator.Int64 {
 	}
 }
 
-func (df DifferentFromValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
+func (o DifferentFromValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -116,12 +116,12 @@ func (df DifferentFromValidator) ValidateBool(ctx context.Context, req validator
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateFloat64(ctx context.Context, req validator.Float64Request, resp *validator.Float64Response) {
+func (o DifferentFromValidator) ValidateFloat64(ctx context.Context, req validator.Float64Request, resp *validator.Float64Response) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -130,12 +130,12 @@ func (df DifferentFromValidator) ValidateFloat64(ctx context.Context, req valida
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+func (o DifferentFromValidator) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -144,12 +144,12 @@ func (df DifferentFromValidator) ValidateInt64(ctx context.Context, req validato
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
+func (o DifferentFromValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -158,12 +158,12 @@ func (df DifferentFromValidator) ValidateList(ctx context.Context, req validator
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateMap(ctx context.Context, req validator.MapRequest, resp *validator.MapResponse) {
+func (o DifferentFromValidator) ValidateMap(ctx context.Context, req validator.MapRequest, resp *validator.MapResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -172,12 +172,12 @@ func (df DifferentFromValidator) ValidateMap(ctx context.Context, req validator.
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateNumber(ctx context.Context, req validator.NumberRequest, resp *validator.NumberResponse) {
+func (o DifferentFromValidator) ValidateNumber(ctx context.Context, req validator.NumberRequest, resp *validator.NumberResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -186,12 +186,12 @@ func (df DifferentFromValidator) ValidateNumber(ctx context.Context, req validat
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {
+func (o DifferentFromValidator) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -200,12 +200,12 @@ func (df DifferentFromValidator) ValidateObject(ctx context.Context, req validat
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+func (o DifferentFromValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -214,12 +214,12 @@ func (df DifferentFromValidator) ValidateSet(ctx context.Context, req validator.
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (df DifferentFromValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+func (o DifferentFromValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	validateReq := DifferentFromValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
@@ -228,7 +228,7 @@ func (df DifferentFromValidator) ValidateString(ctx context.Context, req validat
 	}
 	validateResp := &DifferentFromValidatorResponse{}
 
-	df.Validate(ctx, validateReq, validateResp)
+	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
