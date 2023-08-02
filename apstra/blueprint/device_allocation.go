@@ -95,12 +95,9 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "Set the [deploy mode](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/datacenter-deploy-mode-set.html) " +
 				"of the associated fabric node.",
-			Optional: true,
-			Computed: true,
-			Validators: []validator.String{
-				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
-				stringvalidator.AlsoRequires(path.MatchRoot("device_key")),
-			},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 	}
 }
@@ -358,20 +355,15 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.C
 // SetNodeSystemId assigns a managed device 'device_key' (serial number) to
 // the `system_id` field of a switch 'system' node in the blueprint graph based
 // on the value of o.DeviceKey. When Sets o.DeviceKey is <null>, as would be the
-// case when it's not provided in the Terraform config, SetNodeSystemId returns
-// immediately without making any changes. When o.DeviceKey is <unknown>,
-// SetNodeSystemId clears the graph node's `system_id` field.
+// case when it's not provided in the Terraform config, SetNodeSystemId clears
+// the graph node's `system_id` field.
 //
 // If Apstra returns 404 to any blueprint operation, indicating the blueprint
 // doesn't exist, SetNodeSystemId sets o.BlueprintId to <null> to indicate that
 // resources which depend on the blueprint's existence should be removed.
 func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	if o.DeviceKey.IsNull() {
-		return
-	}
-
 	var deviceKeyPtr *string
-	if !o.DeviceKey.IsUnknown() {
+	if !o.DeviceKey.IsNull() {
 		dk := o.DeviceKey.ValueString()
 		deviceKeyPtr = &dk
 	}
