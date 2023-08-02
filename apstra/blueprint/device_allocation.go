@@ -700,29 +700,14 @@ func (o *DeviceAllocation) SetNodeDeployMode(ctx context.Context, client *apstra
 }
 
 func (o *DeviceAllocation) GetNodeDeployMode(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
+	var node struct {
+		Id         string `json:"id"`
+		Type       string `json:"type"`
+		DeployMode string `json:"deploy_mode"`
+	}
+	err := client.GetNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.ObjectId(o.NodeId.ValueString()), &node)
 	if err != nil {
-		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.BlueprintId), err.Error())
-		return
-	}
-
-	var nodesResponse struct {
-		Nodes map[string]struct {
-			Id         string `json:"id"`
-			Type       string `json:"type"`
-			DeployMode string `json:"deploy_mode"`
-		} `json:"nodes"`
-	}
-	err = bpClient.GetNodes(ctx, apstra.NodeTypeSystem, &nodesResponse)
-	if err != nil {
-		diags.AddError("error fetching blueprint nodes", err.Error())
-		return
-	}
-
-	node, ok := nodesResponse.Nodes[o.NodeId.ValueString()]
-	if !ok {
-		o.DeployMode = types.StringNull()
-		return
+		diags.AddError("failed to fetch blueprint node", err.Error())
 	}
 
 	var deployMode apstra.NodeDeployMode
