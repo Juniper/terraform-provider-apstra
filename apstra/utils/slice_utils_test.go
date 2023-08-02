@@ -7,51 +7,43 @@ import (
 )
 
 func TestItemInSlice(t *testing.T) {
-	type testCase struct {
-		item     any
-		slice    []any
+	type testCase[T comparable] struct {
+		item     T
+		slice    []T
 		expected bool
 	}
 
-	testCases := []testCase{
-		{item: 1, slice: []any{1, 2, 3}, expected: true},
-		{item: 1, slice: []any{1, 2, 3, 1}, expected: true},
-		{item: 1, slice: []any{3, 2, 1}, expected: true},
-		{item: 0, slice: []any{1, 2, 3}, expected: false},
-		{item: 0, slice: []any{}, expected: false},
-		{item: 1, slice: []any{}, expected: false},
-		{item: "foo", slice: []any{"foo", "bar"}, expected: true},
-		{item: "foo", slice: []any{"bar", "foo"}, expected: true},
-		{item: "foo", slice: []any{"foo", "bar", "foo"}, expected: true},
-		{item: "foo", slice: []any{"bar", "baz"}, expected: false},
-		{item: "foo", slice: []any{""}, expected: false},
-		{item: "foo", slice: []any{"", ""}, expected: false},
-		{item: "foo", slice: []any{}, expected: false},
-		{item: "", slice: []any{"bar", "foo"}, expected: false},
-		{item: "", slice: []any{"bar", "", "foo"}, expected: true},
-		{item: "", slice: []any{}, expected: false},
+	intTestCases := []testCase[int]{
+		{item: 1, slice: []int{1, 2, 3}, expected: true},
+		{item: 1, slice: []int{1, 2, 3, 1}, expected: true},
+		{item: 1, slice: []int{3, 2, 1}, expected: true},
+		{item: 0, slice: []int{1, 2, 3}, expected: false},
+		{item: 0, slice: []int{}, expected: false},
+		{item: 1, slice: []int{}, expected: false},
+	}
+	for i, tc := range intTestCases {
+		result := ItemInSlice(tc.item, tc.slice)
+		if result != tc.expected {
+			t.Fatalf("int test case %d produced %t, expected %t", i, result, tc.expected)
+		}
 	}
 
-	var result bool
-	for i, tc := range testCases {
-		switch tc.item.(type) {
-		case int:
-			item := tc.item.(int)
-			slice := make([]int, len(tc.slice))
-			for j := range tc.slice {
-				slice[j] = tc.slice[j].(int)
-			}
-			result = ItemInSlice(item, slice)
-		case string:
-			item := tc.item.(string)
-			slice := make([]string, len(tc.slice))
-			for j := range tc.slice {
-				slice[j] = tc.slice[j].(string)
-			}
-			result = ItemInSlice(item, slice)
-		}
+	stringTestCases := []testCase[string]{
+		{item: "foo", slice: []string{"foo", "bar"}, expected: true},
+		{item: "foo", slice: []string{"bar", "foo"}, expected: true},
+		{item: "foo", slice: []string{"foo", "bar", "foo"}, expected: true},
+		{item: "foo", slice: []string{"bar", "baz"}, expected: false},
+		{item: "foo", slice: []string{""}, expected: false},
+		{item: "foo", slice: []string{"", ""}, expected: false},
+		{item: "foo", slice: []string{}, expected: false},
+		{item: "", slice: []string{"bar", "foo"}, expected: false},
+		{item: "", slice: []string{"bar", "", "foo"}, expected: true},
+		{item: "", slice: []string{}, expected: false},
+	}
+	for i, tc := range stringTestCases {
+		result := ItemInSlice(tc.item, tc.slice)
 		if result != tc.expected {
-			t.Fatalf("test case %d produced %t, expected %t", i, result, tc.expected)
+			t.Fatalf("string test case %d produced %t, expected %t", i, result, tc.expected)
 		}
 	}
 }
