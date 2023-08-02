@@ -80,7 +80,7 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 	var d diag.Diagnostics
 
 	// We only use the Datacenter Reference Design
-	refArchs := []apstra.RefDesign{apstra.RefDesignDatacenter}
+	refArchs := []apstra.RefDesign{apstra.RefDesignTwoStageL3Clos}
 
 	// Extract configlet generators
 	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))

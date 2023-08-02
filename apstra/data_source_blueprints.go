@@ -46,7 +46,7 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 				MarkdownDescription: "Optional filter to select only Blueprints matching the specified Reference Design.",
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
-					utils.StringersToFriendlyString(apstra.RefDesignDatacenter),
+					utils.StringersToFriendlyString(apstra.RefDesignTwoStageL3Clos),
 					apstra.RefDesignFreeform.String(),
 				)},
 			},

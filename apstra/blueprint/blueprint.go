@@ -246,7 +246,7 @@ func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *apstra.C
 	}
 
 	return &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:              apstra.RefDesignDatacenter,
+		RefDesign:              apstra.RefDesignTwoStageL3Clos,
 		Label:                  o.Name.ValueString(),
 		TemplateId:             apstra.ObjectId(o.TemplateId.ValueString()),
 		FabricAddressingPolicy: fap,
