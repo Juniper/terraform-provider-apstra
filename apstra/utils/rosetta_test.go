@@ -29,7 +29,7 @@ func TestRosetta(t *testing.T) {
 		{string: "static", stringers: []fmt.Stringer{apstra.OverlayControlProtocolNone}},
 		{string: "evpn", stringers: []fmt.Stringer{apstra.OverlayControlProtocolEvpn}},
 
-		{string: "datacenter", stringers: []fmt.Stringer{apstra.RefDesignDatacenter}},
+		{string: "datacenter", stringers: []fmt.Stringer{apstra.RefDesignTwoStageL3Clos}},
 		{string: "freeform", stringers: []fmt.Stringer{apstra.RefDesignFreeform}},
 
 		{string: "vni_virtual_network_ids", stringers: []fmt.Stringer{apstra.ResourceGroupNameVxlanVnIds}},
