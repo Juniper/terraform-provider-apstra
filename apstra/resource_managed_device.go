@@ -65,7 +65,7 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// Create new Agent for this Managed Device
-	agentId, err := o.client.CreateAgent(ctx, request)
+	agentId, err := o.client.CreateSystemAgent(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating new Agent",

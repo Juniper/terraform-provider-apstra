@@ -17,7 +17,7 @@ func BlueprintA(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignDatacenter,
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: "L2_Virtual_EVPN",
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
@@ -62,7 +62,7 @@ func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.Objec
 
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignDatacenter,
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
@@ -103,7 +103,7 @@ func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignDatacenter,
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
@@ -144,7 +144,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignDatacenter,
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
@@ -245,7 +245,7 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignDatacenter,
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
@@ -285,7 +285,7 @@ func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignDatacenter,
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{

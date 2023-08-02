@@ -147,7 +147,7 @@ func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) st
 
 func refDesignToFriendlyString(in apstra.RefDesign) string {
 	switch in {
-	case apstra.RefDesignDatacenter:
+	case apstra.RefDesignTwoStageL3Clos:
 		return refDesignDataCenter
 	}
 
@@ -252,7 +252,7 @@ func refDesignFromFriendlyString(target *apstra.RefDesign, in ...string) error {
 
 	switch in[0] {
 	case refDesignDataCenter:
-		*target = apstra.RefDesignDatacenter
+		*target = apstra.RefDesignTwoStageL3Clos
 	default:
 		return target.FromString(in[0])
 	}
