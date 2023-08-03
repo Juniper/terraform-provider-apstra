@@ -200,7 +200,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
-				apstravalidator.ParseCidr(true, false),
+				apstravalidator.ParseCidr(false, true),
 				apstravalidator.WhenValueSetString(
 					apstravalidator.ValueAtMustBeString(
 						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
@@ -261,7 +261,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
-				apstravalidator.ParseIp(true, false),
+				apstravalidator.ParseIp(false, true),
 				apstravalidator.FallsWithinCidr(
 					path.MatchRelative().AtParent().AtName("ipv6_subnet"),
 					true, true),
