@@ -87,6 +87,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 			return
 		}
 	}
+
 	config.Id = types.StringValue(api.Id.String())
 	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
