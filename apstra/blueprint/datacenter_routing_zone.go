@@ -262,7 +262,12 @@ func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Dia
 
 func (o *DatacenterRoutingZone) LoadApiData(_ context.Context, sz *apstra.SecurityZoneData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(sz.VrfName)
-	o.VlanId = types.Int64Value(int64(*sz.VlanId))
+
+	if sz.VlanId != nil {
+		o.VlanId = types.Int64Value(int64(*sz.VlanId))
+	} else {
+		o.VlanId = types.Int64Null()
+	}
 
 	if sz.RoutingPolicyId != "" {
 		o.RoutingPolicyId = types.StringValue(sz.RoutingPolicyId.String())
