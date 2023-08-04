@@ -611,7 +611,7 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(vnResultName)},
-			}).In([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("member_vns")}}). // todo new relationship type after SDK update
+			}).In([]apstra.QEEAttribute{apstra.RelationshipTypeMemberVNs.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeSecurityZone.QEEAttribute(),
 				{Key: "id", Value: apstra.QEStringVal(o.RoutingZoneId.ValueString())},
@@ -623,9 +623,9 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(vnResultName)},
-			}).Out([]apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("instantiated_by")}}). // todo new relationship type after SDK update
+			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeInstantiatedBy.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
-				{Key: "type", Value: apstra.QEStringVal("vn_instance")}, // todo new node type after SDK update
+				apstra.NodeTypeVirtualNetworkInstance.QEEAttribute(),
 				{Key: "dhcp_enabled", Value: apstra.QEBoolVal(o.DhcpServiceEnabled.ValueBool())},
 			}))
 	}
