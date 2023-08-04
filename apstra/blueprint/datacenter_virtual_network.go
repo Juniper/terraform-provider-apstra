@@ -61,6 +61,22 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Name",
 			Optional:            true,
+			Validators: []validator.String{stringvalidator.AtLeastOneOf(
+				path.MatchRelative(),
+				path.MatchRoot("type"),
+				path.MatchRoot("routing_zone_id"),
+				path.MatchRoot("vni"),
+				path.MatchRoot("reserve_vlan"),
+				path.MatchRoot("dhcp_service_enabled"),
+				path.MatchRoot("ipv4_connectivity_enabled"),
+				path.MatchRoot("ipv6_connectivity_enabled"),
+				path.MatchRoot("ipv4_subnet"),
+				path.MatchRoot("ipv6_subnet"),
+				path.MatchRoot("ipv4_virtual_gateway_enabled"),
+				path.MatchRoot("ipv6_virtual_gateway_enabled"),
+				path.MatchRoot("ipv4_virtual_gateway"),
+				path.MatchRoot("ipv6_virtual_gateway"),
+			)},
 		},
 		"type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Type",
@@ -630,9 +646,5 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 			}))
 	}
 
-	s := vnQuery.String()
-	_ = s
-
 	return vnQuery
-
 }
