@@ -63,43 +63,32 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Optional:            true,
 			Validators: []validator.String{stringvalidator.AtLeastOneOf(
 				path.MatchRelative(),
-				path.MatchRoot("filters").AtName("type"),
-				path.MatchRoot("filters").AtName("routing_zone_id"),
-				path.MatchRoot("filters").AtName("vni"),
-				path.MatchRoot("filters").AtName("reserve_vlan"),
-				path.MatchRoot("filters").AtName("dhcp_service_enabled"),
-				path.MatchRoot("filters").AtName("ipv4_connectivity_enabled"),
-				path.MatchRoot("filters").AtName("ipv6_connectivity_enabled"),
-				path.MatchRoot("filters").AtName("ipv4_subnet"),
-				path.MatchRoot("filters").AtName("ipv6_subnet"),
-				path.MatchRoot("filters").AtName("ipv4_virtual_gateway_enabled"),
-				path.MatchRoot("filters").AtName("ipv6_virtual_gateway_enabled"),
-				path.MatchRoot("filters").AtName("ipv4_virtual_gateway"),
-				path.MatchRoot("filters").AtName("ipv6_virtual_gateway"),
+				path.MatchRoot("filter").AtName("type"),
+				path.MatchRoot("filter").AtName("routing_zone_id"),
+				path.MatchRoot("filter").AtName("vni"),
+				path.MatchRoot("filter").AtName("reserve_vlan"),
+				path.MatchRoot("filter").AtName("dhcp_service_enabled"),
+				path.MatchRoot("filter").AtName("ipv4_connectivity_enabled"),
+				path.MatchRoot("filter").AtName("ipv6_connectivity_enabled"),
+				path.MatchRoot("filter").AtName("ipv4_subnet"),
+				path.MatchRoot("filter").AtName("ipv6_subnet"),
+				path.MatchRoot("filter").AtName("ipv4_virtual_gateway_enabled"),
+				path.MatchRoot("filter").AtName("ipv6_virtual_gateway_enabled"),
+				path.MatchRoot("filter").AtName("ipv4_virtual_gateway"),
+				path.MatchRoot("filter").AtName("ipv6_virtual_gateway"),
 			)},
 		},
 		"type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Type",
 			Optional:            true,
-			Validators: []validator.String{
-				// specifically enumerated types - SDK supports additional
-				// types which do not make sense in this context.
-				stringvalidator.OneOf(apstra.VnTypeVlan.String(), apstra.VnTypeVxlan.String()),
-			},
 		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`", apstra.VnTypeVxlan),
 			Optional:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
 		},
 		"vni": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "EVPN Virtual Network ID to be associated with this Virtual Network.",
 			Optional:            true,
-			Validators: []validator.Int64{
-				int64validator.Between(resources.VniMin-1, resources.VniMax+1),
-			},
 		},
 		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Not applicable in filter context. Ignore.",
@@ -123,50 +112,47 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Optional:            true,
 		},
 		"ipv4_connectivity_enabled": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
+			MarkdownDescription: "Enables IPv4 within the Virtual Network.",
 			Optional:            true,
 		},
 		"ipv6_connectivity_enabled": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables IPv6 within the Virtual Network. Default: false",
+			MarkdownDescription: "Enables IPv6 within the Virtual Network.",
 			Optional:            true,
 		},
 		"ipv4_subnet": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("IPv4 subnet associated with the "+
-				"Virtual Network. When not specified, a prefix from within the IPv4 "+
-				"Resource Pool assigned to the `%s` role will be automatically a"+
-				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv4),
-			Optional:   true,
-			Validators: []validator.String{apstravalidator.ParseCidr(true, false)},
+			MarkdownDescription: "IPv4 subnet associated with the Virtual Network.",
+			Optional:            true,
+			Validators:          []validator.String{apstravalidator.ParseCidr(true, false)},
 		},
 		"ipv6_subnet": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("IPv6 subnet associated with the "+
-				"Virtual Network. When not specified, a prefix from within the IPv6 "+
-				"Resource Pool assigned to the `%s` role will be automatically a"+
-				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv6),
+			MarkdownDescription: "IPv6 subnet associated with the Virtual Network. " +
+				"Note that this attribute will not appear in the `graph_query` output " +
+				"because IPv6 zero compression rules are problematic for mechanisms " +
+				"which rely on string matching.",
 			Optional:   true,
 			Validators: []validator.String{apstravalidator.ParseCidr(false, true)},
 		},
 		"ipv4_virtual_gateway_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Controls and indicates whether the IPv4 gateway within the " +
-				"Virtual Network is enabled. Requires `ipv4_connectivity_enabled` to be `true`",
+				"Virtual Network is enabled.",
 			Optional: true,
 		},
 		"ipv6_virtual_gateway_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Controls and indicates whether the IPv6 gateway within the " +
-				"Virtual Network is enabled. Requires `ipv6_connectivity_enabled` to be `true`",
+				"Virtual Network is enabled.",
 			Optional: true,
 		},
 		"ipv4_virtual_gateway": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Specifies the IPv4 virtual gateway address within the " +
-				"Virtual Network. The configured value must be a valid IPv4 host address " +
-				"configured value within range specified by `ipv4_subnet`",
+				"Virtual Network.",
 			Optional:   true,
 			Validators: []validator.String{apstravalidator.ParseIp(true, false)},
 		},
 		"ipv6_virtual_gateway": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Specifies the IPv6 virtual gateway address within the " +
-				"Virtual Network. The configured value must be a valid IPv6 host address " +
-				"configured value within range specified by `ipv6_subnet`",
+				"Virtual Network. Note that this attribute will not appear in the " +
+				"`graph_query` output because IPv6 zero compression rules are problematic " +
+				"for mechanisms which rely on string matching.",
 			Optional:   true,
 			Validators: []validator.String{apstravalidator.ParseIp(false, true)},
 		},
