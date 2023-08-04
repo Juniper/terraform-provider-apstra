@@ -634,3 +634,25 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 
 	return vnQuery
 }
+
+func (o *DatacenterVirtualNetwork) Ipv6Subnet(_ context.Context, path path.Path, diags *diag.Diagnostics) *net.IPNet {
+	if o.IPv6Subnet.IsNull() {
+		return nil
+	}
+
+	_, result, err := net.ParseCIDR(o.IPv6Subnet.ValueString())
+	if err != nil {
+		diags.AddAttributeError(path, fmt.Sprintf("failed to parse 'ipv6_subnet' value %s", o.IPv6Subnet), err.Error())
+		return nil
+	}
+
+	return result
+}
+
+func (o *DatacenterVirtualNetwork) Ipv6Gateway(_ context.Context, _ path.Path, _ *diag.Diagnostics) net.IP {
+	if o.IPv6Gateway.IsNull() {
+		return nil
+	}
+
+	return net.ParseIP(o.IPv6Gateway.ValueString())
+}
