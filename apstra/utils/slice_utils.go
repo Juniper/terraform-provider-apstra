@@ -88,3 +88,10 @@ func Reverse[A any](in []A) {
 		Swap(i, len(in)-1-i, in)
 	}
 }
+
+func SliceDeleteUnOrdered[A any](i int, a *[]A) {
+	s := *a
+	s[i] = s[len(s)-1] // copy item from end of slice to position i
+	s = s[:len(s)-1]
+	*a = s
+}
