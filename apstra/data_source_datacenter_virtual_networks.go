@@ -209,7 +209,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 			_, s, err := net.ParseCIDR(*queryResponse.Items[i].VirtualNetwork.Ipv6Subnet)
 			if err != nil {
 				resp.Diagnostics.AddError(
-					fmt.Sprintf("failed parsing API response %q as CIDR", itemSubnet), err.Error())
+					fmt.Sprintf("failed parsing API response %q as CIDR", *itemSubnet), err.Error())
 				return
 			}
 			if v6Subnet.String() != s.String() {
