@@ -76,7 +76,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 		},
 		"had_prior_vlan_id_config": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Used to trigger plan modification when `vlan_id` has been removed from the " +
-				"configuration in managed resource context, this attribute will always be `false` and should be " +
+				"configuration in managed resource context, this attribute will always be `null` and should be " +
 				"ignored in data source context.",
 			Computed: true,
 		},
@@ -87,7 +87,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 		},
 		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the " +
-				"configuration in managed resource context, this attribute will always be `false` and should be " +
+				"configuration in managed resource context, this attribute will always be `null` and should be " +
 				"ignored in data source context.",
 			Computed: true,
 		},
