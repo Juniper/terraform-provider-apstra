@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -68,7 +69,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	type virtualNetworks struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		IDs         types.Set    `tfsdk:"ids"`
-		Filters     types.Object `tfsdk:"filter"`
+		Filter      types.Object `tfsdk:"filter"`
 		Query       types.String `tfsdk:"graph_query"`
 	}
 
@@ -78,74 +79,62 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		return
 	}
 
-	if config.Filters.IsNull() {
+	var ids []attr.Value
+	var query *apstra.MatchQuery // todo change to interface after SDK update
+	bpId := apstra.ObjectId(config.BlueprintId.ValueString())
+	if config.Filter.IsNull() {
 		// just pull the VN IDs via API when no filter is specified
-		bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
-		if err != nil {
-			var ace apstra.ApstraClientErr
-			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-				resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-					config.BlueprintId), err.Error())
-				return
-			}
-			resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
-			return
-		}
-
-		ids, err := bpClient.ListAllVirtualNetworkIds(ctx)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("failed to list virtual networks in blueprint %s", config.BlueprintId), err.Error())
-			return
-		}
-
-		// load the result
-		config.IDs = utils.SetValueOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
+		ids = o.getAllVnIds(ctx, bpId, &resp.Diagnostics)
+		config.IDs = types.SetValueMust(types.StringType, ids)
+	} else {
+		// use a graph query (and some IPv6 value matching)
+		filter := blueprint.DatacenterVirtualNetwork{}
+		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		// set state
-		resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
-
+		ids, query = o.getFilteredVnIds(ctx, bpId, filter, &resp.Diagnostics)
+		config.IDs = types.SetValueMust(types.StringType, ids)
+		config.Query = types.StringValue(query.String())
+	}
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// if we got here, the user specified some filter attributes
-	filter := blueprint.DatacenterVirtualNetwork{}
-	if !config.Filters.IsNull() {
-		resp.Diagnostics.Append(config.Filters.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
-		if resp.Diagnostics.HasError() {
-			return
+	// set the state
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, bpId apstra.ObjectId, diags *diag.Diagnostics) []attr.Value {
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, bpId)
+	if err != nil {
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			diags.AddError(fmt.Sprintf("blueprint %s not found", bpId), err.Error())
+			return nil
 		}
+		diags.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, bpId), err.Error())
+		return nil
 	}
 
-	// pull out IPv6 network objects for later use (we can't let the graph db do
-	// string compare on these because of possible "::" expansion weirdness.
-	var v6Gateway net.IP
-	if !filter.IPv6Gateway.IsNull() {
-		v6Gateway = net.ParseIP(filter.IPv6Gateway.ValueString())
-		if v6Gateway == nil {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("filter").AtMapKey("ipv6_virtual_gateway"),
-				fmt.Sprintf("failed to parse 'ipv6_virtual_gateway' value %s", filter.IPv4Gateway),
-				"result: `nil`")
-		}
+	ids, err := bpClient.ListAllVirtualNetworkIds(ctx)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("failed to list virtual networks in blueprint %s", bpId), err.Error())
+		return nil
 	}
 
-	// pull out IPv6 network objects for later use (we can't let the graph db do
-	// string compare on these because of possible "::" expansion weirdness.
-	var v6Subnet *net.IPNet
-	if !filter.IPv6Subnet.IsNull() {
-		var err error
-		_, v6Subnet, err = net.ParseCIDR(filter.IPv6Subnet.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddAttributeError(path.Root("filter").AtMapKey("ipv6_subnet"),
-				fmt.Sprintf("failed to parse 'ipv6_subnet' value %s", filter.IPv6Subnet),
-				err.Error())
-		}
+	result := make([]attr.Value, len(ids))
+	for i, id := range ids {
+		result[i] = types.StringValue(id.String())
 	}
 
+	return result
+}
+
+// todo change returned query to interface after SDK update
+func (o *dataSourceDatacenterVirtualNetworks) getFilteredVnIds(ctx context.Context, bpId apstra.ObjectId, filter blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]attr.Value, *apstra.MatchQuery) {
 	query := filter.Query("n_virtual_network")
 	queryResponse := new(struct {
 		Items []struct {
@@ -161,13 +150,13 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	query2 := query.(*apstra.MatchQuery)
 	query2.
 		SetClient(o.client).
-		SetBlueprintId(apstra.ObjectId(config.BlueprintId.ValueString())).
+		SetBlueprintId(bpId).
 		SetBlueprintType(apstra.BlueprintTypeStaging)
 
 	err := query2.Do(ctx, queryResponse)
 	if err != nil {
-		resp.Diagnostics.AddError("error querying graph datastore", err.Error())
-		return
+		diags.AddError("error querying graph datastore", err.Error())
+		return nil, nil
 	}
 
 	// eliminate duplicate results
@@ -181,18 +170,27 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		idMap[id] = true
 	}
 
-	// check IPv6 fields because these cannot be compared by Apstra's query
-	// feature (string match might have unexpected results)
-	if v6Gateway != nil {
+	// extract the v6 subnet and gateway filters (if any)
+	filterPath := path.Root("filter")
+	v6SubnetFilter := filter.Ipv6Subnet(ctx, filterPath.AtName("ipv6_subnet"), diags)
+	if diags.HasError() {
+		return nil, nil
+	}
+	v6GatewayFilter := filter.Ipv6Gateway(ctx, filterPath.AtName("ipv6_virtual_gateway"), diags)
+	if diags.HasError() {
+		return nil, nil
+	}
+
+	if v6GatewayFilter != nil {
+		// remove results which don't match the filter
 		for i := len(queryResponse.Items) - 1; i >= 0; i-- {
-			itemGateway := queryResponse.Items[i].VirtualNetwork.Ipv6Gateway
-			if itemGateway == nil {
+			if queryResponse.Items[i].VirtualNetwork.Ipv6Gateway == nil {
 				// Item has no gateway, so not a match. Drop it.
 				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
 				continue
 			}
 			g := net.ParseIP(*queryResponse.Items[i].VirtualNetwork.Ipv6Gateway)
-			if !v6Gateway.Equal(g) {
+			if !v6GatewayFilter.Equal(g) {
 				// Item's gateway is not a match. Drop it.
 				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
 				continue
@@ -200,23 +198,21 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		}
 	}
 
-	// check IPv6 fields because these cannot be compared by Apstra's query
-	// feature (string match might have unexpected results)
-	if v6Subnet != nil {
+	if v6SubnetFilter != nil {
+		// remove results which don't match the filter
 		for i := len(queryResponse.Items) - 1; i >= 0; i-- {
-			itemSubnet := queryResponse.Items[i].VirtualNetwork.Ipv6Subnet
-			if itemSubnet == nil {
+			if queryResponse.Items[i].VirtualNetwork.Ipv6Subnet == nil {
 				// Item has no subnet, so not a match. Drop it.
 				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
 				continue
 			}
 			_, s, err := net.ParseCIDR(*queryResponse.Items[i].VirtualNetwork.Ipv6Subnet)
 			if err != nil {
-				resp.Diagnostics.AddError(
-					fmt.Sprintf("failed parsing API response %q as CIDR", *itemSubnet), err.Error())
-				return
+				diags.AddError(fmt.Sprintf("failed parsing API response %q as CIDR",
+					*queryResponse.Items[i].VirtualNetwork.Ipv6Subnet), err.Error())
+				return nil, nil
 			}
-			if v6Subnet.String() != s.String() {
+			if v6SubnetFilter.String() != s.String() {
 				// Item's subnet is not a match. Drop it.
 				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
 				continue
@@ -224,14 +220,10 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		}
 	}
 
-	ids := make([]attr.Value, len(queryResponse.Items))
+	result := make([]attr.Value, len(queryResponse.Items))
 	for i, item := range queryResponse.Items {
-		ids[i] = types.StringValue(item.VirtualNetwork.Id)
+		result[i] = types.StringValue(item.VirtualNetwork.Id)
 	}
 
-	config.IDs = types.SetValueMust(types.StringType, ids)
-	config.Query = types.StringValue(query.String())
-
-	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+	return result, query2
 }
