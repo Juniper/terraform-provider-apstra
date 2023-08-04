@@ -9,9 +9,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"net"
 	"terraform-provider-apstra/apstra/blueprint"
 	"terraform-provider-apstra/apstra/utils"
 )
@@ -114,13 +116,39 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		}
 	}
 
+	// pull out IPv6 network objects for later use (we can't let the graph db do
+	// string compare on these because of possible "::" expansion weirdness.
+	var v6Gateway net.IP
+	if !filters.IPv6Gateway.IsNull() {
+		v6Gateway = net.ParseIP(filters.IPv6Gateway.ValueString())
+		if v6Gateway == nil {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("filters").AtMapKey("ipv6_virtual_gateway"),
+				fmt.Sprintf("failed to parse 'ipv6_virtual_gateway' value %s", filters.IPv4Gateway),
+				"result: `nil`")
+		}
+	}
+
+	// pull out IPv6 network objects for later use (we can't let the graph db do
+	// string compare on these because of possible "::" expansion weirdness.
+	var v6Subnet *net.IPNet
+	if !filters.IPv6Subnet.IsNull() {
+		var err error
+		_, v6Subnet, err = net.ParseCIDR(filters.IPv6Subnet.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(path.Root("filters").AtMapKey("ipv6_subnet"),
+				fmt.Sprintf("failed to parse 'ipv6_subnet' value %s", filters.IPv6Subnet),
+				err.Error())
+		}
+	}
+
 	query := filters.Query("n_virtual_network")
 	queryResponse := new(struct {
 		Items []struct {
 			VirtualNetwork struct {
-				Id          string `json:"id"`
-				Ipv6Subnet  string `json:"ipv6_subnet"`          // todo verify match against filter
-				Ipv6Gateway string `json:"virtual_gateway_ipv6"` // todo verify match against filter
+				Id          string  `json:"id"`
+				Ipv6Subnet  *string `json:"ipv6_subnet"`
+				Ipv6Gateway *string `json:"virtual_gateway_ipv6"`
 			} `json:"n_virtual_network"`
 		} `json:"items"`
 	})
@@ -147,6 +175,49 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 			continue
 		}
 		idMap[id] = true
+	}
+
+	// check IPv6 fields because these cannot be compared by Apstra's query
+	// feature (string match might have unexpected results)
+	if v6Gateway != nil {
+		for i := len(queryResponse.Items) - 1; i >= 0; i-- {
+			itemGateway := queryResponse.Items[i].VirtualNetwork.Ipv6Gateway
+			if itemGateway == nil {
+				// Item has no gateway, so not a match. Drop it.
+				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
+				continue
+			}
+			g := net.ParseIP(*queryResponse.Items[i].VirtualNetwork.Ipv6Gateway)
+			if !v6Gateway.Equal(g) {
+				// Item's gateway is not a match. Drop it.
+				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
+				continue
+			}
+		}
+	}
+
+	// check IPv6 fields because these cannot be compared by Apstra's query
+	// feature (string match might have unexpected results)
+	if v6Subnet != nil {
+		for i := len(queryResponse.Items) - 1; i >= 0; i-- {
+			itemSubnet := queryResponse.Items[i].VirtualNetwork.Ipv6Subnet
+			if itemSubnet == nil {
+				// Item has no subnet, so not a match. Drop it.
+				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
+				continue
+			}
+			_, s, err := net.ParseCIDR(*queryResponse.Items[i].VirtualNetwork.Ipv6Subnet)
+			if err != nil {
+				resp.Diagnostics.AddError(
+					fmt.Sprintf("failed parsing API response %q as CIDR", itemSubnet), err.Error())
+				return
+			}
+			if v6Subnet.String() != s.String() {
+				// Item's subnet is not a match. Drop it.
+				utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
+				continue
+			}
+		}
 	}
 
 	ids := make([]attr.Value, len(queryResponse.Items))
