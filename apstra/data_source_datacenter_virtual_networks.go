@@ -35,7 +35,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Configure(ctx context.Context, req
 func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns the IDs of Virtual Networks within the specified Blueprint. " +
-			"All of the `filters` attributes are optional.",
+			"All of the `filter` attributes are optional.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID.",
@@ -43,18 +43,22 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "Set of Virtual Neteork IDs",
+				MarkdownDescription: "Set of Virtual Network IDs",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
-			"filters": schema.SingleNestedAttribute{
-				MarkdownDescription: "Virtual Network attributes used as filters",
-				Optional:            true,
-				Attributes:          blueprint.DatacenterVirtualNetwork{}.DataSourceFilterAttributes(),
+			"filter": schema.SingleNestedAttribute{
+				MarkdownDescription: "Virtual Network attributes used as filter. At least " +
+					"one filter attribute must be included when this attribute is used.",
+				Optional:   true,
+				Attributes: blueprint.DatacenterVirtualNetwork{}.DataSourceFilterAttributes(),
 			},
 			"graph_query": schema.StringAttribute{
-				MarkdownDescription: "The graph datastore query used to perform the lookup.",
-				Computed:            true,
+				MarkdownDescription: "The graph datastore query based on `filter` used to " +
+					"perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` " +
+					"attributes are never part of the graph query because IPv6 zero " +
+					"compression rules make string matches unreliable.",
+				Computed: true,
 			},
 		},
 	}
@@ -64,7 +68,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	type virtualNetworks struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		IDs         types.Set    `tfsdk:"ids"`
-		Filters     types.Object `tfsdk:"filters"`
+		Filters     types.Object `tfsdk:"filter"`
 		Query       types.String `tfsdk:"graph_query"`
 	}
 
@@ -75,7 +79,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	}
 
 	if config.Filters.IsNull() {
-		// just pull the VN IDs via API when no filters are specified
+		// just pull the VN IDs via API when no filter is specified
 		bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 		if err != nil {
 			var ace apstra.ApstraClientErr
@@ -108,9 +112,9 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	}
 
 	// if we got here, the user specified some filter attributes
-	filters := blueprint.DatacenterVirtualNetwork{}
+	filter := blueprint.DatacenterVirtualNetwork{}
 	if !config.Filters.IsNull() {
-		resp.Diagnostics.Append(config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
+		resp.Diagnostics.Append(config.Filters.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -119,12 +123,12 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	// pull out IPv6 network objects for later use (we can't let the graph db do
 	// string compare on these because of possible "::" expansion weirdness.
 	var v6Gateway net.IP
-	if !filters.IPv6Gateway.IsNull() {
-		v6Gateway = net.ParseIP(filters.IPv6Gateway.ValueString())
+	if !filter.IPv6Gateway.IsNull() {
+		v6Gateway = net.ParseIP(filter.IPv6Gateway.ValueString())
 		if v6Gateway == nil {
 			resp.Diagnostics.AddAttributeError(
-				path.Root("filters").AtMapKey("ipv6_virtual_gateway"),
-				fmt.Sprintf("failed to parse 'ipv6_virtual_gateway' value %s", filters.IPv4Gateway),
+				path.Root("filter").AtMapKey("ipv6_virtual_gateway"),
+				fmt.Sprintf("failed to parse 'ipv6_virtual_gateway' value %s", filter.IPv4Gateway),
 				"result: `nil`")
 		}
 	}
@@ -132,17 +136,17 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	// pull out IPv6 network objects for later use (we can't let the graph db do
 	// string compare on these because of possible "::" expansion weirdness.
 	var v6Subnet *net.IPNet
-	if !filters.IPv6Subnet.IsNull() {
+	if !filter.IPv6Subnet.IsNull() {
 		var err error
-		_, v6Subnet, err = net.ParseCIDR(filters.IPv6Subnet.ValueString())
+		_, v6Subnet, err = net.ParseCIDR(filter.IPv6Subnet.ValueString())
 		if err != nil {
-			resp.Diagnostics.AddAttributeError(path.Root("filters").AtMapKey("ipv6_subnet"),
-				fmt.Sprintf("failed to parse 'ipv6_subnet' value %s", filters.IPv6Subnet),
+			resp.Diagnostics.AddAttributeError(path.Root("filter").AtMapKey("ipv6_subnet"),
+				fmt.Sprintf("failed to parse 'ipv6_subnet' value %s", filter.IPv6Subnet),
 				err.Error())
 		}
 	}
 
-	query := filters.Query("n_virtual_network")
+	query := filter.Query("n_virtual_network")
 	queryResponse := new(struct {
 		Items []struct {
 			VirtualNetwork struct {
