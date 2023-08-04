@@ -218,11 +218,14 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"be disabled without re-creating the Blueprint.",
 			Optional: true,
 			Computed: true,
-			PlanModifiers: []planmodifier.Bool{boolplanmodifier.RequiresReplaceIf(
-				apstraplanmodifier.BoolRequiresReplaceWhenSwitchingTo(false),
-				"Switching from \"false\" to \"true\" requires the Blueprint to be replaced",
-				"Switching from `false` to `true` requires the Blueprint to be replaced",
-			)},
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.UseStateForUnknown(),
+				boolplanmodifier.RequiresReplaceIf(
+					apstraplanmodifier.BoolRequiresReplaceWhenSwitchingTo(false),
+					"Switching from \"false\" to \"true\" requires the Blueprint to be replaced",
+					"Switching from `false` to `true` requires the Blueprint to be replaced",
+				),
+			},
 		},
 	}
 }
