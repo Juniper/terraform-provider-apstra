@@ -2,6 +2,8 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -11,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetworks{}
@@ -69,6 +72,40 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		return
 	}
 
+	if config.Filters.IsNull() {
+		// just pull the VN IDs via API when no filters are specified
+		bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+		if err != nil {
+			var ace apstra.ApstraClientErr
+			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+				resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
+					config.BlueprintId), err.Error())
+				return
+			}
+			resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
+			return
+		}
+
+		ids, err := bpClient.ListAllVirtualNetworkIds(ctx)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("failed to list virtual networks in blueprint %s", config.BlueprintId), err.Error())
+			return
+		}
+
+		// load the result
+		config.IDs = utils.SetValueOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// set state
+		resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+
+		return
+	}
+
+	// if we got here, the user specified some filter attributes
 	filters := blueprint.DatacenterVirtualNetwork{}
 	if !config.Filters.IsNull() {
 		resp.Diagnostics.Append(config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
@@ -77,30 +114,44 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		}
 	}
 
-	query := filters.Query("n_security_zone", "n_policy")
-
+	query := filters.Query("n_virtual_network")
 	queryResponse := new(struct {
 		Items []struct {
-			SecurityZone struct {
-				Id string `json:"id"`
-			} `json:"n_security_zone"`
+			VirtualNetwork struct {
+				Id          string `json:"id"`
+				Ipv6Subnet  string `json:"ipv6_subnet"`          // todo verify match against filter
+				Ipv6Gateway string `json:"virtual_gateway_ipv6"` // todo verify match against filter
+			} `json:"n_virtual_network"`
 		} `json:"items"`
 	})
 
-	query.
+	// todo remove this type assertion when QEQuery is extended with new methods used below
+	query2 := query.(*apstra.MatchQuery)
+	query2.
 		SetClient(o.client).
 		SetBlueprintId(apstra.ObjectId(config.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging)
 
-	err := query.Do(ctx, queryResponse)
+	err := query2.Do(ctx, queryResponse)
 	if err != nil {
 		resp.Diagnostics.AddError("error querying graph datastore", err.Error())
 		return
 	}
 
+	// eliminate duplicate results
+	idMap := make(map[string]bool)
+	for i := len(queryResponse.Items) - 1; i >= 0; i-- {
+		id := queryResponse.Items[i].VirtualNetwork.Id
+		if idMap[id] {
+			utils.SliceDeleteUnOrdered(i, &queryResponse.Items)
+			continue
+		}
+		idMap[id] = true
+	}
+
 	ids := make([]attr.Value, len(queryResponse.Items))
 	for i, item := range queryResponse.Items {
-		ids[i] = types.StringValue(item.SecurityZone.Id)
+		ids[i] = types.StringValue(item.VirtualNetwork.Id)
 	}
 
 	config.IDs = types.SetValueMust(types.StringType, ids)
