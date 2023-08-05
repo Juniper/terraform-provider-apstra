@@ -67,7 +67,7 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			fmt.Sprintf("failed locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -79,14 +79,9 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	}
 
 	// Set the new allocation
-	switch {
-	case !plan.RoutingZoneId.IsNull():
-		err = bp.SetResourceAllocation(ctx, request)
-	default:
-		err = bp.SetResourceAllocation(ctx, request)
-	}
+	err = bp.SetResourceAllocation(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
+		resp.Diagnostics.AddError("failed setting resource allocation", err.Error())
 		return
 	}
 
@@ -129,7 +124,7 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 			return
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error getting %q resource allocation", allocationRequest.ResourceGroup.Name.String()),
+			fmt.Sprintf("failed getting %q resource allocation", allocationRequest.ResourceGroup.Name.String()),
 			err.Error())
 		return
 	}
@@ -163,7 +158,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			fmt.Sprintf("failed locking blueprint %q mutex", plan.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -177,7 +172,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	// Set the new allocation
 	err = bp.SetResourceAllocation(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
+		resp.Diagnostics.AddError("failed setting resource allocation", err.Error())
 	}
 
 	// Set state
@@ -204,7 +199,7 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
+			fmt.Sprintf("failed locking blueprint %q mutex", state.BlueprintId.ValueString()),
 			err.Error())
 		return
 	}
@@ -227,6 +222,6 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 	// Set the empty allocation
 	err = client.SetResourceAllocation(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error setting resource allocation", err.Error())
+		resp.Diagnostics.AddError("failed setting resource allocation", err.Error())
 	}
 }
