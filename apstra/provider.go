@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -33,6 +34,8 @@ const (
 	osxCertErrStringMatch = "certificate is not trusted"
 	winCertErrStringMatch = "x509: certificate signed by unknown authority"
 	linCertErrStringMatch = "x509: cannot validate certificate for"
+
+	defaultApiTimeout = 10
 
 	disableTlsValidationMsg = `!!! BAD IDEA WARNING !!!
 
@@ -153,6 +156,14 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 					compatibility.SupportedApiVersionsPretty()),
 				Optional: true,
 			},
+			"api_timeout": schema.Int64Attribute{
+				MarkdownDescription: fmt.Sprintf("Timeout in seconds for completing API transactions "+
+					"with the Apstra server. Omit for default value of %d seconds. Value of 0 results in "+
+					"infinite timeout.",
+					defaultApiTimeout),
+				Optional:   true,
+				Validators: []validator.Int64{int64validator.AtLeast(0)},
+			},
 		},
 	}
 }
@@ -165,6 +176,7 @@ type providerConfig struct {
 	MutexEnable  types.Bool   `tfsdk:"blueprint_mutex_enabled"`
 	MutexMessage types.String `tfsdk:"blueprint_mutex_message"`
 	Experimental types.Bool   `tfsdk:"experimental"`
+	ApiTimeout   types.Int64  `tfsdk:"api_timeout"`
 }
 
 func (o providerConfig) handleMutexFlag(_ context.Context, diags *diag.Diagnostics) {
@@ -217,6 +229,19 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	if transport, ok := clientCfg.HttpClient.Transport.(*http.Transport); ok {
 		transport.TLSClientConfig.InsecureSkipVerify = config.TlsNoVerify.ValueBool()
 		clientCfg.HttpClient.Transport = transport
+	}
+
+	// Set the API timeout
+	if config.ApiTimeout.IsNull() {
+		config.ApiTimeout = types.Int64Value(defaultApiTimeout)
+	}
+
+	cfgValue := config.ApiTimeout.ValueInt64()
+	switch cfgValue {
+	case 0:
+		clientCfg.Timeout = -1 * time.Second // negative value is infinite timeout
+	default:
+		clientCfg.Timeout = time.Duration(cfgValue) * time.Second
 	}
 
 	// Create the Apstra client.
