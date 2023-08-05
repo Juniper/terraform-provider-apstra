@@ -38,6 +38,7 @@ APSTRA_PASS=password
 
 ### Optional
 
+- `api_timeout` (Number) Timeout in seconds for completing API transactions with the Apstra server. Omit for default value of 10 seconds. Value of 0 results in infinite timeout.
 - `blueprint_mutex_disabled` (Boolean, Deprecated) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform)  should wait before beginning to make changes of their own. Set this attribute 'true' to skip locking the mutex(es) which signal exclusive Blueprint access for all Blueprint changes made in this project.
 - `blueprint_mutex_enabled` (Boolean) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform) should wait before beginning to make changes of their own. Setting this attribute 'true' causes the provider to lock a blueprint-specific mutex before making any changes.
 - `blueprint_mutex_message` (String) Blueprint mutexes are signals that changes are being made in the staging Blueprint and other automation processes (including other instances of Terraform)  should wait before beginning to make changes of their own. The mutexes embed a human-readable field to reduce confusion in the event a mutex needs to be cleared manually. This attribute overrides the default message in that field: "locked by terraform at $DATE".
