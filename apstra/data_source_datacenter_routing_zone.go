@@ -31,7 +31,7 @@ func (o *dataSourceDatacenterRoutingZone) Schema(_ context.Context, _ datasource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource returns details of a Routing Zone within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes:          blueprint.DatacenterRoutingZone{}.DataSourceAttributes(),
+		Attributes: blueprint.DatacenterRoutingZone{}.DataSourceAttributes(),
 	}
 }
 
