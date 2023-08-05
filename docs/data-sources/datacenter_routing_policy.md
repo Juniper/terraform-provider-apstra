@@ -3,11 +3,14 @@ page_title: "apstra_datacenter_routing_policy Data Source - terraform-provider-a
 subcategory: ""
 description: |-
   This resource returns details of a Datacenter Routing Policy.
+  At least one optional attribute is required.
 ---
 
 # apstra_datacenter_routing_policy (Data Source)
 
 This resource returns details of a Datacenter Routing Policy.
+
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -132,8 +135,8 @@ output "test_policy" { value = data.apstra_datacenter_routing_policy.test }
 
 ### Optional
 
-- `id` (String) Apstra graph node ID.
-- `name` (String) Web UI `name` field.
+- `id` (String) Apstra graph node ID. Required when `name` is omitted.
+- `name` (String) Web UI `name` field. Required when `id` is omitted.
 
 ### Read-Only
 

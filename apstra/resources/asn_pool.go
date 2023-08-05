@@ -29,7 +29,7 @@ type AsnPool struct {
 func (o AsnPool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the desired ASN Pool.",
+			MarkdownDescription: "ID of the desired ASN Pool. Required when `name` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -41,7 +41,7 @@ func (o AsnPool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Display name of the ASN Pool.",
+			MarkdownDescription: "Display name of the ASN Pool. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

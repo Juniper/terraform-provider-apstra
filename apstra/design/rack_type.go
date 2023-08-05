@@ -32,7 +32,7 @@ type RackType struct {
 func (o RackType) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Rack Type ID.  Required when the Rack Type name is omitted.",
+			MarkdownDescription: "Apstra ID of the Rack Type. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -44,7 +44,7 @@ func (o RackType) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Rack Type name displayed in the Apstra web UI.  Required when Rack Type ID is omitted.",
+			MarkdownDescription: "Web UI name of the Type. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

@@ -28,9 +28,7 @@ func (o *dataSourceIpv4Pool) Configure(ctx context.Context, req datasource.Confi
 func (o *dataSourceIpv4Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IPv4 Pool.\n\n" +
-			"At least one optional attribute is required. " +
-			"It is incumbent upon the user to ensure the lookup criteria matches exactly one IPv4 Pool. " +
-			"Matching zero or more IPv4 Pools will produce an error.",
+			"At least one optional attribute is required. ",
 		Attributes: resources.Ipv4Pool{}.DataSourceAttributes(),
 	}
 }

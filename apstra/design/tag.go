@@ -25,7 +25,7 @@ type Tag struct {
 func (o Tag) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Tag by ID. Required when `name`is omitted.",
+			MarkdownDescription: "Apstra ID of the Tag. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -37,7 +37,7 @@ func (o Tag) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Tag by name. Required when `id` is omitted.",
+			MarkdownDescription: "Web UI name of the Tag. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{

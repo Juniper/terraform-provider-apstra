@@ -28,7 +28,8 @@ func (o *dataSourceDatacenterRoutingPolicy) Configure(ctx context.Context, req d
 
 func (o *dataSourceDatacenterRoutingPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource returns details of a Datacenter Routing Policy.",
+		MarkdownDescription: "This resource returns details of a Datacenter Routing Policy.\n\n" +
+			"At least one optional attribute is required.",
 		Attributes:          blueprint.DatacenterRoutingPolicy{}.DataSourceAttributes(),
 	}
 }

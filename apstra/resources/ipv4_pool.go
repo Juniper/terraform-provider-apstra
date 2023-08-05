@@ -29,7 +29,7 @@ type Ipv4Pool struct {
 func (o Ipv4Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the desired IPv4 Pool.",
+			MarkdownDescription: "Apstra ID of the desired IPv4 Pool. Required when `name` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -41,7 +41,7 @@ func (o Ipv4Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the IPv4 pool.",
+			MarkdownDescription: "Web UI Name of the IPv4 pool. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

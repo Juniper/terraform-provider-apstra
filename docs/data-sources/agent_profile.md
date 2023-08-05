@@ -37,8 +37,8 @@ output "agent_profiles_missing_credentials" {
 
 ### Optional
 
-- `id` (String) Populate this field to look up an Agent Profile by ID. Required when `name`is omitted.
-- `name` (String) Populate this field to look up an Agent Profile by name. Required when `id`is omitted.
+- `id` (String) Apstra ID of the Agent Profile. Required when `name` is omitted.
+- `name` (String) Web UID name of the Agent Profile. Required when `id` is omitted.
 
 ### Read-Only
 

@@ -27,7 +27,7 @@ type PropertySet struct {
 func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Property Set by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Apstra ID of the Property Set. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -39,7 +39,7 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Property Set by name. Required when `id` is omitted.",
+			MarkdownDescription: "Web UID name of the Property Set. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

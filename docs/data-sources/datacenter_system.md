@@ -3,11 +3,14 @@ page_title: "apstra_datacenter_system Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source returns details of a specific system Graph DB node within a Blueprint.
+  At least one optional attribute is required.
 ---
 
 # apstra_datacenter_system (Data Source)
 
 This data source returns details of a specific *system* Graph DB node within a Blueprint.
+
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -50,8 +53,8 @@ locals {
 
 ### Optional
 
-- `id` (String) Apstra Graph DB node `id` field
-- `name` (String) Apstra Web UI `name` field / Graph DB `label` field
+- `id` (String) Apstra Graph DB node `id` field. Required when `name` is omitted.
+- `name` (String) Apstra Web UI name (araph DB `label` field). Required when `id` is omitted.
 
 ### Read-Only
 

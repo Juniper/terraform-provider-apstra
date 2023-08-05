@@ -35,8 +35,8 @@ resource "apstra_rack_type" "my_rack" {
 
 ### Optional
 
-- `id` (String) Populate this field to look up a Tag by ID. Required when `name`is omitted.
-- `name` (String) Populate this field to look up a Tag by name. Required when `id` is omitted.
+- `id` (String) Apstra ID of the Tag. Required when `name` is omitted.
+- `name` (String) Web UI name of the Tag. Required when `id` is omitted.
 
 ### Read-Only
 

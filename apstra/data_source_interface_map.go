@@ -29,9 +29,7 @@ func (o *dataSourceInterfaceMap) Configure(ctx context.Context, req datasource.C
 func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Interface Map.\n\n" +
-			"At least one optional attribute is required. " +
-			"It is incumbent upon the user to ensure the lookup criteria matches exactly one Interface Map. " +
-			"Matching zero or more Interface Maps will produce an error.",
+			"At least one optional attribute is required. ",
 		Attributes: design.InterfaceMap{}.DataSourceAttributes(),
 	}
 }
