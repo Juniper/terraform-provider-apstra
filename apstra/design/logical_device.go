@@ -26,7 +26,7 @@ type LogicalDevice struct {
 func (o LogicalDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Logical Device by ID. Required when `name`is omitted.",
+			MarkdownDescription: "Apstra ID of the Logical Device. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -38,7 +38,7 @@ func (o LogicalDevice) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Logical Device by name. Required when `id`is omitted.",
+			MarkdownDescription: "Web UI name of the Logical Device. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

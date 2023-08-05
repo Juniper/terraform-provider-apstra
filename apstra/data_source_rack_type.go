@@ -29,9 +29,7 @@ func (o *dataSourceRackType) Configure(ctx context.Context, req datasource.Confi
 func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Rack Type.\n\n" +
-			"At least one optional attribute is required. " +
-			"It is incumbent on the user to ensure the criteria matches exactly one Rack Type. " +
-			"Matching zero Rack Types or more than one Rack Type will produce an error.",
+			"At least one optional attribute is required.",
 		Attributes: design.RackType{}.DataSourceAttributes(),
 	}
 }

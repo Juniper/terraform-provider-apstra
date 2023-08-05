@@ -3,14 +3,14 @@ page_title: "apstra_logical_device Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific Logical Device.
-  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Logical Device. Matching zero or more Logical Devices will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_logical_device (Data Source)
 
 This data source provides details of a specific Logical Device.
 
-At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Logical Device. Matching zero or more Logical Devices will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -70,8 +70,8 @@ resource "apstra_rack_type" "my_rack" {
 
 ### Optional
 
-- `id` (String) Populate this field to look up a Logical Device by ID. Required when `name`is omitted.
-- `name` (String) Populate this field to look up a Logical Device by name. Required when `id`is omitted.
+- `id` (String) Apstra ID of the Logical Device. Required when `name` is omitted.
+- `name` (String) Web UI name of the Logical Device. Required when `id` is omitted.
 
 ### Read-Only
 

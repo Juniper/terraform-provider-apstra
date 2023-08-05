@@ -28,7 +28,7 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			Required:            true,
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Graph DB node `id` field",
+			MarkdownDescription: "Apstra Graph DB node `id` field. Required when `name` is omitted.",
 			Optional:            true,
 			Validators: []validator.String{stringvalidator.ExactlyOneOf(path.Expressions{
 				path.MatchRelative(),
@@ -36,7 +36,7 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			}...)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Web UI `name` field / Graph DB `label` field",
+			MarkdownDescription: "Apstra Web UI name (araph DB `label` field). Required when `id` is omitted.",
 			Optional:            true,
 		},
 		"attributes": dataSourceSchema.SingleNestedAttribute{

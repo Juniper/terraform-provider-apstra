@@ -3,14 +3,14 @@ page_title: "apstra_asn_pool Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific ASN Pool.
-  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one ASN Pool. Matching zero or more ASN Pools will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_asn_pool (Data Source)
 
 This data source provides details of a specific ASN Pool.
 
-At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one ASN Pool. Matching zero or more ASN Pools will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -61,8 +61,8 @@ output "asn_report" {
 
 ### Optional
 
-- `id` (String) ID of the desired ASN Pool.
-- `name` (String) Display name of the ASN Pool.
+- `id` (String) ID of the desired ASN Pool. Required when `name` is omitted.
+- `name` (String) Display name of the ASN Pool. Required when `id` is omitted.
 
 ### Read-Only
 

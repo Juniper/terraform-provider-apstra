@@ -44,7 +44,7 @@ type Blueprint struct {
 func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Blueprint: Either as a result of a lookup, or user-specified.",
+			MarkdownDescription: "ID of the Blueprint. Required when `name` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -56,7 +56,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the Blueprint: Either as a result of a lookup, or user-specified.",
+			MarkdownDescription: "Name of the Blueprint. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

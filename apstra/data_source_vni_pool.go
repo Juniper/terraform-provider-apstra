@@ -29,9 +29,7 @@ func (o *dataSourceVniPool) Configure(ctx context.Context, req datasource.Config
 func (o *dataSourceVniPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific VNI Pool.\n\n" +
-			"At least one optional attribute is required. " +
-			"It is incumbent upon the user to ensure the lookup criteria matches exactly one VNI Pool. " +
-			"Matching zero or more VNI Pools will produce an error.",
+			"At least one optional attribute is required.",
 		Attributes: resources.VniPool{}.DataSourceAttributes(),
 	}
 }

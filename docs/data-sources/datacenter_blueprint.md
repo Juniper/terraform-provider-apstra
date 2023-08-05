@@ -3,14 +3,14 @@ page_title: "apstra_datacenter_blueprint Data Source - terraform-provider-apstra
 subcategory: ""
 description: |-
   This data source looks up summary details of a Datacenter Blueprint.
-  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Datacenter Blueprint. Matching zero or more Datacenter Blueprints will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_datacenter_blueprint (Data Source)
 
 This data source looks up summary details of a Datacenter Blueprint.
 
-At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Datacenter Blueprint. Matching zero or more Datacenter Blueprints will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -45,8 +45,8 @@ resource "apstra_blueprint_deployment" "as_needed" {
 
 ### Optional
 
-- `id` (String) ID of the Blueprint: Either as a result of a lookup, or user-specified.
-- `name` (String) Name of the Blueprint: Either as a result of a lookup, or user-specified.
+- `id` (String) ID of the Blueprint. Required when `name` is omitted.
+- `name` (String) Name of the Blueprint. Required when `id` is omitted.
 
 ### Read-Only
 

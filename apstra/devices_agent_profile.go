@@ -30,7 +30,7 @@ type agentProfile struct {
 func (o agentProfile) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an Agent Profile by ID. Required when `name`is omitted.",
+			MarkdownDescription: "Apstra ID of the Agent Profile. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -42,7 +42,7 @@ func (o agentProfile) dataSourceAttributes() map[string]dataSourceSchema.Attribu
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an Agent Profile by name. Required when `id`is omitted.",
+			MarkdownDescription: "Web UID name of the Agent Profile. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

@@ -3,11 +3,14 @@ page_title: "apstra_datacenter_routing_zone Data Source - terraform-provider-aps
 subcategory: ""
 description: |-
   This resource returns details of a Routing Zone within a Datacenter Blueprint.
+  At least one optional attribute is required.
 ---
 
 # apstra_datacenter_routing_zone (Data Source)
 
 This resource returns details of a Routing Zone within a Datacenter Blueprint.
+
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -50,11 +53,11 @@ output "routing_zone" {
 
 ### Required
 
-- `blueprint_id` (String) Apstra Blueprint ID.
+- `blueprint_id` (String) Apstra Blueprint ID. Required when `id` is omitted.
 
 ### Optional
 
-- `id` (String) Apstra graph node ID.
+- `id` (String) Apstra graph node ID. Required when `name` is omitted.
 - `name` (String) VRF name displayed in thw Apstra web UI.
 
 ### Read-Only

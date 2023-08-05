@@ -33,7 +33,7 @@ type TemplateRackBased struct {
 func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Template ID.  Required when the Template name is omitted.",
+			MarkdownDescription: "Apstra Template ID. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -45,7 +45,7 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Template name displayed in the Apstra web UI.  Required when Template ID is omitted.",
+			MarkdownDescription: "Web UI name of the Template. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{

@@ -29,9 +29,7 @@ func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.
 func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific Logical Device.\n\n" +
-			"At least one optional attribute is required. " +
-			"It is incumbent upon the user to ensure the lookup criteria matches exactly one Logical Device. " +
-			"Matching zero or more Logical Devices will produce an error.",
+			"At least one optional attribute is required.",
 		Attributes: design.LogicalDevice{}.DataSourceAttributes(),
 	}
 }
