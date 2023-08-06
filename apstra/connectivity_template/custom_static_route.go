@@ -131,7 +131,7 @@ func (o customStaticRoutePrototype) attributes(_ context.Context, path path.Path
 	if o.Network != nil {
 		_, result.Network, err = net.ParseCIDR(*o.Network)
 		if err != nil {
-			diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %q", o.Network), err.Error())
+			diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %q", *o.Network), err.Error())
 			return nil
 		}
 	}
@@ -139,7 +139,7 @@ func (o customStaticRoutePrototype) attributes(_ context.Context, path path.Path
 	if o.NextHop != nil {
 		result.NextHop = net.ParseIP(*o.NextHop)
 		if result.NextHop == nil {
-			diags.AddAttributeError(path, fmt.Sprintf("failed parsing next hop IP address string %q", o.Network), err.Error())
+			diags.AddAttributeError(path, fmt.Sprintf("failed parsing next hop IP address string %q", *o.Network), err.Error())
 		}
 	}
 
