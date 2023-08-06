@@ -368,6 +368,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterCtCustomStaticRoute{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtIpLink{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtRoutingPolicy{} },
+		func() datasource.DataSource { return &dataSourceDatacenterCtRoutingZoneConstraint{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtStaticRoute{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtVnSingle{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtVnMultiple{} },
