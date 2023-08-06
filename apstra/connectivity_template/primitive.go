@@ -55,8 +55,8 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 		jsonPrimitive = new(ipLinkPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
 		jsonPrimitive = new(staticRoutePrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-	//	jsonPrimitive = new(customStaticRoutePrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
+		jsonPrimitive = new(customStaticRoutePrototype)
 	//case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
 	//	jsonPrimitive = new(bgpPeeringIpEndpointPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
@@ -118,8 +118,8 @@ func PrimitiveFromSdk(ctx context.Context, in *apstra.ConnectivityTemplatePrimit
 		primitive = new(IpLink)
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
 		primitive = new(StaticRoute)
-	//case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-	//	primitive = new(CustomStaticRoute)
+	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
+		primitive = new(CustomStaticRoute)
 	//case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
 	//	primitive = new(BgpPeeringIpEndpoint)
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
