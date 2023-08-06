@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math"
+	"net"
 	"sort"
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
@@ -24,26 +25,27 @@ import (
 var _ Primitive = &BgpPeeringIpEndpoint{}
 
 type BgpPeeringIpEndpoint struct {
-	NeighborAsnDynamic types.Bool   `tfsdk:"neighbor_asn_dynamic"`
-	Ipv4AfiEnabled     types.Bool   `tfsdk:"ipv4_afi_enabled"`
-	Ipv6AfiEnabled     types.Bool   `tfsdk:"ipv6_afi_enabled"`
-	Ttl                types.Int64  `tfsdk:"ttl"`
-	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
-	Password           types.String `tfsdk:"password"`
-	KeepaliveTime      types.Int64  `tfsdk:"keepalive_time"`
-	HoldTime           types.Int64  `tfsdk:"hold_time"`
-	LocalAsn           types.Int64  `tfsdk:"local_asn"`
-	Ipv4AddressingType types.String `tfsdk:"ipv4_address"`
-	Ipv6AddressingType types.String `tfsdk:"ipv6_address"`
-	ChildPrimitives    types.Set    `tfsdk:"child_primitives"`
-	Primitive          types.String `tfsdk:"primitive"`
+	NeighborAsn     types.Int64  `tfsdk:"neighbor_asn"`
+	Ipv4AfiEnabled  types.Bool   `tfsdk:"ipv4_afi_enabled"`
+	Ipv6AfiEnabled  types.Bool   `tfsdk:"ipv6_afi_enabled"`
+	Ttl             types.Int64  `tfsdk:"ttl"`
+	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
+	Password        types.String `tfsdk:"password"`
+	KeepaliveTime   types.Int64  `tfsdk:"keepalive_time"`
+	HoldTime        types.Int64  `tfsdk:"hold_time"`
+	LocalAsn        types.Int64  `tfsdk:"local_asn"`
+	Ipv4Address     types.String `tfsdk:"ipv4_address"`
+	Ipv6Address     types.String `tfsdk:"ipv6_address"`
+	ChildPrimitives types.Set    `tfsdk:"child_primitives"`
+	Primitive       types.String `tfsdk:"primitive"`
 }
 
 func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"neighbor_asn_dynamic": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Default behavior is `static`",
+		"neighbor_asn": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",
 			Optional:            true,
+			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
 		},
 		"ipv4_afi_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "IPv4 Address Family Identifier",
@@ -76,6 +78,14 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			MarkdownDescription: "BGP hold time (seconds).",
 			Optional:            true,
 			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint16+1)},
+		},
+		"local_asn": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "This feature is configured on a per-peer basis. It allows a router " +
+				"to appear to be a member of a second autonomous system (AS) by prepending a local-as " +
+				"AS number, in addition to its real AS number, announced to its eBGP peer, resulting " +
+				"in an AS path length of two.",
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
 		},
 		"ipv4_address": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address of peer (if IPv4 AFI is enabled)", // todo - is this true?
@@ -115,72 +125,52 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 }
 
 func (o BgpPeeringIpEndpoint) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
-	obj := bgpPeeringIpEndpointPrototype{
-		Ipv4AfiEnabled: o.Ipv4AfiEnabled.ValueBool(),
-		Ipv6AfiEnabled: o.Ipv6AfiEnabled.ValueBool(),
-		//Ttl:                nil, // see below
-		BfdEnabled: o.BfdEnabled.ValueBool(),
-		Password:   o.Password.ValueStringPointer(),
-		//KeepaliveTime:      nil, // see below
-		//HoldTime:           nil, // see below
-		Ipv4AddressingType: o.Ipv4AddressingType.ValueString(),
-		Ipv6AddressingType: o.Ipv6AddressingType.ValueString(),
-		//LocalAsn:           nil, // see below
-		NeighborAsnDynamic: o.NeighborAsnDynamic.ValueBool(),
+	prototype := bgpPeeringIpEndpointPrototype{
+		Ipv4AfiEnabled:  o.Ipv4AfiEnabled.ValueBool(),
+		Ipv6AfiEnabled:  o.Ipv6AfiEnabled.ValueBool(),
+		Ttl:             uint8(o.Ttl.ValueInt64()), // okay if null, then we get zero value
+		BfdEnabled:      o.BfdEnabled.ValueBool(),
+		Password:        o.Password.ValueStringPointer(),
+		Ipv4Address:     o.Ipv4Address.ValueStringPointer(),
+		Ipv6Address:     o.Ipv6Address.ValueStringPointer(),
+		ChildPrimitives: nil,
 	}
 
-	ttl := uint8(o.Ttl.ValueInt64())
-	obj.Ttl = &ttl
+	if o.NeighborAsn.IsNull() {
+		prototype.NeighborAsnDynaimc = true
+	} else {
+		nasn := uint32(o.NeighborAsn.ValueInt64())
+		prototype.NeighborAsn = &nasn
+	}
 
-	var keepaliveTime *uint16
 	if !o.KeepaliveTime.IsNull() {
-		t := uint16(o.KeepaliveTime.ValueInt64())
-		keepaliveTime = &t
+		kat := uint16(o.KeepaliveTime.ValueInt64())
+		prototype.KeepaliveTime = &kat
 	}
-	obj.KeepaliveTime = keepaliveTime
 
-	var holdTime *uint16
 	if !o.HoldTime.IsNull() {
-		t := uint16(o.HoldTime.ValueInt64())
-		holdTime = &t
-	}
-	obj.HoldTime = holdTime
-
-	if obj.Ipv4AddressingType == "" { // set default for omitted attribute
-		obj.Ipv4AddressingType = apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String()
+		ht := uint16(o.HoldTime.ValueInt64())
+		prototype.HoldTime = &ht
 	}
 
-	if obj.Ipv6AddressingType == "" { // set default for omitted attribute
-		obj.Ipv6AddressingType = apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String()
-	}
-
-	var localAsn *uint32
 	if !o.LocalAsn.IsNull() {
-		la := uint32(o.LocalAsn.ValueInt64())
-		localAsn = &la
-	}
-	obj.LocalAsn = localAsn
-
-	if obj.PeerTo == "" { // set default for omitted attribute
-		obj.PeerTo = apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt.String()
+		lasn := uint32(o.LocalAsn.ValueInt64())
+		prototype.LocalAsn = &lasn
 	}
 
-	var childPrimitives []string
-	diags.Append(o.ChildPrimitives.ElementsAs(ctx, &childPrimitives, false)...)
+	diags.Append(o.ChildPrimitives.ElementsAs(ctx, &prototype.ChildPrimitives, false)...)
 	if diags.HasError() {
 		return ""
 	}
 
 	// sort the childPrimitives by their SHA1 sums for easier comparison of nested strings
-	sort.Slice(childPrimitives, func(i, j int) bool {
-		sum1 := sha1.Sum([]byte(childPrimitives[i]))
-		sum2 := sha1.Sum([]byte(childPrimitives[j]))
+	sort.Slice(prototype.ChildPrimitives, func(i, j int) bool {
+		sum1 := sha1.Sum([]byte(prototype.ChildPrimitives[i]))
+		sum2 := sha1.Sum([]byte(prototype.ChildPrimitives[j]))
 		return bytes.Compare(sum1[:], sum2[:]) >= 0
 	})
 
-	obj.ChildPrimitives = childPrimitives
-
-	data, err := json.Marshal(&obj)
+	data, err := json.Marshal(&prototype)
 	if err != nil {
 		diags.AddError("failed marshaling BgpPeeringIpEndpoint primitive data", err.Error())
 		return ""
@@ -199,119 +189,88 @@ func (o BgpPeeringIpEndpoint) Marshal(ctx context.Context, diags *diag.Diagnosti
 }
 
 func (o *BgpPeeringIpEndpoint) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	attributes, ok := in.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi)
+	attributes, ok := in.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt)
 	if !ok {
 		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %T", in))
 		return
+	}
+
+	if attributes.Asn != nil {
+		o.NeighborAsn = types.Int64Value(int64(*attributes.Asn))
 	}
 
 	o.Ipv4AfiEnabled = types.BoolValue(attributes.Ipv4Safi)
 	o.Ipv6AfiEnabled = types.BoolValue(attributes.Ipv6Safi)
 	o.Ttl = types.Int64Value(int64(attributes.Ttl))
 	o.BfdEnabled = types.BoolValue(attributes.Bfd)
+
 	if attributes.Password != nil {
 		o.Password = types.StringValue(*attributes.Password)
-	} else {
-		o.Password = types.StringNull()
 	}
+
 	if attributes.Keepalive != nil {
 		o.KeepaliveTime = types.Int64Value(int64(*attributes.Keepalive))
-	} else {
-		o.KeepaliveTime = types.Int64Null()
 	}
+
 	if attributes.Holdtime != nil {
 		o.HoldTime = types.Int64Value(int64(*attributes.Holdtime))
-	} else {
-		o.HoldTime = types.Int64Null()
 	}
-	o.Ipv4AddressingType = types.StringValue(attributes.SessionAddressingIpv4.String())
-	o.Ipv6AddressingType = types.StringValue(attributes.SessionAddressingIpv6.String())
+
 	if attributes.LocalAsn != nil {
 		o.LocalAsn = types.Int64Value(int64(*attributes.LocalAsn))
-	} else {
-		o.LocalAsn = types.Int64Null()
 	}
-	o.NeighborAsnDynamic = types.BoolValue(attributes.NeighborAsnDynamic)
-	o.PeerFromLoopback = types.BoolValue(attributes.PeerFromLoopback)
-	o.PeerTo = types.StringValue(attributes.PeerTo.String())
+
+	if attributes.Ipv4Addr != nil {
+		o.Ipv4Address = types.StringValue(attributes.Ipv4Addr.String())
+	}
+
+	if attributes.Ipv6Addr != nil {
+		o.Ipv6Address = types.StringValue(attributes.Ipv6Addr.String())
+	}
+
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 }
 
 var _ JsonPrimitive = &bgpPeeringIpEndpointPrototype{}
 
 type bgpPeeringIpEndpointPrototype struct {
+	NeighborAsn        *uint32  `json:"neighbor_asn"`
+	NeighborAsnDynaimc bool     `json:"neighbor_asn_dynaimc"`
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled     bool     `json:"ipv6_afi_enabled"`
-	Ttl                *uint8   `json:"ttl"`
+	Ttl                uint8    `json:"ttl"`
 	BfdEnabled         bool     `json:"bfd_enabled"`
 	Password           *string  `json:"password"`
 	KeepaliveTime      *uint16  `json:"keepalive_time"`
 	HoldTime           *uint16  `json:"hold_time"`
-	Ipv4AddressingType string   `json:"ipv4_addressing_type"`
-	Ipv6AddressingType string   `json:"ipv6_addressing_type"`
 	LocalAsn           *uint32  `json:"local_asn"`
-	NeighborAsnDynamic bool     `json:"neighbor_asn_dynamic"`
-	PeerFromLoopback   bool     `json:"peer_from_loopback"`
-	PeerTo             string   `json:"peer_to"`
+	Ipv4Address        *string  `json:"ipv4_address"`
+	Ipv6Address        *string  `json:"ipv6_address"`
 	ChildPrimitives    []string `json:"child_primitives"`
 }
 
-func (o bgpPeeringIpEndpointPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
-	var err error
-	var ipv4AddressingType apstra.CtPrimitiveIPv4ProtocolSessionAddressing
-	err = ipv4AddressingType.FromString(o.Ipv4AddressingType)
-	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv4 addressing type %q", o.Ipv4AddressingType), err.Error())
-		return nil
+func (o bgpPeeringIpEndpointPrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+	var ipv4Addr, ipv6Addr net.IP
+	if o.Ipv4Address != nil {
+		ipv4Addr = net.ParseIP(*o.Ipv4Address)
+	}
+	if o.Ipv6Address != nil {
+		ipv6Addr = net.ParseIP(*o.Ipv6Address)
 	}
 
-	var ipv6AddressingType apstra.CtPrimitiveIPv6ProtocolSessionAddressing
-	err = ipv6AddressingType.FromString(o.Ipv6AddressingType)
-	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv6 addressing type %q", o.Ipv6AddressingType), err.Error())
-		return nil
-	}
-
-	var peerTo apstra.CtPrimitiveBgpPeerTo
-	err = peerTo.FromString(o.PeerTo)
-	if err != nil {
-		diags.AddAttributeError(path, "failed parsing peer_to", err.Error())
-		return nil
-	}
-
-	var sessionAddressingIpv4 apstra.CtPrimitiveIPv4ProtocolSessionAddressing
-	err = sessionAddressingIpv4.FromString(o.Ipv4AddressingType)
-	if err != nil {
-		diags.AddAttributeError(path, "failed parsing ipv4_addressing_type", err.Error())
-		return nil
-	}
-
-	var sessionAddressingIpv6 apstra.CtPrimitiveIPv6ProtocolSessionAddressing
-	err = sessionAddressingIpv6.FromString(o.Ipv6AddressingType)
-	if err != nil {
-		diags.AddAttributeError(path, "failed parsing ipv6_addressing_type", err.Error())
-		return nil
-	}
-
-	var ttl uint8
-	if o.Ttl != nil {
-		ttl = *o.Ttl
-	}
-
-	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi{
-		Bfd:                   o.BfdEnabled,
-		Holdtime:              o.HoldTime,
-		Ipv4Safi:              o.Ipv4AfiEnabled,
-		Ipv6Safi:              o.Ipv6AfiEnabled,
-		Keepalive:             o.KeepaliveTime,
-		LocalAsn:              o.LocalAsn,
-		NeighborAsnDynamic:    o.NeighborAsnDynamic,
-		Password:              o.Password,
-		PeerFromLoopback:      o.PeerFromLoopback,
-		PeerTo:                peerTo,
-		SessionAddressingIpv4: sessionAddressingIpv4,
-		SessionAddressingIpv6: sessionAddressingIpv6,
-		Ttl:                   ttl,
+	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt{
+		Asn:                o.NeighborAsn,
+		Bfd:                o.BfdEnabled,
+		Holdtime:           o.HoldTime,
+		Ipv4Addr:           ipv4Addr,
+		Ipv6Addr:           ipv6Addr,
+		Ipv4Safi:           o.Ipv4AfiEnabled,
+		Ipv6Safi:           o.Ipv6AfiEnabled,
+		Keepalive:          o.KeepaliveTime,
+		LocalAsn:           o.LocalAsn,
+		NeighborAsnDynamic: o.NeighborAsnDynaimc,
+		Password:           o.Password,
+		Ttl:                o.Ttl,
 	}
 }
 
