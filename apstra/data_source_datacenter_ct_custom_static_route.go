@@ -62,7 +62,7 @@ func (o *dataSourceDatacenterCtCustomStaticRoute) ValidateConfig(ctx context.Con
 	}
 
 	// both should have the same length (either 4 or 16 bytes)
-	if len(network.IP) != len(nextHop) {
+	if len(network.IP.To4()) != len(nextHop.To4()) {
 		resp.Diagnostics.AddError("invalid attribute combination",
 			fmt.Sprintf("'network' and 'next_hop' must be same type (IPv4 or IPv6), got %q and %q",
 				config.Network, config.NextHop))
