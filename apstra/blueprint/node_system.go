@@ -36,7 +36,7 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			}...)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Web UI name (Gq	qqqraph DB `label` field). Required when `id` is omitted.",
+			MarkdownDescription: "Apstra Web UI name (Graph DB `label` field). Required when `id` is omitted.",
 			Optional:            true,
 		},
 		"attributes": dataSourceSchema.SingleNestedAttribute{

@@ -54,7 +54,7 @@ locals {
 ### Optional
 
 - `id` (String) Apstra Graph DB node `id` field. Required when `name` is omitted.
-- `name` (String) Apstra Web UI name (araph DB `label` field). Required when `id` is omitted.
+- `name` (String) Apstra Web UI name (Graph DB `label` field). Required when `id` is omitted.
 
 ### Read-Only
 
