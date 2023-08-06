@@ -65,8 +65,8 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 	//	jsonPrimitive = new(dynamicBgpPeeringPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
 		jsonPrimitive = new(routingPolicyPrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-	//	jsonPrimitive = new(routingZoneConstraintPrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
+		jsonPrimitive = new(routingZoneConstraintPrototype)
 	default:
 		diags.AddAttributeError(path, "primitive rehydration failed", fmt.Sprintf("unhandled primitive type %q", pType.String()))
 		return nil
@@ -128,8 +128,8 @@ func PrimitiveFromSdk(ctx context.Context, in *apstra.ConnectivityTemplatePrimit
 	//	primitive = new(DynamicBgpPeering)
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
 		primitive = new(RoutingPolicy)
-	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-	//	primitive = new(RoutingZoneConstraint)
+	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
+		primitive = new(RoutingZoneConstraint)
 	default:
 		diags.AddError("parsing primitive from SDK failed", fmt.Sprintf("unhandled primitive type %q", in.Attributes.PolicyTypeName()))
 		return nil
