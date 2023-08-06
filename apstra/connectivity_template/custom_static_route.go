@@ -51,10 +51,21 @@ func (o CustomStaticRoute) DataSourceAttributes() map[string]dataSourceSchema.At
 }
 
 func (o CustomStaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string {
-	obj := customStaticRoutePrototype{
-		RoutingZoneId: o.RoutingZoneId.ValueString(),
-		Network:       o.Network.ValueString(),
-		NextHop:       o.NextHop.ValueString(),
+	obj := customStaticRoutePrototype{}
+
+	if !o.RoutingZoneId.IsNull() {
+		rzId := o.RoutingZoneId.ValueString()
+		obj.RoutingZoneId = &rzId
+	}
+
+	if !o.Network.IsNull() {
+		network := o.Network.ValueString()
+		obj.Network = &network
+	}
+
+	if !o.NextHop.IsNull() {
+		nextHop := o.NextHop.ValueString()
+		obj.NextHop = &nextHop
 	}
 
 	data, err := json.Marshal(&obj)
@@ -108,34 +119,36 @@ func (o *CustomStaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *ap
 var _ JsonPrimitive = &customStaticRoutePrototype{}
 
 type customStaticRoutePrototype struct {
-	RoutingZoneId string `json:"routing_zone_id"`
-	Network       string `json:"network"`
-	NextHop       string `json:"next_hop_ip_address"`
+	RoutingZoneId *string `json:"routing_zone_id"`
+	Network       *string `json:"network"`
+	NextHop       *string `json:"next_hop_ip_address"`
 }
 
 func (o customStaticRoutePrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
-	_, network, err := net.ParseCIDR(o.Network)
-	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %q", o.Network), err.Error())
-		return nil
+	var result apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute
+	var err error
+
+	if o.Network != nil {
+		_, result.Network, err = net.ParseCIDR(*o.Network)
+		if err != nil {
+			diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %q", o.Network), err.Error())
+			return nil
+		}
 	}
 
-	nextHop := net.ParseIP(o.NextHop)
-	if nextHop == nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing next hop IP address string %q", o.Network), err.Error())
+	if o.NextHop != nil {
+		result.NextHop = net.ParseIP(*o.NextHop)
+		if result.NextHop == nil {
+			diags.AddAttributeError(path, fmt.Sprintf("failed parsing next hop IP address string %q", o.Network), err.Error())
+		}
 	}
 
-	var securityZone *apstra.ObjectId
-	if o.RoutingZoneId != "" {
-		rzId := apstra.ObjectId(o.RoutingZoneId)
-		securityZone = &rzId
+	if o.RoutingZoneId != nil {
+		id := apstra.ObjectId(*o.RoutingZoneId)
+		result.SecurityZone = &id
 	}
 
-	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute{
-		Network:      network,
-		NextHop:      nextHop,
-		SecurityZone: securityZone,
-	}
+	return &result
 }
 
 func (o customStaticRoutePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
