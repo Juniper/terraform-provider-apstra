@@ -3,14 +3,14 @@ page_title: "apstra_rack_type Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific Rack Type.
-  At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Type. Matching zero Rack Types or more than one Rack Type will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_rack_type (Data Source)
 
 This data source provides details of a specific Rack Type.
 
-At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Type. Matching zero Rack Types or more than one Rack Type will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -47,8 +47,8 @@ output "rack_types_with_40_or_more_generic_systems_by_ID" {
 
 ### Optional
 
-- `id` (String) Rack Type ID.  Required when the Rack Type name is omitted.
-- `name` (String) Rack Type name displayed in the Apstra web UI.  Required when Rack Type ID is omitted.
+- `id` (String) Apstra ID of the Rack Type. Required when `name` is omitted.
+- `name` (String) Web UI name of the Type. Required when `id` is omitted.
 
 ### Read-Only
 

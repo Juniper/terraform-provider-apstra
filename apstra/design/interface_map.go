@@ -22,7 +22,7 @@ type InterfaceMap struct {
 func (o InterfaceMap) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Interface Map ID.  Required when the Interface Map name is omitted.",
+			MarkdownDescription: "Apstra Interface Map ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -34,7 +34,7 @@ func (o InterfaceMap) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Interface Map name displayed in the Apstra web UI.  Required when Interface Map ID is omitted.",
+			MarkdownDescription: "Interface Map name displayed in the Apstra web UI. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

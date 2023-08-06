@@ -3,14 +3,14 @@ page_title: "apstra_vni_pool Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific VNI Pool.
-  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one VNI Pool. Matching zero or more VNI Pools will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_vni_pool (Data Source)
 
 This data source provides details of a specific VNI Pool.
 
-At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one VNI Pool. Matching zero or more VNI Pools will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -42,8 +42,8 @@ output "available_IDs_of_in_use_pools" {
 
 ### Optional
 
-- `id` (String) ID of the desired VNI Pool.
-- `name` (String) Display name of the VNI Pool.
+- `id` (String) Apstra ID of the VNI Pool. Required when `name` is omitted.
+- `name` (String) Web UI name of the VNI Pool. Required when `id` is omitted.
 
 ### Read-Only
 

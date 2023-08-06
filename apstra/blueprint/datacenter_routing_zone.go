@@ -43,7 +43,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra graph node ID.",
+			MarkdownDescription: "Apstra graph node ID. Required when `name` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -55,7 +55,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			},
 		},
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID.",
+			MarkdownDescription: "Apstra Blueprint ID. Required when `id` is omitted.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},

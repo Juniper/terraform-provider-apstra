@@ -3,14 +3,14 @@ page_title: "apstra_template_rack_based Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific Rack Based (3 stage) Template.
-  At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Based Template. Matching zero Rack Based Templates or more than one Rack Based Template will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_template_rack_based (Data Source)
 
 This data source provides details of a specific Rack Based (3 stage) Template.
 
-At least one optional attribute is required. It is incumbent on the user to ensure the criteria matches exactly one Rack Based Template. Matching zero Rack Based Templates or more than one Rack Based Template will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -41,8 +41,8 @@ output "rack_based_template_id_to_name" {
 
 ### Optional
 
-- `id` (String) Template ID.  Required when the Template name is omitted.
-- `name` (String) Template name displayed in the Apstra web UI.  Required when Template ID is omitted.
+- `id` (String) Apstra Template ID. Required when `id` is omitted.
+- `name` (String) Web UI name of the Template. Required when `id` is omitted.
 
 ### Read-Only
 

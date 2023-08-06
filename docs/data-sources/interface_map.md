@@ -3,14 +3,14 @@ page_title: "apstra_interface_map Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific Interface Map.
-  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Interface Map. Matching zero or more Interface Maps will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_interface_map (Data Source)
 
 This data source provides details of a specific Interface Map.
 
-At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one Interface Map. Matching zero or more Interface Maps will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -67,8 +67,8 @@ output "unmapped_interface_count" {
 
 ### Optional
 
-- `id` (String) Interface Map ID.  Required when the Interface Map name is omitted.
-- `name` (String) Interface Map name displayed in the Apstra web UI.  Required when Interface Map ID is omitted.
+- `id` (String) Apstra Interface Map ID. Required when `name` is omitted.
+- `name` (String) Interface Map name displayed in the Apstra web UI. Required when `id` is omitted.
 
 ### Read-Only
 

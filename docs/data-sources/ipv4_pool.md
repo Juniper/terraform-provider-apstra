@@ -3,14 +3,14 @@ page_title: "apstra_ipv4_pool Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific IPv4 Pool.
-  At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one IPv4 Pool. Matching zero or more IPv4 Pools will produce an error.
+  At least one optional attribute is required.
 ---
 
 # apstra_ipv4_pool (Data Source)
 
 This data source provides details of a specific IPv4 Pool.
 
-At least one optional attribute is required. It is incumbent upon the user to ensure the lookup criteria matches exactly one IPv4 Pool. Matching zero or more IPv4 Pools will produce an error.
+At least one optional attribute is required.
 
 ## Example Usage
 
@@ -74,8 +74,8 @@ output "ipv4_pool_report" {
 
 ### Optional
 
-- `id` (String) ID of the desired IPv4 Pool.
-- `name` (String) Name of the IPv4 pool.
+- `id` (String) Apstra ID of the desired IPv4 Pool. Required when `name` is omitted.
+- `name` (String) Web UI Name of the IPv4 pool. Required when `id` is omitted.
 
 ### Read-Only
 

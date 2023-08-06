@@ -29,7 +29,7 @@ type VniPool struct {
 func (o VniPool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the desired VNI Pool.",
+			MarkdownDescription: "Apstra ID of the VNI Pool. Required when `name` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -41,7 +41,7 @@ func (o VniPool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Display name of the VNI Pool.",
+			MarkdownDescription: "Web UI name of the VNI Pool. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},

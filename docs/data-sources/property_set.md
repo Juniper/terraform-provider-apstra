@@ -78,8 +78,8 @@ output "apstra_property_set_report" {
 
 ### Optional
 
-- `id` (String) Populate this field to look up a Property Set by ID. Required when `name` is omitted.
-- `name` (String) Populate this field to look up a Property Set by name. Required when `id` is omitted.
+- `id` (String) Apstra ID of the Property Set. Required when `name` is omitted.
+- `name` (String) Web UID name of the Property Set. Required when `id` is omitted.
 
 ### Read-Only
 
