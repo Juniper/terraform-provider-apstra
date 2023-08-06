@@ -87,7 +87,7 @@ type routingPolicyPrototype struct {
 	RoutingPolicyId *string `json:"routing_policy_id"`
 }
 
-func (o routingPolicyPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+func (o routingPolicyPrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy{
 		RpToAttach: o.RoutingPolicyId,
 	}
