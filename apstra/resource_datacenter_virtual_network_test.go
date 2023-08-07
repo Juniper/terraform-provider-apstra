@@ -212,5 +212,4 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 			},
 		},
 	})
-
 }
