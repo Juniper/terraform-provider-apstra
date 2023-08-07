@@ -27,7 +27,6 @@ This data source composes a Connectivity Template Primitive as a JSON string, su
 
 # Declare a "BGP Peering (Generic System)" Connectivity Template Primitive:
 data "apstra_datacenter_ct_bgp_peering_ip_endpoint" "a" {
-  ipv4_afi_enabled = true
   bfd_enabled      = true
   ttl              = 1
   password         = "big secret"
@@ -103,8 +102,8 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `bfd_enabled` (Boolean) Enable BFD.
 - `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `hold_time` (Number) BGP hold time (seconds).
-- `ipv4_address` (String) IPv4 address of peer (if IPv4 AFI is enabled)
-- `ipv6_address` (String) IPv6 address of peer (if IPv6 AFI is enabled)
+- `ipv4_address` (String) IPv4 address of peer
+- `ipv6_address` (String) IPv6 address of peer
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.

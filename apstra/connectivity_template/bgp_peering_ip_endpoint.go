@@ -78,7 +78,7 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			Validators: []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
 		},
 		"ipv4_address": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "IPv4 address of peer (if IPv4 AFI is enabled)", // todo - is this true?
+			MarkdownDescription: "IPv4 address of peer",
 			Optional:            true,
 			Validators: []validator.String{
 				apstravalidator.ParseIp(true, false),
@@ -90,7 +90,7 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			},
 		},
 		"ipv6_address": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "IPv6 address of peer (if IPv6 AFI is enabled)", // todo - is this true?
+			MarkdownDescription: "IPv6 address of peer",
 			Optional:            true,
 			Validators: []validator.String{
 				apstravalidator.StringRequiredWhenValueIs(path.MatchRoot("ipv6_afi_enabled"), types.BoolValue(true)),

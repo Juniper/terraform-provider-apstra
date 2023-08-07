@@ -13,7 +13,6 @@
 
 # Declare a "BGP Peering (Generic System)" Connectivity Template Primitive:
 data "apstra_datacenter_ct_bgp_peering_ip_endpoint" "a" {
-  ipv4_afi_enabled = true
   bfd_enabled      = true
   ttl              = 1
   password         = "big secret"
