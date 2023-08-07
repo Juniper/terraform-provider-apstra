@@ -26,8 +26,6 @@ var _ Primitive = &BgpPeeringIpEndpoint{}
 
 type BgpPeeringIpEndpoint struct {
 	NeighborAsn     types.Int64  `tfsdk:"neighbor_asn"`
-	Ipv4AfiEnabled  types.Bool   `tfsdk:"ipv4_afi_enabled"`
-	Ipv6AfiEnabled  types.Bool   `tfsdk:"ipv6_afi_enabled"`
 	Ttl             types.Int64  `tfsdk:"ttl"`
 	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
 	Password        types.String `tfsdk:"password"`
@@ -46,14 +44,6 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",
 			Optional:            true,
 			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
-		},
-		"ipv4_afi_enabled": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "IPv4 Address Family Identifier",
-			Optional:            true,
-		},
-		"ipv6_afi_enabled": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "IPv6 Address Family Identifier",
-			Optional:            true,
 		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
@@ -126,8 +116,8 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 
 func (o BgpPeeringIpEndpoint) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 	prototype := bgpPeeringIpEndpointPrototype{
-		Ipv4AfiEnabled:  o.Ipv4AfiEnabled.ValueBool(),
-		Ipv6AfiEnabled:  o.Ipv6AfiEnabled.ValueBool(),
+		Ipv4AfiEnabled:  !o.Ipv4Address.IsNull(),
+		Ipv6AfiEnabled:  !o.Ipv6Address.IsNull(),
 		Ttl:             uint8(o.Ttl.ValueInt64()), // okay if null, then we get zero value
 		BfdEnabled:      o.BfdEnabled.ValueBool(),
 		Password:        o.Password.ValueStringPointer(),
@@ -199,8 +189,6 @@ func (o *BgpPeeringIpEndpoint) loadSdkPrimitive(ctx context.Context, in apstra.C
 		o.NeighborAsn = types.Int64Value(int64(*attributes.Asn))
 	}
 
-	o.Ipv4AfiEnabled = types.BoolValue(attributes.Ipv4Safi)
-	o.Ipv6AfiEnabled = types.BoolValue(attributes.Ipv6Safi)
 	o.Ttl = types.Int64Value(int64(attributes.Ttl))
 	o.BfdEnabled = types.BoolValue(attributes.Bfd)
 

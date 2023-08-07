@@ -104,9 +104,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `hold_time` (Number) BGP hold time (seconds).
 - `ipv4_address` (String) IPv4 address of peer (if IPv4 AFI is enabled)
-- `ipv4_afi_enabled` (Boolean) IPv4 Address Family Identifier
 - `ipv6_address` (String) IPv6 address of peer (if IPv6 AFI is enabled)
-- `ipv6_afi_enabled` (Boolean) IPv6 Address Family Identifier
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
