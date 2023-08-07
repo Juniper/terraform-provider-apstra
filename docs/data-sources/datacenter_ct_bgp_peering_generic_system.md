@@ -27,8 +27,6 @@ This data source composes a Connectivity Template Primitive as a JSON string, su
 
 # Declare a "BGP Peering (Generic System)" Connectivity Template Primitive:
 data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
-  ipv4_afi_enabled     = true
-  ipv6_afi_enabled     = true
   ipv4_addressing_type = "addressed"
   ipv6_addressing_type = "link_local"
   bfd_enabled          = true
@@ -40,8 +38,6 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 # {
 #   "type": "AttachLogicalLink",
 #   "data": {
-#     "ipv4_afi_enabled": true,
-#     "ipv6_afi_enabled": true,
 #     "ttl": 1,
 #     "bfd_enabled": true,
 #     "password": "big secret",
@@ -79,7 +75,7 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 #     "ipv4_addressing_type": "numbered",
 #     "ipv6_addressing_type": "link_local",
 #     "child_primitives": [
-#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ipv4_afi_enabled\":true,\"ipv6_afi_enabled\":true,\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"child_primitives\":null}}"
+#       "{\"type\":\"AttachLogicalLink\",\"data\":{\"ttl\":1,\"bfd_enabled\":true,\"password\":\"big secret\",\"keepalive_time\":null,\"hold_time\":null,\"ipv4_addressing_type\":\"addressed\",\"ipv6_addressing_type\":\"link_local\",\"local_asn\":null,\"neighbor_asn_dynamic\":false,\"peer_from_loopback\":false,\"peer_to\":\"interface_or_ip_endpoint\",\"child_primitives\":null}}"
 #     ]
 #   }
 # }
@@ -87,8 +83,8 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 # Finally, use the IP Link's `primitive` element in a Connectivity Template:
 resource "apstra_datacenter_connectivity_template" "t" {
   blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
-  name         = "test-net-handoff"
-  description  = "ip handoff with static routes to test nets"
+  name         = "bgp server"
+  description  = "ip handoff to bgp-enabled server"
   tags         = [
     "test",
     "terraform",
@@ -108,9 +104,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `hold_time` (Number) BGP hold time (seconds).
 - `ipv4_addressing_type` (String) One of `none`, `addressed` (or omit)
-- `ipv4_afi_enabled` (Boolean) IPv4 Address Family Identifier
 - `ipv6_addressing_type` (String) One of `none`, `addressed`, `link_local` (or omit)
-- `ipv6_afi_enabled` (Boolean) IPv6 Address Family Identifier
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn_dynamic` (Boolean) Default behavior is `static`
