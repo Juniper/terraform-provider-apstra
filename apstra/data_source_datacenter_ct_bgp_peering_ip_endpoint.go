@@ -2,15 +2,13 @@ package tfapstra
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
 )
 
-var _ datasource.DataSourceWithValidateConfig = &dataSourceDatacenterCtBgpPeeringIpEndpoint{}
+var _ datasource.DataSource = &dataSourceDatacenterCtBgpPeeringIpEndpoint{}
 
 type dataSourceDatacenterCtBgpPeeringIpEndpoint struct{}
 
@@ -24,20 +22,6 @@ func (o *dataSourceDatacenterCtBgpPeeringIpEndpoint) Schema(_ context.Context, _
 			"suitable for use in the `primitives` attribute of an `apstra_datacenter_connectivity_template` " +
 			"resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.",
 		Attributes: connectivitytemplate.BgpPeeringIpEndpoint{}.DataSourceAttributes(),
-	}
-}
-
-func (o *dataSourceDatacenterCtBgpPeeringIpEndpoint) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config connectivitytemplate.BgpPeeringIpEndpoint
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if !config.Ipv4AfiEnabled.ValueBool() && !config.Ipv6AfiEnabled.ValueBool() {
-		resp.Diagnostics.AddError("invalid attribute combination",
-			fmt.Sprintf("at least one of %q and %q must have value 'true'",
-				path.Root("ipv4_afi_enabled"), path.Root("ipv6_afi_enabled")))
 	}
 }
 
