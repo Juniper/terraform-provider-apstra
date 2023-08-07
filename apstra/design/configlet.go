@@ -76,7 +76,7 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletRequest {
+func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletData {
 	var d diag.Diagnostics
 
 	// We only use the Datacenter Reference Design
@@ -99,7 +99,7 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 		return nil
 	}
 
-	return &apstra.ConfigletRequest{
+	return &apstra.ConfigletData{
 		DisplayName: o.Name.ValueString(),
 		RefArchs:    refArchs,
 		Generators:  generators,
