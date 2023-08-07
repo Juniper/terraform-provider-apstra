@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -45,6 +46,117 @@ type DatacenterVirtualNetwork struct {
 	IPv6GatewayEnabled      types.Bool   `tfsdk:"ipv6_virtual_gateway_enabled"`
 	IPv4Gateway             types.String `tfsdk:"ipv4_virtual_gateway"`
 	IPv6Gateway             types.String `tfsdk:"ipv6_virtual_gateway"`
+}
+
+func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Name",
+			Optional:            true,
+			Validators: []validator.String{stringvalidator.AtLeastOneOf(
+				path.MatchRelative(),
+				path.MatchRoot("filter").AtName("type"),
+				path.MatchRoot("filter").AtName("routing_zone_id"),
+				path.MatchRoot("filter").AtName("vni"),
+				path.MatchRoot("filter").AtName("reserve_vlan"),
+				path.MatchRoot("filter").AtName("dhcp_service_enabled"),
+				path.MatchRoot("filter").AtName("ipv4_connectivity_enabled"),
+				path.MatchRoot("filter").AtName("ipv6_connectivity_enabled"),
+				path.MatchRoot("filter").AtName("ipv4_subnet"),
+				path.MatchRoot("filter").AtName("ipv6_subnet"),
+				path.MatchRoot("filter").AtName("ipv4_virtual_gateway_enabled"),
+				path.MatchRoot("filter").AtName("ipv6_virtual_gateway_enabled"),
+				path.MatchRoot("filter").AtName("ipv4_virtual_gateway"),
+				path.MatchRoot("filter").AtName("ipv6_virtual_gateway"),
+			)},
+		},
+		"type": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Type",
+			Optional:            true,
+		},
+		"routing_zone_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`", apstra.VnTypeVxlan),
+			Optional:            true,
+		},
+		"vni": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "EVPN Virtual Network ID to be associated with this Virtual Network.",
+			Optional:            true,
+		},
+		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"reserve_vlan": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "For use only with `%s` type Virtual networks when all `bindings` " +
+				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to " +
+				"which the Virtual Network has not yet been deployed.",
+			Optional: true,
+		},
+		"bindings": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: map[string]dataSourceSchema.Attribute{},
+			},
+		},
+		"dhcp_service_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables a DHCP relay agent.",
+			Optional:            true,
+		},
+		"ipv4_connectivity_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables IPv4 within the Virtual Network.",
+			Optional:            true,
+		},
+		"ipv6_connectivity_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables IPv6 within the Virtual Network.",
+			Optional:            true,
+		},
+		"ipv4_subnet": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "IPv4 subnet associated with the Virtual Network.",
+			Optional:            true,
+			Validators:          []validator.String{apstravalidator.ParseCidr(true, false)},
+		},
+		"ipv6_subnet": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "IPv6 subnet associated with the Virtual Network. " +
+				"Note that this attribute will not appear in the `graph_query` output " +
+				"because IPv6 zero compression rules are problematic for mechanisms " +
+				"which rely on string matching.",
+			Optional:   true,
+			Validators: []validator.String{apstravalidator.ParseCidr(false, true)},
+		},
+		"ipv4_virtual_gateway_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Controls and indicates whether the IPv4 gateway within the " +
+				"Virtual Network is enabled.",
+			Optional: true,
+		},
+		"ipv6_virtual_gateway_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Controls and indicates whether the IPv6 gateway within the " +
+				"Virtual Network is enabled.",
+			Optional: true,
+		},
+		"ipv4_virtual_gateway": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Specifies the IPv4 virtual gateway address within the " +
+				"Virtual Network.",
+			Optional:   true,
+			Validators: []validator.String{apstravalidator.ParseIp(true, false)},
+		},
+		"ipv6_virtual_gateway": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Specifies the IPv6 virtual gateway address within the " +
+				"Virtual Network. Note that this attribute will not appear in the " +
+				"`graph_query` output because IPv6 zero compression rules are problematic " +
+				"for mechanisms which rely on string matching.",
+			Optional:   true,
+			Validators: []validator.String{apstravalidator.ParseIp(false, true)},
+		},
+	}
 }
 
 func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -94,7 +206,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"vni": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associatd with this Virtual "+
+			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
 				"Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated]"+
 				"(../apstra_datacenter_resource_pool_allocation) to role `%s`.",
 				utils.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
@@ -408,4 +520,139 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv6Enabled)
 	o.IPv4Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv4, diags)
 	o.IPv6Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv6, diags)
+}
+
+func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
+	nodeAttributes := []apstra.QEEAttribute{
+		apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+		{Key: "name", Value: apstra.QEStringVal(vnResultName)},
+	}
+
+	if !o.Name.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "label",
+			Value: apstra.QEStringVal(o.Name.ValueString()),
+		})
+	}
+
+	if !o.Type.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "vn_type",
+			Value: apstra.QEStringVal(o.Type.ValueString()),
+		})
+	}
+
+	if !o.Vni.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "vn_id",
+			Value: apstra.QEIntVal(int(o.Vni.ValueInt64())),
+		})
+	}
+
+	if !o.ReserveVlan.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "reserved_vlan_id",
+			Value: apstra.QENone(!o.ReserveVlan.ValueBool()),
+		})
+	}
+
+	if !o.IPv4ConnectivityEnabled.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "ipv4_enabled",
+			Value: apstra.QEBoolVal(o.IPv4ConnectivityEnabled.ValueBool()),
+		})
+	}
+
+	if !o.IPv6ConnectivityEnabled.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "ipv6_enabled",
+			Value: apstra.QEBoolVal(o.IPv6ConnectivityEnabled.ValueBool()),
+		})
+	}
+
+	if !o.IPv4Subnet.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "ipv4_subnet",
+			Value: apstra.QEStringVal(o.IPv4Subnet.ValueString()),
+		})
+	}
+
+	// not handling ipv6 subnet as a string match because of '::' expansion weirdness
+	//if !o.IPv6Subnet.IsNull() { nope! }
+
+	if !o.IPv4GatewayEnabled.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "virtual_gateway_ipv4_enabled",
+			Value: apstra.QEBoolVal(o.IPv4GatewayEnabled.ValueBool()),
+		})
+	}
+
+	if !o.IPv6GatewayEnabled.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "virtual_gateway_ipv6_enabled",
+			Value: apstra.QEBoolVal(o.IPv6GatewayEnabled.ValueBool()),
+		})
+	}
+
+	if !o.IPv4Gateway.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "virtual_gateway_ipv4",
+			Value: apstra.QEStringVal(o.IPv4Gateway.ValueString()),
+		})
+	}
+
+	// not handling ipv6 gateway as a string match because of '::' expansion weirdness
+	//if !o.IPv6Gateway.IsNull() { nope! }
+
+	// Begin the query with the VN node
+	vnQuery := new(apstra.MatchQuery).Match(new(apstra.PathQuery).Node(nodeAttributes))
+
+	if !o.RoutingZoneId.IsNull() {
+		// extend the query with a routing zone match
+		vnQuery.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(vnResultName)},
+			}).In([]apstra.QEEAttribute{apstra.RelationshipTypeMemberVNs.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeSecurityZone.QEEAttribute(),
+				{Key: "id", Value: apstra.QEStringVal(o.RoutingZoneId.ValueString())},
+			}))
+	}
+
+	if !o.DhcpServiceEnabled.IsNull() {
+		vnQuery.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(vnResultName)},
+			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeInstantiatedBy.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetworkInstance.QEEAttribute(),
+				{Key: "dhcp_enabled", Value: apstra.QEBoolVal(o.DhcpServiceEnabled.ValueBool())},
+			}))
+	}
+
+	return vnQuery
+}
+
+func (o *DatacenterVirtualNetwork) Ipv6Subnet(_ context.Context, path path.Path, diags *diag.Diagnostics) *net.IPNet {
+	if o.IPv6Subnet.IsNull() {
+		return nil
+	}
+
+	_, result, err := net.ParseCIDR(o.IPv6Subnet.ValueString())
+	if err != nil {
+		diags.AddAttributeError(path, fmt.Sprintf("failed to parse 'ipv6_subnet' value %s", o.IPv6Subnet), err.Error())
+		return nil
+	}
+
+	return result
+}
+
+func (o *DatacenterVirtualNetwork) Ipv6Gateway(_ context.Context, _ path.Path, _ *diag.Diagnostics) net.IP {
+	if o.IPv6Gateway.IsNull() {
+		return nil
+	}
+
+	return net.ParseIP(o.IPv6Gateway.ValueString())
 }

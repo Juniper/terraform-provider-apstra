@@ -246,3 +246,36 @@ func TestRevers(t *testing.T) {
 		}
 	}
 }
+
+func TestSliceDelete(t *testing.T) {
+	type testCase[T any] struct {
+		i int
+		s []T
+		e []T
+	}
+
+	testCases := []testCase[int]{
+		{
+			i: 0,
+			s: []int{1, 2, 3},
+			e: []int{3, 2},
+		},
+		{
+			i: 1,
+			s: []int{1, 2, 3},
+			e: []int{1, 3},
+		},
+		{
+			i: 2,
+			s: []int{1, 2, 3},
+			e: []int{1, 2},
+		},
+	}
+
+	for i, tc := range testCases {
+		SliceDeleteUnOrdered(tc.i, &tc.s)
+		if !SlicesMatch(tc.e, tc.s) {
+			t.Fatalf("test case %d, expected %v, got %v", i, tc.e, tc.s)
+		}
+	}
+}
