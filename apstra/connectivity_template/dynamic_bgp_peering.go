@@ -69,7 +69,7 @@ func (o DynamicBgpPeering) DataSourceAttributes() map[string]dataSourceSchema.At
 		"ipv4_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enable to allow IPv4 peers.",
 			Optional:            true,
-			Validators: []validator.Bool{boolvalidator.AtLeastOneOf( // todo needs validation which ensures at least one is *true*
+			Validators: []validator.Bool{boolvalidator.AtLeastOneOf(
 				path.MatchRelative(),
 				path.MatchRoot("ipv6_enabled"),
 			)},
