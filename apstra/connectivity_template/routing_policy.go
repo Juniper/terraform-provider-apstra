@@ -62,14 +62,14 @@ func (o RoutingPolicy) Marshal(_ context.Context, diags *diag.Diagnostics) strin
 }
 
 func (o *RoutingPolicy) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	switch attributes := in.Attributes.(type) {
-	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy:
-		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
-		if diags.HasError() {
-			return
-		}
-	default:
+	attributes, ok := in.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy)
+	if !ok {
 		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %T", in))
+		return
+	}
+
+	o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
+	if diags.HasError() {
 		return
 	}
 }
@@ -87,7 +87,7 @@ type routingPolicyPrototype struct {
 	RoutingPolicyId *string `json:"routing_policy_id"`
 }
 
-func (o routingPolicyPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+func (o routingPolicyPrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy{
 		RpToAttach: o.RoutingPolicyId,
 	}

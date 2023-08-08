@@ -55,18 +55,18 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 		jsonPrimitive = new(ipLinkPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
 		jsonPrimitive = new(staticRoutePrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-	//	jsonPrimitive = new(customStaticRoutePrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
-	//	jsonPrimitive = new(bgpPeeringIpEndpointPrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
+		jsonPrimitive = new(customStaticRoutePrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
+		jsonPrimitive = new(bgpPeeringIpEndpointPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
 		jsonPrimitive = new(bgpPeeringGenericSystemPrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
-	//	jsonPrimitive = new(dynamicBgpPeeringPrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
+		jsonPrimitive = new(dynamicBgpPeeringPrototype)
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
 		jsonPrimitive = new(routingPolicyPrototype)
-	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-	//	jsonPrimitive = new(routingZoneConstraintPrototype)
+	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
+		jsonPrimitive = new(routingZoneConstraintPrototype)
 	default:
 		diags.AddAttributeError(path, "primitive rehydration failed", fmt.Sprintf("unhandled primitive type %q", pType.String()))
 		return nil
@@ -118,18 +118,18 @@ func PrimitiveFromSdk(ctx context.Context, in *apstra.ConnectivityTemplatePrimit
 		primitive = new(IpLink)
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
 		primitive = new(StaticRoute)
-	//case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-	//	primitive = new(CustomStaticRoute)
-	//case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
-	//	primitive = new(BgpPeeringIpEndpoint)
+	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
+		primitive = new(CustomStaticRoute)
+	case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
+		primitive = new(BgpPeeringIpEndpoint)
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
 		primitive = new(BgpPeeringGenericSystem)
-	//case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
-	//	primitive = new(DynamicBgpPeering)
+	case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
+		primitive = new(DynamicBgpPeering)
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
 		primitive = new(RoutingPolicy)
-	//case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-	//	primitive = new(RoutingZoneConstraint)
+	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
+		primitive = new(RoutingZoneConstraint)
 	default:
 		diags.AddError("parsing primitive from SDK failed", fmt.Sprintf("unhandled primitive type %q", in.Attributes.PolicyTypeName()))
 		return nil

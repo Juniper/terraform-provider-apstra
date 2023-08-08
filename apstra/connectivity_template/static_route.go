@@ -68,14 +68,14 @@ func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string 
 }
 
 func (o *StaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	switch attributes := in.Attributes.(type) {
-	case *apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute:
-		o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
-		if diags.HasError() {
-			return
-		}
-	default:
+	attributes, ok := in.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute)
+	if !ok {
 		diags.AddError("failed loading SDK primitive due to wrong attribute type", fmt.Sprintf("unexpected type %T", in))
+		return
+	}
+
+	o.loadSdkPrimitiveAttributes(ctx, attributes, diags)
+	if diags.HasError() {
 		return
 	}
 }
@@ -98,7 +98,7 @@ type staticRoutePrototype struct {
 func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
 	_, network, err := net.ParseCIDR(o.Network)
 	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %s", o.Network), err.Error())
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing network CIDR string %q", o.Network), err.Error())
 		return nil
 	}
 

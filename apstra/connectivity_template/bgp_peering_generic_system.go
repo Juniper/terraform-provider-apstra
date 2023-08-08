@@ -83,14 +83,8 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 			MarkdownDescription: fmt.Sprintf("One of `%s` (or omit)",
 				strings.Join(ipv4AddressingTypes, "`, `"),
 			),
-			Optional: true,
-			Validators: []validator.String{
-				stringvalidator.OneOf(ipv4AddressingTypes...),
-				stringvalidator.AtLeastOneOf(path.Expressions{
-					path.MatchRelative(),
-					path.MatchRoot("ipv6_addressing_type"),
-				}...),
-			},
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.OneOf(ipv4AddressingTypes...)},
 		},
 		"ipv6_addressing_type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of `%s` (or omit)",
@@ -143,6 +137,7 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 	obj := bgpPeeringGenericSystemPrototype{
 		Ipv4AfiEnabled:     !o.Ipv4AddressingType.IsNull() && o.Ipv4AddressingType.ValueString() != apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String(),
 		Ipv6AfiEnabled:     !o.Ipv6AddressingType.IsNull() && o.Ipv6AddressingType.ValueString() != apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone.String(),
+		Ttl:                uint8(o.Ttl.ValueInt64()),
 		BfdEnabled:         o.BfdEnabled.ValueBool(),
 		Password:           o.Password.ValueStringPointer(),
 		Ipv4AddressingType: o.Ipv4AddressingType.ValueString(),
@@ -151,9 +146,6 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 		PeerFromLoopback:   o.PeerFromLoopback.ValueBool(),
 		PeerTo:             o.PeerTo.ValueString(), // see below
 	}
-
-	ttl := uint8(o.Ttl.ValueInt64())
-	obj.Ttl = &ttl
 
 	if !o.KeepaliveTime.IsNull() {
 		t := uint16(o.KeepaliveTime.ValueInt64())
@@ -257,7 +249,7 @@ var _ JsonPrimitive = &bgpPeeringGenericSystemPrototype{}
 type bgpPeeringGenericSystemPrototype struct {
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled     bool     `json:"ipv6_afi_enabled"`
-	Ttl                *uint8   `json:"ttl"`
+	Ttl                uint8    `json:"ttl"`
 	BfdEnabled         bool     `json:"bfd_enabled"`
 	Password           *string  `json:"password"`
 	KeepaliveTime      *uint16  `json:"keepalive_time"`
@@ -276,14 +268,14 @@ func (o bgpPeeringGenericSystemPrototype) attributes(_ context.Context, path pat
 	var ipv4AddressingType apstra.CtPrimitiveIPv4ProtocolSessionAddressing
 	err = ipv4AddressingType.FromString(o.Ipv4AddressingType)
 	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv4 addressing type %s", o.Ipv4AddressingType), err.Error())
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv4 addressing type %q", o.Ipv4AddressingType), err.Error())
 		return nil
 	}
 
 	var ipv6AddressingType apstra.CtPrimitiveIPv6ProtocolSessionAddressing
 	err = ipv6AddressingType.FromString(o.Ipv6AddressingType)
 	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv6 addressing type %s", o.Ipv6AddressingType), err.Error())
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv6 addressing type %q", o.Ipv6AddressingType), err.Error())
 		return nil
 	}
 
@@ -308,11 +300,6 @@ func (o bgpPeeringGenericSystemPrototype) attributes(_ context.Context, path pat
 		return nil
 	}
 
-	var ttl uint8
-	if o.Ttl != nil {
-		ttl = *o.Ttl
-	}
-
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi{
 		Bfd:                   o.BfdEnabled,
 		Holdtime:              o.HoldTime,
@@ -326,7 +313,7 @@ func (o bgpPeeringGenericSystemPrototype) attributes(_ context.Context, path pat
 		PeerTo:                peerTo,
 		SessionAddressingIpv4: sessionAddressingIpv4,
 		SessionAddressingIpv6: sessionAddressingIpv6,
-		Ttl:                   ttl,
+		Ttl:                   o.Ttl,
 	}
 }
 

@@ -180,14 +180,14 @@ func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *di
 	var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
 	err = ipv4AddressingType.FromString(o.Ipv4AddressingType)
 	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv4 addressing type %s", o.Ipv4AddressingType), err.Error())
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv4 addressing type %q", o.Ipv4AddressingType), err.Error())
 		return nil
 	}
 
 	var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
 	err = ipv6AddressingType.FromString(o.Ipv6AddressingType)
 	if err != nil {
-		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv6 addressing type %s", o.Ipv6AddressingType), err.Error())
+		diags.AddAttributeError(path, fmt.Sprintf("failed parsing ipv6 addressing type %q", o.Ipv6AddressingType), err.Error())
 		return nil
 	}
 
