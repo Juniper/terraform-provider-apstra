@@ -143,6 +143,7 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 	obj := bgpPeeringGenericSystemPrototype{
 		Ipv4AfiEnabled:     !o.Ipv4AddressingType.IsNull() && o.Ipv4AddressingType.ValueString() != apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String(),
 		Ipv6AfiEnabled:     !o.Ipv6AddressingType.IsNull() && o.Ipv6AddressingType.ValueString() != apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone.String(),
+		Ttl:                uint8(o.Ttl.ValueInt64()),
 		BfdEnabled:         o.BfdEnabled.ValueBool(),
 		Password:           o.Password.ValueStringPointer(),
 		Ipv4AddressingType: o.Ipv4AddressingType.ValueString(),
@@ -151,9 +152,6 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 		PeerFromLoopback:   o.PeerFromLoopback.ValueBool(),
 		PeerTo:             o.PeerTo.ValueString(), // see below
 	}
-
-	ttl := uint8(o.Ttl.ValueInt64())
-	obj.Ttl = &ttl
 
 	if !o.KeepaliveTime.IsNull() {
 		t := uint16(o.KeepaliveTime.ValueInt64())
@@ -257,7 +255,7 @@ var _ JsonPrimitive = &bgpPeeringGenericSystemPrototype{}
 type bgpPeeringGenericSystemPrototype struct {
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled     bool     `json:"ipv6_afi_enabled"`
-	Ttl                *uint8   `json:"ttl"`
+	Ttl                uint8    `json:"ttl"`
 	BfdEnabled         bool     `json:"bfd_enabled"`
 	Password           *string  `json:"password"`
 	KeepaliveTime      *uint16  `json:"keepalive_time"`
@@ -308,11 +306,6 @@ func (o bgpPeeringGenericSystemPrototype) attributes(_ context.Context, path pat
 		return nil
 	}
 
-	var ttl uint8
-	if o.Ttl != nil {
-		ttl = *o.Ttl
-	}
-
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi{
 		Bfd:                   o.BfdEnabled,
 		Holdtime:              o.HoldTime,
@@ -326,7 +319,7 @@ func (o bgpPeeringGenericSystemPrototype) attributes(_ context.Context, path pat
 		PeerTo:                peerTo,
 		SessionAddressingIpv4: sessionAddressingIpv4,
 		SessionAddressingIpv6: sessionAddressingIpv6,
-		Ttl:                   ttl,
+		Ttl:                   o.Ttl,
 	}
 }
 
