@@ -41,7 +41,7 @@ func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) ValidateConfig(ctx conte
 
 	if v4Unconfigured && v6Unconfigured {
 		resp.Diagnostics.AddError("Invalid Attribute Combination", "At least one attribute "+
-			"out of 'ipv4_addressing_type' and 'ipv4_addressing_type' must be enabled")
+			"out of 'ipv4_addressing_type' and 'ipv6_addressing_type' must be enabled")
 	}
 }
 
