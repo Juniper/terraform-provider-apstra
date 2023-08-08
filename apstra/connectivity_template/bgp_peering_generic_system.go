@@ -41,9 +41,11 @@ type BgpPeeringGenericSystem struct {
 
 func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	ipv4AddressingTypes := []string{
+		apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String(),
 		apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed.String(),
 	}
 	ipv6AddressingTypes := []string{
+		apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone.String(),
 		apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed.String(),
 		apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal.String(),
 	}
@@ -82,14 +84,8 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 				strings.Join(ipv4AddressingTypes, "`, `"),
 				apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone,
 			),
-			Optional: true,
-			Validators: []validator.String{
-				stringvalidator.OneOf(ipv4AddressingTypes...),
-				stringvalidator.AtLeastOneOf(path.Expressions{
-					path.MatchRelative(),
-					path.MatchRoot("ipv6_addressing_type"),
-				}...),
-			},
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.OneOf(ipv4AddressingTypes...)},
 		},
 		"ipv6_addressing_type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of `%s` Omit for `%s`",
