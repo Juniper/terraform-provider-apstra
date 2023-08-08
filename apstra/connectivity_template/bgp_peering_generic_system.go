@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -25,8 +24,6 @@ import (
 var _ Primitive = &BgpPeeringGenericSystem{}
 
 type BgpPeeringGenericSystem struct {
-	Ipv4AfiEnabled     types.Bool   `tfsdk:"ipv4_afi_enabled"`
-	Ipv6AfiEnabled     types.Bool   `tfsdk:"ipv6_afi_enabled"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -58,18 +55,6 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 		apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint.String(),
 	}
 	return map[string]dataSourceSchema.Attribute{
-		"ipv4_afi_enabled": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "IPv4 Address Family Identifier",
-			Optional:            true,
-			Validators: []validator.Bool{boolvalidator.AtLeastOneOf(path.Expressions{
-				path.MatchRelative(),
-				path.MatchRoot("ipv6_afi_enabled"),
-			}...)},
-		},
-		"ipv6_afi_enabled": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "IPv6 Address Family Identifier",
-			Optional:            true,
-		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
@@ -156,16 +141,12 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 
 func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 	obj := bgpPeeringGenericSystemPrototype{
-		Ipv4AfiEnabled: o.Ipv4AfiEnabled.ValueBool(),
-		Ipv6AfiEnabled: o.Ipv6AfiEnabled.ValueBool(),
-		//Ttl:                nil, // see below
-		BfdEnabled: o.BfdEnabled.ValueBool(),
-		Password:   o.Password.ValueStringPointer(),
-		//KeepaliveTime:      nil, // see below
-		//HoldTime:           nil, // see below
+		Ipv4AfiEnabled:     !o.Ipv4AddressingType.IsNull() && o.Ipv4AddressingType.ValueString() != apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String(),
+		Ipv6AfiEnabled:     !o.Ipv6AddressingType.IsNull() && o.Ipv6AddressingType.ValueString() != apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone.String(),
+		BfdEnabled:         o.BfdEnabled.ValueBool(),
+		Password:           o.Password.ValueStringPointer(),
 		Ipv4AddressingType: o.Ipv4AddressingType.ValueString(),
 		Ipv6AddressingType: o.Ipv6AddressingType.ValueString(),
-		//LocalAsn:           nil, // see below
 		NeighborAsnDynamic: o.NeighborAsnDynamic.ValueBool(),
 		PeerFromLoopback:   o.PeerFromLoopback.ValueBool(),
 		PeerTo:             o.PeerTo.ValueString(), // see below
@@ -174,19 +155,15 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 	ttl := uint8(o.Ttl.ValueInt64())
 	obj.Ttl = &ttl
 
-	var keepaliveTime *uint16
 	if !o.KeepaliveTime.IsNull() {
 		t := uint16(o.KeepaliveTime.ValueInt64())
-		keepaliveTime = &t
+		obj.KeepaliveTime = &t
 	}
-	obj.KeepaliveTime = keepaliveTime
 
-	var holdTime *uint16
 	if !o.HoldTime.IsNull() {
 		t := uint16(o.HoldTime.ValueInt64())
-		holdTime = &t
+		obj.HoldTime = &t
 	}
-	obj.HoldTime = holdTime
 
 	if obj.Ipv4AddressingType == "" { // set default for omitted attribute
 		obj.Ipv4AddressingType = apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String()
@@ -196,12 +173,10 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 		obj.Ipv6AddressingType = apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String()
 	}
 
-	var localAsn *uint32
 	if !o.LocalAsn.IsNull() {
 		la := uint32(o.LocalAsn.ValueInt64())
-		localAsn = &la
+		obj.LocalAsn = &la
 	}
-	obj.LocalAsn = localAsn
 
 	if obj.PeerTo == "" { // set default for omitted attribute
 		obj.PeerTo = apstra.CtPrimitiveBgpPeerToInterfaceOrIpEndpoint.String()
@@ -247,8 +222,6 @@ func (o *BgpPeeringGenericSystem) loadSdkPrimitive(ctx context.Context, in apstr
 		return
 	}
 
-	o.Ipv4AfiEnabled = types.BoolValue(attributes.Ipv4Safi)
-	o.Ipv6AfiEnabled = types.BoolValue(attributes.Ipv6Safi)
 	o.Ttl = types.Int64Value(int64(attributes.Ttl))
 	o.BfdEnabled = types.BoolValue(attributes.Bfd)
 	if attributes.Password != nil {

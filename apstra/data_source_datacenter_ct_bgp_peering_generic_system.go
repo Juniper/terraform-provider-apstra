@@ -2,13 +2,14 @@ package tfapstra
 
 import (
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
 )
 
-var _ datasource.DataSource = &dataSourceDatacenterCtBgpPeeringGenericSystem{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceDatacenterCtBgpPeeringGenericSystem{}
 
 type dataSourceDatacenterCtBgpPeeringGenericSystem struct{}
 
@@ -22,6 +23,25 @@ func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) Schema(_ context.Context
 			"suitable for use in the `primitives` attribute of an `apstra_datacenter_connectivity_template` " +
 			"resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.",
 		Attributes: connectivitytemplate.BgpPeeringGenericSystem{}.DataSourceAttributes(),
+	}
+}
+
+func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	var config connectivitytemplate.BgpPeeringGenericSystem
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	v4NoneString := apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String() // "none"
+	v6NoneString := apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone.String() // "none"
+
+	v4Unconfigured := config.Ipv4AddressingType.IsNull() || config.Ipv4AddressingType.ValueString() == v4NoneString
+	v6Unconfigured := config.Ipv6AddressingType.IsNull() || config.Ipv6AddressingType.ValueString() == v6NoneString
+
+	if v4Unconfigured && v6Unconfigured {
+		resp.Diagnostics.AddError("Invalid Attribute Combination", "At least one attribute "+
+			"out of 'ipv4_addressing_type' and 'ipv4_addressing_type' must be enabled")
 	}
 }
 

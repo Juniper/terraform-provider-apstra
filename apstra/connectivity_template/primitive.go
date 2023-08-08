@@ -147,6 +147,9 @@ func SdkPrimitivesToJsonStrings(ctx context.Context, in []*apstra.ConnectivityTe
 	result := make([]attr.Value, len(in))
 	for i := range in {
 		p := PrimitiveFromSdk(ctx, in[i], diags)
+		if diags.HasError() {
+			return nil
+		}
 		result[i] = types.StringValue(p.Marshal(ctx, diags))
 		if diags.HasError() {
 			return nil
