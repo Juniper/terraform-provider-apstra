@@ -279,3 +279,136 @@ func TestSliceDelete(t *testing.T) {
 		}
 	}
 }
+
+func TestSliceComplementOfA(t *testing.T) {
+	type testCase[T comparable] struct {
+		a []T
+		b []T
+		e []T
+	}
+
+	testCases := []testCase[int]{
+		{
+			a: []int{},
+			b: nil,
+			e: []int{},
+		},
+		{
+			a: nil,
+			b: []int{},
+			e: []int{},
+		},
+		{
+			a: nil,
+			b: nil,
+			e: []int{},
+		},
+		{
+			a: []int{},
+			b: []int{},
+			e: []int{},
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{},
+			e: []int{},
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: nil,
+			e: []int{},
+		},
+		{
+			a: []int{},
+			b: []int{1, 2, 3, 4},
+			e: []int{1, 2, 3, 4},
+		},
+		{
+			a: nil,
+			b: []int{1, 2, 3, 4},
+			e: []int{1, 2, 3, 4},
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{1, 2, 3, 4},
+			e: []int{},
+		},
+		{
+			a: []int{2, 4, 6, 8},
+			b: []int{1, 3, 5, 7},
+			e: []int{1, 3, 5, 7},
+		},
+		{
+			a: []int{2, 4, 6, 8},
+			b: []int{1, 2, 3, 4},
+			e: []int{1, 3},
+		},
+	}
+
+	for i, tc := range testCases {
+		r := SliceComplementOfA(tc.a, tc.b)
+		if len(tc.e) != len(r) {
+			t.Fatalf("test case %d: expected %d results, got %d results", i, len(tc.e), len(r))
+		}
+
+		e := make(map[int]bool, len(tc.e))
+		for _, t := range tc.e {
+			e[t] = true
+		}
+
+		for _, v := range r {
+			if !e[v] {
+				t.Fatalf("test case %d: did not find expected value %d among results", i, v)
+			}
+		}
+	}
+}
+
+func TestSliceIntersectionOfAB(t *testing.T) {
+	type testCase[T comparable] struct {
+		a []T
+		b []T
+		e []T
+	}
+
+	testCases := []testCase[int]{
+		{
+			a: []int{},
+			b: []int{},
+			e: []int{},
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{1, 2, 3, 4},
+			e: []int{1, 2, 3, 4},
+		},
+		{
+			a: []int{2, 4, 6, 8},
+			b: []int{1, 3, 5, 7},
+			e: []int{},
+		},
+		{
+			a: []int{2, 4, 6, 8},
+			b: []int{1, 2, 3, 4},
+			e: []int{2, 4},
+		},
+	}
+
+	for i, tc := range testCases {
+		r := SliceIntersectionOfAB(tc.a, tc.b)
+		if len(tc.e) != len(r) {
+			t.Fatalf("test case %d: expected %d results, got %d results", i, len(tc.e), len(r))
+		}
+
+		e := make(map[int]bool, len(tc.e))
+		for _, t := range tc.e {
+			e[t] = true
+		}
+
+		for _, v := range r {
+			if !e[v] {
+				t.Fatalf("test case %d: did not find expected value %d among results", i, v)
+			}
+		}
+	}
+}
