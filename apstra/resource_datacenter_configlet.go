@@ -74,16 +74,18 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	time.Sleep(time.Second * 3)
-	api, err := bpClient.GetConfiglet(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError("Error importing Datacenter Configlet", err.Error())
-		return
+	if plan.Name.IsUnknown() { // fetch is only required to learn the name
+		time.Sleep(time.Second * 3)
+		api, err := bpClient.GetConfiglet(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError("Error importing Datacenter Configlet", err.Error())
+			return
+		}
+		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	}
 
 	// set the state
-	plan.Id = types.StringValue(api.Id.String())
-	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -137,10 +139,6 @@ func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.U
 
 	api, err := bpClient.GetConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddAttributeError(path.Root("name"),
 			fmt.Sprintf("Failed to read imported Configlet %s", plan.Id), err.Error())
 		return

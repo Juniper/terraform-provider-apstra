@@ -81,13 +81,10 @@ func (o *dataSourceDatacenterConfiglet) Read(ctx context.Context, req datasource
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading DatacenterConfiglet", err.Error(),
+				path.Root("name"), "Failed reading Datacenter Configlet", err.Error(),
 			)
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 
 	config.Id = types.StringValue(api.Id.String())
