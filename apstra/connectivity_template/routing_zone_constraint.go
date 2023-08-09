@@ -77,7 +77,7 @@ func (o *RoutingZoneConstraint) loadSdkPrimitive(ctx context.Context, in apstra.
 func (o *RoutingZoneConstraint) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachRoutingZoneConstraint, _ *diag.Diagnostics) {
 	o.RoutingZoneConstraintId = types.StringNull()
 	if in.RoutingZoneConstraint != nil {
-		o.RoutingZoneConstraintId = types.StringValue(*in.RoutingZoneConstraint)
+		o.RoutingZoneConstraintId = types.StringValue(in.RoutingZoneConstraint.String())
 	}
 }
 
@@ -88,8 +88,9 @@ type routingZoneConstraintPrototype struct {
 }
 
 func (o routingZoneConstraintPrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+	rzcId := apstra.ObjectId(*o.RoutingZoneConstraintId)
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachRoutingZoneConstraint{
-		RoutingZoneConstraint: o.RoutingZoneConstraintId,
+		RoutingZoneConstraint: &rzcId,
 	}
 }
 

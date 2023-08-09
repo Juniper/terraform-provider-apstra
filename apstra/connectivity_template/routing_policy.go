@@ -77,7 +77,7 @@ func (o *RoutingPolicy) loadSdkPrimitive(ctx context.Context, in apstra.Connecti
 func (o *RoutingPolicy) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy, _ *diag.Diagnostics) {
 	o.RoutingPolicyId = types.StringNull()
 	if in.RpToAttach != nil {
-		o.RoutingPolicyId = types.StringValue(*in.RpToAttach)
+		o.RoutingPolicyId = types.StringValue(in.RpToAttach.String())
 	}
 }
 
@@ -88,8 +88,9 @@ type routingPolicyPrototype struct {
 }
 
 func (o routingPolicyPrototype) attributes(_ context.Context, _ path.Path, _ *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
+	rpId := apstra.ObjectId(*o.RoutingPolicyId)
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy{
-		RpToAttach: o.RoutingPolicyId,
+		RpToAttach: &rpId,
 	}
 }
 
