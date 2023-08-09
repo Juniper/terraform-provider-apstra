@@ -30,7 +30,7 @@ func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by Id. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -65,7 +65,7 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet Id.",
+			MarkdownDescription: "Configlet ID.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
