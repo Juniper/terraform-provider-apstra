@@ -290,8 +290,43 @@ func TestSliceComplementOfA(t *testing.T) {
 	testCases := []testCase[int]{
 		{
 			a: []int{},
+			b: nil,
+			e: []int{},
+		},
+		{
+			a: nil,
 			b: []int{},
 			e: []int{},
+		},
+		{
+			a: nil,
+			b: nil,
+			e: []int{},
+		},
+		{
+			a: []int{},
+			b: []int{},
+			e: []int{},
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{},
+			e: []int{},
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: nil,
+			e: []int{},
+		},
+		{
+			a: []int{},
+			b: []int{1, 2, 3, 4},
+			e: []int{1, 2, 3, 4},
+		},
+		{
+			a: nil,
+			b: []int{1, 2, 3, 4},
+			e: []int{1, 2, 3, 4},
 		},
 		{
 			a: []int{1, 2, 3, 4},
