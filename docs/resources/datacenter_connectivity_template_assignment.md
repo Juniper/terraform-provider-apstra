@@ -15,7 +15,7 @@ This resource assigns one or more Connectivity Templates to an Application Point
 # This example assigns two connectivity templates to the switch port
 # identified by the ID "FkYtMBdeoJ5urBaIEi8"
 #
-# Note that as of release v0.26.0 there's not an easy way to determine
+# Note that as of release v0.27.0 there's not an easy way to determine
 # interface IDs. New data sources which facilitate interface ID lookup
 # are coming soon (tm)
 
