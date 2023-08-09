@@ -74,7 +74,6 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Co
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-	return
 }
 
 func (o *resourceDatacenterConnectivityTemplateAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
