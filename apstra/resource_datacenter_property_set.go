@@ -43,7 +43,6 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	// extract the keys to be imported from the plan
 	var keysToImport []string
 	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
