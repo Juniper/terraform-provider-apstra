@@ -25,13 +25,12 @@ type DatacenterConfiglet struct {
 func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
-				"the Blueprint that the Configlet belongs to.",
-			Required:   true,
-			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Configlet belongs to.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by Id. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -47,7 +46,7 @@ func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.
 			Optional:            true,
 			Computed:            true},
 		"condition": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Condition that decides how the configlet is applied",
+			MarkdownDescription: "Condition determines where the Configlet is applied.",
 			Computed:            true,
 		},
 		"catalog_configlet_id": dataSourceSchema.StringAttribute{
@@ -66,25 +65,26 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet Id",
+			MarkdownDescription: "Configlet ID.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet name.",
+			MarkdownDescription: "Configlet name. When omitted, the name found in the catalog will be used.",
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"condition": resourceSchema.StringAttribute{
-			MarkdownDescription: "Condition that determines when the configlet is applied",
+			MarkdownDescription: "Condition determines where the Configlet is applied.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"catalog_configlet_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Id of the Catalog Configlet that is to be imported",
+			MarkdownDescription: "Id of the catalog Configlet to be imported",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 	}
 }
