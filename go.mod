@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20230809075757-17d7e5f60f26
+	github.com/Juniper/apstra-go-sdk v0.0.0-20230809123248-907c01d45423
 	github.com/chrismarget-j/go-licenses v0.0.0-20230424163011-d60082a506e0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.18.0
 	github.com/hashicorp/terraform-plugin-testing v1.2.0
 	github.com/mitchellh/go-homedir v1.1.0
-	golang.org/x/exp v0.0.0-20230807204917-050eac23e9de
+	golang.org/x/exp v0.0.0-20230809094429-853ea248256d
 	honnef.co/go/tools v0.4.3
 )
 
