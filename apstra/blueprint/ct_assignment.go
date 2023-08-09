@@ -15,9 +15,9 @@ import (
 )
 
 type ConnectivityTemplateAssignment struct {
-	BlueprintId            types.String `tfsdk:"blueprint_id"`
-	ConnectivityTemplateId types.String `tfsdk:"connectivity_template_id"`
-	ApplicationPointIds    types.Set    `tfsdk:"application_point_ids"`
+	BlueprintId             types.String `tfsdk:"blueprint_id"`
+	ConnectivityTemplateIds types.Set    `tfsdk:"connectivity_template_ids"`
+	ApplicationPointId      types.String `tfsdk:"application_point_id"`
 }
 
 func (o ConnectivityTemplateAssignment) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -28,14 +28,15 @@ func (o ConnectivityTemplateAssignment) ResourceAttributes() map[string]resource
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"connectivity_template_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra node ID of the Connectivity Template.",
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		"application_point_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra node ID of the Interface or System where the Connectivity Template " +
+				"should be applied.",
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"application_point_ids": resourceSchema.SetAttribute{
-			MarkdownDescription: "Set of Application Point IDs to which the Connectivity Template should be assigned.",
+		"connectivity_template_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Connectivity Template IDs which should be applied to the Application Point.",
 			Required:            true,
 			ElementType:         types.StringType,
 			Validators: []validator.Set{
@@ -47,20 +48,20 @@ func (o ConnectivityTemplateAssignment) ResourceAttributes() map[string]resource
 }
 
 func (o *ConnectivityTemplateAssignment) AddDelRequest(ctx context.Context, state *ConnectivityTemplateAssignment, diags *diag.Diagnostics) ([]apstra.ObjectId, []apstra.ObjectId) {
-	var planIds []apstra.ObjectId
-	diags.Append(o.ApplicationPointIds.ElementsAs(ctx, &planIds, false)...)
-	if diags.HasError() {
-		return nil, nil
+	var planIds, stateIds []apstra.ObjectId
+
+	if o != nil { // o will be nil in Delete()
+		diags.Append(o.ConnectivityTemplateIds.ElementsAs(ctx, &planIds, false)...)
+		if diags.HasError() {
+			return nil, nil
+		}
 	}
 
-	if state == nil { // no state in Create()
-		return planIds, nil
-	}
-
-	var stateIds []apstra.ObjectId
-	diags.Append(o.ApplicationPointIds.ElementsAs(ctx, &stateIds, false)...)
-	if diags.HasError() {
-		return nil, nil
+	if state != nil { // state will be nil in Create()
+		diags.Append(state.ConnectivityTemplateIds.ElementsAs(ctx, &stateIds, false)...)
+		if diags.HasError() {
+			return nil, nil
+		}
 	}
 
 	return utils.SliceComplementOfA(stateIds, planIds), utils.SliceComplementOfA(planIds, stateIds)

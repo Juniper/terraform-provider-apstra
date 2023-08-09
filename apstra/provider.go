@@ -413,6 +413,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterBlueprint{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplate{} },
+		func() resource.Resource { return &resourceDatacenterConnectivityTemplateAssignment{} },
 		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterPropertySet{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
