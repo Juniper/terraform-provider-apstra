@@ -89,9 +89,7 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 	}
 }
 
-func (o *DatacenterConfiglet) LoadApiData(ctx context.Context, in *apstra.TwoStageL3ClosConfiglet, diags *diag.Diagnostics) {
-	o.Condition = types.StringValue(in.Data.Condition)
-	o.Name = types.StringValue(in.Data.Label)
-	o.Id = types.StringValue(in.Id.String())
-	o.Name = types.StringValue(in.Data.Label)
+func (o *DatacenterConfiglet) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosConfigletData, _ *diag.Diagnostics) {
+	o.Condition = types.StringValue(in.Condition)
+	o.Name = types.StringValue(in.Label)
 }
