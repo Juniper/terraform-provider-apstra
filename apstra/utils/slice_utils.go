@@ -117,3 +117,25 @@ func SliceComplementOfA[T comparable](a, b []T) []T {
 
 	return result
 }
+
+// SliceIntersectionOfAB returns items which appear in both a and b
+func SliceIntersectionOfAB[T comparable](a, b []T) []T {
+	mapA := make(map[T]bool, len(a))
+	for _, t := range a {
+		mapA[t] = true
+	}
+
+	mapB := make(map[T]bool, len(b))
+	for _, t := range b {
+		mapB[t] = true
+	}
+
+	var result []T
+	for t := range mapB {
+		if mapA[t] {
+			result = append(result, t)
+		}
+	}
+
+	return result
+}
