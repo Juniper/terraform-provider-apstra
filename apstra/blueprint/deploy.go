@@ -3,6 +3,7 @@ package blueprint
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -182,26 +183,25 @@ func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Di
 
 	o.HasUncommittedChanges = types.BoolValue(status.HasUncommittedChanges)
 
-	//if o.Comment.IsUnknown() {
 	revision, err := client.GetLastDeployedRevision(ctx, bpId)
 	if err != nil {
-		diags.AddWarning(
-			fmt.Sprintf("error reading blueprint %q revision %d", bpId, status.Version),
-			err.Error(),
-		)
+		var ace apstra.ApstraClientErr
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrUncommitted) {
+			diags.AddError(
+				fmt.Sprintf("failed reading blueprint %q revision", bpId),
+				err.Error(),
+			)
+			return
+		}
+
+		// instantiate bogus revision because the API doesn't have one.
+		// zero values okay.
+		revision = &apstra.BlueprintRevision{}
 	}
-	if revision == nil {
-		return
-	}
-	//if revision == nil {
-	//	o.Comment = types.StringNull()
-	//	o.Revision = types.Int64Null()
-	//} else {
+
 	o.Comment = utils.StringValueOrNull(ctx, revision.Description, diags)
 	o.ActiveRevision = types.Int64Value(int64(revision.RevisionId))
 	o.StagedRevision = types.Int64Value(int64(status.Version))
-	//}
-	//}
 }
 
 type CommentTemplate struct {
