@@ -18,6 +18,7 @@ import (
 	"math"
 	"sort"
 	"strings"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -72,12 +73,17 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 		"keepalive_time": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP keepalive time (seconds).",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint16+1)},
+			Validators: []validator.Int64{
+				int64validator.Between(0, math.MaxUint16+1),
+			},
 		},
 		"hold_time": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP hold time (seconds).",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint16+1)},
+			Validators: []validator.Int64{
+				int64validator.Between(0, math.MaxUint16+1),
+				apstravalidator.AtLeastProductOf(3, path.MatchRoot("keepalive_time")),
+			},
 		},
 		"ipv4_addressing_type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of `%s` (or omit)",
