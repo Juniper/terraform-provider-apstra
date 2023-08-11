@@ -62,12 +62,19 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 		"keepalive_time": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP keepalive time (seconds).",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint16+1)},
+			Validators: []validator.Int64{
+				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.AlsoRequires(path.MatchRoot("hold_time")),
+			},
 		},
 		"hold_time": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP hold time (seconds).",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint16+1)},
+			Validators: []validator.Int64{
+				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.AlsoRequires(path.MatchRoot("keepalive_time")),
+				apstravalidator.AtLeastProductOf(3, path.MatchRoot("keepalive_time")),
+			},
 		},
 		"local_asn": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "This feature is configured on a per-peer basis. It allows a router " +
