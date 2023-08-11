@@ -61,6 +61,7 @@ func (o DynamicBgpPeering) DataSourceAttributes() map[string]dataSourceSchema.At
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.AlsoRequires(path.MatchRoot("hold_time")),
 			},
 		},
 		"hold_time": dataSourceSchema.Int64Attribute{
@@ -68,6 +69,7 @@ func (o DynamicBgpPeering) DataSourceAttributes() map[string]dataSourceSchema.At
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.AlsoRequires(path.MatchRoot("keepalive_time")),
 				apstravalidator.AtLeastProductOf(3, path.MatchRoot("keepalive_time")),
 			},
 		},
