@@ -118,7 +118,10 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 				Attributes: prefixFilter{}.resourceAttributes(),
 				Validators: []validator.Object{prefixFilterValidator()},
 			},
-			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
+			Validators: []validator.List{
+				listvalidator.UniqueValues(),
+				listvalidator.SizeAtLeast(1),
+			},
 		},
 		"extra_exports": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "User defined export routes will be used in addition to any other routes specified " +
@@ -129,7 +132,10 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 				Attributes: prefixFilter{}.resourceAttributes(),
 				Validators: []validator.Object{prefixFilterValidator()},
 			},
-			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
+			Validators: []validator.List{
+				listvalidator.UniqueValues(),
+				listvalidator.SizeAtLeast(1),
+			},
 		},
 	}
 }
