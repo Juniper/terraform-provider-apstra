@@ -82,7 +82,6 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			Optional:            true,
 			Validators: []validator.String{
 				apstravalidator.ParseIp(true, false),
-				apstravalidator.StringRequiredWhenValueIs(path.MatchRoot("ipv4_afi_enabled"), types.BoolValue(true)),
 				stringvalidator.AtLeastOneOf(path.Expressions{
 					path.MatchRelative(),
 					path.MatchRoot("ipv6_address"),
@@ -93,7 +92,6 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			MarkdownDescription: "IPv6 address of peer",
 			Optional:            true,
 			Validators: []validator.String{
-				apstravalidator.StringRequiredWhenValueIs(path.MatchRoot("ipv6_afi_enabled"), types.BoolValue(true)),
 				apstravalidator.ParseIp(false, true),
 			},
 		},
