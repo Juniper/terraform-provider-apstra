@@ -187,16 +187,17 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	// No need to proceed if the blueprint no longer exists
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
-		return
-	}
-	if resp.Diagnostics.HasError() {
-		return
+	// Create a client for the datacenter reference design
+	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("failed locking blueprint %q mutex", state.BlueprintId.ValueString()),
@@ -206,12 +207,6 @@ func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.Delete
 
 	// Clear the poolIds so they'll get un-allocated
 	state.PoolIds = types.SetNull(types.StringType)
-
-	// Create a blueprint client
-	client, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
-	}
 
 	// Create a resource allocation request
 	request := state.Request(ctx, &resp.Diagnostics)

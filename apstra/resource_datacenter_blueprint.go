@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
@@ -268,8 +269,7 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 
 	err := o.client.DeleteBlueprint(ctx, bpID)
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting Blueprint", err.Error())

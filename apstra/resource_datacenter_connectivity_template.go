@@ -171,16 +171,18 @@ func (o *resourceDatacenterConnectivityTemplate) Delete(ctx context.Context, req
 		return
 	}
 
-	// No need to proceed if the blueprint no longer exists
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
-		return
-	}
-	if resp.Diagnostics.HasError() {
+	// Create a client for the datacenter reference design
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
@@ -188,16 +190,9 @@ func (o *resourceDatacenterConnectivityTemplate) Delete(ctx context.Context, req
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
-		return
-	}
-
 	err = bp.DeleteConnectivityTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError(fmt.Sprintf("failed while deleting Connectivity Template %s", state.Id), err.Error())
