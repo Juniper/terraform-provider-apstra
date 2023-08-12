@@ -265,18 +265,16 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	bpID := apstra.ObjectId(state.Id.ValueString())
-
-	err := o.client.DeleteBlueprint(ctx, bpID)
+	// Delete the blueprint
+	err := o.client.DeleteBlueprint(ctx, apstra.ObjectId(state.Id.ValueString())
 	if err != nil {
-		if utils.IsApstra404(err) {
-			return // 404 is okay
+		if !utils.IsApstra404(err) {
+			resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
 		}
-		resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
 	}
 
 	// Unlock the blueprint mutex.
-	err = o.unlockFunc(ctx, bpID.String())
+	err = o.unlockFunc(ctx, state.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("error unlocking blueprint mutex", err.Error())
 	}
