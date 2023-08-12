@@ -190,6 +190,7 @@ func (o *resourceDatacenterConnectivityTemplate) Delete(ctx context.Context, req
 		return
 	}
 
+	// Delete connectivity template
 	err = bp.DeleteConnectivityTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
