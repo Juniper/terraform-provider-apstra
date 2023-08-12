@@ -330,6 +330,7 @@ func (o *resourceDatacenterRoutingZone) Delete(ctx context.Context, req resource
 		return
 	}
 
+	// Delete the routing zone
 	err = bp.DeleteSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {

@@ -187,6 +187,7 @@ func (o *resourceDatacenterRoutingPolicy) Delete(ctx context.Context, req resour
 		return
 	}
 
+	// Delete the routing policy
 	err = bp.DeleteRoutingPolicy(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {

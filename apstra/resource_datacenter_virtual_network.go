@@ -331,6 +331,7 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 		return
 	}
 
+	// Delete the virtual network
 	err = bp.DeleteVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {

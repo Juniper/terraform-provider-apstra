@@ -216,6 +216,7 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 		return
 	}
 
+	// Delete generic system
 	err = bp.DeleteGenericSystem(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
