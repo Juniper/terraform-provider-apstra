@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -45,8 +44,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
 				config.BlueprintId), err.Error())
 			return
@@ -97,8 +95,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 
 	dhcpServers, err := bpClient.GetSecurityZoneDhcpServers(ctx, api.Id)
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}

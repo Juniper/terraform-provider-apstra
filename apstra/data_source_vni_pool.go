@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -10,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"terraform-provider-apstra/apstra/resources"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceVniPool{}
@@ -43,12 +43,11 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 
 	var err error
 	var apiData *apstra.VniPool
-	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetVniPoolByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"VNI Pool not found",
@@ -57,16 +56,13 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 		}
 	case !config.Id.IsNull():
 		apiData, err = o.client.GetVniPool(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"VNI Pool not found",
 				fmt.Sprintf("VNI Pool with ID %q not found", config.Id.ValueString()))
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving VNI Pool", err.Error())

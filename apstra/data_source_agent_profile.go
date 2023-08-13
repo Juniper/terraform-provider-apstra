@@ -2,13 +2,13 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfile{}
@@ -42,12 +42,11 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 
 	var err error
 	var apiData *apstra.AgentProfile
-	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetAgentProfileByLabel(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Agent Profile not found",
@@ -56,16 +55,13 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 		}
 	case !config.Id.IsNull():
 		apiData, err = o.client.GetAgentProfile(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Agent Profile not found",
 				fmt.Sprintf("Agent profile with ID %q not found", config.Id.ValueString()))
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Agent Profile", err.Error())

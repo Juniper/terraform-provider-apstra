@@ -2,12 +2,12 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	systemAgents "terraform-provider-apstra/apstra/system_agents"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgent{}
@@ -41,8 +41,7 @@ func (o *dataSourceAgent) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	agent, err := o.client.GetSystemAgent(ctx, apstra.ObjectId(config.AgentId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("agent %s not found",
 				config.AgentId), err.Error())
 			return

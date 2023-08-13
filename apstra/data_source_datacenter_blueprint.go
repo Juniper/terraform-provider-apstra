@@ -2,13 +2,13 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
@@ -42,12 +42,11 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 
 	var err error
 	var apiData *apstra.BlueprintStatus
-	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetBlueprintStatusByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Blueprint not found",
@@ -56,16 +55,13 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 		}
 	case !config.Id.IsNull():
 		apiData, err = o.client.GetBlueprintStatus(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Blueprint not found",
 				fmt.Sprintf("Blueprint with ID %q not found", config.Id.ValueString()))
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Blueprint Status", err.Error())

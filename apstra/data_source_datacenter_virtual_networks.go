@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -109,8 +108,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, bpId apstra.ObjectId, diags *diag.Diagnostics) []attr.Value {
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, bpId)
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			diags.AddError(fmt.Sprintf("blueprint %s not found", bpId), err.Error())
 			return nil
 		}
