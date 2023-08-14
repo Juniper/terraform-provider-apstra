@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -72,10 +71,9 @@ func (o *resourcePropertySet) Read(ctx context.Context, req resource.ReadRequest
 
 	var err error
 	var api *apstra.PropertySet
-	var ace apstra.ApstraClientErr
 
 	api, err = o.client.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
-	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+	if utils.IsApstra404(err) {
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -122,16 +120,20 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 		resp.Diagnostics.AddError("error updating Property Set", err.Error())
 		return
 	}
-	var ace apstra.ApstraClientErr
-	// set state
+
+	// read the state fromm the API
 	api, err := o.client.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("id"),
-			"PropertySet not found",
-			fmt.Sprintf("PropertySet with ID %q not found. This should not happen", plan.Id.ValueString()))
-		return
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"PropertySet not found",
+				fmt.Sprintf("just-updated PropertySet with ID %q not found.", plan.Id.ValueString()))
+			return
+		}
+		resp.Diagnostics.AddError("error updating property set", err.Error())
 	}
+
 	// save the old data
 	d := plan.Data
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
@@ -155,10 +157,10 @@ func (o *resourcePropertySet) Delete(ctx context.Context, req resource.DeleteReq
 	// Delete Property Set by calling API
 	err := o.client.DeletePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError("error deleting Property Set", err.Error())
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("error deleting Property Set", err.Error())
+		return
 	}
 }

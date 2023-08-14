@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/go-version"
@@ -11,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
@@ -124,18 +124,15 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 	// Get Rack Based Template from API and then update what is in state from what the API returns
 	api, err := o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			// resource deleted outside of terraform
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError(
-				"error reading Rack Based Template",
-				fmt.Sprintf("Could not Read %q - %s", state.Id.ValueString(), err),
-			)
-			return
 		}
+		resp.Diagnostics.AddError(
+			"error reading Rack Based Template",
+			fmt.Sprintf("Could not Read %q - %s", state.Id.ValueString(), err),
+		)
+		return
 	}
 
 	// Create new state object
@@ -213,14 +210,14 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 	// Delete Agent Profile by calling API
 	err := o.client.DeleteTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError(
-				"error deleting Agent Profile",
-				fmt.Sprintf("could not delete Agent Profile %q - %s", state.Id.ValueString(), err),
-			)
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError(
+			"error deleting Agent Profile",
+			fmt.Sprintf("could not delete Agent Profile %q - %s", state.Id.ValueString(), err),
+		)
+		return
 	}
 }
 

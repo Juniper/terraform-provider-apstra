@@ -141,10 +141,10 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 	// Delete Agent Profile by calling API
 	err := o.client.DeleteAgentProfile(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError("error deleting Agent Profile", err.Error())
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("error deleting Agent Profile", err.Error())
+		return
 	}
 }

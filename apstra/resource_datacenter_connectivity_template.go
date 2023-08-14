@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -46,8 +45,7 @@ func (o *resourceDatacenterConnectivityTemplate) Create(ctx context.Context, req
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
@@ -93,8 +91,7 @@ func (o *resourceDatacenterConnectivityTemplate) Read(ctx context.Context, req r
 	// Create a blueprint client
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -104,8 +101,7 @@ func (o *resourceDatacenterConnectivityTemplate) Read(ctx context.Context, req r
 
 	api, err := bp.GetConnectivityTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}

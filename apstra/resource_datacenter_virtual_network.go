@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -112,8 +111,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
@@ -200,8 +198,7 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 	// create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -212,8 +209,7 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 	// retrieve the virtual network
 	vn, err := bp.GetVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}

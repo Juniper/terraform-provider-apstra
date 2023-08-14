@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/go-version"
@@ -160,8 +159,7 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 	// Some interesting details are in BlueprintStatus.
 	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
