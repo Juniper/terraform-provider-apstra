@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
@@ -311,12 +312,11 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 		return
 	}
 
-	// create a client for the datacenter reference design
+	// Create a client for the datacenter reference design
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
 		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
@@ -331,11 +331,11 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 		return
 	}
 
+	// Delete the virtual network
 	err = bp.DeleteVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("error deleting virtual network", err.Error())
 	}

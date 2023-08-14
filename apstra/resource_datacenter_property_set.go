@@ -252,7 +252,7 @@ func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource
 		return
 	}
 
-	// create a blueprint client
+	// Create a client for the datacenter reference design
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
