@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,7 +18,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/compatibility"
 	"terraform-provider-apstra/apstra/utils"
 	"time"
@@ -120,19 +118,6 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 				MarkdownDescription: "Set 'true' to disable TLS certificate validation.",
 				Optional:            true,
 			},
-			"blueprint_mutex_disabled": schema.BoolAttribute{
-				MarkdownDescription: "Blueprint mutexes are signals that changes are being made in the staging " +
-					"Blueprint and other automation processes (including other instances of Terraform)  should wait " +
-					"before beginning to make changes of their own. Set this attribute 'true' to skip locking the " +
-					"mutex(es) which signal exclusive Blueprint access for all Blueprint changes made in this project.",
-				Optional: true,
-				Validators: []validator.Bool{apstravalidator.AtMostNOf(1, path.Expressions{
-					path.MatchRelative(),
-					path.MatchRoot("blueprint_mutex_enabled"),
-				}...)},
-				DeprecationMessage: "`blueprint_mutex_disabled` is deprecated and will be removed in a future " +
-					"version. Please migrate your configuration to use `blueprint_mutex_enabled` instead.",
-			},
 			"blueprint_mutex_enabled": schema.BoolAttribute{
 				MarkdownDescription: "Blueprint mutexes are signals that changes are being made in the staging " +
 					"Blueprint and other automation processes (including other instances of Terraform) should wait " +
@@ -172,7 +157,6 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 type providerConfig struct {
 	Url          types.String `tfsdk:"url"`
 	TlsNoVerify  types.Bool   `tfsdk:"tls_validation_disabled"`
-	MutexDisable types.Bool   `tfsdk:"blueprint_mutex_disabled"`
 	MutexEnable  types.Bool   `tfsdk:"blueprint_mutex_enabled"`
 	MutexMessage types.String `tfsdk:"blueprint_mutex_message"`
 	Experimental types.Bool   `tfsdk:"experimental"`
@@ -180,7 +164,7 @@ type providerConfig struct {
 }
 
 func (o providerConfig) handleMutexFlag(_ context.Context, diags *diag.Diagnostics) {
-	if o.MutexEnable.IsNull() && o.MutexDisable.IsNull() {
+	if o.MutexEnable.IsNull() {
 		diags.AddWarning("Possibly unsafe default - No exclusive Blueprint access",
 			"The provider's 'blueprint_mutex_enabled' configuration attribute is not set. This attribute is used "+
 				"to explicitly opt-in to, or opt-out of, signaling exclusive Blueprint access via a mutex. The default "+
@@ -192,10 +176,7 @@ func (o providerConfig) handleMutexFlag(_ context.Context, diags *diag.Diagnosti
 		return
 	}
 
-	switch {
-	case !o.MutexDisable.IsNull() && !o.MutexDisable.ValueBool():
-		blueprintMutexes = make(map[string]apstra.Mutex, 0) // non-nil slice signals intent use blueprint mutexes
-	case !o.MutexEnable.IsNull() && o.MutexEnable.ValueBool():
+	if !o.MutexEnable.IsNull() && o.MutexEnable.ValueBool() {
 		blueprintMutexes = make(map[string]apstra.Mutex, 0) // non-nil slice signals intent use blueprint mutexes
 	}
 }
