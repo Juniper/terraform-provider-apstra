@@ -55,36 +55,25 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 	switch {
 	case !config.Name.IsNull():
 		api, err = bpClient.GetPropertySetByName(ctx, config.Name.ValueString())
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with label %s not found", config.Name))
-				return
-			}
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading DatacenterPropertySet", err.Error(),
-			)
+				path.Root("name"),
+				"DatacenterPropertySet not found",
+				fmt.Sprintf("DatacenterPropertySet with label %s not found", config.Name))
 			return
 		}
 	case !config.Id.IsNull():
 		api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"DatacenterPropertySet not found",
-					fmt.Sprintf("DatacenterPropertySet with ID %s not found", config.Id))
-				return
-			}
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading DatacenterPropertySet", err.Error(),
-			)
+				path.Root("id"),
+				"DatacenterPropertySet not found",
+				fmt.Sprintf("DatacenterPropertySet with ID %s not found", config.Id))
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("Failed reading DatacenterPropertySet", err.Error())
 		return
 	}
 
