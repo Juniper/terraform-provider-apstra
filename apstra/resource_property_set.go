@@ -132,6 +132,7 @@ func (o *resourcePropertySet) Update(ctx context.Context, req resource.UpdateReq
 			return
 		}
 		resp.Diagnostics.AddError("error updating property set", err.Error())
+		return
 	}
 
 	// save the old data
