@@ -2,12 +2,12 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceAgentProfile{}
@@ -72,8 +72,7 @@ func (o *resourceAgentProfile) Read(ctx context.Context, req resource.ReadReques
 	// Get Agent Profile from API and then update what is in state from what the API returns
 	ap, err := o.client.GetAgentProfile(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -109,14 +108,8 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace apstra.ApstraClientErr
 	err := o.client.UpdateAgentProfile(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		// some other unknown error
 		resp.Diagnostics.AddError("error updating Agent Profile", err.Error())
 		return
 	}
