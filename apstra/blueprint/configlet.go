@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"terraform-provider-apstra/apstra/design"
 )
 
 type DatacenterConfiglet struct {
@@ -20,18 +21,18 @@ type DatacenterConfiglet struct {
 	CatalogConfigletID types.String `tfsdk:"catalog_configlet_id"`
 	Condition          types.String `tfsdk:"condition"`
 	Name               types.String `tfsdk:"name"`
+	Data               types.Object `tfsdk:"data"`
 }
 
 func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
-				"the Blueprint that the Configlet belongs to.",
-			Required:   true,
-			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Configlet belongs to.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Configlet by Id. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Configlet by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -47,12 +48,31 @@ func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.
 			Optional:            true,
 			Computed:            true},
 		"condition": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Condition that decides how the configlet is applied",
+			MarkdownDescription: "Condition determines where the Configlet is applied.",
 			Computed:            true,
 		},
 		"catalog_configlet_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Will be null in the data source",
 			Computed:            true,
+		},
+		"data":  dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Imported Configlet Data"
+			Computed: true,
+			Attributes: map[string]dataSourceSchema.Attribute{
+				"name": dataSourceSchema.StringAttribute{
+					MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id` is omitted.",
+					Optional:            true,
+					Computed:            true,
+					Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+				},
+				"generators": dataSourceSchema.ListNestedAttribute{
+					MarkdownDescription: "Ordered list of Generators",
+					Computed:            true,
+					NestedObject: dataSourceSchema.NestedAttributeObject{
+						Attributes: design.ConfigletGenerator{}.DataSourceAttributesNested(),
+					},
+				},
+			},
 		},
 	}
 }
@@ -66,32 +86,35 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet Id",
+			MarkdownDescription: "Configlet ID.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet name.",
+			MarkdownDescription: "Configlet name. When omitted, the name found in the catalog will be used.",
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"condition": resourceSchema.StringAttribute{
-			MarkdownDescription: "Condition that determines when the configlet is applied",
+			MarkdownDescription: "Condition determines where the Configlet is applied.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"catalog_configlet_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Id of the Catalog Configlet that is to be imported",
+			MarkdownDescription: "Id of the catalog Configlet to be imported",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 	}
 }
 
-func (o *DatacenterConfiglet) LoadApiData(ctx context.Context, in *apstra.TwoStageL3ClosConfiglet, diags *diag.Diagnostics) {
-	o.Condition = types.StringValue(in.Data.Condition)
-	o.Name = types.StringValue(in.Data.Label)
-	o.Id = types.StringValue(in.Id.String())
-	o.Name = types.StringValue(in.Data.Label)
+func (o *DatacenterConfiglet) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosConfigletData, _ *diag.Diagnostics) {
+	o.Condition = types.StringValue(in.Condition)
+	o.Name = types.StringValue(in.Label)
+	var configletdata struct{
+				Name types.String `tfsdk:string`
+				Generators []types.Object,
+	}
 }

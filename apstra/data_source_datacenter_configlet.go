@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
 	"terraform-provider-apstra/apstra/utils"
 )
@@ -80,22 +81,18 @@ func (o *dataSourceDatacenterConfiglet) Read(ctx context.Context, req datasource
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading DatacenterConfiglet", err.Error(),
+				path.Root("name"), "Failed reading Datacenter Configlet", err.Error(),
 			)
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 
-	// create new state object
-	var state blueprint.DatacenterConfiglet
-	state.BlueprintId = config.BlueprintId
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	config.Id = types.StringValue(api.Id.String())
+	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

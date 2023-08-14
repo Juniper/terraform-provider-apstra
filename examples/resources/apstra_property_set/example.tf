@@ -16,5 +16,5 @@ locals {
 }
 resource "apstra_property_set" "r" {
 	name = "TF Property Set 1234567"
-	data = "{}"
+	data = local.
 }

@@ -2,11 +2,13 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
 	"terraform-provider-apstra/apstra/utils"
 	"time"
@@ -30,7 +32,7 @@ func (o *resourceDatacenterConfiglet) Configure(ctx context.Context, req resourc
 
 func (o *resourceDatacenterConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource imports a configlet into a Blueprint.",
+		MarkdownDescription: "This resource imports a Configlet into a Blueprint.",
 		Attributes:          blueprint.DatacenterConfiglet{}.ResourceAttributes(),
 	}
 }
@@ -42,12 +44,19 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		var ace apstra.ApstraClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -56,6 +65,7 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 			err.Error())
 		return
 	}
+
 	// Perform the import
 	id, err := bpClient.ImportConfigletById(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()),
 		plan.Condition.ValueString(), plan.Name.ValueString())
@@ -63,29 +73,20 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		resp.Diagnostics.AddError("Error importing Datacenter Configlet", err.Error())
 		return
 	}
-	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
+
+	if plan.Name.IsUnknown() { // fetch is only required to learn the name
+		time.Sleep(time.Second * 3)
+		api, err := bpClient.GetConfiglet(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError("Error importing Datacenter Configlet", err.Error())
 			return
 		}
-		resp.Diagnostics.AddAttributeError(path.Root("name"),
-			fmt.Sprintf("Failed to read imported Configlet %s", plan.Id), err.Error())
-		return
-	}
-	time.Sleep(time.Second * 3)
-	api, err := bpClient.GetConfiglet(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError("Error importing Datacenter Configlet", err.Error())
-		return
+		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	}
 
-	// create new state object
-	var state blueprint.DatacenterConfiglet
-	state.BlueprintId = plan.BlueprintId
-	state.CatalogConfigletID = plan.CatalogConfigletID
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	// set the state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceDatacenterConfiglet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -116,13 +117,9 @@ func (o *resourceDatacenterConfiglet) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// create new state object
-	var newState blueprint.DatacenterConfiglet
-	newState.LoadApiData(ctx, api, &resp.Diagnostics)
-	newState.BlueprintId = state.BlueprintId
-	newState.CatalogConfigletID = state.CatalogConfigletID
 	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -142,14 +139,11 @@ func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.U
 
 	api, err := bpClient.GetConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddAttributeError(path.Root("name"),
 			fmt.Sprintf("Failed to read imported Configlet %s", plan.Id), err.Error())
 		return
 	}
+
 	api.Data.Label = plan.Name.ValueString()
 	api.Data.Condition = plan.Condition.ValueString()
 	resp.Diagnostics.AddWarning("response from API", fmt.Sprintln(api))
@@ -183,7 +177,7 @@ func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.U
 
 	// create new state object
 	var state blueprint.DatacenterConfiglet
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
 	state.CatalogConfigletID = plan.CatalogConfigletID
 	// Set state

@@ -17,9 +17,9 @@ import (
 )
 
 type Configlet struct {
-	Id         types.String `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	Generators types.List   `tfsdk:"generators"`
+	Id   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
+	Data types.Object `tfsdk:"data"`
 }
 
 func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -42,11 +42,11 @@ func (o Configlet) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"generators": dataSourceSchema.ListNestedAttribute{
+		"data": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Ordered list of Generators",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: ConfigletGenerator{}.DataSourceAttributesNested(),
+				Attributes: ConfigletData{}.DataSourceAttributesNested(),
 			},
 		},
 	}
@@ -61,14 +61,14 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configlet name displayed in the Apstra web UI",
-			Required:            true,
+			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"generators": resourceSchema.ListNestedAttribute{
+		"data": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Generators organized by Network OS",
 			Required:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: ConfigletGenerator{}.ResourceAttributesNested(),
+				Attributes: ConfigletData{}.ResourceAttributesNested(),
 				Validators: []validator.Object{ValidateConfigletGenerator()},
 			},
 			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
@@ -78,27 +78,8 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletData {
 	var d diag.Diagnostics
-
-	// We only use the Datacenter Reference Design
-	refArchs := []apstra.RefDesign{apstra.RefDesignTwoStageL3Clos}
-
-	// Extract configlet generators
-	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))
-	d = o.Generators.ElementsAs(ctx, &tfGenerators, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-
-	// Convert configlet generators to apstra types
-	generators := make([]apstra.ConfigletGenerator, len(tfGenerators))
-	for i, gen := range tfGenerators {
-		generators[i] = *gen.Request(ctx, diags)
-	}
-	if diags.HasError() {
-		return nil
-	}
-
+	data :=
+	r := o.Data.Request()
 	return &apstra.ConfigletData{
 		DisplayName: o.Name.ValueString(),
 		RefArchs:    refArchs,

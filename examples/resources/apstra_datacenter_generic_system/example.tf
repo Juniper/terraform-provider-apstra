@@ -23,7 +23,7 @@ resource "apstra_datacenter_generic_system" "example" {
   tags              = ["terraform"]
   links = [
     {
-      tags                          = ["10G", "terraform", "bond0"]
+      tags                           = ["10G", "terraform", "bond0"]
       lag_mode                      = "lacp_active"
       target_switch_id              = local.rack_11_leaf_ids[0] // first switch
       target_switch_if_name         = "xe-0/0/6"
