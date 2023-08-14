@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -45,8 +44,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
 				config.BlueprintId), err.Error())
 			return
@@ -59,34 +57,26 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 	switch {
 	case !config.Id.IsNull():
 		api, err = bpClient.GetSecurityZone(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"Routing Zone  not found",
-					fmt.Sprintf("Routing Zone with ID %s not found", config.Id))
-				return
-			}
-			resp.Diagnostics.AddError(
-				"Failed reading Routing Zone", err.Error(),
-			)
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"Routing Zone  not found",
+				fmt.Sprintf("Routing Zone with ID %s not found", config.Id))
 			return
 		}
 	case !config.Name.IsNull():
 		api, err = bpClient.GetSecurityZoneByVrfName(ctx, config.Name.ValueString())
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"Routing Zone not found",
-					fmt.Sprintf("Routing Zone with Name %s not found", config.Name))
-				return
-			}
-			resp.Diagnostics.AddError(
-				"Failed reading Routing Zone", err.Error(),
-			)
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"Routing Zone not found",
+				fmt.Sprintf("Routing Zone with Name %s not found", config.Name))
 			return
 		}
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("Failed reading Routing Zone", err.Error())
+		return
 	}
 
 	config.Id = types.StringValue(api.Id.String())
@@ -97,8 +87,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 
 	dhcpServers, err := bpClient.GetSecurityZoneDhcpServers(ctx, api.Id)
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}

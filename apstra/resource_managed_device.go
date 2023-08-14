@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -10,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/system_agents"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
@@ -135,17 +135,15 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 	// Get AgentInfo from API
 	agentInfo, err := o.client.GetSystemAgent(ctx, apstra.ObjectId(state.AgentId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError(
-				"error reading managed device agent info",
-				fmt.Sprintf("Could not Read %q (%s)- %s", state.AgentId.ValueString(), state.ManagementIp.ValueString(), err),
-			)
-			return
 		}
+		resp.Diagnostics.AddError(
+			"error reading managed device agent info",
+			fmt.Sprintf("Could not Read %q (%s)- %s", state.AgentId.ValueString(), state.ManagementIp.ValueString(), err),
+		)
+		return
 	}
 
 	var newState systemAgents.ManagedDevice
@@ -216,8 +214,7 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 
 	_, err := o.client.GetSystemAgent(ctx, apstra.ObjectId(state.AgentId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
+		if utils.IsApstra404(err) {
 			agentDoesNotExist = true
 		} else {
 			resp.Diagnostics.AddError(
@@ -229,8 +226,7 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 
 	_, err = o.client.GetSystemInfo(ctx, apstra.SystemId(state.SystemId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
+		if utils.IsApstra404(err) {
 			systemDoesNotExist = true
 		} else {
 			resp.Diagnostics.AddError(
@@ -243,8 +239,7 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 	if !agentDoesNotExist {
 		err = o.client.DeleteSystemAgent(ctx, apstra.ObjectId(state.AgentId.ValueString()))
 		if err != nil {
-			var ace apstra.ApstraClientErr
-			if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
+			if !utils.IsApstra404(err) {
 				resp.Diagnostics.AddError(
 					"error deleting device agent",
 					fmt.Sprintf("device agent %q (%q %q) delete error - %s",
@@ -257,8 +252,7 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 	if !systemDoesNotExist {
 		err = o.client.DeleteSystem(ctx, apstra.SystemId(state.SystemId.ValueString()))
 		if err != nil {
-			var ace apstra.ApstraClientErr
-			if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
+			if !utils.IsApstra404(err) {
 				resp.Diagnostics.AddError(
 					"error deleting managed device",
 					fmt.Sprintf("managed device %q (%s) delete error - %s",

@@ -16,5 +16,4 @@ const (
 	errTemplateTypeInvalidElement             = "template '%s' has type '%s' which never permits '%s' to be set"
 	errDataSourceReadFail                     = "Data Source Read() failure'"
 	errResourceReadFail                       = "Resource Read() failure'"
-	errInsufficientConfigElements             = "Available configuration elements did provide a solution. Please report this issue to the provider maintainers"
 )

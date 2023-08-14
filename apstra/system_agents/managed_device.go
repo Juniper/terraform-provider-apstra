@@ -2,7 +2,6 @@ package systemAgents
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -17,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 type ManagedDevice struct {
@@ -151,8 +151,7 @@ func (o *ManagedDevice) LoadApiData(_ context.Context, in *apstra.SystemAgent, _
 func (o *ManagedDevice) ValidateAgentProfile(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	agentProfile, err := client.GetAgentProfile(ctx, apstra.ObjectId(o.AgentProfileId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			diags.AddAttributeError(
 				path.Root("agent_profile_id"),
 				"agent profile not found",
@@ -201,8 +200,7 @@ func (o *ManagedDevice) GetDeviceKey(ctx context.Context, client *apstra.Client,
 	// Get SystemInfo from API
 	systemInfo, err := client.GetSystemInfo(ctx, apstra.SystemId(o.SystemId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 		} else {
 			diags.AddError(
 				"error reading managed device system info",

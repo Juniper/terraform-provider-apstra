@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -10,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/resources"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceVniPool{}
@@ -104,12 +104,11 @@ func (o *resourceVniPool) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// read pool back from Apstra to get usage statistics
-	var ace apstra.ApstraClientErr
 	var pool *apstra.VniPool
 	for {
 		pool, err = o.client.GetVniPool(ctx, id)
 		if err != nil {
-			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
 					"VNI Pool not found",
@@ -146,8 +145,7 @@ func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, re
 	// Get VNI pool from API and then update what is in state from what the API returns
 	p, err := o.client.GetVniPool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -181,14 +179,8 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace apstra.ApstraClientErr
 	err := o.client.UpdateVniPool(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		// some other unknown error
 		resp.Diagnostics.AddError("error updating VNI Pool", err.Error())
 		return
 	}
@@ -196,7 +188,7 @@ func (o *resourceVniPool) Update(ctx context.Context, req resource.UpdateRequest
 	// read pool back from Apstra to get usage statistics
 	p, err := o.client.GetVniPool(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"VNI Pool not found",
@@ -228,10 +220,10 @@ func (o *resourceVniPool) Delete(ctx context.Context, req resource.DeleteRequest
 	// Delete VNI pool by calling API
 	err := o.client.DeleteVniPool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError("error deleting VNI pool", err.Error())
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("error deleting VNI pool", err.Error())
 		return
 	}
 }

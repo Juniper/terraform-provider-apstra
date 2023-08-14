@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -11,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	"terraform-provider-apstra/apstra/resources"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceAsnPool{}
@@ -121,12 +121,11 @@ func (o *resourceIpv4Pool) Create(ctx context.Context, req resource.CreateReques
 	}
 
 	// read pool back from Apstra to get usage statistics
-	var ace apstra.ApstraClientErr
 	var pool *apstra.IpPool
 	for { // loop until creation complete
 		pool, err = o.client.GetIp4Pool(ctx, id)
 		if err != nil {
-			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddError(
 					"IPv4 Pool not found",
 					fmt.Sprintf("Just-created IPv4 Pool with ID %q not found", id))
@@ -162,15 +161,13 @@ func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, r
 	// Get Ipv4 pool from API and then update what is in state from what the API returns
 	p, err := o.client.GetIp4Pool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError("error reading IPv4 pool", err.Error())
-			return
 		}
+		resp.Diagnostics.AddError("error reading IPv4 pool", err.Error())
+		return
 	}
 
 	// create new state object
@@ -198,14 +195,8 @@ func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace apstra.ApstraClientErr
 	err := o.client.UpdateIp4Pool(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		// some other unknown error
 		resp.Diagnostics.AddError("error updating IPv4 Pool", err.Error())
 		return
 	}
@@ -213,7 +204,7 @@ func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateReques
 	// read pool back from Apstra to get usage statistics
 	p, err := o.client.GetIp4Pool(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"IPv4 Pool not found",
@@ -246,10 +237,10 @@ func (o *resourceIpv4Pool) Delete(ctx context.Context, req resource.DeleteReques
 	// Delete IPv4 pool by calling API
 	err := o.client.DeleteIp4Pool(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
-			resp.Diagnostics.AddError(
-				"error deleting IPv4 pool", err.Error())
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError(
+			"error deleting IPv4 pool", err.Error())
 	}
 }

@@ -57,34 +57,26 @@ func (o *dataSourceDatacenterRoutingPolicy) Read(ctx context.Context, req dataso
 	switch {
 	case !config.Id.IsNull():
 		api, err = bpClient.GetRoutingPolicy(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"Routing Policy not found",
-					fmt.Sprintf("Routing Policy with ID %s not found", config.Id))
-				return
-			}
-			resp.Diagnostics.AddError(
-				"Failed reading Routing Policy", err.Error(),
-			)
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"Routing Policy not found",
+				fmt.Sprintf("Routing Policy with ID %s not found", config.Id))
 			return
 		}
 	case !config.Name.IsNull():
 		api, err = bpClient.GetRoutingPolicyByName(ctx, config.Name.ValueString())
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("name"),
-					"Routing Policy not found",
-					fmt.Sprintf("Routing Policy with Name %s not found", config.Name))
-				return
-			}
-			resp.Diagnostics.AddError(
-				"Failed reading Routing Policy", err.Error(),
-			)
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"Routing Policy not found",
+				fmt.Sprintf("Routing Policy with Name %s not found", config.Name))
 			return
 		}
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("Failed reading Routing Policy", err.Error())
+		return
 	}
 
 	config.Id = types.StringValue(api.Id.String())

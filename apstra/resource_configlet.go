@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -154,8 +153,7 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 
 	api, err := o.client.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -208,10 +206,10 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 	// Delete Configlet by calling API
 	err := o.client.DeleteConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError("error deleting Configlet", err.Error())
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("error deleting Configlet", err.Error())
+		return
 	}
 }

@@ -2,12 +2,12 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceRackType{}
@@ -91,8 +91,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	// fetch the rack type detail from the API
 	rt, err := o.client.GetRackType(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -180,10 +179,10 @@ func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteReques
 
 	err := o.client.DeleteRackType(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			return // 404 is okay in Delete()
 		}
 		resp.Diagnostics.AddError("error deleting Rack Type", err.Error())
+		return
 	}
 }

@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -10,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceConfiglet{}
@@ -43,12 +43,11 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 
 	var err error
 	var api *apstra.Configlet
-	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		api, err = o.client.GetConfigletByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"Configlet not found",
@@ -57,16 +56,13 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 		}
 	case !config.Id.IsNull():
 		api, err = o.client.GetConfiglet(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Configlet not found",
 				fmt.Sprintf("Configlet with ID %q not found", config.Id.ValueString()))
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 	if err != nil { // catch errors other than 404 from above
 		resp.Diagnostics.AddError("Error retrieving Configlet", err.Error())

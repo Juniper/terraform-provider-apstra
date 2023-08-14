@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -48,8 +47,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Co
 	// create a client for the datacenter reference design
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
@@ -87,8 +85,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Read(ctx context.Cont
 	// create a client for the datacenter reference design
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -99,8 +96,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Read(ctx context.Cont
 	// currentCtIds come from the API, may include CTs unrelated to this resource
 	currentCtIds, err := bpClient.GetInterfaceConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -191,8 +187,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Delete(ctx context.Co
 	// create a client for the datacenter reference design
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
@@ -216,8 +211,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Delete(ctx context.Co
 
 	err = bpClient.DelInterfaceConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()), delIds)
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())

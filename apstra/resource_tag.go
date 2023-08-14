@@ -2,12 +2,12 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/design"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceTag{}
@@ -69,15 +69,12 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 
 	t, err := o.client.GetTag(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			// resource deleted outside of terraform
+		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError("error reading Tag", err.Error())
-			return
 		}
+		resp.Diagnostics.AddError("error reading Tag", err.Error())
+		return
 	}
 
 	// create new state object
@@ -128,10 +125,10 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 	// Delete Tag by calling API
 	err := o.client.DeleteTag(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError("error deleting Tag", err.Error())
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("error deleting Tag", err.Error())
+		return
 	}
 }

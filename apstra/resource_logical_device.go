@@ -2,8 +2,8 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"terraform-provider-apstra/apstra/utils"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -92,8 +92,7 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 	// Get Logical Device from API and then update what is in state from what the API returns
 	ld, err := o.client.GetLogicalDevice(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -130,14 +129,8 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	var ace apstra.ApstraClientErr
 	err := o.client.UpdateLogicalDevice(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound { // deleted manually since 'plan'?
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		// some other unknown error
 		resp.Diagnostics.AddError("error updating Logical Device", err.Error())
 		return
 	}
@@ -156,10 +149,10 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 	// Delete Logical Device by calling API
 	err := o.client.DeleteLogicalDevice(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound { // 404 is okay - it's the objective
-			resp.Diagnostics.AddError("error deleting Logical Device", err.Error())
-			return
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError("error deleting Logical Device", err.Error())
+		return
 	}
 }

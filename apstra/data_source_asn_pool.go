@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -10,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"terraform-provider-apstra/apstra/resources"
+	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAsnPool{}
@@ -43,12 +43,11 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 
 	var err error
 	var apiData *apstra.AsnPool
-	var ace apstra.ApstraClientErr
 
 	switch {
 	case !config.Name.IsNull():
 		apiData, err = o.client.GetAsnPoolByName(ctx, config.Name.ValueString())
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
 				"ASN Pool not found",
@@ -57,16 +56,13 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 		}
 	case !config.Id.IsNull():
 		apiData, err = o.client.GetAsnPool(ctx, apstra.ObjectId(config.Id.ValueString()))
-		if err != nil && errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"ASN Pool not found",
 				fmt.Sprintf("ASN Pool with ID %q not found", config.Id.ValueString()))
 			return
 		}
-	default:
-		resp.Diagnostics.AddError(errInsufficientConfigElements, "neither 'name' nor 'id' set")
-		return
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving ASN Pool", err.Error())

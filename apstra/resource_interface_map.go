@@ -3,7 +3,6 @@ package tfapstra
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -198,8 +197,7 @@ func (o *resourceInterfaceMap) Read(ctx context.Context, req resource.ReadReques
 	// Get Interface Map from API and then update what is in state from what the API returns
 	iMap, err := o.client.GetInterfaceMap(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+		if utils.IsApstra404(err) {
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
@@ -268,11 +266,11 @@ func (o *resourceInterfaceMap) Delete(ctx context.Context, req resource.DeleteRe
 	// Delete Interface Map by calling API
 	err := o.client.DeleteInterfaceMap(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
-		if errors.As(err, &ace) && ace.Type() != apstra.ErrNotfound {
-			resp.Diagnostics.AddError(
-				"error deleting Interface Map", err.Error())
+		if utils.IsApstra404(err) {
+			return // 404 is okay
 		}
+		resp.Diagnostics.AddError(
+			"error deleting Interface Map", err.Error())
 		return
 	}
 }
