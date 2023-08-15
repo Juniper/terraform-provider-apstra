@@ -1,5 +1,43 @@
 # Blueprint Mutex
 
+### TL;DR
+
+Mutexes are a way to coordinate multiple copies of terraform by making them
+take turns in a Blueprint. They can also be tricky to set up and should be on
+the "figure that out later" list if you're just starting out with the Apstra
+Terraform provider.
+
+If you're learning, you're in development, or you're in a production
+environment where you're not worried about multiple instances of terraform
+running at the same time, disabling the mutex feature will probably help
+maintain your sanity:
+
+```hcl
+provider "apstra" {
+  blueprint_mutex_enabled = false
+}
+```
+
+Definitely turn it back on if you have multiple jobs waiting to spring into
+action when the bell rings at the end of the business day. It's safer to force
+these processes to take turns modifying a blueprint, rather than thrashing
+changes and commits into a single blueprint all at once.
+
+If your `terraform apply` seems stuck, it's probably a mutex problem:
+
+```text
+apstra_datacenter_virtual_network.b: Still creating... [10s elapsed]
+apstra_datacenter_virtual_network.b: Still creating... [20s elapsed]
+apstra_datacenter_virtual_network.b: Still creating... [30s elapsed]
+apstra_datacenter_virtual_network.b: Still creating... [40s elapsed]
+apstra_datacenter_virtual_network.b: Still creating... [50s elapsed]
+apstra_datacenter_virtual_network.b: Still creating... [1m0s elapsed]
+apstra_datacenter_virtual_network.b: Still creating... [1m10s elapsed]
+```
+
+See *Manually Clearing Mutexes* (below) to handle this situation.
+
+
 ### The problem
 
 Pending changes to an Apstra Blueprint are "staged" in a non-operational clone
@@ -124,11 +162,11 @@ to proceed until the mutex is manually cleared.
 In the specific case of a `terraform apply`, this will look like an interminable
 `apply` run which never seems to make any progress. In reality, it's regularly
 polling the API, waiting for the offending mutex to disappear so that it can
-go to work.
+get to work.
 
 It is reasonable and safe to manually clear a mutex any time one has been left
-behind so long as it's clear that the mutex's creator has exited without
-clearing it.
+behind so long as it's clear that the mutex's creator (probably some earlier
+instance of `terraform apply`) has exited without clearing it.
 
 To manually clear a mutex:
 1. Open the Apstra Web UI.
