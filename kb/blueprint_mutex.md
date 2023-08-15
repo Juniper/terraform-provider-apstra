@@ -131,6 +131,6 @@ behind so long as it's clear that the mutex's creator has exited without
 clearing it.
 
 To manually clear a mutex:
-1. Open the Apstra Web Us "Delete" button.
+1. Open the Apstra Web UI.
 1. Navigate to [Design] -> [Tags]
-1. Identify the offending mutex / tag and delete it using its "Delete" button.
+1. Identify the offending mutex / tag and remove it using its "Delete" button.
