@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -17,6 +18,7 @@ import (
 var _ Primitive = &StaticRoute{}
 
 type StaticRoute struct {
+	Label           types.String `tfsdk:"label"`
 	Network         types.String `tfsdk:"network"`
 	ShareIpEndpoint types.Bool   `tfsdk:"share_ip_endpoint"`
 	Primitive       types.String `tfsdk:"primitive"`
@@ -28,6 +30,11 @@ func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 			MarkdownDescription: "IPv4 or IPv6 prefix in CIDR notation",
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(false, false)},
+		},
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"share_ip_endpoint": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the next-hop IP address is shared across " +
@@ -45,6 +52,7 @@ func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 
 func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 	obj := staticRoutePrototype{
+		Label:           o.Label.ValueString(),
 		Network:         o.Network.ValueString(),
 		ShareIpEndpoint: o.ShareIpEndpoint.ValueBool(),
 	}
@@ -91,8 +99,9 @@ func (o *StaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.C
 var _ JsonPrimitive = &staticRoutePrototype{}
 
 type staticRoutePrototype struct {
-	Network         string `json:"network"`
-	ShareIpEndpoint bool   `json:"share_ip_endpoint"`
+	Label           *string `json:"label,omitempty"`
+	Network         string  `json:"network"`
+	ShareIpEndpoint bool    `json:"share_ip_endpoint"`
 }
 
 func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
