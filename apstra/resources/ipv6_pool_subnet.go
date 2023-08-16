@@ -7,7 +7,9 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -53,6 +55,7 @@ func (o Ipv6PoolSubnet) ResourceAttributesWrite() map[string]resourceSchema.Attr
 		"network": resourceSchema.StringAttribute{
 			MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
 			Required:            true,
+			Validators:          []validator.String{apstravalidator.ParseCidr(false, true)},
 		},
 		"total": resourceSchema.NumberAttribute{
 			MarkdownDescription: "Total number of addresses in this IPv6 range.",
