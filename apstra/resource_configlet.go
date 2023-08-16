@@ -77,13 +77,14 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Delay Validation until the involved attributes have a known value.
 	if config.Generators.IsUnknown() {
 		return
 	}
+
 	// extract generators from config
 	var generators []design.ConfigletGenerator
-
 	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
 	if resp.Diagnostics.HasError() {
 		return
