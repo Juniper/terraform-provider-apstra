@@ -80,6 +80,9 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 
 	// extract generators from config
 	var generators []design.ConfigletGenerator
+	if config.Generators.IsUnknown() {
+		return
+	}
 	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
 	if resp.Diagnostics.HasError() {
 		return
