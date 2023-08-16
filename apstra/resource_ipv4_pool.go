@@ -53,7 +53,9 @@ func (o *resourceIpv4Pool) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
-	var jNets []*net.IPNet // Each subnet will be checked for overlap with members of jNets, then appended to jNets
+	var jNets []*net.IPNet
+	// Each subnet will be checked for overlap with members of jNets
+	// (j is inner loop iterator variable), then appended to jNets
 	for i := range subnets {
 		// setVal is used to path AttributeErrors correctly
 		setVal, d := types.ObjectValueFrom(ctx, resources.Ipv4PoolSubnet{}.AttrTypes(), &subnets[i])
@@ -75,23 +77,13 @@ func (o *resourceIpv4Pool) ValidateConfig(ctx context.Context, req resource.Vali
 			return
 		}
 
-		// insist the user give us the all-zeros host address: 192.168.1.0/24 not 192.168.1.50/24
-		if iNet.String() != subnets[i].Network.ValueString() {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("subnets").AtSetValue(setVal),
-				errInvalidConfig,
-				fmt.Sprintf("%q doesn't specify a network base address. Did you mean %q?",
-					subnets[i].Network.ValueString(), iNet.String()),
-			)
-		}
-
 		// check for overlaps with previous subnets
-		for j := range jNets {
-			if iNet.Contains(jNets[j].IP) || jNets[j].Contains(iNet.IP) {
+		for _, jNet := range jNets {
+			if iNet.Contains(jNet.IP) || jNet.Contains(iNet.IP) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("subnets"),
 					"pool has overlapping subnets",
-					fmt.Sprintf("subnets %q and %q overlap", iNet.String(), jNets[j].String()))
+					fmt.Sprintf("subnets %q and %q overlap", iNet.String(), jNet.String()))
 				return
 			}
 		}
