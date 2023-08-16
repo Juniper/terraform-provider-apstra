@@ -182,6 +182,9 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	if !plan.Vni.IsUnknown() {
 		state.Vni = plan.Vni
 	}
+	if !plan.ReserveVlan.IsUnknown() {
+		state.ReserveVlan = plan.ReserveVlan
+	}
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
@@ -287,6 +290,9 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 	if !plan.IPv6Gateway.IsUnknown() {
 		state.IPv6Gateway = plan.IPv6Gateway
+	}
+	if !plan.ReserveVlan.IsUnknown() {
+		state.ReserveVlan = plan.ReserveVlan
 	}
 
 	// if the plan modifier didn't take action...
