@@ -73,7 +73,7 @@ func (o Ipv6Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o Ipv6Pool) ResourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o Ipv6Pool) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID number of the pool",
