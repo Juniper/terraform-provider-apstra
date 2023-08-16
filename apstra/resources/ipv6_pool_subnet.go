@@ -3,6 +3,7 @@ package resources
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -14,11 +15,11 @@ import (
 )
 
 type Ipv6PoolSubnet struct {
-	Status         types.String  `tfsdk:"status"`
-	Network        types.String  `tfsdk:"network"`
-	Total          types.Number  `tfsdk:"total"`
-	Used           types.Number  `tfsdk:"used"`
-	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
+	Status         types.String         `tfsdk:"status"`
+	Network        cidrtypes.IPv6Prefix `tfsdk:"network"`
+	Total          types.Number         `tfsdk:"total"`
+	Used           types.Number         `tfsdk:"used"`
+	UsedPercentage types.Float64        `tfsdk:"used_percentage"`
 }
 
 func (o Ipv6PoolSubnet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -29,6 +30,7 @@ func (o Ipv6PoolSubnet) DataSourceAttributes() map[string]dataSourceSchema.Attri
 		},
 		"network": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Network specification in CIDR syntax (\"2001:db8::/32\").",
+			CustomType:          new(cidrtypes.IPv6PrefixType),
 			Required:            true,
 		},
 		"total": dataSourceSchema.NumberAttribute{
@@ -46,7 +48,7 @@ func (o Ipv6PoolSubnet) DataSourceAttributes() map[string]dataSourceSchema.Attri
 	}
 }
 
-func (o Ipv6PoolSubnet) ResourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o Ipv6PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"status": resourceSchema.StringAttribute{
 			MarkdownDescription: "Status of the IPv6 resource pool.",
@@ -54,6 +56,7 @@ func (o Ipv6PoolSubnet) ResourceAttributesWrite() map[string]resourceSchema.Attr
 		},
 		"network": resourceSchema.StringAttribute{
 			MarkdownDescription: "Network specification in CIDR syntax (\"2001:db8::/64\").",
+			CustomType:          new(cidrtypes.IPv6PrefixType),
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(false, true)},
 		},
@@ -84,7 +87,7 @@ func (o Ipv6PoolSubnet) AttrTypes() map[string]attr.Type {
 
 func (o *Ipv6PoolSubnet) LoadApiData(_ context.Context, in *apstra.IpSubnet, _ *diag.Diagnostics) {
 	o.Status = types.StringValue(in.Status)
-	o.Network = types.StringValue(in.Network.String())
+	o.Network = cidrtypes.NewIPv6PrefixValue(in.Network.String())
 	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))
 	o.Used = types.NumberValue(utils.BigIntToBigFloat(&in.Used))
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))

@@ -90,7 +90,7 @@ func (o Ipv4Pool) ResourceAttributesWrite() map[string]resourceSchema.Attribute 
 			Required:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: Ipv4PoolSubnet{}.ResourceAttributesWrite(),
+				Attributes: Ipv4PoolSubnet{}.ResourceAttributes(),
 			},
 		},
 		"total": resourceSchema.NumberAttribute{
