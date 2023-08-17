@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	"terraform-provider-apstra/apstra/resources"
 	"terraform-provider-apstra/apstra/utils"
@@ -57,34 +56,22 @@ func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.Vali
 	// Each subnet will be checked for overlap with members of jNets
 	// (j is inner loop iterator variable), then appended to jNets
 	for i := range subnets {
-		// setVal is used to path AttributeErrors correctly
-		setVal, d := types.ObjectValueFrom(ctx, resources.Ipv6PoolSubnet{}.AttrTypes(), &subnets[i])
-		resp.Diagnostics.Append(d...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
+		// skip unknown values
 		if subnets[i].Network.IsUnknown() {
 			continue
 		}
 
-		// parse the subnet string
-		_, iNet, err := net.ParseCIDR(subnets[i].Network.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("subnets").AtSetValue(setVal),
-				"failure parsing CIDR notation", fmt.Sprintf("error parsing %q - %s", subnets[i], err.Error()))
-			return
-		}
+		// parse the subnet string; error ignored because it's already been validated
+		_, iNet, _ := net.ParseCIDR(subnets[i].Network.ValueString())
 
 		// check for overlaps with previous subnets
 		for _, jNet := range jNets {
 			if iNet.Contains(jNet.IP) || jNet.Contains(iNet.IP) {
+				// no return so we catch all overlap errors
 				resp.Diagnostics.AddAttributeError(
 					path.Root("subnets"),
 					"pool has overlapping subnets",
 					fmt.Sprintf("subnets %q and %q overlap", iNet.String(), jNet.String()))
-				return
 			}
 		}
 
