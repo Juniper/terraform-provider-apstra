@@ -30,7 +30,7 @@ func (o Ipv4PoolSubnet) DataSourceAttributes() map[string]dataSourceSchema.Attri
 		},
 		"network": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Network specification in CIDR syntax (\"10.0.0.0/8\").",
-			CustomType:          new(cidrtypes.IPv4PrefixType),
+			CustomType:          cidrtypes.IPv4PrefixType{},
 			Required:            true,
 		},
 		"total": dataSourceSchema.NumberAttribute{
@@ -56,7 +56,7 @@ func (o Ipv4PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute
 		},
 		"network": resourceSchema.StringAttribute{
 			MarkdownDescription: "Network specification in CIDR syntax (\"192.0.2.0/24\").",
-			CustomType:          new(cidrtypes.IPv4PrefixType),
+			CustomType:          cidrtypes.IPv4PrefixType{},
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(true, false)},
 		},
