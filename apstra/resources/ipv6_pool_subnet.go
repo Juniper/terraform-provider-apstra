@@ -59,6 +59,7 @@ func (o Ipv6PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(false, true)},
+			// ParseCidr is still required because the IPv6PrefixType doesn't enforce the zero address.
 		},
 		"total": resourceSchema.NumberAttribute{
 			MarkdownDescription: "Total number of addresses in this IPv6 range.",
