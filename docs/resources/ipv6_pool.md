@@ -82,7 +82,7 @@ locals {
 
 Required:
 
-- `network` (String) Network specification in CIDR syntax ("10.0.0.0/8").
+- `network` (String) Network specification in CIDR syntax ("2001:db8::/64").
 
 Read-Only:
 

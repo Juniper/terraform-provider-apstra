@@ -82,7 +82,7 @@ output "example_pool_size" {
 
 Required:
 
-- `network` (String) Network specification in CIDR syntax ("10.0.0.0/8").
+- `network` (String) Network specification in CIDR syntax ("192.0.2.0/24").
 
 Read-Only:
 

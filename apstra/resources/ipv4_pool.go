@@ -73,7 +73,7 @@ func (o Ipv4Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o Ipv4Pool) ResourceAttributesWrite() map[string]resourceSchema.Attribute {
+func (o Ipv4Pool) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID number of the pool",
@@ -90,7 +90,7 @@ func (o Ipv4Pool) ResourceAttributesWrite() map[string]resourceSchema.Attribute 
 			Required:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: Ipv4PoolSubnet{}.ResourceAttributesWrite(),
+				Attributes: Ipv4PoolSubnet{}.ResourceAttributes(),
 			},
 		},
 		"total": resourceSchema.NumberAttribute{
