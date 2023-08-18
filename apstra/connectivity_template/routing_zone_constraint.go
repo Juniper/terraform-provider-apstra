@@ -92,6 +92,7 @@ func (o *RoutingZoneConstraint) loadSdkPrimitiveAttributes(_ context.Context, in
 var _ JsonPrimitive = &routingZoneConstraintPrototype{}
 
 type routingZoneConstraintPrototype struct {
+	Label                   string  `json:"label,omitempty"`
 	RoutingZoneConstraintId *string `json:"routing_zone_constraint_id"`
 }
 
@@ -110,6 +111,7 @@ func (o routingZoneConstraintPrototype) ToSdkPrimitive(ctx context.Context, path
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

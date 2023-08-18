@@ -234,6 +234,7 @@ func (o *BgpPeeringIpEndpoint) loadSdkPrimitive(ctx context.Context, in apstra.C
 var _ JsonPrimitive = &bgpPeeringIpEndpointPrototype{}
 
 type bgpPeeringIpEndpointPrototype struct {
+	Label              string   `json:"label,omitempty"`
 	NeighborAsn        *uint32  `json:"neighbor_asn"`
 	NeighborAsnDynaimc bool     `json:"neighbor_asn_dynaimc"`
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
@@ -287,6 +288,7 @@ func (o bgpPeeringIpEndpointPrototype) ToSdkPrimitive(ctx context.Context, path 
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

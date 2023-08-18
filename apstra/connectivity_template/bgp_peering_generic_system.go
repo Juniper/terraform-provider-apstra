@@ -262,6 +262,7 @@ func (o *BgpPeeringGenericSystem) loadSdkPrimitive(ctx context.Context, in apstr
 var _ JsonPrimitive = &bgpPeeringGenericSystemPrototype{}
 
 type bgpPeeringGenericSystemPrototype struct {
+	Label              string   `json:"label,omitempty"`
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled     bool     `json:"ipv6_afi_enabled"`
 	Ttl                uint8    `json:"ttl"`
@@ -345,6 +346,7 @@ func (o bgpPeeringGenericSystemPrototype) ToSdkPrimitive(ctx context.Context, pa
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

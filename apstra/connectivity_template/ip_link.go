@@ -172,6 +172,7 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 var _ JsonPrimitive = &ipLinkPrototype{}
 
 type ipLinkPrototype struct {
+	Label              string       `json:"label,omitempty"`
 	RoutingZoneId      string       `json:"routing_zone_id"`
 	Tagged             bool         `json:"tagged"`
 	VlanId             *apstra.Vlan `json:"vlan_id,omitempty"`
@@ -220,6 +221,7 @@ func (o ipLinkPrototype) ToSdkPrimitive(ctx context.Context, path path.Path, dia
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

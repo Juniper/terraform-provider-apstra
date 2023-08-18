@@ -120,6 +120,7 @@ func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityT
 var _ JsonPrimitive = &vnSinglePrototype{}
 
 type vnSinglePrototype struct {
+	Label           string   `json:"label,omitempty"`
 	VnId            string   `json:"vn_id"`
 	Tagged          bool     `json:"tagged"`
 	ChildPrimitives []string `json:"child_primitives,omitempty"`
@@ -146,6 +147,7 @@ func (o vnSinglePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, d
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

@@ -127,6 +127,7 @@ func (o *CustomStaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *ap
 var _ JsonPrimitive = &customStaticRoutePrototype{}
 
 type customStaticRoutePrototype struct {
+	Label         string  `json:"label,omitempty"`
 	RoutingZoneId *string `json:"routing_zone_id"`
 	Network       *string `json:"network"`
 	NextHop       *string `json:"next_hop_ip_address"`
@@ -167,6 +168,7 @@ func (o customStaticRoutePrototype) ToSdkPrimitive(ctx context.Context, path pat
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

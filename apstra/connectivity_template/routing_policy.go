@@ -92,6 +92,7 @@ func (o *RoutingPolicy) loadSdkPrimitiveAttributes(_ context.Context, in *apstra
 var _ JsonPrimitive = &routingPolicyPrototype{}
 
 type routingPolicyPrototype struct {
+	Label           string  `json:"label,omitempty"`
 	RoutingPolicyId *string `json:"routing_policy_id"`
 }
 
@@ -110,6 +111,7 @@ func (o routingPolicyPrototype) ToSdkPrimitive(ctx context.Context, path path.Pa
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

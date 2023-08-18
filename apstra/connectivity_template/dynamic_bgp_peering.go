@@ -241,6 +241,7 @@ func (o *DynamicBgpPeering) loadSdkPrimitive(ctx context.Context, in apstra.Conn
 var _ JsonPrimitive = &dynamicBgpPeeringPrototype{}
 
 type dynamicBgpPeeringPrototype struct {
+	Label           string   `json:"label,omitempty"`
 	Ipv4AfiEnabled  bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled  bool     `json:"ipv6_afi_enabled"`
 	Ttl             uint8    `json:"ttl"`
@@ -305,6 +306,7 @@ func (o dynamicBgpPeeringPrototype) ToSdkPrimitive(ctx context.Context, path pat
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later
