@@ -25,14 +25,14 @@ type StaticRoute struct {
 
 func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"network": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 or IPv6 prefix in CIDR notation",
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(false, false)},
-		},
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
-			Optional:            true,
 		},
 		"share_ip_endpoint": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the next-hop IP address is shared across " +
