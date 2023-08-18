@@ -49,25 +49,25 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 	var jsonPrimitive JsonPrimitive
 	switch pType {
 	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
-		jsonPrimitive = &vnSinglePrototype{}
+		jsonPrimitive = &vnSinglePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachMultipleVlan:
-		jsonPrimitive = &vnMultiplePrototype{}
+		jsonPrimitive = &vnMultiplePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
-		jsonPrimitive = &ipLinkPrototype{}
+		jsonPrimitive = &ipLinkPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
 		jsonPrimitive = &staticRoutePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-		jsonPrimitive = &customStaticRoutePrototype{}
+		jsonPrimitive = &customStaticRoutePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
-		jsonPrimitive = &bgpPeeringIpEndpointPrototype{}
+		jsonPrimitive = &bgpPeeringIpEndpointPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
-		jsonPrimitive = &bgpPeeringGenericSystemPrototype{}
+		jsonPrimitive = &bgpPeeringGenericSystemPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
-		jsonPrimitive = &dynamicBgpPeeringPrototype{}
+		jsonPrimitive = &dynamicBgpPeeringPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
-		jsonPrimitive = &routingPolicyPrototype{}
+		jsonPrimitive = &routingPolicyPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-		jsonPrimitive = &routingZoneConstraintPrototype{}
+		jsonPrimitive = &routingZoneConstraintPrototype{Label: o.Label}
 	default:
 		diags.AddAttributeError(path, "primitive rehydration failed", fmt.Sprintf("unhandled primitive type %q", pType.String()))
 		return nil
