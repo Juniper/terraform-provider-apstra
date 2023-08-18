@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -33,8 +32,7 @@ func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 		},
 		"label": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Primitive label displayed in the web UI",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Optional:            true,
 		},
 		"share_ip_endpoint": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the next-hop IP address is shared across " +
