@@ -186,6 +186,7 @@ func (o DynamicBgpPeering) Marshal(ctx context.Context, diags *diag.Diagnostics)
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface.String(),
+		Label:         o.Label.ValueString(),
 		Data:          data,
 	})
 	if err != nil {

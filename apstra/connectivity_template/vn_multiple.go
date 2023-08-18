@@ -88,6 +88,7 @@ func (o VnMultiple) Marshal(ctx context.Context, diags *diag.Diagnostics) string
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachMultipleVlan.String(),
+		Label:         o.Label.ValueString(),
 		Data:          data,
 	})
 	if err != nil {

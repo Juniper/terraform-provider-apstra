@@ -56,6 +56,7 @@ func (o RoutingPolicy) Marshal(_ context.Context, diags *diag.Diagnostics) strin
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy.String(),
+		Label:         o.Label.ValueString(),
 		Data:          data,
 	})
 	if err != nil {

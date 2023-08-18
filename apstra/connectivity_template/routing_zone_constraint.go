@@ -56,6 +56,7 @@ func (o RoutingZoneConstraint) Marshal(_ context.Context, diags *diag.Diagnostic
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint.String(),
+		Label:         o.Label.ValueString(),
 		Data:          data,
 	})
 	if err != nil {

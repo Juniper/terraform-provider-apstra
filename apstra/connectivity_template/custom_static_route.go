@@ -81,6 +81,7 @@ func (o CustomStaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) s
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute.String(),
+		Label:         o.Label.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
