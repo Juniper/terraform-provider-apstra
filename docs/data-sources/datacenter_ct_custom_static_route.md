@@ -74,6 +74,10 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `next_hop` (String) IPv4 or IPv6 address of next hop router
 - `routing_zone_id` (String) Apstra ID of Routing Zone
 
+### Optional
+
+- `label` (String) Primitive label displayed in the web UI
+
 ### Read-Only
 
 - `primitive` (String) JSON output for use in the `primitives` field of an `apstra_datacenter_connectivity_template` resource or a different Connectivity Template JsonPrimitive data source
