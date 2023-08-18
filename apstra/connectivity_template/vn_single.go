@@ -21,6 +21,7 @@ import (
 var _ Primitive = &VnSingle{}
 
 type VnSingle struct {
+	Label           types.String `tfsdk:"label"`
 	VnId            types.String `tfsdk:"vn_id"`
 	Tagged          types.Bool   `tfsdk:"tagged"`
 	Primitive       types.String `tfsdk:"primitive"`
@@ -29,6 +30,10 @@ type VnSingle struct {
 
 func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"vn_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network ID",
 			Required:            true,

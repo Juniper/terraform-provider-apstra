@@ -16,12 +16,17 @@ import (
 var _ Primitive = &RoutingZoneConstraint{}
 
 type RoutingZoneConstraint struct {
+	Label                   types.String `tfsdk:"label"`
 	RoutingZoneConstraintId types.String `tfsdk:"routing_zone_constraint_id"`
 	Primitive               types.String `tfsdk:"primitive"`
 }
 
 func (o RoutingZoneConstraint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_zone_constraint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of Routing Zone Constraint to be attached.",
 			Required:            true,

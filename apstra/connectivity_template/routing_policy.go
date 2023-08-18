@@ -16,12 +16,17 @@ import (
 var _ Primitive = &RoutingPolicy{}
 
 type RoutingPolicy struct {
+	Label           types.String `tfsdk:"label"`
 	RoutingPolicyId types.String `tfsdk:"routing_policy_id"`
 	Primitive       types.String `tfsdk:"primitive"`
 }
 
 func (o RoutingPolicy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_policy_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of Routing Policy to be attached.",
 			Required:            true,

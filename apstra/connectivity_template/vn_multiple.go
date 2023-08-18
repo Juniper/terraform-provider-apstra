@@ -19,6 +19,7 @@ import (
 var _ Primitive = &VnMultiple{}
 
 type VnMultiple struct {
+	Label        types.String `tfsdk:"label"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
 	Primitive    types.String `tfsdk:"primitive"`
@@ -26,6 +27,10 @@ type VnMultiple struct {
 
 func (o VnMultiple) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"untagged_vn_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network ID which should be presented without VLAN tags",
 			Optional:            true,

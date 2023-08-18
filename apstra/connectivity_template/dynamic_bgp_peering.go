@@ -26,6 +26,7 @@ import (
 var _ Primitive = &DynamicBgpPeering{}
 
 type DynamicBgpPeering struct {
+	Label           types.String `tfsdk:"label"`
 	Ttl             types.Int64  `tfsdk:"ttl"`
 	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
 	Password        types.String `tfsdk:"password"`
@@ -42,6 +43,10 @@ type DynamicBgpPeering struct {
 
 func (o DynamicBgpPeering) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,

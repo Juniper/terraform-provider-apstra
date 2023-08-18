@@ -18,6 +18,7 @@ import (
 var _ Primitive = &CustomStaticRoute{}
 
 type CustomStaticRoute struct {
+	Label         types.String `tfsdk:"label"`
 	RoutingZoneId types.String `tfsdk:"routing_zone_id"`
 	Network       types.String `tfsdk:"network"`
 	NextHop       types.String `tfsdk:"next_hop"`
@@ -26,6 +27,10 @@ type CustomStaticRoute struct {
 
 func (o CustomStaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID of Routing Zone",
 			Required:            true,

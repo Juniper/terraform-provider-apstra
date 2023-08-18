@@ -24,6 +24,7 @@ import (
 var _ Primitive = &IpLink{}
 
 type IpLink struct {
+	Label              types.String `tfsdk:"label"`
 	RoutingZoneId      types.String `tfsdk:"routing_zone_id"`
 	VlanId             types.Int64  `tfsdk:"vlan_id"`
 	Ipv4AddressingType types.String `tfsdk:"ipv4_addressing_type"`
@@ -43,6 +44,10 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		apstra.CtPrimitiveIPv6AddressingTypeNone.String(),
 	}
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Routing Zone to which this IP Link belongs",
 			Required:            true,

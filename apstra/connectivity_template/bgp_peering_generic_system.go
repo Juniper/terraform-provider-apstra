@@ -25,6 +25,7 @@ import (
 var _ Primitive = &BgpPeeringGenericSystem{}
 
 type BgpPeeringGenericSystem struct {
+	Label              types.String `tfsdk:"label"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -56,6 +57,10 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 		apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint.String(),
 	}
 	return map[string]dataSourceSchema.Attribute{
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive label displayed in the web UI",
+			Optional:            true,
+		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
