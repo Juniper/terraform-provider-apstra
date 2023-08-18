@@ -166,6 +166,7 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 	o.Ipv4AddressingType = types.StringValue(attributes.IPv4AddressingType.String())
 	o.Ipv6AddressingType = types.StringValue(attributes.IPv6AddressingType.String())
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Label = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}

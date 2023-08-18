@@ -103,6 +103,8 @@ func (o *CustomStaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.Conn
 	if diags.HasError() {
 		return
 	}
+
+	o.Label = types.StringValue(in.Label)
 }
 
 func (o *CustomStaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute, _ *diag.Diagnostics) {

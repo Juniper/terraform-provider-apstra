@@ -256,6 +256,7 @@ func (o *BgpPeeringGenericSystem) loadSdkPrimitive(ctx context.Context, in apstr
 	o.PeerFromLoopback = types.BoolValue(attributes.PeerFromLoopback)
 	o.PeerTo = types.StringValue(attributes.PeerTo.String())
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Label = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &bgpPeeringGenericSystemPrototype{}

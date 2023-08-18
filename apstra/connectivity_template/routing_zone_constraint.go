@@ -78,6 +78,8 @@ func (o *RoutingZoneConstraint) loadSdkPrimitive(ctx context.Context, in apstra.
 	if diags.HasError() {
 		return
 	}
+
+	o.Label = types.StringValue(in.Label)
 }
 
 func (o *RoutingZoneConstraint) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachRoutingZoneConstraint, _ *diag.Diagnostics) {

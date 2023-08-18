@@ -114,6 +114,7 @@ func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityT
 	}
 	o.Tagged = types.BoolValue(attributes.Tagged)
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Label = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &vnSinglePrototype{}

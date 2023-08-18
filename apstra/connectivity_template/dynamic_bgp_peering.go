@@ -235,6 +235,7 @@ func (o *DynamicBgpPeering) loadSdkPrimitive(ctx context.Context, in apstra.Conn
 	}
 
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Label = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &dynamicBgpPeeringPrototype{}

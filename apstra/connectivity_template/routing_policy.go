@@ -78,6 +78,8 @@ func (o *RoutingPolicy) loadSdkPrimitive(ctx context.Context, in apstra.Connecti
 	if diags.HasError() {
 		return
 	}
+
+	o.Label = types.StringValue(in.Label)
 }
 
 func (o *RoutingPolicy) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy, _ *diag.Diagnostics) {

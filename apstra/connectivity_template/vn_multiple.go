@@ -117,6 +117,7 @@ func (o *VnMultiple) loadSdkPrimitive(_ context.Context, in apstra.ConnectivityT
 		taggedVnIds[i] = types.StringValue(id.String())
 	}
 	o.TaggedVnIds = types.SetValueMust(types.StringType, taggedVnIds)
+	o.Label = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &vnMultiplePrototype{}
