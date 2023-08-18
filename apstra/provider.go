@@ -119,18 +119,19 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 				Optional:            true,
 			},
 			"blueprint_mutex_enabled": schema.BoolAttribute{
-				MarkdownDescription: "Blueprint mutexes are signals that changes are being made in the staging " +
+				MarkdownDescription: "Blueprint mutexes are indicators that changes are being made in a staging " +
 					"Blueprint and other automation processes (including other instances of Terraform) should wait " +
 					"before beginning to make changes of their own. Setting this attribute 'true' causes the " +
-					"provider to lock a blueprint-specific mutex before making any changes.",
+					"provider to lock a blueprint-specific mutex before making any changes. [More info here]" +
+					"(https://github.com/Juniper/terraform-provider-apstra/blob/main/kb/blueprint_mutex.md).",
 				Optional: true,
 			},
 			"blueprint_mutex_message": schema.StringAttribute{
 				MarkdownDescription: fmt.Sprintf("Blueprint mutexes are signals that changes are being made "+
-					"in the staging Blueprint and other automation processes (including other instances of "+
-					"Terraform)  should wait before beginning to make changes of their own. The mutexes embed a "+
-					"human-readable field to reduce confusion in the event a mutex needs to be cleared manually. "+
-					"This attribute overrides the default message in that field: %q.", blueprintMutexMessage),
+					"in a staging Blueprint and other automation processes (including other instances of Terraform) "+
+					"should wait before beginning to make changes of their own. The mutexes embed a human-readable "+
+					"field to reduce confusion in the event a mutex needs to be cleared manually. This attribute "+
+					"overrides the default message in that field: %q.", blueprintMutexMessage),
 				Optional:   true,
 				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
