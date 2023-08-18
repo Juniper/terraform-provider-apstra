@@ -52,7 +52,6 @@ func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 
 func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string {
 	obj := staticRoutePrototype{
-		Label:           o.Label.ValueString(),
 		Network:         o.Network.ValueString(),
 		ShareIpEndpoint: o.ShareIpEndpoint.ValueBool(),
 	}
@@ -65,6 +64,7 @@ func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string 
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachStaticRoute.String(),
+		Label:         o.Label.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -86,10 +86,11 @@ func (o *StaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.Connectivi
 	if diags.HasError() {
 		return
 	}
+
+	o.Label = types.StringValue(in.Label)
 }
 
 func (o *StaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute, _ *diag.Diagnostics) {
-	o.Label = types.StringValue(in.Label)
 	o.Network = types.StringNull()
 	if in.Network != nil {
 		o.Network = types.StringValue(in.Network.String())
@@ -113,7 +114,6 @@ func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diag
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute{
-		Label:           o.Label,
 		ShareIpEndpoint: o.ShareIpEndpoint,
 		Network:         network,
 	}

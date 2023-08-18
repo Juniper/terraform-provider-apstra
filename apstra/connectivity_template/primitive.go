@@ -32,6 +32,7 @@ type JsonPrimitive interface {
 //   - etc...
 type tfCfgPrimitive struct {
 	PrimitiveType string          `json:"type"`
+	Label         string          `json:"label"`
 	Data          json.RawMessage `json:"data"`
 }
 
@@ -48,25 +49,25 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 	var jsonPrimitive JsonPrimitive
 	switch pType {
 	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
-		jsonPrimitive = new(vnSinglePrototype)
+		jsonPrimitive = &vnSinglePrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachMultipleVlan:
-		jsonPrimitive = new(vnMultiplePrototype)
+		jsonPrimitive = &vnMultiplePrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
-		jsonPrimitive = new(ipLinkPrototype)
+		jsonPrimitive = &ipLinkPrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
-		jsonPrimitive = new(staticRoutePrototype)
+		jsonPrimitive = &staticRoutePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-		jsonPrimitive = new(customStaticRoutePrototype)
+		jsonPrimitive = &customStaticRoutePrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
-		jsonPrimitive = new(bgpPeeringIpEndpointPrototype)
+		jsonPrimitive = &bgpPeeringIpEndpointPrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
-		jsonPrimitive = new(bgpPeeringGenericSystemPrototype)
+		jsonPrimitive = &bgpPeeringGenericSystemPrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
-		jsonPrimitive = new(dynamicBgpPeeringPrototype)
+		jsonPrimitive = &dynamicBgpPeeringPrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
-		jsonPrimitive = new(routingPolicyPrototype)
+		jsonPrimitive = &routingPolicyPrototype{}
 	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-		jsonPrimitive = new(routingZoneConstraintPrototype)
+		jsonPrimitive = &routingZoneConstraintPrototype{}
 	default:
 		diags.AddAttributeError(path, "primitive rehydration failed", fmt.Sprintf("unhandled primitive type %q", pType.String()))
 		return nil
