@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -12,6 +14,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
+var _ resource.ResourceWithModifyPlan = &resourceDatacenterVirtualNetwork{}
+var _ resource.ResourceWithValidateConfig = &resourceDatacenterVirtualNetwork{}
 
 type resourceDatacenterVirtualNetwork struct {
 	client   *apstra.Client
@@ -31,6 +35,70 @@ func (o *resourceDatacenterVirtualNetwork) Schema(_ context.Context, _ resource.
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Virtual Network within a Blueprint.",
 		Attributes:          blueprint.DatacenterVirtualNetwork{}.ResourceAttributes(),
+	}
+}
+
+// ValidateConfig ensures that when reserve_vlan is true, all vlan bindings are
+// set and match each other.
+func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// validation only possible when reserve_vlan is set "true"
+	if !config.ReserveVlan.ValueBool() {
+		return // skip 'false', 'unknown', 'null' values
+	}
+
+	// validation not possible when bindings are unknown
+	if config.Bindings.IsUnknown() {
+		return
+	}
+
+	// validation not possible when any individual binding is unknown
+	for _, v := range config.Bindings.Elements() {
+		if v.IsUnknown() {
+			return
+		}
+	}
+
+	// extract bindings as a map
+	var bindings map[string]blueprint.VnBinding
+	resp.Diagnostics.Append(config.Bindings.ElementsAs(ctx, &bindings, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// validate each binding
+	invalidConfigDueToNullVlan := false
+	reservedVlanIds := make(map[int64]struct{})
+	for _, binding := range bindings {
+		if binding.VlanId.IsUnknown() {
+			continue // skip further validation of unknown vlans
+		}
+		if binding.VlanId.IsNull() {
+			invalidConfigDueToNullVlan = true
+			continue
+		}
+		reservedVlanIds[binding.VlanId.ValueInt64()] = struct{}{}
+	}
+
+	// null vlan is invalid
+	if invalidConfigDueToNullVlan {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'vlan_id' must be specified in each binding when 'reserve_vlan' is true"))
+	}
+
+	// we should have at most one VLAN ID across all bindings (zero when they're unknown)
+	if len(reservedVlanIds) > 1 {
+		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'vlan_id' attributes must match when 'reserve_vlan' is true"))
+		return
 	}
 }
 
