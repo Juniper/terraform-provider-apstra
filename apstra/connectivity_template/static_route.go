@@ -33,7 +33,7 @@ func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 		},
 		"label": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Primitive label displayed in the web UI",
-			Optional:            true,
+			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"share_ip_endpoint": dataSourceSchema.BoolAttribute{
@@ -89,6 +89,7 @@ func (o *StaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.Connectivi
 }
 
 func (o *StaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute, _ *diag.Diagnostics) {
+	o.Label = types.StringValue(in.Label)
 	o.Network = types.StringNull()
 	if in.Network != nil {
 		o.Network = types.StringValue(in.Network.String())
@@ -99,9 +100,9 @@ func (o *StaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.C
 var _ JsonPrimitive = &staticRoutePrototype{}
 
 type staticRoutePrototype struct {
-	Label           *string `json:"label,omitempty"`
-	Network         string  `json:"network"`
-	ShareIpEndpoint bool    `json:"share_ip_endpoint"`
+	Label           string `json:"label,omitempty"`
+	Network         string `json:"network"`
+	ShareIpEndpoint bool   `json:"share_ip_endpoint"`
 }
 
 func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
@@ -112,6 +113,7 @@ func (o staticRoutePrototype) attributes(_ context.Context, path path.Path, diag
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute{
+		Label:           o.Label,
 		ShareIpEndpoint: o.ShareIpEndpoint,
 		Network:         network,
 	}
@@ -125,6 +127,7 @@ func (o staticRoutePrototype) ToSdkPrimitive(ctx context.Context, path path.Path
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children
