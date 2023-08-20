@@ -65,7 +65,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Co
 	}
 
 	addIds, _ := plan.AddDelRequest(ctx, nil, &resp.Diagnostics)
-	err = bpClient.SetInterfaceConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
+	err = bpClient.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed applying Connectivity Template", err.Error())
 		return
@@ -160,14 +160,14 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Update(ctx context.Co
 	}
 
 	// add any required CTs
-	err = bpClient.SetInterfaceConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
+	err = bpClient.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed assigning connectivity templates", err.Error())
 		return
 	}
 
 	// clear any undesired CTs
-	err = bpClient.DelInterfaceConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), delIds)
+	err = bpClient.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), delIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())
 		return
@@ -209,7 +209,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Delete(ctx context.Co
 		return
 	}
 
-	err = bpClient.DelInterfaceConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()), delIds)
+	err = bpClient.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()), delIds)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
