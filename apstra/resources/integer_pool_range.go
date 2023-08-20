@@ -11,14 +11,10 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
 )
 
-const (
-	VniMin = 4096
-	VniMax = 16777214
-)
-
-type VniPoolRange struct {
+type IntegerPoolRange struct {
 	Status         types.String  `tfsdk:"status"`
 	First          types.Int64   `tfsdk:"first"`
 	Last           types.Int64   `tfsdk:"last"`
@@ -27,7 +23,12 @@ type VniPoolRange struct {
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
 
-func (o VniPoolRange) AttrTypes() map[string]attr.Type {
+const (
+	IntegerPoolMin = 1
+	IntegerPoolMax = math.MaxUint32
+)
+
+func (o IntegerPoolRange) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"status":          types.StringType,
 		"first":           types.Int64Type,
@@ -38,71 +39,71 @@ func (o VniPoolRange) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o VniPoolRange) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o IntegerPoolRange) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"first": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Lowest numbered ID in this VNI Pool Range.",
+			MarkdownDescription: "Lowest numbered ID in this Integer Pool Range.",
 			Computed:            true,
 		},
 		"last": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Highest numbered ID in this VNI Pool Range.",
+			MarkdownDescription: "Highest numbered ID in this Integer Pool Range.",
 			Computed:            true,
 		},
 		"total": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Total number of IDs in the VNI Pool Range.",
+			MarkdownDescription: "Total number of IDs in the Integer Pool Range.",
 			Computed:            true,
 		},
 		"status": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the VNI Pool Range, as reported by Apstra.",
+			MarkdownDescription: "Status of the Integer Pool Range, as reported by Apstra.",
 			Computed:            true,
 		},
 		"used": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Count of used VNIs in the VNI Pool Range.",
+			MarkdownDescription: "Count of used Integers in the Integer Pool Range.",
 			Computed:            true,
 		},
 		"used_percentage": dataSourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used IDs in the VNI Pool Range.",
+			MarkdownDescription: "Percent of used IDs in the Integer Pool Range.",
 			Computed:            true,
 		},
 	}
 }
 
-func (o VniPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o IntegerPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"first": resourceSchema.Int64Attribute{
 			Required:   true,
-			Validators: []validator.Int64{int64validator.Between(VniMin-1, VniMax+1)},
+			Validators: []validator.Int64{int64validator.Between(IntegerPoolMin, IntegerPoolMax)},
 		},
 		"last": resourceSchema.Int64Attribute{
 			Required: true,
 			Validators: []validator.Int64{
-				int64validator.Between(VniMin-1, VniMax+1),
+				int64validator.Between(IntegerPoolMin, IntegerPoolMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
 			},
 		},
 		"total": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Total number of IDs in the VNI Pool Range.",
+			MarkdownDescription: "Total number of Integers in the Integer Pool Range.",
 			Computed:            true,
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the VNI Pool Range, as reported by Apstra." +
+			MarkdownDescription: "Status of the Integers Pool Range, as reported by Apstra." +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 		"used": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Count of used IDs in the VNI Pool Range." +
+			MarkdownDescription: "Count of used IDs in the Integers Pool Range." +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used IDs in the VNI Pool Range." +
+			MarkdownDescription: "Percent of used IDs in the Integers Pool Range." +
 				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
 			Computed: true,
 		},
 	}
 }
 
-func (o *VniPoolRange) LoadApiData(_ context.Context, in *apstra.IntRange, _ *diag.Diagnostics) {
+func (o *IntegerPoolRange) LoadApiData(_ context.Context, in *apstra.IntRange, _ *diag.Diagnostics) {
 	o.Status = types.StringValue(in.Status)
 	o.First = types.Int64Value(int64(in.First))
 	o.Last = types.Int64Value(int64(in.Last))
@@ -111,7 +112,7 @@ func (o *VniPoolRange) LoadApiData(_ context.Context, in *apstra.IntRange, _ *di
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }
 
-func (o *VniPoolRange) Request(_ context.Context, _ *diag.Diagnostics) apstra.IntfIntRange {
+func (o *IntegerPoolRange) Request(_ context.Context, _ *diag.Diagnostics) apstra.IntfIntRange {
 	return &apstra.IntRangeRequest{
 		First: uint32(o.First.ValueInt64()),
 		Last:  uint32(o.Last.ValueInt64()),
