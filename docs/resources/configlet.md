@@ -14,26 +14,31 @@ This resource creates a specific Configlet.
 ```terraform
 # This example creates a configlet responsible for DNS server
 # addresses on Junos and EOS devices.
-resource "apstra_configlet" "example" {
-  name = "DNS according to Terraform"
-  generators = [
-    {
-      config_style  = "junos"
-      section       = "system"
-      template_text = <<-EOT
+locals {
+  cfg_data = {
+    name = "DNS according to Terraform"
+    generators = [
+      {
+        config_style  = "junos"
+        section       = "top_level_hierarchical"
+        template_text = <<-EOT
         name-server {
           4.2.2.1;
           4.2.2.2;
         }
       EOT
-    },
-    {
-      config_style           = "eos"
-      section                = "system"
-      template_text          = "ip name-server 4.2.2.1 4.2.2.2"
-      negation_template_text = "no ip name-server 4.2.2.1 4.2.2.2"
-    }
-  ]
+      },
+      {
+        config_style           = "eos"
+        section                = "system"
+        template_text          = "ip name-server 4.2.2.1 4.2.2.2"
+        negation_template_text = "no ip name-server 4.2.2.1 4.2.2.2"
+      }
+    ]
+  }
+}
+resource "apstra_configlet" "example" {
+  data = local.cfg_data
 }
 ```
 
@@ -42,15 +47,23 @@ resource "apstra_configlet" "example" {
 
 ### Required
 
-- `generators` (Attributes List) Generators organized by Network OS (see [below for nested schema](#nestedatt--generators))
-- `name` (String) Configlet name displayed in the Apstra web UI
+- `data` (Attributes) Generators organized by Network OS (see [below for nested schema](#nestedatt--data))
 
 ### Read-Only
 
 - `id` (String) Apstra ID number of Configlet
+- `name` (String) Configlet name displayed in the Apstra web UI
 
-<a id="nestedatt--generators"></a>
-### Nested Schema for `generators`
+<a id="nestedatt--data"></a>
+### Nested Schema for `data`
+
+Required:
+
+- `generators` (Attributes List) Generators organized by Network OS (see [below for nested schema](#nestedatt--data--generators))
+- `name` (String) Configlet name displayed in the Apstra web UI
+
+<a id="nestedatt--data--generators"></a>
+### Nested Schema for `data.generators`
 
 Required:
 

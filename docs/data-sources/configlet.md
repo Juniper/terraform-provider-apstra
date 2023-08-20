@@ -36,7 +36,7 @@ output "junos_section_count" {
   value = {
     for id, configlet in data.apstra_configlet.junos :
     id => length([
-      for gen in configlet.generators : gen if gen.config_style == "junos"
+      for gen in configlet.data.generators : gen if gen.config_style == "junos"
     ])
   }
 }
@@ -52,10 +52,21 @@ output "junos_section_count" {
 
 ### Read-Only
 
-- `generators` (Attributes List) Ordered list of Generators (see [below for nested schema](#nestedatt--generators))
+- `data` (Attributes) Configlet Data (see [below for nested schema](#nestedatt--data))
 
-<a id="nestedatt--generators"></a>
-### Nested Schema for `generators`
+<a id="nestedatt--data"></a>
+### Nested Schema for `data`
+
+Optional:
+
+- `name` (String) Populate this field to look up a Configlet by name. Required when `id` is omitted.
+
+Read-Only:
+
+- `generators` (Attributes List) Ordered list of Generators (see [below for nested schema](#nestedatt--data--generators))
+
+<a id="nestedatt--data--generators"></a>
+### Nested Schema for `data.generators`
 
 Read-Only:
 

@@ -72,6 +72,7 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 	// create new state object
 	var state design.Configlet
 	state.Id = types.StringValue(string(api.Id))
+	state.Name = types.StringValue(api.Data.DisplayName)
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

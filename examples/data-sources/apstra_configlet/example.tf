@@ -19,7 +19,7 @@ output "junos_section_count" {
   value = {
     for id, configlet in data.apstra_configlet.junos :
     id => length([
-      for gen in configlet.generators : gen if gen.config_style == "junos"
+      for gen in configlet.data.generators : gen if gen.config_style == "junos"
     ])
   }
 }

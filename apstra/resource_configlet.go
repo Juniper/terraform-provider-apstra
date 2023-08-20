@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
 	"terraform-provider-apstra/apstra/design"
 	"terraform-provider-apstra/apstra/utils"
@@ -79,13 +80,24 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	}
 
 	// Delay Validation until the involved attributes have a known value.
-	if config.Generators.IsUnknown() {
+	if config.Data.IsUnknown() {
+		return
+	}
+	// Get the ConfigletData
+	var cdata design.ConfigletData
+	resp.Diagnostics.Append(config.Data.As(ctx, &cdata, basetypes.ObjectAsOptions{})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Delay Validation until the involved attributes have a known value.
+	if cdata.Generators.IsUnknown() {
 		return
 	}
 
 	// extract generators from config
 	var generators []design.ConfigletGenerator
-	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
+	resp.Diagnostics.Append(cdata.Generators.ElementsAs(ctx, &generators, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -144,8 +156,10 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 		resp.Diagnostics.AddError("Error Creating Configlet", err.Error())
 		return
 	}
+	api, err := o.client.GetConfiglet(ctx, id)
 
 	plan.Id = types.StringValue(id.String())
+	plan.Name = types.StringValue(api.Data.DisplayName)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -167,6 +181,7 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 	}
 
 	state.Id = types.StringValue(string(api.Id))
+
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
