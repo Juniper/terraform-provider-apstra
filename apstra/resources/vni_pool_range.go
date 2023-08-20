@@ -13,6 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+const (
+	VniMin = 4096
+	VniMax = 16777214
+)
+
 type VniPoolRange struct {
 	Status         types.String  `tfsdk:"status"`
 	First          types.Int64   `tfsdk:"first"`
@@ -21,11 +26,6 @@ type VniPoolRange struct {
 	Used           types.Int64   `tfsdk:"used"`
 	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
-
-const (
-	VniMin = 4096
-	VniMax = 16777214
-)
 
 func (o VniPoolRange) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
