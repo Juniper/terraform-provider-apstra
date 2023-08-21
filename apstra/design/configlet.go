@@ -75,6 +75,10 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletData {
 	var cdata ConfigletData
 	diags.Append(o.Data.As(ctx, &cdata, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return nil
+	}
+
 	return cdata.Request(ctx, diags)
 }
 
