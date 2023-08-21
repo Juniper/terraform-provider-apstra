@@ -71,12 +71,12 @@ func (o VniPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"first": resourceSchema.Int64Attribute{
 			Required:   true,
-			Validators: []validator.Int64{int64validator.Between(VniMin-1, VniMax+1)},
+			Validators: []validator.Int64{int64validator.Between(VniMin, VniMax)},
 		},
 		"last": resourceSchema.Int64Attribute{
 			Required: true,
 			Validators: []validator.Int64{
-				int64validator.Between(VniMin-1, VniMax+1),
+				int64validator.Between(VniMin, VniMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
 			},
 		},

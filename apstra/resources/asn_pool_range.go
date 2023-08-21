@@ -72,12 +72,12 @@ func (o AsnPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"first": resourceSchema.Int64Attribute{
 			Required:   true,
-			Validators: []validator.Int64{int64validator.Between(minAsn-1, maxAsn+1)},
+			Validators: []validator.Int64{int64validator.Between(minAsn, maxAsn)},
 		},
 		"last": resourceSchema.Int64Attribute{
 			Required: true,
 			Validators: []validator.Int64{
-				int64validator.Between(minAsn-1, maxAsn+1),
+				int64validator.Between(minAsn, maxAsn),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
 			},
 		},

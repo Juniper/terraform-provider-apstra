@@ -64,7 +64,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
-				stringvalidator.LengthBetween(1, 18),
+				stringvalidator.LengthBetween(0, 18),
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
 			},
 		},
@@ -167,7 +167,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
-				stringvalidator.LengthBetween(1, 15),
+				stringvalidator.LengthBetween(0, 15),
 			},
 		},
 		"vlan_id": resourceSchema.Int64Attribute{
@@ -176,7 +176,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"range of 2-4094, or enter a specific value.",
 			Optional:   true,
 			Computed:   true,
-			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+			Validators: []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
 		},
 		"had_prior_vlan_id_config": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Used to trigger plan modification when `vlan_id` has been removed from the " +
@@ -188,7 +188,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
 			Optional:   true,
 			Computed:   true,
-			Validators: []validator.Int64{int64validator.Between(resources.VniMin-1, resources.VniMax+1)},
+			Validators: []validator.Int64{int64validator.Between(resources.VniMin, resources.VniMax)},
 		},
 		"had_prior_vni_config": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the " +

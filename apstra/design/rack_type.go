@@ -133,7 +133,7 @@ func (o RackType) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Rack Type name, displayed in the Apstra web UI.",
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthBetween(1, 17)},
+			Validators:          []validator.String{stringvalidator.LengthBetween(0, 18)},
 		},
 		"description": resourceSchema.StringAttribute{
 			MarkdownDescription: "Rack Type description, displayed in the Apstra web UI.",

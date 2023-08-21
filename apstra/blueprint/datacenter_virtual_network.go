@@ -170,7 +170,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: "Virtual Network Name",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.LengthBetween(1, 30),
+				stringvalidator.LengthBetween(0, 30),
 				stringvalidator.RegexMatches(regexp.MustCompile(design.AlphaNumericRegexp), "valid characters are: "+design.AlphaNumericChars),
 			},
 		},
@@ -213,7 +213,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
-				int64validator.Between(resources.VniMin-1, resources.VniMax+1),
+				int64validator.Between(resources.VniMin, resources.VniMax),
 				apstravalidator.Int64ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("type"),
 					fmt.Sprintf("%q", apstra.VnTypeVlan.String()),
