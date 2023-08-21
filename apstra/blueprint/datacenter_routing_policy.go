@@ -51,7 +51,7 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 			MarkdownDescription: "Web UI 'name' field.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.LengthBetween(1, 18),
+				stringvalidator.LengthBetween(1, 17),
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
 			},
 		},
@@ -158,7 +158,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 			MarkdownDescription: "Web UI `name` field. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthBetween(1, 18)},
+			Validators:          []validator.String{stringvalidator.LengthBetween(1, 17)},
 		},
 		"description": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Web UI 'description' field.",

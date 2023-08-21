@@ -50,7 +50,7 @@ func (o VnBinding) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "When not specified, Apstra will choose the VLAN to be used on each switch.",
 			Optional:            true,
 			Computed:            true,
-			Validators:          []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+			Validators:          []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
 		},
 		"access_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "The graph db node ID of the access switch `system` node (nonredundant " +

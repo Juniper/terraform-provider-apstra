@@ -213,7 +213,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
-				int64validator.Between(resources.VniMin-1, resources.VniMax+1),
+				int64validator.Between(resources.VniMin, resources.VniMax),
 				apstravalidator.Int64ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("type"),
 					fmt.Sprintf("%q", apstra.VnTypeVlan.String()),

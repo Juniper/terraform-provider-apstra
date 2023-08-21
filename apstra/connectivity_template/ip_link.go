@@ -52,7 +52,7 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "When set, selects the 802.1Q VLAN ID to use for the link's traffic. " +
 				"Omit for an untagged link.",
 			Optional:   true,
-			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+			Validators: []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
 		},
 		"ipv4_addressing_type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of `%s` (or omit)",
