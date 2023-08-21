@@ -76,6 +76,7 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

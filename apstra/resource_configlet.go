@@ -78,16 +78,19 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Delay Validation until the involved attributes have a known value.
 	if config.Data.IsUnknown() {
 		return
 	}
+
 	// Get the ConfigletData
 	var cdata design.ConfigletData
 	resp.Diagnostics.Append(config.Data.As(ctx, &cdata, basetypes.ObjectAsOptions{})...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Delay Validation until the involved attributes have a known value.
 	if cdata.Generators.IsUnknown() {
 		return
@@ -149,15 +152,18 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	id, err := o.client.CreateConfiglet(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("Error Creating Configlet", err.Error())
 		return
 	}
+
 	plan.Id = types.StringValue(id.String())
 	plan.Name = types.StringValue(request.DisplayName)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -169,6 +175,7 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	api, err := o.client.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -178,11 +185,13 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 		resp.Diagnostics.AddError("failed to read Configlet", err.Error())
 		return
 	}
+
 	state.Id = types.StringValue(string(api.Id))
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -208,6 +217,7 @@ func (o *resourceConfiglet) Update(ctx context.Context, req resource.UpdateReque
 		resp.Diagnostics.AddError("error updating Configlet", err.Error())
 		return
 	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
