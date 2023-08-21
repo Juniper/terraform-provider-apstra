@@ -167,7 +167,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
-				stringvalidator.LengthBetween(1, 16),
+				stringvalidator.LengthBetween(1, 15),
 			},
 		},
 		"vlan_id": resourceSchema.Int64Attribute{
