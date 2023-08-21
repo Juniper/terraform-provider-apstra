@@ -15,8 +15,8 @@ const (
 	OverlayControlProtocolEvpn   = "evpn"
 	OverlayControlProtocolStatic = "static"
 
-	VlanMin = 0
-	VlanMax = 4095
+	VlanMin = 1
+	VlanMax = 4094
 
 	poIdMin = 0
 	poIdMax = 4096

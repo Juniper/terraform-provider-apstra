@@ -46,7 +46,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators:          []validator.String{stringvalidator.LengthBetween(0, 65)},
+			Validators:          []validator.String{stringvalidator.LengthBetween(1, 64)},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "System hostname.",
@@ -56,7 +56,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9.-]+$"),
 					"only alphanumeric characters, '.' and '-' allowed."),
-				stringvalidator.LengthBetween(0, 33),
+				stringvalidator.LengthBetween(1, 32),
 			},
 		},
 		"tags": resourceSchema.SetAttribute{

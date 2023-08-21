@@ -170,7 +170,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: "Virtual Network Name",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.LengthBetween(0, 30),
+				stringvalidator.LengthBetween(1, 30),
 				stringvalidator.RegexMatches(regexp.MustCompile(design.AlphaNumericRegexp), "valid characters are: "+design.AlphaNumericChars),
 			},
 		},
