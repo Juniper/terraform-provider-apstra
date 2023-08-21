@@ -78,7 +78,6 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	// Delay Validation until the involved attributes have a known value.
 	if config.Data.IsUnknown() {
 		return
@@ -89,7 +88,6 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	// Delay Validation until the involved attributes have a known value.
 	if cdata.Generators.IsUnknown() {
 		return
@@ -106,6 +104,12 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 	for i, generator := range generators {
 		// extract the platform/config_style from the generator object as an SDK iota type
 		var platform apstra.PlatformOS
+		if generator.ConfigStyle.IsUnknown() {
+			return
+		}
+		if generator.Section.IsUnknown() {
+			return
+		}
 		err := platform.FromString(generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
@@ -165,7 +169,6 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	api, err := o.client.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -175,14 +178,11 @@ func (o *resourceConfiglet) Read(ctx context.Context, req resource.ReadRequest, 
 		resp.Diagnostics.AddError("failed to read Configlet", err.Error())
 		return
 	}
-
 	state.Id = types.StringValue(string(api.Id))
-
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
