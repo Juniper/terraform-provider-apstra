@@ -145,21 +145,17 @@ func (o *resourceConfiglet) Create(ctx context.Context, req resource.CreateReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
 	id, err := o.client.CreateConfiglet(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("Error Creating Configlet", err.Error())
 		return
 	}
-	api, err := o.client.GetConfiglet(ctx, id)
-
 	plan.Id = types.StringValue(id.String())
-	plan.Name = types.StringValue(api.Data.DisplayName)
+	plan.Name = types.StringValue(request.DisplayName)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
