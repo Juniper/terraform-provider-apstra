@@ -185,7 +185,7 @@ func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Di
 
 	revision, err := client.GetLastDeployedRevision(ctx, bpId)
 	if err != nil {
-		var ace apstra.ApstraClientErr
+		var ace apstra.ClientErr
 		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrUncommitted) {
 			diags.AddError(
 				fmt.Sprintf("failed reading blueprint %q revision", bpId),

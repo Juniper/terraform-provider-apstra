@@ -42,7 +42,7 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 
 	var err error
 	var api *apstra.TemplateRackBased
-	var ace apstra.ApstraClientErr
+	var ace apstra.ClientErr
 
 	switch { // attribute validation ensures that one of Name and ID must be set.
 	case !config.Name.IsNull():

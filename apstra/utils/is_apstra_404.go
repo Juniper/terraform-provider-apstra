@@ -6,7 +6,7 @@ import (
 )
 
 func IsApstra404(err error) bool {
-	var ace apstra.ApstraClientErr
+	var ace apstra.ClientErr
 	if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 		return true
 	}
