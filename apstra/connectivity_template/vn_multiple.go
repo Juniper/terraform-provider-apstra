@@ -19,7 +19,7 @@ import (
 var _ Primitive = &VnMultiple{}
 
 type VnMultiple struct {
-	Label        types.String `tfsdk:"label"`
+	Name         types.String `tfsdk:"name"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
 	Primitive    types.String `tfsdk:"primitive"`
@@ -27,8 +27,8 @@ type VnMultiple struct {
 
 func (o VnMultiple) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"untagged_vn_id": dataSourceSchema.StringAttribute{
@@ -88,7 +88,7 @@ func (o VnMultiple) Marshal(ctx context.Context, diags *diag.Diagnostics) string
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachMultipleVlan.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -117,7 +117,7 @@ func (o *VnMultiple) loadSdkPrimitive(_ context.Context, in apstra.ConnectivityT
 		taggedVnIds[i] = types.StringValue(id.String())
 	}
 	o.TaggedVnIds = types.SetValueMust(types.StringType, taggedVnIds)
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &vnMultiplePrototype{}

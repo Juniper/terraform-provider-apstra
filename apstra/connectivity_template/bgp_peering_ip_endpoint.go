@@ -25,7 +25,7 @@ import (
 var _ Primitive = &BgpPeeringIpEndpoint{}
 
 type BgpPeeringIpEndpoint struct {
-	Label           types.String `tfsdk:"label"`
+	Name            types.String `tfsdk:"name"`
 	NeighborAsn     types.Int64  `tfsdk:"neighbor_asn"`
 	Ttl             types.Int64  `tfsdk:"ttl"`
 	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
@@ -41,8 +41,8 @@ type BgpPeeringIpEndpoint struct {
 
 func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"neighbor_asn": dataSourceSchema.Int64Attribute{
@@ -178,7 +178,7 @@ func (o BgpPeeringIpEndpoint) Marshal(ctx context.Context, diags *diag.Diagnosti
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -228,7 +228,7 @@ func (o *BgpPeeringIpEndpoint) loadSdkPrimitive(ctx context.Context, in apstra.C
 	}
 
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &bgpPeeringIpEndpointPrototype{}

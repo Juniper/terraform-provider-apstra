@@ -16,15 +16,15 @@ import (
 var _ Primitive = &RoutingPolicy{}
 
 type RoutingPolicy struct {
-	Label           types.String `tfsdk:"label"`
+	Name            types.String `tfsdk:"name"`
 	RoutingPolicyId types.String `tfsdk:"routing_policy_id"`
 	Primitive       types.String `tfsdk:"primitive"`
 }
 
 func (o RoutingPolicy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"routing_policy_id": dataSourceSchema.StringAttribute{
@@ -56,7 +56,7 @@ func (o RoutingPolicy) Marshal(_ context.Context, diags *diag.Diagnostics) strin
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func (o *RoutingPolicy) loadSdkPrimitive(ctx context.Context, in apstra.Connecti
 		return
 	}
 
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 func (o *RoutingPolicy) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy, _ *diag.Diagnostics) {

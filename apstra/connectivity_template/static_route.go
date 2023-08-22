@@ -17,7 +17,7 @@ import (
 var _ Primitive = &StaticRoute{}
 
 type StaticRoute struct {
-	Label           types.String `tfsdk:"label"`
+	Name            types.String `tfsdk:"name"`
 	Network         types.String `tfsdk:"network"`
 	ShareIpEndpoint types.Bool   `tfsdk:"share_ip_endpoint"`
 	Primitive       types.String `tfsdk:"primitive"`
@@ -25,8 +25,8 @@ type StaticRoute struct {
 
 func (o StaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"network": dataSourceSchema.StringAttribute{
@@ -62,7 +62,7 @@ func (o StaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) string 
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachStaticRoute.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -85,7 +85,7 @@ func (o *StaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.Connectivi
 		return
 	}
 
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 func (o *StaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachStaticRoute, _ *diag.Diagnostics) {

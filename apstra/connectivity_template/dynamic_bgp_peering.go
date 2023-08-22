@@ -26,7 +26,7 @@ import (
 var _ Primitive = &DynamicBgpPeering{}
 
 type DynamicBgpPeering struct {
-	Label           types.String `tfsdk:"label"`
+	Name            types.String `tfsdk:"name"`
 	Ttl             types.Int64  `tfsdk:"ttl"`
 	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
 	Password        types.String `tfsdk:"password"`
@@ -43,8 +43,8 @@ type DynamicBgpPeering struct {
 
 func (o DynamicBgpPeering) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"ttl": dataSourceSchema.Int64Attribute{
@@ -186,7 +186,7 @@ func (o DynamicBgpPeering) Marshal(ctx context.Context, diags *diag.Diagnostics)
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -235,7 +235,7 @@ func (o *DynamicBgpPeering) loadSdkPrimitive(ctx context.Context, in apstra.Conn
 	}
 
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &dynamicBgpPeeringPrototype{}

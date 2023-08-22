@@ -25,7 +25,7 @@ import (
 var _ Primitive = &BgpPeeringGenericSystem{}
 
 type BgpPeeringGenericSystem struct {
-	Label              types.String `tfsdk:"label"`
+	Name               types.String `tfsdk:"name"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -57,8 +57,8 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 		apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint.String(),
 	}
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"ttl": dataSourceSchema.Int64Attribute{
@@ -210,7 +210,7 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -256,7 +256,7 @@ func (o *BgpPeeringGenericSystem) loadSdkPrimitive(ctx context.Context, in apstr
 	o.PeerFromLoopback = types.BoolValue(attributes.PeerFromLoopback)
 	o.PeerTo = types.StringValue(attributes.PeerTo.String())
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &bgpPeeringGenericSystemPrototype{}

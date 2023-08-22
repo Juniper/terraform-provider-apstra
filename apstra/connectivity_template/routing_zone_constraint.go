@@ -16,15 +16,15 @@ import (
 var _ Primitive = &RoutingZoneConstraint{}
 
 type RoutingZoneConstraint struct {
-	Label                   types.String `tfsdk:"label"`
+	Name                    types.String `tfsdk:"name"`
 	RoutingZoneConstraintId types.String `tfsdk:"routing_zone_constraint_id"`
 	Primitive               types.String `tfsdk:"primitive"`
 }
 
 func (o RoutingZoneConstraint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"label": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Primitive label displayed in the web UI",
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
 			Optional:            true,
 		},
 		"routing_zone_constraint_id": dataSourceSchema.StringAttribute{
@@ -56,7 +56,7 @@ func (o RoutingZoneConstraint) Marshal(_ context.Context, diags *diag.Diagnostic
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint.String(),
-		Label:         o.Label.ValueString(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -79,7 +79,7 @@ func (o *RoutingZoneConstraint) loadSdkPrimitive(ctx context.Context, in apstra.
 		return
 	}
 
-	o.Label = types.StringValue(in.Label)
+	o.Name = types.StringValue(in.Label)
 }
 
 func (o *RoutingZoneConstraint) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachRoutingZoneConstraint, _ *diag.Diagnostics) {
