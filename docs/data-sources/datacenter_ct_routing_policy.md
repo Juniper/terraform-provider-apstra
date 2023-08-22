@@ -128,6 +128,10 @@ resource "apstra_datacenter_connectivity_template" "t" {
 
 - `routing_policy_id` (String) Apstra Object ID of Routing Policy to be attached.
 
+### Optional
+
+- `name` (String) Primitive name displayed in the web UI
+
 ### Read-Only
 
 - `primitive` (String) JSON output for use in the `primitives` field of an `apstra_datacenter_connectivity_template` resource or a different Connectivity Template Primitive data source

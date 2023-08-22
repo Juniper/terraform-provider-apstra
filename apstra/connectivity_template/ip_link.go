@@ -24,6 +24,7 @@ import (
 var _ Primitive = &IpLink{}
 
 type IpLink struct {
+	Name               types.String `tfsdk:"name"`
 	RoutingZoneId      types.String `tfsdk:"routing_zone_id"`
 	VlanId             types.Int64  `tfsdk:"vlan_id"`
 	Ipv4AddressingType types.String `tfsdk:"ipv4_addressing_type"`
@@ -43,6 +44,10 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		apstra.CtPrimitiveIPv6AddressingTypeNone.String(),
 	}
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Routing Zone to which this IP Link belongs",
 			Required:            true,
@@ -130,6 +135,7 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachLogicalLink.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -160,11 +166,13 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 	o.Ipv4AddressingType = types.StringValue(attributes.IPv4AddressingType.String())
 	o.Ipv6AddressingType = types.StringValue(attributes.IPv6AddressingType.String())
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}
 
 type ipLinkPrototype struct {
+	Label              string       `json:"label,omitempty"`
 	RoutingZoneId      string       `json:"routing_zone_id"`
 	Tagged             bool         `json:"tagged"`
 	VlanId             *apstra.Vlan `json:"vlan_id,omitempty"`
@@ -213,6 +221,7 @@ func (o ipLinkPrototype) ToSdkPrimitive(ctx context.Context, path path.Path, dia
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

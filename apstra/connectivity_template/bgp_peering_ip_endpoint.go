@@ -25,6 +25,7 @@ import (
 var _ Primitive = &BgpPeeringIpEndpoint{}
 
 type BgpPeeringIpEndpoint struct {
+	Name            types.String `tfsdk:"name"`
 	NeighborAsn     types.Int64  `tfsdk:"neighbor_asn"`
 	Ttl             types.Int64  `tfsdk:"ttl"`
 	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
@@ -40,6 +41,10 @@ type BgpPeeringIpEndpoint struct {
 
 func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"neighbor_asn": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",
 			Optional:            true,
@@ -173,6 +178,7 @@ func (o BgpPeeringIpEndpoint) Marshal(ctx context.Context, diags *diag.Diagnosti
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -222,11 +228,13 @@ func (o *BgpPeeringIpEndpoint) loadSdkPrimitive(ctx context.Context, in apstra.C
 	}
 
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &bgpPeeringIpEndpointPrototype{}
 
 type bgpPeeringIpEndpointPrototype struct {
+	Label              string   `json:"label,omitempty"`
 	NeighborAsn        *uint32  `json:"neighbor_asn"`
 	NeighborAsnDynaimc bool     `json:"neighbor_asn_dynaimc"`
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
@@ -280,6 +288,7 @@ func (o bgpPeeringIpEndpointPrototype) ToSdkPrimitive(ctx context.Context, path 
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

@@ -18,6 +18,7 @@ import (
 var _ Primitive = &CustomStaticRoute{}
 
 type CustomStaticRoute struct {
+	Name          types.String `tfsdk:"name"`
 	RoutingZoneId types.String `tfsdk:"routing_zone_id"`
 	Network       types.String `tfsdk:"network"`
 	NextHop       types.String `tfsdk:"next_hop"`
@@ -26,6 +27,10 @@ type CustomStaticRoute struct {
 
 func (o CustomStaticRoute) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID of Routing Zone",
 			Required:            true,
@@ -76,6 +81,7 @@ func (o CustomStaticRoute) Marshal(_ context.Context, diags *diag.Diagnostics) s
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -97,6 +103,8 @@ func (o *CustomStaticRoute) loadSdkPrimitive(ctx context.Context, in apstra.Conn
 	if diags.HasError() {
 		return
 	}
+
+	o.Name = types.StringValue(in.Label)
 }
 
 func (o *CustomStaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute, _ *diag.Diagnostics) {
@@ -119,6 +127,7 @@ func (o *CustomStaticRoute) loadSdkPrimitiveAttributes(_ context.Context, in *ap
 var _ JsonPrimitive = &customStaticRoutePrototype{}
 
 type customStaticRoutePrototype struct {
+	Label         string  `json:"label,omitempty"`
 	RoutingZoneId *string `json:"routing_zone_id"`
 	Network       *string `json:"network"`
 	NextHop       *string `json:"next_hop_ip_address"`
@@ -159,6 +168,7 @@ func (o customStaticRoutePrototype) ToSdkPrimitive(ctx context.Context, path pat
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

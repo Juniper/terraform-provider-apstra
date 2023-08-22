@@ -106,6 +106,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `ipv6_address` (String) IPv6 address of peer
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
+- `name` (String) Primitive name displayed in the web UI
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
 - `password` (String)
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.

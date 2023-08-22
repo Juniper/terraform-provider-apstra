@@ -16,12 +16,17 @@ import (
 var _ Primitive = &RoutingPolicy{}
 
 type RoutingPolicy struct {
+	Name            types.String `tfsdk:"name"`
 	RoutingPolicyId types.String `tfsdk:"routing_policy_id"`
 	Primitive       types.String `tfsdk:"primitive"`
 }
 
 func (o RoutingPolicy) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_policy_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of Routing Policy to be attached.",
 			Required:            true,
@@ -51,6 +56,7 @@ func (o RoutingPolicy) Marshal(_ context.Context, diags *diag.Diagnostics) strin
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -72,6 +78,8 @@ func (o *RoutingPolicy) loadSdkPrimitive(ctx context.Context, in apstra.Connecti
 	if diags.HasError() {
 		return
 	}
+
+	o.Name = types.StringValue(in.Label)
 }
 
 func (o *RoutingPolicy) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy, _ *diag.Diagnostics) {
@@ -84,6 +92,7 @@ func (o *RoutingPolicy) loadSdkPrimitiveAttributes(_ context.Context, in *apstra
 var _ JsonPrimitive = &routingPolicyPrototype{}
 
 type routingPolicyPrototype struct {
+	Label           string  `json:"label,omitempty"`
 	RoutingPolicyId *string `json:"routing_policy_id"`
 }
 
@@ -102,6 +111,7 @@ func (o routingPolicyPrototype) ToSdkPrimitive(ctx context.Context, path path.Pa
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

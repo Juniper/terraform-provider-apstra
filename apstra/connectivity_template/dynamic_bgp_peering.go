@@ -26,6 +26,7 @@ import (
 var _ Primitive = &DynamicBgpPeering{}
 
 type DynamicBgpPeering struct {
+	Name            types.String `tfsdk:"name"`
 	Ttl             types.Int64  `tfsdk:"ttl"`
 	BfdEnabled      types.Bool   `tfsdk:"bfd_enabled"`
 	Password        types.String `tfsdk:"password"`
@@ -42,6 +43,10 @@ type DynamicBgpPeering struct {
 
 func (o DynamicBgpPeering) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
@@ -181,6 +186,7 @@ func (o DynamicBgpPeering) Marshal(ctx context.Context, diags *diag.Diagnostics)
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -229,11 +235,13 @@ func (o *DynamicBgpPeering) loadSdkPrimitive(ctx context.Context, in apstra.Conn
 	}
 
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &dynamicBgpPeeringPrototype{}
 
 type dynamicBgpPeeringPrototype struct {
+	Label           string   `json:"label,omitempty"`
 	Ipv4AfiEnabled  bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled  bool     `json:"ipv6_afi_enabled"`
 	Ttl             uint8    `json:"ttl"`
@@ -298,6 +306,7 @@ func (o dynamicBgpPeeringPrototype) ToSdkPrimitive(ctx context.Context, path pat
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

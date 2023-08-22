@@ -19,6 +19,7 @@ import (
 var _ Primitive = &VnMultiple{}
 
 type VnMultiple struct {
+	Name         types.String `tfsdk:"name"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
 	Primitive    types.String `tfsdk:"primitive"`
@@ -26,6 +27,10 @@ type VnMultiple struct {
 
 func (o VnMultiple) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"untagged_vn_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network ID which should be presented without VLAN tags",
 			Optional:            true,
@@ -83,6 +88,7 @@ func (o VnMultiple) Marshal(ctx context.Context, diags *diag.Diagnostics) string
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachMultipleVlan.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -111,11 +117,13 @@ func (o *VnMultiple) loadSdkPrimitive(_ context.Context, in apstra.ConnectivityT
 		taggedVnIds[i] = types.StringValue(id.String())
 	}
 	o.TaggedVnIds = types.SetValueMust(types.StringType, taggedVnIds)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &vnMultiplePrototype{}
 
 type vnMultiplePrototype struct {
+	Label        string            `json:"label,omitempty"`
 	UntaggedVnId *apstra.ObjectId  `json:"untagged_vn_id"`
 	TaggedVnIds  []apstra.ObjectId `json:"tagged_vn_ids"`
 }
@@ -135,6 +143,7 @@ func (o vnMultiplePrototype) ToSdkPrimitive(ctx context.Context, path path.Path,
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

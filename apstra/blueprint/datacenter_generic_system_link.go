@@ -157,7 +157,7 @@ func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstr
 	err := client.SetTransformIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()),
 		o.TargetSwitchIfName.ValueString(), int(o.TargetSwitchIfTransformId.ValueInt64()))
 	if err != nil {
-		var ace apstra.ApstraClientErr
+		var ace apstra.ClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrCannotChangeTransform {
 			diags.AddWarning("could not change interface transform", err.Error())
 		} else {

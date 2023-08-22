@@ -65,6 +65,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 ### Optional
 
 - `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
+- `name` (String) Primitive name displayed in the web UI
 - `tagged` (Boolean) Indicates whether the VN should mark frames belonging to the VN with 802.1Q tags. Default: `false`
 
 ### Read-Only

@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20230820191743-540627d061d6
+	github.com/Juniper/apstra-go-sdk v0.0.0-20230822124025-b01894fe7c1d
 	github.com/chrismarget-j/go-licenses v0.0.0-20230424163011-d60082a506e0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
@@ -17,9 +17,6 @@ require (
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	honnef.co/go/tools v0.4.3
 )
-
-//                                                                                          HHMMSS
-//replace github.com/Juniper/apstra-go-sdk => github.com/Juniper/apstra-go-sdk v0.0.0-20230726192616-4f4885d64516
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect

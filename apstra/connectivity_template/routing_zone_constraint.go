@@ -16,12 +16,17 @@ import (
 var _ Primitive = &RoutingZoneConstraint{}
 
 type RoutingZoneConstraint struct {
+	Name                    types.String `tfsdk:"name"`
 	RoutingZoneConstraintId types.String `tfsdk:"routing_zone_constraint_id"`
 	Primitive               types.String `tfsdk:"primitive"`
 }
 
 func (o RoutingZoneConstraint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"routing_zone_constraint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of Routing Zone Constraint to be attached.",
 			Required:            true,
@@ -51,6 +56,7 @@ func (o RoutingZoneConstraint) Marshal(_ context.Context, diags *diag.Diagnostic
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -72,6 +78,8 @@ func (o *RoutingZoneConstraint) loadSdkPrimitive(ctx context.Context, in apstra.
 	if diags.HasError() {
 		return
 	}
+
+	o.Name = types.StringValue(in.Label)
 }
 
 func (o *RoutingZoneConstraint) loadSdkPrimitiveAttributes(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachRoutingZoneConstraint, _ *diag.Diagnostics) {
@@ -84,6 +92,7 @@ func (o *RoutingZoneConstraint) loadSdkPrimitiveAttributes(_ context.Context, in
 var _ JsonPrimitive = &routingZoneConstraintPrototype{}
 
 type routingZoneConstraintPrototype struct {
+	Label                   string  `json:"label,omitempty"`
 	RoutingZoneConstraintId *string `json:"routing_zone_constraint_id"`
 }
 
@@ -102,6 +111,7 @@ func (o routingZoneConstraintPrototype) ToSdkPrimitive(ctx context.Context, path
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: nil, // this primitive has no children
 		BatchId:     nil, // this primitive has no children

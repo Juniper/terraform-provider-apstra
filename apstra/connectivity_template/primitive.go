@@ -32,6 +32,7 @@ type JsonPrimitive interface {
 //   - etc...
 type tfCfgPrimitive struct {
 	PrimitiveType string          `json:"type"`
+	Label         string          `json:"label"`
 	Data          json.RawMessage `json:"data"`
 }
 
@@ -48,25 +49,25 @@ func (o tfCfgPrimitive) rehydrate(_ context.Context, path path.Path, diags *diag
 	var jsonPrimitive JsonPrimitive
 	switch pType {
 	case apstra.CtPrimitivePolicyTypeNameAttachSingleVlan:
-		jsonPrimitive = new(vnSinglePrototype)
+		jsonPrimitive = &vnSinglePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachMultipleVlan:
-		jsonPrimitive = new(vnMultiplePrototype)
+		jsonPrimitive = &vnMultiplePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachLogicalLink:
-		jsonPrimitive = new(ipLinkPrototype)
+		jsonPrimitive = &ipLinkPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachStaticRoute:
-		jsonPrimitive = new(staticRoutePrototype)
+		jsonPrimitive = &staticRoutePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachCustomStaticRoute:
-		jsonPrimitive = new(customStaticRoutePrototype)
+		jsonPrimitive = &customStaticRoutePrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachIpEndpointWithBgpNsxt:
-		jsonPrimitive = new(bgpPeeringIpEndpointPrototype)
+		jsonPrimitive = &bgpPeeringIpEndpointPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi:
-		jsonPrimitive = new(bgpPeeringGenericSystemPrototype)
+		jsonPrimitive = &bgpPeeringGenericSystemPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachBgpWithPrefixPeeringForSviOrSubinterface:
-		jsonPrimitive = new(dynamicBgpPeeringPrototype)
+		jsonPrimitive = &dynamicBgpPeeringPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachExistingRoutingPolicy:
-		jsonPrimitive = new(routingPolicyPrototype)
+		jsonPrimitive = &routingPolicyPrototype{Label: o.Label}
 	case apstra.CtPrimitivePolicyTypeNameAttachRoutingZoneConstraint:
-		jsonPrimitive = new(routingZoneConstraintPrototype)
+		jsonPrimitive = &routingZoneConstraintPrototype{Label: o.Label}
 	default:
 		diags.AddAttributeError(path, "primitive rehydration failed", fmt.Sprintf("unhandled primitive type %q", pType.String()))
 		return nil

@@ -69,6 +69,7 @@ resource "apstra_datacenter_connectivity_template" "hypervisor" {
 
 ### Optional
 
+- `name` (String) Primitive name displayed in the web UI
 - `tagged_vn_ids` (Set of String) Set of Virtual Network IDs which should be presented with VLAN tags
 - `untagged_vn_id` (String) Virtual Network ID which should be presented without VLAN tags
 

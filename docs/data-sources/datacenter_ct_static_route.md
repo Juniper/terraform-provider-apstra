@@ -96,6 +96,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 
 ### Optional
 
+- `name` (String) Primitive name displayed in the web UI
 - `share_ip_endpoint` (Boolean) Indicates whether the next-hop IP address is shared across multiple remote systems. Default:  Default: `false`
 
 ### Read-Only

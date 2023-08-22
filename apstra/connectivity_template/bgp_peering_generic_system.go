@@ -25,6 +25,7 @@ import (
 var _ Primitive = &BgpPeeringGenericSystem{}
 
 type BgpPeeringGenericSystem struct {
+	Name               types.String `tfsdk:"name"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -56,6 +57,10 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 		apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint.String(),
 	}
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
@@ -205,6 +210,7 @@ func (o BgpPeeringGenericSystem) Marshal(ctx context.Context, diags *diag.Diagno
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachBgpOverSubinterfacesOrSvi.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -250,11 +256,13 @@ func (o *BgpPeeringGenericSystem) loadSdkPrimitive(ctx context.Context, in apstr
 	o.PeerFromLoopback = types.BoolValue(attributes.PeerFromLoopback)
 	o.PeerTo = types.StringValue(attributes.PeerTo.String())
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &bgpPeeringGenericSystemPrototype{}
 
 type bgpPeeringGenericSystemPrototype struct {
+	Label              string   `json:"label,omitempty"`
 	Ipv4AfiEnabled     bool     `json:"ipv4_afi_enabled"`
 	Ipv6AfiEnabled     bool     `json:"ipv6_afi_enabled"`
 	Ttl                uint8    `json:"ttl"`
@@ -338,6 +346,7 @@ func (o bgpPeeringGenericSystemPrototype) ToSdkPrimitive(ctx context.Context, pa
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later

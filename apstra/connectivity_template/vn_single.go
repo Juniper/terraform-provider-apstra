@@ -21,6 +21,7 @@ import (
 var _ Primitive = &VnSingle{}
 
 type VnSingle struct {
+	Name            types.String `tfsdk:"name"`
 	VnId            types.String `tfsdk:"vn_id"`
 	Tagged          types.Bool   `tfsdk:"tagged"`
 	Primitive       types.String `tfsdk:"primitive"`
@@ -29,6 +30,10 @@ type VnSingle struct {
 
 func (o VnSingle) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Primitive name displayed in the web UI",
+			Optional:            true,
+		},
 		"vn_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network ID",
 			Required:            true,
@@ -84,6 +89,7 @@ func (o VnSingle) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 
 	data, err = json.Marshal(&tfCfgPrimitive{
 		PrimitiveType: apstra.CtPrimitivePolicyTypeNameAttachSingleVlan.String(),
+		Label:         o.Name.ValueString(),
 		Data:          data,
 	})
 	if err != nil {
@@ -108,11 +114,13 @@ func (o *VnSingle) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityT
 	}
 	o.Tagged = types.BoolValue(attributes.Tagged)
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.Name = types.StringValue(in.Label)
 }
 
 var _ JsonPrimitive = &vnSinglePrototype{}
 
 type vnSinglePrototype struct {
+	Label           string   `json:"label,omitempty"`
 	VnId            string   `json:"vn_id"`
 	Tagged          bool     `json:"tagged"`
 	ChildPrimitives []string `json:"child_primitives,omitempty"`
@@ -139,6 +147,7 @@ func (o vnSinglePrototype) ToSdkPrimitive(ctx context.Context, path path.Path, d
 
 	return &apstra.ConnectivityTemplatePrimitive{
 		Id:          nil, // calculated later
+		Label:       o.Label,
 		Attributes:  attributes,
 		Subpolicies: childPrimitives,
 		BatchId:     nil, // calculated later
