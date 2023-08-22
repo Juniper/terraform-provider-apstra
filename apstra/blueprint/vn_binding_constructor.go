@@ -36,7 +36,7 @@ func (o VnBindingConstructor) DataSourceAttributes() map[string]dataSourceSchema
 			MarkdownDescription: "VLAN ID will be populated directly into " +
 				"the `bindings` output.",
 			Optional:   true,
-			Validators: []validator.Int64{int64validator.Between(design.VlanMin-1, design.VlanMax+1)},
+			Validators: []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
 		},
 		"switch_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of graph db node IDs representing " +

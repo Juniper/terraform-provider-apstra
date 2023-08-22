@@ -149,10 +149,9 @@ func (o *resourceVniPool) Read(ctx context.Context, req resource.ReadRequest, re
 			// resource deleted outside of terraform
 			resp.State.RemoveResource(ctx)
 			return
-		} else {
-			resp.Diagnostics.AddError("error reading VNI pool", err.Error())
-			return
 		}
+		resp.Diagnostics.AddError("error reading VNI pool", err.Error())
+		return
 	}
 
 	// create state object

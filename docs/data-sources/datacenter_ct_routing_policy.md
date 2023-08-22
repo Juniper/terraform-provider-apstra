@@ -33,7 +33,7 @@ data "apstra_datacenter_routing_policy" "default" {
 
 # Declare a "Routing Policy" Connectivity Template Primitive:
 data "apstra_datacenter_ct_routing_policy" "default" {
-  routing_policy_id = data.apstra_datacenter_ct_routing_policy.default.id
+  routing_policy_id = data.apstra_datacenter_routing_policy.default.id
 }
 
 # This data source's `primitive` attribute produces JSON like this:
@@ -47,15 +47,13 @@ data "apstra_datacenter_ct_routing_policy" "default" {
 # Declare a "BGP Peering (Generic System)" Connectivity Template Primitive
 # which uses the "Routing Policy" primitive:
 data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
-  ipv4_afi_enabled     = true
-  ipv6_afi_enabled     = true
   ipv4_addressing_type = "addressed"
   ipv6_addressing_type = "link_local"
   bfd_enabled          = true
   ttl                  = 1
   password             = "big secret"
   child_primitives = [
-    data.apstra_datacenter_routing_policy.default.primitive
+    data.apstra_datacenter_ct_routing_policy.default.primitive
   ]
 }
 
@@ -64,8 +62,6 @@ data "apstra_datacenter_ct_bgp_peering_generic_system" "bgp_server" {
 # {
 #   "type": "AttachBgpOverSubinterfacesOrSvi",
 #   "data": {
-#     "ipv4_afi_enabled": true,
-#     "ipv6_afi_enabled": true,
 #     "ttl": 1,
 #     "bfd_enabled": true,
 #     "password": "big secret",
@@ -114,13 +110,13 @@ data "apstra_datacenter_ct_ip_link" "ip_link_with_bgp" {
 resource "apstra_datacenter_connectivity_template" "t" {
   blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
   name         = "test-net-handoff"
-  description  = "ip handoff with static routes to test nets"
+  description  = "ip handoff with bgp and default routing policy"
   tags = [
     "test",
     "terraform",
   ]
   primitives = [
-    data.apstra_datacenter_ct_ip_link.ip_link_with_static_routes.primitive
+    data.apstra_datacenter_ct_ip_link.ip_link_with_bgp.primitive
   ]
 }
 ```
