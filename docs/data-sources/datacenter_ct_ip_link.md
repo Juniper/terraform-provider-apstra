@@ -99,7 +99,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `child_primitives` (Set of String) Set of JSON strings describing Connectivity Template Primitives which are children of this Connectivity Template Primitive. Use the `primitive` attribute of other Connectivity Template Primitives data sources here.
 - `ipv4_addressing_type` (String) One of `numbered`, `none` (or omit)
 - `ipv6_addressing_type` (String) One of `link_local`, `numbered`, `none` (or omit)
-- `label` (String) Primitive label displayed in the web UI
+- `name` (String) Primitive name displayed in the web UI
 - `vlan_id` (Number) When set, selects the 802.1Q VLAN ID to use for the link's traffic. Omit for an untagged link.
 
 ### Read-Only

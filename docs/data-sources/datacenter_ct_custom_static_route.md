@@ -76,7 +76,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 
 ### Optional
 
-- `label` (String) Primitive label displayed in the web UI
+- `name` (String) Primitive name displayed in the web UI
 
 ### Read-Only
 

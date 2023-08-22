@@ -112,8 +112,8 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `ipv6_enabled` (Boolean) Enable to allow IPv6 peers.
 - `ipv6_peer_prefix` (String) Omit to derive prefix from the application point.
 - `keepalive_time` (Number) BGP keepalive time (seconds).
-- `label` (String) Primitive label displayed in the web UI
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
+- `name` (String) Primitive name displayed in the web UI
 - `password` (String)
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
