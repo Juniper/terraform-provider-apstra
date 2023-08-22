@@ -41,33 +41,46 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 		return
 	}
 
+	// validation not possible when ranges is unknown
 	if config.Ranges.IsUnknown() {
 		return
 	}
 
-	poolRanges := make([]resources.VniPoolRange, len(config.Ranges.Elements()))
-	d := config.Ranges.ElementsAs(ctx, &poolRanges, false)
-	resp.Diagnostics.Append(d...)
+	// validation not possible when any individual range is unknown
+	for _, v := range config.Ranges.Elements() {
+		if v.IsUnknown() {
+			return
+		}
+	}
+
+	// extract ranges
+	var poolRanges []resources.VniPoolRange
+	resp.Diagnostics.Append(config.Ranges.ElementsAs(ctx, &poolRanges, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	var okayRanges apstra.IntRanges
 	for _, poolRange := range poolRanges {
+		// validation not possible without first and last values
+		if poolRange.First.IsUnknown() || poolRange.Last.IsUnknown() {
+			return
+		}
+
+		// extract set value for use in error pathing.
+		// Note this doesn't currently work. https://github.com/hashicorp/terraform/issues/33491
 		setVal, d := types.ObjectValueFrom(ctx, poolRange.AttrTypes(), &poolRange)
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
+		// grab the values from the range
 		first := uint32(poolRange.First.ValueInt64())
 		last := uint32(poolRange.Last.ValueInt64())
 
 		// check whether this range overlaps previous ranges
-		if okayRanges.Overlaps(apstra.IntRangeRequest{
-			First: first,
-			Last:  last,
-		}) {
+		if okayRanges.Overlaps(apstra.IntRangeRequest{First: first, Last: last}) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("ranges").AtSetValue(setVal),
 				"VNI range collision",
@@ -77,10 +90,7 @@ func (o *resourceVniPool) ValidateConfig(ctx context.Context, req resource.Valid
 		}
 
 		// no overlap, append this range to the list for future overlap checks
-		okayRanges = append(okayRanges, apstra.IntRange{
-			First: first,
-			Last:  last,
-		})
+		okayRanges = append(okayRanges, apstra.IntRange{First: first, Last: last})
 	}
 }
 

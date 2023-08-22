@@ -41,13 +41,21 @@ func (o *resourceIpv6Pool) ValidateConfig(ctx context.Context, req resource.Vali
 		return
 	}
 
+	// validation not possible when subnets is unknown
 	if config.Subnets.IsUnknown() {
 		return
 	}
 
-	subnets := make([]resources.Ipv6PoolSubnet, len(config.Subnets.Elements()))
-	d := config.Subnets.ElementsAs(ctx, &subnets, false)
-	resp.Diagnostics.Append(d...)
+	// validation not possible when any individual range is unknown
+	for _, v := range config.Subnets.Elements() {
+		if v.IsUnknown() {
+			return
+		}
+	}
+
+	// extract Subnets
+	var subnets []resources.Ipv6PoolSubnet
+	resp.Diagnostics.Append(config.Subnets.ElementsAs(ctx, &subnets, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
