@@ -1,20 +1,20 @@
 ---
-page_title: "apstra_datacenter_interface_ids_by_link_tag Data Source - terraform-provider-apstra"
+page_title: "apstra_datacenter_interfaces_by_link_tag Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source returns the ID numbers interfaces by link tag.
+  This data source returns the IDs of Interfaces by Link Tag.
 ---
 
-# apstra_datacenter_interface_ids_by_link_tag (Data Source)
+# apstra_datacenter_interfaces_by_link_tag (Data Source)
 
-This data source returns the ID numbers interfaces by link tag.
+This data source returns the IDs of Interfaces by Link Tag.
 
 ## Example Usage
 
 ```terraform
 # Find IDs of leaf switch interfaces with links tagged
 # "dev", "linux", and "backend"
-data "apstra_datacenter_interface_ids_by_link_tag" "x" {
+data "apstra_datacenter_interfaces_by_link_tag" "x" {
   blueprint_id = "fa6782cc-c4d5-4933-ad89-e542acd6b0c1"
   system_type  = "switch" // optional
   system_role  = "leaf"   // optional
