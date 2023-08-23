@@ -18,7 +18,7 @@ type dataSourceInterfacesByLinkTag struct {
 }
 
 func (o *dataSourceInterfacesByLinkTag) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_interface_ids_by_link_tag"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_interfaces_by_link_tag"
 }
 
 func (o *dataSourceInterfacesByLinkTag) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -27,7 +27,7 @@ func (o *dataSourceInterfacesByLinkTag) Configure(ctx context.Context, req datas
 
 func (o *dataSourceInterfacesByLinkTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the ID numbers interfaces by link tag.",
+		MarkdownDescription: "This data source returns the IDs of Interfaces by Link Tag.",
 		Attributes:          blueprint.InterfacesByLinkTag{}.DataSourceAttributes(),
 	}
 }
