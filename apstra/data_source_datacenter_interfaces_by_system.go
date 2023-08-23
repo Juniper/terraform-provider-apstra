@@ -11,30 +11,30 @@ import (
 	"terraform-provider-apstra/apstra/utils"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceInterfacesByLinkTag{}
+var _ datasource.DataSourceWithConfigure = &dataSourceInterfacesBySystem{}
 
-type dataSourceInterfacesByLinkTag struct {
+type dataSourceInterfacesBySystem struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceInterfacesByLinkTag) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_interfaces_by_link_tag"
+func (o *dataSourceInterfacesBySystem) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_interfaces_by_system"
 }
 
-func (o *dataSourceInterfacesByLinkTag) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceInterfacesBySystem) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceInterfacesByLinkTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceInterfacesBySystem) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs of Interfaces by Link Tag.",
-		Attributes:          blueprint.InterfacesByLinkTag{}.DataSourceAttributes(),
+		MarkdownDescription: "This data source returns a map of Interface IDs keyed by Interface Name for the given System ID.",
+		Attributes:          blueprint.InterfacesBySystem{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceInterfacesByLinkTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceInterfacesBySystem) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// fetch config
-	var config blueprint.InterfacesByLinkTag
+	var config blueprint.InterfacesBySystem
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -60,7 +60,7 @@ func (o *dataSourceInterfacesByLinkTag) Read(ctx context.Context, req datasource
 
 	// fill the required values
 	config.GraphQuery = types.StringValue(query.String())
-	config.Ids = utils.SetValueOrNull(ctx, types.StringType, interfaces, &resp.Diagnostics)
+	config.IfMap = utils.MapValueOrNull(ctx, types.StringType, interfaces, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
