@@ -50,7 +50,7 @@ resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   for_each         = local.switches
   blueprint_id     = apstra_datacenter_blueprint.instantiation.id
   node_name        = each.key
-  interface_map_id = each.value
+  initial_interface_map_id = each.value
 }
 
 # Assign ASN pools to fabric roles to eliminate build errors so we
@@ -99,7 +99,7 @@ resource "apstra_blueprint_deployment" "deploy" {
 
 ### Optional
 
-- `comment` (String) Comment associated with the Deployment/Commit. This field supports templating using the `text/template` library (currently supported replacements: ['Version']) and environment variable expansion using `os.ExpandEnv` to include contextual information like the Terraform username, CI system job ID, etc...
+- `comment` (String) Comment associated with the Deployment/Commit. This field supports templating using the `text/template` library (currently supported replacements: [`{{.TerraformVersion}}`, `{{.ProviderVersion}}`]) and environment variable expansion using `os.ExpandEnv` to include contextual information like the Terraform username, CI system job ID, etc...
 
 ### Read-Only
 

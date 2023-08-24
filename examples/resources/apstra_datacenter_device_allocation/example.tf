@@ -17,7 +17,7 @@ resource "apstra_datacenter_blueprint" "r" {
 # initial_interface_map_id by first determining the device type, and then
 # looking for candidate interface maps which can map the specific hardware
 # to the logical device specified by the fabric role. When multiple
-# candidate interface maps exist supplying interface_map_id becomes
+# candidate interface maps exist supplying initial_interface_map_id becomes
 # mandatory.
 locals {
   switches = {
