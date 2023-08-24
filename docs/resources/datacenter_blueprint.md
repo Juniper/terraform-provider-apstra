@@ -50,7 +50,7 @@ resource "apstra_datacenter_device_allocation" "interface_map_assignment" {
   for_each         = local.switches
   blueprint_id     = apstra_datacenter_blueprint.instantiation.id
   node_name        = each.key
-  interface_map_id = each.value
+  initial_interface_map_id = each.value
 }
 
 # Assign ASN pools to fabric roles to eliminate build errors so we

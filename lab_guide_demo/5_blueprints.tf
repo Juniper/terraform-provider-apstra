@@ -34,7 +34,7 @@
 #resource "apstra_datacenter_device_allocation" "lab_guide" {
 #  for_each         = local.switches
 #  blueprint_id     = apstra_datacenter_blueprint.lab_guide.id
-#  interface_map_id = data.apstra_interface_map.lab_guide.id
+#  initial_interface_map_id = data.apstra_interface_map.lab_guide.id
 #  node_name        = each.key
 #  device_key       = each.value.device_key
 #}
