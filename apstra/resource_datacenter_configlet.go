@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -67,13 +66,11 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 
 	// Catalog Configlet ID is not filled in, we will create a configlet in the blueprint
 	if plan.CatalogConfigletID.IsNull() || plan.CatalogConfigletID.IsUnknown() {
-		var d diag.Diagnostics
-		c := plan.Request(ctx, &d)
-		resp.Diagnostics.Append(d...)
+		request := plan.Request(ctx, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
-		id, err := bpClient.CreateConfiglet(ctx, c)
+		id, err := bpClient.CreateConfiglet(ctx, request)
 		if err != nil {
 			resp.Diagnostics.AddError("Unable to create Datacenter Configlet", err.Error())
 			return
@@ -89,7 +86,7 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		}
 		api, err := bpClient.GetConfiglet(ctx, id)
 		if err != nil {
-			resp.Diagnostics.AddError("Error importing Datacenter Configlet", err.Error())
+			resp.Diagnostics.AddError("Error reading Configlet from catalog", err.Error())
 			return
 		}
 		plan.Id = types.StringValue(id.String())
@@ -159,13 +156,17 @@ func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	var d diag.Diagnostics
-	dc := plan.Request(ctx, &d)
+	// generate a request
+	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Update Configlet
-	err = bpClient.UpdateConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()), dc)
+	err = bpClient.UpdateConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("error updating Blueprint %s Property Set %s", plan.BlueprintId, plan.Id),
+			fmt.Sprintf("error updating Blueprint %s Configlet %s", plan.BlueprintId, plan.Id),
 			err.Error())
 		return
 	}
