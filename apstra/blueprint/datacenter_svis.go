@@ -39,6 +39,7 @@ func (o DatacenterSvis) DataSourceAttributes() map[string]dataSourceSchema.Attri
 }
 
 func (o DatacenterSvis) RunQuery(ctx context.Context, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) (map[string]types.Set, apstra.QEQuery) {
+	// query to find paths from VNs to instances of those VNs
 	vnQuery := new(apstra.PathQuery).
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeVirtualNetwork.QEEAttribute(),
@@ -50,6 +51,7 @@ func (o DatacenterSvis) RunQuery(ctx context.Context, client *apstra.TwoStageL3C
 			{Key: "name", Value: apstra.QEStringVal("n_vn_instance")},
 		})
 
+	// query to find paths from switches to SVIs
 	vnInstanceQuery := new(apstra.PathQuery).
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeSystem.QEEAttribute(),
@@ -67,6 +69,7 @@ func (o DatacenterSvis) RunQuery(ctx context.Context, client *apstra.TwoStageL3C
 			{Key: "name", Value: apstra.QEStringVal("n_interface")},
 		})
 
+	// final query
 	query := new(apstra.MatchQuery).
 		SetClient(client.Client()).
 		SetBlueprintId(client.Id()).
