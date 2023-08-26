@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-apstra/apstra/blueprint"
+	"terraform-provider-apstra/apstra/design"
 	"terraform-provider-apstra/apstra/utils"
 )
 
@@ -55,6 +56,28 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	// pull the configlet from the catalog if the user specified one
+	if !plan.CatalogConfigletID.IsNull() {
+		api, err := o.client.GetConfiglet(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("Error reading Configlet from catalog", err.Error())
+			return
+		}
+
+		// extract the needed details from the API response
+		var catalogConfigletData design.Configlet
+		catalogConfigletData.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// update the plan with data from the catalog object
+		plan.Generators = catalogConfigletData.Generators
+		if plan.Name.IsUnknown() {
+			plan.Name = catalogConfigletData.Name
+		}
+	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -64,38 +87,21 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Catalog Configlet ID is not filled in, we will create a configlet in the blueprint
-	if plan.CatalogConfigletID.IsNull() || plan.CatalogConfigletID.IsUnknown() {
-		request := plan.Request(ctx, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-		id, err := bpClient.CreateConfiglet(ctx, request)
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to create Datacenter Configlet", err.Error())
-			return
-		}
-		plan.Id = types.StringValue(id.String())
-
-	} else { // Catalog Configlet ID exists, import the configlet
-		id, err := bpClient.ImportConfigletById(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()),
-			plan.Condition.ValueString(), plan.Name.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("Unable to import Catalog Configlet into Blueprint", err.Error())
-			return
-		}
-		api, err := bpClient.GetConfiglet(ctx, id)
-		if err != nil {
-			resp.Diagnostics.AddError("Error reading Configlet from catalog", err.Error())
-			return
-		}
-		plan.Id = types.StringValue(id.String())
-		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	// create a datacenter configlet request
+	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
-	// set the state
+
+	// create the datacenter configlet
+	id, err := bpClient.CreateConfiglet(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to create Datacenter Configlet", err.Error())
+		return
+	}
+
+	// update the plan with the configlet ID and set the state
+	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
