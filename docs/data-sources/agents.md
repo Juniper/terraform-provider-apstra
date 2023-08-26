@@ -2,12 +2,12 @@
 page_title: "apstra_agents Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source returns the IDs of Managed Device Agents. All of the filters attributes are optional.
+  This data source returns the IDs of Managed Device Agents. All of the filter attributes are optional.
 ---
 
 # apstra_agents (Data Source)
 
-This data source returns the IDs of Managed Device Agents. All of the `filters` attributes are optional.
+This data source returns the IDs of Managed Device Agents. All of the `filter` attributes are optional.
 
 ## Example Usage
 
@@ -16,7 +16,7 @@ This data source returns the IDs of Managed Device Agents. All of the `filters` 
 # with management IP addresses in the 192.168.100.0/24 subnet.
 
 data "apstra_agents" "agents" {
-  filters = {
+  filter = {
     management_ip    = "192.168.100.0/24"
     off_box          = true
   }
@@ -28,14 +28,14 @@ data "apstra_agents" "agents" {
 
 ### Optional
 
-- `filters` (Attributes) Agent attributes used as filters (see [below for nested schema](#nestedatt--filters))
+- `filter` (Attributes) Agent attributes used as a filter (see [below for nested schema](#nestedatt--filter))
 
 ### Read-Only
 
 - `ids` (Set of String) Set of Routing Zone IDs
 
-<a id="nestedatt--filters"></a>
-### Nested Schema for `filters`
+<a id="nestedatt--filter"></a>
+### Nested Schema for `filter`
 
 Optional:
 
