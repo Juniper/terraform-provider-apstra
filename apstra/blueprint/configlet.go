@@ -86,13 +86,7 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-				stringvalidator.AtLeastOneOf(
-					path.MatchRelative(),
-					path.MatchRoot("catalog_configlet_id"),
-				),
-			},
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"condition": resourceSchema.StringAttribute{
 			MarkdownDescription: "Condition determines where the Configlet is applied.",
@@ -108,6 +102,10 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 					path.MatchRelative(),
 					path.MatchRoot("generators"),
 				),
+				stringvalidator.AtLeastOneOf(
+					path.MatchRelative(),
+					path.MatchRoot("name"),
+				),
 			},
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
@@ -119,13 +117,7 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 				Attributes: design.ConfigletGenerator{}.ResourceAttributesNested(),
 			},
 			PlanModifiers: []planmodifier.List{listplanmodifier.UseStateForUnknown()},
-			Validators: []validator.List{
-				listvalidator.SizeAtLeast(1),
-				listvalidator.ExactlyOneOf(
-					path.MatchRelative(),
-					path.MatchRoot("catalog_configlet_id"),
-				),
-			},
+			Validators:    []validator.List{listvalidator.SizeAtLeast(1)},
 		},
 	}
 }
