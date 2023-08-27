@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -21,10 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	"regexp"
-	"terraform-provider-apstra/apstra/apstra_validator"
-	"terraform-provider-apstra/apstra/design"
-	"terraform-provider-apstra/apstra/resources"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterVirtualNetwork struct {

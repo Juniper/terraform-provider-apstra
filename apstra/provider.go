@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -18,8 +20,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"terraform-provider-apstra/apstra/compatibility"
-	"terraform-provider-apstra/apstra/utils"
 	"time"
 )
 

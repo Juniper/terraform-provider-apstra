@@ -3,6 +3,9 @@ package blueprint
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstradefault "github.com/Juniper/terraform-provider-apstra/apstra/defaults"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -10,9 +13,6 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	apstradefault "terraform-provider-apstra/apstra/defaults"
-	"terraform-provider-apstra/apstra/design"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type VnBinding struct {

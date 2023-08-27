@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"strconv"
-	testutils "terraform-provider-apstra/apstra/test_utils"
 	"testing"
 )
 

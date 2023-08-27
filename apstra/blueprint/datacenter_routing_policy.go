@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -21,8 +23,6 @@ import (
 	"net"
 	"regexp"
 	"strings"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterRoutingPolicy struct {

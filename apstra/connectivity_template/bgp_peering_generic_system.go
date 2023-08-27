@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -18,8 +20,6 @@ import (
 	"math"
 	"sort"
 	"strings"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ Primitive = &BgpPeeringGenericSystem{}
