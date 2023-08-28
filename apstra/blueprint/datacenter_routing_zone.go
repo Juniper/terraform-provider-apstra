@@ -144,6 +144,13 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
 				"Set this attribute in an EVPN blueprint to use a non-default policy.",
 			Optional: true,
+			Validators: []validator.String{stringvalidator.AtLeastOneOf(
+				path.MatchRoot("filter").AtName("name"),
+				path.MatchRoot("filter").AtName("vlan_id"),
+				path.MatchRoot("filter").AtName("vni"),
+				path.MatchRoot("filter").AtName("dhcp_servers"),
+				path.MatchRoot("filter").AtName("routing_policy_id"),
+			)},
 		},
 	}
 }

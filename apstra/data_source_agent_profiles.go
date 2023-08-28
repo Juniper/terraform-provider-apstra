@@ -65,7 +65,7 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 	var agentProfileIds []apstra.ObjectId
 	var agentProfiles []apstra.AgentProfile
 
-	// one of the slices from above will get populated, depending on whether the user included filters...
+	// one of the slices from above will get populated, depending on whether the user included filter attributes...
 	if config.Ids.IsNull() && config.Platform.IsNull() && config.HasCredentials.IsNull() {
 		agentProfileIds, err = o.client.ListAgentProfileIds(ctx)
 		if err != nil {

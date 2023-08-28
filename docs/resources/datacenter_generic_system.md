@@ -25,7 +25,7 @@ locals {
 # The IDs field will include all systems matching the tag-based filter
 data "apstra_datacenter_systems" "rack_11_leafs" {
   blueprint_id = local.blueprint_id
-  filters = {
+  filter = {
     tag_ids = ["leaf", "rack 11"]
   }
 }

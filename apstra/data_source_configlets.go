@@ -64,14 +64,14 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 	var err error
 	var ids []apstra.ObjectId
 	if config.SupportedPlatforms.IsNull() {
-		// no required platform filters
+		// no required platform filter
 		ids, err = o.client.ListAllConfiglets(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("error retrieving Configlet IDs", err.Error())
 			return
 		}
 	} else {
-		// extract required platform filters
+		// extract required platform filter
 		platformStrings := make([]string, len(config.SupportedPlatforms.Elements()))
 		d := config.SupportedPlatforms.ElementsAs(ctx, &platformStrings, false)
 		resp.Diagnostics.Append(d...)
