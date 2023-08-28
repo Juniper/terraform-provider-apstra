@@ -3,14 +3,14 @@ page_title: "apstra_datacenter_systems Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source returns Graph DB node IDs of system nodes within a Blueprint.
-  Optional attributes filter the result list so that it only contains IDs of nodes which match the filters.
+  Optional filter attribute filters the result list so that it only contains IDs of matching nodes.
 ---
 
 # apstra_datacenter_systems (Data Source)
 
 This data source returns Graph DB node IDs of *system* nodes within a Blueprint.
 
-Optional attributes filter the result list so that it only contains IDs of nodes which match the filters.
+Optional `filter` attribute filters the result list so that it only contains IDs of matching nodes.
 
 ## Example Usage
 
@@ -19,7 +19,7 @@ Optional attributes filter the result list so that it only contains IDs of nodes
 # switches with tag 'junos' and tag 'qfx'
 data "apstra_datacenter_systems" "juniper_spines" {
   blueprint_id = apstra_datacenter_blueprint.example.id
-  filters = {
+  filter = {
     role        = "spine"
     system_type = "switch"
     tag_ids     = ["junos", "qfx"]
@@ -40,15 +40,15 @@ output "qfx_spines" {
 
 ### Optional
 
-- `filters` (Attributes) Filters used to select only desired node IDs. (see [below for nested schema](#nestedatt--filters))
+- `filter` (Attributes) Filter used to select only desired node IDs. All specified attributes must match. (see [below for nested schema](#nestedatt--filter))
 
 ### Read-Only
 
 - `ids` (Set of String) IDs of matching `system` Graph DB nodes.
-- `query_string` (String) Graph DB query string based on the supplied filters; possibly useful for troubleshooting.
+- `query_string` (String) Graph DB query string based on the supplied filter; possibly useful for troubleshooting.
 
-<a id="nestedatt--filters"></a>
-### Nested Schema for `filters`
+<a id="nestedatt--filter"></a>
+### Nested Schema for `filter`
 
 Optional:
 

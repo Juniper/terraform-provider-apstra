@@ -30,7 +30,7 @@ func (o *dataSourceDatacenterRoutingZones) Configure(ctx context.Context, req da
 func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns the IDs of Routing Zones within the specified Blueprint. " +
-			"All of the `filters` attributes are optional.",
+			"All of the `filter` attributes are optional.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID.",
@@ -42,8 +42,8 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
-			"filters": schema.SingleNestedAttribute{
-				MarkdownDescription: "Routing Zone attributes used as filters",
+			"filter": schema.SingleNestedAttribute{
+				MarkdownDescription: "Routing Zone attributes used as a filter",
 				Optional:            true,
 				Attributes:          blueprint.DatacenterRoutingZone{}.DataSourceFilterAttributes(),
 			},
@@ -59,7 +59,7 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 	type routingZones struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		IDs         types.Set    `tfsdk:"ids"`
-		Filters     types.Object `tfsdk:"filters"`
+		Filter      types.Object `tfsdk:"filter"`
 		Query       types.String `tfsdk:"graph_query"`
 	}
 
@@ -69,15 +69,15 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 		return
 	}
 
-	filters := blueprint.DatacenterRoutingZone{}
-	if !config.Filters.IsNull() {
-		resp.Diagnostics.Append(config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
+	var filter blueprint.DatacenterRoutingZone
+	if !config.Filter.IsNull() {
+		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
-	query := filters.Query("n_security_zone", "n_policy")
+	query := filter.Query("n_security_zone", "n_policy")
 
 	queryResponse := new(struct {
 		Items []struct {
