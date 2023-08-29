@@ -49,6 +49,9 @@ func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.
 			MarkdownDescription: "Populate this field to look up a Configlet by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 		"condition": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Condition determines where the Configlet is applied.",
