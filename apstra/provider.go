@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +27,12 @@ import (
 const (
 	defaultTag    = "v0.0.0"
 	defaultCommit = "devel"
+
+	envApiTimeout            = "APSTRA_API_TIMEOUT"
+	envBlueprintMutexEnabled = "APSTRA_BLUEPRINT_MUTEX_ENABLED"
+	envBlueprintMutexMessage = "APSTRA_BLUEPRINT_MUTEX_MESSAGE"
+	envExperimental          = "APSTRA_EXPERIMENTAL"
+	envTlsNoVerify           = "APSTRA_TLS_VALIDATION_DISABLED"
 
 	blueprintMutexMessage = "locked by terraform at $DATE"
 
@@ -102,13 +109,13 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
-				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n\nIt is possible " +
+				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n It is possible " +
 					"to include Apstra API credentials in the URL using " +
 					"[standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be " +
 					"taken to ensure that these credentials aren't accidentally committed to version control, etc... " +
 					"The preferred approach is to pass the credentials as environment variables `" +
-					utils.EnvApstraUsername + "`  and `" + utils.EnvApstraPassword + "`.\n\nIf `url` is omitted, " +
-					"environment variable `" + utils.EnvApstraUrl + "` can be used to in its place.\n\nWhen the " +
+					utils.EnvApstraUsername + "`  and `" + utils.EnvApstraPassword + "`.\n If `url` is omitted, " +
+					"environment variable `" + utils.EnvApstraUrl + "` can be used to in its place.\n When the " +
 					"username or password are embedded in the URL string, any special characters must be " +
 					"URL-encoded. For example, `pass^word` would become `pass%5eword`.",
 				Optional:   true,
@@ -164,6 +171,52 @@ type providerConfig struct {
 	ApiTimeout   types.Int64  `tfsdk:"api_timeout"`
 }
 
+func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
+	if s, ok := os.LookupEnv(envTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+		v, err := strconv.ParseBool(s)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envTlsNoVerify), err.Error())
+		}
+		o.TlsNoVerify = types.BoolValue(v)
+	}
+
+	if s, ok := os.LookupEnv(envBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+		v, err := strconv.ParseBool(s)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envBlueprintMutexEnabled), err.Error())
+		}
+		o.MutexEnable = types.BoolValue(v)
+	}
+
+	if s, ok := os.LookupEnv(envBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+		o.MutexMessage = types.StringValue(s)
+		if len(s) < 1 {
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envBlueprintMutexMessage),
+				fmt.Sprintf("minimum string length 1; got %q", s))
+		}
+	}
+
+	if s, ok := os.LookupEnv(envExperimental); ok && o.Experimental.IsNull() {
+		v, err := strconv.ParseBool(s)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envExperimental), err.Error())
+		}
+		o.Experimental = types.BoolValue(v)
+	}
+
+	if s, ok := os.LookupEnv(envApiTimeout); ok && o.ApiTimeout.IsNull() {
+		v, err := strconv.ParseInt(s, 0, 64)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envApiTimeout), err.Error())
+		}
+		if v < 0 {
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", envApiTimeout),
+				fmt.Sprintf("minimum permitted value is 0, got %d", v))
+		}
+		o.ApiTimeout = types.Int64Value(v)
+	}
+}
+
 func (o providerConfig) handleMutexFlag(_ context.Context, diags *diag.Diagnostics) {
 	if o.MutexEnable.IsNull() {
 		diags.AddWarning("Possibly unsafe default - No exclusive Blueprint access",
@@ -188,6 +241,12 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// Retrieve provider data from configuration
 	var config providerConfig
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve missing config elements from environment
+	config.fromEnv(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
