@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-func ConfigletSupportsPlatforms(configlet *apstra.Configlet, platforms []apstra.PlatformOS) bool {
+func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []apstra.PlatformOS) bool {
 	supportedPlatforms := make(map[apstra.PlatformOS]struct{})
-	for _, generator := range configlet.Data.Generators {
+	for _, generator := range configletdata.Generators {
 		supportedPlatforms[generator.ConfigStyle] = struct{}{}
 	}
 
