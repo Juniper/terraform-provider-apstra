@@ -1,4 +1,4 @@
-module terraform-provider-apstra
+module github.com/Juniper/terraform-provider-apstra
 
 go 1.20
 

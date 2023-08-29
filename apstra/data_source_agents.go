@@ -3,14 +3,14 @@ package tfapstra
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"net"
-	systemAgents "terraform-provider-apstra/apstra/system_agents"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgents{}
