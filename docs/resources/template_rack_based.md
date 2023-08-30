@@ -91,7 +91,7 @@ Read-Only:
 
 - `count` (Number) Number of Access Switches of this type.
 - `esi_lag_info` (Attributes) Defines connectivity between ESI LAG peers when `redundancy_protocol` is set to `esi`. (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--esi_lag_info))
-- `links` (Attributes Map) Each Access Switch is required to have at least one Link to a Leaf Switch. (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--links))
+- `links` (Attributes Set) Each Access Switch is required to have at least one Link to a Leaf Switch. (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--links))
 - `logical_device` (Attributes) Logical Device attributes cloned from the Global Catalog at creation time. (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--logical_device))
 - `logical_device_id` (String) ID will always be `<null>` in nested contexts.
 - `redundancy_protocol` (String) Indicates whether the switch is a redundant pair.
@@ -114,6 +114,7 @@ Read-Only:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
+- `name` (String) Link name
 - `speed` (String) Speed of this Link.
 - `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in nested contexts.
@@ -184,7 +185,7 @@ Read-Only:
 Read-Only:
 
 - `count` (Number) Number of Generic Systems of this type.
-- `links` (Attributes Map) Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems--links))
+- `links` (Attributes Set) Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems--links))
 - `logical_device` (Attributes) Logical Device attributes cloned from the Global Catalog at creation time. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems--logical_device))
 - `logical_device_id` (String) ID will always be `<null>` in nested contexts.
 - `port_channel_id_max` (Number) Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.
@@ -197,6 +198,7 @@ Read-Only:
 
 Required:
 
+- `name` (String) Link name
 - `speed` (String) Speed of this Link.
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
