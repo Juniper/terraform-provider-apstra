@@ -2,15 +2,18 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ resource.ResourceWithConfigure = &resourceRackType{}
+var _ resource.ResourceWithValidateConfig = &resourceRackType{}
 
 type resourceRackType struct {
 	client *apstra.Client
@@ -28,6 +31,141 @@ func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, r
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a Rack Type in the Apstra Design tab.",
 		Attributes:          design.RackType{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config
+	var config design.RackType
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// access switches must have a value
+	if config.AccessSwitches.IsUnknown() {
+		return // cannot proceed
+	}
+
+	// each access switch must have a value
+	for _, accessSwitch := range config.AccessSwitches.Elements() {
+		if accessSwitch.IsUnknown() {
+			return // cannot proceed
+		}
+	}
+
+	// extract access switches
+	accessSwitches := make(map[string]design.AccessSwitch)
+	resp.Diagnostics.Append(config.AccessSwitches.ElementsAs(ctx, &accessSwitches, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// check each access switch
+	for name, accessSwitch := range accessSwitches {
+		// links must have a value
+		if accessSwitch.Links.IsUnknown() {
+			return // cannot proceed
+		}
+
+		// each link must have a value
+		for _, link := range accessSwitch.Links.Elements() {
+			if link.IsUnknown() {
+				return // cannot proceed
+			}
+		}
+
+		// extract links from access switches
+		var links []design.RackLink
+		resp.Diagnostics.Append(accessSwitch.Links.ElementsAs(ctx, &links, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// map keyed by link name to ensure names are unique
+		linkNameMap := make(map[string]bool, len(links))
+
+		// check each link
+		for _, link := range links {
+			// link name must have a value
+			if link.Name.IsNull() {
+				return // cannot proceed
+			}
+
+			if linkNameMap[link.Name.ValueString()] {
+				// the name has been seen before!
+				resp.Diagnostics.AddAttributeError(
+					path.Root("access_switches"), "Link names must be unique",
+					fmt.Sprintf("Access Switch with name %q has multiple links with name %q",
+						name, link.Name.ValueString()))
+			} else {
+				// save name in the map
+				linkNameMap[link.Name.ValueString()] = true
+			}
+		}
+	}
+
+	// generic systems must have a value
+	if config.GenericSystems.IsUnknown() {
+		return // cannot proceed
+	}
+
+	// each generic system must have a value
+	for _, genericSystem := range config.GenericSystems.Elements() {
+		if genericSystem.IsUnknown() {
+			return // cannot proceed
+		}
+	}
+
+	// extract generic systems
+	genericSystems := make(map[string]design.GenericSystem)
+	resp.Diagnostics.Append(config.GenericSystems.ElementsAs(ctx, &genericSystems, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// check each generic system
+	for name, genericSystem := range genericSystems {
+		// links must have a value
+		if genericSystem.Links.IsUnknown() {
+			return // cannot proceed
+		}
+
+		// each link must have a value
+		for _, link := range genericSystem.Links.Elements() {
+			if link.IsUnknown() {
+				return // cannot proceed
+			}
+		}
+
+		// extract links from generic system
+		var links []design.RackLink
+		resp.Diagnostics.Append(genericSystem.Links.ElementsAs(ctx, &links, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// map keyed by link name to ensure names are unique
+		linkNameMap := make(map[string]bool, len(links))
+
+		// check each link
+		for _, link := range links {
+			// link name must have a value
+			if link.Name.IsNull() {
+				return // cannot proceed
+			}
+
+			if linkNameMap[link.Name.ValueString()] {
+				// the name has been seen before!
+				resp.Diagnostics.AddAttributeError(
+					path.Root("generic_systems"), "Link names must be unique",
+					fmt.Sprintf("Generic System with name %q has multiple links with name %q",
+						name, link.Name.ValueString()))
+			} else {
+				// save name in the map
+				linkNameMap[link.Name.ValueString()] = true
+			}
+		}
 	}
 }
 
