@@ -209,7 +209,8 @@ func (o *AccessSwitch) Request(ctx context.Context, path path.Path, rack *RackTy
 
 	lacpActive := apstra.RackLinkLagModeActive.String()
 
-	links := o.GetLinks(ctx, diags)
+	links := make([]RackLink, len(o.Links.Elements()))
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
 	if diags.HasError() {
 		return nil
 	}
@@ -260,20 +261,6 @@ func (o *AccessSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementAc
 	o.Links = NewLinkSet(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = NewTagSet(ctx, in.Tags, diags)
-}
-
-func (o *AccessSwitch) GetLinks(ctx context.Context, diags *diag.Diagnostics) []RackLink {
-	links := make([]RackLink, len(o.Links.Elements()))
-	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
-	if diags.HasError() {
-		return nil
-	}
-
-	// copy the link name from the map key into the object's Name field
-	for i, link := range links {
-		links[i] = link
-	}
-	return links
 }
 
 func (o *AccessSwitch) CopyWriteOnlyElements(ctx context.Context, src *AccessSwitch, diags *diag.Diagnostics) {

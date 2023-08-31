@@ -211,7 +211,8 @@ func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackT
 		poIdMaxVal = int(o.PortChannelIdMax.ValueInt64())
 	}
 
-	links := o.GetLinks(ctx, diags)
+	links := make([]RackLink, len(o.Links.Elements()))
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
 	if diags.HasError() {
 		return nil
 	}
@@ -251,20 +252,6 @@ func (o *GenericSystem) LoadApiData(ctx context.Context, in *apstra.RackElementG
 	o.Links = NewLinkSet(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = NewTagSet(ctx, in.Tags, diags)
-}
-
-func (o *GenericSystem) GetLinks(ctx context.Context, diags *diag.Diagnostics) []RackLink {
-	links := make([]RackLink, len(o.Links.Elements()))
-	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
-	if diags.HasError() {
-		return nil
-	}
-
-	// copy the link name from the map key into the object's Name field
-	for i, link := range links {
-		links[i] = link
-	}
-	return links
 }
 
 func (o *GenericSystem) CopyWriteOnlyElements(ctx context.Context, src *GenericSystem, diags *diag.Diagnostics) {
