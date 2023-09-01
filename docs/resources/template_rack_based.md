@@ -81,7 +81,7 @@ Read-Only:
 - `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed'.
 - `generic_systems` (Attributes Map) Generic Systems are optional rack elements notmanaged by Apstra: Servers, routers, firewalls, etc... (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems))
 - `id` (String) ID will always be `<null>` in nested contexts.
-- `leaf_switches` (Attributes Map) Each Rack Type is required to have at least one Leaf Switch. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
+- `leaf_switches` (Attributes List) A list of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
 - `name` (String) Rack Type name, displayed in the Apstra web UI.
 
 <a id="nestedatt--rack_infos--rack_type--access_switches"></a>
@@ -279,6 +279,7 @@ Read-Only:
 - `logical_device` (Attributes) Logical Device attributes cloned from the Global Catalog at creation time. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches--logical_device))
 - `logical_device_id` (String) ID will always be `<null>` in nested contexts.
 - `mlag_info` (Attributes) Defines connectivity between MLAG peers when `redundancy_protocol` is set to `mlag`. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches--mlag_info))
+- `name` (String) Leaf Switch name.
 - `redundancy_protocol` (String) Enabling a redundancy protocol converts a single Leaf Switch into a LAG-capable switch pair. Must be one of 'esi', 'mlag'.
 - `spine_link_count` (Number) Links per Spine.
 - `spine_link_speed` (String) Speed of Spine-facing links, something like '10G'
