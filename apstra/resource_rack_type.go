@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var _ resource.ResourceWithConfigure = &resourceRackType{}
@@ -40,6 +41,33 @@ func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.Vali
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// leaf switches must have a value
+	if config.LeafSwitches.IsUnknown() {
+		return // cannot proceed
+	}
+
+	// check each leaf switch
+	leafSwitchNameMap := make(map[string]bool)
+	for _, leafSwitchVal := range config.LeafSwitches.Elements() {
+		if leafSwitchVal.IsUnknown() {
+			return // cannot proceed
+		}
+
+		var leafSwitch design.LeafSwitch
+		leafSwitchVal.(basetypes.ObjectValue).As(ctx, &leafSwitch, basetypes.ObjectAsOptions{})
+		if leafSwitch.Name.IsUnknown() {
+			return // cannot proceed
+		}
+
+		if leafSwitchNameMap[leafSwitch.Name.ValueString()] {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("leaf_switches"), "Leaf Switch must be unique",
+				fmt.Sprintf("Rack has multiple Leaf Switches with name %q", leafSwitch.Name.ValueString()))
+		} else {
+			leafSwitchNameMap[leafSwitch.Name.ValueString()] = true
+		}
 	}
 
 	// access switches must have a value
