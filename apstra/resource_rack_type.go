@@ -255,7 +255,7 @@ func (o *resourceRackType) Read(ctx context.Context, req resource.ReadRequest, r
 	newState.CopyWriteOnlyElements(ctx, &state, &resp.Diagnostics)
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceRackType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {

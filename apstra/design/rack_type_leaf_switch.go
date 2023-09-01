@@ -37,6 +37,7 @@ func ValidateLeafSwitch(rt *apstra.RackType, i int, diags *diag.Diagnostics) {
 }
 
 type LeafSwitch struct {
+	Name               types.String `tfsdk:"name"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
@@ -49,6 +50,10 @@ type LeafSwitch struct {
 
 func (o LeafSwitch) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Leaf Switch name.",
+			Computed:            true,
+		},
 		"logical_device_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
@@ -92,6 +97,11 @@ func (o LeafSwitch) DataSourceAttributes() map[string]dataSourceSchema.Attribute
 
 func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Leaf Switch name.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
 		"logical_device_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Leaf Switch.",
 			Required:            true,
@@ -159,6 +169,10 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Leaf Switch name.",
+			Computed:            true,
+		},
 		"logical_device_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
 			Computed:            true,
@@ -205,6 +219,7 @@ func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribu
 
 func (o LeafSwitch) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"name":                types.StringType,
 		"logical_device_id":   types.StringType,
 		"logical_device":      types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
 		"mlag_info":           types.ObjectType{AttrTypes: MlagInfo{}.AttrTypes()},
@@ -258,6 +273,7 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.Fab
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	return &apstra.RackElementLeafSwitchRequest{
+		Label:              o.Name.ValueString(),
 		MlagInfo:           leafMlagInfo,
 		LinkPerSpineCount:  linkPerSpineCount,
 		LinkPerSpineSpeed:  linkPerSpineSpeed,
@@ -268,6 +284,7 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.Fab
 }
 
 func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+	o.Name = types.StringValue(in.Label)
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 
@@ -305,18 +322,16 @@ func (o *LeafSwitch) CopyWriteOnlyElements(ctx context.Context, src *LeafSwitch,
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
-func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
-	leafSwitches := make(map[string]LeafSwitch, len(in))
-	for _, leafIn := range in {
-		var ls LeafSwitch
-		ls.LoadApiData(ctx, &leafIn, fcd, diags)
-		leafSwitches[leafIn.Label] = ls
-		if diags.HasError() {
-			return types.MapNull(types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()})
-		}
+func NewLeafSwitchList(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.List {
+	leafSwitches := make([]LeafSwitch, len(in))
+	for i, leafIn := range in {
+		leafSwitches[i].LoadApiData(ctx, &leafIn, fcd, diags)
+	}
+	if diags.HasError() {
+		return types.ListNull(types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, leafSwitches, diags)
+	return utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, leafSwitches, diags)
 }
 
 // LeafRedundancyModes returns permitted fabric_connectivity_design mode strings
