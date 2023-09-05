@@ -343,7 +343,6 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 		return
 	}
 
-	// passing prior link state here could speed things up because we won't need to call every set operation
 	o.updateLinkParams(ctx, updateLinksPlan, updateLinksState, bp, diags)
 	if diags.HasError() {
 		return
