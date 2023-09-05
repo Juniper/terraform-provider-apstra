@@ -70,7 +70,7 @@ Read-Only:
 - `fabric_connectivity_design` (String) Indicates designs for which this Rack Type is intended.
 - `generic_systems` (Attributes Map) A map of Generic Systems in the Rack Type, keyed by name. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems))
 - `id` (String) IDs will always be `<null>` in nested contexts.
-- `leaf_switches` (Attributes List) A list of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
+- `leaf_switches` (Attributes Set) A set of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
 - `name` (String) Rack Type name displayed in the Apstra web UI.
 
 <a id="nestedatt--rack_infos--rack_type--access_switches"></a>

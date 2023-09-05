@@ -81,7 +81,7 @@ Read-Only:
 - `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed'.
 - `generic_systems` (Attributes Map) Generic Systems are optional rack elements notmanaged by Apstra: Servers, routers, firewalls, etc... (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems))
 - `id` (String) ID will always be `<null>` in nested contexts.
-- `leaf_switches` (Attributes List) A list of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
+- `leaf_switches` (Attributes Set) A set of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
 - `name` (String) Rack Type name, displayed in the Apstra web UI.
 
 <a id="nestedatt--rack_infos--rack_type--access_switches"></a>
