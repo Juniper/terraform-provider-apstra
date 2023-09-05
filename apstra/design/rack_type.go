@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -24,7 +25,7 @@ type RackType struct {
 	Name                     types.String `tfsdk:"name"`
 	Description              types.String `tfsdk:"description"`
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             types.Map    `tfsdk:"leaf_switches"`
+	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
 	AccessSwitches           types.Map    `tfsdk:"access_switches"`
 	GenericSystems           types.Map    `tfsdk:"generic_systems"`
 }
@@ -57,8 +58,8 @@ func (o RackType) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "Indicates designs for which this Rack Type is intended.",
 			Computed:            true,
 		},
-		"leaf_switches": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "A map of Leaf Switches in this Rack Type, keyed by name.",
+		"leaf_switches": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "A set of Leaf Switches in this Rack Type.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.DataSourceAttributes(),
@@ -99,8 +100,8 @@ func (o RackType) DataSourceAttributesNested() map[string]dataSourceSchema.Attri
 			MarkdownDescription: "Indicates designs for which this Rack Type is intended.",
 			Computed:            true,
 		},
-		"leaf_switches": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "A map of Leaf Switches in this Rack Type, keyed by name.",
+		"leaf_switches": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "A set of Leaf Switches in this Rack Type.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.DataSourceAttributes(),
@@ -146,10 +147,10 @@ func (o RackType) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.OneOf(utils.FcdModes()...)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
-		"leaf_switches": resourceSchema.MapNestedAttribute{
+		"leaf_switches": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
 			Required:            true,
-			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.ResourceAttributes(),
 			},
@@ -192,8 +193,8 @@ func (o RackType) ResourceAttributesNested() map[string]resourceSchema.Attribute
 			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(utils.FcdModes(), "', '")),
 			Computed:            true,
 		},
-		"leaf_switches": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
+		"leaf_switches": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "A set of Leaf Switches in this Rack Type.",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.ResourceAttributesNested(),
@@ -223,7 +224,7 @@ func (o RackType) AttrTypes() map[string]attr.Type {
 		"name":                       types.StringType,
 		"description":                types.StringType,
 		"fabric_connectivity_design": types.StringType,
-		"leaf_switches":              types.MapType{ElemType: types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}},
+		"leaf_switches":              types.SetType{ElemType: types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}},
 		"access_switches":            types.MapType{ElemType: types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}},
 		"generic_systems":            types.MapType{ElemType: types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}},
 	}
@@ -247,7 +248,7 @@ func (o *RackType) LoadApiData(ctx context.Context, in *apstra.RackTypeData, dia
 	o.Name = types.StringValue(in.DisplayName)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.FabricConnectivityDesign.String())
-	o.LeafSwitches = NewLeafSwitchMap(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
+	o.LeafSwitches = NewLeafSwitchSet(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
 	o.AccessSwitches = NewAccessSwitchMap(ctx, in.AccessSwitches, diags)
 	o.GenericSystems = NewGenericSystemMap(ctx, in.GenericSystems, diags)
 }
@@ -284,19 +285,15 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *apstra
 		return nil
 	}
 
-	var i int
-
 	leafSwitchRequests := make([]apstra.RackElementLeafSwitchRequest, len(leafSwitches))
-	i = 0
-	for name, ls := range leafSwitches {
-		req := ls.Request(ctx, path.Root("leaf_switches").AtMapKey(name), fcd, diags)
+	for i, ls := range leafSwitches {
+		leafSwitchRequests[i] = *ls.Request(ctx, path.Root("leaf_switches").AtListIndex(i), fcd, diags)
 		if diags.HasError() {
 			return nil
 		}
-		req.Label = name
-		leafSwitchRequests[i] = *req
-		i++
 	}
+
+	var i int
 
 	accessSwitchRequests := make([]apstra.RackElementAccessSwitchRequest, len(accessSwitches))
 	i = 0
@@ -385,10 +382,9 @@ func ValidateRackType(ctx context.Context, in *apstra.RackType, diags *diag.Diag
 	}
 }
 
-func (o *RackType) GetLeafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]LeafSwitch {
-	leafSwitches := make(map[string]LeafSwitch, len(o.LeafSwitches.Elements()))
-	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
-	diags.Append(d...)
+func (o *RackType) GetLeafSwitches(ctx context.Context, diags *diag.Diagnostics) []LeafSwitch {
+	var leafSwitches []LeafSwitch
+	diags.Append(o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)...)
 	if diags.HasError() {
 		return nil
 	}
@@ -402,8 +398,10 @@ func (o *RackType) GetLeafSwitchByName(ctx context.Context, requested string, di
 		return nil
 	}
 
-	if ls, ok := leafSwitches[requested]; ok {
-		return &ls
+	for _, leafSwitch := range leafSwitches {
+		if leafSwitch.Name.ValueString() == requested {
+			return &leafSwitch
+		}
 	}
 
 	return nil
@@ -467,20 +465,19 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 	dstGenericSystems := o.GetGenericSystems(ctx, diags)
 
 	// invoke the CopyWriteOnlyElements on every leaf switch object
-	for name, dstLeafSwitch := range dstLeafSwitches {
-		srcLeafSwitch, ok := src.GetLeafSwitches(ctx, diags)[name]
-		if !ok {
+	for i := range dstLeafSwitches {
+		srcLeafSwitch := src.GetLeafSwitchByName(ctx, dstLeafSwitches[i].Name.ValueString(), diags)
+		if diags.HasError() {
+			return
+		}
+		if srcLeafSwitch == nil {
 			continue
 		}
-		if diags.HasError() {
-			return
-		}
 
-		dstLeafSwitch.CopyWriteOnlyElements(ctx, &srcLeafSwitch, diags)
+		dstLeafSwitches[i].CopyWriteOnlyElements(ctx, srcLeafSwitch, diags)
 		if diags.HasError() {
 			return
 		}
-		dstLeafSwitches[name] = dstLeafSwitch
 	}
 
 	// invoke the CopyWriteOnlyElements on every access switch object
@@ -518,7 +515,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	leafSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, dstLeafSwitches, diags)
+	leafSwitchSet := utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, dstLeafSwitches, diags)
 	accessSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}, dstAccessSwitches, diags)
 	genericSystemMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}, dstGenericSystems, diags)
 	if diags.HasError() {
@@ -526,7 +523,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 	}
 
 	// save the TF sets into RackType
-	o.LeafSwitches = leafSwitchMap
+	o.LeafSwitches = leafSwitchSet
 	o.AccessSwitches = accessSwitchMap
 	o.GenericSystems = genericSystemMap
 }

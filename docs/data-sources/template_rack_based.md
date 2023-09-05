@@ -70,7 +70,7 @@ Read-Only:
 - `fabric_connectivity_design` (String) Indicates designs for which this Rack Type is intended.
 - `generic_systems` (Attributes Map) A map of Generic Systems in the Rack Type, keyed by name. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems))
 - `id` (String) IDs will always be `<null>` in nested contexts.
-- `leaf_switches` (Attributes Map) A map of Leaf Switches in this Rack Type, keyed by name. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
+- `leaf_switches` (Attributes Set) A set of Leaf Switches in this Rack Type. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches))
 - `name` (String) Rack Type name displayed in the Apstra web UI.
 
 <a id="nestedatt--rack_infos--rack_type--access_switches"></a>
@@ -250,6 +250,7 @@ Read-Only:
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches--logical_device))
 - `logical_device_id` (String) ID will always be `<null>` in data source contexts.
 - `mlag_info` (Attributes) Details settings when the Leaf Switch is an MLAG-capable pair. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches--mlag_info))
+- `name` (String) Leaf Switch name.
 - `redundancy_protocol` (String) When set, 'the switch' is actually a LAG-capable redundant pair of the given type.
 - `spine_link_count` (Number) Number of links to each Spine switch.
 - `spine_link_speed` (String) Speed of links to Spine switches.

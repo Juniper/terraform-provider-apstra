@@ -14,6 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -37,6 +40,7 @@ func ValidateLeafSwitch(rt *apstra.RackType, i int, diags *diag.Diagnostics) {
 }
 
 type LeafSwitch struct {
+	Name               types.String `tfsdk:"name"`
 	LogicalDeviceId    types.String `tfsdk:"logical_device_id"`
 	LogicalDevice      types.Object `tfsdk:"logical_device"`
 	MlagInfo           types.Object `tfsdk:"mlag_info"`
@@ -49,6 +53,10 @@ type LeafSwitch struct {
 
 func (o LeafSwitch) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Leaf Switch name.",
+			Computed:            true,
+		},
 		"logical_device_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in data source contexts.",
 			Computed:            true,
@@ -92,6 +100,11 @@ func (o LeafSwitch) DataSourceAttributes() map[string]dataSourceSchema.Attribute
 
 func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Leaf Switch name.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
 		"logical_device_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Logical Device used to model this Leaf Switch.",
 			Required:            true,
@@ -100,6 +113,7 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Object{objectplanmodifier.UseStateForUnknown()},
 			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
 		},
 		"mlag_info": resourceSchema.SingleNestedAttribute{
@@ -150,6 +164,7 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"tags": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Set of Tags (Name + Description) applied to this Leaf Switch",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: Tag{}.ResourceAttributesNested(),
 			},
@@ -159,6 +174,10 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Leaf Switch name.",
+			Computed:            true,
+		},
 		"logical_device_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
 			Computed:            true,
@@ -205,6 +224,7 @@ func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribu
 
 func (o LeafSwitch) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"name":                types.StringType,
 		"logical_device_id":   types.StringType,
 		"logical_device":      types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
 		"mlag_info":           types.ObjectType{AttrTypes: MlagInfo{}.AttrTypes()},
@@ -258,6 +278,7 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.Fab
 	o.TagIds.ElementsAs(ctx, &tagIds, false)
 
 	return &apstra.RackElementLeafSwitchRequest{
+		Label:              o.Name.ValueString(),
 		MlagInfo:           leafMlagInfo,
 		LinkPerSpineCount:  linkPerSpineCount,
 		LinkPerSpineSpeed:  linkPerSpineSpeed,
@@ -268,6 +289,7 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.Fab
 }
 
 func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+	o.Name = types.StringValue(in.Label)
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 
@@ -305,18 +327,16 @@ func (o *LeafSwitch) CopyWriteOnlyElements(ctx context.Context, src *LeafSwitch,
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
-func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
-	leafSwitches := make(map[string]LeafSwitch, len(in))
-	for _, leafIn := range in {
-		var ls LeafSwitch
-		ls.LoadApiData(ctx, &leafIn, fcd, diags)
-		leafSwitches[leafIn.Label] = ls
-		if diags.HasError() {
-			return types.MapNull(types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()})
-		}
+func NewLeafSwitchSet(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Set {
+	leafSwitches := make([]LeafSwitch, len(in))
+	for i, leafIn := range in {
+		leafSwitches[i].LoadApiData(ctx, &leafIn, fcd, diags)
+	}
+	if diags.HasError() {
+		return types.SetNull(types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, leafSwitches, diags)
+	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, leafSwitches, diags)
 }
 
 // LeafRedundancyModes returns permitted fabric_connectivity_design mode strings
