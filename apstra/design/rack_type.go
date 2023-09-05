@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -25,21 +25,10 @@ type RackType struct {
 	Name                     types.String `tfsdk:"name"`
 	Description              types.String `tfsdk:"description"`
 	FabricConnectivityDesign types.String `tfsdk:"fabric_connectivity_design"`
-	LeafSwitches             types.List   `tfsdk:"leaf_switches"` // see note about set/list/map
+	LeafSwitches             types.Set    `tfsdk:"leaf_switches"`
 	AccessSwitches           types.Map    `tfsdk:"access_switches"`
 	GenericSystems           types.Map    `tfsdk:"generic_systems"`
 }
-
-// a note about use of sets/lists/maps from cmarget...
-// until late summer '23, the schema for leaf switches, access switches and
-// generic systems used maps. The ergonomics of this decision wasn't good.
-//
-// lists look like they'll be okay in the design API because it maintains order.
-// lists will be awkward (but workable if we sort on read) in the blueprint.
-//
-// sets don't work due to a limitation in terraform: a set of objects containing
-// both computed and configured attributes cause constant state churn.
-// https://discuss.hashicorp.com/t/framework-v1-1-1-strategies-for-diagnosing-resource-state-churn/49688/5
 
 func (o RackType) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
@@ -69,8 +58,8 @@ func (o RackType) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "Indicates designs for which this Rack Type is intended.",
 			Computed:            true,
 		},
-		"leaf_switches": dataSourceSchema.ListNestedAttribute{
-			MarkdownDescription: "A list of Leaf Switches in this Rack Type.",
+		"leaf_switches": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "A set of Leaf Switches in this Rack Type.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.DataSourceAttributes(),
@@ -111,8 +100,8 @@ func (o RackType) DataSourceAttributesNested() map[string]dataSourceSchema.Attri
 			MarkdownDescription: "Indicates designs for which this Rack Type is intended.",
 			Computed:            true,
 		},
-		"leaf_switches": dataSourceSchema.ListNestedAttribute{
-			MarkdownDescription: "A list of Leaf Switches in this Rack Type.",
+		"leaf_switches": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "A set of Leaf Switches in this Rack Type.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.DataSourceAttributes(),
@@ -158,10 +147,10 @@ func (o RackType) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.OneOf(utils.FcdModes()...)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
-		"leaf_switches": resourceSchema.ListNestedAttribute{
+		"leaf_switches": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Each Rack Type is required to have at least one Leaf Switch.",
 			Required:            true,
-			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.ResourceAttributes(),
 			},
@@ -204,8 +193,8 @@ func (o RackType) ResourceAttributesNested() map[string]resourceSchema.Attribute
 			MarkdownDescription: fmt.Sprintf("Must be one of '%s'.", strings.Join(utils.FcdModes(), "', '")),
 			Computed:            true,
 		},
-		"leaf_switches": resourceSchema.ListNestedAttribute{
-			MarkdownDescription: "A list of Leaf Switches in this Rack Type.",
+		"leaf_switches": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "A set of Leaf Switches in this Rack Type.",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: LeafSwitch{}.ResourceAttributesNested(),
@@ -235,7 +224,7 @@ func (o RackType) AttrTypes() map[string]attr.Type {
 		"name":                       types.StringType,
 		"description":                types.StringType,
 		"fabric_connectivity_design": types.StringType,
-		"leaf_switches":              types.ListType{ElemType: types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}},
+		"leaf_switches":              types.SetType{ElemType: types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}},
 		"access_switches":            types.MapType{ElemType: types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}},
 		"generic_systems":            types.MapType{ElemType: types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}},
 	}
@@ -259,7 +248,7 @@ func (o *RackType) LoadApiData(ctx context.Context, in *apstra.RackTypeData, dia
 	o.Name = types.StringValue(in.DisplayName)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.FabricConnectivityDesign.String())
-	o.LeafSwitches = NewLeafSwitchList(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
+	o.LeafSwitches = NewLeafSwitchSet(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
 	o.AccessSwitches = NewAccessSwitchMap(ctx, in.AccessSwitches, diags)
 	o.GenericSystems = NewGenericSystemMap(ctx, in.GenericSystems, diags)
 }
@@ -526,7 +515,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	leafSwitchList := utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, dstLeafSwitches, diags)
+	leafSwitchSet := utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, dstLeafSwitches, diags)
 	accessSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}, dstAccessSwitches, diags)
 	genericSystemMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}, dstGenericSystems, diags)
 	if diags.HasError() {
@@ -534,7 +523,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 	}
 
 	// save the TF sets into RackType
-	o.LeafSwitches = leafSwitchList
+	o.LeafSwitches = leafSwitchSet
 	o.AccessSwitches = accessSwitchMap
 	o.GenericSystems = genericSystemMap
 }
