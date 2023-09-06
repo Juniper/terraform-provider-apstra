@@ -207,20 +207,23 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	o.Links = types.SetValueMust(types.ObjectType{AttrTypes: DatacenterGenericSystemLink{}.attrTypes()}, oLinks)
 }
 
-// GetLabelAndHostname returns an error rather than appending to a
+// ReadSystemProperties returns an error rather than appending to a
 // []diag.Diagnosics because some callers might need to invoke RemoveResource()
 // based on the error type.
-func (o *DatacenterGenericSystem) GetLabelAndHostname(ctx context.Context, bp *apstra.TwoStageL3ClosClient) error {
-	var node struct {
-		Hostname string `json:"hostname"`
-		Label    string `json:"label"`
-	}
-	err := bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(o.Id.ValueString()), &node)
+func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, overwriteKnownValues bool) error {
+	nodeInfo, err := bp.GetSystemNodeInfo(ctx, apstra.ObjectId(o.Id.ValueString()))
 	if err != nil {
 		return err
 	}
-	o.Hostname = types.StringValue(node.Hostname)
-	o.Name = types.StringValue(node.Label)
+
+	if overwriteKnownValues || o.Hostname.IsUnknown() {
+		o.Hostname = types.StringValue(nodeInfo.Hostname)
+	}
+
+	if overwriteKnownValues || o.Name.IsUnknown() {
+		o.Name = types.StringValue(nodeInfo.Label)
+	}
+
 	return nil
 }
 
