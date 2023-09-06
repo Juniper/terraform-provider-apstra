@@ -8,8 +8,8 @@ before:
   hooks:
     - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || (echo must be on branch main; false)"
     - sh -c "[ \"$(git pull)\" = \"Already up to date.\" ] || (echo not in sync with origin; false)"
-    - go run github.com/chrismarget-j/go-licenses save --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk --save_path=./Third_Party_Code --force ./...
-    - sh -c "go run github.com/chrismarget-j/go-licenses report ./... --ignore terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk/apstra --template .notices.tpl > Third_Party_Code/NOTICES.md"
+    - go run github.com/chrismarget-j/go-licenses save --ignore github.com/Juniper/terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk --save_path=./Third_Party_Code --force ./...
+    - sh -c "go run github.com/chrismarget-j/go-licenses report ./... --ignore github.com/Juniper/terraform-provider-apstra --ignore github.com/Juniper/apstra-go-sdk/apstra --template .notices.tpl > Third_Party_Code/NOTICES.md"
     - go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
     - git update-index --refresh && git diff-index --quiet HEAD --
 builds:
