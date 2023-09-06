@@ -316,12 +316,15 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	}
 
 	// compare plan and state, make lists of links to add / check+update / delete
-	var addLinks, updateLinks, delLinks []*DatacenterGenericSystemLink
+	var addLinks, updateLinksPlan, updateLinksState, delLinks []*DatacenterGenericSystemLink
 	for digest := range planLinksMap {
 		if _, ok := stateLinksMap[digest]; !ok {
 			addLinks = append(addLinks, planLinksMap[digest])
 		} else {
-			updateLinks = append(updateLinks, planLinksMap[digest])
+			// "updateLinks" is two slices: plan and state, so that we can
+			// compare and change only required attributes.
+			updateLinksPlan = append(updateLinksPlan, planLinksMap[digest])
+			updateLinksState = append(updateLinksState, stateLinksMap[digest])
 		}
 	}
 	for digest := range stateLinksMap {
@@ -340,8 +343,7 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 		return
 	}
 
-	// passing prior link state here could speed things up because we won't need to call every set operation
-	o.updateLinkParams(ctx, updateLinks, bp, diags)
+	o.updateLinkParams(ctx, updateLinksPlan, updateLinksState, bp, diags)
 	if diags.HasError() {
 		return
 	}
@@ -397,9 +399,9 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 // embedded), but it does not operate on those links (all of the links). Rather
 // it operates only on the links passed as a function argument because only
 // those links need to be updated/validated.
-func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLinks, stateLinks []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// one at a time, check/update each link
-	for _, link := range links {
+	for i, link := range planLinks {
 		// we don't keep the link ID, but we have each link's target switch and
 		// interface name. That's enough to uniquely identify the link from the
 		// graph data store
@@ -408,7 +410,7 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []
 			return
 		}
 
-		link.updateParams(ctx, linkId, bp, diags) // collect all errors
+		link.updateParams(ctx, linkId, stateLinks[i], bp, diags) // collect all errors
 	}
 }
 
