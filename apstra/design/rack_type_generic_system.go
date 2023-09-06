@@ -240,7 +240,7 @@ func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackT
 	return &apstra.RackElementGenericSystemRequest{
 		Count:            int(o.Count.ValueInt64()),
 		AsnDomain:        apstra.FeatureSwitchDisabled,
-		ManagementLevel:  apstra.GenericSystemUnmanaged,
+		ManagementLevel:  apstra.SystemManagementLevelUnmanaged,
 		PortChannelIdMin: poIdMinVal,
 		PortChannelIdMax: poIdMaxVal,
 		Loopback:         apstra.FeatureSwitchDisabled,
