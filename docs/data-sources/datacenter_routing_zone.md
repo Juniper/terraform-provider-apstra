@@ -58,7 +58,7 @@ output "routing_zone" {
 ### Optional
 
 - `id` (String) Apstra graph node ID. Required when `name` is omitted.
-- `name` (String) VRF name displayed in thw Apstra web UI.
+- `name` (String) VRF name displayed in the Apstra web UI.
 
 ### Read-Only
 

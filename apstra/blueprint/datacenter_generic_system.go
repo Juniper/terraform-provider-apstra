@@ -42,7 +42,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Name displayed in thw Apstra web UI.",
+			MarkdownDescription: "Name displayed in the Apstra web UI.",
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},

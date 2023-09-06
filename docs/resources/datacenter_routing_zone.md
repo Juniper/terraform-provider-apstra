@@ -30,7 +30,7 @@ resource "apstra_datacenter_routing_zone" "blue" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `name` (String) VRF name displayed in thw Apstra web UI.
+- `name` (String) VRF name displayed in the Apstra web UI.
 
 ### Optional
 
