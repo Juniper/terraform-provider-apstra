@@ -60,7 +60,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -115,7 +115,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Optional:            true,
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -170,7 +170,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
