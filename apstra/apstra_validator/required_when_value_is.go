@@ -81,7 +81,7 @@ func (o RequiredWhenValueIsValidator) Validate(ctx context.Context, req Required
 				resp.Diagnostics.AddAttributeError(
 					req.Path,
 					"Missing required attribute",
-					fmt.Sprintf("Attribute %q required when %q has value %q", req.Path, mp.String(), mpVal.String()),
+					fmt.Sprintf("Attribute %q required when %q has value %q.", req.Path, mp.String(), mpVal.String()),
 				)
 			}
 		}
@@ -223,56 +223,7 @@ func (o RequiredWhenValueIsValidator) ValidateString(ctx context.Context, req va
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func BoolRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Bool {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func Float64RequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Float64 {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func Int64RequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Int64 {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func MapRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Map {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func NumberRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Number {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func ObjectRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Object {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func SetRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.Set {
-	return RequiredWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func StringRequiredWhenValueIs(expression path.Expression, value attr.Value) validator.String {
+func RequiredWhenValueIs(expression path.Expression, value attr.Value) RequiredWhenValueIsValidator {
 	return RequiredWhenValueIsValidator{
 		expression: expression,
 		value:      value,

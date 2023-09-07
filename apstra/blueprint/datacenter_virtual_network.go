@@ -198,7 +198,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Computed:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				apstravalidator.StringRequiredWhenValueIs(
+				apstravalidator.RequiredWhenValueIs(
 					path.MatchRelative().AtParent().AtName("type"),
 					types.StringValue(apstra.VnTypeVxlan.String()),
 				),
