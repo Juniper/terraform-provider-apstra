@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20230906191331-2d35487e8591
+	github.com/Juniper/apstra-go-sdk v0.0.0-20230907025940-dc1e5c263239
 	github.com/chrismarget-j/go-licenses v0.0.0-20230424163011-d60082a506e0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hashicorp/terraform-plugin-docs v0.13.0

@@ -82,6 +82,12 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 	plan.Id = types.StringValue(genericSystemId.String())
 
+	// set generic system properties sending <nil> for prior state
+	plan.SetProperties(ctx, bp, nil, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// pull Apstra-generated strings as needed
 	err = plan.ReadSystemProperties(ctx, bp, false)
 	if err != nil {
@@ -166,6 +172,12 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	}
 
 	plan.UpdateHostnameAndName(ctx, bp, &state, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set generic system properties using prior state to skip unnecessary API calls
+	plan.SetProperties(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

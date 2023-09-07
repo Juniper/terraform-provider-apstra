@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -15,17 +17,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
+	"net"
 	"regexp"
 	"sort"
 )
 
 type DatacenterGenericSystem struct {
-	Id          types.String `tfsdk:"id"`
-	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Name        types.String `tfsdk:"name"`
-	Hostname    types.String `tfsdk:"hostname"`
-	Tags        types.Set    `tfsdk:"tags"`
-	Links       types.Set    `tfsdk:"links"`
+	Id           types.String         `tfsdk:"id"`
+	BlueprintId  types.String         `tfsdk:"blueprint_id"`
+	Name         types.String         `tfsdk:"name"`
+	Hostname     types.String         `tfsdk:"hostname"`
+	Tags         types.Set            `tfsdk:"tags"`
+	Links        types.Set            `tfsdk:"links"`
+	Asn          types.Int64          `tfsdk:"asn"`
+	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
+	LoopbackIpv6 cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -76,6 +83,21 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				setvalidator.SizeAtLeast(1),
 				genericSystemLinkSetValidator{},
 			},
+		},
+		"asn": resourceSchema.Int64Attribute{
+			MarkdownDescription: "AS number of the Generic System",
+			Optional:            true,
+			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
+		},
+		"loopback_ipv4": resourceSchema.StringAttribute{
+			MarkdownDescription: "IPv4 address of loopback interface in CIDR notation",
+			CustomType:          cidrtypes.IPv4PrefixType{},
+			Optional:            true,
+		},
+		"loopback_ipv6": resourceSchema.StringAttribute{
+			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation",
+			CustomType:          cidrtypes.IPv6PrefixType{},
+			Optional:            true,
 		},
 	}
 }
@@ -222,6 +244,20 @@ func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *
 
 	if overwriteKnownValues || o.Name.IsUnknown() {
 		o.Name = types.StringValue(nodeInfo.Label)
+	}
+	// asn isn't computed, so will never be unknown
+	if overwriteKnownValues && nodeInfo.Asn != nil {
+		o.Asn = types.Int64Value(int64(*nodeInfo.Asn))
+	}
+
+	// v4 loopback isn't computed, so will never be unknown
+	if overwriteKnownValues && nodeInfo.LoopbackIpv4 != nil {
+		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(nodeInfo.LoopbackIpv4.String())
+	}
+
+	// v6 loopback isn't computed, so will never be unknown
+	if overwriteKnownValues && nodeInfo.LoopbackIpv6 != nil {
+		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(nodeInfo.LoopbackIpv6.String())
 	}
 
 	return nil
@@ -569,5 +605,81 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		} else {
 			groupModes[groupLabel] = lagMode
 		}
+	}
+}
+
+func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
+	// set ASN if we don't have prior state or the ASN needs to be updated
+	if state == nil || !o.Asn.Equal(state.Asn) {
+		o.setAsn(ctx, bp, diags)
+	}
+
+	// set loopback v4 if we don't have prior state or the v4 address needs to be updated
+	if state == nil || !o.LoopbackIpv4.Equal(state.LoopbackIpv4) {
+		o.setLoopbackIPv4(ctx, bp, diags)
+	}
+
+	// set loopback v6 if we don't have prior state or the v6 address needs to be updated
+	if state == nil || !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
+		o.setLoopbackIPv6(ctx, bp, diags)
+	}
+}
+
+// setAsn sets or clears the generic system ASN attribute depending on o.Asn.IsNull()
+func (o *DatacenterGenericSystem) setAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var asn *uint32
+
+	if !o.Asn.IsNull() {
+		a := uint32(o.Asn.ValueInt64())
+		asn = &a
+	}
+
+	err := bp.SetGenericSystemAsn(ctx, apstra.ObjectId(o.Id.ValueString()), asn)
+	if err != nil {
+		diags.AddError("failed setting generic system ASN", err.Error())
+	}
+}
+
+// setLoopbackIPv4 sets or clears the generic system loopback IPv4 attribute depending on o.LoopbackIpv4.IsNull()
+func (o *DatacenterGenericSystem) setLoopbackIPv4(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var ipNet *net.IPNet
+	var err error
+
+	if !o.LoopbackIpv4.IsNull() {
+		var ip net.IP
+		ip, ipNet, err = net.ParseCIDR(o.LoopbackIpv4.ValueString())
+		if err != nil {
+			diags.AddError("failed parsing generic system IPv4 loopback address", err.Error())
+			return
+		}
+
+		ipNet.IP = ip // overwrite subnet address in the parsed object with host address
+	}
+
+	err = bp.SetGenericSystemLoopbackIpv4(ctx, apstra.ObjectId(o.Id.ValueString()), ipNet, 0)
+	if err != nil {
+		diags.AddError("failed setting generic system IPv4 loopback address", err.Error())
+	}
+}
+
+// setLoopbackIPv6 sets or clears the generic system loopback IPv6 attribute depending on o.LoopbackIpv6.IsNull()
+func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var ipNet *net.IPNet
+	var err error
+
+	if !o.LoopbackIpv6.IsNull() {
+		var ip net.IP
+		ip, ipNet, err = net.ParseCIDR(o.LoopbackIpv6.ValueString())
+		if err != nil {
+			diags.AddError("failed parsing generic system IPv6 loopback address", err.Error())
+			return
+		}
+
+		ipNet.IP = ip // overwrite subnet address in the parsed object with host address
+	}
+
+	err = bp.SetGenericSystemLoopbackIpv6(ctx, apstra.ObjectId(o.Id.ValueString()), ipNet, 0)
+	if err != nil {
+		diags.AddError("failed setting generic system IPv6 loopback address", err.Error())
 	}
 }
