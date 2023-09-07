@@ -591,15 +591,24 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 
 		lagMode := link.LagMode.ValueString()
 		groupLabel := link.GroupLabel.ValueString()
-		if m, ok := groupModes[groupLabel]; ok {
-			if m != lagMode {
+		if groupMode, ok := groupModes[groupLabel]; ok {
+			// we have seen this group label before
+
+			if link.LagMode.IsNull() {
+				resp.Diagnostics.Append(
+					validatordiag.InvalidAttributeCombinationDiagnostic(
+						req.Path,
+						fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
+							groupLabel)))
+				return
+			}
+
+			if groupMode != lagMode {
 				resp.Diagnostics.Append(
 					validatordiag.InvalidAttributeCombinationDiagnostic(
 						req.Path,
 						fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
-							groupLabel, m, lagMode),
-					),
-				)
+							groupLabel, groupMode, lagMode)))
 				return
 			}
 		} else {
