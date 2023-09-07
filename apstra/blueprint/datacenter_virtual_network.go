@@ -202,6 +202,9 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 					path.MatchRelative().AtParent().AtName("type"),
 					types.StringValue(apstra.VnTypeVxlan.String()),
 				),
+				apstravalidator.RequiredWhenValueNull(
+					path.MatchRelative().AtParent().AtName("type"),
+				),
 			},
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
