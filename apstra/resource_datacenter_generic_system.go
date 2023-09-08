@@ -69,7 +69,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 
 	// unfortunately we only learn the link IDs, not the generic system ID
-	linkIds, err := bp.CreateLinksWithNewServer(ctx, request)
+	linkIds, err := bp.CreateLinksWithNewSystem(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create generic system", err.Error())
 		return

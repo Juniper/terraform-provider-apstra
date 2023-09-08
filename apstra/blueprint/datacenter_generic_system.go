@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -33,6 +35,7 @@ type DatacenterGenericSystem struct {
 	Asn          types.Int64          `tfsdk:"asn"`
 	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
 	LoopbackIpv6 cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
+	External     types.Bool           `tfsdk:"external"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -99,10 +102,17 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Optional:            true,
 		},
+		"external": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Set `true` to create an External Generic System",
+			Optional:            true,
+			Computed:            true,
+			Default:             booldefault.StaticBool(false),
+			PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
+		},
 	}
 }
 
-func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinksWithNewServerRequest {
+func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinksWithNewSystemRequest {
 	bogusLdTemplateUsedInEveryRequest := apstra.LogicalDevice{
 		Id: "tf-ld-template",
 		Data: &apstra.LogicalDeviceData{
@@ -125,18 +135,26 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 		return nil
 	}
 
+	var systemType apstra.SystemType
+	if o.External.ValueBool() {
+		systemType = apstra.SystemTypeExternal
+	} else {
+		systemType = apstra.SystemTypeServer
+	}
+
 	// start building the request object
-	request := apstra.CreateLinksWithNewServerRequest{
+	request := apstra.CreateLinksWithNewSystemRequest{
 		Links: make([]apstra.CreateLinkRequest, len(planLinks)),
-		Server: apstra.CreateLinksWithNewServerRequestServer{
+		System: apstra.CreateLinksWithNewSystemRequestSystem{
 			Hostname:      o.Hostname.ValueString(),
 			Label:         o.Name.ValueString(),
 			LogicalDevice: &bogusLdTemplateUsedInEveryRequest,
+			Type:          systemType,
 		},
 	}
 
 	// populate the tags in the request object without checking diags for errors
-	diags.Append(o.Tags.ElementsAs(ctx, &request.Server.Tags, false)...)
+	diags.Append(o.Tags.ElementsAs(ctx, &request.System.Tags, false)...)
 
 	// populate each link in the request object
 	for i, link := range planLinks {
@@ -245,6 +263,11 @@ func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *
 	if overwriteKnownValues || o.Name.IsUnknown() {
 		o.Name = types.StringValue(nodeInfo.Label)
 	}
+
+	if overwriteKnownValues || o.External.IsUnknown() {
+		o.External = types.BoolValue(nodeInfo.External)
+	}
+
 	// asn isn't computed, so will never be unknown
 	if overwriteKnownValues && nodeInfo.Asn != nil {
 		o.Asn = types.Int64Value(int64(*nodeInfo.Asn))

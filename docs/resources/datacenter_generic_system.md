@@ -83,6 +83,7 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Optional
 
 - `asn` (Number) AS number of the Generic System
+- `external` (Boolean) Set `true` to create an External Generic System
 - `hostname` (String) System hostname.
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation
 - `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation
