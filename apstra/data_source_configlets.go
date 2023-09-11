@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
@@ -64,14 +64,14 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 	var err error
 	var ids []apstra.ObjectId
 	if config.SupportedPlatforms.IsNull() {
-		// no required platform filters
+		// no required platform filter
 		ids, err = o.client.ListAllConfiglets(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("error retrieving Configlet IDs", err.Error())
 			return
 		}
 	} else {
-		// extract required platform filters
+		// extract required platform filter
 		platformStrings := make([]string, len(config.SupportedPlatforms.Elements()))
 		d := config.SupportedPlatforms.ElementsAs(ctx, &platformStrings, false)
 		resp.Diagnostics.Append(d...)

@@ -3,11 +3,11 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	testutils "terraform-provider-apstra/apstra/test_utils"
-	"terraform-provider-apstra/apstra/utils"
 	"testing"
 )
 

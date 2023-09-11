@@ -2,18 +2,18 @@
 page_title: "apstra_datacenter_routing_zones Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source returns the IDs of Routing Zones within the specified Blueprint. All of the filters attributes are optional.
+  This data source returns the IDs of Routing Zones within the specified Blueprint. All of the filter attributes are optional.
 ---
 
 # apstra_datacenter_routing_zones (Data Source)
 
-This data source returns the IDs of Routing Zones within the specified Blueprint. All of the `filters` attributes are optional.
+This data source returns the IDs of Routing Zones within the specified Blueprint. All of the `filter` attributes are optional.
 
 ## Example Usage
 
 ```terraform
-# By specifying no filters, a wide search is performed. All routing
-# zones in the blueprint will match.
+# Without specifying no filter, a wide search is performed.
+# All routing zones in the blueprint will match.
 data "apstra_datacenter_routing_zones" "all" {
   blueprint_id = "05f9d3fc-671a-4efc-8e91-5ef87b2937d3"
 }
@@ -22,7 +22,7 @@ data "apstra_datacenter_routing_zones" "all" {
 # routing zones can match the resulting query.
 data "apstra_datacenter_routing_zones" "rzs" {
   blueprint_id = "05f9d3fc-671a-4efc-8e91-5ef87b2937d3"
-  filters = { # all filters are optional
+  filter = { # all filter attributes are optional
     name              = "customer_1"
     vlan_id           = 55
     vni               = 10055
@@ -41,20 +41,20 @@ data "apstra_datacenter_routing_zones" "rzs" {
 
 ### Optional
 
-- `filters` (Attributes) Routing Zone attributes used as filters (see [below for nested schema](#nestedatt--filters))
+- `filter` (Attributes) Routing Zone attributes used as a filter (see [below for nested schema](#nestedatt--filter))
 
 ### Read-Only
 
 - `graph_query` (String) The graph datastore query used to perform the lookup.
 - `ids` (Set of String) Set of Routing Zone IDs
 
-<a id="nestedatt--filters"></a>
-### Nested Schema for `filters`
+<a id="nestedatt--filter"></a>
+### Nested Schema for `filter`
 
 Optional:
 
 - `dhcp_servers` (Set of String) Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured in the Routing Zone. This is a list of *required* servers, not an exact-match list.
-- `name` (String) VRF name displayed in thw Apstra web UI.
+- `name` (String) VRF name displayed in the Apstra web UI.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
 - `vni` (Number) VxLAN VNI associated with the routing zone.

@@ -3,9 +3,9 @@ package testutils
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"net/http"
 	"sync"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var sharedClient *apstra.Client

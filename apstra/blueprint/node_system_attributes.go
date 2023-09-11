@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -9,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type NodeTypeSystemAttributes struct {
@@ -108,13 +108,13 @@ func (o NodeTypeSystemAttributes) DataSourceAttributesAsFilter() map[string]data
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 				setvalidator.AtLeastOneOf(
-					path.MatchRoot("filters").AtName("hostname"),
-					path.MatchRoot("filters").AtName("id"),
-					path.MatchRoot("filters").AtName("label"),
-					path.MatchRoot("filters").AtName("role"),
-					path.MatchRoot("filters").AtName("system_id"),
-					path.MatchRoot("filters").AtName("system_type"),
-					path.MatchRoot("filters").AtName("tag_ids"),
+					path.MatchRoot("filter").AtName("hostname"),
+					path.MatchRoot("filter").AtName("id"),
+					path.MatchRoot("filter").AtName("label"),
+					path.MatchRoot("filter").AtName("role"),
+					path.MatchRoot("filter").AtName("system_id"),
+					path.MatchRoot("filter").AtName("system_type"),
+					path.MatchRoot("filter").AtName("tag_ids"),
 				),
 			},
 		},

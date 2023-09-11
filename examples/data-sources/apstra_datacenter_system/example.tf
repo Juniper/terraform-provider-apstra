@@ -12,7 +12,7 @@ locals {
 
 data "apstra_datacenter_systems" "system_one" {
   blueprint_id = local.blueprint_id
-  filters = {
+  filter = {
     system_index = 1
   }
 }

@@ -2,9 +2,9 @@ package apstravalidator
 
 import (
 	"context"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ validator.String = ParseJsonValidator{}

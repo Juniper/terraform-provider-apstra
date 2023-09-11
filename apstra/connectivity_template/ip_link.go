@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -17,8 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"sort"
 	"strings"
-	"terraform-provider-apstra/apstra/design"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ Primitive = &IpLink{}
