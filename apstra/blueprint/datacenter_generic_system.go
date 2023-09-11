@@ -613,8 +613,7 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		}
 
 		lagMode := link.LagMode.ValueString()
-		groupLabel := link.GroupLabel.ValueString()
-		if groupMode, ok := groupModes[groupLabel]; ok {
+		if groupMode, ok := groupModes[link.GroupLabel.ValueString()]; ok && !link.GroupLabel.IsNull() {
 			// we have seen this group label before
 
 			if link.LagMode.IsNull() {
@@ -622,7 +621,7 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 					validatordiag.InvalidAttributeCombinationDiagnostic(
 						req.Path,
 						fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
-							groupLabel)))
+							link.GroupLabel.ValueString())))
 				return
 			}
 
@@ -631,11 +630,11 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 					validatordiag.InvalidAttributeCombinationDiagnostic(
 						req.Path,
 						fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
-							groupLabel, groupMode, lagMode)))
+							link.GroupLabel.ValueString(), groupMode, lagMode)))
 				return
 			}
 		} else {
-			groupModes[groupLabel] = lagMode
+			groupModes[link.GroupLabel.ValueString()] = lagMode
 		}
 	}
 }
