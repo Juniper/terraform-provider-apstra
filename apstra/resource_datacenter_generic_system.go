@@ -132,9 +132,17 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 		return
 	}
 
-	// read tags and link info using other combinations of API calls
+	// read tags
 	state.ReadTags(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// read link info
 	state.ReadLinks(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
