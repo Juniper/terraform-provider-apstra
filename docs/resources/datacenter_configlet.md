@@ -161,9 +161,9 @@ output "created" {
 
 ### Optional
 
-- `catalog_configlet_id` (String) Id of the catalog Configlet to be imported
-- `generators` (Attributes List) Ordered list of Generators (see [below for nested schema](#nestedatt--generators))
-- `name` (String) Configlet name. When omitted, the name found in the catalog will be used.
+- `catalog_configlet_id` (String) Id of the catalog configlet to be imported. This is an alternative to specifying the `generators` attribute
+- `generators` (Attributes List) Ordered list of Generators. This is an alternative to specifying the `catalog_configlet_id` attribute (see [below for nested schema](#nestedatt--generators))
+- `name` (String) Configlet name. When omitted, the name found in the catalog configlet will be used. Required when the `generators` attribute is specified.
 
 ### Read-Only
 

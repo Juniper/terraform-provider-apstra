@@ -85,11 +85,12 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet name. When omitted, the name found in the catalog will be used.",
-			Optional:            true,
-			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Configlet name. When omitted, the name found in the catalog configlet will be used." +
+				" Required when the `generators` attribute is specified.",
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"condition": resourceSchema.StringAttribute{
 			MarkdownDescription: "Condition determines where the Configlet is applied.",
@@ -97,8 +98,9 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"catalog_configlet_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Id of the catalog Configlet to be imported",
-			Optional:            true,
+			MarkdownDescription: "Id of the catalog configlet to be imported. " +
+				"This is an alternative to specifying the `generators` attribute",
+			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(
@@ -113,9 +115,10 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"generators": resourceSchema.ListNestedAttribute{
-			MarkdownDescription: "Ordered list of Generators",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: "Ordered list of Generators. " +
+				"This is an alternative to specifying the `catalog_configlet_id` attribute",
+			Optional: true,
+			Computed: true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: design.ConfigletGenerator{}.ResourceAttributesNested(),
 			},

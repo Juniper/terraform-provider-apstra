@@ -19,10 +19,6 @@ func MakeOrFindBlueprint(ctx context.Context, name string, f Bfunc) (*apstra.Two
 		return nil, deleteFunc, err
 	}
 
-	if len(name) == 0 {
-		name = acctest.RandString(10)
-	}
-
 	status, err := client.GetBlueprintStatusByName(ctx, name)
 	if err != nil {
 		if utils.IsApstra404(err) {
