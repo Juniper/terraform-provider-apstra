@@ -13,24 +13,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
+var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglets{}
 
-type dataSourceConfiglets struct {
+type dataSourceDatacenterConfiglets struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceConfiglets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_configlets"
+func (o *dataSourceDatacenterConfiglets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_configlets"
 }
 
-func (o *dataSourceConfiglets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceDatacenterConfiglets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceConfiglets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceDatacenterConfiglets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the ID numbers of all Configlets.",
+		MarkdownDescription: "This data source returns the ID numbers of all Configlets in a Blueprint.",
 		Attributes: map[string]schema.Attribute{
+			"blueprint_id": schema.StringAttribute{
+				MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Configlet belongs to.",
+				Required:            true,
+				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",
 				Computed:            true,
@@ -49,10 +54,11 @@ func (o *dataSourceConfiglets) Schema(_ context.Context, _ datasource.SchemaRequ
 	}
 }
 
-func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceDatacenterConfiglets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
-		Ids                types.Set `tfsdk:"ids"`
-		SupportedPlatforms types.Set `tfsdk:"supported_platforms"`
+		BlueprintId        types.String `tfsdk:"blueprint_id"`
+		Ids                types.Set    `tfsdk:"ids"`
+		SupportedPlatforms types.Set    `tfsdk:"supported_platforms"`
 	}
 
 	// get the configuration
@@ -60,18 +66,27 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
+				config.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
 
-	var err error
 	var ids []apstra.ObjectId
 	if config.SupportedPlatforms.IsNull() {
-		// no required platform filter
-		ids, err = o.client.ListAllConfiglets(ctx)
+		// no required platform filters
+		ids, err = bpClient.GetAllConfigletIds(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("error retrieving Configlet IDs", err.Error())
 			return
 		}
 	} else {
-		// extract required platform filter
+		// extract required platform filters
 		platformStrings := make([]string, len(config.SupportedPlatforms.Elements()))
 		d := config.SupportedPlatforms.ElementsAs(ctx, &platformStrings, false)
 		resp.Diagnostics.Append(d...)
@@ -91,7 +106,7 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 			return
 		}
 
-		configlets, err := o.client.GetAllConfiglets(ctx)
+		configlets, err := bpClient.GetAllConfiglets(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("error retrieving Configlets", err.Error())
 			return
@@ -100,7 +115,7 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 		ids = make([]apstra.ObjectId, len(configlets))
 		var count int
 		for i := range configlets {
-			if utils.ConfigletSupportsPlatforms(configlets[i].Data, platforms) {
+			if utils.ConfigletSupportsPlatforms(configlets[i].Data.Data, platforms) {
 				ids[count] = configlets[i].Id
 				count++
 			}
@@ -116,9 +131,11 @@ func (o *dataSourceConfiglets) Read(ctx context.Context, req datasource.ReadRequ
 
 	// create new state object
 	state := struct {
-		Ids                types.Set `tfsdk:"ids"`
-		SupportedPlatforms types.Set `tfsdk:"supported_platforms"`
+		BlueprintId        types.String `tfsdk:"blueprint_id"`
+		Ids                types.Set    `tfsdk:"ids"`
+		SupportedPlatforms types.Set    `tfsdk:"supported_platforms"`
 	}{
+		BlueprintId:        config.BlueprintId,
 		Ids:                idSet,
 		SupportedPlatforms: config.SupportedPlatforms,
 	}
