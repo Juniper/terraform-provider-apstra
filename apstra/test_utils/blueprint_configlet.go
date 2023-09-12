@@ -2,12 +2,8 @@ package testutils
 
 import (
 	"context"
-	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
-	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 func CatalogConfigletA(ctx context.Context, client *apstra.Client) (apstra.ObjectId, *apstra.ConfigletData,
@@ -38,32 +34,6 @@ func CatalogConfigletA(ctx context.Context, client *apstra.Client) (apstra.Objec
 		return id, &data, deleteFunc, nil
 	}
 	return c.Id, c.Data, deleteFunc, nil
-}
-
-func ConfigletMatch(ctx context.Context, c1 apstra.ConfigletData, condition string, c2 blueprint.DatacenterConfiglet) (bool,
-	string, diag.Diagnostics) {
-	if condition != c2.Condition.ValueString() {
-		return false, "condition does not match", nil
-	}
-	if c1.DisplayName != c2.Name.ValueString() {
-		return false, "name does not match", nil
-	}
-
-	tfGenerators := make([]design.ConfigletGenerator, len(c2.Generators.Elements()))
-	d := c2.Generators.ElementsAs(ctx, &tfGenerators, false)
-	if d.HasError() {
-		return false, "unable to parse generators", d
-	}
-	var g apstra.ConfigletGenerator
-	for i, j := range tfGenerators {
-		g = c1.Generators[i]
-		if j.Section.ValueString() != g.Section.String() || j.TemplateText.ValueString() != g.TemplateText || j.
-			NegationTemplateText.ValueString() != g.NegationTemplateText || j.ConfigStyle.ValueString() != g.
-			ConfigStyle.String() || j.FileName.String() != g.Filename {
-			return false, fmt.Sprintf("Generator %d does not match %q %q", j, g, j), nil
-		}
-	}
-	return true, "", nil
 }
 
 func BlueprintConfigletA(ctx context.Context, client *apstra.TwoStageL3ClosClient,
