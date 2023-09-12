@@ -34,12 +34,12 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 	}
 
 	// Set up a Catalog Property Set
-	cc, data, deleteFunc, err := testutils.CatalogConfigletA(ctx, client)
+	ccId, data, deleteFunc, err := testutils.CatalogConfigletA(ctx, client)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := deleteFunc(ctx, cc)
+		err := deleteFunc(ctx, ccId)
 		if err != nil {
 			t.Error(err)
 		}
@@ -58,7 +58,7 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 		}
 	}()
 
-	bpcid, bpcfgletDelete, err := testutils.BlueprintConfigletA(ctx, bpClient, cc, condition)
+	bpcid, bpcfgletDelete, err := testutils.BlueprintConfigletA(ctx, bpClient, ccId, condition)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,16 +78,12 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDatacenterConfigletTemplateByIdHCL,
 					string(bpClient.Id()), string(bpcid)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.apstra_datacenter_configlet.test", "id"),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "id", bpcid.String()),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "name", data.DisplayName),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "condition",
-						condition),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.template_text",
-						data.Generators[0].TemplateText),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.config_style",
-						data.Generators[0].ConfigStyle.String()),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.section",
-						utils.StringersToFriendlyString(data.Generators[0].Section, data.Generators[0].ConfigStyle)),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "condition", condition),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.template_text", data.Generators[0].TemplateText),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.config_style", data.Generators[0].ConfigStyle.String()),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.section", utils.StringersToFriendlyString(data.Generators[0].Section, data.Generators[0].ConfigStyle)),
 				),
 			},
 			// Read by Name
@@ -95,16 +91,12 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDatacenterConfigletTemplateByNameHCL,
 					string(bpClient.Id()), data.DisplayName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet("data.apstra_datacenter_configlet.test", "id"),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "id", bpcid.String()),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "name", data.DisplayName),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "condition",
-						condition),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.template_text",
-						data.Generators[0].TemplateText),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.config_style",
-						data.Generators[0].ConfigStyle.String()),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.section",
-						utils.StringersToFriendlyString(data.Generators[0].Section, data.Generators[0].ConfigStyle)),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "condition", condition),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.template_text", data.Generators[0].TemplateText),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.config_style", data.Generators[0].ConfigStyle.String()),
+					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.section", utils.StringersToFriendlyString(data.Generators[0].Section, data.Generators[0].ConfigStyle)),
 				),
 			},
 		},
