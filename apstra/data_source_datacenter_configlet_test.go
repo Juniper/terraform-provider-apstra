@@ -58,10 +58,16 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 		}
 	}()
 
-	bpcid, _, err := testutils.BlueprintConfigletA(ctx, bpClient, cc, condition_string)
+	bpcid, bpcfglet_delete, err := testutils.BlueprintConfigletA(ctx, bpClient, cc, condition_string)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		err = bpcfglet_delete(ctx, bpcid)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
 
 	resource.Test(t, resource.TestCase{
 		// PreCheck:                 setup,
