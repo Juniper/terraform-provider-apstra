@@ -15,7 +15,7 @@ const (
   	resource "apstra_datacenter_configlet" "test" {
   		blueprint_id = "%s"
   		catalog_configlet_id = "%s"
-  		condition = "%s"
+  		condition = %q
   	}
 	`
 	resourceDatacenterConfigletTemplateByDataHCL = `
@@ -25,14 +25,13 @@ const (
 
   	resource "apstra_datacenter_configlet" "test" {
   		blueprint_id = "%s"
-  		condition = "%s"
+  		condition = %q
   		name = data.apstra_configlet.cat_cfg.name
   		generators = data.apstra_configlet.cat_cfg.generators
   	}
 	`
 
-	condition        = `role in [\"spine\"]`
-	condition_string = "role in [\"spine\"]"
+	condition = "role in [\"spine\"]"
 )
 
 func TestAccResourceDatacenterConfiglet(t *testing.T) {
@@ -83,7 +82,7 @@ func TestAccResourceDatacenterConfiglet(t *testing.T) {
 					resource.TestCheckResourceAttrSet("apstra_datacenter_configlet.test", "id"),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "name", data.DisplayName),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "condition",
-						condition_string),
+						condition),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "generators.0.template_text",
 						data.Generators[0].TemplateText),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "generators.0.config_style",
@@ -100,7 +99,7 @@ func TestAccResourceDatacenterConfiglet(t *testing.T) {
 					resource.TestCheckResourceAttrSet("apstra_datacenter_configlet.test", "id"),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "name", data.DisplayName),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "condition",
-						condition_string),
+						condition),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "generators.0.template_text",
 						data.Generators[0].TemplateText),
 					resource.TestCheckResourceAttr("apstra_datacenter_configlet.test", "generators.0.config_style",

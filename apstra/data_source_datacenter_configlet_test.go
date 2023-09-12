@@ -58,7 +58,7 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 		}
 	}()
 
-	bpcid, bpcfgletDelete, err := testutils.BlueprintConfigletA(ctx, bpClient, cc, condition_string)
+	bpcid, bpcfgletDelete, err := testutils.BlueprintConfigletA(ctx, bpClient, cc, condition)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.apstra_datacenter_configlet.test", "id"),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "name", data.DisplayName),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "condition",
-						condition_string),
+						condition),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.template_text",
 						data.Generators[0].TemplateText),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.config_style",
@@ -98,7 +98,7 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 					resource.TestCheckResourceAttrSet("data.apstra_datacenter_configlet.test", "id"),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "name", data.DisplayName),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "condition",
-						condition_string),
+						condition),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.template_text",
 						data.Generators[0].TemplateText),
 					resource.TestCheckResourceAttr("data.apstra_datacenter_configlet.test", "generators.0.config_style",
