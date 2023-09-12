@@ -35,7 +35,9 @@ func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
 
 	// Set up a Catalog Property Set
 	cc, data, deleteFunc, err := testutils.CatalogConfigletA(ctx, client)
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer func() {
 		err := deleteFunc(ctx, cc)
 		if err != nil {
