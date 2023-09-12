@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -12,9 +11,11 @@ import (
 )
 
 type DatacenterSvis struct {
-	BlueprintId types.String `tfsdk:"blueprint_id"`
-	SviMap      types.Map    `tfsdk:"svi_map"`
-	GraphQuery  types.String `tfsdk:"graph_query"`
+	BlueprintId    types.String `tfsdk:"blueprint_id"`
+	InterfaceToSvi types.Map    `tfsdk:"by_id"`
+	NetworkToSvi   types.Map    `tfsdk:"by_virtual_network"`
+	SystemToSvi    types.Map    `tfsdk:"by_system"`
+	GraphQuery     types.String `tfsdk:"graph_query"`
 }
 
 func (o DatacenterSvis) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -24,8 +25,20 @@ func (o DatacenterSvis) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"svi_map": dataSourceSchema.MapAttribute{
+		"by_id": dataSourceSchema.MapAttribute{
+			MarkdownDescription: "A map of sets of SVI info keyed by SVI ID.",
+			Computed:            true,
+			ElementType:         types.ObjectType{AttrTypes: SviMapEntry{}.AttrTypes()},
+		},
+		"by_virtual_network": dataSourceSchema.MapAttribute{
 			MarkdownDescription: "A map of sets of SVI info keyed by Virtual Network ID.",
+			Computed:            true,
+			ElementType: types.SetType{
+				ElemType: types.ObjectType{AttrTypes: SviMapEntry{}.AttrTypes()},
+			},
+		},
+		"by_system": dataSourceSchema.MapAttribute{
+			MarkdownDescription: "A map of sets of SVI info keyed by System ID.",
 			Computed:            true,
 			ElementType: types.SetType{
 				ElemType: types.ObjectType{AttrTypes: SviMapEntry{}.AttrTypes()},
@@ -38,7 +51,7 @@ func (o DatacenterSvis) DataSourceAttributes() map[string]dataSourceSchema.Attri
 	}
 }
 
-func (o DatacenterSvis) RunQuery(ctx context.Context, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) (map[string]types.Set, apstra.QEQuery) {
+func (o DatacenterSvis) GetSviInfo(ctx context.Context, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) ([]SviMapEntry, apstra.QEQuery) {
 	// query to find paths from VNs to instances of those VNs
 	vnQuery := new(apstra.PathQuery).
 		Node([]apstra.QEEAttribute{
@@ -105,28 +118,18 @@ func (o DatacenterSvis) RunQuery(ctx context.Context, client *apstra.TwoStageL3C
 	}
 
 	// prep the result
-	sliceMap := make(map[string][]attr.Value)
-	for _, item := range queryResult.Items {
-		attrVal, d := types.ObjectValueFrom(ctx, SviMapEntry{}.AttrTypes(), &SviMapEntry{
-			SystemId: types.StringValue(item.System.Id),
-			SviId:    types.StringValue(item.Interface.Id),
-			Name:     types.StringValue(item.Interface.IfName),
-			Ipv4Addr: types.StringPointerValue(item.Interface.IPv4Addr),
-			Ipv6Addr: types.StringPointerValue(item.Interface.IPv6Addr),
-			Ipv4Mode: types.StringValue(item.VirtualNetworkInstance.IPv4Mode),
-			Ipv6Mode: types.StringValue(item.VirtualNetworkInstance.IPv6Mode),
-		})
-		diags.Append(d...)
-		if diags.HasError() {
-			return nil, nil
+	result := make([]SviMapEntry, len(queryResult.Items))
+	for i, item := range queryResult.Items {
+		result[i] = SviMapEntry{
+			SystemId:  types.StringValue(item.System.Id),
+			Id:        types.StringValue(item.Interface.Id),
+			Name:      types.StringValue(item.Interface.IfName),
+			Ipv4Addr:  types.StringPointerValue(item.Interface.IPv4Addr),
+			Ipv6Addr:  types.StringPointerValue(item.Interface.IPv6Addr),
+			Ipv4Mode:  types.StringValue(item.VirtualNetworkInstance.IPv4Mode),
+			Ipv6Mode:  types.StringValue(item.VirtualNetworkInstance.IPv6Mode),
+			NetworkId: types.StringValue(item.VirtualNetwork.Id),
 		}
-
-		sliceMap[item.VirtualNetwork.Id] = append(sliceMap[item.VirtualNetwork.Id], attrVal)
-	}
-
-	result := make(map[string]types.Set, len(sliceMap))
-	for k, v := range sliceMap {
-		result[k] = types.SetValueMust(types.ObjectType{AttrTypes: SviMapEntry{}.AttrTypes()}, v)
 	}
 
 	return result, query

@@ -6,24 +6,26 @@ import (
 )
 
 type SviMapEntry struct {
-	SystemId types.String `tfsdk:"system_id"`
-	SviId    types.String `tfsdk:"svi_id"`
-	Name     types.String `tfsdk:"name"`
-	Ipv4Addr types.String `tfsdk:"ipv4_addr"`
-	Ipv6Addr types.String `tfsdk:"ipv6_addr"`
-	Ipv4Mode types.String `tfsdk:"ipv4_mode"`
-	Ipv6Mode types.String `tfsdk:"ipv6_mode"`
+	SystemId  types.String `tfsdk:"system_id"`
+	Id        types.String `tfsdk:"id"`
+	Name      types.String `tfsdk:"name"`
+	Ipv4Addr  types.String `tfsdk:"ipv4_addr"`
+	Ipv6Addr  types.String `tfsdk:"ipv6_addr"`
+	Ipv4Mode  types.String `tfsdk:"ipv4_mode"`
+	Ipv6Mode  types.String `tfsdk:"ipv6_mode"`
+	NetworkId types.String `tfsdk:"virtual_network_id"`
 }
 
 func (o SviMapEntry) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"system_id": types.StringType,
-		"svi_id":    types.StringType,
-		"name":      types.StringType,
-		"ipv4_addr": types.StringType,
-		"ipv6_addr": types.StringType,
-		"ipv4_mode": types.StringType,
-		"ipv6_mode": types.StringType,
+		"system_id":          types.StringType,
+		"id":                 types.StringType,
+		"name":               types.StringType,
+		"ipv4_addr":          types.StringType,
+		"ipv6_addr":          types.StringType,
+		"ipv4_mode":          types.StringType,
+		"ipv6_mode":          types.StringType,
+		"virtual_network_id": types.StringType,
 	}
 }
 
@@ -55,6 +57,10 @@ func (o SviMapEntry) AttrTypes() map[string]attr.Type {
 //		},
 //		"ipv6_mode": dataSourceSchema.StringAttribute{
 //			MarkdownDescription: "Secondary IPv6 allocation mode",
+//			Computed:            true,
+//		},
+//		"virtual_network_id": dataSourceSchema.StringAttribute{
+//			MarkdownDescription: "ID of the Virtual Network associated with this SVI",
 //			Computed:            true,
 //		},
 //	}
