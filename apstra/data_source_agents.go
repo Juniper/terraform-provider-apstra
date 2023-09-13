@@ -3,14 +3,14 @@ package tfapstra
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"net"
-	systemAgents "terraform-provider-apstra/apstra/system_agents"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgents{}
@@ -30,15 +30,15 @@ func (o *dataSourceAgents) Configure(ctx context.Context, req datasource.Configu
 func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns the IDs of Managed Device Agents. " +
-			"All of the `filters` attributes are optional.",
+			"All of the `filter` attributes are optional.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "Set of Routing Zone IDs",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
-			"filters": schema.SingleNestedAttribute{
-				MarkdownDescription: "Agent attributes used as filters",
+			"filter": schema.SingleNestedAttribute{
+				MarkdownDescription: "Agent attributes used as a filter",
 				Optional:            true,
 				Attributes:          systemAgents.ManagedDevice{}.DataSourceFilterAttributes(),
 			},
@@ -48,8 +48,8 @@ func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest,
 
 func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	type systems struct {
-		IDs     types.Set    `tfsdk:"ids"`
-		Filters types.Object `tfsdk:"filters"`
+		IDs    types.Set    `tfsdk:"ids"`
+		Filter types.Object `tfsdk:"filter"`
 	}
 
 	var config systems
@@ -58,8 +58,8 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	if config.Filters.IsNull() {
-		// no filters specified, use the HTTP OPTIONS method as a shortcut
+	if config.Filter.IsNull() {
+		// no filter specified, use the HTTP OPTIONS method as a shortcut
 		ids, err := o.client.ListSystemAgents(ctx)
 		if err != nil {
 			resp.Diagnostics.AddError("while listing system agents", err.Error())
@@ -74,9 +74,8 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	filters := &systemAgents.ManagedDevice{}
-	d := config.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})
-	resp.Diagnostics.Append(d...)
+	filter := &systemAgents.ManagedDevice{}
+	resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -89,21 +88,21 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 
 	var agentIdVals []attr.Value
 	for _, agent := range agents {
-		if !filters.AgentId.IsNull() && filters.AgentId.ValueString() != agent.Id.String() {
+		if !filter.AgentId.IsNull() && filter.AgentId.ValueString() != agent.Id.String() {
 			continue
 		}
 
-		if !filters.SystemId.IsNull() && filters.SystemId.ValueString() != string(agent.Status.SystemId) {
+		if !filter.SystemId.IsNull() && filter.SystemId.ValueString() != string(agent.Status.SystemId) {
 			continue
 		}
 
-		if !filters.ManagementIp.IsNull() {
+		if !filter.ManagementIp.IsNull() {
 			agentIp := net.ParseIP(agent.Config.ManagementIp)
 			if agentIp == nil {
 				continue // no address or bogus address == no match
 			}
 
-			mgmtNet := filters.IpNetFromManagementIp(ctx, &resp.Diagnostics)
+			mgmtNet := filter.IpNetFromManagementIp(ctx, &resp.Diagnostics)
 			if resp.Diagnostics.HasError() {
 				return
 			}
@@ -113,15 +112,15 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 			}
 		}
 
-		if !filters.DeviceKey.IsNull() && filters.DeviceKey.ValueString() != string(agent.Status.SystemId) {
+		if !filter.DeviceKey.IsNull() && filter.DeviceKey.ValueString() != string(agent.Status.SystemId) {
 			continue
 		}
 
-		if !filters.AgentProfileId.IsNull() && filters.AgentProfileId.ValueString() != agent.Config.Profile.String() {
+		if !filter.AgentProfileId.IsNull() && filter.AgentProfileId.ValueString() != agent.Config.Profile.String() {
 			continue
 		}
 
-		if !filters.OffBox.IsNull() && filters.OffBox.ValueBool() != bool(agent.Config.AgentTypeOffBox) {
+		if !filter.OffBox.IsNull() && filter.OffBox.ValueBool() != bool(agent.Config.AgentTypeOffBox) {
 			continue
 		}
 

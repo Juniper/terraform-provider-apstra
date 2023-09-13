@@ -25,7 +25,7 @@ locals {
 # The IDs field will include all systems matching the tag-based filter
 data "apstra_datacenter_systems" "rack_11_leafs" {
   blueprint_id = local.blueprint_id
-  filters = {
+  filter = {
     tag_ids = ["leaf", "rack 11"]
   }
 }
@@ -82,8 +82,12 @@ resource "apstra_datacenter_generic_system" "example" {
 
 ### Optional
 
+- `asn` (Number) AS number of the Generic System
+- `external` (Boolean) Set `true` to create an External Generic System
 - `hostname` (String) System hostname.
-- `name` (String) Name displayed in thw Apstra web UI.
+- `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation
+- `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation
+- `name` (String) Name displayed in the Apstra web UI.
 - `tags` (Set of String) Tag labels to be applied to this Generic System. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
 ### Read-Only

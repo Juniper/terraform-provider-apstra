@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"sort"
-	testutils "terraform-provider-apstra/apstra/test_utils"
-	"terraform-provider-apstra/apstra/utils"
 	"testing"
 )
 

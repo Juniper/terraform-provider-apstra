@@ -5,7 +5,7 @@
 # that sport the label "leaf_1"
 data "apstra_datacenter_systems" "only_leaf_1" {
   blueprint_id = "fa6782cc-c4d5-4933-ad89-e542acd6b0c1"
-  filters = {
+  filter = {
     label = "leaf_1"
   }
 }

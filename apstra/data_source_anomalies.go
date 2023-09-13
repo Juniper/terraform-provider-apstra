@@ -3,10 +3,10 @@ package tfapstra
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
-	"terraform-provider-apstra/apstra/blueprint"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAnomalies{}

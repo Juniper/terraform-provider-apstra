@@ -2,7 +2,7 @@
 # switches with tag 'junos' and tag 'qfx'
 data "apstra_datacenter_systems" "juniper_spines" {
   blueprint_id = apstra_datacenter_blueprint.example.id
-  filters = {
+  filter = {
     role        = "spine"
     system_type = "switch"
     tag_ids     = ["junos", "qfx"]

@@ -3,12 +3,12 @@ package tfapstra
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfiles{}
@@ -65,7 +65,7 @@ func (o *dataSourceAgentProfiles) Read(ctx context.Context, req datasource.ReadR
 	var agentProfileIds []apstra.ObjectId
 	var agentProfiles []apstra.AgentProfile
 
-	// one of the slices from above will get populated, depending on whether the user included filters...
+	// one of the slices from above will get populated, depending on whether the user included filter attributes...
 	if config.Ids.IsNull() && config.Platform.IsNull() && config.HasCredentials.IsNull() {
 		agentProfileIds, err = o.client.ListAgentProfileIds(ctx)
 		if err != nil {

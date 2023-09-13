@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -15,8 +18,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type ManagedDevice struct {
@@ -97,6 +98,14 @@ func (o ManagedDevice) DataSourceFilterAttributes() map[string]dataSourceSchema.
 		"off_box": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the agent runs on the switch (true) or on an Apstra node (false).",
 			Optional:            true,
+			Validators: []validator.Bool{boolvalidator.AtLeastOneOf(
+				path.MatchRoot("filter").AtName("agent_id"),
+				path.MatchRoot("filter").AtName("system_id"),
+				path.MatchRoot("filter").AtName("management_ip"),
+				path.MatchRoot("filter").AtName("device_key"),
+				path.MatchRoot("filter").AtName("agent_profile_id"),
+				path.MatchRoot("filter").AtName("off_box"),
+			)},
 		},
 	}
 }

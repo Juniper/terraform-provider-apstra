@@ -4,28 +4,38 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
+	"net"
 	"regexp"
 	"sort"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type DatacenterGenericSystem struct {
-	Id          types.String `tfsdk:"id"`
-	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Name        types.String `tfsdk:"name"`
-	Hostname    types.String `tfsdk:"hostname"`
-	Tags        types.Set    `tfsdk:"tags"`
-	Links       types.Set    `tfsdk:"links"`
+	Id           types.String         `tfsdk:"id"`
+	BlueprintId  types.String         `tfsdk:"blueprint_id"`
+	Name         types.String         `tfsdk:"name"`
+	Hostname     types.String         `tfsdk:"hostname"`
+	Tags         types.Set            `tfsdk:"tags"`
+	Links        types.Set            `tfsdk:"links"`
+	Asn          types.Int64          `tfsdk:"asn"`
+	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
+	LoopbackIpv6 cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
+	External     types.Bool           `tfsdk:"external"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -42,7 +52,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Name displayed in thw Apstra web UI.",
+			MarkdownDescription: "Name displayed in the Apstra web UI.",
 			Optional:            true,
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -77,10 +87,32 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				genericSystemLinkSetValidator{},
 			},
 		},
+		"asn": resourceSchema.Int64Attribute{
+			MarkdownDescription: "AS number of the Generic System",
+			Optional:            true,
+			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
+		},
+		"loopback_ipv4": resourceSchema.StringAttribute{
+			MarkdownDescription: "IPv4 address of loopback interface in CIDR notation",
+			CustomType:          cidrtypes.IPv4PrefixType{},
+			Optional:            true,
+		},
+		"loopback_ipv6": resourceSchema.StringAttribute{
+			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation",
+			CustomType:          cidrtypes.IPv6PrefixType{},
+			Optional:            true,
+		},
+		"external": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Set `true` to create an External Generic System",
+			Optional:            true,
+			Computed:            true,
+			Default:             booldefault.StaticBool(false),
+			PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
+		},
 	}
 }
 
-func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinksWithNewServerRequest {
+func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinksWithNewSystemRequest {
 	bogusLdTemplateUsedInEveryRequest := apstra.LogicalDevice{
 		Id: "tf-ld-template",
 		Data: &apstra.LogicalDeviceData{
@@ -103,18 +135,26 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 		return nil
 	}
 
+	var systemType apstra.SystemType
+	if o.External.ValueBool() {
+		systemType = apstra.SystemTypeExternal
+	} else {
+		systemType = apstra.SystemTypeServer
+	}
+
 	// start building the request object
-	request := apstra.CreateLinksWithNewServerRequest{
+	request := apstra.CreateLinksWithNewSystemRequest{
 		Links: make([]apstra.CreateLinkRequest, len(planLinks)),
-		Server: apstra.CreateLinksWithNewServerRequestServer{
+		System: apstra.CreateLinksWithNewSystemRequestSystem{
 			Hostname:      o.Hostname.ValueString(),
 			Label:         o.Name.ValueString(),
 			LogicalDevice: &bogusLdTemplateUsedInEveryRequest,
+			Type:          systemType,
 		},
 	}
 
 	// populate the tags in the request object without checking diags for errors
-	diags.Append(o.Tags.ElementsAs(ctx, &request.Server.Tags, false)...)
+	diags.Append(o.Tags.ElementsAs(ctx, &request.System.Tags, false)...)
 
 	// populate each link in the request object
 	for i, link := range planLinks {
@@ -207,20 +247,42 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	o.Links = types.SetValueMust(types.ObjectType{AttrTypes: DatacenterGenericSystemLink{}.attrTypes()}, oLinks)
 }
 
-// GetLabelAndHostname returns an error rather than appending to a
+// ReadSystemProperties returns an error rather than appending to a
 // []diag.Diagnosics because some callers might need to invoke RemoveResource()
 // based on the error type.
-func (o *DatacenterGenericSystem) GetLabelAndHostname(ctx context.Context, bp *apstra.TwoStageL3ClosClient) error {
-	var node struct {
-		Hostname string `json:"hostname"`
-		Label    string `json:"label"`
-	}
-	err := bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(o.Id.ValueString()), &node)
+func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, overwriteKnownValues bool) error {
+	nodeInfo, err := bp.GetSystemNodeInfo(ctx, apstra.ObjectId(o.Id.ValueString()))
 	if err != nil {
 		return err
 	}
-	o.Hostname = types.StringValue(node.Hostname)
-	o.Name = types.StringValue(node.Label)
+
+	if overwriteKnownValues || o.Hostname.IsUnknown() {
+		o.Hostname = types.StringValue(nodeInfo.Hostname)
+	}
+
+	if overwriteKnownValues || o.Name.IsUnknown() {
+		o.Name = types.StringValue(nodeInfo.Label)
+	}
+
+	if overwriteKnownValues || o.External.IsUnknown() {
+		o.External = types.BoolValue(nodeInfo.External)
+	}
+
+	// asn isn't computed, so will never be unknown
+	if overwriteKnownValues && nodeInfo.Asn != nil {
+		o.Asn = types.Int64Value(int64(*nodeInfo.Asn))
+	}
+
+	// v4 loopback isn't computed, so will never be unknown
+	if overwriteKnownValues && nodeInfo.LoopbackIpv4 != nil {
+		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(nodeInfo.LoopbackIpv4.String())
+	}
+
+	// v6 loopback isn't computed, so will never be unknown
+	if overwriteKnownValues && nodeInfo.LoopbackIpv6 != nil {
+		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(nodeInfo.LoopbackIpv6.String())
+	}
+
 	return nil
 }
 
@@ -316,12 +378,15 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	}
 
 	// compare plan and state, make lists of links to add / check+update / delete
-	var addLinks, updateLinks, delLinks []*DatacenterGenericSystemLink
+	var addLinks, updateLinksPlan, updateLinksState, delLinks []*DatacenterGenericSystemLink
 	for digest := range planLinksMap {
 		if _, ok := stateLinksMap[digest]; !ok {
 			addLinks = append(addLinks, planLinksMap[digest])
 		} else {
-			updateLinks = append(updateLinks, planLinksMap[digest])
+			// "updateLinks" is two slices: plan and state, so that we can
+			// compare and change only required attributes.
+			updateLinksPlan = append(updateLinksPlan, planLinksMap[digest])
+			updateLinksState = append(updateLinksState, stateLinksMap[digest])
 		}
 	}
 	for digest := range stateLinksMap {
@@ -340,8 +405,7 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 		return
 	}
 
-	// passing prior link state here could speed things up because we won't need to call every set operation
-	o.updateLinkParams(ctx, updateLinks, bp, diags)
+	o.updateLinkParams(ctx, updateLinksPlan, updateLinksState, bp, diags)
 	if diags.HasError() {
 		return
 	}
@@ -397,9 +461,9 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 // embedded), but it does not operate on those links (all of the links). Rather
 // it operates only on the links passed as a function argument because only
 // those links need to be updated/validated.
-func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLinks, stateLinks []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// one at a time, check/update each link
-	for _, link := range links {
+	for i, link := range planLinks {
 		// we don't keep the link ID, but we have each link's target switch and
 		// interface name. That's enough to uniquely identify the link from the
 		// graph data store
@@ -408,7 +472,7 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, links []
 			return
 		}
 
-		link.updateParams(ctx, linkId, bp, diags) // collect all errors
+		link.updateParams(ctx, linkId, stateLinks[i], bp, diags) // collect all errors
 	}
 }
 
@@ -549,20 +613,104 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		}
 
 		lagMode := link.LagMode.ValueString()
-		groupLabel := link.GroupLabel.ValueString()
-		if m, ok := groupModes[groupLabel]; ok {
-			if m != lagMode {
+		if groupMode, ok := groupModes[link.GroupLabel.ValueString()]; ok && !link.GroupLabel.IsNull() {
+			// we have seen this group label before
+
+			if link.LagMode.IsNull() {
+				resp.Diagnostics.Append(
+					validatordiag.InvalidAttributeCombinationDiagnostic(
+						req.Path,
+						fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
+							link.GroupLabel.ValueString())))
+				return
+			}
+
+			if groupMode != lagMode {
 				resp.Diagnostics.Append(
 					validatordiag.InvalidAttributeCombinationDiagnostic(
 						req.Path,
 						fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
-							groupLabel, m, lagMode),
-					),
-				)
+							link.GroupLabel.ValueString(), groupMode, lagMode)))
 				return
 			}
 		} else {
-			groupModes[groupLabel] = lagMode
+			groupModes[link.GroupLabel.ValueString()] = lagMode
 		}
+	}
+}
+
+func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
+	// set ASN if we don't have prior state or the ASN needs to be updated
+	if state == nil || !o.Asn.Equal(state.Asn) {
+		o.setAsn(ctx, bp, diags)
+	}
+
+	// set loopback v4 if we don't have prior state or the v4 address needs to be updated
+	if state == nil || !o.LoopbackIpv4.Equal(state.LoopbackIpv4) {
+		o.setLoopbackIPv4(ctx, bp, diags)
+	}
+
+	// set loopback v6 if we don't have prior state or the v6 address needs to be updated
+	if state == nil || !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
+		o.setLoopbackIPv6(ctx, bp, diags)
+	}
+}
+
+// setAsn sets or clears the generic system ASN attribute depending on o.Asn.IsNull()
+func (o *DatacenterGenericSystem) setAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var asn *uint32
+
+	if !o.Asn.IsNull() {
+		a := uint32(o.Asn.ValueInt64())
+		asn = &a
+	}
+
+	err := bp.SetGenericSystemAsn(ctx, apstra.ObjectId(o.Id.ValueString()), asn)
+	if err != nil {
+		diags.AddError("failed setting generic system ASN", err.Error())
+	}
+}
+
+// setLoopbackIPv4 sets or clears the generic system loopback IPv4 attribute depending on o.LoopbackIpv4.IsNull()
+func (o *DatacenterGenericSystem) setLoopbackIPv4(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var ipNet *net.IPNet
+	var err error
+
+	if !o.LoopbackIpv4.IsNull() {
+		var ip net.IP
+		ip, ipNet, err = net.ParseCIDR(o.LoopbackIpv4.ValueString())
+		if err != nil {
+			diags.AddError("failed parsing generic system IPv4 loopback address", err.Error())
+			return
+		}
+
+		ipNet.IP = ip // overwrite subnet address in the parsed object with host address
+	}
+
+	err = bp.SetGenericSystemLoopbackIpv4(ctx, apstra.ObjectId(o.Id.ValueString()), ipNet, 0)
+	if err != nil {
+		diags.AddError("failed setting generic system IPv4 loopback address", err.Error())
+	}
+}
+
+// setLoopbackIPv6 sets or clears the generic system loopback IPv6 attribute depending on o.LoopbackIpv6.IsNull()
+func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var ipNet *net.IPNet
+	var err error
+
+	if !o.LoopbackIpv6.IsNull() {
+		var ip net.IP
+		ip, ipNet, err = net.ParseCIDR(o.LoopbackIpv6.ValueString())
+		if err != nil {
+			diags.AddError("failed parsing generic system IPv6 loopback address", err.Error())
+			return
+		}
+
+		ipNet.IP = ip // overwrite subnet address in the parsed object with host address
+	}
+
+	err = bp.SetGenericSystemLoopbackIpv6(ctx, apstra.ObjectId(o.Id.ValueString()), ipNet, 0)
+	if err != nil {
+		diags.AddError("failed setting generic system IPv6 loopback address", err.Error())
 	}
 }

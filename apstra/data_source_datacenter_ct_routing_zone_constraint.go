@@ -2,10 +2,10 @@ package tfapstra
 
 import (
 	"context"
+	connectivitytemplate "github.com/Juniper/terraform-provider-apstra/apstra/connectivity_template"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
 )
 
 var _ datasource.DataSource = &dataSourceDatacenterCtRoutingZoneConstraint{}

@@ -3,10 +3,10 @@ package tfapstra
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	connectivitytemplate "github.com/Juniper/terraform-provider-apstra/apstra/connectivity_template"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
 )
 
 var _ datasource.DataSourceWithValidateConfig = &dataSourceDatacenterCtBgpPeeringGenericSystem{}

@@ -5,26 +5,61 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 )
 
-func BlueprintA(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
+type Bfunc func(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error)
+
+func MakeOrFindBlueprint(ctx context.Context, name string, f Bfunc) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
 	deleteFunc := func(ctx context.Context) error { return nil }
+
 	client, err := GetTestClient(ctx)
 	if err != nil {
 		return nil, deleteFunc, err
 	}
 
-	name := acctest.RandString(10)
+	status, err := client.GetBlueprintStatusByName(ctx, name)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return f(ctx, name)
+		}
+		return nil, deleteFunc, err
+	}
+
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, status.Id)
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+
+	return bpClient, deleteFunc, nil
+}
+
+func BlueprintA(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
+	deleteFunc := func(ctx context.Context) error { return nil }
+
+	client, err := GetTestClient(ctx)
+	if err != nil {
+		return nil, deleteFunc, err
+	}
+
+	var bpname string
+	if name == nil {
+		bpname = acctest.RandString(10)
+	} else {
+		bpname = name[0]
+	}
+
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
-		Label:      name,
+		Label:      bpname,
 		TemplateId: "L2_Virtual_EVPN",
 		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
+
 	if err != nil {
 		return nil, deleteFunc, fmt.Errorf("error creating blueprint %w", err)
 	}

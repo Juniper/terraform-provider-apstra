@@ -1,7 +1,7 @@
 package compatibility
 
 import (
-	"terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"testing"
 )
 

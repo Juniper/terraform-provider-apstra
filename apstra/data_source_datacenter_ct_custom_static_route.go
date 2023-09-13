@@ -3,13 +3,13 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	connectivitytemplate "github.com/Juniper/terraform-provider-apstra/apstra/connectivity_template"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
-	connectivitytemplate "terraform-provider-apstra/apstra/connectivity_template"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ datasource.DataSourceWithValidateConfig = &dataSourceDatacenterCtCustomStaticRoute{}

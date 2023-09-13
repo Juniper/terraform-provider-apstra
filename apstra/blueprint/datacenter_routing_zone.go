@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -17,10 +21,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	"regexp"
-	apstravalidator "terraform-provider-apstra/apstra/apstra_validator"
-	"terraform-provider-apstra/apstra/design"
-	"terraform-provider-apstra/apstra/resources"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 const (
@@ -60,7 +60,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -115,7 +115,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Optional:            true,
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -144,6 +144,13 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
 				"Set this attribute in an EVPN blueprint to use a non-default policy.",
 			Optional: true,
+			Validators: []validator.String{stringvalidator.AtLeastOneOf(
+				path.MatchRoot("filter").AtName("name"),
+				path.MatchRoot("filter").AtName("vlan_id"),
+				path.MatchRoot("filter").AtName("vni"),
+				path.MatchRoot("filter").AtName("dhcp_servers"),
+				path.MatchRoot("filter").AtName("routing_policy_id"),
+			)},
 		},
 	}
 }
@@ -163,7 +170,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in thw Apstra web UI.",
+			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),

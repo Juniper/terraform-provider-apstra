@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -10,12 +11,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 type NodesTypeSystem struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Filters     types.Object `tfsdk:"filters"`
+	Filter      types.Object `tfsdk:"filter"`
 	Ids         types.Set    `tfsdk:"ids"`
 	QueryString types.String `tfsdk:"query_string"`
 }
@@ -27,13 +27,13 @@ func (o NodesTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attr
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"filters": dataSourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Filters used to select only desired node IDs.",
+		"filter": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Filter used to select only desired node IDs. All specified attributes must match.",
 			Optional:            true,
 			Attributes:          NodeTypeSystemAttributes{}.DataSourceAttributesAsFilter(),
 		},
 		"query_string": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Graph DB query string based on the supplied filters; possibly useful for troubleshooting.",
+			MarkdownDescription: "Graph DB query string based on the supplied filter; possibly useful for troubleshooting.",
 			Computed:            true,
 		},
 		"ids": dataSourceSchema.SetAttribute{
@@ -77,17 +77,17 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 }
 
 func (o *NodesTypeSystem) query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
-	var filters NodeTypeSystemAttributes
-	if utils.Known(o.Filters) {
-		diags.Append(o.Filters.As(ctx, &filters, basetypes.ObjectAsOptions{})...)
+	var filter NodeTypeSystemAttributes
+	if utils.Known(o.Filter) {
+		diags.Append(o.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 		if diags.HasError() {
 			return nil
 		}
 	}
 
 	var tagIds []string
-	if utils.Known(filters.TagIds) {
-		diags.Append(filters.TagIds.ElementsAs(ctx, &tagIds, false)...)
+	if utils.Known(filter.TagIds) {
+		diags.Append(filter.TagIds.ElementsAs(ctx, &tagIds, false)...)
 		if diags.HasError() {
 			return nil
 		}
@@ -98,8 +98,8 @@ func (o *NodesTypeSystem) query(ctx context.Context, diags *diag.Diagnostics) *a
 		{Key: "name", Value: apstra.QEStringVal("n_system")},
 	}
 
-	// []QEEAttribute to match the system hostname, label, role, etc... as specified by `filters`
-	systemNodeAttributes := append(systemNodeBaseAttributes, filters.QEEAttributes()...)
+	// []QEEAttribute to match the system hostname, label, role, etc... as specified by `filter`
+	systemNodeAttributes := append(systemNodeBaseAttributes, filter.QEEAttributes()...)
 
 	// []QEEAttribute to match the relationship between system and tag nodes
 	relationshipAttributes := []apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("tag")}}
@@ -113,7 +113,7 @@ func (o *NodesTypeSystem) query(ctx context.Context, diags *diag.Diagnostics) *a
 	// each specified tag.
 	query := new(apstra.MatchQuery)
 
-	// first query: the system node with filters.
+	// first query: the system node with filter.
 	query.Match(new(apstra.PathQuery).Node(systemNodeAttributes))
 
 	// now add each tag-path query.

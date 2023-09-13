@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-apstra/apstra/blueprint"
-	"terraform-provider-apstra/apstra/utils"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
@@ -69,7 +69,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 
 	// unfortunately we only learn the link IDs, not the generic system ID
-	linkIds, err := bp.CreateLinksWithNewServer(ctx, request)
+	linkIds, err := bp.CreateLinksWithNewSystem(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create generic system", err.Error())
 		return
@@ -82,14 +82,18 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 	plan.Id = types.StringValue(genericSystemId.String())
 
-	// pull Apstra-generated strings if not specified by the user
-	if plan.Name.IsUnknown() || plan.Hostname.IsUnknown() {
-		err = plan.GetLabelAndHostname(ctx, bp)
-		if err != nil {
-			resp.Diagnostics.AddError(
-				fmt.Sprintf("failed to retrieve labels from new generic system %s", plan.Id), err.Error())
-			// don't return here - still want to set the state
-		}
+	// set generic system properties sending <nil> for prior state
+	plan.SetProperties(ctx, bp, nil, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// pull Apstra-generated strings as needed
+	err = plan.ReadSystemProperties(ctx, bp, false)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed to retrieve properties from new generic system %s", plan.Id), err.Error())
+		// don't return here - still want to set the state
 	}
 
 	// set state
@@ -115,9 +119,9 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 		return
 	}
 
-	// read string fields directly from the graph node. This has the side
-	// effect of discovering whether the generic system has been deleted.
-	err = state.GetLabelAndHostname(ctx, bp)
+	// Read various fields using the web UI's system API endpoint. This has a
+	// side effect of discovering whether the generic system has been deleted.
+	err = state.ReadSystemProperties(ctx, bp, true)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -128,9 +132,17 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 		return
 	}
 
-	// read tags and link info using other combinations of API calls
+	// read tags
 	state.ReadTags(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// read link info
 	state.ReadLinks(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -168,6 +180,12 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	}
 
 	plan.UpdateHostnameAndName(ctx, bp, &state, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set generic system properties using prior state to skip unnecessary API calls
+	plan.SetProperties(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

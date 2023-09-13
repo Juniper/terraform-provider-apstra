@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -16,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"os"
-	"terraform-provider-apstra/apstra/utils"
+	"strings"
 	"text/template"
 )
 
@@ -65,10 +66,11 @@ func (o Deploy) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"comment": resourceSchema.StringAttribute{
-			MarkdownDescription: "Comment associated with the Deployment/Commit. This field supports templating " +
-				"using the `text/template` library (currently supported replacements: ['Version']) and " +
-				"environment variable expansion using `os.ExpandEnv` to include contextual information like the " +
-				"Terraform username, CI system job ID, etc...",
+			MarkdownDescription: fmt.Sprintf("Comment associated with the Deployment/Commit. "+
+				"This field supports templating using the `text/template` library (currently supported "+
+				"replacements: [`%s`]) and environment variable expansion using `os.ExpandEnv` to "+
+				"include contextual information like the Terraform username, CI system job ID, etc...",
+				strings.Join(CommentTemplateReplacements, "`, `")),
 			Computed:   true,
 			Optional:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -121,7 +123,11 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 		return
 	}
 
-	t, err := new(template.Template).Parse(o.Comment.ValueString())
+	// expand environment variables in the comment
+	commentWithEnv := os.ExpandEnv(o.Comment.ValueString())
+
+	// parse the comment template
+	t, err := new(template.Template).Parse(commentWithEnv)
 	if err != nil {
 		diags.AddWarning(
 			fmt.Sprintf("error creating deployment comment template from string %q", o.Comment.ValueString()),
@@ -133,9 +139,10 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 		diags.AddWarning("error executing deployment comment template", err.Error())
 	}
 
+	// request deployment via the API
 	response, err := client.DeployBlueprint(ctx, &apstra.BlueprintDeployRequest{
 		Id:          apstra.ObjectId(o.BlueprintId.ValueString()),
-		Description: os.ExpandEnv(buf.String()),
+		Description: buf.String(),
 		Version:     status.Version,
 	})
 	if err != nil {
@@ -203,6 +210,8 @@ func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Di
 	o.ActiveRevision = types.Int64Value(int64(revision.RevisionId))
 	o.StagedRevision = types.Int64Value(int64(status.Version))
 }
+
+var CommentTemplateReplacements = []string{"{{`{{.TerraformVersion}}`}}", "{{`{{.ProviderVersion}}`}}"}
 
 type CommentTemplate struct {
 	ProviderVersion  string
