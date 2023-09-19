@@ -195,5 +195,4 @@ func (o *attributeConflictValidator) validateElement(ctx context.Context, req at
 		}
 		break // all of the the required attribute have been found; move on to the next set member
 	}
-
 }
