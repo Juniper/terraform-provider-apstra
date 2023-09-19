@@ -10,14 +10,24 @@ import (
 	"testing"
 )
 
-func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
+func TestAttributeConflictValidator(t *testing.T) {
 	ctx := context.Background()
 
 	type testCase struct {
 		keyAttrNames []string
 		attrTypes    map[string]attr.Type
-		attrValues   []attr.Value
+		attrValues   map[string]attr.Value
 		expectError  bool
+	}
+
+	attrValueSlice := func(in map[string]attr.Value) []attr.Value {
+		result := make([]attr.Value, len(in))
+		var i int
+		for _, attrValue := range in {
+			result[i] = attrValue
+			i++
+		}
+		return result
 	}
 
 	testCases := map[string]testCase{
@@ -26,8 +36,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 			attrTypes: map[string]attr.Type{
 				"key1": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 					},
@@ -35,7 +45,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"key1": types.StringValue("foo"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 					},
@@ -51,8 +61,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 			attrTypes: map[string]attr.Type{
 				"key1": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 					},
@@ -60,7 +70,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"key1": types.StringValue("foo"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 					},
@@ -78,8 +88,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"extra1": types.StringType,
 				"extra2": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"extra1": types.StringType,
@@ -91,7 +101,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"extra2": types.StringValue("foo"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"extra1": types.StringType,
@@ -113,8 +123,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"extra1": types.StringType,
 				"extra2": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"extra1": types.StringType,
@@ -126,7 +136,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"extra2": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"extra1": types.StringType,
@@ -148,8 +158,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"key2": types.StringType,
 				"key3": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -161,7 +171,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"key3": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -186,8 +196,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"extra2": types.StringType,
 				"extra3": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"key2":   types.StringType,
@@ -205,7 +215,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"extra3": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"key2":   types.StringType,
@@ -233,8 +243,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"key2": types.StringType,
 				"key3": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -246,7 +256,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"key3": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -271,8 +281,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"extra2": types.StringType,
 				"extra3": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"key2":   types.StringType,
@@ -290,7 +300,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"extra3": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1":   types.StringType,
 						"key2":   types.StringType,
@@ -318,8 +328,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"key2": types.StringType,
 				"key3": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -331,7 +341,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"key3": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -353,8 +363,8 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 				"key2": types.StringType,
 				"key3": types.StringType,
 			},
-			attrValues: []attr.Value{
-				types.ObjectValueMust(
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -366,7 +376,7 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 						"key3": types.StringValue("baz"),
 					},
 				),
-				types.ObjectValueMust(
+				"two": types.ObjectValueMust(
 					map[string]attr.Type{
 						"key1": types.StringType,
 						"key2": types.StringType,
@@ -383,18 +393,19 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 		},
 	}
 
+	// test list validation
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
-			request := validator.SetRequest{
+			request := validator.ListRequest{
 				Path:           path.Root("test"),
 				PathExpression: path.MatchRoot("test"),
-				ConfigValue:    types.SetValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, tCase.attrValues),
+				ConfigValue:    types.ListValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, attrValueSlice(tCase.attrValues)),
 			}
-			response := validator.SetResponse{}
-			validator := UniquteValueCombinationsAt(tCase.keyAttrNames...)
-			validator.ValidateSet(ctx, request, &response)
+			response := validator.ListResponse{}
+			v := UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			v.ValidateList(ctx, request, &response)
 
 			if !response.Diagnostics.HasError() && tCase.expectError {
 				t.Fatal("expected error, got no error")
@@ -405,10 +416,74 @@ func TestAttributeConflictValidator_ValidateSet(t *testing.T) {
 			}
 
 			if response.Diagnostics.HasError() {
-				for _, error := range response.Diagnostics.Errors() {
-					log.Println(validator.Description(ctx))
-					log.Println(error.Summary())
-					log.Println(error.Detail())
+				for _, diags := range response.Diagnostics.Errors() {
+					log.Println(v.Description(ctx))
+					log.Println(diags.Summary())
+					log.Println(diags.Detail())
+				}
+			}
+		})
+	}
+
+	// test map validation
+	for tName, tCase := range testCases {
+		tName, tCase := tName, tCase
+		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+			request := validator.MapRequest{
+				Path:           path.Root("test"),
+				PathExpression: path.MatchRoot("test"),
+				ConfigValue:    types.MapValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, tCase.attrValues),
+			}
+			response := validator.MapResponse{}
+			v := UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			v.ValidateMap(ctx, request, &response)
+
+			if !response.Diagnostics.HasError() && tCase.expectError {
+				t.Fatal("expected error, got no error")
+			}
+
+			if response.Diagnostics.HasError() && !tCase.expectError {
+				t.Fatalf("got unexpected error: %s", response.Diagnostics)
+			}
+
+			if response.Diagnostics.HasError() {
+				for _, diags := range response.Diagnostics.Errors() {
+					log.Println(v.Description(ctx))
+					log.Println(diags.Summary())
+					log.Println(diags.Detail())
+				}
+			}
+		})
+	}
+
+	// test set validation
+	for tName, tCase := range testCases {
+		tName, tCase := tName, tCase
+		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+			request := validator.SetRequest{
+				Path:           path.Root("test"),
+				PathExpression: path.MatchRoot("test"),
+				ConfigValue:    types.SetValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, attrValueSlice(tCase.attrValues)),
+			}
+			response := validator.SetResponse{}
+			v := UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			v.ValidateSet(ctx, request, &response)
+
+			if !response.Diagnostics.HasError() && tCase.expectError {
+				t.Fatal("expected error, got no error")
+			}
+
+			if response.Diagnostics.HasError() && !tCase.expectError {
+				t.Fatalf("got unexpected error: %s", response.Diagnostics)
+			}
+
+			if response.Diagnostics.HasError() {
+				for _, diags := range response.Diagnostics.Errors() {
+					log.Println(v.Description(ctx))
+					log.Println(diags.Summary())
+					log.Println(diags.Detail())
 				}
 			}
 		})
