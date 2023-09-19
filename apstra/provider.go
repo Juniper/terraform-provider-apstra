@@ -330,17 +330,22 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 			return nil
 		}
 
+		// Let's ensure that the blueprint exists before trying for a lock
+		bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(id))
+		if err != nil {
+			if utils.IsApstra404(err) {
+				return fmt.Errorf("attempt to lock non-existent blueprint - %w", err)
+			}
+			return fmt.Errorf("failure to create blueprint client while attempting to lock blueprint mutex"+
+				" - %w", err)
+		}
+
 		blueprintMutexesMutex.Lock()
 		defer blueprintMutexesMutex.Unlock()
 
 		if _, ok := blueprintMutexes[id]; ok {
 			// We have a map entry, so the mutex must be locked already.
 			return nil
-		}
-
-		bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(id))
-		if err != nil {
-			return fmt.Errorf("error creating blueprint client while attempting to lock blueprint mutex - %w", err)
 		}
 
 		// Shove the date into the environment so it's available to ExpandEnv.
