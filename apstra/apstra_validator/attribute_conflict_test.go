@@ -14,10 +14,11 @@ func TestAttributeConflictValidator(t *testing.T) {
 	ctx := context.Background()
 
 	type testCase struct {
-		keyAttrNames []string
-		attrTypes    map[string]attr.Type
-		attrValues   map[string]attr.Value
-		expectError  bool
+		keyAttrNames    []string
+		attrTypes       map[string]attr.Type
+		attrValues      map[string]attr.Value
+		expectError     bool
+		caseInsensitive bool
 	}
 
 	attrValueSlice := func(in map[string]attr.Value) []attr.Value {
@@ -391,6 +392,58 @@ func TestAttributeConflictValidator(t *testing.T) {
 			},
 			expectError: true,
 		},
+		"one_key_no_collision_case_sensitive": {
+			keyAttrNames: []string{"key1"},
+			attrTypes: map[string]attr.Type{
+				"key1": types.StringType,
+			},
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
+					map[string]attr.Type{
+						"key1": types.StringType,
+					},
+					map[string]attr.Value{
+						"key1": types.StringValue("foo"),
+					},
+				),
+				"two": types.ObjectValueMust(
+					map[string]attr.Type{
+						"key1": types.StringType,
+					},
+					map[string]attr.Value{
+						"key1": types.StringValue("FOO"),
+					},
+				),
+			},
+			expectError:     false,
+			caseInsensitive: false,
+		},
+		"one_key_collision_case_insensitive": {
+			keyAttrNames: []string{"key1"},
+			attrTypes: map[string]attr.Type{
+				"key1": types.StringType,
+			},
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
+					map[string]attr.Type{
+						"key1": types.StringType,
+					},
+					map[string]attr.Value{
+						"key1": types.StringValue("foo"),
+					},
+				),
+				"two": types.ObjectValueMust(
+					map[string]attr.Type{
+						"key1": types.StringType,
+					},
+					map[string]attr.Value{
+						"key1": types.StringValue("FOO"),
+					},
+				),
+			},
+			expectError:     true,
+			caseInsensitive: true,
+		},
 	}
 
 	// test list validation
@@ -404,7 +457,12 @@ func TestAttributeConflictValidator(t *testing.T) {
 				ConfigValue:    types.ListValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, attrValueSlice(tCase.attrValues)),
 			}
 			response := validator.ListResponse{}
-			v := UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			var v CollectionValidator
+			if tCase.caseInsensitive {
+				v = UniqueInsensitiveValueCombinationsAt(tCase.keyAttrNames...)
+			} else {
+				v = UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			}
 			v.ValidateList(ctx, request, &response)
 
 			if !response.Diagnostics.HasError() && tCase.expectError {
@@ -436,7 +494,12 @@ func TestAttributeConflictValidator(t *testing.T) {
 				ConfigValue:    types.MapValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, tCase.attrValues),
 			}
 			response := validator.MapResponse{}
-			v := UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			var v CollectionValidator
+			if tCase.caseInsensitive {
+				v = UniqueInsensitiveValueCombinationsAt(tCase.keyAttrNames...)
+			} else {
+				v = UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			}
 			v.ValidateMap(ctx, request, &response)
 
 			if !response.Diagnostics.HasError() && tCase.expectError {
@@ -468,7 +531,12 @@ func TestAttributeConflictValidator(t *testing.T) {
 				ConfigValue:    types.SetValueMust(types.ObjectType{AttrTypes: tCase.attrTypes}, attrValueSlice(tCase.attrValues)),
 			}
 			response := validator.SetResponse{}
-			v := UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			var v CollectionValidator
+			if tCase.caseInsensitive {
+				v = UniqueInsensitiveValueCombinationsAt(tCase.keyAttrNames...)
+			} else {
+				v = UniqueValueCombinationsAt(tCase.keyAttrNames...)
+			}
 			v.ValidateSet(ctx, request, &response)
 
 			if !response.Diagnostics.HasError() && tCase.expectError {

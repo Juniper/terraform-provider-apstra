@@ -32,7 +32,8 @@ var _ CollectionValidator = attributeConflictValidator{}
 //
 // If keyAttrs is empty, then values across all attributes are evaluated.
 type attributeConflictValidator struct {
-	keyAttrs []string
+	keyAttrs        []string
+	caseInsensitive bool
 }
 
 func (o attributeConflictValidator) Description(_ context.Context) string {
@@ -107,12 +108,6 @@ func (o attributeConflictValidator) ValidateSet(ctx context.Context, req validat
 	}
 }
 
-func UniqueValueCombinationsAt(attrNames ...string) CollectionValidator {
-	return attributeConflictValidator{
-		keyAttrs: attrNames,
-	}
-}
-
 type attributeConflictValidateElementRequest struct {
 	elementValue              attr.Value
 	elementPath               path.Path
@@ -170,7 +165,14 @@ func (o *attributeConflictValidator) validateElement(ctx context.Context, req at
 			return // cannot validate when attribute is unknown
 		}
 
-		keyValuesMap[attrName] = base64.StdEncoding.EncodeToString([]byte(attrValue.String()))
+		var valueToCompare string // a configured value we're checking for unique-ness
+		if o.caseInsensitive {
+			valueToCompare = strings.ToLower(attrValue.String())
+		} else {
+			valueToCompare = attrValue.String()
+		}
+
+		keyValuesMap[attrName] = base64.StdEncoding.EncodeToString([]byte(valueToCompare))
 		if len(keyValuesMap) < len(keyAttributeNames) {
 			continue // keep going until we fill keyValuesMap
 		}
@@ -185,14 +187,40 @@ func (o *attributeConflictValidator) validateElement(ctx context.Context, req at
 		}
 
 		if req.foundKeyValueCombinations[sb.String()] { // seen this value before?
+			var detailedError string
+			switch len(o.keyAttrs) {
+			case 0:
+				detailedError = fmt.Sprintf("Two objects cannot use the same value "+
+					"combination across all attributes (case sensitive: %t", o.caseInsensitive)
+			case 1:
+				detailedError = fmt.Sprintf("Two objects cannot use the same value for "+
+					"'%s' (case sensitive: %t)", o.keyAttrs[0], o.caseInsensitive)
+			default:
+				detailedError = fmt.Sprintf("Two objects cannot use the same value "+
+					"combination for these attributes: ['%s'] (case sensitive: %t)",
+					strings.Join(o.keyAttrs, "', '"), o.caseInsensitive)
+			}
 			resp.Diagnostics.AddAttributeError(
 				req.elementPath,
 				fmt.Sprintf("%s collision", o.keyAttrs),
-				fmt.Sprintf("Two objects cannot use the same %s", o.keyAttrs),
+				detailedError,
 			)
 		} else {
 			req.foundKeyValueCombinations[sb.String()] = true // log the name for future collision checks
 		}
 		break // all of the the required attribute have been found; move on to the next set member
+	}
+}
+
+func UniqueValueCombinationsAt(attrNames ...string) CollectionValidator {
+	return attributeConflictValidator{
+		keyAttrs: attrNames,
+	}
+}
+
+func UniqueInsensitiveValueCombinationsAt(attrNames ...string) CollectionValidator {
+	return attributeConflictValidator{
+		keyAttrs:        attrNames,
+		caseInsensitive: true,
 	}
 }
