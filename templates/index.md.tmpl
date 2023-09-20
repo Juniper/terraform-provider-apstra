@@ -28,6 +28,16 @@ embedding them in the URL string using
 Please consider whether writing credentials to a configuration file is
 acceptable in your environment.
 
+### Proxy Support
+
+HTTP, HTTPS, and SOCKS5 proxies are supported through the `HTTP_PROXY` and
+`HTTPS_PROXY` environment variables or the lowercase versions of those
+variables. The value of each may be either a complete URL or a "host[:port]",
+in which case the "http" scheme is assumed.
+
+Hosts which should be omitted from the proxy configuration may be listed in
+the `NO_PROXY` (or `no_proxy`) environment variable ([details](https://github.com/golang/go/blob/682a1d2176b02337460aeede0ff9e49429525195/src/vendor/golang.org/x/net/http/httpproxy/proxy.go#L38C1-L50C13)).
+
 ### Additional Environment Variables
 
 Provider attributes which have been omitted from the configuration
