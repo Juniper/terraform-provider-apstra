@@ -266,9 +266,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// Set the experimental flag according to the configuration
 	clientCfg.Experimental = config.Experimental.ValueBool()
 
-	// Set the TLS InsecureSkipVerify according to the configuration
+	// Set http client transport configuration
 	if transport, ok := clientCfg.HttpClient.Transport.(*http.Transport); ok {
+		// Set the TLS InsecureSkipVerify according to the configuration
 		transport.TLSClientConfig.InsecureSkipVerify = config.TlsNoVerify.ValueBool()
+
+		// Set HTTP/HTTPS proxies according to the environment
+		transport.Proxy = http.ProxyFromEnvironment
+
 		clientCfg.HttpClient.Transport = transport
 	}
 
