@@ -173,42 +173,53 @@ func (o *attributeConflictValidator) validateElement(ctx context.Context, req at
 		}
 
 		keyValuesMap[attrName] = base64.StdEncoding.EncodeToString([]byte(valueToCompare))
-		if len(keyValuesMap) < len(keyAttributeNames) {
-			continue // keep going until we fill keyValuesMap
+		if len(keyValuesMap) == len(keyAttributeNames) {
+			break // keyValuesMap is full, no need to look at remaining attributes
+		}
+	}
+
+	// did we find all of the required "key attributes" ?
+	if len(keyValuesMap) < len(keyAttributeNames) {
+		// collect object's attribute names so we can complain about them
+		var attrNames []string
+		for attrName := range objectValue.Attributes() {
+			attrNames = append(attrNames, attrName)
 		}
 
-		sb := strings.Builder{}
-		for i := range o.keyAttrs {
-			if i == 0 {
-				sb.WriteString(keyValuesMap[o.keyAttrs[i]])
-			} else {
-				sb.WriteString(":" + keyValuesMap[o.keyAttrs[i]])
-			}
-		}
+		resp.Diagnostics.AddAttributeError(
+			req.path,
+			"Invalid Validator for Element Value",
+			"While performing schema-based validation, an unexpected error occurred. "+
+				"The attribute declares an Object values validator which has been asked "+
+				"to validate attributes not present in the object. "+
+				"This issue should be reported to the provider developers.\n\n"+
+				fmt.Sprintf("Path: %s\n", req.path.String())+
+				fmt.Sprintf("Element Attributes: '%s'\n", strings.Join(attrNames, "', '"))+
+				fmt.Sprintf("Element Attributes to validate: '%s'\n", strings.Join(o.keyAttrs, "', '")),
+		)
 
-		if req.foundKeyValueCombinations[sb.String()] { // seen this value before?
-			var detailedError string
-			switch len(o.keyAttrs) {
-			case 0:
-				detailedError = fmt.Sprintf("Two objects cannot use the same value "+
-					"combination across all attributes (case sensitive: %t", o.caseInsensitive)
-			case 1:
-				detailedError = fmt.Sprintf("Two objects cannot use the same value for "+
-					"'%s' (case sensitive: %t)", o.keyAttrs[0], o.caseInsensitive)
-			default:
-				detailedError = fmt.Sprintf("Two objects cannot use the same value "+
-					"combination for these attributes: ['%s'] (case sensitive: %t)",
-					strings.Join(o.keyAttrs, "', '"), o.caseInsensitive)
-			}
-			resp.Diagnostics.AddAttributeError(
-				req.elementPath,
-				fmt.Sprintf("%s collision", o.keyAttrs),
-				detailedError,
-			)
+		return
+	}
+
+	sb := strings.Builder{}
+	for i := range o.keyAttrs {
+		if i == 0 {
+			sb.WriteString(keyValuesMap[o.keyAttrs[i]])
 		} else {
-			req.foundKeyValueCombinations[sb.String()] = true // log the name for future collision checks
+			sb.WriteString(":" + keyValuesMap[o.keyAttrs[i]])
 		}
-		break // all of the the required attribute have been found; move on to the next set member
+	}
+
+	if req.foundKeyValueCombinations[sb.String()] { // seen this value before?
+		resp.Diagnostics.AddAttributeError(
+			req.elementPath,
+			fmt.Sprintf("%s collision", o.keyAttrs),
+			fmt.Sprintf("Two objects cannot use the same value "+
+				"combination for these attributes: ['%s'] (case sensitive: %t)",
+				strings.Join(o.keyAttrs, "', '"), o.caseInsensitive),
+		)
+	} else {
+		req.foundKeyValueCombinations[sb.String()] = true // log the name for future collision checks
 	}
 }
 

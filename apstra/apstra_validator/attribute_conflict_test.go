@@ -444,6 +444,23 @@ func TestAttributeConflictValidator(t *testing.T) {
 			expectError:     true,
 			caseInsensitive: true,
 		},
+		"missing_key": {
+			keyAttrNames: []string{"key1", "key2"},
+			attrTypes: map[string]attr.Type{
+				"key1": types.StringType,
+			},
+			attrValues: map[string]attr.Value{
+				"one": types.ObjectValueMust(
+					map[string]attr.Type{
+						"key1": types.StringType,
+					},
+					map[string]attr.Value{
+						"key1": types.StringValue("foo"),
+					},
+				),
+			},
+			expectError: true,
+		},
 	}
 
 	// test list validation
