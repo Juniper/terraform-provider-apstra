@@ -88,9 +88,10 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 		} `json:"items"`
 	}
 
+	// we're always going to perform at least one query, but we keep 'em as a slice
 	var queries []apstra.MatchQuery
 	switch {
-	case utils.Known(o.Filter):
+	case utils.Known(o.Filter): // one query, because the user specified 'filter' (deprecated)
 		var filter NodeTypeSystemAttributes
 		if utils.Known(o.Filter) {
 			diags.Append(o.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
@@ -103,7 +104,7 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 		if diags.HasError() {
 			return
 		}
-	case utils.Known(o.Filters):
+	case utils.Known(o.Filters): // many queries, because the user specified 'filters'
 		var filters []NodeTypeSystemAttributes
 		if utils.Known(o.Filters) {
 			diags.Append(o.Filters.ElementsAs(ctx, &filters, false)...)
@@ -119,17 +120,20 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 				return
 			}
 		}
-	default:
+	default: // one query because the user specified no filters - and we create a catchall
 		queries = []apstra.MatchQuery{*NodeTypeSystemAttributes{}.query(ctx, diags)}
 		if diags.HasError() {
 			return
 		}
 	}
 
+	// create a map of node IDs (for unique-ness) and a slice of query strings
 	idMap := make(map[string]bool)
 	queryStrings := make([]string, len(queries))
+
+	// collect IDs and a query string for each filter/query
 	for i, query := range queries {
-		query.
+		query. // flesh out the query with info needed to run it
 			SetClient(client).
 			SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 			SetBlueprintType(apstra.BlueprintTypeStaging)
@@ -137,19 +141,23 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 			return
 		}
 
+		// run the query
 		err := query.Do(ctx, &queryResponse)
 		if err != nil {
 			diags.AddError("Error executing Blueprint query", err.Error())
 			return
 		}
 
+		// collect the matching system IDs
 		for j := range queryResponse.Items {
 			idMap[queryResponse.Items[j].System.Id] = true
 		}
 
+		// save the query string
 		queryStrings[i] = query.String()
 	}
 
+	// pull the IDs out of the map
 	ids := make([]attr.Value, len(idMap))
 	var i int
 	for id := range idMap {
