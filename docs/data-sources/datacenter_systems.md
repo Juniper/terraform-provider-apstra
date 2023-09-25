@@ -40,15 +40,30 @@ output "qfx_spines" {
 
 ### Optional
 
-- `filter` (Attributes) Filter used to select only desired node IDs. All specified attributes must match. (see [below for nested schema](#nestedatt--filter))
+- `filter` (Attributes, Deprecated) Filter used to select only desired node IDs. All specified attributes must match. (see [below for nested schema](#nestedatt--filter))
+- `filters` (Attributes List) Set of filters used to select only desired node IDs. For a System node to match a filter, all specified attributes must match (each the attributes within a filter are AND-ed together). The returned System node IDs represent the nodes matched by all of the filters together (filters are OR-ed together). (see [below for nested schema](#nestedatt--filters))
 
 ### Read-Only
 
 - `ids` (Set of String) IDs of matching `system` Graph DB nodes.
-- `query_string` (String) Graph DB query string based on the supplied filter; possibly useful for troubleshooting.
+- `query_strings` (List of String) Graph DB query strings based on the supplied filters; possibly useful for troubleshooting.
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
+
+Optional:
+
+- `hostname` (String) Apstra Graph DB node `hostname`
+- `id` (String) Apstra Graph DB node ID
+- `label` (String) Apstra Graph DB node `label`
+- `role` (String) Apstra Graph DB node `role`
+- `system_id` (String) Apstra ID of the physical system (not to be confused with its fabric role)
+- `system_type` (String) Apstra Graph DB node `system_type`
+- `tag_ids` (Set of String) Set of Tag IDs (labels) - only nodes with all tags will match this filter
+
+
+<a id="nestedatt--filters"></a>
+### Nested Schema for `filters`
 
 Optional:
 
