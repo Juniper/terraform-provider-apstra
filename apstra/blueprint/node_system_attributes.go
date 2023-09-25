@@ -1,13 +1,14 @@
 package blueprint
 
 import (
+	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -107,15 +108,6 @@ func (o NodeTypeSystemAttributes) DataSourceAttributesAsFilter() map[string]data
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
-				setvalidator.AtLeastOneOf(
-					path.MatchRoot("filter").AtName("hostname"),
-					path.MatchRoot("filter").AtName("id"),
-					path.MatchRoot("filter").AtName("label"),
-					path.MatchRoot("filter").AtName("role"),
-					path.MatchRoot("filter").AtName("system_id"),
-					path.MatchRoot("filter").AtName("system_type"),
-					path.MatchRoot("filter").AtName("tag_ids"),
-				),
 			},
 		},
 	}
@@ -149,4 +141,52 @@ func (o NodeTypeSystemAttributes) QEEAttributes() []apstra.QEEAttribute {
 	}
 
 	return result
+}
+
+func (o NodeTypeSystemAttributes) query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
+	var tagIds []string
+	if utils.Known(o.TagIds) {
+		diags.Append(o.TagIds.ElementsAs(ctx, &tagIds, false)...)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
+	systemNodeBaseAttributes := []apstra.QEEAttribute{
+		{Key: "type", Value: apstra.QEStringVal("system")},
+		{Key: "name", Value: apstra.QEStringVal("n_system")},
+	}
+
+	// []QEEAttribute to match the system hostname, label, role, etc...
+	systemNodeAttributes := append(systemNodeBaseAttributes, o.QEEAttributes()...)
+
+	// []QEEAttribute to match the relationship between system and tag nodes
+	relationshipAttributes := []apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("tag")}}
+
+	// []QEEAttribute to match the tag node (further qualified in the loop below)
+	tagNodeBaseAttributes := []apstra.QEEAttribute{{Key: "type", Value: apstra.QEStringVal("tag")}}
+
+	// This is the query we actually want to execute. It's a `match()`
+	// query-of-queries which selects the system node using
+	// `systemNodeAttributes` and also selects paths from the system node to
+	// each specified tag.
+	query := new(apstra.MatchQuery)
+
+	// first query: the system node with filter.
+	query.Match(new(apstra.PathQuery).Node(systemNodeAttributes))
+
+	// now add each tag-path query.
+	for i := range tagIds {
+		tagLabelAttribute := apstra.QEEAttribute{
+			Key:   "label",
+			Value: apstra.QEStringVal(tagIds[i]),
+		}
+		tagQuery := new(apstra.PathQuery).
+			Node(systemNodeBaseAttributes).
+			In(relationshipAttributes).
+			Node(append(tagNodeBaseAttributes, tagLabelAttribute))
+		query.Match(tagQuery)
+	}
+
+	return query
 }
