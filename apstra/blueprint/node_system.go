@@ -47,7 +47,7 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 	}
 }
 
-func (o *NodeTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	type node struct {
 		Id         string `json:"id"`
 		Hostname   string `json:"hostname"`
