@@ -96,7 +96,7 @@ func TestObjectMustHaveNOf(t *testing.T) {
 			expAtMostErr:  true,
 			expExactlyErr: true,
 		},
-		"2:3": {
+		"2:3:3": {
 			n:               2,
 			checkAttributes: []string{"a1", "a2", "a3"},
 			attrTypes: map[string]attr.Type{
@@ -186,6 +186,68 @@ func TestObjectMustHaveNOf(t *testing.T) {
 			expAtLeastErr: true,
 			expAtMostErr:  true,
 			expExactlyErr: true,
+		},
+		"1:0:1": {
+			n:               1,
+			checkAttributes: []string{},
+			attrTypes: map[string]attr.Type{
+				"a1": types.StringType,
+			},
+			attributes: map[string]attr.Value{
+				"a1": types.StringValue("foo"),
+			},
+			expAtLeastErr: false,
+			expAtMostErr:  false,
+			expExactlyErr: false,
+		},
+		"1:0:2": {
+			n:               1,
+			checkAttributes: []string{},
+			attrTypes: map[string]attr.Type{
+				"a1": types.StringType,
+				"a2": types.StringType,
+			},
+			attributes: map[string]attr.Value{
+				"a1": types.StringValue("foo"),
+				"a2": types.StringValue("bar"),
+			},
+			expAtLeastErr: false,
+			expAtMostErr:  true,
+			expExactlyErr: true,
+		},
+		"2:0:3": {
+			n:               2,
+			checkAttributes: []string{},
+			attrTypes: map[string]attr.Type{
+				"a1": types.StringType,
+				"a2": types.StringType,
+				"a3": types.StringType,
+			},
+			attributes: map[string]attr.Value{
+				"a1": types.StringValue("foo"),
+				"a2": types.StringValue("bar"),
+				"a3": types.StringValue("baz"),
+			},
+			expAtLeastErr: false,
+			expAtMostErr:  true,
+			expExactlyErr: true,
+		},
+		"3:0:3": {
+			n:               3,
+			checkAttributes: []string{},
+			attrTypes: map[string]attr.Type{
+				"a1": types.StringType,
+				"a2": types.StringType,
+				"a3": types.StringType,
+			},
+			attributes: map[string]attr.Value{
+				"a1": types.StringValue("foo"),
+				"a2": types.StringValue("bar"),
+				"a3": types.StringValue("baz"),
+			},
+			expAtLeastErr: false,
+			expAtMostErr:  false,
+			expExactlyErr: false,
 		},
 		"bad_data": {
 			n:               1,

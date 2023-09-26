@@ -31,6 +31,22 @@ func (o mustHaveNOfValidator) ValidateObject(_ context.Context, req validator.Ob
 		return // can't validate null or unknown objects
 	}
 
+	// extract the attributes from the configured object
+	attributeMap := req.ConfigValue.Attributes()
+
+	// when no attributes are enumerated during validator creation, that's a signal
+	// to consider all attributes. Rewrite the attribute slice with all attributes.
+	if len(o.attributes) == 0 {
+		o.attributes = make([]string, len(attributeMap))
+		i := 0
+		for attributeName := range attributeMap {
+			o.attributes[i] = attributeName
+			i++
+		}
+
+	}
+
+	// n can never be larger than the number of known attributes
 	if o.n > len(o.attributes) {
 		resp.Diagnostics.AddAttributeError(
 			req.Path,
@@ -46,8 +62,9 @@ func (o mustHaveNOfValidator) ValidateObject(_ context.Context, req validator.Ob
 		return
 	}
 
-	foundValueCount := 0
-	attributeMap := req.ConfigValue.Attributes()
+	foundValueCount := 0 // we'll compare this to 'n' later
+
+	// loop over the attributes the caller asked us to count
 	for _, requiredAttribute := range o.attributes {
 		var foundAttribute attr.Value
 		var ok bool
@@ -78,7 +95,7 @@ func (o mustHaveNOfValidator) ValidateObject(_ context.Context, req validator.Ob
 			return
 		}
 
-		// increment the counter for each known value
+		// increment the counter if the attribute has a value
 		if !foundAttribute.IsNull() {
 			foundValueCount++
 		}
