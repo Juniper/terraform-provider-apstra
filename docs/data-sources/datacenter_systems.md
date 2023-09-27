@@ -15,19 +15,26 @@ Optional `filter` attribute filters the result list so that it only contains IDs
 ## Example Usage
 
 ```terraform
-# This example outputs a set of graph db node IDs representing all spine
-# switches with tag 'junos' and tag 'qfx'
-data "apstra_datacenter_systems" "juniper_spines" {
+# This example outputs a set of graph db node IDs representing
+# non-prod leaf switches in pod 2.
+data "apstra_datacenter_systems" "pod2_nonprod_leafs" {
   blueprint_id = apstra_datacenter_blueprint.example.id
-  filter = {
-    role        = "spine"
-    system_type = "switch"
-    tag_ids     = ["junos", "qfx"]
-  }
+  filters = [
+    {
+      role        = "leaf"
+      system_type = "switch"
+      tag_ids     = ["pod2", "dev"]
+    },
+    {
+      role        = "leaf"
+      system_type = "switch"
+      tag_ids     = ["pod2", "test"]
+    },
+  ]
 }
 
-output "qfx_spines" {
-  value = data.apstra_datacenter_systems.juniper_spines.ids
+output "pod2_nonprod_leafs" {
+  value = data.apstra_datacenter_systems.pod2_nonprod_leafs.ids
 }
 ```
 
