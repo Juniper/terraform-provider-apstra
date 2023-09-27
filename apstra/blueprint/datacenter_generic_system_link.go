@@ -138,6 +138,11 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 
 	transformId, err := client.GetTransformationIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()), o.TargetSwitchIfName.ValueString())
 	if err != nil {
+		var ace apstra.ClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			o.TargetSwitchIfTransformId = types.Int64Null()
+			return
+		}
 		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.digest()), err.Error())
 		return
 	}
