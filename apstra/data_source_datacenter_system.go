@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSystemNode{}
@@ -37,9 +38,20 @@ func (o *dataSourceDatacenterSystemNode) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	config.ReadFromApi(ctx, o.client, &resp.Diagnostics)
+	// read "attributes" object element from the API
+	config.AttributesFromApi(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// if the user supplied "id", then "name" will be null. Fill it in.
+	if config.Name.IsNull() {
+		config.Name = config.Attributes.Attributes()["name"].(basetypes.StringValue)
+	}
+
+	// if the user supplied "name", then "id" will be null. Fill it in.
+	if config.Id.IsNull() {
+		config.Id = config.Attributes.Attributes()["id"].(basetypes.StringValue)
 	}
 
 	// set state
