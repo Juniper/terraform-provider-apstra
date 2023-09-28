@@ -46,7 +46,7 @@ func (o *dataSourceDatacenterSystemNode) Read(ctx context.Context, req datasourc
 
 	// if the user supplied "id", then "name" will be null. Fill it in.
 	if config.Name.IsNull() {
-		config.Name = config.Attributes.Attributes()["name"].(basetypes.StringValue)
+		config.Name = config.Attributes.Attributes()["label"].(basetypes.StringValue)
 	}
 
 	// if the user supplied "name", then "id" will be null. Fill it in.
