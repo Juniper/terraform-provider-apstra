@@ -6,7 +6,6 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -39,7 +38,7 @@ func (o NodesTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attr
 			DeprecationMessage: "The `filter` attribute is deprecated and will be removed in a future " +
 				"release. Please migrate your configuration to use `filters` instead.",
 			Validators: []validator.Object{
-				objectvalidator.ExactlyOneOf(
+				apstravalidator.AtMostNOf(1,
 					path.MatchRelative(),
 					path.MatchRoot("filters"),
 				),
