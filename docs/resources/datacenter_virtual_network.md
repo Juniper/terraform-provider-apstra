@@ -64,7 +64,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `ipv6_subnet` (String) IPv6 subnet associated with the Virtual Network. When not specified, a prefix from within the IPv6 Resource Pool assigned to the `virtual_network_svi_subnets_ipv6` role will be automatically assigned by Apstra.
 - `ipv6_virtual_gateway` (String) Specifies the IPv6 virtual gateway address within the Virtual Network. The configured value must be a valid IPv6 host address configured value within range specified by `ipv6_subnet`
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled. Requires `ipv6_connectivity_enabled` to be `true`
-- `reserve_vlan` (Boolean) For use only with `%s` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed. The only accepted values is `true`.
+- `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed. The only accepted values is `true`.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../apstra_datacenter_resource_pool_allocation) to role `vni_virtual_network_ids`.

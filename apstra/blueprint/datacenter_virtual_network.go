@@ -228,9 +228,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Computed:            true,
 		},
 		"reserve_vlan": resourceSchema.BoolAttribute{
-			MarkdownDescription: "For use only with `%s` type Virtual networks when all `bindings` " +
-				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the" +
-				" Virtual Network has not yet been deployed. The only accepted values is `true`.",
+			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks "+
+				"when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, "+
+				"even on switches to which the Virtual Network has not yet been deployed. The only "+
+				"accepted values is `true`.", apstra.VnTypeVxlan.String()),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Bool{
