@@ -22,7 +22,7 @@ builds:
   flags:
     - -trimpath
   ldflags:
-    - '-s -w -X terraform-provider-apstra/apstra.tag={{.Version}} -X terraform-provider-apstra/apstra.commit={{.Commit}}'
+    - '-s -w -X github.com/Juniper/terraform-provider-apstra/apstra.tag={{.Version}} -X github.com/Juniper/terraform-provider-apstra/apstra.commit={{.Commit}}'
   goos:
 #    - freebsd
     - windows
