@@ -73,20 +73,17 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error reading Tag", err.Error())
+		resp.Diagnostics.AddError("failed reading Tag", err.Error())
 		return
 	}
 
-	// create new state object
-	var newState design.Tag
-	newState.Id = types.StringValue(string(t.Id))
-	newState.LoadApiData(ctx, t.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, t.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Update resource

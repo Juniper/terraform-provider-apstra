@@ -115,9 +115,9 @@ func (o Tag) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *Tag) LoadApiData(_ context.Context, in *apstra.DesignTagData, _ *diag.Diagnostics) {
+func (o *Tag) LoadApiData(ctx context.Context, in *apstra.DesignTagData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
-	o.Description = types.StringValue(in.Description)
+	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 }
 
 func (o *Tag) Request(_ context.Context, _ *diag.Diagnostics) *apstra.DesignTagRequest {
