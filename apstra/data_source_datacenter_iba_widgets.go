@@ -28,13 +28,13 @@ func (o *dataSourceDatacenterIbaWidgets) Configure(ctx context.Context, req data
 
 func (o *dataSourceDatacenterIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the ID numbers of all IBA Widgets in a Blueprint.",
+		MarkdownDescription: "This data source returns the IDss of all IBA Widgets in a Blueprint.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID. " +
 					"Used to identify the Blueprint that the IBA Widgets belongs to.",
-				Required:            true,
-				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+				Required:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers representing the IBA Widgets in the blueprint.",
@@ -59,8 +59,7 @@ func (o *dataSourceDatacenterIbaWidgets) Read(ctx context.Context, req datasourc
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", config.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
