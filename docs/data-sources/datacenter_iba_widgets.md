@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_iba_widgets Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This data source returns the ID numbers of all IBA Widgets in a Blueprint.
+  This data source returns the IDs of the IBA Widgets in a Blueprint.
 ---
 
 # apstra_datacenter_iba_widgets (Data Source)
 
-This data source returns the ID numbers of all IBA Widgets in a Blueprint.
+This data source returns the IDs of the IBA Widgets in a Blueprint.
 
 ## Example Usage
 
