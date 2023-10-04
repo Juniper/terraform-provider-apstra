@@ -10,14 +10,14 @@ import (
 )
 
 const (
-	dataSourceDatacenterIbaWidgetTemplateByNameHCL = `
+	dataSourceIbaWidgetTemplateByNameHCL = `
 	data "apstra_iba_widget" "test" {
     	blueprint_id = "%s"
 		name = "%s"
 	}
 	`
 
-	dataSourceDatacenterIbaWidgetTemplateByIdHCL = `
+	dataSourceIbaWidgetTemplateByIdHCL = `
 	data "apstra_iba_widget" "test" {
   		blueprint_id = "%s"
 		id = "%s"
@@ -25,7 +25,7 @@ const (
 	`
 )
 
-func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
+func TestAccDataSourceIbaWidget(t *testing.T) {
 	ctx := context.Background()
 
 	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
@@ -58,7 +58,7 @@ func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Read by ID
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDatacenterIbaWidgetTemplateByIdHCL,
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIbaWidgetTemplateByIdHCL,
 					string(bpClient.Id()), string(widgetIdA)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.apstra_iba_widget.test", "id", widgetIdA.String()),
@@ -68,7 +68,7 @@ func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
 			},
 			// Read by Name
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDatacenterIbaWidgetTemplateByNameHCL,
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIbaWidgetTemplateByNameHCL,
 					string(bpClient.Id()), widgetDataA.Label),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.apstra_iba_widget.test", "id", widgetIdA.String()),

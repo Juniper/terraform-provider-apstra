@@ -1,4 +1,4 @@
-package blueprint
+package iba
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 type IbaDashboard struct {
 	BlueprintId         types.String `tfsdk:"blueprint_id"`
 	Id                  types.String `tfsdk:"id"`
-	Label               types.String `tfsdk:"label"`
+	Name                types.String `tfsdk:"name"`
 	Description         types.String `tfsdk:"description"`
 	Default             types.Bool   `tfsdk:"default"`
 	WidgetGrid          types.List   `tfsdk:"widget_grid"`
@@ -41,11 +41,11 @@ func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
 					path.MatchRelative(),
-					path.MatchRoot("label"),
+					path.MatchRoot("name"),
 				}...),
 			},
 		},
-		"label": dataSourceSchema.StringAttribute{
+		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up a IBA Widget by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
@@ -84,7 +84,7 @@ func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 
 func (o *IbaDashboard) LoadApiData(ctx context.Context, in *apstra.IbaDashboard, diag *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
-	o.Label = types.StringValue(in.Data.Label)
+	o.Name = types.StringValue(in.Data.Label)
 	o.Description = types.StringValue(in.Data.Description)
 	o.Default = types.BoolValue(in.Data.Default)
 	o.PredefinedDashboard = types.StringValue(in.Data.PredefinedDashboard)

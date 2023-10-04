@@ -6,27 +6,28 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterIbaDashboards{}
+var _ datasource.DataSourceWithConfigure = &dataSourceIbaDashboards{}
 
-type dataSourceDatacenterIbaDashboards struct {
+type dataSourceIbaDashboards struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceDatacenterIbaDashboards) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_iba_dashboards"
+func (o *dataSourceIbaDashboards) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_iba_dashboards"
 }
 
-func (o *dataSourceDatacenterIbaDashboards) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceIbaDashboards) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceDatacenterIbaDashboards) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceIbaDashboards) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns the ID numbers of all IBA Dashboards in a Blueprint.",
 		Attributes: map[string]schema.Attribute{
@@ -45,7 +46,7 @@ func (o *dataSourceDatacenterIbaDashboards) Schema(_ context.Context, _ datasour
 	}
 }
 
-func (o *dataSourceDatacenterIbaDashboards) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceIbaDashboards) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		Ids         types.Set    `tfsdk:"ids"`
@@ -67,22 +68,17 @@ func (o *dataSourceDatacenterIbaDashboards) Read(ctx context.Context, req dataso
 		return
 	}
 
-	ws, err := bpClient.GetAllIbaDashboards(ctx)
+	ds, err := bpClient.GetAllIbaDashboards(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving IBA Dashboards", err.Error())
 		return
 	}
 
-	ids := make([]apstra.ObjectId, len(ws))
-	for i, j := range ws {
-		ids[i] = j.Id
+	ids := make([]attr.Value, len(ds))
+	for i, j := range ds {
+		ids[i] = types.StringValue(j.Id.String())
 	}
-
-	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	idSet := types.SetValueMust(types.StringType, ids)
 
 	// create new state object
 	state := struct {

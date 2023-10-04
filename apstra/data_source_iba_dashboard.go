@@ -4,38 +4,38 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterIbaDashboard{}
+var _ datasource.DataSourceWithConfigure = &dataSourceIbaDashboard{}
 
-type dataSourceDatacenterIbaDashboard struct {
+type dataSourceIbaDashboard struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceDatacenterIbaDashboard) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_iba_dashboard"
+func (o *dataSourceIbaDashboard) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_iba_dashboard"
 }
 
-func (o *dataSourceDatacenterIbaDashboard) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceIbaDashboard) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceDatacenterIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IBA Dashboard in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.IbaDashboard{}.DataSourceAttributes(),
+		Attributes: iba.IbaDashboard{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceDatacenterIbaDashboard) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config blueprint.IbaDashboard
+func (o *dataSourceIbaDashboard) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config iba.IbaDashboard
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -54,14 +54,14 @@ func (o *dataSourceDatacenterIbaDashboard) Read(ctx context.Context, req datasou
 
 	var api *apstra.IbaDashboard
 	switch {
-	case !config.Label.IsNull():
-		api, err = bpClient.GetIbaDashboardByLabel(ctx, config.Label.ValueString())
+	case !config.Name.IsNull():
+		api, err = bpClient.GetIbaDashboardByLabel(ctx, config.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("name"),
 					"IBA dashboard not found",
-					fmt.Sprintf("IBA Dashboard with label %s not found", config.Label))
+					fmt.Sprintf("IBA Dashboard with name %s not found: Error : %q", config.Name, err))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
