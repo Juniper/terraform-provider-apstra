@@ -2,7 +2,6 @@ package iba
 
 import (
 	"context"
-	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -70,7 +69,7 @@ func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			Computed:            true,
 		},
 		"widget_grid": resourceSchema.ListAttribute{
-			MarkdownDescription: fmt.Sprintf("Grid of Widgets to be displayed in the dashboard"),
+			MarkdownDescription: "Grid of Widgets to be displayed in the dashboard",
 			Computed:            true,
 			ElementType: types.ListType{
 				ElemType: types.StringType,
