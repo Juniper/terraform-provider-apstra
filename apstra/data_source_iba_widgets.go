@@ -74,8 +74,8 @@ func (o *dataSourceIbaWidgets) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	ids := make([]attr.Value, len(ws))
-	for i, id := range ws {
-		ids[i] = types.StringValue(id.Id.String())
+	for i, j := range ws {
+		ids[i] = types.StringValue(j.Id.String())
 	}
 	idSet := types.SetValueMust(types.StringType, ids)
 
