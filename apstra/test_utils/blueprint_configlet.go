@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"testing"
 )
 
 func CatalogConfigletA(ctx context.Context, client *apstra.Client) (apstra.ObjectId, *apstra.ConfigletData,
@@ -47,4 +48,74 @@ func BlueprintConfigletA(ctx context.Context, client *apstra.TwoStageL3ClosClien
 		return "", nil, err
 	}
 	return id, deleteFunc, nil
+}
+
+// testWidgetsAB instantiates two predefined probes and creates widgets from them,
+// returning the widget Object Id and the IbaWidgetData object used for creation
+
+func TestWidgetsAB(ctx context.Context, t *testing.T, bpClient *apstra.TwoStageL3ClosClient) (apstra.ObjectId,
+	apstra.IbaWidgetData, apstra.ObjectId, apstra.IbaWidgetData, func() error) {
+	probeAId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
+		Name: "bgp_session",
+		Data: []byte(`{
+			"Label":     "BGP Session Flapping",
+			"Duration":  300,
+			"Threshold": 40
+		}`),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	probeBId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
+		Name: "drain_node_traffic_anomaly",
+		Data: []byte(`{
+			"Label":     "Drain Traffic Anomaly",
+			"Threshold": 100000
+		}`),
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	widgetA := apstra.IbaWidgetData{
+		Type:      apstra.IbaWidgetTypeStage,
+		Label:     "BGP Session Flapping",
+		ProbeId:   probeAId,
+		StageName: "BGP Session",
+	}
+	widgetAId, err := bpClient.CreateIbaWidget(ctx, &widgetA)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	widgetB := apstra.IbaWidgetData{
+		Type:      apstra.IbaWidgetTypeStage,
+		Label:     "Drain Traffic Anomaly",
+		ProbeId:   probeBId,
+		StageName: "excess_range",
+	}
+	widgetBId, err := bpClient.CreateIbaWidget(ctx, &widgetB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleanup := func() error {
+		err = bpClient.DeleteIbaWidget(ctx, widgetAId)
+		if err != nil {
+			return err
+		}
+		err = bpClient.DeleteIbaWidget(ctx, widgetBId)
+		if err != nil {
+			return err
+		}
+		err = bpClient.DeleteIbaProbe(ctx, probeAId)
+		if err != nil {
+			return err
+		}
+		err = bpClient.DeleteIbaProbe(ctx, probeBId)
+		return err
+	}
+
+	return widgetAId, widgetA, widgetBId, widgetB, cleanup
 }
