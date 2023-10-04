@@ -54,14 +54,14 @@ func (o *dataSourceDatacenterIbaWidget) Read(ctx context.Context, req datasource
 
 	var api *apstra.IbaWidget
 	switch {
-	case !config.Label.IsNull():
-		api, err = bpClient.GetIbaWidgetByLabel(ctx, config.Label.ValueString())
+	case !config.Name.IsNull():
+		api, err = bpClient.GetIbaWidgetByLabel(ctx, config.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("name"),
 					"IBA widget not found",
-					fmt.Sprintf("IBA Widget with label %s not found", config.Label))
+					fmt.Sprintf("IBA Widget with name %s not found", config.Name))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
@@ -80,7 +80,7 @@ func (o *dataSourceDatacenterIbaWidget) Read(ctx context.Context, req datasource
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading IBA Widgett", err.Error(),
+				path.Root("name"), "Failed reading IBA Widget", err.Error(),
 			)
 			return
 		}

@@ -14,7 +14,7 @@ import (
 type IbaWidget struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Id          types.String `tfsdk:"id"`
-	Label       types.String `tfsdk:"label"`
+	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
 
@@ -33,11 +33,11 @@ func (o IbaWidget) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
 					path.MatchRelative(),
-					path.MatchRoot("label"),
+					path.MatchRoot("name"),
 				}...),
 			},
 		},
-		"label": dataSourceSchema.StringAttribute{
+		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up a IBA Widget by name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
@@ -54,6 +54,6 @@ func (o IbaWidget) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 
 func (o *IbaWidget) LoadApiData(ctx context.Context, in *apstra.IbaWidget, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
-	o.Label = types.StringValue(in.Data.Label)
+	o.Name = types.StringValue(in.Data.Label)
 	o.Description = types.StringValue(in.Data.Description)
 }

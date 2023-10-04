@@ -13,7 +13,7 @@ const (
 	dataSourceDatacenterIbaWidgetTemplateByNameHCL = `
 	data "apstra_datacenter_iba_widget" "test" {
     	blueprint_id = "%s"
-		label = "%s"
+		name = "%s"
 	}
 	`
 
@@ -62,7 +62,7 @@ func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
 					string(bpClient.Id()), string(widgetIdA)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "id", widgetIdA.String()),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "label",
+					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "name",
 						widgetDataA.Label),
 				),
 			},
@@ -72,7 +72,7 @@ func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
 					string(bpClient.Id()), widgetDataA.Label),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "id", widgetIdA.String()),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "label",
+					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "name",
 						widgetDataA.Label),
 				),
 			},

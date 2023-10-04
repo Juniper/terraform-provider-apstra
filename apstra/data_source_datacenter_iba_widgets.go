@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -72,16 +73,11 @@ func (o *dataSourceDatacenterIbaWidgets) Read(ctx context.Context, req datasourc
 		return
 	}
 
-	ids := make([]apstra.ObjectId, len(ws))
-	for i, j := range ws {
-		ids[i] = j.Id
+	ids := make([]attr.Value, len(ws))
+	for i, id := range ws {
+		ids[i] = types.StringValue(id.Id.String())
 	}
-
-	idSet, diags := types.SetValueFrom(ctx, types.StringType, ids)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	idSet := types.SetValueMust(types.StringType, ids)
 
 	// create new state object
 	state := struct {
