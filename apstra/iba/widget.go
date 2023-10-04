@@ -52,7 +52,7 @@ func (o IbaWidget) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 	}
 }
 
-func (o *IbaWidget) LoadApiData(ctx context.Context, in *apstra.IbaWidget, _ *diag.Diagnostics) {
+func (o *IbaWidget) LoadApiData(_ context.Context, in *apstra.IbaWidget, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Data.Label)
 	o.Description = types.StringValue(in.Data.Description)
