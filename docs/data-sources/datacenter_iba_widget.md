@@ -48,7 +48,7 @@ output "o" {
 ### Optional
 
 - `id` (String) Populate this field to look up a IBA Widget by ID. Required when `name` is omitted.
-- `label` (String) Populate this field to look up a IBA Widget by name. Required when `id` is omitted.
+- `name` (String) Populate this field to look up a IBA Widget by name. Required when `id` is omitted.
 
 ### Read-Only
 
