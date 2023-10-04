@@ -11,14 +11,14 @@ import (
 
 const (
 	dataSourceDatacenterIbaWidgetTemplateByNameHCL = `
-	data "apstra_datacenter_iba_widget" "test" {
+	data "apstra_iba_widget" "test" {
     	blueprint_id = "%s"
 		name = "%s"
 	}
 	`
 
 	dataSourceDatacenterIbaWidgetTemplateByIdHCL = `
-	data "apstra_datacenter_iba_widget" "test" {
+	data "apstra_iba_widget" "test" {
   		blueprint_id = "%s"
 		id = "%s"
 	}
@@ -61,8 +61,8 @@ func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
 				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDatacenterIbaWidgetTemplateByIdHCL,
 					string(bpClient.Id()), string(widgetIdA)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "id", widgetIdA.String()),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "name",
+					resource.TestCheckResourceAttr("data.apstra_iba_widget.test", "id", widgetIdA.String()),
+					resource.TestCheckResourceAttr("data.apstra_iba_widget.test", "name",
 						widgetDataA.Label),
 				),
 			},
@@ -71,8 +71,8 @@ func TestAccDataSourceDatacenterIbaWidget(t *testing.T) {
 				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDatacenterIbaWidgetTemplateByNameHCL,
 					string(bpClient.Id()), widgetDataA.Label),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "id", widgetIdA.String()),
-					resource.TestCheckResourceAttr("data.apstra_datacenter_iba_widget.test", "name",
+					resource.TestCheckResourceAttr("data.apstra_iba_widget.test", "id", widgetIdA.String()),
+					resource.TestCheckResourceAttr("data.apstra_iba_widget.test", "name",
 						widgetDataA.Label),
 				),
 			},

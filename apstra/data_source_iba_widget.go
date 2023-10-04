@@ -4,38 +4,38 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterIbaWidget{}
+var _ datasource.DataSourceWithConfigure = &dataSourceIbaWidget{}
 
-type dataSourceDatacenterIbaWidget struct {
+type dataSourceIbaWidget struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceDatacenterIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_iba_widget"
+func (o *dataSourceIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_iba_widget"
 }
 
-func (o *dataSourceDatacenterIbaWidget) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceIbaWidget) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceDatacenterIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IBA Widget in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.IbaWidget{}.DataSourceAttributes(),
+		Attributes: iba.IbaWidget{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceDatacenterIbaWidget) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config blueprint.IbaWidget
+func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config iba.IbaWidget
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
