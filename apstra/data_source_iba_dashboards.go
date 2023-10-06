@@ -75,7 +75,7 @@ func (o *dataSourceIbaDashboards) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	var ids []attr.Value
+	ids := make([]attr.Value, len(ds))
 	for i, j := range ds {
 		ids[i] = types.StringValue(j.Id.String())
 	}
