@@ -80,7 +80,7 @@ func (o *dataSourceIbaDashboard) Read(ctx context.Context, req datasource.ReadRe
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading IBA Dashboardt", err.Error(),
+				path.Root("name"), "Failed reading IBA Dashboard", err.Error(),
 			)
 			return
 		}

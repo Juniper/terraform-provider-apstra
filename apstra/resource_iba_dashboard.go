@@ -39,8 +39,7 @@ func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// Convert the plan into an API Request
-	dashReq := plan.Request(ctx, &resp.Diagnostics)
+
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
@@ -48,14 +47,12 @@ func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	// Lock the blueprint mutex.
-	// err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
-	// if err != nil {
-	// 	resp.Diagnostics.AddError(
-	// 		fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
-	// 		err.Error())
-	// 	return
-	// }
+	// Convert the plan into an API Request
+	dashReq := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	id, err := bpClient.CreateIbaDashboard(ctx, dashReq)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create Iba Dashboard", err.Error())
@@ -63,22 +60,19 @@ func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	api, err := bpClient.GetIbaDashboard(ctx, id)
-
-	if err != nil { // catch errors other than 404 from above
+	if err != nil {
 		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
 		return
 	}
 
 	// create new state object
-	var newstate iba.IbaDashboard
-	newstate.LoadApiData(ctx, api, &resp.Diagnostics)
+	plan.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	newstate.BlueprintId = plan.BlueprintId
+
 	// Set state
-	//
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newstate)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceIbaDashboard) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -88,35 +82,34 @@ func (o *resourceIbaDashboard) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	var err error
-	var api *apstra.IbaDashboard
-
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
-	api, err = bpClient.GetIbaDashboard(ctx, apstra.ObjectId(state.Id.ValueString()))
-	if utils.IsApstra404(err) {
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if err != nil { // catch errors other than 404 from above
+	api, err := bpClient.GetIbaDashboard(ctx, apstra.ObjectId(state.Id.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
 		return
 	}
 
 	// create new state object
-	var newstate iba.IbaDashboard
-	newstate.LoadApiData(ctx, api, &resp.Diagnostics)
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	newstate.BlueprintId = state.BlueprintId
+
 	// Set state
-	//
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newstate)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Update resource
@@ -145,24 +138,20 @@ func (o *resourceIbaDashboard) Update(ctx context.Context, req resource.UpdateRe
 		resp.Diagnostics.AddError("error updating IBA Dashboard", err.Error())
 		return
 	}
-	api, err := bpClient.GetIbaDashboard(ctx, apstra.ObjectId(plan.Id.ValueString()))
 
-	if err != nil { // catch errors other than 404 from above
+	api, err := bpClient.GetIbaDashboard(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
 		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
 		return
 	}
 
-	// create new state object
-	var newstate iba.IbaDashboard
-	newstate.LoadApiData(ctx, api, &resp.Diagnostics)
+	plan.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	newstate.BlueprintId = plan.BlueprintId
 
 	// Set state
-	//
-	resp.Diagnostics.Append(resp.State.Set(ctx, &newstate)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete resource
@@ -172,8 +161,12 @@ func (o *resourceIbaDashboard) Delete(ctx context.Context, req resource.DeleteRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}

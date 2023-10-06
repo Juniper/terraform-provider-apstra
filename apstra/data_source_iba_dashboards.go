@@ -38,7 +38,7 @@ func (o *dataSourceIbaDashboards) Schema(_ context.Context, _ datasource.SchemaR
 				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "A set of Apstra object ID numbers of  the IBA Dashboards in the blueprint.",
+				MarkdownDescription: "A set of Apstra object ID numbers of the IBA Dashboards in the Blueprint.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
@@ -57,6 +57,7 @@ func (o *dataSourceIbaDashboards) Read(ctx context.Context, req datasource.ReadR
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -74,7 +75,7 @@ func (o *dataSourceIbaDashboards) Read(ctx context.Context, req datasource.ReadR
 		return
 	}
 
-	ids := make([]attr.Value, len(ds))
+	var ids []attr.Value
 	for i, j := range ds {
 		ids[i] = types.StringValue(j.Id.String())
 	}
