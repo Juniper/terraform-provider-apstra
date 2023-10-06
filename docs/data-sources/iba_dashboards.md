@@ -77,4 +77,4 @@ output "od" {
 
 ### Read-Only
 
-- `ids` (Set of String) A set of Apstra object ID numbers of  the IBA Dashboards in the blueprint.
+- `ids` (Set of String) A set of Apstra object ID numbers of the IBA Dashboards in the Blueprint.
