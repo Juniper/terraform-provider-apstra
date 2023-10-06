@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -31,10 +32,12 @@ func (o ModularDeviceProfile) ResourceAttributes() map[string]schema.Attribute {
 		"name": schema.StringAttribute{
 			MarkdownDescription: "Name displayed in web UI.",
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"chassis_profile_id": schema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID of the Chassis Device Profile.",
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"line_card_profile_ids": schema.MapAttribute{
 			MarkdownDescription: "A map of Line Card Device Profile IDs, keyed by slot number",
