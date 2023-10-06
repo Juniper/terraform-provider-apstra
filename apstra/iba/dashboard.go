@@ -10,6 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -23,6 +25,54 @@ type IbaDashboard struct {
 	WidgetGrid          types.List   `tfsdk:"widget_grid"`
 	PredefinedDashboard types.String `tfsdk:"predefined_dashboard"`
 	UpdatedBy           types.String `tfsdk:"updated_by"`
+}
+
+func (o IbaDashboard) ResourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"blueprint_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Widget belongs to.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "IBA Dashboard ID.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "IBA Dashboard Name.",
+			Required:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Description of the IBA Dashboard",
+			Optional:            true,
+		},
+		"default": resourceSchema.BoolAttribute{
+			MarkdownDescription: "True if Default IBA Dashboard",
+			Optional:            true,
+		},
+		"predefined_dashboard": resourceSchema.StringAttribute{
+			MarkdownDescription: "Id of predefined IBA Dashboard if any",
+			Computed:            true,
+		},
+		"updated_by": resourceSchema.StringAttribute{
+			MarkdownDescription: "The user who updated the IBA Dashboard last",
+			Computed:            true,
+		},
+		"widget_grid": resourceSchema.ListAttribute{
+			MarkdownDescription: "Grid of Widgets to be displayed in the IBA Dashboard",
+			Required:            true,
+			ElementType: types.ListType{
+				ElemType: types.StringType,
+			},
+			Validators: []validator.List{
+				listvalidator.SizeAtLeast(1),
+			},
+		},
+	}
 }
 
 func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -68,7 +118,7 @@ func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			MarkdownDescription: "The user who updated the dashboard last",
 			Computed:            true,
 		},
-		"widget_grid": resourceSchema.ListAttribute{
+		"widget_grid": dataSourceSchema.ListAttribute{
 			MarkdownDescription: "Grid of Widgets to be displayed in the dashboard",
 			Computed:            true,
 			ElementType: types.ListType{
@@ -89,4 +139,20 @@ func (o *IbaDashboard) LoadApiData(ctx context.Context, in *apstra.IbaDashboard,
 	o.PredefinedDashboard = types.StringValue(in.Data.PredefinedDashboard)
 	o.UpdatedBy = types.StringValue(in.Data.UpdatedBy)
 	o.WidgetGrid = utils.ListValueOrNull(ctx, types.ListType{ElemType: types.StringType}, in.Data.IbaWidgetGrid, diag)
+}
+
+func (o *IbaDashboard) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaDashboardData {
+	var grid [][]apstra.ObjectId
+	d.Append(o.WidgetGrid.ElementsAs(ctx, &grid, false)...)
+	if d.HasError() {
+		return nil
+	}
+	return &apstra.IbaDashboardData{
+		Description:         o.Description.ValueString(),
+		Default:             o.Default.ValueBool(),
+		Label:               o.Name.ValueString(),
+		IbaWidgetGrid:       grid,
+		PredefinedDashboard: o.PredefinedDashboard.ValueString(),
+		UpdatedBy:           o.UpdatedBy.ValueString(),
+	}
 }
