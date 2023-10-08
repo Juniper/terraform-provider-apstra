@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"time"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
@@ -216,12 +217,31 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
 	// fetch the virtual network to learn apstra-assigned VLAN assignments
-	api, err := bp.GetVirtualNetwork(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error fetching just-created virtual network %q", id),
-			err.Error())
-		return
+	var api *apstra.VirtualNetwork
+	retryMax := 25
+	for {
+		if retryMax == 0 {
+			break
+		}
+		retryMax--
+		api, err = bp.GetVirtualNetwork(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("error fetching just-created virtual network %q", id),
+				err.Error())
+			return
+		}
+
+		if plan.IPv4ConnectivityEnabled.ValueBool() && api.Data.Ipv4Subnet == nil {
+			time.Sleep(200 * time.Millisecond)
+			continue // try again
+		}
+		if plan.IPv6ConnectivityEnabled.ValueBool() && api.Data.Ipv6Subnet == nil {
+			time.Sleep(200 * time.Millisecond)
+			continue // try again
+		}
+
+		break
 	}
 
 	// Create a new state object and load the current state from the API. We're
