@@ -36,6 +36,10 @@ func (o PrefixFilterValidator) ValidateObject(ctx context.Context, req validator
 		return
 	}
 
+	if pf.Prefix.IsUnknown() || pf.LeMask.IsUnknown() || pf.GeMask.IsUnknown() {
+		return
+	}
+
 	ip, ipNet, err := net.ParseCIDR(pf.Prefix.ValueString())
 	if err != nil {
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
