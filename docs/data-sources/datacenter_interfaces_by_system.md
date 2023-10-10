@@ -36,7 +36,7 @@ data "apstra_datacenter_interfaces_by_system" "test" {
 # The interesting output of apstra_datacenter_interfaces_by_system.test
 # is in the 'if_map' attribute:
 #
-#   "id_map" = tomap({
+#   "if_map" = tomap({
 #     "ae1" = "Pyu5ONSkPaJ36mwaRqQ"
 #     "ae2" = "oaMT0oZSnMZcY-RGY6U"
 #     "lo0.0" = "l2_esi_2x_links_001_leaf1_loopback"
