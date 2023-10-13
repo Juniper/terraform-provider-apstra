@@ -412,3 +412,53 @@ func TestSliceIntersectionOfAB(t *testing.T) {
 		}
 	}
 }
+
+func TestOnlyUniqStringers(t *testing.T) {
+	type testCase struct {
+		d []fmt.Stringer
+		e []fmt.Stringer
+	}
+
+	testCases := map[string]testCase{
+		"empty": {},
+		"simple": {
+			d: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10)},
+			e: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10)},
+		},
+		"contiguous": {
+			d: []fmt.Stringer{types.StringValue("foo"), types.StringValue("foo"), types.Int64Value(10), types.Int64Value(10)},
+			e: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10)},
+		},
+		"discontiguous": {
+			d: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10), types.StringValue("foo"), types.Int64Value(10)},
+			e: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10)},
+		},
+		"mixed": {
+			d: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10), types.Int64Value(10), types.Int64Value(10), types.StringValue("foo")},
+			e: []fmt.Stringer{types.StringValue("foo"), types.Int64Value(10)},
+		},
+	}
+
+	for tName, tCase := range testCases {
+		tName, tCase := tName, tCase
+		t.Run(t.Name(), func(t *testing.T) {
+			t.Parallel()
+			r := OnlyUniqStringers(tCase.d)
+
+			resultStrings := make([]string, len(r))
+			for i := range r {
+				resultStrings[i] = r[i].String()
+			}
+
+			expectedStrings := make([]string, len(r))
+			for i := range tCase.e {
+				expectedStrings[i] = tCase.e[i].String()
+			}
+
+			if !SlicesMatch(expectedStrings, resultStrings) {
+				t.Errorf("test case %s failed.\nexpected: %v\ngot: %v", tName, tCase.e, r)
+			}
+
+		})
+	}
+}
