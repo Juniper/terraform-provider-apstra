@@ -49,10 +49,10 @@ func (o NodesTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attr
 			},
 		},
 		"filters": dataSourceSchema.ListNestedAttribute{
-			MarkdownDescription: "Set of filters used to select only desired node IDs. For a System " +
-				"node to match a filter, all specified attributes must match (each the attributes within " +
-				"a filter are AND-ed together). The returned System node IDs represent the nodes matched " +
-				"by all of the filters together (filters are OR-ed together).",
+			MarkdownDescription: "List of filters used to select only desired node IDs. For a node " +
+				"to match a filter, all specified attributes must match (each attribute within a " +
+				"filter is AND-ed together). The returned node IDs represent the nodes matched by " +
+				"all of the filters together (filters are OR-ed together).",
 			Optional:   true,
 			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{

@@ -98,6 +98,39 @@ func (o datacenterRoutingPolicyExport) dataSourceAttributes() map[string]dataSou
 	}
 }
 
+func (o datacenterRoutingPolicyExport) dataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"export_loopbacks": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all loopbacks within a routing zone (VRF) across spine, leaf, and L3 servers.",
+			Optional:            true,
+		},
+		"export_spine_superspine_links": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all spine-leaf (fabric) links within a VRF. EVPN routing zones do not have " +
+				"spine-leaf addressing, so this generated list may be empty. For routing zones of type Virtual L3 " +
+				"Fabric, subinterfaces between spine-leaf will be included.",
+			Optional: true,
+		},
+		"export_spine_leaf_links": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all spine-supersine (fabric) links within the default routing zone (VRF)",
+			Optional:            true,
+		},
+		"export_l3_edge_server_links": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all leaf to L3 server links within a routing zone (VRF). This will be an " +
+				"empty list on a layer2 based blueprint",
+			Optional: true,
+		},
+		"export_l2_edge_subnets": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all virtual networks (VLANs) that have L3 addresses within a routing zone (VRF).",
+			Optional:            true,
+		},
+		"export_static_routes": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Exports all subnets in a VRF associated with static routes from all fabric systems " +
+				"to external routers associated with this routing policy",
+			Optional: true,
+		},
+	}
+}
+
 func (o datacenterRoutingPolicyExport) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"export_loopbacks":              types.BoolType,
@@ -138,4 +171,32 @@ func (o *datacenterRoutingPolicyExport) loadApiData(_ context.Context, in *apstr
 	o.L3Edge = types.BoolValue(in.L3EdgeServerLinks)
 	o.L2Edge = types.BoolValue(in.L2EdgeSubnets)
 	o.Static = types.BoolValue(in.StaticRoutes)
+}
+
+func (o *datacenterRoutingPolicyExport) filterMatch(_ context.Context, in *datacenterRoutingPolicyExport, _ *diag.Diagnostics) bool {
+	if !o.Loopback.IsNull() && !o.Loopback.Equal(in.Loopback) {
+		return false
+	}
+
+	if !o.Superspine.IsNull() && !o.Superspine.Equal(in.Superspine) {
+		return false
+	}
+
+	if !o.Spine.IsNull() && !o.Spine.Equal(in.Spine) {
+		return false
+	}
+
+	if !o.L3Edge.IsNull() && !o.L3Edge.Equal(in.L3Edge) {
+		return false
+	}
+
+	if !o.L2Edge.IsNull() && !o.L2Edge.Equal(in.L2Edge) {
+		return false
+	}
+
+	if !o.Static.IsNull() && !o.Static.Equal(in.Static) {
+		return false
+	}
+
+	return true
 }

@@ -3,14 +3,14 @@ page_title: "apstra_datacenter_systems Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source returns Graph DB node IDs of system nodes within a Blueprint.
-  Optional filter attribute filters the result list so that it only contains IDs of matching nodes.
+  Optional filters can be used to select only interesting nodes.
 ---
 
 # apstra_datacenter_systems (Data Source)
 
 This data source returns Graph DB node IDs of *system* nodes within a Blueprint.
 
-Optional `filter` attribute filters the result list so that it only contains IDs of matching nodes.
+Optional `filters` can be used to select only interesting nodes.
 
 ## Example Usage
 
@@ -48,7 +48,7 @@ output "pod2_nonprod_leafs" {
 ### Optional
 
 - `filter` (Attributes, Deprecated) Filter used to select only desired node IDs. All specified attributes must match. (see [below for nested schema](#nestedatt--filter))
-- `filters` (Attributes List) Set of filters used to select only desired node IDs. For a System node to match a filter, all specified attributes must match (each the attributes within a filter are AND-ed together). The returned System node IDs represent the nodes matched by all of the filters together (filters are OR-ed together). (see [below for nested schema](#nestedatt--filters))
+- `filters` (Attributes List) List of filters used to select only desired node IDs. For a node to match a filter, all specified attributes must match (each attribute within a filter is AND-ed together). The returned node IDs represent the nodes matched by all of the filters together (filters are OR-ed together). (see [below for nested schema](#nestedatt--filters))
 
 ### Read-Only
 
