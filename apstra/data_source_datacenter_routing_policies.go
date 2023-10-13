@@ -111,8 +111,7 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 	if len(rpFilters) == 0 { // no filter shortcut! return all routing policy IDs without inspection
 
 		// collect the IDs into config.Ids
-		var ids []attr.Value
-		ids = make([]attr.Value, len(apiResponse))
+		ids := make([]attr.Value, len(apiResponse))
 		for i, routingPolicy := range apiResponse {
 			ids[i] = types.StringValue(routingPolicy.Id.String())
 		}
