@@ -220,6 +220,74 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 	}
 }
 
+func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra graph node ID.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Web UI `name` field.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthBetween(1, 17)},
+		},
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Web UI 'description' field.",
+			Optional:            true,
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"import_policy": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("One of '%s'",
+				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
+			Optional: true,
+		},
+		"export_policy": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",
+			Attributes:          datacenterRoutingPolicyExport{}.dataSourceAttributesAsFilter(),
+			Optional:            true,
+		},
+		"expect_default_ipv4": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Default IPv4 route is expected to be imported via protocol session using this " +
+				"policy. Used for rendering route expectations.",
+			Optional: true,
+		},
+		"expect_default_ipv6": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Default IPv6 route is expected to be imported via protocol session using this " +
+				"policy. Used for rendering route expectations.",
+			Optional: true,
+		},
+		"aggregate_prefixes": dataSourceSchema.ListAttribute{
+			MarkdownDescription: "All `aggregate_prefixes` specified here are required for the filter to match, " +
+				"but the list need not be an *exact match*. That is, a policy containting `10.1.0.0/16` and " +
+				"`10.2.0.0/16` will match a filter which specifies only `10.1.0.0/16`",
+			Optional:    true,
+			ElementType: types.StringType,
+		},
+		"extra_imports": dataSourceSchema.ListNestedAttribute{
+			MarkdownDescription: "All `extra_imports` specified here are required for the filter to match, " +
+				"using the same logic as `aggregate_prefixes`.",
+			Optional: true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: prefixFilter{}.dataSourceAttributesAsFilter(),
+				Validators: []validator.Object{prefixFilterValidator()},
+			},
+		},
+		"extra_exports": dataSourceSchema.ListNestedAttribute{
+			MarkdownDescription: "All `extra_exports` specified here are required for the filter to match, " +
+				"using the same logic as `aggregate_prefixes`.",
+			Optional: true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: prefixFilter{}.dataSourceAttributesAsFilter(),
+				Validators: []validator.Object{prefixFilterValidator()},
+			},
+		},
+	}
+}
+
 func (o *DatacenterRoutingPolicy) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.DcRoutingPolicyData {
 	if o.ImportPolicy.IsUnknown() {
 		o.ImportPolicy = types.StringValue(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String())
@@ -345,4 +413,94 @@ func (o *DatacenterRoutingPolicy) LoadApiData(ctx context.Context, policyData *a
 	o.AggregatePrefixes = utils.ListValueOrNull(ctx, types.StringType, aggregatePrefixStrings, diags)
 	o.ExtraImports = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: prefixFilter{}.attrTypes()}, extraImports, diags)
 	o.ExtraExports = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: prefixFilter{}.attrTypes()}, extraExports, diags)
+}
+
+// FilterMatch returns true if 'in' has values which match those in 'o'
+func (o *DatacenterRoutingPolicy) FilterMatch(ctx context.Context, in *DatacenterRoutingPolicy, diags *diag.Diagnostics) bool {
+	if !o.Id.IsNull() && !o.Id.Equal(in.Id) {
+		return false
+	}
+
+	if !o.Name.IsNull() && !o.Name.Equal(in.Name) {
+		return false
+	}
+
+	if !o.Description.IsNull() && !o.Description.Equal(in.Description) {
+		return false
+	}
+
+	if !o.ImportPolicy.IsNull() && !o.ImportPolicy.Equal(in.ImportPolicy) {
+		return false
+	}
+
+	if !o.ExportPolicy.IsNull() {
+		var filterExportPolicy, candidateExportPolicy datacenterRoutingPolicyExport
+		diags.Append(o.ExportPolicy.As(ctx, &filterExportPolicy, basetypes.ObjectAsOptions{})...)
+		diags.Append(in.ExportPolicy.As(ctx, &candidateExportPolicy, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return false
+		}
+
+		if !filterExportPolicy.filterMatch(ctx, &candidateExportPolicy, diags) {
+			return false
+		}
+	}
+
+	if !o.ExpectV4Default.IsNull() && !o.ExpectV4Default.Equal(in.ExpectV4Default) {
+		return false
+	}
+
+	if !o.ExpectV6Default.IsNull() && !o.ExpectV6Default.Equal(in.ExpectV6Default) {
+		return false
+	}
+
+	if !o.AggregatePrefixes.IsNull() {
+		var filterAggregatePrefixes, candidateAggregatePrefixes []string
+		diags.Append(o.AggregatePrefixes.ElementsAs(ctx, &filterAggregatePrefixes, false)...)
+		diags.Append(in.AggregatePrefixes.ElementsAs(ctx, &candidateAggregatePrefixes, false)...)
+		if diags.HasError() {
+			return false
+		}
+		for _, filterAggreatePrefix := range filterAggregatePrefixes {
+			if !utils.SliceContains(filterAggreatePrefix, candidateAggregatePrefixes) {
+				return false
+			}
+		}
+	}
+
+	if !o.ExtraImports.IsNull() {
+		var filterExtraImports, candidateExtraImports []prefixFilter
+		diags.Append(o.ExtraImports.ElementsAs(ctx, &filterExtraImports, false)...)
+		diags.Append(in.ExtraImports.ElementsAs(ctx, &candidateExtraImports, false)...)
+
+	importFilterLoop:
+		for _, filter := range filterExtraImports {
+			for _, candidate := range candidateExtraImports {
+				if filter.filterMatch(ctx, &candidate, diags) {
+					continue importFilterLoop
+				}
+			}
+			// if we get here, then  no candidate matched the filter
+			return false
+		}
+	}
+
+	if !o.ExtraExports.IsNull() {
+		var filterExtraExports, candidateExtraExports []prefixFilter
+		diags.Append(o.ExtraExports.ElementsAs(ctx, &filterExtraExports, false)...)
+		diags.Append(in.ExtraExports.ElementsAs(ctx, &candidateExtraExports, false)...)
+
+	exportFilterLoop:
+		for _, filter := range filterExtraExports {
+			for _, candidate := range candidateExtraExports {
+				if filter.filterMatch(ctx, &candidate, diags) {
+					continue exportFilterLoop
+				}
+			}
+			// if we get here, then  no candidate matched the filter
+			return false
+		}
+	}
+
+	return true
 }
