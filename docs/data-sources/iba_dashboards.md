@@ -12,7 +12,7 @@ This data source returns the ID numbers of all IBA Dashboards in a Blueprint.
 ## Example Usage
 
 ```terraform
-# This example pulls one iba widget from a blueprint
+# This example pulls all the iba dashboards from a blueprint
 
 data "apstra_datacenter_blueprint" "b" {
   name = "test"

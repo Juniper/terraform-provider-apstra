@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -10,30 +11,30 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceIbaProbe{}
+var _ resource.ResourceWithConfigure = &resourceIbaWidget{}
 
-type resourceIbaProbe struct {
+type resourceIbaWidget struct {
 	client *apstra.Client
 }
 
-func (o *resourceIbaProbe) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_probe"
+func (o *resourceIbaWidget) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_iba_widget"
 }
 
-func (o *resourceIbaProbe) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceIbaWidget) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
 }
 
-func (o *resourceIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a IBA Dashboard.",
-		Attributes:          iba.IbaProbe{}.ResourceAttributes(),
+		MarkdownDescription: "This resource creates a IBA Widget.",
+		Attributes:          iba.IbaWidget{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan iba.IbaProbe
+	var plan iba.IbaWidget
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -52,32 +53,19 @@ func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	id, err := bpClient.InstantiateIbaPredefinedProbe(ctx, probeReq)
+	id, err := bpClient.CreateIbaWidget(ctx, probeReq)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
 		return
 	}
 	plan.Id = types.StringValue(id.String())
-	plan.Description = types.StringValue("")
-
-	api, err := bpClient.GetIbaProbe(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
-		return
-	}
-
-	// create new state object
-	plan.LoadApiData(ctx, api, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state iba.IbaProbe
+func (o *resourceIbaWidget) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state iba.IbaWidget
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -93,7 +81,7 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	api, err := bpClient.GetIbaProbe(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bpClient.GetIbaWidget(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -114,50 +102,50 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 // Update resource
-func (o *resourceIbaProbe) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan iba.IbaProbe
+	var plan iba.IbaWidget
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	//
-	// dbReq := plan.Request(ctx, &resp.Diagnostics)
-	// if resp.Diagnostics.HasError() {
-	// 	return
-	// }
-	//
-	// bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-	// 	return
-	// }
-	//
-	// // Update IBA Dashboard
-	// err = bpClient.UpdateIbaProbe(ctx, apstra.ObjectId(plan.Id.ValueString()), dbReq)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("error updating IBA Dashboard", err.Error())
-	// 	return
-	// }
-	//
-	// api, err := bpClient.GetIbaProbe(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
-	// 	return
-	// }
-	//
-	// plan.LoadApiData(ctx, api, &resp.Diagnostics)
-	// if resp.Diagnostics.HasError() {
-	// 	return
-	// }
+
+	widgetReq := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
+	// Update IBA Widget
+	err = bpClient.UpdateIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()), widgetReq)
+	if err != nil {
+		resp.Diagnostics.AddError("plan", fmt.Sprintf("%q", plan))
+		resp.Diagnostics.AddError("error updating IBA Dashboard plan", err.Error())
+		return
+	}
+
+	api, err := bpClient.GetIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
+		return
+	}
+	plan.LoadApiData(ctx, api, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete resource
-func (o *resourceIbaProbe) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state iba.IbaProbe
+func (o *resourceIbaWidget) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state iba.IbaWidget
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -173,7 +161,7 @@ func (o *resourceIbaProbe) Delete(ctx context.Context, req resource.DeleteReques
 	}
 
 	// Delete IBA Probe by calling API
-	err = bpClient.DeleteIbaProbe(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bpClient.DeleteIbaWidget(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

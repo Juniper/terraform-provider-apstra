@@ -482,6 +482,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceIbaDashboard{} },
 		func() resource.Resource { return &resourceIbaProbe{} },
+		func() resource.Resource { return &resourceIbaWidget{} },
 		func() resource.Resource { return &resourceIntegerPool{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },
 		func() resource.Resource { return &resourceIpv4Pool{} },

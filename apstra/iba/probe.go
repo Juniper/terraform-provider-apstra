@@ -27,7 +27,7 @@ type IbaProbe struct {
 func (o IbaProbe) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Widget belongs to.",
+			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Probe belongs to.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},

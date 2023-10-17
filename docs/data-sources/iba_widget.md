@@ -53,3 +53,5 @@ output "o" {
 ### Read-Only
 
 - `description` (String) Description of the IBA Widget
+- `probe_id` (String) Id of IBA Probe used by this widget
+- `stage` (String) Stage of IBA Probe used by this widget

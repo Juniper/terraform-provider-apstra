@@ -1,4 +1,4 @@
-# This example pulls one iba widget from a blueprint
+# This example pulls all the iba dashboards from a blueprint
 
 data "apstra_datacenter_blueprint" "b" {
   name = "test"
