@@ -115,7 +115,6 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 func (o *resourceIbaProbe) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	resp.Diagnostics.AddError("not implemented", "Probe update not implemented via terraform. Please file a bug.")
-	return
 }
 
 // Delete resource
