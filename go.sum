@@ -71,6 +71,8 @@ github.com/Juniper/apstra-go-sdk v0.0.0-20231014094535-29acb3e1bf00 h1:YYqFb1Hsl
 github.com/Juniper/apstra-go-sdk v0.0.0-20231014094535-29acb3e1bf00/go.mod h1:It+5cLgOj77K+s+7m5Nsnbms3Tu/4ObqDuBjsTR2Oh0=
 github.com/Juniper/apstra-go-sdk v0.0.0-20231014134337-d36959aa30d4 h1:H/ZXWL3acgyWplJt8q5lS15X9IN8in8OQ3WXrdVzPj0=
 github.com/Juniper/apstra-go-sdk v0.0.0-20231014134337-d36959aa30d4/go.mod h1:It+5cLgOj77K+s+7m5Nsnbms3Tu/4ObqDuBjsTR2Oh0=
+github.com/Juniper/apstra-go-sdk v0.0.0-20231017135235-6928acdbc77f h1:+9i18zSI2iEUqgKvDiCFM3HghRAN4Grjmp+4hDlljMw=
+github.com/Juniper/apstra-go-sdk v0.0.0-20231017135235-6928acdbc77f/go.mod h1:It+5cLgOj77K+s+7m5Nsnbms3Tu/4ObqDuBjsTR2Oh0=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
 github.com/Masterminds/goutils v1.1.1/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver/v3 v3.1.1 h1:hLg3sBzpNErnxhQtUy/mmLR2I9foDujNK030IGemrRc=

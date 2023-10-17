@@ -15,7 +15,7 @@ At least one optional attribute is required.
 ## Example Usage
 
 ```terraform
-# This example pulls one iba widget from a blueprint
+# This example pulls one iba dashboards from a blueprint
 
 data "apstra_datacenter_blueprint" "b" {
   name = "test"
