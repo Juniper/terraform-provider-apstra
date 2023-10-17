@@ -2,12 +2,12 @@
 page_title: "apstra_iba_probe Resource - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This resource creates a IBA Dashboard.
+  This resource creates a IBA Probe.
 ---
 
 # apstra_iba_probe (Resource)
 
-This resource creates a IBA Dashboard.
+This resource creates a IBA Probe.
 
 ## Example Usage
 
@@ -77,4 +77,4 @@ output "o"{
 - `description` (String) Description of the IBA Probe
 - `id` (String) IBA Probe ID.
 - `name` (String) IBA Probe Name.
-- `stages` (Set of String) Description of the IBA Probe
+- `stages` (Set of String) set of stages in the IBA Probe
