@@ -77,4 +77,4 @@ output "o"{
 - `description` (String) Description of the IBA Probe
 - `id` (String) IBA Probe ID.
 - `name` (String) IBA Probe Name.
-- `stages` (Set of String) set of stages in the IBA Probe
+- `stages` (Set of String) Set of names of stages in the IBA Probe
