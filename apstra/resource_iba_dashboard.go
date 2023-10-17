@@ -28,13 +28,13 @@ func (o *resourceIbaDashboard) Configure(ctx context.Context, req resource.Confi
 func (o *resourceIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a IBA Dashboard.",
-		Attributes:          iba.IbaDashboard{}.ResourceAttributes(),
+		Attributes:          iba.Dashboard{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan iba.IbaDashboard
+	var plan iba.Dashboard
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -76,7 +76,7 @@ func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (o *resourceIbaDashboard) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state iba.IbaDashboard
+	var state iba.Dashboard
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -115,7 +115,7 @@ func (o *resourceIbaDashboard) Read(ctx context.Context, req resource.ReadReques
 // Update resource
 func (o *resourceIbaDashboard) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan iba.IbaDashboard
+	var plan iba.Dashboard
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -156,7 +156,7 @@ func (o *resourceIbaDashboard) Update(ctx context.Context, req resource.UpdateRe
 
 // Delete resource
 func (o *resourceIbaDashboard) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state iba.IbaDashboard
+	var state iba.Dashboard
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

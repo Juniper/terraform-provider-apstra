@@ -16,7 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IbaDashboard struct {
+type Dashboard struct {
 	BlueprintId         types.String `tfsdk:"blueprint_id"`
 	Id                  types.String `tfsdk:"id"`
 	Name                types.String `tfsdk:"name"`
@@ -27,7 +27,7 @@ type IbaDashboard struct {
 	UpdatedBy           types.String `tfsdk:"updated_by"`
 }
 
-func (o IbaDashboard) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o Dashboard) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Widget belongs to.",
@@ -75,7 +75,7 @@ func (o IbaDashboard) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o Dashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Widget belongs to.",
@@ -131,7 +131,7 @@ func (o IbaDashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 	}
 }
 
-func (o *IbaDashboard) LoadApiData(ctx context.Context, in *apstra.IbaDashboard, diag *diag.Diagnostics) {
+func (o *Dashboard) LoadApiData(ctx context.Context, in *apstra.IbaDashboard, diag *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Data.Label)
 	o.Description = types.StringValue(in.Data.Description)
@@ -141,7 +141,7 @@ func (o *IbaDashboard) LoadApiData(ctx context.Context, in *apstra.IbaDashboard,
 	o.WidgetGrid = utils.ListValueOrNull(ctx, types.ListType{ElemType: types.StringType}, in.Data.IbaWidgetGrid, diag)
 }
 
-func (o *IbaDashboard) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaDashboardData {
+func (o *Dashboard) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaDashboardData {
 	var grid [][]apstra.ObjectId
 	d.Append(o.WidgetGrid.ElementsAs(ctx, &grid, false)...)
 	if d.HasError() {

@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IbaProbe struct {
+type Probe struct {
 	BlueprintId          types.String `tfsdk:"blueprint_id"`
 	Id                   types.String `tfsdk:"id"`
 	Name                 types.String `tfsdk:"name"`
@@ -23,7 +23,7 @@ type IbaProbe struct {
 	Stages               types.Set    `tfsdk:"stages"`
 }
 
-func (o IbaProbe) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Probe belongs to.",
@@ -60,7 +60,7 @@ func (o IbaProbe) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *IbaProbe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *diag.Diagnostics) {
+func (o *Probe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
@@ -71,7 +71,7 @@ func (o *IbaProbe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *d
 	o.Stages = utils.SetValueOrNull(ctx, types.StringType, s, diag)
 }
 
-func (o *IbaProbe) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaPredefinedProbeRequest {
+func (o *Probe) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaPredefinedProbeRequest {
 	return &apstra.IbaPredefinedProbeRequest{
 		Name: o.PredefinedIbaProbeId.ValueString(),
 		Data: []byte(o.IbaProbeConfig.ValueString()),

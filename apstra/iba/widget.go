@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IbaWidget struct {
+type Widget struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
@@ -23,7 +23,7 @@ type IbaWidget struct {
 	ProbeId     types.String `tfsdk:"probe_id"`
 }
 
-func (o IbaWidget) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o Widget) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Widget belongs to.",
@@ -65,7 +65,7 @@ func (o IbaWidget) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 	}
 }
 
-func (o IbaWidget) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o Widget) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Apstra Blueprint where the IBA Widget will be created",
@@ -105,7 +105,7 @@ func (o IbaWidget) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *IbaWidget) LoadApiData(_ context.Context, in *apstra.IbaWidget, _ *diag.Diagnostics) {
+func (o *Widget) LoadApiData(_ context.Context, in *apstra.IbaWidget, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Data.Label)
 	o.Description = types.StringValue(in.Data.Description)
@@ -113,7 +113,7 @@ func (o *IbaWidget) LoadApiData(_ context.Context, in *apstra.IbaWidget, _ *diag
 	o.ProbeId = types.StringValue(in.Data.ProbeId.String())
 }
 
-func (o *IbaWidget) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaWidgetData {
+func (o *Widget) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaWidgetData {
 
 	return &apstra.IbaWidgetData{
 		StageName:   o.Stage.ValueString(),
