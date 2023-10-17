@@ -28,12 +28,12 @@ func (o *dataSourceIbaPredefinedProbe) Configure(ctx context.Context, req dataso
 func (o *dataSourceIbaPredefinedProbe) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IBA Predefined Probe in a Blueprint.",
-		Attributes:          iba.IbaPredefinedProbe{}.DataSourceAttributes(),
+		Attributes:          iba.PredefinedProbe{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceIbaPredefinedProbe) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config iba.IbaPredefinedProbe
+	var config iba.PredefinedProbe
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return

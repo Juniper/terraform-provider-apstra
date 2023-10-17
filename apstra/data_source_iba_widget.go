@@ -30,12 +30,12 @@ func (o *dataSourceIbaWidget) Schema(_ context.Context, _ datasource.SchemaReque
 		MarkdownDescription: "This data source provides details of a specific IBA Widget in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: iba.IbaWidget{}.DataSourceAttributes(),
+		Attributes: iba.Widget{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config iba.IbaWidget
+	var config iba.Widget
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -75,8 +75,8 @@ func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadReque
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
-					"IbaWidget not found",
-					fmt.Sprintf("IbaWidget with ID %s not found", config.Id))
+					"Widget not found",
+					fmt.Sprintf("Widget with ID %s not found", config.Id))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(

@@ -30,12 +30,12 @@ func (o *dataSourceIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRe
 		MarkdownDescription: "This data source provides details of a specific IBA Dashboard in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: iba.IbaDashboard{}.DataSourceAttributes(),
+		Attributes: iba.Dashboard{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceIbaDashboard) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config iba.IbaDashboard
+	var config iba.Dashboard
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -75,8 +75,8 @@ func (o *dataSourceIbaDashboard) Read(ctx context.Context, req datasource.ReadRe
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
-					"IbaDashboard not found",
-					fmt.Sprintf("IbaDashboard with ID %s not found", config.Id))
+					"Dashboard not found",
+					fmt.Sprintf("Dashboard with ID %s not found", config.Id))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(

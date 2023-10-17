@@ -27,13 +27,13 @@ func (o *resourceIbaProbe) Configure(ctx context.Context, req resource.Configure
 func (o *resourceIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a IBA Probe.",
-		Attributes:          iba.IbaProbe{}.ResourceAttributes(),
+		Attributes:          iba.Probe{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan iba.IbaProbe
+	var plan iba.Probe
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -75,7 +75,7 @@ func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateReques
 }
 
 func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state iba.IbaProbe
+	var state iba.Probe
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -119,7 +119,7 @@ func (o *resourceIbaProbe) Update(_ context.Context, _ resource.UpdateRequest, r
 
 // Delete resource
 func (o *resourceIbaProbe) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state iba.IbaProbe
+	var state iba.Probe
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

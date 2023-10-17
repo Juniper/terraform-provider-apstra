@@ -28,13 +28,13 @@ func (o *resourceIbaWidget) Configure(ctx context.Context, req resource.Configur
 func (o *resourceIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a IBA Widget.",
-		Attributes:          iba.IbaWidget{}.ResourceAttributes(),
+		Attributes:          iba.Widget{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan iba.IbaWidget
+	var plan iba.Widget
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -65,7 +65,7 @@ func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateReque
 }
 
 func (o *resourceIbaWidget) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state iba.IbaWidget
+	var state iba.Widget
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -104,7 +104,7 @@ func (o *resourceIbaWidget) Read(ctx context.Context, req resource.ReadRequest, 
 // Update resource
 func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan iba.IbaWidget
+	var plan iba.Widget
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -145,7 +145,7 @@ func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateReque
 
 // Delete resource
 func (o *resourceIbaWidget) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state iba.IbaWidget
+	var state iba.Widget
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

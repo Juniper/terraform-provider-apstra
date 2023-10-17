@@ -432,7 +432,6 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterSvis{} },
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetworks{} },
 		func() datasource.DataSource { return &dataSourceIbaPredefinedProbe{} },
-		func() datasource.DataSource { return &dataSourceIbaPredefinedProbes{} },
 		func() datasource.DataSource { return &dataSourceIbaWidget{} },
 		func() datasource.DataSource { return &dataSourceIbaWidgets{} },
 		func() datasource.DataSource { return &dataSourceIbaDashboard{} },

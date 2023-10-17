@@ -10,14 +10,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type IbaPredefinedProbe struct {
+type PredefinedProbe struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	Schema      types.String `tfsdk:"schema"`
 }
 
-func (o IbaPredefinedProbe) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o PredefinedProbe) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Predefined Probe belongs to.",
@@ -42,7 +42,7 @@ func (o IbaPredefinedProbe) DataSourceAttributes() map[string]dataSourceSchema.A
 	}
 }
 
-func (o *IbaPredefinedProbe) LoadApiData(_ context.Context, in *apstra.IbaPredefinedProbe, d *diag.Diagnostics) {
+func (o *PredefinedProbe) LoadApiData(_ context.Context, in *apstra.IbaPredefinedProbe, d *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Name)
 	o.Description = types.StringValue(in.Description)
 	o.Schema = types.StringValue(string(in.Schema))
