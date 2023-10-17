@@ -43,7 +43,7 @@ func (o IbaProbe) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 		},
 		"stages": resourceSchema.SetAttribute{
-			MarkdownDescription: "Description of the IBA Probe",
+			MarkdownDescription: "Set of names of stages in the IBA Probe",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
