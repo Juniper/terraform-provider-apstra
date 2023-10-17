@@ -26,7 +26,7 @@ func (o *resourceIbaProbe) Configure(ctx context.Context, req resource.Configure
 
 func (o *resourceIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a IBA Dashboard.",
+		MarkdownDescription: "This resource creates a IBA Probe.",
 		Attributes:          iba.IbaProbe{}.ResourceAttributes(),
 	}
 }
@@ -58,11 +58,9 @@ func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 	plan.Id = types.StringValue(id.String())
-	plan.Description = types.StringValue("")
-
 	api, err := bpClient.GetIbaProbe(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
+		resp.Diagnostics.AddError("Failed to Read IBA Probe", err.Error())
 		return
 	}
 
@@ -99,7 +97,7 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
+		resp.Diagnostics.AddError("Failed to Read IBA Probe", err.Error())
 		return
 	}
 
@@ -114,45 +112,10 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 // Update resource
-func (o *resourceIbaProbe) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceIbaProbe) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan iba.IbaProbe
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	//
-	// dbReq := plan.Request(ctx, &resp.Diagnostics)
-	// if resp.Diagnostics.HasError() {
-	// 	return
-	// }
-	//
-	// bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-	// 	return
-	// }
-	//
-	// // Update IBA Dashboard
-	// err = bpClient.UpdateIbaProbe(ctx, apstra.ObjectId(plan.Id.ValueString()), dbReq)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("error updating IBA Dashboard", err.Error())
-	// 	return
-	// }
-	//
-	// api, err := bpClient.GetIbaProbe(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
-	// 	return
-	// }
-	//
-	// plan.LoadApiData(ctx, api, &resp.Diagnostics)
-	// if resp.Diagnostics.HasError() {
-	// 	return
-	// }
-
-	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	resp.Diagnostics.AddError("not implemented", "Probe update not implemented via terraform. Please file a bug.")
+	return
 }
 
 // Delete resource
