@@ -49,6 +49,7 @@ func (o *dataSourceIbaPredefinedProbe) Read(ctx context.Context, req datasource.
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
+
 	api, err := bpClient.GetIbaPredefinedProbeByName(ctx, config.Name.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
