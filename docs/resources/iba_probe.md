@@ -2,12 +2,12 @@
 page_title: "apstra_iba_probe Resource - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This resource creates a IBA Probe.
+  This resource creates an IBA Probe within a Blueprint.
 ---
 
 # apstra_iba_probe (Resource)
 
-This resource creates a IBA Probe.
+This resource creates an IBA Probe within a Blueprint.
 
 ## Example Usage
 
