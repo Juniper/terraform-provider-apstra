@@ -2,12 +2,12 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ resource.ResourceWithConfigure = &resourceIbaProbe{}
@@ -26,7 +26,7 @@ func (o *resourceIbaProbe) Configure(ctx context.Context, req resource.Configure
 
 func (o *resourceIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a IBA Probe.",
+		MarkdownDescription: "This resource creates an IBA Probe within a Blueprint.",
 		Attributes:          iba.Probe{}.ResourceAttributes(),
 	}
 }
@@ -42,6 +42,11 @@ func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateReques
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
+				plan.BlueprintId), err.Error())
+			return
+		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
@@ -52,19 +57,21 @@ func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
+	// Instantiate the probe
 	id, err := bpClient.InstantiateIbaPredefinedProbe(ctx, probeReq)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
 		return
 	}
-	plan.Id = types.StringValue(id.String())
+
+	// Fetch the probe details
 	api, err := bpClient.GetIbaProbe(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to Read IBA Probe", err.Error())
 		return
 	}
 
-	// create new state object
+	// Populate plan object with new probe details
 	plan.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -81,6 +88,7 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
+	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -91,6 +99,7 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
+	// read probe details from API
 	api, err := bpClient.GetIbaProbe(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -101,7 +110,7 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	// create new state object
+	// load probe details into state object
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

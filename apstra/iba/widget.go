@@ -114,7 +114,6 @@ func (o *Widget) LoadApiData(_ context.Context, in *apstra.IbaWidget, _ *diag.Di
 }
 
 func (o *Widget) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaWidgetData {
-
 	return &apstra.IbaWidgetData{
 		StageName:   o.Stage.ValueString(),
 		Description: o.Description.ValueString(),

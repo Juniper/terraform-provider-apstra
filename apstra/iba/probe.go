@@ -14,13 +14,13 @@ import (
 )
 
 type Probe struct {
-	BlueprintId          types.String `tfsdk:"blueprint_id"`
-	Id                   types.String `tfsdk:"id"`
-	Name                 types.String `tfsdk:"name"`
-	Description          types.String `tfsdk:"description"`
-	PredefinedIbaProbeId types.String `tfsdk:"predefined_probe_id"`
-	IbaProbeConfig       types.String `tfsdk:"probe_config"`
-	Stages               types.Set    `tfsdk:"stages"`
+	BlueprintId       types.String `tfsdk:"blueprint_id"`
+	Id                types.String `tfsdk:"id"`
+	Name              types.String `tfsdk:"name"`
+	Description       types.String `tfsdk:"description"`
+	PredefinedProbeId types.String `tfsdk:"predefined_probe_id"`
+	ProbeConfig       types.String `tfsdk:"probe_config"`
+	Stages            types.Set    `tfsdk:"stages"`
 }
 
 func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -29,6 +29,7 @@ func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Probe belongs to.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "IBA Probe ID.",
@@ -73,7 +74,7 @@ func (o *Probe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *diag
 
 func (o *Probe) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaPredefinedProbeRequest {
 	return &apstra.IbaPredefinedProbeRequest{
-		Name: o.PredefinedIbaProbeId.ValueString(),
-		Data: []byte(o.IbaProbeConfig.ValueString()),
+		Name: o.PredefinedProbeId.ValueString(),
+		Data: []byte(o.ProbeConfig.ValueString()),
 	}
 }

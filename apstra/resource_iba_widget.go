@@ -43,6 +43,11 @@ func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateReque
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
+				plan.BlueprintId), err.Error())
+			return
+		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
@@ -58,9 +63,9 @@ func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateReque
 		resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
 		return
 	}
-	plan.Id = types.StringValue(id.String())
 
 	// Set state
+	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -124,7 +129,6 @@ func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateReque
 	// Update IBA Widget
 	err = bpClient.UpdateIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()), widgetReq)
 	if err != nil {
-		resp.Diagnostics.AddError("plan", fmt.Sprintf("%q", plan))
 		resp.Diagnostics.AddError("error updating IBA Dashboard plan", err.Error())
 		return
 	}
@@ -134,6 +138,7 @@ func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateReque
 		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
 		return
 	}
+
 	plan.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
