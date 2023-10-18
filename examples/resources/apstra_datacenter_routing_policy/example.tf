@@ -8,7 +8,7 @@ resource "apstra_datacenter_routing_policy" "just_pull_every_available_lever" {
   blueprint_id  = data.apstra_datacenter_blueprint.prod.id
   name          = "nope"
   description   = "Nothing good can come from this"
-  import_policy = "defult_only" // "default_only" is the default. other options: "all" "extra_only"
+  import_policy = "default_only" // "default_only" is the default. other options: "all" "extra_only"
   extra_imports = [
     { prefix = "10.0.0.0/8",                                 action = "deny"   },
     { prefix = "11.0.0.0/8", ge_mask = 31,   le_mask = 32,   action = "deny"   },
