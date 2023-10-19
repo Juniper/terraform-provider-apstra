@@ -4,19 +4,19 @@ data "apstra_datacenter_blueprint" "b" {
   name = "test"
 }
 
-data "apstra_iba_predefined_probes" "all" {
+data "apstra_blueprint_iba_predefined_probes" "all" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
 }
 
 
-data "apstra_iba_predefined_probe" "all" {
-  for_each = data.apstra_iba_predefined_probes.all.names
+data "apstra_blueprint_iba_predefined_probe" "all" {
+  for_each = data.apstra_blueprint_iba_predefined_probes.all.names
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   name = each.key
 }
 
 output "o2" {
-  value = data.apstra_iba_predefined_probe.all
+  value = data.apstra_blueprint_iba_predefined_probe.all
 }
 
 # Output looks something like this

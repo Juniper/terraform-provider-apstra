@@ -3,19 +3,19 @@ data "apstra_datacenter_blueprint" "b" {
   name = "test"
 }
 
-data "apstra_iba_widgets" "all" {
+data "apstra_blueprint_iba_widgets" "all" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
 }
 
 
-data "apstra_iba_widget" "all" {
-  for_each = data.apstra_iba_widgets.all.ids
+data "apstra_blueprint_iba_widget" "all" {
+  for_each = data.apstra_blueprint_iba_widgets.all.ids
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   id = each.key
 }
 
 output "o" {
-  value = data.apstra_iba_widget.all
+  value = data.apstra_blueprint_iba_widget.all
 }
 
 #Output looks something like this

@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	resourceIbaWidgetHCL = `
-resource "apstra_iba_probe" "p_device_health" {
+	resourceBlueprintIbaWidgetHCL = `
+resource "apstra_blueprint_iba_probe" "p_device_health" {
   blueprint_id = "%s"
   predefined_probe_id = "device_health"
   probe_config = jsonencode(
@@ -25,10 +25,10 @@ resource "apstra_iba_probe" "p_device_health" {
     }
   )
 }
-resource "apstra_iba_widget" "w_device_health_high_cpu" {
+resource "apstra_blueprint_iba_widget" "w_device_health_high_cpu" {
   blueprint_id = "%s"
   name = "%s"
-  probe_id = apstra_iba_probe.p_device_health.id
+  probe_id = apstra_blueprint_iba_probe.p_device_health.id
   stage = "Systems with high CPU utilization"
   description = "made from terraform"
 }
@@ -55,22 +55,22 @@ func TestAccResourceWidget(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceIbaWidgetHCL, bpClient.Id(), bpClient.Id(), n1),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaWidgetHCL, bpClient.Id(), bpClient.Id(), n1),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_iba_widget.w_device_health_high_cpu", "id"),
+					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_widget.w_device_health_high_cpu", "id"),
 					// Check the name
-					resource.TestCheckResourceAttr("apstra_iba_widget.w_device_health_high_cpu", "name", n1),
+					resource.TestCheckResourceAttr("apstra_blueprint_iba_widget.w_device_health_high_cpu", "name", n1),
 				),
 			},
 			// Update and Read testing
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceIbaWidgetHCL, bpClient.Id(), bpClient.Id(), n2),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaWidgetHCL, bpClient.Id(), bpClient.Id(), n2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_iba_widget.w_device_health_high_cpu", "id"),
+					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_widget.w_device_health_high_cpu", "id"),
 					// Check the name
-					resource.TestCheckResourceAttr("apstra_iba_widget.w_device_health_high_cpu", "name", n2),
+					resource.TestCheckResourceAttr("apstra_blueprint_iba_widget.w_device_health_high_cpu", "name", n2),
 				),
 			},
 		},

@@ -11,28 +11,28 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceIbaWidget{}
+var _ resource.ResourceWithConfigure = &resourceBlueprintIbaWidget{}
 
-type resourceIbaWidget struct {
+type resourceBlueprintIbaWidget struct {
 	client *apstra.Client
 }
 
-func (o *resourceIbaWidget) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_widget"
+func (o *resourceBlueprintIbaWidget) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_widget"
 }
 
-func (o *resourceIbaWidget) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceBlueprintIbaWidget) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
 }
 
-func (o *resourceIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceBlueprintIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a IBA Widget.",
 		Attributes:          iba.Widget{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceBlueprintIbaWidget) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan iba.Widget
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -69,7 +69,7 @@ func (o *resourceIbaWidget) Create(ctx context.Context, req resource.CreateReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceIbaWidget) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceBlueprintIbaWidget) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state iba.Widget
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -107,7 +107,7 @@ func (o *resourceIbaWidget) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 // Update resource
-func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceBlueprintIbaWidget) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan iba.Widget
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -149,7 +149,7 @@ func (o *resourceIbaWidget) Update(ctx context.Context, req resource.UpdateReque
 }
 
 // Delete resource
-func (o *resourceIbaWidget) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceBlueprintIbaWidget) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state iba.Widget
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

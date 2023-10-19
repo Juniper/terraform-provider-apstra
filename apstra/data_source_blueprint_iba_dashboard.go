@@ -11,31 +11,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceIbaWidget{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaDashboard{}
 
-type dataSourceIbaWidget struct {
+type dataSourceBlueprintIbaDashboard struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_widget"
+func (o *dataSourceBlueprintIbaDashboard) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_dashboard"
 }
 
-func (o *dataSourceIbaWidget) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintIbaDashboard) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceBlueprintIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific IBA Widget in a Blueprint." +
+		MarkdownDescription: "This data source provides details of a specific IBA Dashboard in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: iba.Widget{}.DataSourceAttributes(),
+		Attributes: iba.Dashboard{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config iba.Widget
+func (o *dataSourceBlueprintIbaDashboard) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config iba.Dashboard
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -52,35 +52,35 @@ func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadReque
 		return
 	}
 
-	var api *apstra.IbaWidget
+	var api *apstra.IbaDashboard
 	switch {
 	case !config.Name.IsNull():
-		api, err = bpClient.GetIbaWidgetByLabel(ctx, config.Name.ValueString())
+		api, err = bpClient.GetIbaDashboardByLabel(ctx, config.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("name"),
-					"IBA widget not found",
-					fmt.Sprintf("IBA Widget with name %s not found", config.Name))
+					"IBA dashboard not found",
+					fmt.Sprintf("IBA Dashboard with name %s not found: Error : %q", config.Name, err))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading IBA Widget", err.Error(),
+				path.Root("name"), "Failed reading IBA Dashboard", err.Error(),
 			)
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = bpClient.GetIbaWidget(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bpClient.GetIbaDashboard(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
-					"Widget not found",
-					fmt.Sprintf("Widget with ID %s not found", config.Id))
+					"Dashboard not found",
+					fmt.Sprintf("Dashboard with ID %s not found", config.Id))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(
-				path.Root("name"), "Failed reading IBA Widget", err.Error(),
+				path.Root("name"), "Failed reading IBA Dashboard", err.Error(),
 			)
 			return
 		}

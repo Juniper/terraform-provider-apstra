@@ -11,28 +11,28 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceIbaPredefinedProbe{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaPredefinedProbe{}
 
-type dataSourceIbaPredefinedProbe struct {
+type dataSourceBlueprintIbaPredefinedProbe struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceIbaPredefinedProbe) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_predefined_probe"
+func (o *dataSourceBlueprintIbaPredefinedProbe) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_predefined_probe"
 }
 
-func (o *dataSourceIbaPredefinedProbe) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintIbaPredefinedProbe) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceIbaPredefinedProbe) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceBlueprintIbaPredefinedProbe) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IBA Predefined Probe in a Blueprint.",
 		Attributes:          iba.PredefinedProbe{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceIbaPredefinedProbe) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceBlueprintIbaPredefinedProbe) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config iba.PredefinedProbe
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

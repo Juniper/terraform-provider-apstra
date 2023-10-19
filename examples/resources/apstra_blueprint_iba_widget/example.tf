@@ -4,7 +4,7 @@ data "apstra_datacenter_blueprint" "b" {
   name = "test"
 }
 
-resource "apstra_iba_probe" "p_device_health" {
+resource "apstra_blueprint_iba_probe" "p_device_health" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   predefined_probe_id = "device_health"
   probe_config = jsonencode(
@@ -19,16 +19,16 @@ resource "apstra_iba_probe" "p_device_health" {
   )
 }
 
-resource "apstra_iba_widget" "w_device_health_high_cpu" {
+resource "apstra_blueprint_iba_widget" "w_device_health_high_cpu" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   name = "Devices with high CPU Utilization"
-  probe_id = apstra_iba_probe.p_device_health.id
+  probe_id = apstra_blueprint_iba_probe.p_device_health.id
   stage = "Systems with high CPU utilization"
   description = "made from terraform"
 }
 
 output "o"{
-  value = apstra_iba_widget.w_device_health_high_cpu
+  value = apstra_blueprint_iba_widget.w_device_health_high_cpu
 }
 
 # Output looks something like this

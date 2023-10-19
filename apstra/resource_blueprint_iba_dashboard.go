@@ -9,30 +9,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
-var _ resource.ResourceWithConfigure = &resourceIbaDashboard{}
+var _ resource.ResourceWithConfigure = &resourceBlueprintIbaDashboard{}
 
-type resourceIbaDashboard struct {
+type resourceBlueprintIbaDashboard struct {
 	client *apstra.Client
 	//	lockFunc func(context.Context, string) error
 }
 
-func (o *resourceIbaDashboard) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_dashboard"
+func (o *resourceBlueprintIbaDashboard) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_dashboard"
 }
 
-func (o *resourceIbaDashboard) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceBlueprintIbaDashboard) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
-	//	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourceIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates a IBA Dashboard.",
 		Attributes:          iba.Dashboard{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceBlueprintIbaDashboard) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan iba.Dashboard
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -75,7 +74,7 @@ func (o *resourceIbaDashboard) Create(ctx context.Context, req resource.CreateRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceIbaDashboard) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceBlueprintIbaDashboard) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state iba.Dashboard
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -113,7 +112,7 @@ func (o *resourceIbaDashboard) Read(ctx context.Context, req resource.ReadReques
 }
 
 // Update resource
-func (o *resourceIbaDashboard) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceBlueprintIbaDashboard) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan iba.Dashboard
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -155,7 +154,7 @@ func (o *resourceIbaDashboard) Update(ctx context.Context, req resource.UpdateRe
 }
 
 // Delete resource
-func (o *resourceIbaDashboard) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceBlueprintIbaDashboard) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state iba.Dashboard
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
