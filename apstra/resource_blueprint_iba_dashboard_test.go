@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	resourceIbaDashboardTemplateHCL = `
+	resourceBlueprintIbaDashboardTemplateHCL = `
 
-resource "apstra_iba_dashboard" "a" {
+resource "apstra_blueprint_iba_dashboard" "a" {
   blueprint_id = "%s"
   default = false
   description = "The dashboard presents the data of utilization of system cpu, system memory and maximum disk utilization of a partition on every system present."
@@ -40,7 +40,7 @@ func TestAccResourceDashboard(t *testing.T) {
 
 	ctx := context.Background()
 
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "1bb57", testutils.BlueprintA)
+	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
 
 	if err != nil {
 		t.Fatal(errors.Join(err, bpDelete(ctx)))
@@ -69,21 +69,21 @@ func TestAccResourceDashboard(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceIbaDashboardTemplateHCL, bpClient.Id(), fmt.Sprintf(one_pane, widgetIdA)),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaDashboardTemplateHCL, bpClient.Id(), fmt.Sprintf(one_pane, widgetIdA)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_iba_dashboard.a", "id"),
-					resource.TestCheckResourceAttr("apstra_iba_dashboard.a", "widget_grid.0.0", widgetIdA.String()),
+					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_dashboard.a", "id"),
+					resource.TestCheckResourceAttr("apstra_blueprint_iba_dashboard.a", "widget_grid.0.0", widgetIdA.String()),
 				),
 			},
 			// Update and Read testing
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceIbaDashboardTemplateHCL, bpClient.Id(), fmt.Sprintf(two_panes, widgetIdA, widgetIdB)),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaDashboardTemplateHCL, bpClient.Id(), fmt.Sprintf(two_panes, widgetIdA, widgetIdB)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_iba_dashboard.a", "id"),
-					resource.TestCheckResourceAttr("apstra_iba_dashboard.a", "widget_grid.0.0", widgetIdA.String()),
-					resource.TestCheckResourceAttr("apstra_iba_dashboard.a", "widget_grid.1.0", widgetIdB.String()),
+					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_dashboard.a", "id"),
+					resource.TestCheckResourceAttr("apstra_blueprint_iba_dashboard.a", "widget_grid.0.0", widgetIdA.String()),
+					resource.TestCheckResourceAttr("apstra_blueprint_iba_dashboard.a", "widget_grid.1.0", widgetIdB.String()),
 				),
 			},
 		},

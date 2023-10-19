@@ -10,28 +10,28 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
-var _ resource.ResourceWithConfigure = &resourceIbaProbe{}
+var _ resource.ResourceWithConfigure = &resourceBlueprintIbaProbe{}
 
-type resourceIbaProbe struct {
+type resourceBlueprintIbaProbe struct {
 	client *apstra.Client
 }
 
-func (o *resourceIbaProbe) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_probe"
+func (o *resourceBlueprintIbaProbe) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_probe"
 }
 
-func (o *resourceIbaProbe) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceBlueprintIbaProbe) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
 }
 
-func (o *resourceIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceBlueprintIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This resource creates an IBA Probe within a Blueprint.",
 		Attributes:          iba.Probe{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceBlueprintIbaProbe) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan iba.Probe
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -81,7 +81,7 @@ func (o *resourceIbaProbe) Create(ctx context.Context, req resource.CreateReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceBlueprintIbaProbe) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state iba.Probe
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -121,13 +121,13 @@ func (o *resourceIbaProbe) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 // Update resource
-func (o *resourceIbaProbe) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceBlueprintIbaProbe) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	resp.Diagnostics.AddError("not implemented", "Probe update not implemented via terraform. Please file a bug.")
 }
 
 // Delete resource
-func (o *resourceIbaProbe) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceBlueprintIbaProbe) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state iba.Probe
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

@@ -3,6 +3,7 @@ package iba
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -86,7 +87,10 @@ func (o Widget) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"description": resourceSchema.StringAttribute{
 			MarkdownDescription: "IBA Widget Description",
-			Required:            true,
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 		"probe_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Id of IBA Probe used by this widget",
@@ -105,10 +109,10 @@ func (o Widget) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Widget) LoadApiData(_ context.Context, in *apstra.IbaWidget, _ *diag.Diagnostics) {
+func (o *Widget) LoadApiData(ctx context.Context, in *apstra.IbaWidget, d *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Data.Label)
-	o.Description = types.StringValue(in.Data.Description)
+	o.Description = utils.StringValueOrNull(ctx, in.Data.Description, d)
 	o.Stage = types.StringValue(in.Data.StageName)
 	o.ProbeId = types.StringValue(in.Data.ProbeId.String())
 }

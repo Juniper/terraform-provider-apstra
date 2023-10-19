@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	resourceIbaProbeHCL = `
-resource "apstra_iba_probe" "p_device_health" {
+	resourceBlueprintIbaProbeHCL = `
+resource "apstra_blueprint_iba_probe" "p_device_health" {
   blueprint_id = "%s"
   predefined_probe_id = "device_health"
   probe_config = jsonencode(
@@ -30,7 +30,7 @@ resource "apstra_iba_probe" "p_device_health" {
 
 func TestAccResourceProbe(t *testing.T) {
 	ctx := context.Background()
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "1bb57", testutils.BlueprintA)
+	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
 	if err != nil {
 		t.Fatal(errors.Join(err, bpDelete(ctx)))
 	}
@@ -46,10 +46,10 @@ func TestAccResourceProbe(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceIbaProbeHCL, bpClient.Id()),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeHCL, bpClient.Id()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_iba_probe.p_device_health", "id"), resource.TestCheckResourceAttr("apstra_iba_probe.p_device_health", "name", "Device System Health")),
+					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_health", "id"), resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_health", "name", "Device System Health")),
 			},
 		},
 	})
