@@ -72,6 +72,7 @@ func (o Widget) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "ID of the Apstra Blueprint where the IBA Widget will be created",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "IBA Widget ID",

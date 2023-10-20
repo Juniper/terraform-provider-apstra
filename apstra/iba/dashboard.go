@@ -33,6 +33,7 @@ func (o Dashboard) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the IBA Widget belongs to.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "IBA Dashboard ID.",
