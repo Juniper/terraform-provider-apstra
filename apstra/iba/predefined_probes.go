@@ -25,7 +25,7 @@ func (o PredefinedProbe) DataSourceAttributes() map[string]dataSourceSchema.Attr
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a IBA Predefined Probe.",
+			MarkdownDescription: "Populate this field to look up an IBA Predefined Probe.",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),

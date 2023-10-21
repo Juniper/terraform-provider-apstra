@@ -2,12 +2,12 @@
 page_title: "apstra_blueprint_iba_widget Resource - terraform-provider-apstra"
 subcategory: ""
 description: |-
-  This resource creates a IBA Widget.
+  This resource creates an IBA Widget.
 ---
 
 # apstra_blueprint_iba_widget (Resource)
 
-This resource creates a IBA Widget.
+This resource creates an IBA Widget.
 
 ## Example Usage
 

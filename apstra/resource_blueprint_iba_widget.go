@@ -27,7 +27,7 @@ func (o *resourceBlueprintIbaWidget) Configure(ctx context.Context, req resource
 
 func (o *resourceBlueprintIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a IBA Widget.",
+		MarkdownDescription: "This resource creates an IBA Widget.",
 		Attributes:          iba.Widget{}.ResourceAttributes(),
 	}
 }
@@ -60,7 +60,7 @@ func (o *resourceBlueprintIbaWidget) Create(ctx context.Context, req resource.Cr
 
 	id, err := bpClient.CreateIbaWidget(ctx, probeReq)
 	if err != nil {
-		resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
+		resp.Diagnostics.AddError("failed to create IBA Widget", err.Error())
 		return
 	}
 
@@ -129,13 +129,13 @@ func (o *resourceBlueprintIbaWidget) Update(ctx context.Context, req resource.Up
 	// Update IBA Widget
 	err = bpClient.UpdateIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()), widgetReq)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating IBA Dashboard plan", err.Error())
+		resp.Diagnostics.AddError("error updating IBA Widget", err.Error())
 		return
 	}
 
 	api, err := bpClient.GetIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
+		resp.Diagnostics.AddError("Failed to Read IBA Widget", err.Error())
 		return
 	}
 
