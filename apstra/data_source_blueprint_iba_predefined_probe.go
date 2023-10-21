@@ -55,7 +55,7 @@ func (o *dataSourceBlueprintIbaPredefinedProbe) Read(ctx context.Context, req da
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
-				"IBA widget not found",
+				"IBA Predefined Probe not found",
 				fmt.Sprintf("IBA Predefined Probe with name %s not found", config.Name))
 			return
 		}
