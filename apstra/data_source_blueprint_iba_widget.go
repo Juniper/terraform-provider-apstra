@@ -11,31 +11,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceIbaWidget{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidget{}
 
-type dataSourceIbaWidget struct {
+type dataSourceBlueprintIbaWidget struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_widget"
+func (o *dataSourceBlueprintIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_widget"
 }
 
-func (o *dataSourceIbaWidget) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintIbaWidget) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceBlueprintIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IBA Widget in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: iba.IbaWidget{}.DataSourceAttributes(),
+		Attributes: iba.Widget{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config iba.IbaWidget
+func (o *dataSourceBlueprintIbaWidget) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config iba.Widget
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -75,8 +75,8 @@ func (o *dataSourceIbaWidget) Read(ctx context.Context, req datasource.ReadReque
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
-					"IbaWidget not found",
-					fmt.Sprintf("IbaWidget with ID %s not found", config.Id))
+					"Widget not found",
+					fmt.Sprintf("Widget with ID %s not found", config.Id))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(

@@ -1,11 +1,11 @@
 ---
-page_title: "apstra_iba_widgets Data Source - terraform-provider-apstra"
+page_title: "apstra_blueprint_iba_widgets Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source returns the IDs of the IBA Widgets in a Blueprint.
 ---
 
-# apstra_iba_widgets (Data Source)
+# apstra_blueprint_iba_widgets (Data Source)
 
 This data source returns the IDs of the IBA Widgets in a Blueprint.
 
@@ -16,19 +16,19 @@ data "apstra_datacenter_blueprint" "b" {
   name = "test"
 }
 
-data "apstra_iba_widgets" "all" {
+data "apstra_blueprint_iba_widgets" "all" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
 }
 
 
-data "apstra_iba_widget" "all" {
-  for_each = data.apstra_iba_widgets.all.ids
+data "apstra_blueprint_iba_widget" "all" {
+  for_each = data.apstra_blueprint_iba_widgets.all.ids
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   id = each.key
 }
 
 output "o" {
-  value = data.apstra_iba_widget.all
+  value = data.apstra_blueprint_iba_widget.all
 }
 
 #Output looks something like this

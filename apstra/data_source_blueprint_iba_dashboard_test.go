@@ -11,15 +11,15 @@ import (
 )
 
 const (
-	dataSourceIbaDashboardTemplateByNameHCL = `
-	data "apstra_iba_dashboard" "test" {
+	dataSourceBlueprintIbaDashboardTemplateByNameHCL = `
+	data "apstra_blueprint_iba_dashboard" "test" {
     	blueprint_id = "%s"
 		name = "%s"
 	}
 	`
 
-	dataSourceIbaDashboardTemplateByIdHCL = `
-	data "apstra_iba_dashboard" "test" {
+	dataSourceBlueprintIbaDashboardTemplateByIdHCL = `
+	data "apstra_blueprint_iba_dashboard" "test" {
   		blueprint_id = "%s"
 		id = "%s"
 	}
@@ -71,24 +71,24 @@ func TestAccDataSourceIbaDashboard(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Read by ID
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIbaDashboardTemplateByIdHCL,
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceBlueprintIbaDashboardTemplateByIdHCL,
 					bpClient.Id().String(), dId.String()),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "id", dId.String()),
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "name", data.Label),
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "widget_grid.0.0", widgetIdA.String()),
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "widget_grid.0.1", widgetIdB.String()),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "id", dId.String()),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "name", data.Label),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "widget_grid.0.0", widgetIdA.String()),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "widget_grid.0.1", widgetIdB.String()),
 				),
 			},
 			// Read by Name
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceIbaDashboardTemplateByNameHCL,
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceBlueprintIbaDashboardTemplateByNameHCL,
 					bpClient.Id().String(), data.Label),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "id", dId.String()),
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "name", data.Label),
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "widget_grid.0.0", widgetIdA.String()),
-					resource.TestCheckResourceAttr("data.apstra_iba_dashboard.test", "widget_grid.0.1", widgetIdB.String()),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "id", dId.String()),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "name", data.Label),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "widget_grid.0.0", widgetIdA.String()),
+					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "widget_grid.0.1", widgetIdB.String()),
 				),
 			},
 		},

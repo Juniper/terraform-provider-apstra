@@ -11,31 +11,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceIbaDashboard{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaDashboard{}
 
-type dataSourceIbaDashboard struct {
+type dataSourceBlueprintIbaDashboard struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceIbaDashboard) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_dashboard"
+func (o *dataSourceBlueprintIbaDashboard) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_dashboard"
 }
 
-func (o *dataSourceIbaDashboard) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintIbaDashboard) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceBlueprintIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source provides details of a specific IBA Dashboard in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: iba.IbaDashboard{}.DataSourceAttributes(),
+		Attributes: iba.Dashboard{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceIbaDashboard) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config iba.IbaDashboard
+func (o *dataSourceBlueprintIbaDashboard) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config iba.Dashboard
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -75,8 +75,8 @@ func (o *dataSourceIbaDashboard) Read(ctx context.Context, req datasource.ReadRe
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
 					path.Root("id"),
-					"IbaDashboard not found",
-					fmt.Sprintf("IbaDashboard with ID %s not found", config.Id))
+					"Dashboard not found",
+					fmt.Sprintf("Dashboard with ID %s not found", config.Id))
 				return
 			}
 			resp.Diagnostics.AddAttributeError(

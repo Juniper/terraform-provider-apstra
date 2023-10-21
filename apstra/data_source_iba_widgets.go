@@ -13,21 +13,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceIbaWidgets{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidgets{}
 
-type dataSourceIbaWidgets struct {
+type dataSourceBlueprintIbaWidgets struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceIbaWidgets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_iba_widgets"
+func (o *dataSourceBlueprintIbaWidgets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_iba_widgets"
 }
 
-func (o *dataSourceIbaWidgets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintIbaWidgets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceBlueprintIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "This data source returns the IDs of the IBA Widgets in a Blueprint.",
 		Attributes: map[string]schema.Attribute{
@@ -46,7 +46,7 @@ func (o *dataSourceIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequ
 	}
 }
 
-func (o *dataSourceIbaWidgets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceBlueprintIbaWidgets) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		Ids         types.Set    `tfsdk:"ids"`

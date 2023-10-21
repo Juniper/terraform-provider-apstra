@@ -1,18 +1,18 @@
 ---
-page_title: "apstra_iba_dashboards Data Source - terraform-provider-apstra"
+page_title: "apstra_blueprint_iba_dashboards Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source returns the ID numbers of all IBA Dashboards in a Blueprint.
 ---
 
-# apstra_iba_dashboards (Data Source)
+# apstra_blueprint_iba_dashboards (Data Source)
 
 This data source returns the ID numbers of all IBA Dashboards in a Blueprint.
 
 ## Example Usage
 
 ```terraform
-# This example pulls one iba widget from a blueprint
+# This example pulls all the iba dashboards from a blueprint
 
 data "apstra_datacenter_blueprint" "b" {
   name = "test"

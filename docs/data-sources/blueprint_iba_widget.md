@@ -1,12 +1,12 @@
 ---
-page_title: "apstra_iba_widget Data Source - terraform-provider-apstra"
+page_title: "apstra_blueprint_iba_widget Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific IBA Widget in a Blueprint.
   At least one optional attribute is required.
 ---
 
-# apstra_iba_widget (Data Source)
+# apstra_blueprint_iba_widget (Data Source)
 
 This data source provides details of a specific IBA Widget in a Blueprint.
 
@@ -21,12 +21,12 @@ data "apstra_datacenter_blueprint" "b" {
   name = "test"
 }
 
-data "apstra_iba_widget" "i" {
+data "apstra_blueprint_iba_widget" "i" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   name = "Fabric ECMP Imbalance"
 }
 output "o" {
-  value = data.apstra_iba_widget.i
+  value = data.apstra_blueprint_iba_widget.i
 }
 
 #Output looks like this
@@ -53,3 +53,5 @@ output "o" {
 ### Read-Only
 
 - `description` (String) Description of the IBA Widget
+- `probe_id` (String) Id of IBA Probe used by this widget
+- `stage` (String) Stage of IBA Probe used by this widget

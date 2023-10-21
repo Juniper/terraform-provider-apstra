@@ -1,12 +1,12 @@
 ---
-page_title: "apstra_iba_dashboard Data Source - terraform-provider-apstra"
+page_title: "apstra_blueprint_iba_dashboard Data Source - terraform-provider-apstra"
 subcategory: ""
 description: |-
   This data source provides details of a specific IBA Dashboard in a Blueprint.
   At least one optional attribute is required.
 ---
 
-# apstra_iba_dashboard (Data Source)
+# apstra_blueprint_iba_dashboard (Data Source)
 
 This data source provides details of a specific IBA Dashboard in a Blueprint.
 
@@ -15,18 +15,18 @@ At least one optional attribute is required.
 ## Example Usage
 
 ```terraform
-# This example pulls one iba widget from a blueprint
+# This example pulls one iba dashboards from a blueprint
 
 data "apstra_datacenter_blueprint" "b" {
   name = "test"
 }
 
-data "apstra_iba_dashboard" "i" {
+data "apstra_blueprint_iba_dashboard" "i" {
   blueprint_id = data.apstra_datacenter_blueprint.b.id
   name = "Device Health Summary"
 }
 output "pd" {
-  value = data.apstra_iba_dashboard.i
+  value = data.apstra_blueprint_iba_dashboard.i
 }
 
 #pd = {
