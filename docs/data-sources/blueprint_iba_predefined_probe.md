@@ -147,7 +147,7 @@ output "o2" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the IBA Predefined Probe belongs to.
-- `name` (String) Populate this field to look up a IBA Predefined Probe.
+- `name` (String) Populate this field to look up an IBA Predefined Probe.
 
 ### Read-Only
 
