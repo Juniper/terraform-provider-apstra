@@ -133,17 +133,6 @@ func (o *resourceBlueprintIbaWidget) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	api, err := bpClient.GetIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to Read IBA Widget", err.Error())
-		return
-	}
-
-	plan.LoadApiData(ctx, api, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
