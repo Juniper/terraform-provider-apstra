@@ -63,8 +63,10 @@ output "routing_zone" {
 ### Read-Only
 
 - `dhcp_servers` (Set of String) Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.
+- `export_route_targets` (Set of String) Used to export routes from the EVPN VRF.
 - `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration in managed resource context, this attribute will always be `null` and should be ignored in data source context.
 - `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration in managed resource context, this attribute will always be `null` and should be ignored in data source context.
+- `import_route_targets` (Set of String) Used to import routes into the EVPN VRF.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
 - `vni` (Number) VxLAN VNI associated with the routing zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.

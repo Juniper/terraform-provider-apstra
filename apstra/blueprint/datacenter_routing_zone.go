@@ -37,6 +37,8 @@ type DatacenterRoutingZone struct {
 	HadPriorVniConfig    types.Bool   `tfsdk:"had_prior_vni_config"`
 	DhcpServers          types.Set    `tfsdk:"dhcp_servers"`
 	RoutingPolicyId      types.String `tfsdk:"routing_policy_id"`
+	ImportRouteTargets   types.Set    `tfsdk:"import_route_targets"`
+	ExportRouteTargets   types.Set    `tfsdk:"export_route_targets"`
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -101,6 +103,16 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 				"Set this attribute in an EVPN blueprint to use a non-default policy.",
 			Computed: true,
 		},
+		"import_route_targets": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Used to import routes into the EVPN VRF.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"export_route_targets": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Used to export routes from the EVPN VRF.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 	}
 }
 
@@ -144,13 +156,19 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			MarkdownDescription: "Non-EVPN blueprints must use the default policy, so this field must be null. " +
 				"Set this attribute in an EVPN blueprint to use a non-default policy.",
 			Optional: true,
-			Validators: []validator.String{stringvalidator.AtLeastOneOf(
-				path.MatchRoot("filter").AtName("name"),
-				path.MatchRoot("filter").AtName("vlan_id"),
-				path.MatchRoot("filter").AtName("vni"),
-				path.MatchRoot("filter").AtName("dhcp_servers"),
-				path.MatchRoot("filter").AtName("routing_policy_id"),
-			)},
+		},
+		"import_route_targets": resourceSchema.SetAttribute{
+			MarkdownDescription: "This is a set of *required* RTs, not an exact-match list.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"export_route_targets": resourceSchema.SetAttribute{
+			MarkdownDescription: "This is a set of *required* RTs, not an exact-match list.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -218,6 +236,32 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Computed:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
+		"import_route_targets": resourceSchema.SetAttribute{
+			MarkdownDescription: "Used to import routes into the EVPN VRF.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(
+					stringvalidator.RegexMatches(
+						regexp.MustCompile("^[0-9]+:[0-9]+$"),
+						"import_route_targets must take the form: \"<digits>:<digits>\""),
+				),
+			},
+		},
+		"export_route_targets": resourceSchema.SetAttribute{
+			MarkdownDescription: "Used to export routes from the EVPN VRF.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(
+					stringvalidator.RegexMatches(
+						regexp.MustCompile("^[0-9]+:[0-9]+$"),
+						"export_route_targets must take the form: \"<digits>:<digits>\""),
+				),
+			},
+		},
 	}
 }
 
@@ -248,6 +292,13 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosetta treatment
 	}
 
+	var importRTs, exportRTs []string
+	diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &importRTs, false)...)
+	diags.Append(o.ExportRouteTargets.ElementsAs(ctx, &exportRTs, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
 	return &apstra.SecurityZoneData{
 		SzType:          apstra.SecurityZoneTypeEVPN,
 		VrfName:         o.Name.ValueString(),
@@ -255,6 +306,10 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		RoutingPolicyId: apstra.ObjectId(o.RoutingPolicyId.ValueString()),
 		VlanId:          vlan,
 		VniId:           vni,
+		RtPolicy: &apstra.RtPolicy{
+			ImportRTs: importRTs,
+			ExportRTs: exportRTs,
+		},
 	}
 }
 
@@ -267,7 +322,7 @@ func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Dia
 	return request
 }
 
-func (o *DatacenterRoutingZone) LoadApiData(_ context.Context, sz *apstra.SecurityZoneData, _ *diag.Diagnostics) {
+func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.SecurityZoneData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(sz.VrfName)
 
 	if sz.VlanId != nil {
@@ -287,6 +342,9 @@ func (o *DatacenterRoutingZone) LoadApiData(_ context.Context, sz *apstra.Securi
 	} else {
 		o.Vni = types.Int64Null()
 	}
+
+	o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ImportRTs, diags)
+	o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ExportRTs, diags)
 }
 
 func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []net.IP, diags *diag.Diagnostics) {
@@ -297,42 +355,104 @@ func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []ne
 	o.DhcpServers = utils.SetValueOrNull(ctx, types.StringType, dhcpServers, diags)
 }
 
-func (o *DatacenterRoutingZone) Query(szResultName, policyResultName string) *apstra.PathQuery {
-	query := new(apstra.PathQuery)
+func (o *DatacenterRoutingZone) Query(szResultName string) *apstra.MatchQuery {
+	matchQuery := new(apstra.MatchQuery)
+	nodeQuery := new(apstra.PathQuery).Node(o.szNodeQueryAttributes(szResultName))
+	matchQuery.Match(nodeQuery)
 
 	if utils.Known(o.RoutingPolicyId) {
-		query.Node([]apstra.QEEAttribute{
+		q := new(apstra.PathQuery)
+		q.Node([]apstra.QEEAttribute{
+			{Key: "name", Value: apstra.QEStringVal(szResultName)},
+		})
+		q.Out([]apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal(apstra.RelationshipTypePolicy.String())},
+		})
+		q.Node([]apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeRoutingPolicy.String())},
 			{Key: "id", Value: apstra.QEStringVal(o.RoutingPolicyId.ValueString())},
 		})
-		query.In([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal("policy")},
-		})
+		matchQuery.Match(q)
 	}
-
-	query.Node(o.szNodeQueryAttributes(szResultName))
 
 	if utils.Known(o.DhcpServers) {
-		query.Out([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal("policy")},
-		})
-		query.Node([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypePolicy.String())},
-			{Key: "policy_type", Value: apstra.QEStringVal("dhcp_relay")},
-			{Key: "name", Value: apstra.QEStringVal(policyResultName)},
-		})
+		q := new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				{Key: "name", Value: apstra.QEStringVal(szResultName)},
+			}).
+			Out([]apstra.QEEAttribute{
+				{Key: "type", Value: apstra.QEStringVal(apstra.RelationshipTypePolicy.String())},
+			}).
+			Node([]apstra.QEEAttribute{
+				{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypePolicy.String())},
+				{Key: "policy_type", Value: apstra.QEStringVal("dhcp_relay")},
+				{Key: "name", Value: apstra.QEStringVal("dhcp_policy")},
+				{Key: "dhcp_servers", Value: apstra.QENone(false)},
+			})
+
+		for _, dhcpServerVal := range o.DhcpServers.Elements() {
+			q.Where(fmt.Sprintf(
+				"lambda %s: '%s' in %s.dhcp_servers",
+				"dhcp_policy",
+				dhcpServerVal.(types.String).ValueString(),
+				"dhcp_policy",
+			))
+		}
+
+		matchQuery.Match(q)
 	}
 
-	for _, dhcpServerVal := range o.DhcpServers.Elements() {
-		query.Where("lambda " +
-			policyResultName +
-			": '" +
-			dhcpServerVal.(types.String).ValueString() +
-			"' in " +
-			policyResultName +
-			".dhcp_servers")
+	if utils.Known(o.ImportRouteTargets) || utils.Known(o.ExportRouteTargets) {
+		rtPolicyNodeAttrs := []apstra.QEEAttribute{
+			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeRouteTargetPolicy.String())},
+			{Key: "name", Value: apstra.QEStringVal("rt_policy")},
+		}
+
+		if utils.Known(o.ImportRouteTargets) {
+			rtPolicyNodeAttrs = append(rtPolicyNodeAttrs, apstra.QEEAttribute{
+				Key:   "import_RTs",
+				Value: apstra.QENone(false),
+			})
+		}
+
+		if utils.Known(o.ExportRouteTargets) {
+			rtPolicyNodeAttrs = append(rtPolicyNodeAttrs, apstra.QEEAttribute{
+				Key:   "export_RTs",
+				Value: apstra.QENone(false),
+			})
+		}
+
+		q := new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				{Key: "name", Value: apstra.QEStringVal(szResultName)},
+			}).
+			Out([]apstra.QEEAttribute{
+				{Key: "type", Value: apstra.QEStringVal(apstra.RelationshipTypeRouteTargetPolicy.String())},
+			}).
+			Node(rtPolicyNodeAttrs)
+
+		for _, importRT := range o.ImportRouteTargets.Elements() {
+			q.Where(fmt.Sprintf(
+				"lambda %s: '%s' in %s.import_RTs",
+				"rt_policy",
+				importRT.(types.String).ValueString(),
+				"rt_policy",
+			))
+		}
+
+		for _, exportRT := range o.ExportRouteTargets.Elements() {
+			q.Where(fmt.Sprintf(
+				"lambda %s: '%s' in %s.export_RTs",
+				"rt_policy",
+				exportRT.(types.String).ValueString(),
+				"rt_policy",
+			))
+		}
+
+		matchQuery.Match(q)
 	}
-	return query
+
+	return matchQuery
 }
 
 func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEAttribute {

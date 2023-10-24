@@ -41,11 +41,12 @@ data "apstra_datacenter_routing_zones" "rzs" {
 
 ### Optional
 
-- `filter` (Attributes) Routing Zone attributes used as a filter (see [below for nested schema](#nestedatt--filter))
+- `filter` (Attributes, Deprecated) Routing Zone attributes used as a filter (see [below for nested schema](#nestedatt--filter))
+- `filters` (Attributes List) List of filters used to select only desired node IDs. For a node to match a filter, all specified attributes must match (each attribute within a filter is AND-ed together). The returned node IDs represent the nodes matched by all of the filters together (filters are OR-ed together). (see [below for nested schema](#nestedatt--filters))
 
 ### Read-Only
 
-- `graph_query` (String) The graph datastore query used to perform the lookup.
+- `graph_queries` (List of String) Graph datastore queries which performed the lookup based on supplied filters.
 - `ids` (Set of String) Set of Routing Zone IDs
 
 <a id="nestedatt--filter"></a>
@@ -54,6 +55,29 @@ data "apstra_datacenter_routing_zones" "rzs" {
 Optional:
 
 - `dhcp_servers` (Set of String) Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured in the Routing Zone. This is a list of *required* servers, not an exact-match list.
+- `export_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
+- `import_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
+- `name` (String) VRF name displayed in the Apstra web UI.
+- `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
+- `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
+- `vni` (Number) VxLAN VNI associated with the routing zone.
+
+Read-Only:
+
+- `blueprint_id` (String) Not applicable in filter context. Ignore.
+- `had_prior_vlan_id_config` (Boolean) Not applicable in filter context. Ignore.
+- `had_prior_vni_config` (Boolean) Not applicable in filter context. Ignore.
+- `id` (String) Not applicable in filter context. Ignore.
+
+
+<a id="nestedatt--filters"></a>
+### Nested Schema for `filters`
+
+Optional:
+
+- `dhcp_servers` (Set of String) Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured in the Routing Zone. This is a list of *required* servers, not an exact-match list.
+- `export_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
+- `import_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
 - `name` (String) VRF name displayed in the Apstra web UI.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.

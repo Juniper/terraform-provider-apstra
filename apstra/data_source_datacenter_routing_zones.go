@@ -2,12 +2,17 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -43,13 +48,45 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 				ElementType:         types.StringType,
 			},
 			"filter": schema.SingleNestedAttribute{
+				DeprecationMessage: "The `filter` attribute is deprecated and will be removed in a future " +
+					"release. Please migrate your configuration to use `filters` instead.",
 				MarkdownDescription: "Routing Zone attributes used as a filter",
 				Optional:            true,
 				Attributes:          blueprint.DatacenterRoutingZone{}.DataSourceFilterAttributes(),
+				Validators: []validator.Object{
+					apstravalidator.AtMostNOf(1,
+						path.MatchRelative(),
+						path.MatchRoot("filters"),
+					),
+					apstravalidator.AtLeastNAttributes(
+						1,
+						"name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
+						"import_route_targets", "export_route_targets",
+					),
+				},
 			},
-			"graph_query": schema.StringAttribute{
-				MarkdownDescription: "The graph datastore query used to perform the lookup.",
+			"filters": schema.ListNestedAttribute{
+				MarkdownDescription: "List of filters used to select only desired node IDs. For a node " +
+					"to match a filter, all specified attributes must match (each attribute within a " +
+					"filter is AND-ed together). The returned node IDs represent the nodes matched by " +
+					"all of the filters together (filters are OR-ed together).",
+				Optional:   true,
+				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: blueprint.DatacenterRoutingZone{}.DataSourceFilterAttributes(),
+					Validators: []validator.Object{
+						apstravalidator.AtLeastNAttributes(
+							1,
+							"name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
+							"import_route_targets", "export_route_targets",
+						),
+					},
+				},
+			},
+			"graph_queries": schema.ListAttribute{
+				MarkdownDescription: "Graph datastore queries which performed the lookup based on supplied filters.",
 				Computed:            true,
+				ElementType:         types.StringType,
 			},
 		},
 	}
@@ -57,55 +94,107 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 
 func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	type routingZones struct {
-		BlueprintId types.String `tfsdk:"blueprint_id"`
-		IDs         types.Set    `tfsdk:"ids"`
-		Filter      types.Object `tfsdk:"filter"`
-		Query       types.String `tfsdk:"graph_query"`
+		BlueprintId  types.String `tfsdk:"blueprint_id"`
+		IDs          types.Set    `tfsdk:"ids"`
+		Filter       types.Object `tfsdk:"filter"`
+		Filters      types.List   `tfsdk:"filters"`
+		GraphQueries types.List   `tfsdk:"graph_queries"`
 	}
 
+	// get the configuration
 	var config routingZones
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var filter blueprint.DatacenterRoutingZone
-	if !config.Filter.IsNull() {
-		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
-		if resp.Diagnostics.HasError() {
+	// create a client for the datacenter reference design
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", config.BlueprintId), err.Error())
 			return
 		}
-	}
-
-	query := filter.Query("n_security_zone", "n_policy")
-
-	queryResponse := new(struct {
-		Items []struct {
-			SecurityZone struct {
-				Id string `json:"id"`
-			} `json:"n_security_zone"`
-		} `json:"items"`
-	})
-
-	query.
-		SetClient(o.client).
-		SetBlueprintId(apstra.ObjectId(config.BlueprintId.ValueString())).
-		SetBlueprintType(apstra.BlueprintTypeStaging)
-
-	err := query.Do(ctx, queryResponse)
-	if err != nil {
-		resp.Diagnostics.AddError("error querying graph datastore", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
 		return
 	}
 
-	ids := make([]attr.Value, len(queryResponse.Items))
-	for i, item := range queryResponse.Items {
-		ids[i] = types.StringValue(item.SecurityZone.Id)
+	// If no filters supplied, we can just fetch IDs via the API
+	if config.Filter.IsNull() && config.Filters.IsNull() {
+		securityZones, err := bp.GetAllSecurityZones(ctx)
+		if err != nil {
+			resp.Diagnostics.AddError("failed to fetch security zones", err.Error())
+			return
+		}
+
+		// collect the IDs
+		ids := make([]attr.Value, len(securityZones))
+		for i, securityZone := range securityZones {
+			ids[i] = types.StringValue(securityZone.Id.String())
+		}
+
+		// set the state
+		config.IDs = types.SetValueMust(types.StringType, ids)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+		return
 	}
 
-	config.IDs = types.SetValueMust(types.StringType, ids)
-	config.Query = types.StringValue(query.String())
+	// extract the supplied filters
+	var filters []blueprint.DatacenterRoutingZone
+	switch {
+	case !config.Filter.IsNull():
+		filters = make([]blueprint.DatacenterRoutingZone, 1)
+		resp.Diagnostics.Append(config.Filter.As(ctx, &filters[0], basetypes.ObjectAsOptions{})...)
+	case !config.Filters.IsNull():
+		resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
-	// set state
+	idMap := make(map[string]struct{})               // collect IDs here
+	graphQueries := make([]attr.Value, len(filters)) // collect graph query strings here
+	for i, filter := range filters {
+		// prep and save the query
+		query := filter.Query("n_security_zone")
+		graphQueries[i] = types.StringValue(query.String())
+
+		// query response target
+		queryResponse := new(struct {
+			Items []struct {
+				SecurityZone struct {
+					Id string `json:"id"`
+				} `json:"n_security_zone"`
+			} `json:"items"`
+		})
+
+		// perform the query
+		query.
+			SetClient(o.client).
+			SetBlueprintId(apstra.ObjectId(config.BlueprintId.ValueString())).
+			SetBlueprintType(apstra.BlueprintTypeStaging)
+		err = query.Do(ctx, queryResponse)
+		if err != nil {
+			resp.Diagnostics.AddError("error querying graph datastore", err.Error())
+			return
+		}
+
+		// save the IDs into idMap
+		for _, item := range queryResponse.Items {
+			idMap[item.SecurityZone.Id] = struct{}{}
+		}
+	}
+
+	// pull the IDs out of the map
+	ids := make([]attr.Value, len(idMap))
+	var i int
+	for id := range idMap {
+		ids[i] = types.StringValue(id)
+		i++
+	}
+
+	// set the state
+	config.IDs = types.SetValueMust(types.StringType, ids)
+	config.GraphQueries = types.ListValueMust(types.StringType, graphQueries)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
