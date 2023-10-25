@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_interface_map Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This resource creates an Interface Map
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_interface_map (Resource)
 
 This resource creates an Interface Map
+
 
 ## Example Usage
 

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_interface_maps Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This data source returns the ID numbers of Interface Maps.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_interface_maps (Data Source)
 
 This data source returns the ID numbers of Interface Maps.
+
 
 ## Example Usage
 

@@ -30,7 +30,7 @@ func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.C
 
 func (o *resourceDeviceAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource allocates a Managed Device (probably a switch) to a node role" +
+		MarkdownDescription: docCategoryDevices + "This resource allocates a Managed Device (probably a switch) to a node role" +
 			" (spine1, etc...) within a Blueprint.",
 		Attributes: blueprint.DeviceAllocation{}.ResourceAttributes(),
 	}

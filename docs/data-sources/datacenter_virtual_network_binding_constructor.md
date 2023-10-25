@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_virtual_network_binding_constructor Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This data source can be used to calculate the bindings data required by apstra_datacenter_virtual_network.
   Given a list of switch node IDSs, it determines whether they're leaf or access nodes, replaces individual switch IDs with ESI or MLAG redundancy group IDs, finds required parent leaf switches of all access switches.
@@ -11,6 +11,7 @@ description: |-
 This data source can be used to calculate the `bindings` data required by `apstra_datacenter_virtual_network`.
 
 Given a list of switch node IDSs, it determines whether they're leaf or access nodes, replaces individual switch IDs with ESI or MLAG redundancy group IDs, finds required parent leaf switches of all access switches.
+
 
 ## Example Usage
 

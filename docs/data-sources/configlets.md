@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_configlets Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This data source returns the ID numbers of all Configlets.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_configlets (Data Source)
 
 This data source returns the ID numbers of all Configlets.
+
 
 ## Example Usage
 

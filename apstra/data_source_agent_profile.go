@@ -27,7 +27,7 @@ func (o *dataSourceAgentProfile) Configure(ctx context.Context, req datasource.C
 
 func (o *dataSourceAgentProfile) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source looks up details of an Agent Profile\n\n" +
+		MarkdownDescription: docCategoryDevices + "This data source looks up details of an Agent Profile\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: agentProfile{}.dataSourceAttributes(),
 	}

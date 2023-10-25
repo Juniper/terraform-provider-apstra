@@ -31,7 +31,7 @@ func (o *resourceDatacenterConfiglet) Configure(ctx context.Context, req resourc
 
 func (o *resourceDatacenterConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource imports a Configlet into a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource imports a Configlet into a Blueprint.",
 		Attributes:          blueprint.DatacenterConfiglet{}.ResourceAttributes(),
 	}
 }

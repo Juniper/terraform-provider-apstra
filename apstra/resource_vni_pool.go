@@ -29,7 +29,7 @@ func (o *resourceVniPool) Configure(ctx context.Context, req resource.ConfigureR
 
 func (o *resourceVniPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates an VNI resource pool",
+		MarkdownDescription: docCategoryResources + "This resource creates an VNI resource pool",
 		Attributes:          resources.VniPool{}.ResourceAttributes(),
 	}
 }

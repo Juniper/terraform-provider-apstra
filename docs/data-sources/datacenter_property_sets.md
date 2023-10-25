@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_property_sets Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Any"
 description: |-
   This data source returns the ID numbers of all Property Sets in the Blueprint.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_datacenter_property_sets (Data Source)
 
 This data source returns the ID numbers of all Property Sets in the Blueprint.
+
 
 ## Example Usage
 

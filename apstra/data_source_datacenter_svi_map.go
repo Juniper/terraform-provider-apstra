@@ -28,7 +28,7 @@ func (o *dataSourceDatacenterSvis) Configure(ctx context.Context, req datasource
 
 func (o *dataSourceDatacenterSvis) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns a maps of Sets of SVI info keyed by Virtual Network ID, System ID and SVI ID.",
+		MarkdownDescription: docCategoryDatacenter + "This data source returns a maps of Sets of SVI info keyed by Virtual Network ID, System ID and SVI ID.",
 		Attributes:          blueprint.DatacenterSvis{}.DataSourceAttributes(),
 	}
 }

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_agent_profile Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Devices"
 description: |-
   This data source looks up details of an Agent Profile
   At least one optional attribute is required.
@@ -11,6 +11,7 @@ description: |-
 This data source looks up details of an Agent Profile
 
 At least one optional attribute is required.
+
 
 ## Example Usage
 
@@ -37,7 +38,7 @@ output "agent_profiles_missing_credentials" {
 
 ### Optional
 
-- `id` (String) Apstra ID of the Agent Profile. Required when `name` is omitted.
+- `id` (String) Devices --- Apstra ID of the Agent Profile. Required when `name` is omitted.
 - `name` (String) Web UID name of the Agent Profile. Required when `id` is omitted.
 
 ### Read-Only

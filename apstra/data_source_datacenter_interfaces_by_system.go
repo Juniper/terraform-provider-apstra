@@ -27,7 +27,7 @@ func (o *dataSourceInterfacesBySystem) Configure(ctx context.Context, req dataso
 
 func (o *dataSourceInterfacesBySystem) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns a map of Interface IDs keyed by Interface Name for the given System ID.",
+		MarkdownDescription: docCategoryDatacenter + "This data source returns a map of Interface IDs keyed by Interface Name for the given System ID.",
 		Attributes:          blueprint.InterfacesBySystem{}.DataSourceAttributes(),
 	}
 }

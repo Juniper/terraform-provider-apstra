@@ -29,7 +29,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Configure(ctx context
 
 func (o *resourceDatacenterConnectivityTemplateAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource assigns one or more Connectivity Templates to an " +
+		MarkdownDescription: docCategoryDatacenter + "This resource assigns one or more Connectivity Templates to an " +
 			"Application Point. Application Points are graph nodes including interfaces at the " +
 			"fabric edge, and switches within the fabric.",
 		Attributes: blueprint.ConnectivityTemplateAssignment{}.ResourceAttributes(),

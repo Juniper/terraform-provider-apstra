@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_template_rack_based Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as pod in a 5-stage design.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_template_rack_based (Resource)
 
 This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as pod in a 5-stage design.
+
 
 ## Example Usage
 

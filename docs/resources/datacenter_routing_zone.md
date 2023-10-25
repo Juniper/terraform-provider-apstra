@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_routing_zone Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This resource creates a Routing Zone within a Datacenter Blueprint.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_datacenter_routing_zone (Resource)
 
 This resource creates a Routing Zone within a Datacenter Blueprint.
+
 
 ## Example Usage
 

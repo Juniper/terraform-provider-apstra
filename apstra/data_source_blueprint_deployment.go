@@ -25,7 +25,7 @@ func (o *dataSourceBlueprintDeploy) Configure(ctx context.Context, req datasourc
 
 func (o *dataSourceBlueprintDeploy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the deployment status of a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This data source returns the deployment status of a Blueprint.",
 		Attributes:          blueprint.Deploy{}.DataSourceAttributes(),
 	}
 }

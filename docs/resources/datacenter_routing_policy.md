@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_routing_policy Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This resource creates a Routing Policy within a Blueprint.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_datacenter_routing_policy (Resource)
 
 This resource creates a Routing Policy within a Blueprint.
+
 
 ## Example Usage
 

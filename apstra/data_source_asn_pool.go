@@ -28,7 +28,7 @@ func (o *dataSourceAsnPool) Configure(ctx context.Context, req datasource.Config
 
 func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific ASN Pool.\n\n" +
+		MarkdownDescription: docCategoryResources + "This data source provides details of a specific ASN Pool.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: resources.AsnPool{}.DataSourceAttributes(),
 	}

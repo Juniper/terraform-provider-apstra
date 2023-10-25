@@ -29,7 +29,7 @@ func (o *resourceDatacenterRoutingPolicy) Configure(ctx context.Context, req res
 
 func (o *resourceDatacenterRoutingPolicy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Routing Policy within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource creates a Routing Policy within a Blueprint.",
 		Attributes:          blueprint.DatacenterRoutingPolicy{}.ResourceAttributes(),
 	}
 }

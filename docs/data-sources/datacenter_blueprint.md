@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_blueprint Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Any"
 description: |-
   This data source looks up summary details of a Datacenter Blueprint.
   At least one optional attribute is required.
@@ -11,6 +11,7 @@ description: |-
 This data source looks up summary details of a Datacenter Blueprint.
 
 At least one optional attribute is required.
+
 
 ## Example Usage
 

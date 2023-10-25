@@ -28,7 +28,7 @@ func (o *dataSourceTemplates) Configure(ctx context.Context, req datasource.Conf
 
 func (o *dataSourceTemplates) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the ID numbers of Templates.",
+		MarkdownDescription: docCategoryDesign + "This data source returns the ID numbers of Templates.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

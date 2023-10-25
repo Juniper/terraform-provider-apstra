@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_logical_device Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This resource creates a Logical Device
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_logical_device (Resource)
 
 This resource creates a Logical Device
+
 
 ## Example Usage
 

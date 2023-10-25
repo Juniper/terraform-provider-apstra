@@ -24,7 +24,7 @@ func (o *dataSourceDatacenterSystemNodes) Configure(ctx context.Context, req dat
 
 func (o *dataSourceDatacenterSystemNodes) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns Graph DB node IDs of *system* nodes within a Blueprint.\n\n" +
+		MarkdownDescription: docCategoryDatacenter + "This data source returns Graph DB node IDs of *system* nodes within a Blueprint.\n\n" +
 			"Optional `filters` can be used to select only interesting nodes.",
 		Attributes: blueprint.NodesTypeSystem{}.DataSourceAttributes(),
 	}

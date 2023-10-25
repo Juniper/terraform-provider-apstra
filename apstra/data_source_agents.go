@@ -29,7 +29,7 @@ func (o *dataSourceAgents) Configure(ctx context.Context, req datasource.Configu
 
 func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs of Managed Device Agents. " +
+		MarkdownDescription: docCategoryDevices + "This data source returns the IDs of Managed Device Agents. " +
 			"All of the `filter` attributes are optional.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{

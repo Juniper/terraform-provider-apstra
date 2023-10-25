@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_connectivity_template_assignment Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This resource assigns one or more Connectivity Templates to an Application Point. Application Points are graph nodes including interfaces at the fabric edge, and switches within the fabric.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_datacenter_connectivity_template_assignment (Resource)
 
 This resource assigns one or more Connectivity Templates to an Application Point. Application Points are graph nodes including interfaces at the fabric edge, and switches within the fabric.
+
 
 ## Example Usage
 

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_iba_dashboard Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Any"
 description: |-
   This resource creates a IBA Dashboard.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_blueprint_iba_dashboard (Resource)
 
 This resource creates a IBA Dashboard.
+
 
 ## Example Usage
 
