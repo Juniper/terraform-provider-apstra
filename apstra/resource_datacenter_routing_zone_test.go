@@ -22,8 +22,34 @@ resource "apstra_datacenter_routing_zone" "test" {
   vlan_id      = %s
   vni          = %s
   dhcp_servers = %s
+  import_route_targets = %s
+  export_route_targets = %s
 }`
 )
+
+type routeTargets struct {
+	rts []string
+}
+
+func (o *routeTargets) init(n int) {
+	s1 := make([]uint32, n)
+	s2 := make([]uint16, n)
+	FillWithRandomIntegers(s1)
+	FillWithRandomIntegers(s2)
+
+	o.rts = make([]string, n)
+	for i := 0; i < n; i++ {
+		o.rts[i] = fmt.Sprintf("%d:%d", s1[i], s2[i])
+	}
+}
+
+func (o routeTargets) String() string {
+	if len(o.rts) == 0 {
+		return "null"
+	}
+
+	return fmt.Sprintf(`["%s"]`, strings.Join(o.rts, `","`))
+}
 
 func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 	ctx := context.Background()
@@ -82,6 +108,8 @@ func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 		vlan          string
 		vni           string
 		dhcpServers   []string
+		irts          routeTargets
+		erts          routeTargets
 		testCheckFunc resource.TestCheckFunc
 	}
 
@@ -97,7 +125,7 @@ func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 			dhcpServers = fmt.Sprintf(`["%s"]`, strings.Join(tc.dhcpServers, `","`))
 		}
 		return insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRoutingZoneHCL,
-			bpClient.Id(), tc.name, tc.vlan, tc.vni, dhcpServers)
+			bpClient.Id(), tc.name, tc.vlan, tc.vni, dhcpServers, tc.irts.String(), tc.erts.String())
 	}
 
 	nameA := acctest.RandString(5)
@@ -106,6 +134,11 @@ func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 	vniA := strconv.Itoa(acctest.RandIntRange(4097, 16777213))
 	dhcpServerA := "1.1.1.1"
 	dhcpServerB := "2.2.2.2"
+	rtsA := routeTargets{}
+	rtsB := routeTargets{}
+
+	rtsA.init(1)
+	rtsB.init(3)
 
 	testCases := []testCase{
 		{
@@ -146,6 +179,48 @@ func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.#", "2"),
 				resource.TestCheckTypeSetElemAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.*", dhcpServerA),
 				resource.TestCheckTypeSetElemAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.*", dhcpServerB),
+			}...),
+		},
+		{
+			name:        nameA,
+			vlan:        vlanA,
+			vni:         vniA,
+			dhcpServers: []string{dhcpServerA, dhcpServerB},
+			irts:        rtsA,
+			erts:        rtsB,
+			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+				resource.TestCheckResourceAttrSet("apstra_datacenter_routing_zone.test", "id"),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "blueprint_id", bpClient.Id().String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "name", nameA),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "vlan_id", vlanA), // first available vlan ID
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "vni", vniA),      // first available vni
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.#", "2"),
+				resource.TestCheckTypeSetElemAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.*", dhcpServerA),
+				resource.TestCheckTypeSetElemAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.*", dhcpServerB),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "import_route_targets.#", strconv.Itoa(len(rtsA.rts))),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "import_route_targets.0", rtsA.rts[0]),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "export_route_targets.#", strconv.Itoa(len(rtsB.rts))),
+			}...),
+		},
+		{
+			name:        nameA,
+			vlan:        vlanA,
+			vni:         vniA,
+			dhcpServers: []string{dhcpServerA, dhcpServerB},
+			irts:        rtsB,
+			erts:        rtsA,
+			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+				resource.TestCheckResourceAttrSet("apstra_datacenter_routing_zone.test", "id"),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "blueprint_id", bpClient.Id().String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "name", nameA),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "vlan_id", vlanA), // first available vlan ID
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "vni", vniA),      // first available vni
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.#", "2"),
+				resource.TestCheckTypeSetElemAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.*", dhcpServerA),
+				resource.TestCheckTypeSetElemAttr("apstra_datacenter_routing_zone.test", "dhcp_servers.*", dhcpServerB),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "import_route_targets.#", strconv.Itoa(len(rtsB.rts))),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "export_route_targets.#", strconv.Itoa(len(rtsA.rts))),
+				resource.TestCheckResourceAttr("apstra_datacenter_routing_zone.test", "export_route_targets.0", rtsA.rts[0]),
 			}...),
 		},
 	}

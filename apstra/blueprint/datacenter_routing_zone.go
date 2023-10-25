@@ -342,8 +342,13 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.Secu
 		o.Vni = types.Int64Null()
 	}
 
-	o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ImportRTs, diags)
-	o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ExportRTs, diags)
+	if sz.RtPolicy != nil && sz.RtPolicy.ImportRTs != nil {
+		o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ImportRTs, diags)
+	}
+
+	if sz.RtPolicy != nil && sz.RtPolicy.ExportRTs != nil {
+		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ExportRTs, diags)
+	}
 }
 
 func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []net.IP, diags *diag.Diagnostics) {
