@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_modular_device_profile Resource - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: "Devices"
 description: |-
   This resource creates a Device Profile for a chassis-based device
 ---

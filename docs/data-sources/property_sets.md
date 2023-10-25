@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_property_sets Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: "Design"
 description: |-
   This data source returns the ID numbers of all Property Sets.
 ---
