@@ -24,7 +24,7 @@ func (o *dataSourcePropertySets) Configure(ctx context.Context, req datasource.C
 
 func (o *dataSourcePropertySets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source returns the ID numbers of all Property Sets.",
+		MarkdownDescription: docCategoryDesign + "This data source returns the ID numbers of all Property Sets.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

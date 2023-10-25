@@ -29,7 +29,7 @@ func (o *dataSourceDatacenterPropertySets) Configure(ctx context.Context, req da
 
 func (o *dataSourceDatacenterPropertySets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source returns the ID numbers of all Property Sets in the Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This data source returns the ID numbers of all Property Sets in the Blueprint.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID.",

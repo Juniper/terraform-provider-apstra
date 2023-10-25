@@ -27,7 +27,7 @@ func (o *dataSourceBlueprintIbaDashboard) Configure(ctx context.Context, req dat
 
 func (o *dataSourceBlueprintIbaDashboard) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source provides details of a specific IBA Dashboard in a Blueprint." +
+		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Dashboard in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: iba.Dashboard{}.DataSourceAttributes(),
