@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_property_set Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: ""
 description: |-
   This data source provides details of a specific PropertySet.
   At least one optional attribute is required.
@@ -11,7 +11,6 @@ description: |-
 This data source provides details of a specific PropertySet.
 
 At least one optional attribute is required.
-
 
 ## Example Usage
 

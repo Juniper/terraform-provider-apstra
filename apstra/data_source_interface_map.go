@@ -28,7 +28,7 @@ func (o *dataSourceInterfaceMap) Configure(ctx context.Context, req datasource.C
 
 func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Interface Map.\n\n" +
+		MarkdownDescription: "This data source provides details of a specific Interface Map.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.InterfaceMap{}.DataSourceAttributes(),
 	}

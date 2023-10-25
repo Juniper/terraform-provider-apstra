@@ -27,7 +27,7 @@ func (o *dataSourceDatacenterPropertySet) Configure(ctx context.Context, req dat
 
 func (o *dataSourceDatacenterPropertySet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific Property Set imported into a Blueprint.\n\n" +
+		MarkdownDescription: "This data source provides details of a specific Property Set imported into a Blueprint.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.DatacenterPropertySet{}.DataSourceAttributes(),
 	}

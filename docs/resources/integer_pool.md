@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_integer_pool Resource - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: ""
 description: |-
   This resource creates an Integer resource pool
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_integer_pool (Resource)
 
 This resource creates an Integer resource pool
-
 
 ## Example Usage
 

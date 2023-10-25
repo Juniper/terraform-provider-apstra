@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_property_set Resource - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: ""
 description: |-
   This resource creates a Property Set in the Apstra Design tab.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_property_set (Resource)
 
 This resource creates a Property Set in the Apstra Design tab.
-
 
 ## Example Usage
 

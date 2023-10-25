@@ -59,7 +59,7 @@ func (o *resourceInterfaceMap) Configure(_ context.Context, req resource.Configu
 
 func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates an Interface Map",
+		MarkdownDescription: "This resource creates an Interface Map",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Apstra ID number of the Interface Map",

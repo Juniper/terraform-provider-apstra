@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_ipv6_pool Data Source - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: ""
 description: |-
   This data source provides details of a specific IPv6 Pool.
   At least one optional attribute is required.
@@ -11,7 +11,6 @@ description: |-
 This data source provides details of a specific IPv6 Pool.
 
 At least one optional attribute is required.
-
 
 ## Example Usage
 

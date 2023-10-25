@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_agent_profiles Data Source - terraform-provider-apstra"
-subcategory: "Devices"
+subcategory: ""
 description: |-
   This data source returns the ID numbers of all Agent Profiles.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_agent_profiles (Data Source)
 
 This data source returns the ID numbers of all Agent Profiles.
-
 
 ## Example Usage
 

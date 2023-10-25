@@ -27,7 +27,7 @@ func (o *resourceBlueprintIbaWidget) Configure(ctx context.Context, req resource
 
 func (o *resourceBlueprintIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This resource creates an IBA Widget.",
+		MarkdownDescription: "This resource creates an IBA Widget.",
 		Attributes:          iba.Widget{}.ResourceAttributes(),
 	}
 }

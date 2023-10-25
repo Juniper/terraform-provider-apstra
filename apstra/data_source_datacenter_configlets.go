@@ -29,7 +29,7 @@ func (o *dataSourceDatacenterConfiglets) Configure(ctx context.Context, req data
 
 func (o *dataSourceDatacenterConfiglets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source returns the ID numbers of all Configlets in a Blueprint.",
+		MarkdownDescription: "This data source returns the ID numbers of all Configlets in a Blueprint.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Configlet belongs to.",

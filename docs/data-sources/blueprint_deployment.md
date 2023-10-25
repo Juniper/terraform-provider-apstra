@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_deployment Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This data source returns the deployment status of a Blueprint.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_blueprint_deployment (Data Source)
 
 This data source returns the deployment status of a Blueprint.
-
 
 ## Example Usage
 

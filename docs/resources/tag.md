@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_tag Resource - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: ""
 description: |-
   This resource creates a Tag in the Apstra Design tab.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_tag (Resource)
 
 This resource creates a Tag in the Apstra Design tab.
-
 
 ## Example Usage
 

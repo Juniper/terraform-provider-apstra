@@ -29,7 +29,7 @@ func (o *resourceDatacenterGenericSystem) Configure(ctx context.Context, req res
 
 func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource creates a Generic System within a Datacenter Blueprint.",
+		MarkdownDescription: "This resource creates a Generic System within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterGenericSystem{}.ResourceAttributes(),
 	}
 }

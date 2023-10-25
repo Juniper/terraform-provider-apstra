@@ -25,7 +25,7 @@ func (o *dataSourceVirtualNetworkBindingConstructor) Configure(ctx context.Conte
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source can be used to calculate the " +
+		MarkdownDescription: "This data source can be used to calculate the " +
 			"`bindings` data required by `apstra_datacenter_virtual_network`." +
 			"\n\n" +
 			"Given a list of switch node IDSs, it determines whether they're " +

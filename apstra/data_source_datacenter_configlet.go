@@ -28,7 +28,7 @@ func (o *dataSourceDatacenterConfiglet) Configure(ctx context.Context, req datas
 
 func (o *dataSourceDatacenterConfiglet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source provides details of a specific Configlet imported into a Blueprint." +
+		MarkdownDescription: "This data source provides details of a specific Configlet imported into a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.DatacenterConfiglet{}.DataSourceAttributes(),

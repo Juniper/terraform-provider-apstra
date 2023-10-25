@@ -28,7 +28,7 @@ func (o *resourcePropertySet) Configure(ctx context.Context, req resource.Config
 
 func (o *resourcePropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates a Property Set in the Apstra Design tab.",
+		MarkdownDescription: "This resource creates a Property Set in the Apstra Design tab.",
 		Attributes:          design.PropertySet{}.ResourceAttributes(),
 	}
 }

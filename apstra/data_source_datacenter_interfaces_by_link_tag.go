@@ -27,7 +27,7 @@ func (o *dataSourceInterfacesByLinkTag) Configure(ctx context.Context, req datas
 
 func (o *dataSourceInterfacesByLinkTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source returns the IDs of Interfaces by Link Tag.",
+		MarkdownDescription: "This data source returns the IDs of Interfaces by Link Tag.",
 		Attributes:          blueprint.InterfacesByLinkTag{}.DataSourceAttributes(),
 	}
 }

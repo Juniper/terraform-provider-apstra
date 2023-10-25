@@ -24,7 +24,7 @@ func (o *dataSourceIntegerPools) Configure(ctx context.Context, req datasource.C
 
 func (o *dataSourceIntegerPools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryResources + "This data source returns the ID numbers of all Integer Pools.",
+		MarkdownDescription: "This data source returns the ID numbers of all Integer Pools.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

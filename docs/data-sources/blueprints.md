@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprints Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: ""
 description: |-
   This data source returns the ID numbers of Blueprints.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_blueprints (Data Source)
 
 This data source returns the ID numbers of Blueprints.
-
 
 ## Example Usage
 

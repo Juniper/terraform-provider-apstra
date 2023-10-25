@@ -29,7 +29,7 @@ func (o *resourceDatacenterConnectivityTemplate) Configure(ctx context.Context, 
 
 func (o *resourceDatacenterConnectivityTemplate) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template within a Datacenter Blueprint.",
+		MarkdownDescription: "This resource creates a Connectivity Template within a Datacenter Blueprint.",
 		Attributes:          blueprint.ConnectivityTemplate{}.ResourceAttributes(),
 	}
 }

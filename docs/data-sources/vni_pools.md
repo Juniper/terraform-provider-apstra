@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_vni_pools Data Source - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: ""
 description: |-
   This data source returns the ID numbers of all VNI Pools.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_vni_pools (Data Source)
 
 This data source returns the ID numbers of all VNI Pools.
-
 
 ## Example Usage
 

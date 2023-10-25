@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_systems Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This data source returns Graph DB node IDs of system nodes within a Blueprint.
   Optional filters can be used to select only interesting nodes.
@@ -11,7 +11,6 @@ description: |-
 This data source returns Graph DB node IDs of *system* nodes within a Blueprint.
 
 Optional `filters` can be used to select only interesting nodes.
-
 
 ## Example Usage
 

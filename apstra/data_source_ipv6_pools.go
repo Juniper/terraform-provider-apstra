@@ -24,7 +24,7 @@ func (o *dataSourceIpv6Pools) Configure(ctx context.Context, req datasource.Conf
 
 func (o *dataSourceIpv6Pools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryResources + "This data source returns the ID numbers of all IPv6 Pools",
+		MarkdownDescription: "This data source returns the ID numbers of all IPv6 Pools",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

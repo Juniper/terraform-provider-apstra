@@ -29,7 +29,7 @@ func (o *resourceLogicalDevice) Configure(ctx context.Context, req resource.Conf
 
 func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates a Logical Device",
+		MarkdownDescription: "This resource creates a Logical Device",
 		Attributes:          design.LogicalDevice{}.ResourceAttributes(),
 	}
 }

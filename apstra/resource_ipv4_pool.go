@@ -29,7 +29,7 @@ func (o *resourceIpv4Pool) Configure(ctx context.Context, req resource.Configure
 
 func (o *resourceIpv4Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryResources + "This resource creates an IPv4 resource pool",
+		MarkdownDescription: "This resource creates an IPv4 resource pool",
 		Attributes:          resources.Ipv4Pool{}.ResourceAttributes(),
 	}
 }

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_iba_widget Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: ""
 description: |-
   This data source provides details of a specific IBA Widget in a Blueprint.
   At least one optional attribute is required.
@@ -11,7 +11,6 @@ description: |-
 This data source provides details of a specific IBA Widget in a Blueprint.
 
 At least one optional attribute is required.
-
 
 ## Example Usage
 

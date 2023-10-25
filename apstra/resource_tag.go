@@ -26,7 +26,7 @@ func (o *resourceTag) Configure(ctx context.Context, req resource.ConfigureReque
 
 func (o *resourceTag) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates a Tag in the Apstra Design tab.",
+		MarkdownDescription: "This resource creates a Tag in the Apstra Design tab.",
 		Attributes:          design.Tag{}.ResourceAttributes(),
 	}
 }

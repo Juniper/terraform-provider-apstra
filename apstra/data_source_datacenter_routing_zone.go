@@ -28,7 +28,7 @@ func (o *dataSourceDatacenterRoutingZone) Configure(ctx context.Context, req dat
 
 func (o *dataSourceDatacenterRoutingZone) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a Routing Zone within a Datacenter Blueprint.\n\n" +
+		MarkdownDescription: "This resource returns details of a Routing Zone within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.DatacenterRoutingZone{}.DataSourceAttributes(),
 	}

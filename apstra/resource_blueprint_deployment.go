@@ -35,7 +35,7 @@ func (o *resourceBlueprintDeploy) Configure(ctx context.Context, req resource.Co
 
 func (o *resourceBlueprintDeploy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This resource commits a staging Blueprint after checking for build errors.",
+		MarkdownDescription: "This resource commits a staging Blueprint after checking for build errors.",
 		Attributes:          blueprint.Deploy{}.ResourceAttributes(),
 	}
 }

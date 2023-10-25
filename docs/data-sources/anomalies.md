@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_anomalies Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: ""
 description: |-
   This data source provides per-node summary, per-service summary and full details of anomalies in the specified Blueprint.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_anomalies (Data Source)
 
 This data source provides per-node summary, per-service summary and full details of anomalies in the specified Blueprint.
-
 
 ## Example Usage
 

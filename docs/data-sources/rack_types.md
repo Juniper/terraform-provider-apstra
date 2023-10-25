@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_rack_types Data Source - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: ""
 description: |-
   This data source returns the ID numbers of all Rack Types.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_rack_types (Data Source)
 
 This data source returns the ID numbers of all Rack Types.
-
 
 ## Example Usage
 

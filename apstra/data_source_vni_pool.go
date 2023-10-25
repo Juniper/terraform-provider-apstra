@@ -28,7 +28,7 @@ func (o *dataSourceVniPool) Configure(ctx context.Context, req datasource.Config
 
 func (o *dataSourceVniPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryResources + "This data source provides details of a specific VNI Pool.\n\n" +
+		MarkdownDescription: "This data source provides details of a specific VNI Pool.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: resources.VniPool{}.DataSourceAttributes(),
 	}

@@ -28,7 +28,7 @@ func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.
 
 func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Logical Device.\n\n" +
+		MarkdownDescription: "This data source provides details of a specific Logical Device.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.LogicalDevice{}.DataSourceAttributes(),
 	}

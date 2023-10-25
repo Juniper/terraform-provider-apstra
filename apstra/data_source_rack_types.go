@@ -24,7 +24,7 @@ func (o *dataSourceRackTypes) Configure(ctx context.Context, req datasource.Conf
 
 func (o *dataSourceRackTypes) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This data source returns the ID numbers of all Rack Types.",
+		MarkdownDescription: "This data source returns the ID numbers of all Rack Types.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

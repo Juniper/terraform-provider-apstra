@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_configlet Data Source - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: ""
 description: |-
   This data source provides details of a specific Configlet.
   At least one optional attribute is required.
@@ -11,7 +11,6 @@ description: |-
 This data source provides details of a specific Configlet.
 
 At least one optional attribute is required.
-
 
 ## Example Usage
 

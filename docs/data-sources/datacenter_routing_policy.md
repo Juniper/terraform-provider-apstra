@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_routing_policy Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This data source returns details of a Datacenter Routing Policy.
   At least one optional attribute is required.
@@ -11,7 +11,6 @@ description: |-
 This data source returns details of a Datacenter Routing Policy.
 
 At least one optional attribute is required.
-
 
 ## Example Usage
 

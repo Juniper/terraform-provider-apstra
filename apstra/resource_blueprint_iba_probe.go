@@ -26,7 +26,7 @@ func (o *resourceBlueprintIbaProbe) Configure(ctx context.Context, req resource.
 
 func (o *resourceBlueprintIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This resource creates an IBA Probe within a Blueprint.",
+		MarkdownDescription: "This resource creates an IBA Probe within a Blueprint.",
 		Attributes:          iba.Probe{}.ResourceAttributes(),
 	}
 }

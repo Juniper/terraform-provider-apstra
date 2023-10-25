@@ -35,7 +35,7 @@ func (o *dataSourceBlueprints) Configure(ctx context.Context, req datasource.Con
 
 func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source returns the ID numbers of Blueprints.",
+		MarkdownDescription: "This data source returns the ID numbers of Blueprints.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

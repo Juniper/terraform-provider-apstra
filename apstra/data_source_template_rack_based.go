@@ -27,7 +27,7 @@ func (o *dataSourceTemplateRackBased) Configure(ctx context.Context, req datasou
 
 func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Rack Based (3 stage) Template.\n\n" +
+		MarkdownDescription: "This data source provides details of a specific Rack Based (3 stage) Template.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.TemplateRackBased{}.DataSourceAttributes(),
 	}

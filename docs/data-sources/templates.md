@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_templates Data Source - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: ""
 description: |-
   This data source returns the ID numbers of Templates.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_templates (Data Source)
 
 This data source returns the ID numbers of Templates.
-
 
 ## Example Usage
 

@@ -16,12 +16,4 @@ const (
 	errTemplateTypeInvalidElement             = "template '%s' has type '%s' which never permits '%s' to be set"
 	errDataSourceReadFail                     = "Data Source Read() failure'"
 	errResourceReadFail                       = "Resource Read() failure'"
-
-	docCategorySeparator    = " --- "
-	docCategoryDesign       = "Design" + docCategorySeparator
-	docCategoryResources    = "Resources" + docCategorySeparator
-	docCategoryDatacenter   = "RefDesign: Datacenter" + docCategorySeparator
-	docCategoryFreeform     = "RefDesign: Freeform" + docCategorySeparator
-	docCategoryRefDesignAny = "RefDesign: Any" + docCategorySeparator
-	docCategoryDevices      = "Devices" + docCategorySeparator
 )

@@ -28,7 +28,7 @@ func (o *resourceManagedDeviceAck) Configure(ctx context.Context, req resource.C
 
 func (o *resourceManagedDeviceAck) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDevices + "This resource *acknowledges* the System " +
+		MarkdownDescription: "This resource *acknowledges* the System " +
 			"(probably a switch) discovered by a running System Agent. The " +
 			"acknowledgement of a System cannot be modified nor deleted. " +
 			"Any modification to the inputs of this resource will cause it " +

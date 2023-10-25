@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_generic_system Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This resource creates a Generic System within a Datacenter Blueprint.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_datacenter_generic_system (Resource)
 
 This resource creates a Generic System within a Datacenter Blueprint.
-
 
 ## Example Usage
 

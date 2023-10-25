@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_system Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This data source returns details of a specific system Graph DB node within a Blueprint.
   At least one optional attribute is required.
@@ -11,7 +11,6 @@ description: |-
 This data source returns details of a specific *system* Graph DB node within a Blueprint.
 
 At least one optional attribute is required.
-
 
 ## Example Usage
 

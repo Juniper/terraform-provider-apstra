@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_connectivity_template Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This resource creates a Connectivity Template within a Datacenter Blueprint.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_datacenter_connectivity_template (Resource)
 
 This resource creates a Connectivity Template within a Datacenter Blueprint.
-
 
 ## Example Usage
 

@@ -50,7 +50,7 @@ func (o *resourceModularDeviceProfile) Configure(ctx context.Context, req resour
 
 func (o *resourceModularDeviceProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDevices + "This resource creates a Device Profile for a chassis-based device",
+		MarkdownDescription: "This resource creates a Device Profile for a chassis-based device",
 		Attributes:          device.ModularDeviceProfile{}.ResourceAttributes(),
 	}
 }

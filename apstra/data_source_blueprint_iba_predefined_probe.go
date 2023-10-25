@@ -27,7 +27,7 @@ func (o *dataSourceBlueprintIbaPredefinedProbe) Configure(ctx context.Context, r
 
 func (o *dataSourceBlueprintIbaPredefinedProbe) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Predefined Probe in a Blueprint.",
+		MarkdownDescription: "This data source provides details of a specific IBA Predefined Probe in a Blueprint.",
 		Attributes:          iba.PredefinedProbe{}.DataSourceAttributes(),
 	}
 }

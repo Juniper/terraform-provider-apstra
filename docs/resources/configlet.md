@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_configlet Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This resource creates a specific Configlet.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_configlet (Resource)
 
 This resource creates a specific Configlet.
-
 
 ## Example Usage
 

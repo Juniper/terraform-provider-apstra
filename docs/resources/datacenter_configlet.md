@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_configlet Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: ""
 description: |-
   This resource imports a Configlet into a Blueprint.
 ---
@@ -8,7 +8,6 @@ description: |-
 # apstra_datacenter_configlet (Resource)
 
 This resource imports a Configlet into a Blueprint.
-
 
 ## Example Usage
 

@@ -31,7 +31,7 @@ func (o *resourceDatacenterPropertySet) Configure(ctx context.Context, req resou
 
 func (o *resourceDatacenterPropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource imports a property set into a Blueprint.",
+		MarkdownDescription: "This resource imports a property set into a Blueprint.",
 		Attributes:          blueprint.DatacenterPropertySet{}.ResourceAttributes(),
 	}
 }
