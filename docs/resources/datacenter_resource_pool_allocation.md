@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_resource_pool_allocation Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: "RefDesign: Datacenter"
 description: |-
   This resource allocates a resource pool to a role within a Blueprint.
 ---

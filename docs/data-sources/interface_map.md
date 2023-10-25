@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_interface_map Data Source - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Design"
 description: |-
   This data source provides details of a specific Interface Map.
   At least one optional attribute is required.

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_device_allocation Resource - terraform-provider-apstra"
-subcategory: "Devices"
+subcategory: "RefDesign: Datacenter"
 description: |-
   This resource allocates a Managed Device (probably a switch) to a node role (spine1, etc...) within a Blueprint.
 ---
