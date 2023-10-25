@@ -29,7 +29,7 @@ func (o *resourceIntegerPool) Configure(ctx context.Context, req resource.Config
 
 func (o *resourceIntegerPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates an Integer resource pool",
+		MarkdownDescription: docCategoryResources + "This resource creates an Integer resource pool",
 		Attributes:          resources.IntegerPool{}.ResourceAttributes(),
 	}
 }

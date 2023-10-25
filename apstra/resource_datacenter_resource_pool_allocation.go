@@ -29,7 +29,7 @@ func (o *resourcePoolAllocation) Configure(ctx context.Context, req resource.Con
 
 func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource allocates a resource pool to a role within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource allocates a resource pool to a role within a Blueprint.",
 		Attributes:          blueprint.PoolAllocation{}.ResourceAttributes(),
 	}
 }

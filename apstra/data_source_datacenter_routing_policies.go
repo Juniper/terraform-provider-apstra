@@ -32,7 +32,7 @@ func (o *dataSourceDatacenterRoutingPolicies) Configure(ctx context.Context, req
 
 func (o *dataSourceDatacenterRoutingPolicies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns Graph DB node IDs of *routing_policy* nodes within a Blueprint.\n\n" +
+		MarkdownDescription: docCategoryDatacenter + "This data source returns Graph DB node IDs of *routing_policy* nodes within a Blueprint.\n\n" +
 			"Optional `filters` can be used select only interesting nodes.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{

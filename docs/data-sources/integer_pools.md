@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_integer_pools Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Resources"
 description: |-
   This data source returns the ID numbers of all Integer Pools.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_integer_pools (Data Source)
 
 This data source returns the ID numbers of all Integer Pools.
+
 
 ## Example Usage
 

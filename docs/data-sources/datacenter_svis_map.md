@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_svis_map Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This data source returns a maps of Sets of SVI info keyed by Virtual Network ID, System ID and SVI ID.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_datacenter_svis_map (Data Source)
 
 This data source returns a maps of Sets of SVI info keyed by Virtual Network ID, System ID and SVI ID.
+
 
 ## Example Usage
 

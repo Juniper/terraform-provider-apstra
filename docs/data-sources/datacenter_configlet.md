@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_configlet Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This data source provides details of a specific Configlet imported into a Blueprint.
   At least one optional attribute is required.
@@ -11,6 +11,7 @@ description: |-
 This data source provides details of a specific Configlet imported into a Blueprint.
 
 At least one optional attribute is required.
+
 
 ## Example Usage
 

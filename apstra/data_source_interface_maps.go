@@ -28,7 +28,7 @@ func (o *dataSourceInterfaceMaps) Configure(ctx context.Context, req datasource.
 
 func (o *dataSourceInterfaceMaps) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the ID numbers of Interface Maps.",
+		MarkdownDescription: docCategoryDesign + "This data source returns the ID numbers of Interface Maps.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

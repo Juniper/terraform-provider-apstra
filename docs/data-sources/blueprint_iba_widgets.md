@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_iba_widgets Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Any"
 description: |-
   This data source returns the IDs of the IBA Widgets in a Blueprint.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_blueprint_iba_widgets (Data Source)
 
 This data source returns the IDs of the IBA Widgets in a Blueprint.
+
 
 ## Example Usage
 

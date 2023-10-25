@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_agents Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Devices"
 description: |-
   This data source returns the IDs of Managed Device Agents. All of the filter attributes are optional.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_agents (Data Source)
 
 This data source returns the IDs of Managed Device Agents. All of the `filter` attributes are optional.
+
 
 ## Example Usage
 

@@ -25,7 +25,7 @@ func (o *dataSourceAnomalies) Configure(ctx context.Context, req datasource.Conf
 
 func (o *dataSourceAnomalies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides per-node summary, " +
+		MarkdownDescription: docCategoryRefDesignAny + "This data source provides per-node summary, " +
 			"per-service summary and full details of anomalies in the specified Blueprint.",
 		Attributes: blueprint.Anomalies{}.DataSourceAttributes(),
 	}

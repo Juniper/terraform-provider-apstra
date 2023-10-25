@@ -37,7 +37,7 @@ func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resourc
 
 func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource instantiates a Datacenter Blueprint from a template.",
+		MarkdownDescription: docCategoryDatacenter + "This resource instantiates a Datacenter Blueprint from a template.",
 		Attributes:          blueprint.Blueprint{}.ResourceAttributes(),
 	}
 }

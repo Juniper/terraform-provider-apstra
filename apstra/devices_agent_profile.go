@@ -30,7 +30,7 @@ type agentProfile struct {
 func (o agentProfile) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID of the Agent Profile. Required when `name` is omitted.",
+			MarkdownDescription: docCategoryDevices + "Apstra ID of the Agent Profile. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{

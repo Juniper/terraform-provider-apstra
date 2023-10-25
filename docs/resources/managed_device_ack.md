@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_managed_device_ack Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Devices"
 description: |-
   This resource acknowledges the System (probably a switch) discovered by a running System Agent. The acknowledgement of a System cannot be modified nor deleted. Any modification to the inputs of this resource will cause it to be removed from the Terraform state and recreated. Modifying or deleting this resource has no effect on Apstra.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_managed_device_ack (Resource)
 
 This resource *acknowledges* the System (probably a switch) discovered by a running System Agent. The acknowledgement of a System cannot be modified nor deleted. Any modification to the inputs of this resource will cause it to be removed from the Terraform state and recreated. Modifying or deleting this resource has no effect on Apstra.
+
 
 ## Example Usage
 

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_rack_type Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This resource creates a Rack Type in the Apstra Design tab.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_rack_type (Resource)
 
 This resource creates a Rack Type in the Apstra Design tab.
+
 
 ## Example Usage
 

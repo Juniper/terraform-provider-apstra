@@ -28,7 +28,7 @@ func (o *dataSourceIntegerPool) Configure(ctx context.Context, req datasource.Co
 
 func (o *dataSourceIntegerPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific Integer Pool.\n\n" +
+		MarkdownDescription: docCategoryResources + "This data source provides details of a specific Integer Pool.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: resources.IntegerPool{}.DataSourceAttributes(),
 	}

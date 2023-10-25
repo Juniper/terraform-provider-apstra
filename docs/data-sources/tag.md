@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_tag Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Design"
 description: |-
   This data source provides details of a specific Tag.
   At least one optional attribute is required.
@@ -11,6 +11,7 @@ description: |-
 This data source provides details of a specific Tag.
 
 At least one optional attribute is required.
+
 
 ## Example Usage
 

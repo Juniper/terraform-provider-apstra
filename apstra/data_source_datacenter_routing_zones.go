@@ -29,7 +29,7 @@ func (o *dataSourceDatacenterRoutingZones) Configure(ctx context.Context, req da
 
 func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs of Routing Zones within the specified Blueprint. " +
+		MarkdownDescription: docCategoryDatacenter + "This data source returns the IDs of Routing Zones within the specified Blueprint. " +
 			"All of the `filter` attributes are optional.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{

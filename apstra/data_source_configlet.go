@@ -28,7 +28,7 @@ func (o *dataSourceConfiglet) Configure(ctx context.Context, req datasource.Conf
 
 func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific Configlet.\n\n" +
+		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Configlet.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.Configlet{}.DataSourceAttributes(),
 	}

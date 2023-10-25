@@ -27,7 +27,7 @@ func (o *dataSourceBlueprintIbaWidget) Configure(ctx context.Context, req dataso
 
 func (o *dataSourceBlueprintIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific IBA Widget in a Blueprint." +
+		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Widget in a Blueprint." +
 			"\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: iba.Widget{}.DataSourceAttributes(),

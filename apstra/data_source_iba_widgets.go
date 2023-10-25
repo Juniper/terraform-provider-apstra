@@ -29,7 +29,7 @@ func (o *dataSourceBlueprintIbaWidgets) Configure(ctx context.Context, req datas
 
 func (o *dataSourceBlueprintIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the IDs of the IBA Widgets in a Blueprint.",
+		MarkdownDescription: docCategoryRefDesignAny + "This data source returns the IDs of the IBA Widgets in a Blueprint.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID. " +

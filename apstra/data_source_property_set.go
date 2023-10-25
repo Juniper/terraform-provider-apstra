@@ -28,7 +28,7 @@ func (o *dataSourcePropertySet) Configure(ctx context.Context, req datasource.Co
 
 func (o *dataSourcePropertySet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source provides details of a specific PropertySet.\n\n" +
+		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific PropertySet.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.PropertySet{}.DataSourceAttributes(),
 	}

@@ -29,7 +29,7 @@ func (o *resourceAsnPool) Configure(ctx context.Context, req resource.ConfigureR
 
 func (o *resourceAsnPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates an ASN resource pool",
+		MarkdownDescription: docCategoryResources + "This resource creates an ASN resource pool",
 		Attributes:          resources.AsnPool{}.ResourceAttributes(),
 	}
 }

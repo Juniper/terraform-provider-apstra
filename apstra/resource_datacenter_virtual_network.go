@@ -34,7 +34,7 @@ func (o *resourceDatacenterVirtualNetwork) Configure(ctx context.Context, req re
 
 func (o *resourceDatacenterVirtualNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a Virtual Network within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource creates a Virtual Network within a Blueprint.",
 		Attributes:          blueprint.DatacenterVirtualNetwork{}.ResourceAttributes(),
 	}
 }

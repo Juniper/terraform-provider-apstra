@@ -26,7 +26,7 @@ func (o *resourceBlueprintIbaDashboard) Configure(ctx context.Context, req resou
 
 func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates a IBA Dashboard.",
+		MarkdownDescription: docCategoryRefDesignAny + "This resource creates a IBA Dashboard.",
 		Attributes:          iba.Dashboard{}.ResourceAttributes(),
 	}
 }

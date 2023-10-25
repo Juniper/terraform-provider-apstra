@@ -26,7 +26,7 @@ func (o *resourceAgentProfile) Configure(ctx context.Context, req resource.Confi
 
 func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This resource creates an Agent Profile. Note that credentials (username/password) " +
+		MarkdownDescription: docCategoryDevices + "This resource creates an Agent Profile. Note that credentials (username/password) " +
 			"cannot be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's " +
 			"impossible for terraform to detect drift and because (b) leaving credentials in the configuration/state " +
 			"isn't a safe practice.",

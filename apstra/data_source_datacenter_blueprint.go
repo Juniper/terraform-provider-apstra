@@ -27,7 +27,7 @@ func (o *dataSourceDatacenterBlueprint) Configure(ctx context.Context, req datas
 
 func (o *dataSourceDatacenterBlueprint) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source looks up summary details of a Datacenter Blueprint.\n\n" +
+		MarkdownDescription: docCategoryDatacenter + "This data source looks up summary details of a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.Blueprint{}.DataSourceAttributes(),
 	}

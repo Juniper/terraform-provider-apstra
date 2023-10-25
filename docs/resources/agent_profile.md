@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_agent_profile Resource - terraform-provider-apstra"
-subcategory: ""
+subcategory: "Devices"
 description: |-
   This resource creates an Agent Profile. Note that credentials (username/password) cannot be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a safe practice.
 ---
@@ -8,6 +8,7 @@ description: |-
 # apstra_agent_profile (Resource)
 
 This resource creates an Agent Profile. Note that credentials (username/password) cannot be set using this resource because (a) Apstra doesn't allow them to be retrieved, so it's impossible for terraform to detect drift and because (b) leaving credentials in the configuration/state isn't a safe practice.
+
 
 ## Example Usage
 

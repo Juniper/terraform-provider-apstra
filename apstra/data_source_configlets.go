@@ -29,7 +29,7 @@ func (o *dataSourceConfiglets) Configure(ctx context.Context, req datasource.Con
 
 func (o *dataSourceConfiglets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This data source returns the ID numbers of all Configlets.",
+		MarkdownDescription: docCategoryDesign + "This data source returns the ID numbers of all Configlets.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
 				MarkdownDescription: "A set of Apstra object ID numbers.",

@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_routing_zone Data Source - terraform-provider-apstra"
-subcategory: ""
+subcategory: "RefDesign: Datacenter"
 description: |-
   This resource returns details of a Routing Zone within a Datacenter Blueprint.
   At least one optional attribute is required.
@@ -11,6 +11,7 @@ description: |-
 This resource returns details of a Routing Zone within a Datacenter Blueprint.
 
 At least one optional attribute is required.
+
 
 ## Example Usage
 
