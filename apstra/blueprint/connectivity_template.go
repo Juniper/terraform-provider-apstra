@@ -36,6 +36,7 @@ func (o ConnectivityTemplate) ResourceAttributes() map[string]resourceSchema.Att
 			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplaceIfConfigured()},
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name displayed in web UI.",
