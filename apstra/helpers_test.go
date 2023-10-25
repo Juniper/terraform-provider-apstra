@@ -106,6 +106,9 @@ func notAllZeros[A constraints.Integer](in []A) bool {
 }
 
 func TestRandomIntegers(t *testing.T) {
+	type uFoo uint16
+	type sFoo int16
+
 	dataI := make([]int, 50)
 	dataS8 := make([]uint8, 50)
 	dataS16 := make([]uint16, 50)
@@ -115,6 +118,8 @@ func TestRandomIntegers(t *testing.T) {
 	dataU16 := make([]uint16, 50)
 	dataU32 := make([]uint32, 50)
 	dataU64 := make([]uint64, 50)
+	dataSFoo := make([]sFoo, 50)
+	dataUFoo := make([]uFoo, 50)
 
 	FillWithRandomIntegers(dataI)
 	FillWithRandomIntegers(dataS8)
@@ -125,6 +130,8 @@ func TestRandomIntegers(t *testing.T) {
 	FillWithRandomIntegers(dataU16)
 	FillWithRandomIntegers(dataU32)
 	FillWithRandomIntegers(dataU64)
+	FillWithRandomIntegers(dataSFoo)
+	FillWithRandomIntegers(dataUFoo)
 
 	if !notAllZeros(dataI) {
 		t.Fail()
@@ -151,6 +158,12 @@ func TestRandomIntegers(t *testing.T) {
 		t.Fail()
 	}
 	if !notAllZeros(dataU64) {
+		t.Fail()
+	}
+	if !notAllZeros(dataSFoo) {
+		t.Fail()
+	}
+	if !notAllZeros(dataUFoo) {
 		t.Fail()
 	}
 }
