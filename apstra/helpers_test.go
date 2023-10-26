@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"golang.org/x/exp/constraints"
 	"testing"
 )
 
@@ -92,5 +93,77 @@ func TestSliceWithoutElement(t *testing.T) {
 			}
 			continue
 		}
+	}
+}
+
+func allZeros[A constraints.Integer](in []A) bool {
+	for i := range in {
+		if in[i] != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func TestRandomIntegers(t *testing.T) {
+	type uFoo uint16
+	type sFoo int16
+
+	dataI := make([]int, 50)
+	dataS8 := make([]uint8, 50)
+	dataS16 := make([]uint16, 50)
+	dataS32 := make([]uint32, 50)
+	dataS64 := make([]uint64, 50)
+	dataU8 := make([]uint8, 50)
+	dataU16 := make([]uint16, 50)
+	dataU32 := make([]uint32, 50)
+	dataU64 := make([]uint64, 50)
+	dataSFoo := make([]sFoo, 50)
+	dataUFoo := make([]uFoo, 50)
+
+	FillWithRandomIntegers(dataI)
+	FillWithRandomIntegers(dataS8)
+	FillWithRandomIntegers(dataS16)
+	FillWithRandomIntegers(dataS32)
+	FillWithRandomIntegers(dataS64)
+	FillWithRandomIntegers(dataU8)
+	FillWithRandomIntegers(dataU16)
+	FillWithRandomIntegers(dataU32)
+	FillWithRandomIntegers(dataU64)
+	FillWithRandomIntegers(dataSFoo)
+	FillWithRandomIntegers(dataUFoo)
+
+	if allZeros(dataI) {
+		t.Fail()
+	}
+	if allZeros(dataS8) {
+		t.Fail()
+	}
+	if allZeros(dataS16) {
+		t.Fail()
+	}
+	if allZeros(dataS32) {
+		t.Fail()
+	}
+	if allZeros(dataS64) {
+		t.Fail()
+	}
+	if allZeros(dataU8) {
+		t.Fail()
+	}
+	if allZeros(dataU16) {
+		t.Fail()
+	}
+	if allZeros(dataU32) {
+		t.Fail()
+	}
+	if allZeros(dataU64) {
+		t.Fail()
+	}
+	if allZeros(dataSFoo) {
+		t.Fail()
+	}
+	if allZeros(dataUFoo) {
+		t.Fail()
 	}
 }
