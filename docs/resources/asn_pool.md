@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_asn_pool Resource - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Resource Pools"
 description: |-
   This resource creates an ASN resource pool
 ---

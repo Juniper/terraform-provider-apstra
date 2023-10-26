@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_ipv6_pool Resource - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Resource Pools"
 description: |-
   This resource creates an IPv6 resource pool
 ---

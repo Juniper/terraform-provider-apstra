@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_configlets Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source returns the ID numbers of all Configlets in a Blueprint.
 ---

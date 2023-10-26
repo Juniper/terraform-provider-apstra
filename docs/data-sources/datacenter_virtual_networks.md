@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_virtual_networks Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source returns the IDs of Virtual Networks within the specified Blueprint. All of the filter attributes are optional.
 ---

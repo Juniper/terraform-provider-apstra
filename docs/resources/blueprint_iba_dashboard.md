@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_iba_dashboard Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: "Reference Design: Shared"
 description: |-
   This resource creates a IBA Dashboard.
 ---

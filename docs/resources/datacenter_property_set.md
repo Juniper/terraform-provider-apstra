@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_property_set Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This resource imports a property set into a Blueprint.
 ---

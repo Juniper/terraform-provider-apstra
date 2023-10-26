@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_integer_pool Data Source - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Resource Pools"
 description: |-
   This data source provides details of a specific Integer Pool.
   At least one optional attribute is required.

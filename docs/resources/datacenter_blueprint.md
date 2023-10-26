@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_blueprint Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This resource instantiates a Datacenter Blueprint from a template.
 ---

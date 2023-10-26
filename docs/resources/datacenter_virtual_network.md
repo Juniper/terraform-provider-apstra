@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_virtual_network Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This resource creates a Virtual Network within a Blueprint.
 ---

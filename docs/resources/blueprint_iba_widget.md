@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_iba_widget Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: "Reference Design: Shared"
 description: |-
   This resource creates an IBA Widget.
 ---

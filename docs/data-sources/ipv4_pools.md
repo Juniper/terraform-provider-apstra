@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_ipv4_pools Data Source - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Resource Pools"
 description: |-
   This data source returns the ID numbers of all IPv4 Pools
 ---
