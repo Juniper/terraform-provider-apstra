@@ -96,13 +96,13 @@ func TestSliceWithoutElement(t *testing.T) {
 	}
 }
 
-func notAllZeros[A constraints.Integer](in []A) bool {
+func allZeros[A constraints.Integer](in []A) bool {
 	for i := range in {
 		if in[i] != 0 {
-			return true
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func TestRandomIntegers(t *testing.T) {
@@ -133,37 +133,37 @@ func TestRandomIntegers(t *testing.T) {
 	FillWithRandomIntegers(dataSFoo)
 	FillWithRandomIntegers(dataUFoo)
 
-	if !notAllZeros(dataI) {
+	if allZeros(dataI) {
 		t.Fail()
 	}
-	if !notAllZeros(dataS8) {
+	if allZeros(dataS8) {
 		t.Fail()
 	}
-	if !notAllZeros(dataS16) {
+	if allZeros(dataS16) {
 		t.Fail()
 	}
-	if !notAllZeros(dataS32) {
+	if allZeros(dataS32) {
 		t.Fail()
 	}
-	if !notAllZeros(dataS64) {
+	if allZeros(dataS64) {
 		t.Fail()
 	}
-	if !notAllZeros(dataU8) {
+	if allZeros(dataU8) {
 		t.Fail()
 	}
-	if !notAllZeros(dataU16) {
+	if allZeros(dataU16) {
 		t.Fail()
 	}
-	if !notAllZeros(dataU32) {
+	if allZeros(dataU32) {
 		t.Fail()
 	}
-	if !notAllZeros(dataU64) {
+	if allZeros(dataU64) {
 		t.Fail()
 	}
-	if !notAllZeros(dataSFoo) {
+	if allZeros(dataSFoo) {
 		t.Fail()
 	}
-	if !notAllZeros(dataUFoo) {
+	if allZeros(dataUFoo) {
 		t.Fail()
 	}
 }
