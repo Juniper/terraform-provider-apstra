@@ -23,13 +23,18 @@ func sliceWithoutElement[A comparable](in []A, e A) ([]A, int) {
 }
 
 func FillWithRandomIntegers[A constraints.Integer](a []A) {
+	if len(a) == 0 {
+		return
+	}
+
+	var nominal A
 	maxSize := unsafe.Sizeof(uint64(0))
+	nominalSize := unsafe.Sizeof(nominal)
+	if nominalSize > maxSize {
+		panic(fmt.Sprintf("FillWithRandomIntegers got unexpectedly large integer type %v", nominal))
+	}
 
 	for i := 0; i < len(a); i++ {
-		if unsafe.Sizeof(a[i]) > maxSize {
-			panic(fmt.Sprintf("FillWithRandomIntegers got unexpectedly large integer type %v", a[i]))
-		}
-
 		a[i] = A(rand.Uint64())
 	}
 }
