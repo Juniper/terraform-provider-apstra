@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_asn_pool Data Source - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Resource Pools"
 description: |-
   This data source provides details of a specific ASN Pool.
   At least one optional attribute is required.

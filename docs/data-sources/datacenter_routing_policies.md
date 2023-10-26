@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_routing_policies Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source returns Graph DB node IDs of routing_policy nodes within a Blueprint.
   Optional filters can be used select only interesting nodes.

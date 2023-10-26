@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_deployment Resource - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: "Reference Design: Shared"
 description: |-
   This resource commits a staging Blueprint after checking for build errors.
 ---

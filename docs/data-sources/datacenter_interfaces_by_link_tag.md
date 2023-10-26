@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_interfaces_by_link_tag Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source returns the IDs of Interfaces by Link Tag.
 ---

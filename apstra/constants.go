@@ -19,9 +19,9 @@ const (
 
 	docCategorySeparator    = " --- "
 	docCategoryDesign       = "Design" + docCategorySeparator
-	docCategoryResources    = "Resources" + docCategorySeparator
-	docCategoryDatacenter   = "RefDesign: Datacenter" + docCategorySeparator
-	docCategoryFreeform     = "RefDesign: Freeform" + docCategorySeparator
-	docCategoryRefDesignAny = "RefDesign: Any" + docCategorySeparator
+	docCategoryResources    = "Resource Pools" + docCategorySeparator
+	docCategoryDatacenter   = "Reference Design: Datacenter" + docCategorySeparator
+	docCategoryFreeform     = "Reference Design: Freeform" + docCategorySeparator
+	docCategoryRefDesignAny = "Reference Design: Shared" + docCategorySeparator
 	docCategoryDevices      = "Devices" + docCategorySeparator
 )

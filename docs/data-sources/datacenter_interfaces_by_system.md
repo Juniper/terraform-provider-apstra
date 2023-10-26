@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_interfaces_by_system Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Datacenter"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source returns a map of Interface IDs keyed by Interface Name for the given System ID.
 ---

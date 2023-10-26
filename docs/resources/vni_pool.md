@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_vni_pool Resource - terraform-provider-apstra"
-subcategory: "Resources"
+subcategory: "Resource Pools"
 description: |-
   This resource creates an VNI resource pool
 ---

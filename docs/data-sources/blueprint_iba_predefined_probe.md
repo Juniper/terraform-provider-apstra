@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_blueprint_iba_predefined_probe Data Source - terraform-provider-apstra"
-subcategory: "RefDesign: Any"
+subcategory: "Reference Design: Shared"
 description: |-
   This data source provides details of a specific IBA Predefined Probe in a Blueprint.
 ---
