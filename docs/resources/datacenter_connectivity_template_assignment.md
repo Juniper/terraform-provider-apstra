@@ -16,9 +16,11 @@ This resource assigns one or more Connectivity Templates to an Application Point
 # This example assigns two connectivity templates to the switch port
 # identified by the ID "FkYtMBdeoJ5urBaIEi8"
 #
-# Note that as of release v0.27.0 there's not an easy way to determine
-# interface IDs. New data sources which facilitate interface ID lookup
-# are coming soon (tm)
+# Data sources like these can be used to find node IDs to use in
+# the `application_point_id` attribute:
+# - apstra_datacenter_svis_map
+# - apstra_datacenter_interfaces_by_link_tag
+# - apstra_datacenter_interfaces_by_system
 
 resource "apstra_datacenter_connectivity_template_assignment" "a" {
   blueprint_id              = "b726704d-f80e-4733-9103-abd6ccd8752c"
