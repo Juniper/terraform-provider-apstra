@@ -21,10 +21,7 @@ const (
 
 var _ validator.String = ParseRtValidator{}
 
-type ParseRtValidator struct {
-	requireIpv4 bool
-	requireIpv6 bool
-}
+type ParseRtValidator struct{}
 
 func (o ParseRtValidator) Description(_ context.Context) string {
 	return "Ensures that the supplied can be parsed as a Route Target"
