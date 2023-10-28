@@ -2,12 +2,15 @@ package tfapstra
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"math/rand"
+	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,15 +34,26 @@ type routeTargets struct {
 	rts []string
 }
 
-func (o *routeTargets) init(n int) {
-	s1 := make([]uint32, n)
-	s2 := make([]uint16, n)
+// init loads o.rts with random RT strings
+func (o *routeTargets) init(count int) {
+	s1 := make([]uint32, count)
+	s2 := make([]uint32, count)
 	FillWithRandomIntegers(s1)
 	FillWithRandomIntegers(s2)
 
-	o.rts = make([]string, n)
-	for i := 0; i < n; i++ {
-		o.rts[i] = fmt.Sprintf("%d:%d", s1[i], s2[i])
+	o.rts = make([]string, count)
+	for i := 0; i < count; i++ {
+		r := rand.Intn(3)
+		switch r {
+		case 0: // force to 16-bits:32-bits
+			o.rts[i] = fmt.Sprintf("%d:%d", uint16(s1[i]), s2[i])
+		case 1: // force to 32-bits:16-bits
+			o.rts[i] = fmt.Sprintf("%d:%d", s1[i], uint16(s2[i]))
+		case 2: // force to IPv4:16-bits
+			ip := make(net.IP, 4)
+			binary.BigEndian.PutUint32(ip, s1[i])
+			o.rts[i] = fmt.Sprintf("%s:%d", ip.String(), uint16(s2[i]))
+		}
 	}
 }
 
@@ -138,7 +152,7 @@ func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 	rtsB := routeTargets{}
 
 	rtsA.init(1)
-	rtsB.init(3)
+	rtsB.init(6)
 
 	testCases := []testCase{
 		{
