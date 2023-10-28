@@ -48,12 +48,12 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 		"neighbor_asn": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
+			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
 		},
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint8+1)},
+			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint8)},
 		},
 		"bfd_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enable BFD.",
@@ -68,7 +68,7 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			MarkdownDescription: "BGP keepalive time (seconds).",
 			Optional:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.Between(1, math.MaxUint16),
 				int64validator.AlsoRequires(path.MatchRoot("hold_time")),
 			},
 		},
@@ -76,7 +76,7 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			MarkdownDescription: "BGP hold time (seconds).",
 			Optional:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.Between(1, math.MaxUint16),
 				int64validator.AlsoRequires(path.MatchRoot("keepalive_time")),
 				apstravalidator.AtLeastProductOf(3, path.MatchRoot("keepalive_time")),
 			},
@@ -87,7 +87,7 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 				"AS number, in addition to its real AS number, announced to its eBGP peer, resulting " +
 				"in an AS path length of two.",
 			Optional:   true,
-			Validators: []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
+			Validators: []validator.Int64{int64validator.Between(1, math.MaxUint32)},
 		},
 		"ipv4_address": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address of peer",

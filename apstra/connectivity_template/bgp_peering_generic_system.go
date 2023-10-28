@@ -64,7 +64,7 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 		"ttl": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(0, math.MaxUint8+1)},
+			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint8)},
 		},
 		"bfd_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enable BFD.",
@@ -79,7 +79,7 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 			MarkdownDescription: "BGP keepalive time (seconds).",
 			Optional:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.Between(1, math.MaxUint16),
 				int64validator.AlsoRequires(path.MatchRoot("hold_time")),
 			},
 		},
@@ -87,7 +87,7 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 			MarkdownDescription: "BGP hold time (seconds).",
 			Optional:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(0, math.MaxUint16+1),
+				int64validator.Between(1, math.MaxUint16),
 				int64validator.AlsoRequires(path.MatchRoot("keepalive_time")),
 				apstravalidator.AtLeastProductOf(3, path.MatchRoot("keepalive_time")),
 			},
@@ -112,7 +112,7 @@ func (o BgpPeeringGenericSystem) DataSourceAttributes() map[string]dataSourceSch
 				"a local-as AS number, in addition to its real AS number, announced to its eBGP " +
 				"peer, resulting in an AS path length of two.",
 			Optional:   true,
-			Validators: []validator.Int64{int64validator.Between(0, math.MaxUint32+1)},
+			Validators: []validator.Int64{int64validator.Between(1, math.MaxUint32)},
 		},
 		"neighbor_asn_dynamic": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Default behavior is `static`",
