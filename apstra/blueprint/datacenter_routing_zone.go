@@ -241,11 +241,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			ElementType:         types.StringType,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(
-					stringvalidator.RegexMatches(
-						regexp.MustCompile("^[0-9]+:[0-9]+$"),
-						"import_route_targets must take the form: \"<digits>:<digits>\""),
-				),
+				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
 		},
 		"export_route_targets": resourceSchema.SetAttribute{
@@ -254,11 +250,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			ElementType:         types.StringType,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(
-					stringvalidator.RegexMatches(
-						regexp.MustCompile("^[0-9]+:[0-9]+$"),
-						"export_route_targets must take the form: \"<digits>:<digits>\""),
-				),
+				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
 		},
 	}
