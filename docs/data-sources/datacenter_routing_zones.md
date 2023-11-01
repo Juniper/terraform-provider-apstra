@@ -58,6 +58,7 @@ Optional:
 - `dhcp_servers` (Set of String) Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured in the Routing Zone. This is a list of *required* servers, not an exact-match list.
 - `export_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
 - `import_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
+- `junos_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
 - `name` (String) VRF name displayed in the Apstra web UI.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
@@ -79,6 +80,7 @@ Optional:
 - `dhcp_servers` (Set of String) Set of addresses of DHCP servers (IPv4 or IPv6) which must be configured in the Routing Zone. This is a list of *required* servers, not an exact-match list.
 - `export_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
 - `import_route_targets` (Set of String) This is a set of *required* RTs, not an exact-match list.
+- `junos_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
 - `name` (String) VRF name displayed in the Apstra web UI.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
