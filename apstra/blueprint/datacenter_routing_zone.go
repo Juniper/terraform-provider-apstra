@@ -25,7 +25,7 @@ import (
 	"regexp"
 )
 
-var junosIrbModeDefault = apstra.JunosEvpnIrbModeAsymmetric.Value
+var junosEvpnIrbModeDefault = apstra.JunosEvpnIrbModeAsymmetric.Value
 
 type DatacenterRoutingZone struct {
 	Id                   types.String `tfsdk:"id"`
@@ -39,7 +39,7 @@ type DatacenterRoutingZone struct {
 	RoutingPolicyId      types.String `tfsdk:"routing_policy_id"`
 	ImportRouteTargets   types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets   types.Set    `tfsdk:"export_route_targets"`
-	JunosIrbMode         types.String `tfsdk:"junos_irb_mode"`
+	JunosEvpnIrbMode     types.String `tfsdk:"junos_evpn_irb_mode"`
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -114,7 +114,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
-		"junos_irb_mode": dataSourceSchema.StringAttribute{
+		"junos_evpn_irb_mode": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for " +
 				"inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for " +
 				"networks with large amounts of VLANs.",
@@ -174,7 +174,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Optional:            true,
 			ElementType:         types.StringType,
 		},
-		"junos_irb_mode": dataSourceSchema.StringAttribute{
+		"junos_evpn_irb_mode": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for " +
 				"inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for " +
 				"networks with large amounts of VLANs.",
@@ -264,11 +264,11 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
 		},
-		"junos_irb_mode": resourceSchema.StringAttribute{
+		"junos_evpn_irb_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Symmetric IRB Routing for EVPN on Junos devices makes use of "+
 				"an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better "+
 				"scaling for networks with large amounts of VLANs. Applicable only to Apstra 4.2.0+. When omitted, "+
-				"Routing Zones in Apstra 4.2.0 and later will be configured with mode `%s`.", junosIrbModeDefault),
+				"Routing Zones in Apstra 4.2.0 and later will be configured with mode `%s`.", junosEvpnIrbModeDefault),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{stringvalidator.OneOf(
@@ -322,7 +322,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	}
 
 	var junosEvpnIrbMode *apstra.JunosEvpnIrbMode
-	if !o.JunosIrbMode.IsNull() {
+	if !o.JunosEvpnIrbMode.IsNull() {
 		junosEvpnIrbMode = &apstra.JunosEvpnIrbModeAsymmetric
 	}
 
@@ -379,9 +379,9 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.Secu
 		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ExportRTs, diags)
 	}
 
-	o.JunosIrbMode = types.StringNull()
+	o.JunosEvpnIrbMode = types.StringNull()
 	if sz.JunosEvpnIrbMode != nil {
-		o.JunosIrbMode = types.StringValue(sz.JunosEvpnIrbMode.Value)
+		o.JunosEvpnIrbMode = types.StringValue(sz.JunosEvpnIrbMode.Value)
 	}
 }
 
@@ -514,8 +514,8 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 		result = append(result, apstra.QEEAttribute{Key: "vlan_id", Value: apstra.QEIntVal(int(o.VlanId.ValueInt64()))})
 	}
 
-	if utils.Known(o.JunosIrbMode) {
-		result = append(result, apstra.QEEAttribute{Key: "junos_evpn_irb_mode", Value: apstra.QEStringVal(o.JunosIrbMode.ValueString())})
+	if utils.Known(o.JunosEvpnIrbMode) {
+		result = append(result, apstra.QEEAttribute{Key: "junos_evpn_irb_mode", Value: apstra.QEStringVal(o.JunosEvpnIrbMode.ValueString())})
 	}
 
 	return result
@@ -529,18 +529,18 @@ func (o *DatacenterRoutingZone) setDefaults(_ context.Context, client *apstra.Cl
 	}
 	junosIrbModeMinVersion, _ := version.NewVersion("4.2.0")
 
-	if utils.Known(o.JunosIrbMode) && apiVersion.LessThan(junosIrbModeMinVersion) {
-		// junos_irb_mode is set, but Apstra version < 4.2.0
+	if utils.Known(o.JunosEvpnIrbMode) && apiVersion.LessThan(junosIrbModeMinVersion) {
+		// junos_evpn_irb_mode is set, but Apstra version < 4.2.0
 		diags.Append(validatordiag.InvalidAttributeValueDiagnostic(
-			path.Root("junos_irb_mode"),
+			path.Root("junos_evpn_irb_mode"),
 			errApiCompatibility,
-			fmt.Sprintf("junos_irb_mode must be set with Apstra API version %s", apiVersion),
+			fmt.Sprintf("junos_evpn_irb_mode must be set with Apstra API version %s", apiVersion),
 		))
 	}
 
-	if !utils.Known(o.JunosIrbMode) && apiVersion.GreaterThanOrEqual(junosIrbModeMinVersion) {
-		// junos_irb_mode not set, Apstra version >= 4.2.0, so set the default value
-		o.JunosIrbMode = types.StringValue(junosIrbModeDefault)
+	if !utils.Known(o.JunosEvpnIrbMode) && apiVersion.GreaterThanOrEqual(junosIrbModeMinVersion) {
+		// junos_evpn_irb_mode not set, Apstra version >= 4.2.0, so set the default value
+		o.JunosEvpnIrbMode = types.StringValue(junosEvpnIrbModeDefault)
 	}
 
 }
