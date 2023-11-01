@@ -8,8 +8,6 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -269,8 +267,9 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better "+
 				"scaling for networks with large amounts of VLANs. Applicable only to Apstra 4.2.0+. When omitted, "+
 				"Routing Zones in Apstra 4.2.0 and later will be configured with mode `%s`.", junosEvpnIrbModeDefault),
-			Optional: true,
-			Computed: true,
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{stringvalidator.OneOf(
 				apstra.JunosEvpnIrbModeSymmetric.Value,
 				apstra.JunosEvpnIrbModeAsymmetric.Value,
@@ -283,11 +282,6 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 }
 
 func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) *apstra.SecurityZoneData {
-	o.setDefaults(ctx, client, diags)
-	if diags.HasError() {
-		return nil
-	}
-
 	var vlan *apstra.Vlan
 	if !o.VlanId.IsNull() && !o.VlanId.IsUnknown() {
 		v := apstra.Vlan(o.VlanId.ValueInt64())
@@ -519,27 +513,4 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 	}
 
 	return result
-}
-
-func (o *DatacenterRoutingZone) setDefaults(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	apiVersion, err := version.NewVersion(client.ApiVersion())
-	if err != nil {
-		diags.AddError("failed parsing API version", err.Error())
-		return
-	}
-	junosIrbModeMinVersion, _ := version.NewVersion("4.2.0")
-
-	if utils.Known(o.JunosEvpnIrbMode) && apiVersion.LessThan(junosIrbModeMinVersion) {
-		// junos_evpn_irb_mode is set, but Apstra version < 4.2.0
-		diags.Append(validatordiag.InvalidAttributeValueDiagnostic(
-			path.Root("junos_evpn_irb_mode"),
-			errApiCompatibility,
-			fmt.Sprintf("junos_evpn_irb_mode must be set with Apstra API version %s", apiVersion),
-		))
-	}
-
-	if !utils.Known(o.JunosEvpnIrbMode) && apiVersion.GreaterThanOrEqual(junosIrbModeMinVersion) {
-		// junos_evpn_irb_mode not set, Apstra version >= 4.2.0, so set the default value
-		o.JunosEvpnIrbMode = types.StringValue(junosEvpnIrbModeDefault)
-	}
 }
