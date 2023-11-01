@@ -323,7 +323,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 
 	var junosEvpnIrbMode *apstra.JunosEvpnIrbMode
 	if !o.JunosEvpnIrbMode.IsNull() {
-		junosEvpnIrbMode = &apstra.JunosEvpnIrbModeAsymmetric
+		junosEvpnIrbMode = &apstra.JunosEvpnIrbMode{Value: o.JunosEvpnIrbMode.ValueString()}
 	}
 
 	return &apstra.SecurityZoneData{
@@ -542,5 +542,4 @@ func (o *DatacenterRoutingZone) setDefaults(_ context.Context, client *apstra.Cl
 		// junos_evpn_irb_mode not set, Apstra version >= 4.2.0, so set the default value
 		o.JunosEvpnIrbMode = types.StringValue(junosEvpnIrbModeDefault)
 	}
-
 }

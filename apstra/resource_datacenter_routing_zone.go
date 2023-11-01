@@ -136,7 +136,6 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	}
 
 	request := plan.Request(ctx, o.client, &resp.Diagnostics)
-	dhcpServerRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -146,14 +145,22 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		resp.Diagnostics.AddError("error creating security zone", err.Error())
 		return
 	}
+
 	// partial state set
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
-	err = bp.SetSecurityZoneDhcpServers(ctx, id, dhcpServerRequest)
-	if err != nil {
-		resp.Diagnostics.AddError("error setting security zone dhcp servers", err.Error())
-		return
+	if !plan.DhcpServers.IsNull() {
+		dhcpServerRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err = bp.SetSecurityZoneDhcpServers(ctx, id, dhcpServerRequest)
+		if err != nil {
+			resp.Diagnostics.AddError("error setting security zone dhcp servers", err.Error())
+			return
+		}
 	}
 
 	sz, err := bp.GetSecurityZone(ctx, id)
@@ -235,6 +242,13 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
+	// Retrieve values from state.
+	var state blueprint.DatacenterRoutingZone
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Create a blueprint client
 	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
@@ -262,15 +276,17 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
-	dhcpRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	if !plan.DhcpServers.Equal(state.DhcpServers) {
+		dhcpRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	err = bp.SetSecurityZoneDhcpServers(ctx, apstra.ObjectId(plan.Id.ValueString()), dhcpRequest)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating security zone dhcp servers", err.Error())
-		return
+		err = bp.SetSecurityZoneDhcpServers(ctx, apstra.ObjectId(plan.Id.ValueString()), dhcpRequest)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating security zone dhcp servers", err.Error())
+			return
+		}
 	}
 
 	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()))
