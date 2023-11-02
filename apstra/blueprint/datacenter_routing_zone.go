@@ -41,7 +41,6 @@ type DatacenterRoutingZone struct {
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
-	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID. Required when `name` is omitted.",
@@ -66,7 +65,8 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Optional:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthBetween(1, 17),
-				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
+					"only underscore, dash and alphanumeric characters allowed."),
 			},
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -182,7 +182,6 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 }
 
 func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.Attribute {
-	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
@@ -199,7 +198,8 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
+					"only underscore, dash and alphanumeric characters allowed."),
 				stringvalidator.LengthBetween(1, 15),
 			},
 		},
