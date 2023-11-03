@@ -20,6 +20,7 @@ func GetTestClient(ctx context.Context) (*apstra.Client, error) {
 		if err != nil {
 			return nil, err
 		}
+		clientCfg.Experimental = true
 		clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 
 		sharedClient, err = clientCfg.NewClient(ctx)

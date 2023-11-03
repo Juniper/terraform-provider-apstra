@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -22,16 +23,16 @@ import (
 )
 
 type DatacenterExternalGateway struct {
-	Id                types.String             `tfsdk:"id"`
-	BlueprintId       types.String             `tfsdk:"blueprint_id"`
-	Name              types.String             `tfsdk:"name"`
-	IpAddress         customtypes.IPv46Address `tfsdk:"ip_address"`
-	Asn               types.Int64              `tfsdk:"asn"`
-	Ttl               types.Int64              `tfsdk:"ttl"`
-	KeepaliveTime     types.Int64              `tfsdk:"keepalive_time"`
-	HoldTime          types.Int64              `tfsdk:"hold_time"`
-	EvpnRouteTypes    types.String             `tfsdk:"evpn_route_types"`
-	LocalGatewayNodes types.Set                `tfsdk:"local_gateway_nodes"`
+	Id                types.String        `tfsdk:"id"`
+	BlueprintId       types.String        `tfsdk:"blueprint_id"`
+	Name              types.String        `tfsdk:"name"`
+	IpAddress         iptypes.IPv4Address `tfsdk:"ip_address"`
+	Asn               types.Int64         `tfsdk:"asn"`
+	Ttl               types.Int64         `tfsdk:"ttl"`
+	KeepaliveTime     types.Int64         `tfsdk:"keepalive_time"`
+	HoldTime          types.Int64         `tfsdk:"hold_time"`
+	EvpnRouteTypes    types.String        `tfsdk:"evpn_route_types"`
+	LocalGatewayNodes types.Set           `tfsdk:"local_gateway_nodes"`
 }
 
 func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -55,7 +56,7 @@ func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchem
 		"ip_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "External Gateway IP address",
 			Required:            true,
-			CustomType:          customtypes.IPv46AddressType{},
+			CustomType:          iptypes.IPv4AddressType{},
 		},
 		"asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "External Gateway AS Number",
@@ -92,6 +93,7 @@ func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchem
 		"local_gateway_nodes": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of IDs of switch nodes which will be configured to peer with the External Gateway",
 			Required:            true,
+			ElementType:         types.StringType,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
@@ -110,9 +112,23 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 		return nil
 	}
 
-	ttl := uint8(o.Ttl.ValueInt64())
-	keepaliveTimer := uint16(o.KeepaliveTime.ValueInt64())
-	holdtimeTimer := uint16(o.HoldTime.ValueInt64())
+	var ttl *uint8
+	if utils.Known(o.Ttl) {
+		t := uint8(o.Ttl.ValueInt64())
+		ttl = &t
+	}
+
+	var keepaliveTimer *uint16
+	if utils.Known(o.KeepaliveTime) {
+		t := uint16(o.KeepaliveTime.ValueInt64())
+		keepaliveTimer = &t
+	}
+
+	var holdtimeTimer *uint16
+	if utils.Known(o.HoldTime) {
+		t := uint16(o.HoldTime.ValueInt64())
+		holdtimeTimer = &t
+	}
 
 	return &apstra.RemoteGatewayData{
 		RouteTypes:     *routeTypes,
@@ -120,9 +136,9 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 		GwAsn:          uint32(o.Asn.ValueInt64()),
 		GwIp:           net.ParseIP(o.IpAddress.ValueString()), // skipping nil check because input
 		GwName:         o.Name.ValueString(),                   // validation should make that impossible
-		Ttl:            &ttl,
-		KeepaliveTimer: &keepaliveTimer,
-		HoldtimeTimer:  &holdtimeTimer,
+		Ttl:            ttl,
+		KeepaliveTimer: keepaliveTimer,
+		HoldtimeTimer:  holdtimeTimer,
 	}
 }
 
@@ -161,7 +177,7 @@ func (o *DatacenterExternalGateway) loadApiData(_ context.Context, in *apstra.Re
 	}
 
 	o.Name = types.StringValue(in.GwName)
-	o.IpAddress = customtypes.NewIPv46AddressValue(in.GwIp.String())
+	o.IpAddress = iptypes.NewIPv4AddressValue(in.GwIp.String())
 	o.Asn = types.Int64Value(int64(in.GwAsn))
 	o.Ttl = ttl
 	o.KeepaliveTime = keepaliveTime
