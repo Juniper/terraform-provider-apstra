@@ -1,7 +1,10 @@
 package tfapstra
 
 import (
+	"context"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"golang.org/x/exp/constraints"
 	"testing"
 )
@@ -165,5 +168,94 @@ func TestRandomIntegers(t *testing.T) {
 	}
 	if allZeros(dataUFoo) {
 		t.Fail()
+	}
+}
+
+func TestSplitImportId(t *testing.T) {
+	ctx := context.Background()
+	t.Parallel()
+
+	type testCase struct {
+		in            string
+		fields        []string
+		expected      []string
+		expectedDiags diag.Diagnostics
+	}
+
+	testCases := map[string]testCase{
+		"|1": {
+			in:       "|foo",
+			fields:   []string{"foo"},
+			expected: []string{"foo"},
+		},
+		".2": {
+			in:       ".foo.bar",
+			fields:   []string{"foo", "bar"},
+			expected: []string{"foo", "bar"},
+		},
+		"nil": {
+			in:     "",
+			fields: []string{},
+			expectedDiags: diag.Diagnostics{
+				diag.NewErrorDiagnostic(
+					"invalid import ID",
+					"import ID minimum length is 2",
+				),
+			},
+		},
+		"empty": {
+			in:     "",
+			fields: []string{},
+			expectedDiags: diag.Diagnostics{
+				diag.NewErrorDiagnostic(
+					"invalid import ID",
+					"import ID minimum length is 2",
+				),
+			},
+		},
+		"too short": {
+			in:     ".",
+			fields: []string{},
+			expectedDiags: diag.Diagnostics{
+				diag.NewErrorDiagnostic(
+					"invalid import ID",
+					"import ID minimum length is 2",
+				),
+			},
+		},
+		"fail embedded separator": {
+			in:     ".abc.def.ghi",
+			fields: []string{"abc", "defghi"},
+			expectedDiags: diag.Diagnostics{
+				diag.NewErrorDiagnostic(
+					`cannot parse import ID: ".abc.def.ghi"`,
+					"ID string for resource import must take this form:\n\n"+
+						"  <separator><abc><separator><defghi>\n\n"+
+						"where <separator> is any single character not found in any of the delimited fields. "+
+						"Expected 2 parts after splitting on '.', got 3 parts",
+				),
+			},
+		},
+	}
+
+	for name, testCase := range testCases {
+		name, testCase := name, testCase
+		var diags diag.Diagnostics
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			parts := SplitImportId(ctx, testCase.in, testCase.fields, &diags)
+
+			if diff := cmp.Diff(testCase.expectedDiags, diags); diff != "" {
+				t.Fatalf("Unexpected diagnostics (-expected ,+got): %s", diff)
+			}
+
+			if len(testCase.expectedDiags) == 0 {
+				if diff := cmp.Diff(testCase.expected, parts); diff != "" {
+					t.Fatalf("Unexpected result (-expected ,+got): %s", diff)
+				}
+			}
+		})
 	}
 }
