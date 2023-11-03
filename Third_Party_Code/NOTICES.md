@@ -5249,8 +5249,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/exp/constraints
 
 * Name: golang.org/x/exp/constraints
-* Version: v0.0.0-20230713183714-613f0c0eb8a1
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/613f0c0e:LICENSE)
+* Version: v0.0.0-20231006140011-7918f672742d
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/7918f672:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
