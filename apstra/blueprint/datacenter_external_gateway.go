@@ -33,6 +33,7 @@ type DatacenterExternalGateway struct {
 	HoldTime          types.Int64         `tfsdk:"hold_time"`
 	EvpnRouteTypes    types.String        `tfsdk:"evpn_route_types"`
 	LocalGatewayNodes types.Set           `tfsdk:"local_gateway_nodes"`
+	Password          types.String        `tfsdk:"password"`
 }
 
 func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -99,6 +100,12 @@ func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchem
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
+		"password": resourceSchema.StringAttribute{
+			MarkdownDescription: "BGP TCP authentication password",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			//Sensitive:           true,
+		},
 	}
 }
 
@@ -130,6 +137,12 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 		holdtimeTimer = &t
 	}
 
+	var password *string
+	if utils.Known(o.Password) {
+		t := o.Password.ValueString()
+		password = &t
+	}
+
 	return &apstra.RemoteGatewayData{
 		RouteTypes:     *routeTypes,
 		LocalGwNodes:   localGwNodes,
@@ -139,6 +152,7 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 		Ttl:            ttl,
 		KeepaliveTimer: keepaliveTimer,
 		HoldtimeTimer:  holdtimeTimer,
+		Password:       password,
 	}
 }
 
@@ -153,6 +167,84 @@ func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStag
 	if diags.HasError() {
 		return
 	}
+
+	o.ReadProtocolPassword(ctx, bp, diags)
+	if diags.HasError() {
+		return
+	}
+}
+
+func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	query := new(apstra.PathQuery).
+		SetClient(bp.Client()).
+		SetBlueprintId(bp.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{apstra.NodeTypeInterface.QEEAttribute()}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeProtocol.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeProtocol.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal("n_protocol")},
+		})
+
+	var queryResponse struct {
+		Items []struct {
+			Protocol struct {
+				Password *string `json:"password"`
+			} `json:"n_protocol"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &queryResponse)
+	if err != nil {
+		diags.AddError("failed while performing graph query",
+			fmt.Sprintf("error: %q\nquery: %q\n", err.Error(), query.String()))
+		return
+	}
+
+	// count usage of each discovered password (there should only be one password, used everywhere)
+	pwUsageCounts := make(map[string]int)
+	var password string
+	for _, item := range queryResponse.Items {
+		if item.Protocol.Password == nil {
+			continue
+		}
+
+		password = *item.Protocol.Password // save the (only?) password outside the map
+		pwUsageCounts[password]++          // increment the password use counter
+	}
+
+	// how many passwords discovered?
+	switch len(pwUsageCounts) {
+	case 0:
+		o.Password = types.StringNull() // no passwords found - this is fine!
+		return
+	case 1: // expected case (only one password found) handled below
+	default:
+		diags.AddError("multiple protocol passwords found",
+			fmt.Sprintf("external gateway node %s sessions use mismatched passwords", o.Id))
+		return
+	}
+
+	// if we got here, only one password is in use. That's good, but is it in use on *every* protocol session?
+	if len(queryResponse.Items) > pwUsageCounts[password] {
+		diags.AddError("protocol password not used uniformly",
+			fmt.Sprintf("external gateway node %s has %d protocol sessions, but only %d of them use a password",
+				o.Id, len(queryResponse.Items), pwUsageCounts[password]))
+		return
+	}
+
+	if len(queryResponse.Items) < pwUsageCounts[password] {
+		diags.AddWarning(errProviderBug,
+			"graph query found more protocol session passwords than sessions - this should be impossible")
+		return
+	}
+
+	o.Password = types.StringValue(password)
 }
 
 func (o *DatacenterExternalGateway) loadApiData(_ context.Context, in *apstra.RemoteGatewayData, _ *diag.Diagnostics) {
