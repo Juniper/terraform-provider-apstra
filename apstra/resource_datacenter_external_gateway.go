@@ -30,8 +30,8 @@ func (o *resourceDatacenterExternalGateway) Configure(ctx context.Context, req r
 
 func (o *resourceDatacenterExternalGateway) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource creates an External Gateway within a Blueprint. " +
-			"Prior to Apstra 4.2 these were called \"EVPN Remote Gateway\"",
+		MarkdownDescription: docCategoryDatacenter + "This resource creates a DCI External Gateway within a Blueprint. " +
+			"Prior to Apstra 4.2 these were called \"Remote EVPN Gateways\"",
 		Attributes: blueprint.DatacenterExternalGateway{}.ResourceAttributes(),
 	}
 }
