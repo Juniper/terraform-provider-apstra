@@ -10,7 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -104,7 +106,70 @@ func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchem
 			MarkdownDescription: "BGP TCP authentication password",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			//Sensitive:           true,
+			Sensitive:           true,
+		},
+	}
+}
+
+func (o DatacenterExternalGateway) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID.",
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.ExactlyOneOf(path.Expressions{
+					path.MatchRelative(),
+					path.MatchRoot("name"),
+				}...),
+			},
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra ID of the Blueprint in which the External Gateway should be created.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "External Gateway name",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"ip_address": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "External Gateway IP address",
+			Computed:            true,
+			CustomType:          iptypes.IPv4AddressType{},
+		},
+		"asn": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "External Gateway AS Number",
+			Computed:            true,
+		},
+		"ttl": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
+			Computed:            true,
+		},
+		"keepalive_time": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "BGP keepalive time (seconds).",
+			Computed:            true,
+		},
+		"hold_time": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "BGP hold time (seconds).",
+			Computed:            true,
+		},
+		"evpn_route_types": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(`EVPN route types. Valid values are: ["%s"]. Default: %q`,
+				strings.Join(apstra.RemoteGatewayRouteTypesEnum.Values(), `", "`),
+				apstra.RemoteGatewayRouteTypesAll.Value),
+			Computed: true,
+		},
+		"local_gateway_nodes": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of IDs of switch nodes which will be configured to peer with the External Gateway",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"password": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "BGP TCP authentication password",
+			Computed:            true,
+			Sensitive:           true,
 		},
 	}
 }
@@ -157,13 +222,36 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 }
 
 func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	remoteGateway, err := bp.GetRemoteGateway(ctx, apstra.ObjectId(o.Id.ValueString()))
+	var err error
+	var api *apstra.RemoteGateway
+
+	switch {
+	case !o.Id.IsNull():
+		api, err = bp.GetRemoteGateway(ctx, apstra.ObjectId(o.Id.ValueString()))
+		if utils.IsApstra404(err) {
+			diags.AddAttributeError(
+				path.Root("id"),
+				"External Gateway not found",
+				fmt.Sprintf("External Gateway with ID %s not found", o.Id))
+			return
+		}
+	case !o.Name.IsNull():
+		api, err = bp.GetRemoteGatewayByName(ctx, o.Name.ValueString())
+		if utils.IsApstra404(err) {
+			diags.AddAttributeError(
+				path.Root("name"),
+				"External Gateway not found",
+				fmt.Sprintf("External Gateway with Name %s not found", o.Name))
+			return
+		}
+		o.Id = types.StringValue(api.Id.String())
+	}
 	if err != nil {
-		diags.AddError("failed to fetch remote gateway", err.Error())
+		diags.AddError("Failed reading Remote Gateway", err.Error())
 		return
 	}
 
-	o.loadApiData(ctx, remoteGateway.Data, diags)
+	o.loadApiData(ctx, api.Data, diags)
 	if diags.HasError() {
 		return
 	}
