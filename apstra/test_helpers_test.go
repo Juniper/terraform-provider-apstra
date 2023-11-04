@@ -47,12 +47,12 @@ func systemIds(ctx context.Context, t *testing.T, bp *apstra.TwoStageL3ClosClien
 //	return `"` + *in + `"`
 //}
 
-//func stringOrNull(in string) string {
-//	if in == "" {
-//		return "null"
-//	}
-//	return `"` + in + `"`
-//}
+func stringOrNull(in string) string {
+	if in == "" {
+		return "null"
+	}
+	return `"` + in + `"`
+}
 
 func intPtrOrNull[A constraints.Integer](in *A) string {
 	if in == nil {
