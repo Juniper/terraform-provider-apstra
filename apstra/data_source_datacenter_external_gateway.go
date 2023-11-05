@@ -26,7 +26,7 @@ func (o *dataSourceDatacenterExternalGateway) Configure(ctx context.Context, req
 
 func (o *dataSourceDatacenterExternalGateway) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a Routing Zone within a Datacenter Blueprint.\n\n" +
+		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a DCI External Gateway within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.DatacenterExternalGateway{}.DataSourceAttributes(),
 	}

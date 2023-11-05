@@ -174,6 +174,62 @@ func (o DatacenterExternalGateway) DataSourceAttributes() map[string]dataSourceS
 	}
 }
 
+func (o DatacenterExternalGateway) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Object ID.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "External Gateway name",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"ip_address": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "External Gateway IP address",
+			Optional:            true,
+			CustomType:          iptypes.IPv4AddressType{},
+		},
+		"asn": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "External Gateway AS Number",
+			Optional:            true,
+		},
+		"ttl": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
+			Optional:            true,
+		},
+		"keepalive_time": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "BGP keepalive time (seconds).",
+			Optional:            true,
+		},
+		"hold_time": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "BGP hold time (seconds).",
+			Optional:            true,
+		},
+		"evpn_route_types": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(`EVPN route types. Valid values are: ["%s"]. Default: %q`,
+				strings.Join(apstra.RemoteGatewayRouteTypesEnum.Values(), `", "`),
+				apstra.RemoteGatewayRouteTypesAll.Value),
+			Optional: true,
+		},
+		"local_gateway_nodes": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of IDs of switch nodes which will be configured to peer with the External Gateway",
+			Optional:            true,
+			ElementType:         types.StringType,
+		},
+		"password": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "BGP TCP authentication password",
+			Optional:            true,
+			Sensitive:           true,
+		},
+	}
+}
+
 func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.RemoteGatewayData {
 	routeTypes := apstra.RemoteGatewayRouteTypesEnum.Parse(o.EvpnRouteTypes.ValueString())
 	// skipping nil check because input validation should make that impossible
@@ -251,7 +307,7 @@ func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStag
 		return
 	}
 
-	o.loadApiData(ctx, api.Data, diags)
+	o.LoadApiData(ctx, api.Data, diags)
 	if diags.HasError() {
 		return
 	}
@@ -335,7 +391,7 @@ func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp
 	o.Password = types.StringValue(password)
 }
 
-func (o *DatacenterExternalGateway) loadApiData(_ context.Context, in *apstra.RemoteGatewayData, _ *diag.Diagnostics) {
+func (o *DatacenterExternalGateway) LoadApiData(_ context.Context, in *apstra.RemoteGatewayData, _ *diag.Diagnostics) {
 	ttl := types.Int64Null()
 	if in.Ttl != nil {
 		ttl = types.Int64Value(int64(*in.Ttl))
@@ -364,4 +420,59 @@ func (o *DatacenterExternalGateway) loadApiData(_ context.Context, in *apstra.Re
 	o.HoldTime = holdTime
 	o.EvpnRouteTypes = types.StringValue(in.RouteTypes.Value)
 	o.LocalGatewayNodes = types.SetValueMust(types.StringType, localGatewayNodes)
+}
+
+func (o *DatacenterExternalGateway) FilterMatch(_ context.Context, in *DatacenterExternalGateway, _ *diag.Diagnostics) bool {
+	if !o.Id.IsNull() && !o.Id.Equal(in.Id) {
+		return false
+	}
+
+	if !o.Name.IsNull() && !o.Name.Equal(in.Name) {
+		return false
+	}
+
+	if !o.IpAddress.IsNull() && !o.IpAddress.Equal(in.IpAddress) {
+		return false
+	}
+
+	if !o.Asn.IsNull() && !o.Asn.Equal(in.Asn) {
+		return false
+	}
+
+	if !o.Ttl.IsNull() && !o.Ttl.Equal(in.Ttl) {
+		return false
+	}
+
+	if !o.KeepaliveTime.IsNull() && !o.KeepaliveTime.Equal(in.KeepaliveTime) {
+		return false
+	}
+
+	if !o.HoldTime.IsNull() && !o.HoldTime.Equal(in.HoldTime) {
+		return false
+	}
+
+	if !o.EvpnRouteTypes.IsNull() && !o.EvpnRouteTypes.Equal(in.EvpnRouteTypes) {
+		return false
+	}
+
+	if !o.Password.IsNull() && !o.Password.Equal(in.Password) {
+		return false
+	}
+
+	if !o.LocalGatewayNodes.IsNull() {
+		// extract the candidate localGatewayNodes as a map for quick lookups
+		candidateItems := make(map[string]bool, len(in.LocalGatewayNodes.Elements()))
+		for _, item := range in.LocalGatewayNodes.Elements() {
+			candidateItems[item.(types.String).ValueString()] = true
+		}
+
+		// fail if any required item is missing from candidate items
+		for _, requiredItem := range o.LocalGatewayNodes.Elements() {
+			if !candidateItems[requiredItem.(types.String).ValueString()] {
+				return false
+			}
+		}
+	}
+
+	return true
 }
