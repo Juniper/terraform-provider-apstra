@@ -1815,9 +1815,9 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 
 ```
 
-## github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes
+## github.com/hashicorp/terraform-plugin-framework-nettypes
 
-* Name: github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes
+* Name: github.com/hashicorp/terraform-plugin-framework-nettypes
 * Version: v0.1.0
 * License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework-nettypes/blob/v0.1.0/LICENSE)
 
