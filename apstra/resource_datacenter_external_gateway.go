@@ -51,12 +51,12 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 	}
 
 	if importId.BlueprintId == "" {
-		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, fmt.Sprintf("'blueprint_id element of import ID string cannot be empty"))
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'blueprint_id element of import ID string cannot be empty")
 		return
 	}
 
 	if importId.ExternalGatewayId == "" {
-		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, fmt.Sprintf("'external_gateway_id' element of import ID string cannot be empty"))
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'external_gateway_id' element of import ID string cannot be empty")
 		return
 	}
 
