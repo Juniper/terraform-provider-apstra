@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -37,22 +38,32 @@ func (o *resourceDatacenterExternalGateway) Schema(_ context.Context, _ resource
 }
 
 func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// req.ID takes the form: "blueprint_id:external_gateway_id"
-	fieldNames := []string{
-		"blueprint_id",
-		"external_gateway_id",
+	var importId struct {
+		BlueprintId       string `json:"blueprint_id"`
+		ExternalGatewayId string `json:"external_gateway_id"`
 	}
 
-	// split the supplied ID into the required fields
-	parts := SplitImportId(ctx, req.ID, fieldNames, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	// parse the user-supplied import ID string JSON
+	err := json.Unmarshal([]byte(req.ID), &importId)
+	if err != nil {
+		resp.Diagnostics.AddError("failed parsing import id JSON string", err.Error())
+		return
+	}
+
+	if importId.BlueprintId == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, fmt.Sprintf("'blueprint_id element of import ID string cannot be empty"))
+		return
+	}
+
+	if importId.ExternalGatewayId == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, fmt.Sprintf("'external_gateway_id' element of import ID string cannot be empty"))
 		return
 	}
 
 	// create a state object preloaded with the critical details we need in advance
 	state := blueprint.DatacenterExternalGateway{
-		BlueprintId: types.StringValue(parts[0]),
-		Id:          types.StringValue(parts[1]),
+		BlueprintId: types.StringValue(importId.BlueprintId),
+		Id:          types.StringValue(importId.ExternalGatewayId),
 	}
 
 	// create a client for the datacenter reference design

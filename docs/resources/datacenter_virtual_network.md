@@ -82,3 +82,6 @@ Optional:
 
 - `access_ids` (Set of String) The graph db node ID of the access switch `system` node (nonredundant access switch) or `redundancy_group` node (ESI LAG access switches) beneath `leaf_id` to which this VN should be bound.
 - `vlan_id` (Number) When not specified, Apstra will choose the VLAN to be used on each switch.
+
+
+

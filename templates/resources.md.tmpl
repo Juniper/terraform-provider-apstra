@@ -26,3 +26,10 @@ description: |-
 {{ tffile (printf "examples/resources/%s/example.tf" .Name)}}
 
 {{ .SchemaMarkdown | trimspace }}
+
+
+{{ if .HasImport }}
+## Import
+
+{{ codefile "shell" .ImportFile }}
+{{- end }}

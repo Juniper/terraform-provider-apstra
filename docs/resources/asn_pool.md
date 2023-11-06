@@ -59,3 +59,6 @@ Read-Only:
 - `total` (Number) Total number of ASNs in the ASN Pool Range.
 - `used` (Number) Count of used ASNs in the ASN Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
 - `used_percentage` (Number) Percent of used ASNs in the ASN Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
+
+
+

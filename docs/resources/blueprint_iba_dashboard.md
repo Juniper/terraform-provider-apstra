@@ -79,3 +79,6 @@ resource "apstra_blueprint_iba_dashboard" "b" {
 - `id` (String) IBA Dashboard ID.
 - `predefined_dashboard` (String) Id of predefined IBA Dashboard if any
 - `updated_by` (String) The user who updated the IBA Dashboard last
+
+
+

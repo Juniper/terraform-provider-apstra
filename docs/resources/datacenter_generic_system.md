@@ -109,3 +109,6 @@ Optional:
 - `group_label` (String) This field is used to collect multiple links into aggregation groups. For example, to create two LAG pairs from four physical links, you might use `group_label` value "bond0" on two links and "bond1" on the other two links. Apstra assigns a unique group ID to each link by default.
 - `lag_mode` (String) LAG negotiation mode of the Link. All links with the same `group_label` must use the value.
 - `tags` (Set of String) Names of Tag to be applied to this Link. If a Tag doesn't exist in the Blueprint it will be created automatically.
+
+
+
