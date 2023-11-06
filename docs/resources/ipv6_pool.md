@@ -91,3 +91,6 @@ Read-Only:
 - `total` (Number) Total number of addresses in this IPv6 range.
 - `used` (Number) Count of used addresses in this IPv6 range.
 - `used_percentage` (Number) Percent of used addresses in this IPv6 range.
+
+
+

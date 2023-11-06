@@ -35,3 +35,6 @@ resource "apstra_managed_device_ack" "spine1" {
 ### Read-Only
 
 - `system_id` (String) Apstra ID for the System discovered by the System Agent.
+
+
+

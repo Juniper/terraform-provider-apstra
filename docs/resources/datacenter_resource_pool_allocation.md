@@ -70,3 +70,6 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
 ### Optional
 
 - `routing_zone_id` (String) Used to allocate a Resource Pool to a `role` associated with specific Routing Zone within a Blueprint, rather than to a fabric-wide `role`. `leaf_loopback_ips` and `virtual_network_svi_subnets` are examples of roles which can be allocaated to a specific Routing Zone. When omitted, the specified Resource Pools are allocated to a fabric-wide `role`.
+
+
+

@@ -3,14 +3,14 @@ page_title: "apstra_datacenter_routing_policies Data Source - terraform-provider
 subcategory: "Reference Design: Datacenter"
 description: |-
   This data source returns Graph DB node IDs of routing_policy nodes within a Blueprint.
-  Optional filters can be used select only interesting nodes.
+  Optional filters can be used to select only interesting nodes.
 ---
 
 # apstra_datacenter_routing_policies (Data Source)
 
 This data source returns Graph DB node IDs of *routing_policy* nodes within a Blueprint.
 
-Optional `filters` can be used select only interesting nodes.
+Optional `filters` can be used to select only interesting nodes.
 
 
 ## Example Usage

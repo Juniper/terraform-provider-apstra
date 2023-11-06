@@ -71,3 +71,6 @@ resource "apstra_managed_device" "example" {
 
 - `agent_id` (String) Apstra ID for the Managed Device Agent.
 - `system_id` (String) Apstra ID for the System onboarded by the Managed Device Agent.
+
+
+

@@ -145,3 +145,6 @@ Read-Only:
 - `logical_device_port` (String) Panel and Port number of logical device expressed in the form "<panel>/<port>". Both numbers are 1-indexed, so the 2nd port on the 1st panel would be "1/2".
 - `physical_interface_name` (String) Interface name found in the Device Profile, e.g. "et-0/0/1:2"
 - `transformation_id` (Number) Transformation ID number identifying the desired port behavior, as found in the Device Profile.
+
+
+

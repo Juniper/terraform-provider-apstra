@@ -119,3 +119,6 @@ resource "apstra_blueprint_deployment" "deploy" {
 - `status` (String) Deployment status of the Blueprint
 - `superspine_count` (Number) For 5-stage topologies, the count of superspine devices
 - `version` (Number) Currently active blueprint version
+
+
+

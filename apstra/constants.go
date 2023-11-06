@@ -16,6 +16,7 @@ const (
 	errTemplateTypeInvalidElement             = "template '%s' has type '%s' which never permits '%s' to be set"
 	errDataSourceReadFail                     = "Data Source Read() failure'"
 	errResourceReadFail                       = "Resource Read() failure'"
+	errImportJsonMissingRequiredField         = "Import ID JSON missing required field"
 
 	docCategorySeparator    = " --- "
 	docCategoryDesign       = "Design" + docCategorySeparator
