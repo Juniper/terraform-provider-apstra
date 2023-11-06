@@ -16,24 +16,24 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
+var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateways{}
 
-type dataSourceDatacenterRoutingPolicies struct {
+type dataSourceDatacenterExternalGateways struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceDatacenterRoutingPolicies) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_routing_policies"
+func (o *dataSourceDatacenterExternalGateways) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_external_gateways"
 }
 
-func (o *dataSourceDatacenterRoutingPolicies) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceDatacenterExternalGateways) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	o.client = DataSourceGetClient(ctx, req, resp)
 }
 
-func (o *dataSourceDatacenterRoutingPolicies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source returns Graph DB node IDs of *routing_policy* nodes within a Blueprint.\n\n" +
-			"Optional `filters` can be used to select only interesting nodes.",
+		MarkdownDescription: docCategoryDatacenter + "This data source returns Graph DB node IDs of DCI External Gateways within a Blueprint.\n\n" +
+			"Optional `filters` can be used to select only interesting External Gateways.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint to search.",
@@ -41,20 +41,20 @@ func (o *dataSourceDatacenterRoutingPolicies) Schema(_ context.Context, _ dataso
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"filters": schema.ListNestedAttribute{
-				MarkdownDescription: "List of filters used to select only desired node IDs. For a node" +
-					"to match a filter, all specified attributes must match (each attribute within a " +
-					"filter is AND-ed together). The returned node IDs represent the nodes matched by " +
+				MarkdownDescription: "List of filters used to select only desired External Gateways. " +
+					"To match a filter, all specified attributes must match (each attribute within a " +
+					"filter is AND-ed together). The returned IDs represent the gateways matched by " +
 					"all of the filters together (filters are OR-ed together).",
 				Optional:   true,
 				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: blueprint.DatacenterRoutingPolicy{}.DataSourceAttributesAsFilter(),
+					Attributes: blueprint.DatacenterExternalGateway{}.DataSourceAttributesAsFilter(),
 					Validators: []validator.Object{
 						apstravalidator.AtLeastNAttributes(
 							1,
-							"id", "name", "description", "import_policy",
-							"export_policy", "expect_default_ipv4", "expect_default_ipv6",
-							"aggregate_prefixes", "extra_imports", "extra_exports",
+							"id", "name", "ip_address", "asn", "ttl",
+							"keepalive_time", "hold_time", "evpn_route_types",
+							"local_gateway_nodes", "password",
 						),
 					},
 				},
@@ -68,52 +68,52 @@ func (o *dataSourceDatacenterRoutingPolicies) Schema(_ context.Context, _ dataso
 	}
 }
 
-func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		Filters     types.List   `tfsdk:"filters"`
 		Ids         types.Set    `tfsdk:"ids"`
 	}
 
-	// retrieve values from config
+	// Retrieve values from config.
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// extract routing policy filters from the config
-	var rpFilters []blueprint.DatacenterRoutingPolicy
-	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &rpFilters, false)...)
+	// extract filters from the config
+	var filters []blueprint.DatacenterExternalGateway
+	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
 				config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
 		return
 	}
 
-	// collect all routing policies in the blueprint
-	apiResponse, err := bpClient.GetAllRoutingPolicies(ctx)
+	// collect all external gateways in the blueprint
+	apiResponse, err := bp.GetAllRemoteGateways(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("failed to retrieve routing policies", err.Error())
+		resp.Diagnostics.AddError("failed to fetch external gateways", err.Error())
 		return
 	}
 
 	// Did the user send any filters?
-	if len(rpFilters) == 0 { // no filter shortcut! return all routing policy IDs without inspection
+	if len(filters) == 0 { // no filter shortcut! return all IDs without inspection
 
 		// collect the IDs into config.Ids
 		ids := make([]attr.Value, len(apiResponse))
-		for i, routingPolicy := range apiResponse {
-			ids[i] = types.StringValue(routingPolicy.Id.String())
+		for i, rgw := range apiResponse {
+			ids[i] = types.StringValue(rgw.Id.String())
 		}
 		config.Ids = types.SetValueMust(types.StringType, ids)
 
@@ -123,11 +123,12 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 	}
 
 	// extract the API response items so that they can be filtered
-	routingPolicies := make([]blueprint.DatacenterRoutingPolicy, len(apiResponse))
+	externalGateways := make([]blueprint.DatacenterExternalGateway, len(apiResponse))
 	for i := range apiResponse {
-		routingPolicy := blueprint.DatacenterRoutingPolicy{Id: types.StringValue(apiResponse[i].Id.String())}
-		routingPolicy.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
-		routingPolicies[i] = routingPolicy
+		externalGateway := blueprint.DatacenterExternalGateway{Id: types.StringValue(apiResponse[i].Id.String())}
+		externalGateway.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
+		externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
+		externalGateways[i] = externalGateway
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -135,19 +136,15 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 
 	// collect ids by applying each filter to each discovered routing policy.
 	var ids []attr.Value
-	for _, rpFilter := range rpFilters { // loop over filters
-		for _, candidate := range routingPolicies { // loop over found policies
-			if rpFilter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
+candidateLoop:
+	for _, candidate := range externalGateways {
+		for _, filter := range filters {
+			if filter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
 				ids = append(ids, candidate.Id)
-			}
-			if resp.Diagnostics.HasError() {
-				return
+				continue candidateLoop
 			}
 		}
 	}
-
-	// unique-ify because one routing policy may match many filters.
-	ids = utils.OnlyUniqStringers(ids)
 
 	// pack the IDs into config.Ids
 	config.Ids = utils.SetValueOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
@@ -155,5 +152,6 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 		return
 	}
 
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

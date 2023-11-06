@@ -48,3 +48,6 @@ resource "apstra_datacenter_routing_zone" "blue" {
 - `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration, this attribute can be ignored.
 - `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration, this attribute can be ignored.
 - `id` (String) Apstra graph node ID.
+
+
+

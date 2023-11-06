@@ -107,3 +107,6 @@ resource "apstra_blueprint_deployment" "deploy" {
 - `has_uncommitted_changes` (Boolean) True when there are uncommited changes in the staging Blueprint.
 - `revision_active` (Number) Revision numbers increment with each Blueprint change. This is the currently deployed revision number.
 - `revision_staged` (Number) Revision numbers increment with each Blueprint change. This is the revision number currently in staging.
+
+
+

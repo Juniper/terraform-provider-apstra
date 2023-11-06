@@ -1815,9 +1815,9 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 
 ```
 
-## github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes
+## github.com/hashicorp/terraform-plugin-framework-nettypes
 
-* Name: github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes
+* Name: github.com/hashicorp/terraform-plugin-framework-nettypes
 * Version: v0.1.0
 * License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework-nettypes/blob/v0.1.0/LICENSE)
 
@@ -5212,8 +5212,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.10.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.10.0:LICENSE)
+* Version: v0.14.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.14.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5249,8 +5249,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/exp/constraints
 
 * Name: golang.org/x/exp/constraints
-* Version: v0.0.0-20230713183714-613f0c0eb8a1
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/613f0c0e:LICENSE)
+* Version: v0.0.0-20231006140011-7918f672742d
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/7918f672:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5286,8 +5286,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.11.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.11.0:LICENSE)
+* Version: v0.16.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.16.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5323,8 +5323,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys/unix
 
 * Name: golang.org/x/sys/unix
-* Version: v0.9.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.9.0:LICENSE)
+* Version: v0.13.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.13.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5360,8 +5360,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.10.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.10.0:LICENSE)
+* Version: v0.13.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.13.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
