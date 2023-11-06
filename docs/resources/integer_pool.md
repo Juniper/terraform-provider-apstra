@@ -96,3 +96,6 @@ Read-Only:
 - `total` (Number) Total number of Integers in the Integer Pool Range.
 - `used` (Number) Count of used IDs in the Integers Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
 - `used_percentage` (Number) Percent of used IDs in the Integers Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
+
+
+

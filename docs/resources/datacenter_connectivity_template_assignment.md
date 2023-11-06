@@ -40,3 +40,6 @@ resource "apstra_datacenter_connectivity_template_assignment" "a" {
 - `application_point_id` (String) Apstra node ID of the Interface or System where the Connectivity Template should be applied.
 - `blueprint_id` (String) Apstra Blueprint ID.
 - `connectivity_template_ids` (Set of String) Set of Connectivity Template IDs which should be applied to the Application Point.
+
+
+
