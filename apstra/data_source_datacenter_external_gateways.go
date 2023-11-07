@@ -112,8 +112,8 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 
 		// collect the IDs into config.Ids
 		ids := make([]attr.Value, len(apiResponse))
-		for i, rgw := range apiResponse {
-			ids[i] = types.StringValue(rgw.Id.String())
+		for i, remoteGateway := range apiResponse {
+			ids[i] = types.StringValue(remoteGateway.Id.String())
 		}
 		config.Ids = types.SetValueMust(types.StringType, ids)
 
@@ -123,22 +123,22 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract the API response items so that they can be filtered
-	externalGateways := make([]blueprint.DatacenterExternalGateway, len(apiResponse))
+	candidates := make([]blueprint.DatacenterExternalGateway, len(apiResponse))
 	for i := range apiResponse {
 		externalGateway := blueprint.DatacenterExternalGateway{Id: types.StringValue(apiResponse[i].Id.String())}
 		externalGateway.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
 		externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
-		externalGateways[i] = externalGateway
+		candidates[i] = externalGateway
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// collect ids by applying each filter to each discovered routing policy.
+	// collect ids of candidates which match any filter
 	var ids []attr.Value
 candidateLoop:
-	for _, candidate := range externalGateways {
-		for _, filter := range filters {
+	for _, candidate := range candidates { // loop over candidates
+		for _, filter := range filters { // loop over filters
 			if filter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
 				ids = append(ids, candidate.Id)
 				continue candidateLoop
