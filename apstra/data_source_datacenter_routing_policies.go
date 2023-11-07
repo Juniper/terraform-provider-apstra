@@ -82,8 +82,8 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 	}
 
 	// extract routing policy filters from the config
-	var rpFilters []blueprint.DatacenterRoutingPolicy
-	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &rpFilters, false)...)
+	var filters []blueprint.DatacenterRoutingPolicy
+	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -108,7 +108,7 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 	}
 
 	// Did the user send any filters?
-	if len(rpFilters) == 0 { // no filter shortcut! return all routing policy IDs without inspection
+	if len(filters) == 0 { // no filter shortcut! return all routing policy IDs without inspection
 
 		// collect the IDs into config.Ids
 		ids := make([]attr.Value, len(apiResponse))
@@ -123,31 +123,27 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 	}
 
 	// extract the API response items so that they can be filtered
-	routingPolicies := make([]blueprint.DatacenterRoutingPolicy, len(apiResponse))
+	candidates := make([]blueprint.DatacenterRoutingPolicy, len(apiResponse))
 	for i := range apiResponse {
 		routingPolicy := blueprint.DatacenterRoutingPolicy{Id: types.StringValue(apiResponse[i].Id.String())}
 		routingPolicy.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
-		routingPolicies[i] = routingPolicy
+		candidates[i] = routingPolicy
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// collect ids by applying each filter to each discovered routing policy.
+	// collect ids of candidates which match any filter
 	var ids []attr.Value
-	for _, rpFilter := range rpFilters { // loop over filters
-		for _, candidate := range routingPolicies { // loop over found policies
-			if rpFilter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
+candidateLoop:
+	for _, candidate := range candidates { // loop over candidates
+		for _, filter := range filters { // loop over filters
+			if filter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
 				ids = append(ids, candidate.Id)
-			}
-			if resp.Diagnostics.HasError() {
-				return
+				continue candidateLoop
 			}
 		}
 	}
-
-	// unique-ify because one routing policy may match many filters.
-	ids = utils.OnlyUniqStringers(ids)
 
 	// pack the IDs into config.Ids
 	config.Ids = utils.SetValueOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
@@ -155,5 +151,6 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 		return
 	}
 
+	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

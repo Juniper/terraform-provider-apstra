@@ -79,24 +79,6 @@ func UniqStringers[A fmt.Stringer](in []A) []A {
 	return in
 }
 
-// OnlyUniqStringers invokes the String() method on each item and returns
-// the slice with elements removed so that no two elements produce the
-// same result. Order is preserved. Only the first item which produces a
-// given result will appear in the returned slice.
-func OnlyUniqStringers[A fmt.Stringer](in []A) []A {
-	strings := make(map[string]bool, len(in))
-	var result []A
-	for _, a := range in {
-		if strings[a.String()] {
-			continue
-		}
-		strings[a.String()] = true
-		result = append(result, a)
-	}
-
-	return result
-}
-
 func Swap[A any](a, b int, in []A) {
 	x := in[a]
 	in[a] = in[b]
