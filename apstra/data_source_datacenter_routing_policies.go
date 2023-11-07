@@ -135,12 +135,11 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 
 	// collect ids of candidates which match any filter
 	var ids []attr.Value
-candidateLoop:
 	for _, candidate := range candidates { // loop over candidates
 		for _, filter := range filters { // loop over filters
 			if filter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
 				ids = append(ids, candidate.Id)
-				continue candidateLoop
+				break
 			}
 		}
 	}
