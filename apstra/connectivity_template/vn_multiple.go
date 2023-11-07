@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -74,6 +75,8 @@ func (o VnMultiple) Marshal(ctx context.Context, diags *diag.Diagnostics) string
 		// nil slice causes API errors
 		taggedVnIds = []apstra.ObjectId{}
 	}
+
+	utils.Sort(taggedVnIds)
 
 	obj := vnMultiplePrototype{
 		UntaggedVnId: untaggedVnId,
