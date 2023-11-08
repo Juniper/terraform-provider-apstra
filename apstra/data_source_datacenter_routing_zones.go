@@ -61,7 +61,7 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 					apstravalidator.AtLeastNAttributes(
 						1,
 						"name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
-						"import_route_targets", "export_route_targets",
+						"import_route_targets", "export_route_targets", "junos_evpn_irb_mode",
 					),
 				},
 			},
@@ -78,7 +78,7 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 						apstravalidator.AtLeastNAttributes(
 							1,
 							"name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
-							"import_route_targets", "export_route_targets",
+							"import_route_targets", "export_route_targets", "junos_evpn_irb_mode",
 						),
 					},
 				},

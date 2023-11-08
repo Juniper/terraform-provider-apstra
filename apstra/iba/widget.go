@@ -118,7 +118,7 @@ func (o *Widget) LoadApiData(ctx context.Context, in *apstra.IbaWidget, d *diag.
 	o.ProbeId = types.StringValue(in.Data.ProbeId.String())
 }
 
-func (o *Widget) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaWidgetData {
+func (o *Widget) Request(_ context.Context, _ *diag.Diagnostics) *apstra.IbaWidgetData {
 	return &apstra.IbaWidgetData{
 		StageName:   o.Stage.ValueString(),
 		Description: o.Description.ValueString(),

@@ -23,9 +23,7 @@ import (
 	"regexp"
 )
 
-const (
-	errInvalidConfig = "invalid configuration"
-)
+var junosEvpnIrbModeDefault = apstra.JunosEvpnIrbModeAsymmetric.Value
 
 type DatacenterRoutingZone struct {
 	Id                   types.String `tfsdk:"id"`
@@ -39,10 +37,10 @@ type DatacenterRoutingZone struct {
 	RoutingPolicyId      types.String `tfsdk:"routing_policy_id"`
 	ImportRouteTargets   types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets   types.Set    `tfsdk:"export_route_targets"`
+	JunosEvpnIrbMode     types.String `tfsdk:"junos_evpn_irb_mode"`
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
-	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID. Required when `name` is omitted.",
@@ -67,7 +65,8 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Optional:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthBetween(1, 17),
-				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
+					"only underscore, dash and alphanumeric characters allowed."),
 			},
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -113,6 +112,12 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
+		"junos_evpn_irb_mode": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for " +
+				"inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for " +
+				"networks with large amounts of VLANs.",
+			Computed: true,
+		},
 	}
 }
 
@@ -157,23 +162,26 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 				"Set this attribute in an EVPN blueprint to use a non-default policy.",
 			Optional: true,
 		},
-		"import_route_targets": resourceSchema.SetAttribute{
+		"import_route_targets": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "This is a set of *required* RTs, not an exact-match list.",
 			Optional:            true,
 			ElementType:         types.StringType,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
-		"export_route_targets": resourceSchema.SetAttribute{
+		"export_route_targets": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "This is a set of *required* RTs, not an exact-match list.",
 			Optional:            true,
 			ElementType:         types.StringType,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"junos_evpn_irb_mode": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for " +
+				"inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for " +
+				"networks with large amounts of VLANs.",
+			Optional: true,
 		},
 	}
 }
 
 func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.Attribute {
-	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
@@ -190,7 +198,8 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
+					"only underscore, dash and alphanumeric characters allowed."),
 				stringvalidator.LengthBetween(1, 15),
 			},
 		},
@@ -253,6 +262,19 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
 		},
+		"junos_evpn_irb_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Symmetric IRB Routing for EVPN on Junos devices makes use of "+
+				"an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better "+
+				"scaling for networks with large amounts of VLANs. Applicable only to Apstra 4.2.0+. When omitted, "+
+				"Routing Zones in Apstra 4.2.0 and later will be configured with mode `%s`.", junosEvpnIrbModeDefault),
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.String{stringvalidator.OneOf(apstra.JunosEvpnIrbModes.Values()...)},
+			// Default: DO NOT USE stringdefault.StaticString(apstra.JunosEvpnIrbModeAsymmetric.Value) here
+			// because that will set the attribute for Apstra < 4.2.0 (which do not support it) leading to
+			// confusion.
+		},
 	}
 }
 
@@ -291,12 +313,13 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	}
 
 	return &apstra.SecurityZoneData{
-		SzType:          apstra.SecurityZoneTypeEVPN,
-		VrfName:         o.Name.ValueString(),
-		Label:           o.Name.ValueString(),
-		RoutingPolicyId: apstra.ObjectId(o.RoutingPolicyId.ValueString()),
-		VlanId:          vlan,
-		VniId:           vni,
+		SzType:           apstra.SecurityZoneTypeEVPN,
+		VrfName:          o.Name.ValueString(),
+		Label:            o.Name.ValueString(),
+		RoutingPolicyId:  apstra.ObjectId(o.RoutingPolicyId.ValueString()),
+		VlanId:           vlan,
+		VniId:            vni,
+		JunosEvpnIrbMode: apstra.JunosEvpnIrbModes.Parse(o.JunosEvpnIrbMode.ValueString()),
 		RtPolicy: &apstra.RtPolicy{
 			ImportRTs: importRTs,
 			ExportRTs: exportRTs,
@@ -340,6 +363,11 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz *apstra.Secu
 
 	if sz.RtPolicy != nil && sz.RtPolicy.ExportRTs != nil {
 		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, sz.RtPolicy.ExportRTs, diags)
+	}
+
+	o.JunosEvpnIrbMode = types.StringNull()
+	if sz.JunosEvpnIrbMode != nil {
+		o.JunosEvpnIrbMode = types.StringValue(sz.JunosEvpnIrbMode.Value)
 	}
 }
 
@@ -470,6 +498,10 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 
 	if utils.Known(o.VlanId) {
 		result = append(result, apstra.QEEAttribute{Key: "vlan_id", Value: apstra.QEIntVal(int(o.VlanId.ValueInt64()))})
+	}
+
+	if utils.Known(o.JunosEvpnIrbMode) {
+		result = append(result, apstra.QEEAttribute{Key: "junos_evpn_irb_mode", Value: apstra.QEStringVal(o.JunosEvpnIrbMode.ValueString())})
 	}
 
 	return result
