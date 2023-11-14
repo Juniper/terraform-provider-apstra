@@ -74,8 +74,8 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 				continue // Collect all errors
 			}
 
-			// Unknown and Null attributes can't satisfy the valueIs condition
-			if mpVal.IsNull() || mpVal.IsUnknown() {
+			// Unknown attributes can't satisfy the valueIs condition
+			if mpVal.IsUnknown() {
 				return
 			}
 
