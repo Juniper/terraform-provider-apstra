@@ -16,8 +16,8 @@ var (
 )
 
 type ForbiddenWhenValueIsValidator struct {
-	expression path.Expression
-	value      string
+	Expression path.Expression
+	Value      attr.Value
 }
 
 type ForbiddenWhenValueIsRequest struct {
@@ -32,7 +32,7 @@ type ForbiddenWhenValueIsResponse struct {
 }
 
 func (o ForbiddenWhenValueIsValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that no value is supplied when attribute at %q has value %q", o.expression.String(), o.value)
+	return fmt.Sprintf("Ensures that no value is supplied when attribute at %q has value %s", o.Expression, o.Value)
 }
 
 func (o ForbiddenWhenValueIsValidator) MarkdownDescription(ctx context.Context) string {
@@ -50,7 +50,7 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 		return
 	}
 
-	mergedExpressions := req.PathExpression.MergeExpressions(o.expression)
+	mergedExpressions := req.PathExpression.MergeExpressions(o.Expression)
 
 	for _, expression := range mergedExpressions {
 		matchedPaths, diags := req.Config.PathMatches(ctx, expression)
@@ -66,6 +66,7 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 				continue
 			}
 
+			// get the attribute we'll be checking against
 			var mpVal attr.Value
 			diags = req.Config.GetAttribute(ctx, mp, &mpVal)
 			resp.Diagnostics.Append(diags...)
@@ -73,15 +74,16 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 				continue // Collect all errors
 			}
 
-			// Unknown and Null attributes can't satisfy the valueIs condition
-			if mpVal.IsNull() || mpVal.IsUnknown() {
+			// Unknown attributes can't satisfy the valueIs condition
+			if mpVal.IsUnknown() {
 				return
 			}
 
-			if mpVal.String() == o.value {
+			// is the forbidden value found in the matched path?
+			if o.Value.Equal(mpVal) {
 				resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 					req.Path,
-					fmt.Sprintf("value not permitted when %q has value %q, got %q", mp, mpVal, req.ConfigValue),
+					fmt.Sprintf("value not permitted when %q has value %s, got %q", mp, mpVal, req.ConfigValue),
 				))
 			}
 		}
@@ -223,58 +225,9 @@ func (o ForbiddenWhenValueIsValidator) ValidateString(ctx context.Context, req v
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func BoolForbiddenWhenValueIs(expression path.Expression, value string) validator.Bool {
+func ForbiddenWhenValueIs(expression path.Expression, value attr.Value) ForbiddenWhenValueIsValidator {
 	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func Float64ForbiddenWhenValueIs(expression path.Expression, value string) validator.Float64 {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func Int64ForbiddenWhenValueIs(expression path.Expression, value string) validator.Int64 {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func MapForbiddenWhenValueIs(expression path.Expression, value string) validator.Map {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func NumberForbiddenWhenValueIs(expression path.Expression, value string) validator.Number {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func ObjectForbiddenWhenValueIs(expression path.Expression, value string) validator.Object {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func SetForbiddenWhenValueIs(expression path.Expression, value string) validator.Set {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
-	}
-}
-
-func StringForbiddenWhenValueIs(expression path.Expression, value string) validator.String {
-	return ForbiddenWhenValueIsValidator{
-		expression: expression,
-		value:      value,
+		Expression: expression,
+		Value:      value,
 	}
 }
