@@ -173,8 +173,8 @@ func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstr
 		}
 	}
 
-	// set the tags and lag mode if either have changed
-	if !o.Tags.Equal(state.Tags) || !o.LagMode.Equal(state.LagMode) {
+	// set the tags, lag mode and group label if any have changed
+	if !o.Tags.Equal(state.Tags) || !o.LagMode.Equal(state.LagMode) || !o.GroupLabel.Equal(state.GroupLabel) {
 		var tags []string
 		diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 		if tags == nil {
