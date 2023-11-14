@@ -77,6 +77,33 @@ func TestForbiddenWhenValueIsValidator(t *testing.T) {
 			otherValue: types.Int64Value(42),
 			expErrors:  true,
 		},
+		"catch_forbidden_null": {
+			req: apstravalidator.ForbiddenWhenValueIsRequest{
+				Path:           path.Root("bar"),
+				PathExpression: path.MatchRoot("bar"),
+				ConfigValue:    types.StringValue("bar value"),
+				Config: tfsdk.Config{
+					Schema: schema.Schema{
+						Attributes: map[string]schema.Attribute{
+							"foo": schema.Int64Attribute{},
+							"bar": schema.StringAttribute{},
+						},
+					},
+					Raw: tftypes.NewValue(tftypes.Object{
+						AttributeTypes: map[string]tftypes.Type{
+							"foo": tftypes.Number,
+							"bar": tftypes.String,
+						},
+					}, map[string]tftypes.Value{
+						"foo": tftypes.NewValue(tftypes.Number, nil),
+						"bar": tftypes.NewValue(tftypes.String, "bar value"),
+					}),
+				},
+			},
+			other:      path.MatchRoot("foo"),
+			otherValue: types.Int64Null(),
+			expErrors:  true,
+		},
 	}
 
 	for name, test := range testCases {
