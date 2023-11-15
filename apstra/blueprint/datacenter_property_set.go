@@ -124,7 +124,6 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 		"sync_with_catalog": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Keep the data synchronized with the catalog.On every apply, " +
 				"check staleness and update data if required. Cannot be set if 'keys' is filled out",
-			Computed: true,
 			Optional: true,
 			Validators: []validator.Bool{
 				boolvalidator.ExactlyOneOf(path.Expressions{
@@ -147,35 +146,3 @@ func (o *DatacenterPropertySet) LoadApiData(_ context.Context, in *apstra.TwoSta
 	}
 	o.Keys = types.SetValueMust(types.StringType, keys)
 }
-
-// this function will read the object from apstra and fill out the data structure
-// func (o *DatacenterPropertySet) ReadData (ctx context.Context, bpid, in  apstra.ObjectId,
-// 	diags *diag.Diagnostics) error {
-// 	var dpset DatacenterPropertySet
-//
-// 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, bpid)
-// 	if err != nil {
-// 		diags.AddError("failed to create blueprint client", err.Error())
-// 		return err
-// 		}
-// 	}
-//
-// 	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
-// 	if err != nil {
-// 		if utils.IsApstra404(err) {
-// 			resp.State.RemoveResource(ctx)
-// 			return
-// 		}
-// 		resp.Diagnostics.AddAttributeError(path.Root("name"),
-// 			fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
-// 		return
-// 	}
-// 	if (state.Keys.IsNull() || state.Keys.IsUnknown()) && state. {
-//
-// 	}
-// 	// create new state object
-// 	var newState blueprint.DatacenterPropertySet
-// 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
-//
-//
-// }

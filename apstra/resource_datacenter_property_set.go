@@ -14,10 +14,18 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
+var _ resource.ResourceWithModifyPlan = &resourceDatacenterPropertySet{}
 
 type resourceDatacenterPropertySet struct {
 	client   *apstra.Client
 	lockFunc func(context.Context, string) error
+}
+
+func (o *resourceDatacenterPropertySet) ModifyPlan(ctx context.Context, request resource.ModifyPlanRequest, response *resource.ModifyPlanResponse) {
+	// TODO implement me
+	response.Diagnostics.AddWarning("Got into Maodify Plan", "bla bla ba")
+	// If stale and keys is empty
+	response.RequiresReplace = path.Paths{path.Root("stale")}
 }
 
 func (o *resourceDatacenterPropertySet) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -53,7 +61,6 @@ func (o *resourceDatacenterPropertySet) ImportPropertySet(ctx context.Context, d
 			err.Error())
 		return nil
 	}
-	d.AddWarning("Got here", "ee")
 
 	// Perform the import
 	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(dps.Id.ValueString()), keysToImport...)
@@ -158,28 +165,28 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 		return
 	}
 	// Keys are empty, configlet is stale and SyncWithCatalog is true
-	if (state.Keys.IsNull() || state.Keys.IsUnknown()) && state.SyncWithCatalog.ValueBool() && api.Stale {
-		err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()), nil...)
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.State.RemoveResource(ctx)
-				return
-			}
-			resp.Diagnostics.AddAttributeError(path.Root("name"),
-				fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
-			return
-		}
-		api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.State.RemoveResource(ctx)
-				return
-			}
-			resp.Diagnostics.AddAttributeError(path.Root("name"),
-				fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
-			return
-		}
-	}
+	// if (state.Keys.IsNull() || state.Keys.IsUnknown()) && state.SyncWithCatalog.ValueBool() && api.Stale {
+	// 	err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()), nil...)
+	// 	if err != nil {
+	// 		if utils.IsApstra404(err) {
+	// 			resp.State.RemoveResource(ctx)
+	// 			return
+	// 		}
+	// 		resp.Diagnostics.AddAttributeError(path.Root("name"),
+	// 			fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
+	// 		return
+	// 	}
+	// 	api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	// 	if err != nil {
+	// 		if utils.IsApstra404(err) {
+	// 			resp.State.RemoveResource(ctx)
+	// 			return
+	// 		}
+	// 		resp.Diagnostics.AddAttributeError(path.Root("name"),
+	// 			fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
+	// 		return
+	// 	}
+	// }
 	// create new state object
 	var newState blueprint.DatacenterPropertySet
 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
