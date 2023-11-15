@@ -60,3 +60,8 @@ locals {
 
 <a id="nestedatt--bindings"></a>
 ### Nested Schema for `bindings`
+
+Read-Only:
+
+- `access_ids` (Set of String) A set of zero or more graph db node IDs representing Access Switch `system` nodes or a `redundancy_group` nodes.
+- `vlan_id` (Number) VLAN id on the specified switch, switch pair and access switches.
