@@ -36,6 +36,81 @@ func (o *resourceDatacenterPropertySet) Schema(_ context.Context, _ resource.Sch
 	}
 }
 
+func (o *resourceDatacenterPropertySet) ImportPropertySet(ctx context.Context, dps blueprint.DatacenterPropertySet,
+	keysToImport []string,
+	d *diag.Diagnostics) *blueprint.DatacenterPropertySet {
+
+	// create a blueprint client
+	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(dps.BlueprintId.ValueString()))
+	if err != nil {
+		d.AddError("failed to create blueprint client", err.Error())
+	}
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, dps.BlueprintId.ValueString())
+	if err != nil {
+		d.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", dps.BlueprintId.ValueString()),
+			err.Error())
+		return nil
+	}
+	d.AddWarning("Got here", "ee")
+
+	// Perform the import
+	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(dps.Id.ValueString()), keysToImport...)
+	if err != nil {
+		d.AddError("Error importing DatacenterPropertySet", err.Error())
+		return nil
+	}
+
+	// Check our assumption that the ID returned from an import call matches the
+	// ID of the imported Property Set because this feels like something which
+	// might change.
+	if id.String() != dps.Id.ValueString() {
+		d.AddWarning("provider bug",
+			fmt.Sprintf("when importing Property Set %s imported into Blueprint %s, API returned unexpected ID %q",
+				dps.Id, dps.BlueprintId, id))
+		// we probably don't need to return here
+	}
+
+	// Read it back
+	api, err := bpClient.GetPropertySet(ctx, id)
+	if err != nil {
+		d.AddError(fmt.Sprintf("failed reading just-imported Property Set %s from Blueprint %s",
+			dps.Id, dps.BlueprintId), err.Error())
+		return nil
+	}
+	var state blueprint.DatacenterPropertySet
+	state.BlueprintId = dps.BlueprintId
+	state.SyncWithCatalog = dps.SyncWithCatalog
+	state.LoadApiData(ctx, api, d)
+	d.AddWarning("Got here", "ee")
+	if len(keysToImport) > 0 {
+		// extract keys which actually got imported
+		var importedKeys []string
+		d.Append(state.Keys.ElementsAs(ctx, &importedKeys, false)...)
+		if d.HasError() {
+			return &state
+		}
+		// keysToImport and importedKeys should match...
+		extraImportedKeys, failedImportedKeys := utils.DiffSliceSets(keysToImport, importedKeys)
+		if len(extraImportedKeys) != 0 {
+			if len(extraImportedKeys) != 0 {
+				d.AddWarning(
+					fmt.Sprintf("import of PropertySet %s produced unexpected Keys", api.Id),
+					fmt.Sprintf("extra Keys: %v", extraImportedKeys))
+			}
+		}
+		if len(failedImportedKeys) != 0 {
+			d.AddAttributeError(
+				path.Root("keys"),
+				fmt.Sprintf("failed to import all desired Keys from PropertySet %s", api.Id),
+				fmt.Sprintf("the following Keys could not be imported: %v", failedImportedKeys),
+			)
+		}
+	}
+	return &state
+}
+
 func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.DatacenterPropertySet
@@ -50,82 +125,9 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
-
-	// Lock the blueprint mutex.
-	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
-			err.Error())
-		return
-	}
-
-	// Perform the import
-	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
-	if err != nil {
-		resp.Diagnostics.AddError("Error importing DatacenterPropertySet", err.Error())
-		return
-	}
-
-	// Check our assumption that the ID returned from an import call matches the
-	// ID of the imported Property Set because this feels like something which
-	// might change.
-	if id.String() != plan.Id.ValueString() {
-		resp.Diagnostics.AddWarning("provider bug",
-			fmt.Sprintf("when importing Property Set %s imported into Blueprint %s, API returned unexpected ID %q",
-				plan.Id, plan.BlueprintId, id))
-		// we probably don't need to return here
-	}
-
-	// Read it back
-	api, err := bpClient.GetPropertySet(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("failed reading just-imported Property Set %s from Blueprint %s",
-			plan.Id, plan.BlueprintId), err.Error())
-		return
-	}
-
-	// create new state object
-	var state blueprint.DatacenterPropertySet
-	state.BlueprintId = plan.BlueprintId
-	state.LoadApiData(ctx, api, &resp.Diagnostics) // this
-
-	// extract keys which actually got imported
-	var importedKeys []string
-	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &importedKeys, false)...)
-	if resp.Diagnostics.HasError() {
-		// set the state prior to returning because the PS has been imported
-		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-		return
-	}
-
-	// keysToImport and importedKeys should match...
-	extraImportedKeys, failedImportedKeys := utils.DiffSliceSets(keysToImport, importedKeys)
-	if len(extraImportedKeys) != 0 {
-		resp.Diagnostics.AddWarning(
-			fmt.Sprintf("import of PropertySet %s produced unexpected Keys", plan.Id),
-			fmt.Sprintf("extra Keys: %v", extraImportedKeys))
-		// do not return without setting state
-	}
-
-	if len(failedImportedKeys) != 0 {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("keys"),
-			fmt.Sprintf("failed to import all desired Keys from PropertySet %s", plan.Id),
-			fmt.Sprintf("the following Keys could not be imported: %v", failedImportedKeys),
-		)
-		// do not return without setting state
-	}
-
-	// set the state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	state := o.ImportPropertySet(ctx, plan, keysToImport, &resp.Diagnostics)
+	state.Keys = plan.Keys
+	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
 func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -142,7 +144,7 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("failed to crreate blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 	}
 
 	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
@@ -155,12 +157,35 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 			fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
 		return
 	}
-
+	// Keys are empty, configlet is stale and SyncWithCatalog is true
+	if (state.Keys.IsNull() || state.Keys.IsUnknown()) && state.SyncWithCatalog.ValueBool() && api.Stale {
+		err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()), nil...)
+		if err != nil {
+			if utils.IsApstra404(err) {
+				resp.State.RemoveResource(ctx)
+				return
+			}
+			resp.Diagnostics.AddAttributeError(path.Root("name"),
+				fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
+			return
+		}
+		api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+		if err != nil {
+			if utils.IsApstra404(err) {
+				resp.State.RemoveResource(ctx)
+				return
+			}
+			resp.Diagnostics.AddAttributeError(path.Root("name"),
+				fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
+			return
+		}
+	}
 	// create new state object
 	var newState blueprint.DatacenterPropertySet
 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
 	newState.BlueprintId = state.BlueprintId
-
+	newState.Keys = state.Keys
+	newState.SyncWithCatalog = state.SyncWithCatalog
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
@@ -180,25 +205,27 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 		return
 	}
 
-	// fetch available keys from the property set to be re-imported from the global catalog
-	availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// If the list of keys to import is blank, we just pull everything
+	if len(keysToImport) > 0 {
+		// fetch available keys from the property set to be re-imported from the global catalog
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// ensure that keys configured to be imported actually exist in the Global
-	// Catalog's copy of the Property Set
-	missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
-	if len(missingRequiredKeys) != 0 {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("keys"),
-			fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
-			fmt.Sprintf("the following keys are configured for import, but are not "+
-				"available for import from the Global Catalog: %v", missingRequiredKeys),
-		)
-		return
+		// ensure that keys configured to be imported actually exist in the Global
+		// Catalog's copy of the Property Set
+		missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
+		if len(missingRequiredKeys) != 0 {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("keys"),
+				fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
+				fmt.Sprintf("the following keys are configured for import, but are not "+
+					"available for import from the Global Catalog: %v", missingRequiredKeys),
+			)
+			return
+		}
 	}
-
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
@@ -239,6 +266,7 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
 	state.Keys = plan.Keys
+	state.SyncWithCatalog = plan.SyncWithCatalog
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

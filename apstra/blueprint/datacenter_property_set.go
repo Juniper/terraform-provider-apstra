@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -12,28 +13,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type DatacenterPropertySet struct {
-	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Data        types.String `tfsdk:"data"`
-	Stale       types.Bool   `tfsdk:"stale"`
-	Keys        types.Set    `tfsdk:"keys"`
+	BlueprintId     types.String `tfsdk:"blueprint_id"`
+	Id              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
+	Data            types.String `tfsdk:"data"`
+	Stale           types.Bool   `tfsdk:"stale"`
+	SyncWithCatalog types.Bool   `tfsdk:"sync_with_catalog"`
+	Keys            types.Set    `tfsdk:"keys"`
 }
 
 func (o DatacenterPropertySet) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"blueprint_id": types.StringType,
-		"id":           types.StringType,
-		"name":         types.StringType,
-		"data":         types.StringType,
-		"stale":        types.BoolType,
-		"keys":         types.SetType{ElemType: types.StringType},
+		"blueprint_id":      types.StringType,
+		"id":                types.StringType,
+		"name":              types.StringType,
+		"data":              types.StringType,
+		"stale":             types.BoolType,
+		"sync_with_catalog": types.BoolType,
+		"keys":              types.SetType{ElemType: types.StringType},
 	}
 }
 
@@ -76,6 +80,10 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 			MarkdownDescription: "Stale as reported in the Web UI.",
 			Computed:            true,
 		},
+		"sync_with_catalog": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Keep the data synchronized with the catalog. Has no meaning in the data source.",
+			Computed:            true,
+		},
 	}
 }
 
@@ -100,9 +108,10 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 		},
 		"keys": resourceSchema.SetAttribute{
 			MarkdownDescription: "Subset of Keys to import, at least one Key is required.",
-			Required:            true,
+			Optional:            true,
 			ElementType:         types.StringType,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 		},
 		"data": resourceSchema.StringAttribute{
 			MarkdownDescription: "A map of values in the Property Set in JSON format.",
@@ -111,6 +120,18 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 		"stale": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Stale as reported in the Web UI.",
 			Computed:            true,
+		},
+		"sync_with_catalog": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Keep the data synchronized with the catalog.On every apply, " +
+				"check staleness and update data if required. Cannot be set if 'keys' is filled out",
+			Computed: true,
+			Optional: true,
+			Validators: []validator.Bool{
+				boolvalidator.ExactlyOneOf(path.Expressions{
+					path.MatchRelative(),
+					path.MatchRoot("keys"),
+				}...),
+			},
 		},
 	}
 }
@@ -126,3 +147,35 @@ func (o *DatacenterPropertySet) LoadApiData(_ context.Context, in *apstra.TwoSta
 	}
 	o.Keys = types.SetValueMust(types.StringType, keys)
 }
+
+// this function will read the object from apstra and fill out the data structure
+// func (o *DatacenterPropertySet) ReadData (ctx context.Context, bpid, in  apstra.ObjectId,
+// 	diags *diag.Diagnostics) error {
+// 	var dpset DatacenterPropertySet
+//
+// 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, bpid)
+// 	if err != nil {
+// 		diags.AddError("failed to create blueprint client", err.Error())
+// 		return err
+// 		}
+// 	}
+//
+// 	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+// 	if err != nil {
+// 		if utils.IsApstra404(err) {
+// 			resp.State.RemoveResource(ctx)
+// 			return
+// 		}
+// 		resp.Diagnostics.AddAttributeError(path.Root("name"),
+// 			fmt.Sprintf("Failed to read imported PropertySet %s", state.Id), err.Error())
+// 		return
+// 	}
+// 	if (state.Keys.IsNull() || state.Keys.IsUnknown()) && state. {
+//
+// 	}
+// 	// create new state object
+// 	var newState blueprint.DatacenterPropertySet
+// 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
+//
+//
+// }

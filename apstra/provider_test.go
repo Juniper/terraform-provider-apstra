@@ -10,6 +10,7 @@ const (
 provider "apstra" {
   tls_validation_disabled = true
   blueprint_mutex_enabled = false
+  experimental = true
 }
 `
 )
