@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"golang.org/x/exp/constraints"
+	"math/rand"
 	"net"
 	"testing"
 )
@@ -70,7 +71,19 @@ func intPtrOrNull[A constraints.Integer](in *A) string {
 //	return `"` + in.String() + `"`
 //}
 
-func randIpAddressMust(t *testing.T, cidrBlock string) net.IP {
+func randIpv4NetMust(t *testing.T, cidrBlock string) *net.IPNet {
+	ip := randIpv4AddressMust(t, cidrBlock)
+
+	_, ipNet, _ := net.ParseCIDR(cidrBlock)
+	cidrBlockPrefixLen, _ := ipNet.Mask.Size()
+	targetPrefixLen := rand.Intn(31-cidrBlockPrefixLen) + cidrBlockPrefixLen
+
+	_, result, _ := net.ParseCIDR(fmt.Sprintf("%s/%d", ip.String(), targetPrefixLen))
+
+	return result
+}
+
+func randIpv4AddressMust(t *testing.T, cidrBlock string) net.IP {
 	s, err := acctest.RandIpAddress(cidrBlock)
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +91,7 @@ func randIpAddressMust(t *testing.T, cidrBlock string) net.IP {
 
 	ip := net.ParseIP(s)
 	if ip == nil {
-		t.Fatalf("randIpAddressMust failed to parse IP address %q", s)
+		t.Fatalf("randIpv4AddressMust failed to parse IP address %q", s)
 	}
 
 	return ip
