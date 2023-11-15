@@ -28,6 +28,21 @@ func (o VnBinding) attrTypes() map[string]attr.Type {
 
 }
 
+func (o VnBinding) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"vlan_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "VLAN id on the specified switch, switch pair and access switches.",
+			Computed:            true,
+		},
+		"access_ids": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "A set of zero or more graph db node IDs representing Access " +
+				"Switch `system` nodes or a `redundancy_group` nodes.",
+			Computed:    true,
+			ElementType: types.StringType,
+		},
+	}
+}
+
 func (o VnBinding) DataSourceAttributesConstructorOutput() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -37,7 +52,7 @@ func (o VnBinding) DataSourceAttributesConstructorOutput() map[string]dataSource
 		},
 		"access_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "A set of zero or more graph db node IDs representing Access " +
-				"Lwitch `system` nodes or a `redundancy_group` nodes.",
+				"Switch `system` nodes or a `redundancy_group` nodes.",
 			Computed:    true,
 			ElementType: types.StringType,
 		},

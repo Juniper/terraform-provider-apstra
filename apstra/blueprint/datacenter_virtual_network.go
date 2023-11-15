@@ -48,6 +48,107 @@ type DatacenterVirtualNetwork struct {
 	IPv6Gateway             types.String `tfsdk:"ipv6_virtual_gateway"`
 }
 
+func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "The id of the Virtual Network",
+			Computed:            true,
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.ExactlyOneOf(path.Expressions{
+					path.MatchRelative(),
+					path.MatchRoot("name"),
+				}...),
+			},
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "The blueprint ID where the Virtual Network is present.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Name",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"type": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Type",
+			Computed:            true,
+		},
+		"routing_zone_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Routing Zone ID (only applies when `type == %s`", apstra.VnTypeVxlan),
+			Computed:            true,
+		},
+		"vni": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "EVPN Virtual Network ID to be associated with this Virtual Network.",
+			Computed:            true,
+		},
+		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Not applicable in data source context. Ignore.",
+			Computed:            true,
+		},
+		"reserve_vlan": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all `bindings` "+
+				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to "+
+				"which the Virtual Network has not yet been deployed.", apstra.VnTypeVxlan),
+			Computed: true,
+		},
+		"bindings": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Details availability of the virtual network on leaf and access switches",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: VnBinding{}.DataSourceAttributes(),
+			},
+		},
+		"dhcp_service_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables a DHCP relay agent.",
+			Computed:            true,
+		},
+		"ipv4_connectivity_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables IPv4 within the Virtual Network.",
+			Computed:            true,
+		},
+		"ipv6_connectivity_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables IPv6 within the Virtual Network.",
+			Computed:            true,
+		},
+		"ipv4_subnet": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "IPv4 subnet associated with the Virtual Network.",
+			Computed:            true,
+		},
+		"ipv6_subnet": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "IPv6 subnet associated with the Virtual Network. " +
+				"Note that this attribute will not appear in the `graph_query` output " +
+				"because IPv6 zero compression rules are problematic for mechanisms " +
+				"which rely on string matching.",
+			Computed: true,
+		},
+		"ipv4_virtual_gateway_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Controls and indicates whether the IPv4 gateway within the " +
+				"Virtual Network is enabled.",
+			Computed: true,
+		},
+		"ipv6_virtual_gateway_enabled": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Controls and indicates whether the IPv6 gateway within the " +
+				"Virtual Network is enabled.",
+			Computed: true,
+		},
+		"ipv4_virtual_gateway": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Specifies the IPv4 virtual gateway address within the " +
+				"Virtual Network.",
+			Computed: true,
+		},
+		"ipv6_virtual_gateway": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Specifies the IPv6 virtual gateway address within the " +
+				"Virtual Network. Note that this attribute will not appear in the " +
+				"`graph_query` output because IPv6 zero compression rules are problematic " +
+				"for mechanisms which rely on string matching.",
+			Computed: true,
+		},
+	}
+}
+
 func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
@@ -95,9 +196,9 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Computed:            true,
 		},
 		"reserve_vlan": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "For use only with `%s` type Virtual networks when all `bindings` " +
-				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to " +
-				"which the Virtual Network has not yet been deployed.",
+			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all `bindings` "+
+				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to "+
+				"which the Virtual Network has not yet been deployed.", apstra.VnTypeVxlan),
 			Optional: true,
 		},
 		"bindings": dataSourceSchema.MapNestedAttribute{
