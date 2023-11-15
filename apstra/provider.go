@@ -433,6 +433,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterSystemNode{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSystemNodes{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSvis{} },
+		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetwork{} },
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetworks{} },
 		func() datasource.DataSource { return &dataSourceBlueprintIbaPredefinedProbe{} },
 		func() datasource.DataSource { return &dataSourceBlueprintIbaWidget{} },
