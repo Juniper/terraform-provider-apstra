@@ -68,8 +68,7 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 
 			// get the attribute we'll be checking against
 			var mpVal attr.Value
-			diags = req.Config.GetAttribute(ctx, mp, &mpVal)
-			resp.Diagnostics.Append(diags...)
+			resp.Diagnostics.Append(req.Config.GetAttribute(ctx, mp, &mpVal)...)
 			if diags.HasError() {
 				continue // Collect all errors
 			}
@@ -83,7 +82,7 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 			if o.Value.Equal(mpVal) {
 				resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 					req.Path,
-					fmt.Sprintf("value not permitted when %q has value %s, got %q", mp, mpVal, req.ConfigValue),
+					fmt.Sprintf("attribute %q must be <null> when %q has value %s, got: %q", req.Path, mp, mpVal, req.ConfigValue),
 				))
 			}
 		}

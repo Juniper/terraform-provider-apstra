@@ -108,7 +108,9 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:   true,
 			Attributes: MlagInfo{}.ResourceAttributes(),
 			Validators: []validator.Object{
-				apstravalidator.ValidateSwitchLagInfo(apstra.LeafRedundancyProtocolMlag.String()),
+				apstravalidator.RequiredWhenValueIs(path.MatchRelative().AtParent().AtName("redundancy_protocol"), types.StringValue(apstra.LeafRedundancyProtocolMlag.String())),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("redundancy_protocol"), types.StringValue(apstra.LeafRedundancyProtocolEsi.String())),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("redundancy_protocol"), types.StringNull()),
 			},
 		},
 		"redundancy_protocol": resourceSchema.StringAttribute{
