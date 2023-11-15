@@ -51,7 +51,7 @@ type DatacenterVirtualNetwork struct {
 func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Not applicable in filter context. Ignore.", // todo
+			MarkdownDescription: "The id of the Virtual Network",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -63,7 +63,7 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			},
 		},
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Not applicable in filter context. Ignore.", // todo
+			MarkdownDescription: "The blueprint ID where the Virtual Network is present.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -95,7 +95,7 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed: true,
 		},
 		"bindings": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Not applicable in filter context. Ignore.", //todo
+			MarkdownDescription: "Details availability of the virtual network on leaf and access switches",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: map[string]dataSourceSchema.Attribute{},
