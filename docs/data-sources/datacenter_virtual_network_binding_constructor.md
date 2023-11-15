@@ -89,5 +89,5 @@ data "apstra_datacenter_virtual_network_binding_constructor" "example" {
 
 Read-Only:
 
-- `access_ids` (Set of String) A set of zero or more graph db node IDs representing Access Lwitch `system` nodes or a `redundancy_group` nodes.
+- `access_ids` (Set of String) A set of zero or more graph db node IDs representing Access Switch `system` nodes or a `redundancy_group` nodes.
 - `vlan_id` (Number) The value supplied as `vlan_id` at the root of this datasource configuration, if any. May be `null`, in which case Apstra will choose.

@@ -98,7 +98,7 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			MarkdownDescription: "Details availability of the virtual network on leaf and access switches",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: map[string]dataSourceSchema.Attribute{},
+				Attributes: VnBinding{}.DataSourceAttributes(),
 			},
 		},
 		"dhcp_service_enabled": dataSourceSchema.BoolAttribute{
