@@ -96,7 +96,7 @@ func (o AtMostNOfValidator) Validate(ctx context.Context, req AtMostNOfValidator
 
 	resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 		req.Path,
-		fmt.Sprintf("At most %d attributes out of %s must be specified, but %d matches were found",
+		fmt.Sprintf("At most %d attributes out of %s may be specified, but %d non-null attributes were found",
 			req.N, expressions, len(notNullPaths)),
 	))
 }

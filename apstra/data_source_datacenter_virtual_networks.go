@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -52,13 +54,49 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 					"one filter attribute must be included when this attribute is used.",
 				Optional:   true,
 				Attributes: blueprint.DatacenterVirtualNetwork{}.DataSourceFilterAttributes(),
+				Validators: []validator.Object{
+					apstravalidator.AtMostNOf(1,
+						path.MatchRelative(),
+						path.MatchRoot("filters"),
+					),
+					apstravalidator.AtLeastNAttributes(
+						1,
+						"name", "type", "routing_zone_id", "vni", "reserve_vlan", "dhcp_service_enabled",
+						"ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet", "ipv6_subnet",
+						"ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
+						"ipv6_virtual_gateway",
+					),
+				},
+				DeprecationMessage: "The `filter` attribute is deprecated and will be removed in a future " +
+					"release. Please migrate your configuration to use `filters` instead.",
 			},
-			"graph_query": schema.StringAttribute{
+			"filters": schema.ListNestedAttribute{
+				MarkdownDescription: "List of filters used to select only desired node IDs. For a node " +
+					"to match a filter, all specified attributes must match (each attribute within a " +
+					"filter is AND-ed together). The returned node IDs represent the nodes matched by " +
+					"all of the filters together (filters are OR-ed together).",
+				Optional:   true,
+				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: blueprint.DatacenterVirtualNetwork{}.DataSourceFilterAttributes(),
+					Validators: []validator.Object{
+						apstravalidator.AtLeastNAttributes(
+							1,
+							"name", "type", "routing_zone_id", "vni", "reserve_vlan", "dhcp_service_enabled",
+							"ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet", "ipv6_subnet",
+							"ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
+							"ipv6_virtual_gateway",
+						),
+					},
+				},
+			},
+			"graph_queries": schema.ListAttribute{
 				MarkdownDescription: "The graph datastore query based on `filter` used to " +
 					"perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` " +
 					"attributes are never part of the graph query because IPv6 zero " +
 					"compression rules make string matches unreliable.",
-				Computed: true,
+				ElementType: types.StringType,
+				Computed:    true,
 			},
 		},
 	}
@@ -69,7 +107,8 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		IDs         types.Set    `tfsdk:"ids"`
 		Filter      types.Object `tfsdk:"filter"`
-		Query       types.String `tfsdk:"graph_query"`
+		Filters     types.List   `tfsdk:"filters"`
+		Queries     types.List   `tfsdk:"graph_queries"`
 	}
 
 	var config virtualNetworks
@@ -78,28 +117,42 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		return
 	}
 
-	var ids []attr.Value
-	var query *apstra.MatchQuery // todo change to interface after SDK update
 	bpId := apstra.ObjectId(config.BlueprintId.ValueString())
-	if config.Filter.IsNull() {
+	if config.Filter.IsNull() && config.Filters.IsNull() {
 		// just pull the VN IDs via API when no filter is specified
-		ids = o.getAllVnIds(ctx, bpId, &resp.Diagnostics)
+		ids := o.getAllVnIds(ctx, bpId, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// set the state
 		config.IDs = types.SetValueMust(types.StringType, ids)
-	} else {
-		// use a graph query (and some IPv6 value matching)
-		filter := blueprint.DatacenterVirtualNetwork{}
+		config.Queries = types.ListNull(types.StringType)
+		resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+		return
+	}
+
+	var filters []blueprint.DatacenterVirtualNetwork
+	if !config.Filter.IsNull() {
+		var filter blueprint.DatacenterVirtualNetwork
 		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		ids, query = o.getFilteredVnIds(ctx, bpId, filter, &resp.Diagnostics)
-		config.IDs = types.SetValueMust(types.StringType, ids)
-		config.Query = types.StringValue(query.String())
+		filters = append(filters, filter)
 	}
-	if resp.Diagnostics.HasError() {
-		return
+
+	if !config.Filters.IsNull() {
+		resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
+
+	ids, queries := o.getVnIdsWithFilters(ctx, bpId, filters, &resp.Diagnostics)
+	config.IDs = types.SetValueMust(types.StringType, ids)
+	config.Queries = types.ListValueMust(types.StringType, queries)
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
@@ -131,8 +184,32 @@ func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, b
 	return result
 }
 
-// todo change returned query to interface after SDK update
-func (o *dataSourceDatacenterVirtualNetworks) getFilteredVnIds(ctx context.Context, bpId apstra.ObjectId, filter blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]attr.Value, *apstra.MatchQuery) {
+func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilters(ctx context.Context, bpId apstra.ObjectId, filters []blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
+	queries := make([]attr.Value, len(filters))
+	resultMap := make(map[string]bool)
+	for i, filter := range filters {
+		ids, query := o.getVnIdsWithFilter(ctx, bpId, filter, diags)
+		if diags.HasError() {
+			return nil, nil
+		}
+
+		queries[i] = types.StringValue(query.String())
+		for _, id := range ids {
+			resultMap[id] = true
+		}
+	}
+
+	ids := make([]attr.Value, len(resultMap))
+	var i int
+	for id := range resultMap {
+		ids[i] = types.StringValue(id)
+		i++
+	}
+
+	return ids, queries
+}
+
+func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilter(ctx context.Context, bpId apstra.ObjectId, filter blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
 	query := filter.Query("n_virtual_network")
 	queryResponse := new(struct {
 		Items []struct {
@@ -145,13 +222,10 @@ func (o *dataSourceDatacenterVirtualNetworks) getFilteredVnIds(ctx context.Conte
 	})
 
 	// todo remove this type assertion when QEQuery is extended with new methods used below
-	query2 := query.(*apstra.MatchQuery)
-	query2.
-		SetClient(o.client).
-		SetBlueprintId(bpId).
-		SetBlueprintType(apstra.BlueprintTypeStaging)
-
-	err := query2.Do(ctx, queryResponse)
+	query.(*apstra.MatchQuery).SetClient(o.client)
+	query.(*apstra.MatchQuery).SetBlueprintId(bpId)
+	query.(*apstra.MatchQuery).SetBlueprintType(apstra.BlueprintTypeStaging)
+	err := query.Do(ctx, queryResponse)
 	if err != nil {
 		diags.AddError("error querying graph datastore", err.Error())
 		return nil, nil
@@ -218,10 +292,10 @@ func (o *dataSourceDatacenterVirtualNetworks) getFilteredVnIds(ctx context.Conte
 		}
 	}
 
-	result := make([]attr.Value, len(queryResponse.Items))
+	result := make([]string, len(queryResponse.Items))
 	for i, item := range queryResponse.Items {
-		result[i] = types.StringValue(item.VirtualNetwork.Id)
+		result[i] = item.VirtualNetwork.Id
 	}
 
-	return result, query2
+	return result, query
 }
