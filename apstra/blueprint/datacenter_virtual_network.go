@@ -162,22 +162,6 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Name",
 			Optional:            true,
-			Validators: []validator.String{stringvalidator.AtLeastOneOf(
-				path.MatchRelative(),
-				path.MatchRoot("filter").AtName("type"),
-				path.MatchRoot("filter").AtName("routing_zone_id"),
-				path.MatchRoot("filter").AtName("vni"),
-				path.MatchRoot("filter").AtName("reserve_vlan"),
-				path.MatchRoot("filter").AtName("dhcp_service_enabled"),
-				path.MatchRoot("filter").AtName("ipv4_connectivity_enabled"),
-				path.MatchRoot("filter").AtName("ipv6_connectivity_enabled"),
-				path.MatchRoot("filter").AtName("ipv4_subnet"),
-				path.MatchRoot("filter").AtName("ipv6_subnet"),
-				path.MatchRoot("filter").AtName("ipv4_virtual_gateway_enabled"),
-				path.MatchRoot("filter").AtName("ipv6_virtual_gateway_enabled"),
-				path.MatchRoot("filter").AtName("ipv4_virtual_gateway"),
-				path.MatchRoot("filter").AtName("ipv6_virtual_gateway"),
-			)},
 		},
 		"type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Type",

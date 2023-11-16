@@ -17,9 +17,11 @@ data "apstra_datacenter_virtual_networks" "all" {
 # )
 data "apstra_datacenter_virtual_networks" "prod_unreserved_with_dhcp" {
   blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
-  filter = {
-    reserve_vlan = false
-    dhcp_service_enabled = true
-    routing_zone_id = apstra_datacenter_routing_zone.prod.id
-  }
+  filters = [
+    {
+      reserve_vlan         = false
+      dhcp_service_enabled = true
+      routing_zone_id      = "Zplm0niOFCCCfjaXkXo"
+    }
+  ]
 }
