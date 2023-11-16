@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20231115202102-f47b2a337343
+	github.com/Juniper/apstra-go-sdk v0.0.0-20231116225553-76b857dfe9d0
 	github.com/chrismarget-j/go-licenses v0.0.0-20230424163011-d60082a506e0
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-version v1.6.0

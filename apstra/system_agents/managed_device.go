@@ -34,7 +34,7 @@ func (o *ManagedDevice) Request(_ context.Context, _ *diag.Diagnostics) *apstra.
 		AgentTypeOffbox: apstra.AgentTypeOffbox(o.OffBox.ValueBool()),
 		ManagementIp:    o.ManagementIp.ValueString(),
 		Profile:         apstra.ObjectId(o.AgentProfileId.ValueString()),
-		OperationMode:   apstra.AgentModeFull,
+		OperationMode:   apstra.SystemManagementLevelFullControl,
 	}
 }
 
