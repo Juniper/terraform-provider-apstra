@@ -32,11 +32,13 @@ data "apstra_datacenter_virtual_networks" "all" {
 # )
 data "apstra_datacenter_virtual_networks" "prod_unreserved_with_dhcp" {
   blueprint_id = "b726704d-f80e-4733-9103-abd6ccd8752c"
-  filter = {
-    reserve_vlan = false
-    dhcp_service_enabled = true
-    routing_zone_id = apstra_datacenter_routing_zone.prod.id
-  }
+  filters = [
+    {
+      reserve_vlan         = false
+      dhcp_service_enabled = true
+      routing_zone_id      = "Zplm0niOFCCCfjaXkXo"
+    }
+  ]
 }
 ```
 
@@ -49,11 +51,12 @@ data "apstra_datacenter_virtual_networks" "prod_unreserved_with_dhcp" {
 
 ### Optional
 
-- `filter` (Attributes) Virtual Network attributes used as filter. At least one filter attribute must be included when this attribute is used. (see [below for nested schema](#nestedatt--filter))
+- `filter` (Attributes, Deprecated) Virtual Network attributes used as filter. At least one filter attribute must be included when this attribute is used. (see [below for nested schema](#nestedatt--filter))
+- `filters` (Attributes List) List of filters used to select only desired node IDs. For a node to match a filter, all specified attributes must match (each attribute within a filter is AND-ed together). The returned node IDs represent the nodes matched by all of the filters together (filters are OR-ed together). (see [below for nested schema](#nestedatt--filters))
 
 ### Read-Only
 
-- `graph_query` (String) The graph datastore query based on `filter` used to perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` attributes are never part of the graph query because IPv6 zero compression rules make string matches unreliable.
+- `graph_queries` (List of String) The graph datastore query based on `filter` used to perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` attributes are never part of the graph query because IPv6 zero compression rules make string matches unreliable.
 - `ids` (Set of String) Set of Virtual Network IDs
 
 <a id="nestedatt--filter"></a>
@@ -85,3 +88,35 @@ Read-Only:
 
 <a id="nestedatt--filter--bindings"></a>
 ### Nested Schema for `filter.bindings`
+
+
+
+<a id="nestedatt--filters"></a>
+### Nested Schema for `filters`
+
+Optional:
+
+- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network.
+- `ipv4_subnet` (String) IPv4 subnet associated with the Virtual Network.
+- `ipv4_virtual_gateway` (String) Specifies the IPv4 virtual gateway address within the Virtual Network.
+- `ipv4_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv4 gateway within the Virtual Network is enabled.
+- `ipv6_connectivity_enabled` (Boolean) Enables IPv6 within the Virtual Network.
+- `ipv6_subnet` (String) IPv6 subnet associated with the Virtual Network. Note that this attribute will not appear in the `graph_query` output because IPv6 zero compression rules are problematic for mechanisms which rely on string matching.
+- `ipv6_virtual_gateway` (String) Specifies the IPv6 virtual gateway address within the Virtual Network. Note that this attribute will not appear in the `graph_query` output because IPv6 zero compression rules are problematic for mechanisms which rely on string matching.
+- `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
+- `name` (String) Virtual Network Name
+- `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
+- `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
+- `type` (String) Virtual Network Type
+- `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
+
+Read-Only:
+
+- `bindings` (Attributes Map) Not applicable in filter context. Ignore. (see [below for nested schema](#nestedatt--filters--bindings))
+- `blueprint_id` (String) Not applicable in filter context. Ignore.
+- `had_prior_vni_config` (Boolean) Not applicable in filter context. Ignore.
+- `id` (String) Not applicable in filter context. Ignore.
+
+<a id="nestedatt--filters--bindings"></a>
+### Nested Schema for `filters.bindings`
