@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
@@ -95,7 +96,14 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	// create new state object
 	var state blueprint.DatacenterPropertySet
 	state.BlueprintId = plan.BlueprintId
-	state.LoadApiData(ctx, api, &resp.Diagnostics) // this
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	state.Keys = plan.Keys
+	state.SyncWithCatalog = plan.SyncWithCatalog
+	state.SyncRequired = types.BoolValue(false)
+
+	if !plan.Keys.IsNull() {
+		state.Stale = types.BoolNull()
+	}
 
 	// extract keys which actually got imported
 	var importedKeys []string
@@ -116,7 +124,7 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	}
 
 	if len(failedImportedKeys) != 0 {
-		resp.Diagnostics.AddAttributeError(
+		resp.Diagnostics.AddAttributeWarning(
 			path.Root("keys"),
 			fmt.Sprintf("failed to import all desired Keys from PropertySet %s", plan.Id),
 			fmt.Sprintf("the following Keys could not be imported: %v", failedImportedKeys),
@@ -161,6 +169,17 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
 	newState.BlueprintId = state.BlueprintId
 
+	newState.Keys = state.Keys
+	newState.SyncWithCatalog = state.SyncWithCatalog
+
+	if state.Keys.IsNull() && newState.Stale.ValueBool() && state.SyncWithCatalog.ValueBool() {
+		newState.SyncRequired = types.BoolValue(true)
+	} else {
+		newState.SyncRequired = types.BoolValue(false)
+	}
+	if !state.Keys.IsNull() {
+		newState.Stale = types.BoolNull()
+	}
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
@@ -239,7 +258,12 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
 	state.Keys = plan.Keys
+	state.SyncWithCatalog = plan.SyncWithCatalog
+	state.SyncRequired = types.BoolValue(false)
 
+	if !plan.Keys.IsNull() {
+		state.Stale = types.BoolNull()
+	}
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
