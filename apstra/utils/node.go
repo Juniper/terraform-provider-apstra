@@ -70,5 +70,4 @@ func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 		diags.AddError("error setting deploy mode", err.Error())
 		return
 	}
-
 }
