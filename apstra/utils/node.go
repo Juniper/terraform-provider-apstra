@@ -2,9 +2,7 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 func AllNodeDeployModes() []string {
@@ -17,7 +15,7 @@ func AllNodeDeployModes() []string {
 	return result
 }
 
-func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string, diags *diag.Diagnostics) string {
+func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string) (string, error) {
 	var node struct {
 		Id         string `json:"id"`
 		Type       string `json:"type"`
@@ -25,26 +23,23 @@ func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 	}
 	err := client.Client().GetNode(ctx, client.Id(), apstra.ObjectId(nodeId), &node)
 	if err != nil {
-		diags.AddError("failed to fetch blueprint node", err.Error())
-		return ""
+		return "", err
 	}
 
 	var deployMode apstra.NodeDeployMode
 	err = deployMode.FromString(node.DeployMode)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("error parsing deploy mode %q", node.DeployMode), err.Error())
-		return ""
+		return "", err
 	}
 
-	return StringersToFriendlyString(deployMode)
+	return StringersToFriendlyString(deployMode), nil
 }
 
-func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string, modeString string, diags *diag.Diagnostics) {
+func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string, modeString string) error {
 	var modeIota apstra.NodeDeployMode
 	err := ApiStringerFromFriendlyString(&modeIota, modeString)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("error parsing deploy mode %q", modeString), err.Error())
-		return
+		return err
 	}
 
 	type patch struct {
@@ -67,7 +62,8 @@ func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 
 	err = client.Client().PatchNode(ctx, client.Id(), apstra.ObjectId(nodeId), &setDeployMode, nil)
 	if err != nil {
-		diags.AddError("error setting deploy mode", err.Error())
-		return
+		return err
 	}
+
+	return nil
 }

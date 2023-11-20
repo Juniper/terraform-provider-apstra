@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -95,9 +96,18 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	switch {
 	case plan.DeployMode.IsNull(): // not expected with Optional+Computed, nothing to do here
 	case plan.DeployMode.IsUnknown(): // config is null, get the Computed value
-		plan.DeployMode = types.StringValue(utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), &resp.Diagnostics))
+		deployMode, err := utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed to fetch node deploy mode", err.Error())
+			return
+		}
+		plan.DeployMode = types.StringValue(deployMode)
 	default: // value provided via config
-		utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString(), &resp.Diagnostics)
+		err = utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed while setting node deploy mode", err.Error())
+			return
+		}
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -156,10 +166,15 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.DeployMode = types.StringValue(utils.GetNodeDeployMode(ctx, bp, state.NodeId.ValueString(), &resp.Diagnostics))
-	if resp.Diagnostics.HasError() {
-		return
+	deployMode, err := utils.GetNodeDeployMode(ctx, bp, state.NodeId.ValueString())
+	if err != nil {
+		var ace apstra.ClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 	}
+	state.DeployMode = types.StringValue(deployMode)
 
 	state.GetInterfaceMapName(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -228,9 +243,19 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 	switch {
 	case plan.DeployMode.IsNull(): // not expected with Optional+Computed, nothing to do here
 	case plan.DeployMode.IsUnknown(): // config is null, get the Computed value
-		plan.DeployMode = types.StringValue(utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), &resp.Diagnostics))
+		deployMode, err := utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed reading node deploy mode", err.Error())
+			return
+		}
+
+		plan.DeployMode = types.StringValue(deployMode)
 	default: // value provided via config
-		utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString(), &resp.Diagnostics)
+		err := utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed setting node deploy mode", err.Error())
+			return
+		}
 	}
 	if resp.Diagnostics.HasError() {
 		return
