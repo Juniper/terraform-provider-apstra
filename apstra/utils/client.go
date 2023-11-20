@@ -17,10 +17,10 @@ const (
 	EnvApstraUrl      = "APSTRA_URL"
 	EnvApstraUsername = "APSTRA_USER"
 	EnvApstraPassword = "APSTRA_PASS"
-	envApstraLogfile  = "APSTRA_LOG"
-	envTlsKeyLogFile  = "SSLKEYLOGFILE"
-
-	urlEncodeMsg = `
+	EnvApstraLogfile  = "APSTRA_LOG"
+	EnvTlsKeyLogFile  = "SSLKEYLOGFILE"
+	EnvExperimental   = "APSTRA_EXPERIMENTAL"
+	urlEncodeMsg      = `
 Note that when the Username or Password fields contain special characters and are
 embedded in the URL, they must be URL-encoded by substituting '%%<hex-value>' in
 place of each special character. The following table demonstrates some common
@@ -83,7 +83,7 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 
 	// Set up a logger.
 	var logger *log.Logger
-	if logFileName, ok := os.LookupEnv(envApstraLogfile); ok {
+	if logFileName, ok := os.LookupEnv(EnvApstraLogfile); ok {
 		logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
 			return nil, err
@@ -93,7 +93,7 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 
 	// Set up the TLS session key log.
 	var klw io.Writer
-	if fileName, ok := os.LookupEnv(envTlsKeyLogFile); ok {
+	if fileName, ok := os.LookupEnv(EnvTlsKeyLogFile); ok {
 		klw, err = newKeyLogWriter(fileName)
 		if err != nil {
 			return nil, err
@@ -108,13 +108,14 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 			},
 		},
 	}
-
+	_, experimental := os.LookupEnv(EnvExperimental)
 	// Create the clientCfg
 	return &apstra.ClientCfg{
-		Url:        parsedUrl.String(),
-		User:       user,
-		Pass:       pass,
-		Logger:     logger,
-		HttpClient: httpClient,
+		Url:          parsedUrl.String(),
+		User:         user,
+		Pass:         pass,
+		Logger:       logger,
+		HttpClient:   httpClient,
+		Experimental: experimental,
 	}, nil
 }
