@@ -84,14 +84,12 @@ func (o DatacenterPropertySet) DataSourceAttributes() map[string]dataSourceSchem
 			Computed:            true,
 		},
 		"sync_with_catalog": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Keep the datacenter property set synchronized with the catalog property set. " +
-				"Has no meaning in the datasource",
-			Computed: true,
+			MarkdownDescription: "Always `null` in Data Source context. Ignore.",
+			Computed:            true,
 		},
 		"sync_required": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "A sync with catalog property set will happen on apply. " +
-				"Has no meaning in the datasource",
-			Computed: true,
+			MarkdownDescription: "Always `null` in Data Source context. Ignore.",
+			Computed:            true,
 		},
 	}
 }
@@ -110,6 +108,7 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 			},
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Property Set name as shown in the Web UI.",
@@ -130,8 +129,10 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Computed:            true,
 		},
 		"sync_with_catalog": resourceSchema.BoolAttribute{
-			MarkdownDescription: "When set, amd the keys are not set, " +
-				"this will trigger a sync with the catalog property set ",
+			MarkdownDescription: "When `true`, the Property Set will be re-imported whenever it is found to be out " +
+				"sync with the source Property Set in the Global Catalog. This attribute cannot be combined with the " +
+				"`keys` attribute, because importing a subset of Keys guarantees the Property Set will never be in " +
+				"sync with the Global Catalog.",
 			Optional: true,
 			PlanModifiers: []planmodifier.Bool{
 				boolplanmodifier.UseStateForUnknown(),
@@ -144,8 +145,8 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			},
 		},
 		"sync_required": resourceSchema.BoolAttribute{
-			MarkdownDescription: "A sync with catalog property set will happen on apply. " +
-				"This is used by the provider and should not be set by the user",
+			MarkdownDescription: "This attribute is used to trigger re-import of the Property Set from the Global " +
+				"Catalog. It is for internal use by the provider, and should not be set by the user.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(false),
