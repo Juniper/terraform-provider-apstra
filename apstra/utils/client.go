@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	EnvApstraUrl      = "APSTRA_URL"
-	EnvApstraUsername = "APSTRA_USER"
-	EnvApstraPassword = "APSTRA_PASS"
-	EnvApstraLogfile  = "APSTRA_LOG"
-	EnvTlsKeyLogFile  = "SSLKEYLOGFILE"
-	EnvExperimental   = "APSTRA_EXPERIMENTAL"
-	urlEncodeMsg      = `
+	EnvApstraUrl          = "APSTRA_URL"
+	EnvApstraUsername     = "APSTRA_USER"
+	EnvApstraPassword     = "APSTRA_PASS"
+	EnvApstraLogfile      = "APSTRA_LOG"
+	EnvApstraExperimental = "APSTRA_EXPERIMENTAL"
+	EnvTlsKeyLogFile      = "SSLKEYLOGFILE"
+
+	urlEncodeMsg = `
 Note that when the Username or Password fields contain special characters and are
 embedded in the URL, they must be URL-encoded by substituting '%%<hex-value>' in
 place of each special character. The following table demonstrates some common
@@ -108,7 +109,9 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 			},
 		},
 	}
-	_, experimental := os.LookupEnv(EnvExperimental)
+
+	_, experimental := os.LookupEnv(EnvApstraExperimental)
+
 	// Create the clientCfg
 	return &apstra.ClientCfg{
 		Url:          parsedUrl.String(),
