@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -36,6 +37,7 @@ type DatacenterGenericSystem struct {
 	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
 	LoopbackIpv6 cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
 	External     types.Bool           `tfsdk:"external"`
+	DeployMode   types.String         `tfsdk:"deploy_mode"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -108,6 +110,14 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Computed:            true,
 			Default:             booldefault.StaticBool(false),
 			PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
+		},
+		"deploy_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Set the Apstra Deploy Mode for this Generic System. Default: `%s`",
+				apstra.NodeDeployModeDeploy),
+			Optional:   true,
+			Computed:   true,
+			Default:    stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 	}
 }
@@ -266,6 +276,14 @@ func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *
 
 	if overwriteKnownValues || o.External.IsUnknown() {
 		o.External = types.BoolValue(nodeInfo.External)
+	}
+
+	if overwriteKnownValues || o.DeployMode.IsUnknown() {
+		deployMode, err := utils.GetNodeDeployMode(ctx, bp, o.Id.ValueString())
+		if err != nil {
+			return err
+		}
+		o.DeployMode = types.StringValue(deployMode)
 	}
 
 	// asn isn't computed, so will never be unknown
@@ -643,16 +661,33 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 	// set ASN if we don't have prior state or the ASN needs to be updated
 	if state == nil || !o.Asn.Equal(state.Asn) {
 		o.setAsn(ctx, bp, diags)
+		if diags.HasError() {
+			return
+		}
 	}
 
 	// set loopback v4 if we don't have prior state or the v4 address needs to be updated
 	if state == nil || !o.LoopbackIpv4.Equal(state.LoopbackIpv4) {
 		o.setLoopbackIPv4(ctx, bp, diags)
+		if diags.HasError() {
+			return
+		}
 	}
 
 	// set loopback v6 if we don't have prior state or the v6 address needs to be updated
 	if state == nil || !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
 		o.setLoopbackIPv6(ctx, bp, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	// set deploy mode if we don't have prior state or the deploy mode needs to be updated
+	if state == nil || !o.DeployMode.Equal(state.DeployMode) {
+		err := utils.SetNodeDeployMode(ctx, bp, o.Id.ValueString(), o.DeployMode.ValueString())
+		if err != nil {
+			diags.AddError("failed to set node deploy mode", err.Error())
+		}
 	}
 }
 
