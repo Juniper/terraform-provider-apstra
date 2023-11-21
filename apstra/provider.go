@@ -424,6 +424,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterCtVnMultiple{} },
 		func() datasource.DataSource { return &dataSourceDatacenterExternalGateway{} },
 		func() datasource.DataSource { return &dataSourceDatacenterExternalGateways{} },
+		func() datasource.DataSource { return &dataSourceDatacenterGraphQuery{} },
 		func() datasource.DataSource { return &dataSourceDatacenterPropertySet{} },
 		func() datasource.DataSource { return &dataSourceDatacenterPropertySets{} },
 		func() datasource.DataSource { return &dataSourceDatacenterRoutingPolicies{} },
