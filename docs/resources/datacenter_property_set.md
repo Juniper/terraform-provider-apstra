@@ -25,7 +25,7 @@ data "apstra_property_set" "ps" {
 resource "apstra_datacenter_property_set" "r" {
 	blueprint_id = data.apstra_datacenter_blueprint.b.id
 	id = data.apstra_property_set.ps.id
-	keys = data.apstra_property_set.ps.keys
+	sync_with_catalog = true
 }
 output "p" {
 	value = resource.apstra_datacenter_property_set.r
@@ -35,12 +35,12 @@ output "p" {
 #	"blueprint_id" = "d6c74373-45ce-4d88-9547-ac23c2ebe61e"
 #	"data" = "{\"junos_mgmt_vrf\": \"mgmt_junos\", \"mgmt_vrf\": \"management\"}"
 #	"id" = "3ae45f2e-c9ed-401b-8f00-367fb9a5e0e8"
-#	"keys" =  toset([
-#   "junos_mgmt_vrf",
-#   "mgmt_vrf",
-#   ])
+#	"keys" =   toset(null) /* of string */
 #	"name" = "MGMT VRF"
 #	"stale" = false
+#	"sync_required" = false
+#	"sync_with_catalog" = true
+
 #}
 ```
 
@@ -51,7 +51,12 @@ output "p" {
 
 - `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.
 - `id` (String) ID of the Property Set ID to be imported.
+
+### Optional
+
 - `keys` (Set of String) Subset of Keys to import, at least one Key is required.
+- `sync_required` (Boolean) A sync with catalog property set will happen on apply. This is used by the provider and should not be set by the user
+- `sync_with_catalog` (Boolean) When set, amd the keys are not set, this will trigger a sync with the catalog property set
 
 ### Read-Only
 

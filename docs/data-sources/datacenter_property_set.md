@@ -38,6 +38,8 @@ output "o" {
 #  ])
 #  "name" = "NTP Server"
 #  "stale" = false
+#  "sync_required" = tobool(null)
+#  "sync_with_catalog" = tobool(null)
 #}
 ```
 
@@ -58,3 +60,5 @@ output "o" {
 - `data` (String) A map of values in the Property Set in JSON format
 - `keys` (Set of String) List of Keys that have been imported.
 - `stale` (Boolean) Stale as reported in the Web UI.
+- `sync_required` (Boolean) A sync with catalog property set will happen on apply. Has no meaning in the datasource
+- `sync_with_catalog` (Boolean) Keep the datacenter property set synchronized with the catalog property set. Has no meaning in the datasource
