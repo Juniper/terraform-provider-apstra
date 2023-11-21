@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -44,19 +45,19 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// Ensure the blueprint exists.
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(plan.BlueprintId.ValueString()), &resp.Diagnostics) {
-		if resp.Diagnostics.HasError() {
+	// create a client for the datacenter reference design
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("no such blueprint", fmt.Sprintf("blueprint %s not found", plan.BlueprintId))
-	}
-	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
@@ -92,7 +93,22 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		}
 	}
 
-	plan.SetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
+	switch {
+	case plan.DeployMode.IsNull(): // not expected with Optional+Computed, nothing to do here
+	case plan.DeployMode.IsUnknown(): // config is null, get the Computed value
+		deployMode, err := utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed to fetch node deploy mode", err.Error())
+			return
+		}
+		plan.DeployMode = types.StringValue(deployMode)
+	default: // value provided via config
+		err = utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed while setting node deploy mode", err.Error())
+			return
+		}
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -112,15 +128,14 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	previousInterfaceMapCatalogId := state.InitialInterfaceMapId
 	previousInterfaceMapName := state.InterfaceMapName
 
-	// Ensure the blueprint still exists.
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
-		if resp.Diagnostics.HasError() {
+	// create a client for the datacenter reference design
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.State.RemoveResource(ctx)
-		return
-	}
-	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
 		return
 	}
 
@@ -151,10 +166,15 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.GetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	deployMode, err := utils.GetNodeDeployMode(ctx, bp, state.NodeId.ValueString())
+	if err != nil {
+		var ace apstra.ClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+			resp.State.RemoveResource(ctx)
+			return
+		}
 	}
+	state.DeployMode = types.StringValue(deployMode)
 
 	state.GetInterfaceMapName(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -200,8 +220,19 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
+	// create a client for the datacenter reference design
+	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
+		return
+	}
+
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
@@ -209,11 +240,27 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	state.DeployMode = plan.DeployMode
-	state.SetNodeDeployMode(ctx, o.client, &resp.Diagnostics)
+	switch {
+	case plan.DeployMode.IsNull(): // not expected with Optional+Computed, nothing to do here
+	case plan.DeployMode.IsUnknown(): // config is null, get the Computed value
+		deployMode, err := utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed reading node deploy mode", err.Error())
+			return
+		}
+
+		plan.DeployMode = types.StringValue(deployMode)
+	default: // value provided via config
+		err := utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("failed setting node deploy mode", err.Error())
+			return
+		}
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	state.DeployMode = plan.DeployMode
 
 	if !plan.DeviceKey.Equal(state.DeviceKey) {
 		// device key has changed
