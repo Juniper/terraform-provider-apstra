@@ -22,8 +22,9 @@ resource "apstra_datacenter_generic_system" "test" {
   asn           = %s
   loopback_ipv4 = %s
   loopback_ipv6 = %s
-  tags = %s
-  links = [
+  tags          = %s
+  deploy_mode   = %s
+  links         = [
 %s  ]
 }
 `
@@ -115,14 +116,15 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	}
 
 	type genericSystem struct {
-		bpId      string
-		name      string
-		hostname  string
-		asn       *int
-		loopback4 *net.IPNet
-		loopback6 *net.IPNet
-		tags      tagSlice
-		links     []link
+		bpId       string
+		name       string
+		hostname   string
+		asn        *int
+		loopback4  *net.IPNet
+		loopback6  *net.IPNet
+		tags       tagSlice
+		deployMode string
+		links      []link
 	}
 	renderGenericSystem := func(in genericSystem) string {
 		return fmt.Sprintf(resourceDataCenterGenericSystemHCL,
@@ -133,6 +135,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 			ipOrNull(in.loopback4),
 			ipOrNull(in.loopback6),
 			renderTags(in.tags),
+			stringOrNull(in.deployMode),
 			renderLinks(in.links),
 		)
 	}
@@ -331,6 +334,96 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "asn"),
 				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv4"),
 				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv6"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.#", "2"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.group_label", "bar"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.lag_mode", apstra.RackLinkLagModePassive.String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_name", "xe-0/0/6"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_transform_id", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.#", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.0", "c"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.group_label", "bar"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.lag_mode", apstra.RackLinkLagModePassive.String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.target_switch_if_name", "xe-0/0/7"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.target_switch_if_transform_id", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.tags.#", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.tags.0", "c"),
+			}...),
+		},
+		{
+			genericSystem: genericSystem{
+				//name:     "foo",
+				//hostname: "foo.com",
+				//tags:     []string{"a"},
+				deployMode: apstra.NodeDeployModeReady.String(),
+				links: []link{
+					{
+						lagMode:        apstra.RackLinkLagModePassive,
+						groupLabel:     "bar",
+						targetSwitchId: leafIds[0],
+						targetSwitchIf: "xe-0/0/6",
+						targetSwitchTf: 1,
+						tags:           []string{"c"},
+					},
+					{
+						lagMode:        apstra.RackLinkLagModePassive,
+						groupLabel:     "bar",
+						targetSwitchId: leafIds[0],
+						targetSwitchIf: "xe-0/0/7",
+						targetSwitchTf: 1,
+						tags:           []string{"c"},
+					},
+				},
+			},
+			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "asn"),
+				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv4"),
+				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv6"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", apstra.NodeDeployModeReady.String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.#", "2"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.group_label", "bar"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.lag_mode", apstra.RackLinkLagModePassive.String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_name", "xe-0/0/6"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_transform_id", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.#", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.0", "c"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.group_label", "bar"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.lag_mode", apstra.RackLinkLagModePassive.String()),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.target_switch_if_name", "xe-0/0/7"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.target_switch_if_transform_id", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.tags.#", "1"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.1.tags.0", "c"),
+			}...),
+		},
+		{
+			genericSystem: genericSystem{
+				//name:     "foo",
+				//hostname: "foo.com",
+				//tags:     []string{"a"},
+				deployMode: apstra.NodeDeployModeDeploy.String(),
+				links: []link{
+					{
+						lagMode:        apstra.RackLinkLagModePassive,
+						groupLabel:     "bar",
+						targetSwitchId: leafIds[0],
+						targetSwitchIf: "xe-0/0/6",
+						targetSwitchTf: 1,
+						tags:           []string{"c"},
+					},
+					{
+						lagMode:        apstra.RackLinkLagModePassive,
+						groupLabel:     "bar",
+						targetSwitchId: leafIds[0],
+						targetSwitchIf: "xe-0/0/7",
+						targetSwitchTf: 1,
+						tags:           []string{"c"},
+					},
+				},
+			},
+			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "asn"),
+				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv4"),
+				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv6"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", apstra.NodeDeployModeDeploy.String()),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.#", "2"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.group_label", "bar"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.lag_mode", apstra.RackLinkLagModePassive.String()),
