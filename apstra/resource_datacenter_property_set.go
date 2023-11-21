@@ -100,11 +100,15 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	state.Keys = plan.Keys
 	state.SyncWithCatalog = plan.SyncWithCatalog
 	state.SyncRequired = types.BoolValue(false)
-
+	// If the keys are empty set the state and return.
 	if plan.Keys.IsNull() {
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
 	}
+
+	// Stale is meaningless when the user has supplied keys
 	state.Stale = types.BoolNull()
+
 	// extract keys which actually got imported
 	var importedKeys []string
 	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &importedKeys, false)...)
