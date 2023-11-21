@@ -52,6 +52,27 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		return
 	}
 
+	if len(keysToImport) != 0 {
+		// fetch available keys from the property set to be re-imported from the global catalog
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// ensure that keys configured to be imported actually exist in the Global
+		// Catalog's copy of the Property Set
+		missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
+		if len(missingRequiredKeys) != 0 {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("keys"),
+				fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
+				fmt.Sprintf("the following keys are configured for import, but are not "+
+					"available for import from the Global Catalog: %v", missingRequiredKeys),
+			)
+			return
+		}
+	}
+
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
@@ -202,26 +223,26 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	if len(keysToImport) != 0 {
+		// fetch available keys from the property set to be re-imported from the global catalog
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// fetch available keys from the property set to be re-imported from the global catalog
-	availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+		// ensure that keys configured to be imported actually exist in the Global
+		// Catalog's copy of the Property Set
+		missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
+		if len(missingRequiredKeys) != 0 {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("keys"),
+				fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
+				fmt.Sprintf("the following keys are configured for import, but are not "+
+					"available for import from the Global Catalog: %v", missingRequiredKeys),
+			)
+			return
+		}
 	}
-
-	// ensure that keys configured to be imported actually exist in the Global
-	// Catalog's copy of the Property Set
-	missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
-	if len(missingRequiredKeys) != 0 {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("keys"),
-			fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
-			fmt.Sprintf("the following keys are configured for import, but are not "+
-				"available for import from the Global Catalog: %v", missingRequiredKeys),
-		)
-		return
-	}
-
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
