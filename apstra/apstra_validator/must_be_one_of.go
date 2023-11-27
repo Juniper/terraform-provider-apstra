@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -49,13 +50,22 @@ func (o MustBeOneOfValidator) Validate(ctx context.Context, req MustBeOneOfValid
 			oneOfUs = true
 		}
 	}
+
 	if !oneOfUs {
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
 			req.Path,
-			fmt.Sprintf("Invalid value for %s. Must be one of %q", req.Path, req.oneOf),
+			fmt.Sprintf("Must be one of : %s", attrArrToString(req.oneOf)),
 			req.ConfigValue.String(),
 		))
 	}
+}
+
+func attrArrToString(arr []attr.Value) string {
+	r := make([]string, len(arr))
+	for i, j := range arr {
+		r[i] = j.String()
+	}
+	return strings.Join(r, ",")
 }
 
 func (o MustBeOneOfValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
