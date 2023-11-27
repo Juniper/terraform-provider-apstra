@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -150,6 +151,9 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(false),
+			Validators: []validator.Bool{
+				apstravalidator.MustBeOneOf([]attr.Value{types.BoolNull()}),
+			},
 		},
 	}
 }
