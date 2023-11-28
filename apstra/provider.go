@@ -481,6 +481,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterExternalGateway{} },
 		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterPropertySet{} },
+		func() resource.Resource { return &resourceDatacenterRack{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
 		func() resource.Resource { return &resourceDatacenterRoutingPolicy{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
