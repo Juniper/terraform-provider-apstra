@@ -63,7 +63,7 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// create the rack and save the rack ID
+	// create the rack and squirrel away the rack ID
 	id, err := bpClient.CreateRack(ctx, plan.Request())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create Datacenter Rack", err.Error())
@@ -71,16 +71,16 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 	}
 	plan.Id = types.StringValue(id.String())
 
-	// set (or get) the rack name
-	if !plan.RackName.IsUnknown() {
-		plan.SetName(ctx, o.client, &resp.Diagnostics)
-		// do not check resp.Diagnostics.HasError()
-	} else {
+	// get or set the rack name
+	if plan.RackName.IsUnknown() {
 		err = plan.GetName(ctx, o.client)
 		if err != nil {
 			resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
 			// do not return
 		}
+	} else {
+		plan.SetName(ctx, o.client, &resp.Diagnostics)
+		// do not check resp.Diagnostics.HasError()
 	}
 
 	// update the plan with the rack ID and set the state
@@ -95,12 +95,14 @@ func (o *resourceDatacenterRack) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
+	// read the name (and confirm the rack still exists)
 	err := state.GetName(ctx, o.client)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
+
 		resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
 		return
 	}
