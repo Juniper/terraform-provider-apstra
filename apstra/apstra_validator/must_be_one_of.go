@@ -23,7 +23,6 @@ type MustBeOneOfValidator struct {
 type MustBeOneOfValidatorRequest struct {
 	Path        path.Path
 	ConfigValue attr.Value
-	OneOf       []attr.Value
 }
 
 type MustBeOneOfValidatorResponse struct {
@@ -35,12 +34,12 @@ func (o MustBeOneOfValidator) Description(ctx context.Context) string {
 }
 
 func (o MustBeOneOfValidator) MarkdownDescription(_ context.Context) string {
-	return fmt.Sprintf("Ensure that the value is one of the following : %q", o.OneOf)
+	return fmt.Sprintf("Ensure that the value is one of the following : %s", o.OneOf)
 }
 
 func (o MustBeOneOfValidator) Validate(_ context.Context, req MustBeOneOfValidatorRequest,
 	resp *MustBeOneOfValidatorResponse) {
-	for _, v := range req.OneOf {
+	for _, v := range o.OneOf {
 		if req.ConfigValue.Equal(v) {
 			return
 		}
@@ -48,7 +47,7 @@ func (o MustBeOneOfValidator) Validate(_ context.Context, req MustBeOneOfValidat
 
 	resp.Diagnostics.Append(validatordiag.InvalidAttributeValueDiagnostic(
 		req.Path,
-		fmt.Sprintf("Must be one of : %q", req.OneOf),
+		fmt.Sprintf("Must be one of : %q", o.OneOf),
 		req.ConfigValue.String(),
 	))
 }
@@ -57,7 +56,6 @@ func (o MustBeOneOfValidator) ValidateBool(ctx context.Context, req validator.Bo
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -70,7 +68,6 @@ func (o MustBeOneOfValidator) ValidateFloat64(ctx context.Context, req validator
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -83,7 +80,6 @@ func (o MustBeOneOfValidator) ValidateInt64(ctx context.Context, req validator.I
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -96,7 +92,6 @@ func (o MustBeOneOfValidator) ValidateList(ctx context.Context, req validator.Li
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -109,7 +104,6 @@ func (o MustBeOneOfValidator) ValidateMap(ctx context.Context, req validator.Map
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -122,7 +116,6 @@ func (o MustBeOneOfValidator) ValidateNumber(ctx context.Context, req validator.
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -135,7 +128,6 @@ func (o MustBeOneOfValidator) ValidateObject(ctx context.Context, req validator.
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -148,7 +140,6 @@ func (o MustBeOneOfValidator) ValidateSet(ctx context.Context, req validator.Set
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
@@ -161,7 +152,6 @@ func (o MustBeOneOfValidator) ValidateString(ctx context.Context, req validator.
 	validateReq := MustBeOneOfValidatorRequest{
 		Path:        req.Path,
 		ConfigValue: req.ConfigValue,
-		OneOf:       o.OneOf,
 	}
 	validateResp := &MustBeOneOfValidatorResponse{}
 
