@@ -12,7 +12,7 @@ import (
 
 func TestMustBeOneOfValidator(t *testing.T) {
 	ctx := context.Background()
-
+	t.Parallel()
 	type testCase struct {
 		req       apstravalidator.MustBeOneOfValidatorRequest
 		expErrors bool
@@ -95,7 +95,7 @@ func TestMustBeOneOfValidator(t *testing.T) {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				Path:        path.Path{},
 				ConfigValue: types.Int64Value(1),
-				OneOf:       []attr.Value{types.nt64Value(3), types.Int64Value(2)},
+				OneOf:       []attr.Value{types.Int64Value(3), types.Int64Value(2)},
 			},
 			expErrors: true,
 		},
