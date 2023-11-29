@@ -4,7 +4,6 @@ import (
 	"context"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math/big"
 	"testing"
@@ -22,7 +21,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 	testCases := map[string]testCase{
 		"bool positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.BoolValue(true),
 			},
 			OneOf:     []attr.Value{types.BoolValue(true)},
@@ -30,7 +28,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"bool negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.BoolValue(true),
 			},
 			OneOf:     []attr.Value{types.BoolNull()},
@@ -38,7 +35,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"float positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.Float64Value(1),
 			},
 			expErrors: false,
@@ -46,7 +42,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"float negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.Float64Value(1),
 			},
 			expErrors: true,
@@ -54,7 +49,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"number positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.Int64Value(1),
 			},
 			expErrors: false,
@@ -62,7 +56,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"number negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.NumberValue(big.NewFloat(1)),
 			},
 			expErrors: true,
@@ -70,7 +63,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"string negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.StringValue("1"),
 			},
 			expErrors: false,
@@ -78,7 +70,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"string positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.StringValue("1"),
 			},
 			expErrors: true,
@@ -86,7 +77,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"int64 negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.Int64Value(1),
 			},
 			expErrors: false,
@@ -94,7 +84,6 @@ func TestMustBeOneOfValidator(t *testing.T) {
 		},
 		"int64 positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
 				ConfigValue: types.Int64Value(1),
 			},
 			expErrors: true,
