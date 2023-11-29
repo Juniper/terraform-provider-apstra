@@ -13,11 +13,12 @@ This resource creates a new Rack in a Datacenter Blueprint.
 ## Example Usage
 
 ```terraform
-# This example creates a new rack in an existing blueprint.
+# This example creates a new rack based on an existing
+# Rack Type (design object) in an existing blueprint.
 
 resource "apstra_datacenter_rack" "r" {
   blueprint_id = "187458bf-7abf-450e-b341-d8da948bef9c"
-  name         = "Rack_13"
+  rack_name    = "Rack_13"
   rack_type_id = "bq-lzzk6tmwc1redcw4rqg"
 }
 ```
@@ -28,12 +29,12 @@ resource "apstra_datacenter_rack" "r" {
 ### Required
 
 - `blueprint_id` (String) Apstra ID of the Blueprint where the Rack should be created.
-- `name` (String) Name of the Rack.
 - `rack_type_id` (String) ID of the Global Catalog Rack Type design object to use as a template for this Rack.
 
 ### Optional
 
 - `pod_id` (String) Graph node ID of Pod (3-stage topology) where the new rack should be created. Required only in Pod-Based (5-stage) Blueprints.
+- `rack_name` (String) Name of the Rack.
 
 ### Read-Only
 
