@@ -71,9 +71,17 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 	}
 	plan.Id = types.StringValue(id.String())
 
-	// set the rack name to the desired value
-	plan.SetName(ctx, o.client, &resp.Diagnostics)
-	// do not check resp.Diagnostics.HasError()
+	// set (or get) the rack name
+	if !plan.RackName.IsUnknown() {
+		plan.SetName(ctx, o.client, &resp.Diagnostics)
+		// do not check resp.Diagnostics.HasError()
+	} else {
+		err = plan.GetName(ctx, o.client)
+		if err != nil {
+			resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
+			// do not return
+		}
+	}
 
 	// update the plan with the rack ID and set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -87,24 +95,17 @@ func (o *resourceDatacenterRack) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	// struct used to collect the rack node info
-	var node struct {
-		Label string `json:"label"`
-	}
-
-	// collect the rack node info
-	err := o.client.GetNode(ctx, apstra.ObjectId(state.BlueprintId.ValueString()), apstra.ObjectId(state.Id.ValueString()), &node)
+	err := state.GetName(ctx, o.client)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("failed reading rack node", err.Error())
+		resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
 		return
 	}
 
 	// Set state
-	state.Name = types.StringValue(node.Label)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -116,8 +117,17 @@ func (o *resourceDatacenterRack) Update(ctx context.Context, req resource.Update
 		return
 	}
 
-	// update the name (the only reconfigurable attribute)
-	plan.SetName(ctx, o.client, &resp.Diagnostics)
+	// Retrieve values from state
+	var state blueprint.Rack
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// update the name if necessary
+	if !plan.RackName.Equal(state.RackName) {
+		plan.SetName(ctx, o.client, &resp.Diagnostics)
+	}
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

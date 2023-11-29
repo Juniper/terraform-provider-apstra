@@ -15,7 +15,7 @@ import (
 type Rack struct {
 	Id          types.String `tfsdk:"id"`
 	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Name        types.String `tfsdk:"name"`
+	RackName    types.String `tfsdk:"rack_name"`
 	PodId       types.String `tfsdk:"pod_id"`
 	RackTypeId  types.String `tfsdk:"rack_type_id"`
 }
@@ -33,9 +33,10 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
-		"name": resourceSchema.StringAttribute{
+		"rack_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name of the Rack.",
-			Required:            true,
+			Computed:            true,
+			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"pod_id": resourceSchema.StringAttribute{
@@ -63,15 +64,31 @@ func (o Rack) Request() *apstra.TwoStageL3ClosRackRequest {
 
 func (o Rack) SetName(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	// data structure to use when calling PatchNode
-	patch := struct {
+	var patch struct {
 		Label string `json:"label"`
-	}{
-		Label: o.Name.ValueString(),
 	}
+	patch.Label = o.RackName.ValueString()
 
 	err := client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.ObjectId(o.Id.ValueString()), &patch, nil)
 	if err != nil {
 		diags.AddError("Unable to create Datacenter Configlet", err.Error())
 		// do not return - we must set the state below
 	}
+}
+
+func (o *Rack) GetName(ctx context.Context, client *apstra.Client) error {
+	// struct used to collect the rack node info
+	var node struct {
+		Label string `json:"label"`
+	}
+
+	// collect the rack node info
+	err := client.GetNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.ObjectId(o.Id.ValueString()), &node)
+	if err != nil {
+		return err
+	}
+
+	o.RackName = types.StringValue(node.Label)
+
+	return nil
 }
