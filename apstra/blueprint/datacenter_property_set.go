@@ -130,14 +130,12 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 			Computed:            true,
 		},
 		"sync_with_catalog": resourceSchema.BoolAttribute{
-			MarkdownDescription: "When `true`, the Property Set will be re-imported whenever it is found to be out " +
+			MarkdownDescription: "When `true`, the Property Set will be re-imported whenever it is found to be out of " +
 				"sync with the source Property Set in the Global Catalog. This attribute cannot be combined with the " +
 				"`keys` attribute, because importing a subset of Keys guarantees the Property Set will never be in " +
 				"sync with the Global Catalog.",
-			Optional: true,
-			PlanModifiers: []planmodifier.Bool{
-				boolplanmodifier.UseStateForUnknown(),
-			},
+			Optional:      true,
+			PlanModifiers: []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			Validators: []validator.Bool{
 				boolvalidator.ExactlyOneOf(path.Expressions{
 					path.MatchRelative(),
@@ -148,12 +146,10 @@ func (o DatacenterPropertySet) ResourceAttributes() map[string]resourceSchema.At
 		"sync_required": resourceSchema.BoolAttribute{
 			MarkdownDescription: "This attribute is used to trigger re-import of the Property Set from the Global " +
 				"Catalog. It is for internal use by the provider, and should not be set by the user.",
-			Computed: true,
-			Optional: true,
-			Default:  booldefault.StaticBool(false),
-			Validators: []validator.Bool{
-				apstravalidator.MustBeOneOf([]attr.Value{types.BoolNull()}),
-			},
+			Computed:   true,
+			Optional:   true,
+			Default:    booldefault.StaticBool(false),
+			Validators: []validator.Bool{apstravalidator.MustBeOneOf([]attr.Value{types.BoolNull()})},
 		},
 	}
 }
