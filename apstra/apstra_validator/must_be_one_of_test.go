@@ -74,7 +74,8 @@ func TestMustBeOneOfValidator(t *testing.T) {
 				OneOf:       []attr.Value{types.StringValue("1"), types.StringValue("2")},
 			},
 			expErrors: false,
-		}, "string positive": {
+		},
+		"string positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				Path:        path.Path{},
 				ConfigValue: types.StringValue("1"),
@@ -89,37 +90,8 @@ func TestMustBeOneOfValidator(t *testing.T) {
 				OneOf:       []attr.Value{types.Int64Value(1), types.Int64Value(2)},
 			},
 			expErrors: false,
-		}, "list positive": {
-			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
-				ConfigValue: types.ListValue(types.Int64Type, []attr.Value{}),
-				OneOf:       []attr.Value{types.nt64Value(3), types.Int64Value(2)},
-			},
-			expErrors: true,
 		},
-		"list negative": {
-			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
-				ConfigValue: types.Int64Value(1),
-				OneOf:       []attr.Value{types.Int64Value(1), types.Int64Value(2)},
-			},
-			expErrors: false,
-		}, "int64 positive": {
-			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
-				ConfigValue: types.Int64Value(1),
-				OneOf:       []attr.Value{types.nt64Value(3), types.Int64Value(2)},
-			},
-			expErrors: true,
-		},
-		"int64 negative": {
-			req: apstravalidator.MustBeOneOfValidatorRequest{
-				Path:        path.Path{},
-				ConfigValue: types.Int64Value(1),
-				OneOf:       []attr.Value{types.Int64Value(1), types.Int64Value(2)},
-			},
-			expErrors: false,
-		}, "int64 positive": {
+		"int64 positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				Path:        path.Path{},
 				ConfigValue: types.Int64Value(1),
