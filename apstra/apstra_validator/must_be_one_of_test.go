@@ -14,80 +14,80 @@ func TestMustBeOneOfValidator(t *testing.T) {
 
 	type testCase struct {
 		req       apstravalidator.MustBeOneOfValidatorRequest
-		OneOf     []attr.Value
+		oneOf     []attr.Value
 		expErrors bool
 	}
 
 	testCases := map[string]testCase{
-		"bool positive": {
+		"bool_negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.BoolValue(true),
 			},
-			OneOf:     []attr.Value{types.BoolValue(true)},
+			oneOf:     []attr.Value{types.BoolValue(true)},
 			expErrors: false,
 		},
-		"bool negative": {
+		"bool_positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.BoolValue(true),
 			},
-			OneOf:     []attr.Value{types.BoolNull()},
+			oneOf:     []attr.Value{types.BoolNull()},
 			expErrors: true,
 		},
-		"float positive": {
+		"float_negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.Float64Value(1),
 			},
 			expErrors: false,
-			OneOf:     []attr.Value{types.Float64Value(1), types.Float64Value(1.5)},
+			oneOf:     []attr.Value{types.Float64Value(1), types.Float64Value(1.5)},
 		},
-		"float negative": {
+		"float_positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				ConfigValue: types.Float64Value(1),
+				ConfigValue: types.Float64Unknown(),
 			},
 			expErrors: true,
-			OneOf:     []attr.Value{types.Float64Value(.5), types.Float64Value(1.5)},
+			oneOf:     []attr.Value{types.Float64Value(.5), types.Float64Value(1.5)},
 		},
-		"number positive": {
+		"number_negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.Int64Value(1),
 			},
 			expErrors: false,
-			OneOf:     []attr.Value{types.Int64Value(1), types.Int64Value(2)},
+			oneOf:     []attr.Value{types.Int64Value(1), types.Int64Value(2)},
 		},
-		"number negative": {
+		"number_positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.NumberValue(big.NewFloat(1)),
 			},
 			expErrors: true,
-			OneOf:     []attr.Value{types.NumberValue(big.NewFloat(1.1)), types.NumberValue(big.NewFloat(1.2))},
+			oneOf:     []attr.Value{types.NumberValue(big.NewFloat(1.1)), types.NumberValue(big.NewFloat(1.2))},
 		},
-		"string negative": {
+		"string_negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.StringValue("1"),
 			},
 			expErrors: false,
-			OneOf:     []attr.Value{types.StringValue("1"), types.StringValue("2")},
+			oneOf:     []attr.Value{types.StringValue("1"), types.StringValue("2")},
 		},
-		"string positive": {
+		"string_positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
-				ConfigValue: types.StringValue("1"),
+				ConfigValue: types.Int64Value(2),
 			},
 			expErrors: true,
-			OneOf:     []attr.Value{types.StringValue("3"), types.StringValue("2")},
+			oneOf:     []attr.Value{types.StringValue("3"), types.StringValue("2")},
 		},
-		"int64 negative": {
+		"int64_negative": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.Int64Value(1),
 			},
 			expErrors: false,
-			OneOf:     []attr.Value{types.Int64Value(1), types.Int64Value(2)},
+			oneOf:     []attr.Value{types.Int64Value(1), types.Int64Value(2)},
 		},
-		"int64 positive": {
+		"int64_positive": {
 			req: apstravalidator.MustBeOneOfValidatorRequest{
 				ConfigValue: types.Int64Value(1),
 			},
 			expErrors: true,
-			OneOf:     []attr.Value{types.Int64Value(3), types.Int64Value(2)},
+			oneOf:     []attr.Value{types.Int64Value(3), types.Int64Value(2)},
 		},
 	}
 
@@ -98,7 +98,7 @@ func TestMustBeOneOfValidator(t *testing.T) {
 
 			var res apstravalidator.MustBeOneOfValidatorResponse
 
-			v := apstravalidator.MustBeOneOf(test.OneOf)
+			v := apstravalidator.MustBeOneOf(test.oneOf)
 			v.(apstravalidator.MustBeOneOfValidator).Validate(ctx, test.req, &res)
 
 			if test.expErrors && !res.Diagnostics.HasError() {
