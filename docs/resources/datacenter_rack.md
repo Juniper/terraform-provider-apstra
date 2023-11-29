@@ -18,7 +18,7 @@ This resource creates a new Rack in a Datacenter Blueprint.
 
 resource "apstra_datacenter_rack" "r" {
   blueprint_id = "187458bf-7abf-450e-b341-d8da948bef9c"
-  rack_name    = "Rack_13"
+  name         = "Rack_13"
   rack_type_id = "bq-lzzk6tmwc1redcw4rqg"
 }
 ```
@@ -33,8 +33,8 @@ resource "apstra_datacenter_rack" "r" {
 
 ### Optional
 
+- `name` (String) Name of the Rack.
 - `pod_id` (String) Graph node ID of Pod (3-stage topology) where the new rack should be created. Required only in Pod-Based (5-stage) Blueprints.
-- `rack_name` (String) Name of the Rack.
 
 ### Read-Only
 

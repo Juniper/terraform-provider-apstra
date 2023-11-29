@@ -15,7 +15,7 @@ const (
 resource "apstra_datacenter_rack" "test" {
   blueprint_id = %q
   rack_type_id = %q
-  rack_name    = %s
+  name         = %s
 }`
 )
 

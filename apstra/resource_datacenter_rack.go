@@ -72,7 +72,7 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 	plan.Id = types.StringValue(id.String())
 
 	// get or set the rack name
-	if plan.RackName.IsUnknown() {
+	if plan.Name.IsUnknown() {
 		err = plan.GetName(ctx, o.client)
 		if err != nil {
 			resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
@@ -127,7 +127,7 @@ func (o *resourceDatacenterRack) Update(ctx context.Context, req resource.Update
 	}
 
 	// update the name if necessary
-	if !plan.RackName.Equal(state.RackName) {
+	if !plan.Name.Equal(state.Name) {
 		plan.SetName(ctx, o.client, &resp.Diagnostics)
 	}
 

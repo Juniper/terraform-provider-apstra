@@ -15,7 +15,7 @@ import (
 type Rack struct {
 	Id          types.String `tfsdk:"id"`
 	BlueprintId types.String `tfsdk:"blueprint_id"`
-	RackName    types.String `tfsdk:"rack_name"`
+	Name        types.String `tfsdk:"name"`
 	PodId       types.String `tfsdk:"pod_id"`
 	RackTypeId  types.String `tfsdk:"rack_type_id"`
 }
@@ -33,7 +33,7 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
-		"rack_name": resourceSchema.StringAttribute{
+		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name of the Rack.",
 			Computed:            true,
 			Optional:            true,
@@ -67,7 +67,7 @@ func (o Rack) SetName(ctx context.Context, client *apstra.Client, diags *diag.Di
 	var patch struct {
 		Label string `json:"label"`
 	}
-	patch.Label = o.RackName.ValueString()
+	patch.Label = o.Name.ValueString()
 
 	err := client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.ObjectId(o.Id.ValueString()), &patch, nil)
 	if err != nil {
@@ -88,7 +88,7 @@ func (o *Rack) GetName(ctx context.Context, client *apstra.Client) error {
 		return err
 	}
 
-	o.RackName = types.StringValue(node.Label)
+	o.Name = types.StringValue(node.Label)
 
 	return nil
 }
