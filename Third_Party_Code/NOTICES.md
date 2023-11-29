@@ -348,8 +348,8 @@ SOFTWARE.
 ## github.com/hashicorp/go-plugin
 
 * Name: github.com/hashicorp/go-plugin
-* Version: v1.4.10
-* License: [MPL-2.0](https://github.com/hashicorp/go-plugin/blob/v1.4.10/LICENSE)
+* Version: v1.5.1
+* License: [MPL-2.0](https://github.com/hashicorp/go-plugin/blob/v1.5.1/LICENSE)
 
 ```
 Copyright (c) 2016 HashiCorp, Inc.
@@ -1452,8 +1452,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.3.3
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.3.3/LICENSE)
+* Version: v1.4.2
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.4.2/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -2569,8 +2569,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.18.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.18.0/LICENSE)
+* Version: v0.19.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.19.0/LICENSE)
 
 ```
 Copyright (c) 2020 HashiCorp, Inc.
@@ -3686,8 +3686,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-registry-address
 
 * Name: github.com/hashicorp/terraform-registry-address
-* Version: v0.2.1
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-registry-address/blob/v0.2.1/LICENSE)
+* Version: v0.2.2
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-registry-address/blob/v0.2.2/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -5286,8 +5286,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.16.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.16.0:LICENSE)
+* Version: v0.17.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.17.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5397,8 +5397,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20230410155749-daa745c078e1
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/daa745c078e1/LICENSE)
+* Version: v0.0.0-20230525234030-28d5490b6b19
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/28d5490b6b19/googleapis/rpc/LICENSE)
 
 ```
 
@@ -5609,8 +5609,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.56.1
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.56.1/LICENSE)
+* Version: v1.57.0
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.57.0/LICENSE)
 
 ```
 

@@ -20,4 +20,6 @@ output "o" {
 #  ])
 #  "name" = "NTP Server"
 #  "stale" = false
+#  "sync_required" = tobool(null)
+#  "sync_with_catalog" = tobool(null)
 #}

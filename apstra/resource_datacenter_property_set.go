@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
@@ -49,6 +50,27 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if len(keysToImport) != 0 {
+		// fetch available keys from the property set to be re-imported from the global catalog
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// ensure that keys configured to be imported actually exist in the Global
+		// Catalog's copy of the Property Set
+		missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
+		if len(missingRequiredKeys) != 0 {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("keys"),
+				fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
+				fmt.Sprintf("the following keys are configured for import, but are not "+
+					"available for import from the Global Catalog: %v", missingRequiredKeys),
+			)
+			return
+		}
 	}
 
 	// create a blueprint client
@@ -95,7 +117,18 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	// create new state object
 	var state blueprint.DatacenterPropertySet
 	state.BlueprintId = plan.BlueprintId
-	state.LoadApiData(ctx, api, &resp.Diagnostics) // this
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
+	state.Keys = plan.Keys
+	state.SyncWithCatalog = plan.SyncWithCatalog
+	state.SyncRequired = types.BoolValue(false)
+	// If the keys are empty set the state and return.
+	if plan.Keys.IsNull() {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+		return
+	}
+
+	// Stale is meaningless when the user has supplied keys
+	state.Stale = types.BoolNull()
 
 	// extract keys which actually got imported
 	var importedKeys []string
@@ -116,7 +149,7 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	}
 
 	if len(failedImportedKeys) != 0 {
-		resp.Diagnostics.AddAttributeError(
+		resp.Diagnostics.AddAttributeWarning(
 			path.Root("keys"),
 			fmt.Sprintf("failed to import all desired Keys from PropertySet %s", plan.Id),
 			fmt.Sprintf("the following Keys could not be imported: %v", failedImportedKeys),
@@ -161,6 +194,17 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 	newState.LoadApiData(ctx, api, &resp.Diagnostics)
 	newState.BlueprintId = state.BlueprintId
 
+	newState.Keys = state.Keys
+	newState.SyncWithCatalog = state.SyncWithCatalog
+
+	if state.Keys.IsNull() && newState.Stale.ValueBool() && state.SyncWithCatalog.ValueBool() {
+		newState.SyncRequired = types.BoolValue(true)
+	} else {
+		newState.SyncRequired = types.BoolValue(false)
+	}
+	if !state.Keys.IsNull() {
+		newState.Stale = types.BoolNull()
+	}
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
@@ -179,26 +223,26 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	if len(keysToImport) != 0 {
+		// fetch available keys from the property set to be re-imported from the global catalog
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// fetch available keys from the property set to be re-imported from the global catalog
-	availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+		// ensure that keys configured to be imported actually exist in the Global
+		// Catalog's copy of the Property Set
+		missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
+		if len(missingRequiredKeys) != 0 {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("keys"),
+				fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
+				fmt.Sprintf("the following keys are configured for import, but are not "+
+					"available for import from the Global Catalog: %v", missingRequiredKeys),
+			)
+			return
+		}
 	}
-
-	// ensure that keys configured to be imported actually exist in the Global
-	// Catalog's copy of the Property Set
-	missingRequiredKeys, _ := utils.DiffSliceSets(availableKeys, keysToImport)
-	if len(missingRequiredKeys) != 0 {
-		resp.Diagnostics.AddAttributeError(
-			path.Root("keys"),
-			fmt.Sprintf("Property Set %s does not contain all required Keys", plan.Id),
-			fmt.Sprintf("the following keys are configured for import, but are not "+
-				"available for import from the Global Catalog: %v", missingRequiredKeys),
-		)
-		return
-	}
-
 	// create a blueprint client
 	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
 	if err != nil {
@@ -239,7 +283,12 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	state.BlueprintId = plan.BlueprintId
 	state.Keys = plan.Keys
+	state.SyncWithCatalog = plan.SyncWithCatalog
+	state.SyncRequired = types.BoolValue(false)
 
+	if !plan.Keys.IsNull() {
+		state.Stale = types.BoolNull()
+	}
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
