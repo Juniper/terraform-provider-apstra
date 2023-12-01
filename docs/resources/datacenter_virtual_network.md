@@ -50,7 +50,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 
 ### Required
 
-- `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`_datacenter_virtual_network_binding_constructor`](../data-sources/apstra_datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
+- `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
 - `blueprint_id` (String) Blueprint ID
 - `name` (String) Virtual Network Name
 
@@ -68,7 +68,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed. The only accepted values is `true`.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
 - `type` (String) Virtual Network Type
-- `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../apstra_datacenter_resource_pool_allocation) to role `vni_virtual_network_ids`.
+- `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../resources/datacenter_resource_pool_allocation) to role `vni_virtual_network_ids`.
 
 ### Read-Only
 

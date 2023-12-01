@@ -75,7 +75,7 @@ Optional:
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
 - `name` (String) Virtual Network Name
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
-- `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
+- `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
 
@@ -107,7 +107,7 @@ Optional:
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
 - `name` (String) Virtual Network Name
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
-- `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
+- `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
 
