@@ -296,7 +296,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
 				"Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated]"+
-				"(../apstra_datacenter_resource_pool_allocation) to role `%s`.",
+				"(../resources/datacenter_resource_pool_allocation) to role `%s`.",
 				utils.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
 			Optional: true,
 			Computed: true,
@@ -334,8 +334,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				"At least one binding entry is required. The value is a map keyed by graph db node IDs of *either* " +
 				"Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf " +
 				"Switches). Practitioners are encouraged to consider using the " +
-				"[`_datacenter_virtual_network_binding_constructor`]" +
-				"(../examples/data-sources/apstra_datacenter_virtual_network_binding_constructor) data source to populate " +
+				"[`apstra_datacenter_virtual_network_binding_constructor`]" +
+				"(../data-sources/datacenter_virtual_network_binding_constructor) data source to populate " +
 				"this map.",
 			Required: true,
 			Validators: []validator.Map{
