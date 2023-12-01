@@ -20,7 +20,7 @@ func DataSourceGetClient(_ context.Context, req datasource.ConfigureRequest, res
 	}
 
 	resp.Diagnostics.AddError(
-		errDataSourceConfigureProviderDataDetail,
+		errDataSourceConfigureProviderDataSummary,
 		fmt.Sprintf(errDataSourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return nil
@@ -38,7 +38,7 @@ func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *r
 	}
 
 	resp.Diagnostics.AddError(
-		errResourceConfigureProviderDataDetail,
+		errResourceConfigureProviderDataSummary,
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return nil
@@ -56,7 +56,7 @@ func ResourceGetProviderVersion(_ context.Context, req resource.ConfigureRequest
 	}
 
 	resp.Diagnostics.AddError(
-		errResourceConfigureProviderDataDetail,
+		errResourceConfigureProviderDataSummary,
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return ""
@@ -74,7 +74,7 @@ func ResourceGetTerraformVersion(_ context.Context, req resource.ConfigureReques
 	}
 
 	resp.Diagnostics.AddError(
-		errResourceConfigureProviderDataDetail,
+		errResourceConfigureProviderDataSummary,
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return ""
@@ -92,7 +92,7 @@ func ResourceGetBlueprintLockFunc(_ context.Context, req resource.ConfigureReque
 	}
 
 	resp.Diagnostics.AddError(
-		errResourceConfigureProviderDataDetail,
+		errResourceConfigureProviderDataSummary,
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return nil
@@ -110,7 +110,7 @@ func ResourceGetBlueprintUnlockFunc(_ context.Context, req resource.ConfigureReq
 	}
 
 	resp.Diagnostics.AddError(
-		errResourceConfigureProviderDataDetail,
+		errResourceConfigureProviderDataSummary,
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
 	return nil
