@@ -16,8 +16,8 @@ var _ resource.ResourceWithConfigure = &resourceDatacenterExternalGateway{}
 var _ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
 
 type resourceDatacenterExternalGateway struct {
-	client   *apstra.Client
-	lockFunc func(context.Context, string) error
+	lockFunc        func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *resourceDatacenterExternalGateway) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -25,7 +25,7 @@ func (o *resourceDatacenterExternalGateway) Metadata(_ context.Context, req reso
 }
 
 func (o *resourceDatacenterExternalGateway) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
@@ -66,8 +66,8 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 		Id:          types.StringValue(importId.ExternalGatewayId),
 	}
 
-	// create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
@@ -93,8 +93,8 @@ func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req reso
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
@@ -141,8 +141,8 @@ func (o *resourceDatacenterExternalGateway) Read(ctx context.Context, req resour
 		return
 	}
 
-	// Create a blueprint client
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -168,8 +168,8 @@ func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req reso
 		return
 	}
 
-	// Create a blueprint client
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
 		return
@@ -211,8 +211,8 @@ func (o *resourceDatacenterExternalGateway) Delete(ctx context.Context, req reso
 		return
 	}
 
-	// Create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
