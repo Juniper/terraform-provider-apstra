@@ -42,19 +42,8 @@ func (o *resourceInterfaceMap) Metadata(_ context.Context, req resource.Metadata
 	resp.TypeName = req.ProviderTypeName + "_interface_map"
 }
 
-func (o *resourceInterfaceMap) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errResourceConfigureProviderDataDetail,
-			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *resourceInterfaceMap) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {

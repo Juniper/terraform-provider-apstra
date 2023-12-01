@@ -22,19 +22,8 @@ func (o *resourceManagedDevice) Metadata(_ context.Context, req resource.Metadat
 	resp.TypeName = req.ProviderTypeName + "_managed_device"
 }
 
-func (o *resourceManagedDevice) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	if req.ProviderData == nil {
-		return
-	}
-
-	if pd, ok := req.ProviderData.(*providerData); ok {
-		o.client = pd.client
-	} else {
-		resp.Diagnostics.AddError(
-			errResourceConfigureProviderDataDetail,
-			fmt.Sprintf(errResourceConfigureProviderDataDetail, pd, req.ProviderData),
-		)
-	}
+func (o *resourceManagedDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	o.client = ResourceGetClient(ctx, req, resp)
 }
 
 func (o *resourceManagedDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
