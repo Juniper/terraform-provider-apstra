@@ -168,7 +168,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Optional:            true,
 		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`", apstra.VnTypeVxlan),
+			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`)", apstra.VnTypeVxlan),
 			Optional:            true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
@@ -335,7 +335,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				"Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf " +
 				"Switches). Practitioners are encouraged to consider using the " +
 				"[`_datacenter_virtual_network_binding_constructor`]" +
-				"(../data-sources/apstra_datacenter_virtual_network_binding_constructor) data source to populate " +
+				"(../examples/data-sources/apstra_datacenter_virtual_network_binding_constructor) data source to populate " +
 				"this map.",
 			Required: true,
 			Validators: []validator.Map{
