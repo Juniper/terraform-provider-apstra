@@ -57,13 +57,7 @@ func (o VnBindingConstructor) DataSourceAttributes() map[string]dataSourceSchema
 	}
 }
 
-func (o *VnBindingConstructor) Compute(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
-	if err != nil {
-		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.BlueprintId), err.Error())
-		return
-	}
-
+func (o *VnBindingConstructor) Compute(ctx context.Context, bpClient *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// only one VLAN per constructor; get it in the expected form
 	var vlanId *apstra.Vlan
 	if utils.Known(o.VlanId) {
