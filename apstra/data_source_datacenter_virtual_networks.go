@@ -23,7 +23,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetworks{}
 
 type dataSourceDatacenterVirtualNetworks struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterVirtualNetworks) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -31,7 +31,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Metadata(_ context.Context, req da
 }
 
 func (o *dataSourceDatacenterVirtualNetworks) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -117,10 +117,20 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		return
 	}
 
-	bpId := apstra.ObjectId(config.BlueprintId.ValueString())
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
+		return
+	}
+
 	if config.Filter.IsNull() && config.Filters.IsNull() {
 		// just pull the VN IDs via API when no filter is specified
-		ids := o.getAllVnIds(ctx, bpId, &resp.Diagnostics)
+		ids := o.getAllVnIds(ctx, bp, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -150,7 +160,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		}
 	}
 
-	ids, queries := o.getVnIdsWithFilters(ctx, bpId, filters, &resp.Diagnostics)
+	ids, queries := o.getVnIdsWithFilters(ctx, bp, filters, &resp.Diagnostics)
 	config.IDs = types.SetValueMust(types.StringType, ids)
 	config.Queries = types.ListValueMust(types.StringType, queries)
 
@@ -158,21 +168,11 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, bpId apstra.ObjectId, diags *diag.Diagnostics) []attr.Value {
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, bpId)
-	if err != nil {
-		if utils.IsApstra404(err) {
-			diags.AddError(fmt.Sprintf("blueprint %s not found", bpId), err.Error())
-			return nil
-		}
-		diags.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, bpId), err.Error())
-		return nil
-	}
-
-	ids, err := bpClient.ListAllVirtualNetworkIds(ctx)
+func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {
+	ids, err := bp.ListAllVirtualNetworkIds(ctx)
 	if err != nil {
 		diags.AddError(
-			fmt.Sprintf("failed to list virtual networks in blueprint %s", bpId), err.Error())
+			fmt.Sprintf("failed to list virtual networks in blueprint %s", bp.Id()), err.Error())
 		return nil
 	}
 
@@ -184,11 +184,11 @@ func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, b
 	return result
 }
 
-func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilters(ctx context.Context, bpId apstra.ObjectId, filters []blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
+func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilters(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filters []blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
 	queries := make([]attr.Value, len(filters))
 	resultMap := make(map[string]bool)
 	for i, filter := range filters {
-		ids, query := o.getVnIdsWithFilter(ctx, bpId, filter, diags)
+		ids, query := o.getVnIdsWithFilter(ctx, bp, filter, diags)
 		if diags.HasError() {
 			return nil, nil
 		}
@@ -209,7 +209,7 @@ func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilters(ctx context.Co
 	return ids, queries
 }
 
-func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilter(ctx context.Context, bpId apstra.ObjectId, filter blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterVirtualNetwork, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
 	query := filter.Query("n_virtual_network")
 	queryResponse := new(struct {
 		Items []struct {
@@ -222,8 +222,8 @@ func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilter(ctx context.Con
 	})
 
 	// todo remove this type assertion when QEQuery is extended with new methods used below
-	query.(*apstra.MatchQuery).SetClient(o.client)
-	query.(*apstra.MatchQuery).SetBlueprintId(bpId)
+	query.(*apstra.MatchQuery).SetClient(bp.Client())
+	query.(*apstra.MatchQuery).SetBlueprintId(bp.Id())
 	query.(*apstra.MatchQuery).SetBlueprintType(apstra.BlueprintTypeStaging)
 	err := query.Do(ctx, queryResponse)
 	if err != nil {
