@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfacesByLinkTag{}
 
 type dataSourceInterfacesByLinkTag struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceInterfacesByLinkTag) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -22,7 +22,7 @@ func (o *dataSourceInterfacesByLinkTag) Metadata(_ context.Context, req datasour
 }
 
 func (o *dataSourceInterfacesByLinkTag) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceInterfacesByLinkTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -40,20 +40,19 @@ func (o *dataSourceInterfacesByLinkTag) Read(ctx context.Context, req datasource
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	// prepare and execute a graph query
-	interfaces, query := config.RunQuery(ctx, bpClient, &resp.Diagnostics)
+	interfaces, query := config.RunQuery(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

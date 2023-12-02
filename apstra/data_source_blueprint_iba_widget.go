@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidget{}
 
 type dataSourceBlueprintIbaWidget struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceBlueprintIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -22,7 +22,7 @@ func (o *dataSourceBlueprintIbaWidget) Metadata(_ context.Context, req datasourc
 }
 
 func (o *dataSourceBlueprintIbaWidget) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprintIbaWidget) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -41,21 +41,21 @@ func (o *dataSourceBlueprintIbaWidget) Read(ctx context.Context, req datasource.
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	var api *apstra.IbaWidget
 	switch {
 	case !config.Name.IsNull():
-		api, err = bpClient.GetIbaWidgetByLabel(ctx, config.Name.ValueString())
+		api, err = bp.GetIbaWidgetByLabel(ctx, config.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
@@ -70,7 +70,7 @@ func (o *dataSourceBlueprintIbaWidget) Read(ctx context.Context, req datasource.
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = bpClient.GetIbaWidget(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetIbaWidget(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(

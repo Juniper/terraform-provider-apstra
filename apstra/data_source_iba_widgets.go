@@ -16,7 +16,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidgets{}
 
 type dataSourceBlueprintIbaWidgets struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceBlueprintIbaWidgets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -24,7 +24,7 @@ func (o *dataSourceBlueprintIbaWidgets) Metadata(_ context.Context, req datasour
 }
 
 func (o *dataSourceBlueprintIbaWidgets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprintIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -57,17 +57,19 @@ func (o *dataSourceBlueprintIbaWidgets) Read(ctx context.Context, req datasource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
-	ws, err := bpClient.GetAllIbaWidgets(ctx)
+	ws, err := bp.GetAllIbaWidgets(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving IBA Widgets", err.Error())
 		return

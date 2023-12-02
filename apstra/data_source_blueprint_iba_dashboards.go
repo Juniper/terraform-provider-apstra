@@ -16,7 +16,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaDashboards{}
 
 type dataSourceBlueprintIbaDashboards struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceBlueprintIbaDashboards) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -24,7 +24,7 @@ func (o *dataSourceBlueprintIbaDashboards) Metadata(_ context.Context, req datas
 }
 
 func (o *dataSourceBlueprintIbaDashboards) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceBlueprintIbaDashboards) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -58,18 +58,18 @@ func (o *dataSourceBlueprintIbaDashboards) Read(ctx context.Context, req datasou
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
-	ds, err := bpClient.GetAllIbaDashboards(ctx)
+	ds, err := bp.GetAllIbaDashboards(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving IBA Dashboards", err.Error())
 		return

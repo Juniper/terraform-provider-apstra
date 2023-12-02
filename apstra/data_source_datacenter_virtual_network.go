@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetwork{}
 
 type dataSourceDatacenterVirtualNetwork struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterVirtualNetwork) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -23,7 +23,7 @@ func (o *dataSourceDatacenterVirtualNetwork) Metadata(_ context.Context, req dat
 }
 
 func (o *dataSourceDatacenterVirtualNetwork) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterVirtualNetwork) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -42,14 +42,14 @@ func (o *dataSourceDatacenterVirtualNetwork) Read(ctx context.Context, req datas
 		return
 	}
 
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
