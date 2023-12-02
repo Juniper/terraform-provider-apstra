@@ -83,6 +83,12 @@ var blueprintMutexes map[string]apstra.Mutex
 // mutex which we use to control access to blueprintMutexes
 var blueprintMutexesMutex sync.Mutex
 
+// map of blueprint clients keyed by blueprint ID
+var twoStageL3ClosClients map[string]apstra.TwoStageL3ClosClient
+
+// mutex which we use to control access to twoStageL3ClosClients
+var twoStageL3ClosClientsMutex sync.Mutex
+
 // Provider fulfils the provider.Provider interface
 type Provider struct {
 	Version string
@@ -93,11 +99,12 @@ type Provider struct {
 // is made available to the Configure() method of implementations of
 // datasource.DataSource and resource.Resource
 type providerData struct {
-	client           *apstra.Client
-	providerVersion  string
-	terraformVersion string
-	bpLockFunc       func(context.Context, string) error
-	bpUnlockFunc     func(context.Context, string) error
+	client                  *apstra.Client
+	providerVersion         string
+	terraformVersion        string
+	bpLockFunc              func(context.Context, string) error
+	bpUnlockFunc            func(context.Context, string) error
+	getTwoStageL3ClosClient func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -383,13 +390,45 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return nil
 	}
 
+	// This function is made available to resources and data sources via providerData.
+	// It maintains a cache of TwoStageL3ClosClients so that NewTwoStageL3ClosClient()
+	// needs to be invoked only once per blueprint, rather than invoking it in every
+	// resource or data source.
+	getTwoStageL3ClosClient := func(ctx context.Context, bpId string) (*apstra.TwoStageL3ClosClient, error) {
+		// ensure exclusive access to the blueprint client cache
+		twoStageL3ClosClientsMutex.Lock()
+		defer twoStageL3ClosClientsMutex.Unlock()
+
+		// do we already have this client?
+		if twoStageL3ClosClient, ok := twoStageL3ClosClients[bpId]; ok {
+			return &twoStageL3ClosClient, nil // client found. return it.
+		}
+
+		// create new client (this is the expensive-ish API call we're trying to avoid)
+		twoStageL3ClosClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(bpId))
+		if err != nil {
+			return nil, err
+		}
+
+		// create the cache if necessary
+		if twoStageL3ClosClients == nil {
+			twoStageL3ClosClients = make(map[string]apstra.TwoStageL3ClosClient)
+		}
+
+		// save a copy of the client in the map / cache
+		twoStageL3ClosClients[bpId] = *twoStageL3ClosClient
+
+		return twoStageL3ClosClient, nil
+	}
+
 	// data passed to Resource and DataSource Configure() methods
 	pd := &providerData{
-		client:           client,
-		providerVersion:  p.Version + "-" + p.Commit,
-		terraformVersion: req.TerraformVersion,
-		bpLockFunc:       bpLockFunc,
-		bpUnlockFunc:     bpUnlockFunc,
+		client:                  client,
+		providerVersion:         p.Version + "-" + p.Commit,
+		terraformVersion:        req.TerraformVersion,
+		bpLockFunc:              bpLockFunc,
+		bpUnlockFunc:            bpUnlockFunc,
+		getTwoStageL3ClosClient: getTwoStageL3ClosClient,
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd

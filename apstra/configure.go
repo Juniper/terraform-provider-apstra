@@ -26,6 +26,25 @@ func DataSourceGetClient(_ context.Context, req datasource.ConfigureRequest, res
 	return nil
 }
 
+func DataSourceGetTwoStageL3ClosClientFunc(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) func(context.Context, string) (*apstra.TwoStageL3ClosClient, error) {
+	if req.ProviderData == nil {
+		return nil
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.getTwoStageL3ClosClient
+	}
+
+	resp.Diagnostics.AddError(
+		errDataSourceConfigureProviderDataSummary,
+		fmt.Sprintf(errDataSourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+
+	return nil
+}
+
 func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) *apstra.Client {
 	if req.ProviderData == nil {
 		return nil
@@ -113,5 +132,24 @@ func ResourceGetBlueprintUnlockFunc(_ context.Context, req resource.ConfigureReq
 		errResourceConfigureProviderDataSummary,
 		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
 	)
+	return nil
+}
+
+func ResourceGetTwoStageL3ClosClientFunc(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) func(context.Context, string) (*apstra.TwoStageL3ClosClient, error) {
+	if req.ProviderData == nil {
+		return nil
+	}
+
+	var pd *providerData
+	var ok bool
+	if pd, ok = req.ProviderData.(*providerData); ok {
+		return pd.getTwoStageL3ClosClient
+	}
+
+	resp.Diagnostics.AddError(
+		errResourceConfigureProviderDataSummary,
+		fmt.Sprintf(errResourceConfigureProviderDataDetail, *pd, req.ProviderData),
+	)
+
 	return nil
 }
