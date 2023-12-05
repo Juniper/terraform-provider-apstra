@@ -17,8 +17,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
 
 type resourceDatacenterPropertySet struct {
-	client   *apstra.Client
-	lockFunc func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (o *resourceDatacenterPropertySet) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -26,7 +26,7 @@ func (o *resourceDatacenterPropertySet) Metadata(_ context.Context, req resource
 }
 
 func (o *resourceDatacenterPropertySet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
@@ -52,9 +52,20 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		return
 	}
 
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	if len(keysToImport) != 0 {
 		// fetch available keys from the property set to be re-imported from the global catalog
-		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), bp.Client(), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -73,13 +84,6 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 		}
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
-
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -90,7 +94,7 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	}
 
 	// Perform the import
-	id, err := bpClient.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
+	id, err := bp.ImportPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
 	if err != nil {
 		resp.Diagnostics.AddError("Error importing DatacenterPropertySet", err.Error())
 		return
@@ -107,7 +111,7 @@ func (o *resourceDatacenterPropertySet) Create(ctx context.Context, req resource
 	}
 
 	// Read it back
-	api, err := bpClient.GetPropertySet(ctx, id)
+	api, err := bp.GetPropertySet(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("failed reading just-imported Property Set %s from Blueprint %s",
 			plan.Id, plan.BlueprintId), err.Error())
@@ -169,16 +173,18 @@ func (o *resourceDatacenterPropertySet) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("failed to crreate blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
 	}
 
-	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bp.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -217,15 +223,24 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 		return
 	}
 
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	// extract the keys to be imported from the plan
 	var keysToImport []string
 	resp.Diagnostics.Append(plan.Keys.ElementsAs(ctx, &keysToImport, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// validate supplied key list, if any
 	if len(keysToImport) != 0 {
 		// fetch available keys from the property set to be re-imported from the global catalog
-		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), o.client, &resp.Diagnostics)
+		availableKeys := globalCatalogKeys(ctx, apstra.ObjectId(plan.Id.ValueString()), bp.Client(), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -243,12 +258,6 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 			return
 		}
 	}
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
-	if err != nil {
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
 
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
@@ -260,7 +269,7 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	}
 
 	// Update Property Set
-	err = bpClient.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
+	err = bp.UpdatePropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()), keysToImport...)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error updating Blueprint %s Property Set %s", plan.BlueprintId, plan.Id),
@@ -269,7 +278,7 @@ func (o *resourceDatacenterPropertySet) Update(ctx context.Context, req resource
 	}
 
 	// Read it back
-	api, err := bpClient.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	api, err := bp.GetPropertySet(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("failure reading just-updated Property Set %s in Blueprint %s",
@@ -301,13 +310,13 @@ func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource
 		return
 	}
 
-	// Create a client for the datacenter reference design
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("unable to get blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -321,7 +330,7 @@ func (o *resourceDatacenterPropertySet) Delete(ctx context.Context, req resource
 	}
 
 	// Delete Property Set by calling API
-	err = bpClient.DeletePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeletePropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
