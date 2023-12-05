@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicy{}
 
 type dataSourceDatacenterRoutingPolicy struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterRoutingPolicy) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -23,7 +23,7 @@ func (o *dataSourceDatacenterRoutingPolicy) Metadata(_ context.Context, req data
 }
 
 func (o *dataSourceDatacenterRoutingPolicy) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterRoutingPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -42,21 +42,21 @@ func (o *dataSourceDatacenterRoutingPolicy) Read(ctx context.Context, req dataso
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	var api *apstra.DcRoutingPolicy
 	switch {
 	case !config.Id.IsNull():
-		api, err = bpClient.GetRoutingPolicy(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetRoutingPolicy(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -65,7 +65,7 @@ func (o *dataSourceDatacenterRoutingPolicy) Read(ctx context.Context, req dataso
 			return
 		}
 	case !config.Name.IsNull():
-		api, err = bpClient.GetRoutingPolicyByName(ctx, config.Name.ValueString())
+		api, err = bp.GetRoutingPolicyByName(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),

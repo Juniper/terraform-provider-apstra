@@ -19,7 +19,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
 
 type dataSourceDatacenterRoutingPolicies struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterRoutingPolicies) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -27,7 +27,7 @@ func (o *dataSourceDatacenterRoutingPolicies) Metadata(_ context.Context, req da
 }
 
 func (o *dataSourceDatacenterRoutingPolicies) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterRoutingPolicies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -88,20 +88,19 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	// collect all routing policies in the blueprint
-	apiResponse, err := bpClient.GetAllRoutingPolicies(ctx)
+	apiResponse, err := bp.GetAllRoutingPolicies(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to retrieve routing policies", err.Error())
 		return

@@ -17,6 +17,8 @@ const (
 	errDataSourceReadFail                     = "Data Source Read() failure'"
 	errResourceReadFail                       = "Resource Read() failure'"
 	errImportJsonMissingRequiredField         = "Import ID JSON missing required field"
+	errBpClientCreateSummary                  = "Failed to create client for Blueprint %s"
+	errBpNotFoundSummary                      = "Blueprint %s not found"
 
 	docCategorySeparator    = " --- "
 	docCategoryDesign       = "Design" + docCategorySeparator

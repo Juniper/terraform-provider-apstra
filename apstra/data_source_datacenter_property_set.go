@@ -14,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterPropertySet{}
 
 type dataSourceDatacenterPropertySet struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterPropertySet) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -22,7 +22,7 @@ func (o *dataSourceDatacenterPropertySet) Metadata(_ context.Context, req dataso
 }
 
 func (o *dataSourceDatacenterPropertySet) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterPropertySet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -40,21 +40,21 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	var api *apstra.TwoStageL3ClosPropertySet
 	switch {
 	case !config.Name.IsNull():
-		api, err = bpClient.GetPropertySetByName(ctx, config.Name.ValueString())
+		api, err = bp.GetPropertySetByName(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -63,7 +63,7 @@ func (o *dataSourceDatacenterPropertySet) Read(ctx context.Context, req datasour
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = bpClient.GetPropertySet(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetPropertySet(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),

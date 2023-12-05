@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,8 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceBlueprintIbaDashboard{}
 
 type resourceBlueprintIbaDashboard struct {
-	client *apstra.Client
-	//	lockFunc func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *resourceBlueprintIbaDashboard) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -21,7 +21,7 @@ func (o *resourceBlueprintIbaDashboard) Metadata(_ context.Context, req resource
 }
 
 func (o *resourceBlueprintIbaDashboard) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -39,9 +39,13 @@ func (o *resourceBlueprintIbaDashboard) Create(ctx context.Context, req resource
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
+			return
+		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
@@ -52,13 +56,13 @@ func (o *resourceBlueprintIbaDashboard) Create(ctx context.Context, req resource
 		return
 	}
 
-	id, err := bpClient.CreateIbaDashboard(ctx, dashReq)
+	id, err := bp.CreateIbaDashboard(ctx, dashReq)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create Iba Dashboard", err.Error())
 		return
 	}
 
-	api, err := bpClient.GetIbaDashboard(ctx, id)
+	api, err := bp.GetIbaDashboard(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
 		return
@@ -81,7 +85,8 @@ func (o *resourceBlueprintIbaDashboard) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -91,7 +96,7 @@ func (o *resourceBlueprintIbaDashboard) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	api, err := bpClient.GetIbaDashboard(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bp.GetIbaDashboard(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -125,20 +130,21 @@ func (o *resourceBlueprintIbaDashboard) Update(ctx context.Context, req resource
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
 	// Update IBA Dashboard
-	err = bpClient.UpdateIbaDashboard(ctx, apstra.ObjectId(plan.Id.ValueString()), dbReq)
+	err = bp.UpdateIbaDashboard(ctx, apstra.ObjectId(plan.Id.ValueString()), dbReq)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating IBA Dashboard", err.Error())
 		return
 	}
 
-	api, err := bpClient.GetIbaDashboard(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	api, err := bp.GetIbaDashboard(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to Read IBA Dashboard", err.Error())
 		return
@@ -161,7 +167,8 @@ func (o *resourceBlueprintIbaDashboard) Delete(ctx context.Context, req resource
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
@@ -171,7 +178,7 @@ func (o *resourceBlueprintIbaDashboard) Delete(ctx context.Context, req resource
 	}
 
 	// Delete IBA Dashboard by calling API
-	err = bpClient.DeleteIbaDashboard(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteIbaDashboard(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

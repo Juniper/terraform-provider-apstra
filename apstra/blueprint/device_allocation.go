@@ -324,25 +324,15 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 
 // SetInterfaceMap creates or deletes the graph db relationship between a switch
 // 'system' node and its interface map.
-func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	assignments := make(apstra.SystemIdToInterfaceMapAssignment, 1)
 	if o.InitialInterfaceMapId.IsNull() {
 		assignments[o.NodeId.ValueString()] = nil
 	} else {
 		assignments[o.NodeId.ValueString()] = o.InitialInterfaceMapId.ValueString()
 	}
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
-	if err != nil {
-		if utils.IsApstra404(err) {
-			o.BlueprintId = types.StringNull()
-			return
-		}
-		diags.AddError(fmt.Sprintf(ErrDCBlueprintCreate, o.BlueprintId), err.Error())
 
-		return
-	}
-
-	err = bpClient.SetInterfaceMapAssignments(ctx, assignments)
+	err := bp.SetInterfaceMapAssignments(ctx, assignments)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()

@@ -14,8 +14,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateAssignment{}
 
 type resourceDatacenterConnectivityTemplateAssignment struct {
-	client   *apstra.Client
-	lockFunc func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (o *resourceDatacenterConnectivityTemplateAssignment) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -23,7 +23,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Metadata(_ context.Co
 }
 
 func (o *resourceDatacenterConnectivityTemplateAssignment) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
@@ -44,14 +44,14 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Co
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -65,7 +65,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Co
 	}
 
 	addIds, _ := plan.AddDelRequest(ctx, nil, &resp.Diagnostics)
-	err = bpClient.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
+	err = bp.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed applying Connectivity Template", err.Error())
 		return
@@ -82,19 +82,19 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Read(ctx context.Cont
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
 	// currentCtIds come from the API, may include CTs unrelated to this resource
-	currentCtIds, err := bpClient.GetInterfaceConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()))
+	currentCtIds, err := bp.GetInterfaceConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -137,10 +137,10 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Update(ctx context.Co
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -160,14 +160,14 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Update(ctx context.Co
 	}
 
 	// add any required CTs
-	err = bpClient.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
+	err = bp.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed assigning connectivity templates", err.Error())
 		return
 	}
 
 	// clear any undesired CTs
-	err = bpClient.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), delIds)
+	err = bp.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), delIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())
 		return
@@ -184,13 +184,13 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Delete(ctx context.Co
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -209,7 +209,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Delete(ctx context.Co
 		return
 	}
 
-	err = bpClient.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()), delIds)
+	err = bp.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()), delIds)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

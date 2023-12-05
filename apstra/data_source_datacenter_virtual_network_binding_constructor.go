@@ -2,8 +2,10 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
@@ -12,7 +14,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceVirtualNetworkBindingConstructor{}
 
 type dataSourceVirtualNetworkBindingConstructor struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -20,7 +22,7 @@ func (o *dataSourceVirtualNetworkBindingConstructor) Metadata(_ context.Context,
 }
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -43,7 +45,18 @@ func (o *dataSourceVirtualNetworkBindingConstructor) Read(ctx context.Context, r
 		return
 	}
 
-	config.Compute(ctx, o.client, &resp.Diagnostics)
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
+		return
+	}
+
+	config.Compute(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

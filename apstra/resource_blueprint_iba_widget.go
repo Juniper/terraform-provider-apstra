@@ -14,7 +14,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceBlueprintIbaWidget{}
 
 type resourceBlueprintIbaWidget struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *resourceBlueprintIbaWidget) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -22,7 +22,7 @@ func (o *resourceBlueprintIbaWidget) Metadata(_ context.Context, req resource.Me
 }
 
 func (o *resourceBlueprintIbaWidget) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *resourceBlueprintIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -40,12 +40,11 @@ func (o *resourceBlueprintIbaWidget) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				plan.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -58,7 +57,7 @@ func (o *resourceBlueprintIbaWidget) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	id, err := bpClient.CreateIbaWidget(ctx, probeReq)
+	id, err := bp.CreateIbaWidget(ctx, probeReq)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create IBA Widget", err.Error())
 		return
@@ -76,7 +75,8 @@ func (o *resourceBlueprintIbaWidget) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -86,7 +86,7 @@ func (o *resourceBlueprintIbaWidget) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	api, err := bpClient.GetIbaWidget(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bp.GetIbaWidget(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -120,14 +120,15 @@ func (o *resourceBlueprintIbaWidget) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
 	// Update IBA Widget
-	err = bpClient.UpdateIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()), widgetReq)
+	err = bp.UpdateIbaWidget(ctx, apstra.ObjectId(plan.Id.ValueString()), widgetReq)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating IBA Widget", err.Error())
 		return
@@ -145,7 +146,8 @@ func (o *resourceBlueprintIbaWidget) Delete(ctx context.Context, req resource.De
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
@@ -155,7 +157,7 @@ func (o *resourceBlueprintIbaWidget) Delete(ctx context.Context, req resource.De
 	}
 
 	// Delete IBA Probe by calling API
-	err = bpClient.DeleteIbaWidget(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteIbaWidget(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

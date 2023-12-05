@@ -16,7 +16,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterPropertySets{}
 
 type dataSourceDatacenterPropertySets struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterPropertySets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -24,7 +24,7 @@ func (o *dataSourceDatacenterPropertySets) Metadata(_ context.Context, req datas
 }
 
 func (o *dataSourceDatacenterPropertySets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterPropertySets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -57,19 +57,19 @@ func (o *dataSourceDatacenterPropertySets) Read(ctx context.Context, req datasou
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
-		} else {
-			resp.Diagnostics.AddError("failed creating blueprint client", err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
+			return
 		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	// read all PropertySets from the API because there's no ID-list-only API option
-	propertySets, err := bpClient.GetAllPropertySets(ctx)
+	propertySets, err := bp.GetAllPropertySets(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving property sets", err.Error())
 		return

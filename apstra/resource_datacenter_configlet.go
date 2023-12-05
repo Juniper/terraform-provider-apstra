@@ -16,8 +16,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterConfiglet{}
 
 type resourceDatacenterConfiglet struct {
-	client   *apstra.Client
-	lockFunc func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (o *resourceDatacenterConfiglet) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -25,7 +25,7 @@ func (o *resourceDatacenterConfiglet) Metadata(_ context.Context, req resource.M
 }
 
 func (o *resourceDatacenterConfiglet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
@@ -44,12 +44,11 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				plan.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -58,7 +57,7 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 
 	// pull the configlet from the catalog if the user specified one
 	if !plan.CatalogConfigletID.IsNull() {
-		api, err := o.client.GetConfiglet(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()))
+		api, err := bp.Client().GetConfiglet(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()))
 		if err != nil {
 			resp.Diagnostics.AddError("Error reading Configlet from catalog", err.Error())
 			return
@@ -94,7 +93,7 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 	}
 
 	// create the datacenter configlet
-	id, err := bpClient.CreateConfiglet(ctx, request)
+	id, err := bp.CreateConfiglet(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create Datacenter Configlet", err.Error())
 		return
@@ -113,16 +112,18 @@ func (o *resourceDatacenterConfiglet) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
 	}
 
-	api, err := bpClient.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bp.GetConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -146,8 +147,8 @@ func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
@@ -169,7 +170,7 @@ func (o *resourceDatacenterConfiglet) Update(ctx context.Context, req resource.U
 	}
 
 	// Update Configlet
-	err = bpClient.UpdateConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdateConfiglet(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error updating Blueprint %s Configlet %s", plan.BlueprintId, plan.Id),
@@ -189,13 +190,13 @@ func (o *resourceDatacenterConfiglet) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("unable to get blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -209,7 +210,7 @@ func (o *resourceDatacenterConfiglet) Delete(ctx context.Context, req resource.D
 	}
 
 	// Delete Property Set by calling API
-	err = bpClient.DeleteConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

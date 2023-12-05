@@ -15,7 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglet{}
 
 type dataSourceDatacenterConfiglet struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterConfiglet) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -23,7 +23,7 @@ func (o *dataSourceDatacenterConfiglet) Metadata(_ context.Context, req datasour
 }
 
 func (o *dataSourceDatacenterConfiglet) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterConfiglet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -42,21 +42,21 @@ func (o *dataSourceDatacenterConfiglet) Read(ctx context.Context, req datasource
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
 	var api *apstra.TwoStageL3ClosConfiglet
 	switch {
 	case !config.Name.IsNull():
-		api, err = bpClient.GetConfigletByName(ctx, config.Name.ValueString())
+		api, err = bp.GetConfigletByName(ctx, config.Name.ValueString())
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(
@@ -71,7 +71,7 @@ func (o *dataSourceDatacenterConfiglet) Read(ctx context.Context, req datasource
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = bpClient.GetConfiglet(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetConfiglet(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if err != nil {
 			if utils.IsApstra404(err) {
 				resp.Diagnostics.AddAttributeError(

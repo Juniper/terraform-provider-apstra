@@ -21,7 +21,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZones{}
 
 type dataSourceDatacenterRoutingZones struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *dataSourceDatacenterRoutingZones) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -29,7 +29,7 @@ func (o *dataSourceDatacenterRoutingZones) Metadata(_ context.Context, req datas
 }
 
 func (o *dataSourceDatacenterRoutingZones) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -108,14 +108,14 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(config.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", config.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, config.BlueprintId), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
 		return
 	}
 
@@ -170,7 +170,7 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 
 		// perform the query
 		query.
-			SetClient(o.client).
+			SetClient(bp.Client()).
 			SetBlueprintId(apstra.ObjectId(config.BlueprintId.ValueString())).
 			SetBlueprintType(apstra.BlueprintTypeStaging)
 		err = query.Do(ctx, queryResponse)
