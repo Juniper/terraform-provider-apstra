@@ -16,8 +16,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
 
 type resourceDeviceAllocation struct {
-	client   *apstra.Client
-	lockFunc func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -25,7 +25,7 @@ func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.Meta
 }
 
 func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
@@ -45,14 +45,14 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -70,7 +70,7 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	//   - SystemNodeId
 	//   - InitialInterfaceMapId
 	//   - DeviceProfileNodeId
-	plan.PopulateDataFromGraphDb(ctx, o.client, &resp.Diagnostics)
+	plan.PopulateDataFromGraphDb(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -78,7 +78,7 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		resp.Diagnostics.AddError("blueprint does not exist", "blueprint vanished while we were working on it")
 	}
 
-	plan.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
+	plan.SetInterfaceMap(ctx, bp, &resp.Diagnostics)
 	if plan.BlueprintId.IsNull() {
 		resp.Diagnostics.AddError("blueprint does not exist", "blueprint vanished while we were working on it")
 	}
@@ -87,7 +87,7 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	}
 
 	if !plan.DeviceKey.IsNull() {
-		plan.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
+		plan.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -128,18 +128,18 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	previousInterfaceMapCatalogId := state.InitialInterfaceMapId
 	previousInterfaceMapName := state.InterfaceMapName
 
-	// create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, state.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
-	state.GetDeviceKey(ctx, o.client, &resp.Diagnostics)
+	state.GetDeviceKey(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -148,7 +148,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.GetCurrentInterfaceMapId(ctx, o.client, &resp.Diagnostics)
+	state.GetCurrentInterfaceMapId(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -157,7 +157,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.GetCurrentDeviceProfileId(ctx, o.client, &resp.Diagnostics)
+	state.GetCurrentDeviceProfileId(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -176,7 +176,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	}
 	state.DeployMode = types.StringValue(deployMode)
 
-	state.GetInterfaceMapName(ctx, o.client, &resp.Diagnostics)
+	state.GetInterfaceMapName(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -220,14 +220,10 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// create a client for the datacenter reference design
-	bp, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError(fmt.Sprintf(blueprint.ErrDCBlueprintCreate, plan.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -265,7 +261,7 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 	if !plan.DeviceKey.Equal(state.DeviceKey) {
 		// device key has changed
 		state.DeviceKey = plan.DeviceKey // copy user input directly from plan
-		state.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
+		state.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -282,16 +278,18 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	// No need to proceed if the blueprint no longer exists
-	if !utils.BlueprintExists(ctx, o.client, apstra.ObjectId(state.BlueprintId.ValueString()), &resp.Diagnostics) {
-		return
-	}
-	if resp.Diagnostics.HasError() {
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
 	// Lock the blueprint mutex.
-	err := o.lockFunc(ctx, state.BlueprintId.ValueString())
+	err = o.lockFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error locking blueprint %q mutex", state.BlueprintId.ValueString()),
@@ -300,8 +298,8 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 	}
 
 	state.InitialInterfaceMapId = types.StringNull()
-	state.SetInterfaceMap(ctx, o.client, &resp.Diagnostics)
+	state.SetInterfaceMap(ctx, bp, &resp.Diagnostics)
 
 	state.DeviceKey = types.StringNull() // 'null' triggers clearing the 'system_id' field.
-	state.SetNodeSystemId(ctx, o.client, &resp.Diagnostics)
+	state.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)
 }

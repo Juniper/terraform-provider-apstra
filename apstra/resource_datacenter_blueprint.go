@@ -19,6 +19,7 @@ var _ versionValidator = &resourceDatacenterBlueprint{}
 
 type resourceDatacenterBlueprint struct {
 	client           *apstra.Client
+	getBpClientFunc  func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	minClientVersion *version.Version
 	maxClientVersion *version.Version
 	lockFunc         func(context.Context, string) error
@@ -31,6 +32,7 @@ func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.M
 
 func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
 }
@@ -110,14 +112,15 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Create blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, id)
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, id.String())
 	if err != nil {
-		resp.Diagnostics.AddError("failed creating blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
 	}
 
 	// set the fabric addressing policy
-	plan.SetFabricAddressingPolicy(ctx, bpClient, nil, &resp.Diagnostics)
+	plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -128,7 +131,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
 
-	fapData, err := bpClient.GetFabricAddressingPolicy(ctx)
+	fapData, err := bp.GetFabricAddressingPolicy(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy after creation", err.Error())
 	}
@@ -156,8 +159,19 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.Id.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	// Some interesting details are in BlueprintStatus.
-	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
+	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -170,13 +184,7 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apiData.Id)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
-
-	fapData, err := bpClient.GetFabricAddressingPolicy(ctx)
+	fapData, err := bp.GetFabricAddressingPolicy(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to read fabric addressing policy", err.Error())
 		return
@@ -205,10 +213,10 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.Id.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("failed creating blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -220,19 +228,19 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	}
 
 	// set the blueprint name
-	plan.SetName(ctx, bpClient, &state, &resp.Diagnostics)
+	plan.SetName(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set the fabric addressing policy
-	plan.SetFabricAddressingPolicy(ctx, bpClient, &state, &resp.Diagnostics)
+	plan.SetFabricAddressingPolicy(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// fetch and load blueprint info
-	apiData, err := o.client.GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint after update", err.Error())
 	}
@@ -241,7 +249,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	fapData, err := bpClient.GetFabricAddressingPolicy(ctx)
+	fapData, err := bp.GetFabricAddressingPolicy(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric AddressingPolicy after update", err.Error())
 	}
@@ -266,7 +274,7 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 	// Delete the blueprint
 	err := o.client.DeleteBlueprint(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		if !utils.IsApstra404(err) {
+		if !utils.IsApstra404(err) { // 404 is okay, but we do not return because we must unlock
 			resp.Diagnostics.AddError("error deleting Blueprint", err.Error())
 		}
 	}

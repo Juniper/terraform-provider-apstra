@@ -13,7 +13,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceBlueprintIbaProbe{}
 
 type resourceBlueprintIbaProbe struct {
-	client *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
 func (o *resourceBlueprintIbaProbe) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -21,7 +21,7 @@ func (o *resourceBlueprintIbaProbe) Metadata(_ context.Context, req resource.Met
 }
 
 func (o *resourceBlueprintIbaProbe) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 }
 
 func (o *resourceBlueprintIbaProbe) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -39,12 +39,11 @@ func (o *resourceBlueprintIbaProbe) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bpClient, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				plan.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -88,8 +87,8 @@ func (o *resourceBlueprintIbaProbe) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bpClient, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -134,7 +133,8 @@ func (o *resourceBlueprintIbaProbe) Delete(ctx context.Context, req resource.Del
 		return
 	}
 
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bpClient, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

@@ -14,8 +14,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterRack{}
 
 type resourceDatacenterRack struct {
-	client   *apstra.Client
-	lockFunc func(context.Context, string) error
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (o *resourceDatacenterRack) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -23,7 +23,7 @@ func (o *resourceDatacenterRack) Metadata(_ context.Context, req resource.Metada
 }
 
 func (o *resourceDatacenterRack) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
@@ -42,12 +42,11 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(plan.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found",
-				plan.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -64,7 +63,7 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 	}
 
 	// create the rack and squirrel away the rack ID
-	id, err := bpClient.CreateRack(ctx, plan.Request())
+	id, err := bp.CreateRack(ctx, plan.Request())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create Datacenter Rack", err.Error())
 		return
@@ -73,13 +72,13 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 
 	// get or set the rack name
 	if plan.Name.IsUnknown() {
-		err = plan.GetName(ctx, o.client)
+		err = plan.GetName(ctx, bp.Client())
 		if err != nil {
 			resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
 			// do not return
 		}
 	} else {
-		plan.SetName(ctx, o.client, &resp.Diagnostics)
+		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
 		// do not check resp.Diagnostics.HasError()
 	}
 
@@ -95,8 +94,19 @@ func (o *resourceDatacenterRack) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	// read the name (and confirm the rack still exists)
-	err := state.GetName(ctx, o.client)
+	err = state.GetName(ctx, bp.Client())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -126,9 +136,16 @@ func (o *resourceDatacenterRack) Update(ctx context.Context, req resource.Update
 		return
 	}
 
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
 	// update the name if necessary
 	if !plan.Name.Equal(state.Name) {
-		plan.SetName(ctx, o.client, &resp.Diagnostics)
+		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
 	}
 
 	// Set state
@@ -143,13 +160,13 @@ func (o *resourceDatacenterRack) Delete(ctx context.Context, req resource.Delete
 		return
 	}
 
-	// create a blueprint client
-	bpClient, err := o.client.NewTwoStageL3ClosClient(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("unable to get blueprint client", err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -163,7 +180,7 @@ func (o *resourceDatacenterRack) Delete(ctx context.Context, req resource.Delete
 	}
 
 	// Delete Rack by calling API
-	err = bpClient.DeleteRack(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteRack(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
