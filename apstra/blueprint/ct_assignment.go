@@ -14,13 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ConnectivityTemplateAssignment struct {
+type ConnectivityTemplatesAssignment struct {
 	BlueprintId             types.String `tfsdk:"blueprint_id"`
 	ConnectivityTemplateIds types.Set    `tfsdk:"connectivity_template_ids"`
 	ApplicationPointId      types.String `tfsdk:"application_point_id"`
 }
 
-func (o ConnectivityTemplateAssignment) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ConnectivityTemplatesAssignment) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -47,7 +47,7 @@ func (o ConnectivityTemplateAssignment) ResourceAttributes() map[string]resource
 	}
 }
 
-func (o *ConnectivityTemplateAssignment) AddDelRequest(ctx context.Context, state *ConnectivityTemplateAssignment, diags *diag.Diagnostics) ([]apstra.ObjectId, []apstra.ObjectId) {
+func (o *ConnectivityTemplatesAssignment) AddDelRequest(ctx context.Context, state *ConnectivityTemplatesAssignment, diags *diag.Diagnostics) ([]apstra.ObjectId, []apstra.ObjectId) {
 	var planIds, stateIds []apstra.ObjectId
 
 	if o != nil { // o will be nil in Delete()
