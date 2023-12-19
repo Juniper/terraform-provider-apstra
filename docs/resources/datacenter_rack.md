@@ -35,6 +35,7 @@ resource "apstra_datacenter_rack" "r" {
 
 - `name` (String) Name of the Rack.
 - `pod_id` (String) Graph node ID of Pod (3-stage topology) where the new rack should be created. Required only in Pod-Based (5-stage) Blueprints.
+- `system_name_one_shot` (Boolean) Set at creation time to only change the system name to match the rack name.
 
 ### Read-Only
 

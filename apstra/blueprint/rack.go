@@ -58,7 +58,7 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"system_name_one_shot": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Boolean to set at creation time only change system name to match rack name.",
+			MarkdownDescription: "Set at creation time to only change the system name to match the rack name.",
 			Optional:            true,
 			Validators:          []validator.Bool{boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name"))},
 		},
