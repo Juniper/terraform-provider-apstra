@@ -70,19 +70,40 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 	}
 	plan.Id = types.StringValue(id.String())
 
-	// get or set the rack name
-	if plan.Name.IsUnknown() {
-		err = plan.GetName(ctx, bp.Client())
-		if err != nil {
-			resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
-			// do not return
-		}
-	} else {
-		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
-		// do not check resp.Diagnostics.HasError()
+	// fetch the rack name chosen by Apstra
+	oldName, err := plan.GetName(ctx, bp.Client())
+	if err != nil {
+		resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
 	}
 
-	// update the plan with the rack ID and set the state
+	// Name is optional. Did the user supply one?
+	if plan.Name.IsUnknown() {
+		// no user supplied name.
+		// save the apstra-generated name
+		plan.Name = types.StringValue(oldName)
+	} else {
+		// user has provided a name.
+		// set the rack name
+		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+			return
+		}
+
+		// one-shot rename objects in the rack. "oldName" is used as the original
+		// value in a substring replace operation.
+		if plan.SystemNameOneShot.ValueBool() {
+			plan.SetSystemNames(ctx, bp.Client(), oldName, &resp.Diagnostics)
+			if resp.Diagnostics.HasError() {
+				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+				return
+			}
+		}
+	}
+
+	//set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -106,7 +127,7 @@ func (o *resourceDatacenterRack) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// read the name (and confirm the rack still exists)
-	err = state.GetName(ctx, bp.Client())
+	name, err := state.GetName(ctx, bp.Client())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -117,7 +138,8 @@ func (o *resourceDatacenterRack) Read(ctx context.Context, req resource.ReadRequ
 		return
 	}
 
-	// Set state
+	// set state.
+	state.Name = types.StringValue(name)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
