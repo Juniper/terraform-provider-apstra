@@ -58,9 +58,12 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"system_name_one_shot": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Set at creation time to only change the system name to match the rack name.",
-			Optional:            true,
-			Validators:          []validator.Bool{boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name"))},
+			MarkdownDescription: "Because this resource only manages the Rack, names of Systems defined within the Rack " +
+				"are not within this resource's control. When `system_name_one_shot` is `true` during initial Rack " +
+				"creation, Systems within the Rack will be renamed to match the rack's `name`. Subsequent modifications " +
+				"to the `name` attribute will not affect the names of those systems. It's a create-time one-shot operation.",
+			Optional:   true,
+			Validators: []validator.Bool{boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name"))},
 		},
 	}
 }
@@ -119,12 +122,14 @@ func (o Rack) SetSystemNames(ctx context.Context, client *apstra.Client, oldName
 		return
 	}
 
+	// data structure to use when calling PatchNode
+	var patch struct {
+		Label    string `json:"label"`
+		Hostname string `json:"hostname"`
+	}
+
+	// loop over each discovered switch, set the label and hostname
 	for _, item := range response.Items {
-		// data structure to use when calling PatchNode
-		var patch struct {
-			Label    string `json:"label"`
-			Hostname string `json:"hostname"`
-		}
 		patch.Label = strings.Replace(item.System.Label, oldName, o.Name.ValueString(), 1)
 		patch.Hostname = strings.Replace(strings.Replace(item.System.Label, oldName, o.Name.ValueString(), 1), "_", "-", -1)
 		err := client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), item.System.Id, &patch, nil)

@@ -78,17 +78,22 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// save the Apstra name or rename the Rack & Leaf and others(if they are there)
+	// Name is optional. Did the user supply one?
 	if plan.Name.IsUnknown() {
+		// no user supplied name.
+		// save the apstra-generated name
 		plan.Name = types.StringValue(oldName)
 	} else {
 		// user has provided a name.
+		// set the rack name
 		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 			return
 		}
 
+		// one-shot rename objects in the rack. "oldName" is used as the original
+		// value in a substring replace operation.
 		if plan.SystemNameOneShot.ValueBool() {
 			plan.SetSystemNames(ctx, bp.Client(), oldName, &resp.Diagnostics)
 			if resp.Diagnostics.HasError() {
