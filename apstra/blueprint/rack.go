@@ -134,7 +134,52 @@ func (o Rack) SetSystemNames(ctx context.Context, client *apstra.Client, oldName
 		patch.Hostname = strings.Replace(strings.Replace(item.System.Label, oldName, o.Name.ValueString(), 1), "_", "-", -1)
 		err := client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), item.System.Id, &patch, nil)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("failed to rename %s switch in rack %s", item.System.Role, o.Id), err.Error())
+			diags.AddError(fmt.Sprintf("failed to rename %s switch %s in rack %s", item.System.Role, item.System.Id, o.Id), err.Error())
+		}
+	}
+}
+
+func (o Rack) SetRedundancyGroupNames(ctx context.Context, client *apstra.Client, oldName string, diags *diag.Diagnostics) {
+	query := new(apstra.PathQuery).
+		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+		SetClient(client).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeRack.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
+		}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypePartOfRack.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeRedundancyGroup.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal("n_redundancy_group")},
+		})
+
+	var response struct {
+		Items []struct {
+			RedundancyGroup struct {
+				Id    apstra.ObjectId `json:"id"`
+				Label string          `json:"label"`
+			} `json:"n_redundancy_group"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &response)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed querying for redundancy groups in rack %s", o.Id), err.Error())
+		return
+	}
+
+	// data structure to use when calling PatchNode
+	var patch struct {
+		Label string `json:"label"`
+	}
+
+	// loop over each discovered redundancy group, set the label and hostname
+	for _, item := range response.Items {
+		patch.Label = strings.Replace(item.RedundancyGroup.Label, oldName, o.Name.ValueString(), 1)
+		err := client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), item.RedundancyGroup.Id, &patch, nil)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed to rename redundancy group %s in rack %s", item.RedundancyGroup.Id, o.Id), err.Error())
 		}
 	}
 }
