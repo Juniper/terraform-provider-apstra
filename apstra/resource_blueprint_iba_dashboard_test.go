@@ -15,18 +15,19 @@ const (
 resource "apstra_blueprint_iba_dashboard" "a" {
   blueprint_id = "%s"
   default = false
-  description = "The dashboard presents the data of utilization of system cpu, system memory and maximum disk utilization of a partition on every system present."
+  %s
   name = "Test Dashboard"
   widget_grid = tolist([
   %s
   ])
 }
 `
-	one_pane = `tolist([
+	descString = `description = "The dashboard presents the data of utilization of system cpu,system memory and maximum disk utilization of a partition on every system present."`
+	onePane    = `tolist([
       	"%s"
     ])`
 
-	two_panes = `
+	twoPanes = `
     tolist([
     	"%s"    
 	]),
@@ -67,18 +68,20 @@ func TestAccResourceDashboard(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create and Read testing
+			// Create and Read testing. Empty Description Test
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaDashboardTemplateHCL, bpClient.Id(), fmt.Sprintf(one_pane, widgetIdA)),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaDashboardTemplateHCL,
+					bpClient.Id(), "", fmt.Sprintf(onePane, widgetIdA)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					// Verify ID has any value set
+					// Verify ID has any133 value set
 					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_dashboard.a", "id"),
 					resource.TestCheckResourceAttr("apstra_blueprint_iba_dashboard.a", "widget_grid.0.0", widgetIdA.String()),
 				),
 			},
 			// Update and Read testing
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaDashboardTemplateHCL, bpClient.Id(), fmt.Sprintf(two_panes, widgetIdA, widgetIdB)),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaDashboardTemplateHCL,
+					bpClient.Id(), descString, fmt.Sprintf(twoPanes, widgetIdA, widgetIdB)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_dashboard.a", "id"),
