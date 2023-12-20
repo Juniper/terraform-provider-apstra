@@ -29,7 +29,7 @@ func (o ConnectivityTemplatesAssignment) ResourceAttributes() map[string]resourc
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"application_point_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra node ID of the Interface or System where the Connectivity Template " +
+			MarkdownDescription: "Apstra node ID of the Interface or System where the Connectivity Templates " +
 				"should be applied.",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
