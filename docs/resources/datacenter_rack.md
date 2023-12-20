@@ -35,7 +35,7 @@ resource "apstra_datacenter_rack" "r" {
 
 - `name` (String) Name of the Rack.
 - `pod_id` (String) Graph node ID of Pod (3-stage topology) where the new rack should be created. Required only in Pod-Based (5-stage) Blueprints.
-- `system_name_one_shot` (Boolean) Set at creation time to only change the system name to match the rack name.
+- `system_name_one_shot` (Boolean) Because this resource only manages the Rack, names of Systems defined within the Rack are not within this resource's control. When `system_name_one_shot` is `true` during initial Rack creation, Systems within the Rack will be renamed to match the rack's `name`. Subsequent modifications to the `name` attribute will not affect the names of those systems. It's a create-time one-shot operation.
 
 ### Read-Only
 
