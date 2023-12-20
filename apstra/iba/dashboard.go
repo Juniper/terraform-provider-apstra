@@ -50,6 +50,9 @@ func (o Dashboard) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"description": resourceSchema.StringAttribute{
 			MarkdownDescription: "Description of the IBA Dashboard",
 			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
 		},
 		"default": resourceSchema.BoolAttribute{
 			MarkdownDescription: "True if Default IBA Dashboard",
@@ -135,7 +138,7 @@ func (o Dashboard) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 func (o *Dashboard) LoadApiData(ctx context.Context, in *apstra.IbaDashboard, diag *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Data.Label)
-	o.Description = types.StringValue(in.Data.Description)
+	o.Description = utils.StringValueOrNull(ctx, in.Data.Description, diag)
 	o.Default = types.BoolValue(in.Data.Default)
 	o.PredefinedDashboard = types.StringValue(in.Data.PredefinedDashboard)
 	o.UpdatedBy = types.StringValue(in.Data.UpdatedBy)
