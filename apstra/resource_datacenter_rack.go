@@ -96,6 +96,7 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 		// value in a substring replace operation.
 		if plan.SystemNameOneShot.ValueBool() {
 			plan.SetSystemNames(ctx, bp.Client(), oldName, &resp.Diagnostics)
+			plan.SetRedundancyGroupNames(ctx, bp.Client(), oldName, &resp.Diagnostics)
 			if resp.Diagnostics.HasError() {
 				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 				return
