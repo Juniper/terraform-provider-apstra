@@ -54,6 +54,9 @@ func (o *ConnectivityTemplateAssignments) Request(ctx context.Context, state *Co
 		return nil
 	}
 	desiredMap := make(map[apstra.ObjectId]bool, len(desired))
+	for _, apId := range desired {
+		desiredMap[apId] = true
+	}
 
 	if state != nil {
 		diags.Append(state.ApplicationPointIds.ElementsAs(ctx, &current, false)...)
@@ -62,6 +65,9 @@ func (o *ConnectivityTemplateAssignments) Request(ctx context.Context, state *Co
 		}
 	}
 	currentMap := make(map[apstra.ObjectId]bool, len(current))
+	for _, apId := range current {
+		currentMap[apId] = true
+	}
 
 	result := make(map[apstra.ObjectId]map[apstra.ObjectId]bool)
 	ctId := apstra.ObjectId(o.ConnectivityTemplateId.ValueString())
