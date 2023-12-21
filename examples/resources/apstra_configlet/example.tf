@@ -5,7 +5,7 @@ resource "apstra_configlet" "example" {
   generators = [
     {
       config_style  = "junos"
-      section       = "system"
+      section       = "top_level_hierarchical"
       template_text = <<-EOT
         name-server {
           4.2.2.1;
