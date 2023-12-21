@@ -31,7 +31,7 @@ func (o *resourceConfiglet) Configure(ctx context.Context, req resource.Configur
 
 func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource creates a specific Configlet.\n\n",
+		MarkdownDescription: docCategoryDesign + "This resource creates a specific Configlet.\n\n",
 		Attributes:          design.Configlet{}.ResourceAttributes(),
 	}
 }
