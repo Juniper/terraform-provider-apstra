@@ -85,7 +85,9 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 	if plan.SystemNameOneShot.ValueBool() || plan.RackElementsNameOneShot.ValueBool() {
 		oldName, err = plan.GetName(ctx, bp.Client())
 		if err != nil {
-			resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("failed to fetch apstra-selected name of just-created rack %s", plan.Id),
+				err.Error())
 			return
 		}
 	}
