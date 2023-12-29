@@ -10,6 +10,7 @@ func TestSupportedApiVersions(t *testing.T) {
 		"4.1.0",
 		"4.1.1",
 		"4.1.2",
+		"4.2.0",
 	}
 
 	result := SupportedApiVersions()
@@ -20,7 +21,7 @@ func TestSupportedApiVersions(t *testing.T) {
 }
 
 func TestSupportedApiVersionsPretty(t *testing.T) {
-	expected := "4.1.0, 4.1.1, and 4.1.2"
+	expected := "4.1.0, 4.1.1, 4.1.2, and 4.2.0"
 	result := SupportedApiVersionsPretty()
 	if expected != result {
 		t.Fatalf("expected %q; got %q", expected, result)

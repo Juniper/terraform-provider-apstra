@@ -10,6 +10,7 @@ func SupportedApiVersions() []string {
 		"4.1.0",
 		"4.1.1",
 		"4.1.2",
+		"4.2.0",
 	}
 	them := apstra.ApstraApiSupportedVersions()
 
