@@ -59,7 +59,8 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"system_name_one_shot": resourceSchema.BoolAttribute{
-			DeprecationMessage: "Please migrate your configuration to use `rack_elements_name_one_shot`.",
+			DeprecationMessage: "The `system_name_one_shot` attribute is deprecated. Please migrate your configuration " +
+				"to use `rack_elements_name_one_shot` instead.",
 			MarkdownDescription: "Because this resource only manages the Rack, names of Systems defined within the Rack " +
 				"are not within this resource's control. When `system_name_one_shot` is `true` during initial Rack " +
 				"creation, Systems within the Rack will be renamed to match the rack's `name`. Subsequent modifications " +
@@ -128,6 +129,10 @@ func (o *Rack) setRackAndChildNames(ctx context.Context, oldName string, client 
 		In([]apstra.QEEAttribute{apstra.RelationshipTypePartOfRack.QEEAttribute()}).
 		Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal("n_part_of_rack")}})
 
+	// The linkQuery doesn't currently catch the link between subinterfaces between an ESI access switch pair.
+	// This might be okay. The link in question doesn't seem to appear in the UI.
+	// That graph traversal might look like:
+	// node(type='system', role='access').out().node(type='interface').out().node(type='interface', if_type='subinterface').out().node(type='link', name='n_link')
 	linkQuery := new(apstra.PathQuery).
 		Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal("n_part_of_rack")}}).
 		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
@@ -193,8 +198,8 @@ func (o *Rack) setRackAndChildNames(ctx context.Context, oldName string, client 
 		}
 	}
 
-	// Reduce the RackElement map to a slice.
-	// Perform string substitution to rename the nodes.
+	// Reduce the RackElement map to a slice, performing string
+	// substitution to rename the nodes as we go.
 	reSlice := make([]interface{}, len(reMap))
 	i := 0
 	for _, v := range reMap {
