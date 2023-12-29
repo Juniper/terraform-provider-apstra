@@ -1,17 +1,11 @@
 ---
-page_title: "apstra_datacenter_connectivity_template_assignment Resource - terraform-provider-apstra"
+page_title: "apstra_datacenter_connectivity_templates_assignment Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  Deprecation Warning
-  This resource has been deprecated and will be removed in a future release. Please migrate your configuration to use the apstra_datacenter_connectivity_templates_assignment resource.
   This resource assigns one or more Connectivity Templates to an Application Point. Application Points are graph nodes including interfaces at the fabric edge, and switches within the fabric.
 ---
 
-# apstra_datacenter_connectivity_template_assignment (Resource)
-
-**Deprecation Warning**
-
-This resource has been deprecated and will be removed in a future release. Please migrate your configuration to use the `apstra_datacenter_connectivity_templates_assignment` resource.
+# apstra_datacenter_connectivity_templates_assignment (Resource)
 
 This resource assigns one or more Connectivity Templates to an Application Point. Application Points are graph nodes including interfaces at the fabric edge, and switches within the fabric.
 

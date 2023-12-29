@@ -517,6 +517,8 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplate{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplateAssignment{} },
+		func() resource.Resource { return &resourceDatacenterConnectivityTemplateAssignments{} },
+		func() resource.Resource { return &resourceDatacenterConnectivityTemplatesAssignment{} },
 		func() resource.Resource { return &resourceDatacenterExternalGateway{} },
 		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterPropertySet{} },

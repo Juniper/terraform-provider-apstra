@@ -11,36 +11,32 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateAssignment{}
+var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplatesAssignment{}
 
-type resourceDatacenterConnectivityTemplateAssignment struct {
+type resourceDatacenterConnectivityTemplatesAssignment struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_connectivity_template_assignment"
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_connectivity_templates_assignment"
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	deprecationMessage := "This resource has been deprecated and will be removed in a future release. Please migrate " +
-		"your configuration to use the `apstra_datacenter_connectivity_templates_assignment` resource."
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		DeprecationMessage: deprecationMessage,
-		MarkdownDescription: docCategoryDatacenter + "**Deprecation Warning**\n\n" + deprecationMessage +
-			"\n\nThis resource assigns one or more Connectivity Templates to an " +
+		MarkdownDescription: docCategoryDatacenter + "This resource assigns one or more Connectivity Templates to an " +
 			"Application Point. Application Points are graph nodes including interfaces at the " +
 			"fabric edge, and switches within the fabric.",
 		Attributes: blueprint.ConnectivityTemplatesAssignment{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var plan blueprint.ConnectivityTemplatesAssignment
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -78,7 +74,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Create(ctx context.Co
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state blueprint.ConnectivityTemplatesAssignment
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -126,7 +122,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Read(ctx context.Cont
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.ConnectivityTemplatesAssignment
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -180,7 +176,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignment) Update(ctx context.Co
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterConnectivityTemplateAssignment) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state blueprint.ConnectivityTemplatesAssignment
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
