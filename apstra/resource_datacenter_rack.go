@@ -62,46 +62,41 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	// create the rack and squirrel away the rack ID
+	// create the rack
 	id, err := bp.CreateRack(ctx, plan.Request())
 	if err != nil {
 		resp.Diagnostics.AddError("Unable to create Datacenter Rack", err.Error())
 		return
 	}
-	plan.Id = types.StringValue(id.String())
 
-	// fetch the rack name chosen by Apstra
-	oldName, err := plan.GetName(ctx, bp.Client())
-	if err != nil {
-		resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
-		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// record the new rack ID and set tentative state
+	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Name is optional. Did the user supply one?
-	if plan.Name.IsUnknown() {
-		// no user supplied name.
-		// save the apstra-generated name
-		plan.Name = types.StringValue(oldName)
-	} else {
-		// user has provided a name.
-		// set the rack name
-		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// oldName is used to trigger one-shot rename of rack elements:
+	// - empty string: only the rack is re-named
+	// - non-empty string: the rack and elements within the rack are renamed
+	var oldName string
+
+	// did the user request one-shot rename of elements within the rack?
+	if plan.SystemNameOneShot.ValueBool() || plan.RackElementsNameOneShot.ValueBool() {
+		oldName, err = plan.GetName(ctx, bp.Client())
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("failed to fetch apstra-selected name of just-created rack %s", plan.Id),
+				err.Error())
 			return
 		}
+	}
 
-		// one-shot rename objects in the rack. "oldName" is used as the original
-		// value in a substring replace operation.
-		if plan.SystemNameOneShot.ValueBool() {
-			plan.SetSystemNames(ctx, bp.Client(), oldName, &resp.Diagnostics)
-			plan.SetRedundancyGroupNames(ctx, bp.Client(), oldName, &resp.Diagnostics)
-			if resp.Diagnostics.HasError() {
-				resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-				return
-			}
-		}
+	// set the rack name
+	plan.SetName(ctx, oldName, bp.Client(), &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
 	}
 
 	//set the state.
@@ -135,7 +130,7 @@ func (o *resourceDatacenterRack) Read(ctx context.Context, req resource.ReadRequ
 			return
 		}
 
-		resp.Diagnostics.AddError("failed to fetch rack name", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch name of rack %s", state.Id), err.Error())
 		return
 	}
 
@@ -168,7 +163,7 @@ func (o *resourceDatacenterRack) Update(ctx context.Context, req resource.Update
 
 	// update the name if necessary
 	if !plan.Name.Equal(state.Name) {
-		plan.SetName(ctx, bp.Client(), &resp.Diagnostics)
+		plan.SetName(ctx, "", bp.Client(), &resp.Diagnostics)
 	}
 
 	// Set state

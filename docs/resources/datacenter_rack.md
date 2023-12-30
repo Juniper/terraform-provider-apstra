@@ -29,13 +29,14 @@ resource "apstra_datacenter_rack" "r" {
 ### Required
 
 - `blueprint_id` (String) Apstra ID of the Blueprint where the Rack should be created.
+- `name` (String) Name of the Rack.
 - `rack_type_id` (String) ID of the Global Catalog Rack Type design object to use as a template for this Rack.
 
 ### Optional
 
-- `name` (String) Name of the Rack.
 - `pod_id` (String) Graph node ID of Pod (3-stage topology) where the new rack should be created. Required only in Pod-Based (5-stage) Blueprints.
-- `system_name_one_shot` (Boolean) Because this resource only manages the Rack, names of Systems defined within the Rack are not within this resource's control. When `system_name_one_shot` is `true` during initial Rack creation, Systems within the Rack will be renamed to match the rack's `name`. Subsequent modifications to the `name` attribute will not affect the names of those systems. It's a create-time one-shot operation.
+- `rack_elements_name_one_shot` (Boolean) Because this resource only manages the Rack, names of Systems and other embedded elements with names derived from the Rack name are not within this resource's control. When `true` during initial Rack creation, those elements will be renamed to match the `name` attribute. Subsequent changes to the `name` attribute will not affect those elements. It's a create-time operation only.
+- `system_name_one_shot` (Boolean, Deprecated) Because this resource only manages the Rack, names of Systems defined within the Rack are not within this resource's control. When `system_name_one_shot` is `true` during initial Rack creation, Systems within the Rack will be renamed to match the rack's `name`. Subsequent modifications to the `name` attribute will not affect the names of those systems. It's a create-time one-shot operation.
 
 ### Read-Only
 
