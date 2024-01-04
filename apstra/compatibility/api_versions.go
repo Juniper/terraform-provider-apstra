@@ -2,8 +2,18 @@ package compatibility
 
 import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/go-version"
 	"strings"
 )
+
+const (
+	minVerForVnL3Mtu = "4.2.0"
+)
+
+func MinVerForVnL3Mtu() *version.Version {
+	v, _ := version.NewVersion(minVerForVnL3Mtu) // this will not error
+	return v
+}
 
 func SupportedApiVersions() []string {
 	us := []string{
