@@ -150,7 +150,7 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed: true,
 		},
 		"l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in this Virtual Network. " +
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
 				"Requires Apstra 4.2 or later.",
 			Computed: true,
 		},
@@ -250,7 +250,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Validators: []validator.String{apstravalidator.ParseIp(false, true)},
 		},
 		"l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in this Virtual Network. " +
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
 				"Requires Apstra 4.2 or later.",
 			Optional: true,
 		},
@@ -482,9 +482,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in this Virtual Network",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
+				"Requires Apstra 4.2 or later.",
+			Optional: true,
+			Computed: true,
 			Validators: []validator.Int64{
 				int64validator.Between(1280, 9216),
 				apstravalidator.MustBeEvenOrOdd(true),
