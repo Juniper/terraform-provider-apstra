@@ -37,10 +37,10 @@ One time only. This should not be repeated unless the key is compromised or lost
   ```
   
 ### Github API Token creation
-These tokens expire, will need to be refreshed before `goreleaser` can deliver a build to the github releases area.
-- Click [here](https://github.com/settings/tokens?type=beta) while logged in to github...
+These tokens expire, will need to be refreshed before `goreleaser` can deliver a build to the Github releases area.
+- Click [here](https://github.com/settings/tokens?type=beta) while logged in to Github...
 - ...or go click-by-click:
-  - Log in to the github web UI.
+  - Log in to the Github web UI.
   - Click on your avatar at the top right, and then *settings*.
   - Click on *<> Developer settings*.
   - Click on *Personal access tokens* and then *Fine-grained tokens*.
@@ -64,42 +64,44 @@ These tokens expire, will need to be refreshed before `goreleaser` can deliver a
   It's a nuclear bomb, definitely better NOT written to disk.
 
 ### Build. Package. Sign. Upload.
-- Confirm that you have a github API token and know the signing key passphrase.
+- Confirm that you have a Github API token.
+- Confirm that you know the signing key passphrase.
 - Confirm that you're on the `main` branch, and there are no un-committed changes.
   ```shell
   git status
   ```
-- Insert the USB stick with the signing key, import the key, and note the key fingerprint. It
-  should match the fingerprint used in the `export` command below.
+- Insert the USB stick with the signing key, import the key, and note the key fingerprint. The
+  fingerprint should be `4EACB71B2FC20EC8499576BDCB9C922903A66F3F`
   ```shell
   gpg --import "/Volumes/terraform-provider-apstra signing key/terraform-provider-apstra.pgp"
   gpg --list-keys terraform-provider-apstra@juniper.net
   ```
-- Put required strings into the environment.
-  - Use `read -s` to get the github API token into the environment without leaking it into the shell history.
-  - Use `export` to load the key fingerprint (not a secret).
+- Put the Github token into the environment.
   ```shell
+  # Use `read -s` to get the Github API token into the environment without leaking it into the shell history.
   read -s GITHUB_TOKEN
   # paste the token string and then hit <ctrl>+d
+  
+  # Use `export` to convert the shell variable into an environment variable.
   export GITHUB_TOKEN
-  export GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F 
-  ################################################################################
-  # Optionally print the GITHUB_TOKEN and GPG_FINGERPRINT to ensure they look okay
-  ################################################################################
-  # printenv GITHUB_TOKEN
-  # printenv GPG_FINGERPRINT
   ```
-- Tag the release with the new version number:
+- Tag the release with a new version number:
   ```shell
-  git tag vX.X.X # don't use 'X's
+  git tag vX.X.X # don't use 'X's, but do use a leading `v`
   ```
-- Run `goreleaser`:
+- Run `goreleaser` using the recipe in the `Makefile` to publish a draft release to github:
   ```shell
-  goreleaser release --rm-dist
+  make release
   ```
 - Delete the private key from the keychain:
   ```shell
   gpg --delete-secret-and-public-key terraform-provider-apstra@juniper.net
   ```
-
-
+- Navigate to the Github Releases [page for this project](https://github.com/Juniper/terraform-provider-apstra/releases).
+The new release will be in draft form, not yet visible to the public.
+  - Hit the pencil (edit) button for the new release.
+  - Press the `Generate release notes` button.
+  - Review the release notes, clean up as appropriate.
+  - Press the `Publish Release` button.
+- Navigate to the [provider page](https://registry.terraform.io/providers/Juniper/apstra) on the Terraform Registry
+  - Within a minute or so of publishing the release, the registry should update with the latest version.

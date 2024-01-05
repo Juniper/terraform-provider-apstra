@@ -214,8 +214,8 @@
 ## github.com/fatih/color
 
 * Name: github.com/fatih/color
-* Version: v1.14.1
-* License: [MIT](https://github.com/fatih/color/blob/v1.14.1/LICENSE.md)
+* Version: v1.15.0
+* License: [MIT](https://github.com/fatih/color/blob/v1.15.0/LICENSE.md)
 
 ```
 The MIT License (MIT)
@@ -282,8 +282,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/google/uuid
 
 * Name: github.com/google/uuid
-* Version: v1.3.0
-* License: [BSD-3-Clause](https://github.com/google/uuid/blob/v1.3.0/LICENSE)
+* Version: v1.5.0
+* License: [BSD-3-Clause](https://github.com/google/uuid/blob/v1.5.0/LICENSE)
 
 ```
 Copyright (c) 2009,2014 Google Inc. All rights reserved.
@@ -4819,8 +4819,8 @@ SOFTWARE.
 ## github.com/mattn/go-isatty
 
 * Name: github.com/mattn/go-isatty
-* Version: v0.0.17
-* License: [MIT](https://github.com/mattn/go-isatty/blob/v0.0.17/LICENSE)
+* Version: v0.0.18
+* License: [MIT](https://github.com/mattn/go-isatty/blob/v0.0.18/LICENSE)
 
 ```
 Copyright (c) Yasuhiro MATSUMOTO <mattn.jp@gmail.com>
@@ -5212,8 +5212,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.14.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.14.0:LICENSE)
+* Version: v0.17.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.17.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5249,8 +5249,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/exp/constraints
 
 * Name: golang.org/x/exp/constraints
-* Version: v0.0.0-20231006140011-7918f672742d
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/7918f672:LICENSE)
+* Version: v0.0.0-20231206192017-f3f8817b8deb
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/f3f8817b:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5286,8 +5286,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.17.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.17.0:LICENSE)
+* Version: v0.19.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.19.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5323,8 +5323,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys/unix
 
 * Name: golang.org/x/sys/unix
-* Version: v0.13.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.13.0:LICENSE)
+* Version: v0.15.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.15.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5360,8 +5360,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.13.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.13.0:LICENSE)
+* Version: v0.14.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.14.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5397,8 +5397,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20230525234030-28d5490b6b19
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/28d5490b6b19/googleapis/rpc/LICENSE)
+* Version: v0.0.0-20231120223509-83a465c0220f
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/83a465c0220f/googleapis/rpc/LICENSE)
 
 ```
 
@@ -5609,8 +5609,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.57.0
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.57.0/LICENSE)
+* Version: v1.59.0
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.59.0/LICENSE)
 
 ```
 
