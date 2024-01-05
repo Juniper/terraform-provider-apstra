@@ -808,8 +808,9 @@ func (o *DatacenterVirtualNetwork) CompatibilityCheckAsResource(_ context.Contex
 		return
 	}
 
-	if !o.L3Mtu.IsNull() && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
+	if utils.Known(o.L3Mtu) && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
 		diags.AddAttributeError(path.Root("l3_mtu"), errApiCompatibility,
-			"The `l3_mtu` attribute is applicable to Apstra %s and later only.")
+			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.",
+				compatibility.MinVerForVnL3Mtu().Original()))
 	}
 }
