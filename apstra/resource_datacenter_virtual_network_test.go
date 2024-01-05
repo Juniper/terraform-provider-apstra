@@ -71,14 +71,6 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// l2_one_access_001_leaf1	l2_one_access_001_access1
-	// l2_one_access_002_leaf1	l2_one_access_002_access1
-	// l2_one_access_003_leaf1	l2_one_access_002_access1
-	// l2_esi_acs_dual_001_leaf1	l2_esi_acs_dual_001_access1
-	// l2_esi_acs_dual_001_leaf2	l2_esi_acs_dual_001_access2
-	// l2_esi_acs_dual_002_leaf1	l2_esi_acs_dual_002_access1	l2_esi_acs_dual_002_access_pair1
-	// l2_esi_acs_dual_002_leaf2	l2_esi_acs_dual_002_access2
-
 	labelToNodeId := make(map[string]string)
 	for k, v := range systemNodesResponse.Nodes {
 		labelToNodeId[v.Label] = k
