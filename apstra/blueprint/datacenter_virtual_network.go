@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -46,6 +48,7 @@ type DatacenterVirtualNetwork struct {
 	IPv6GatewayEnabled      types.Bool   `tfsdk:"ipv6_virtual_gateway_enabled"`
 	IPv4Gateway             types.String `tfsdk:"ipv4_virtual_gateway"`
 	IPv6Gateway             types.String `tfsdk:"ipv6_virtual_gateway"`
+	L3Mtu                   types.Int64  `tfsdk:"l3_mtu"`
 }
 
 func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -146,6 +149,11 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 				"for mechanisms which rely on string matching.",
 			Computed: true,
 		},
+		"l3_mtu": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
+				"Requires Apstra 4.2 or later.",
+			Computed: true,
+		},
 	}
 }
 
@@ -240,6 +248,11 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 				"for mechanisms which rely on string matching.",
 			Optional:   true,
 			Validators: []validator.String{apstravalidator.ParseIp(false, true)},
+		},
+		"l3_mtu": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
+				"Requires Apstra 4.2 or later.",
+			Optional: true,
 		},
 	}
 }
@@ -468,6 +481,16 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 					true, true),
 			},
 		},
+		"l3_mtu": resourceSchema.Int64Attribute{
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
+				"Requires Apstra 4.2 or later.",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(1280, 9216),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
 	}
 }
 
@@ -538,12 +561,19 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		ipv6Gateway = net.ParseIP(o.IPv6Gateway.ValueString())
 	}
 
+	var l3Mtu *int
+	if utils.Known(o.L3Mtu) {
+		i := int(o.L3Mtu.ValueInt64())
+		l3Mtu = &i
+	}
+
 	return &apstra.VirtualNetworkData{
 		DhcpService:               apstra.DhcpServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
 		Ipv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
 		Ipv4Subnet:                ipv4Subnet,
 		Ipv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
 		Ipv6Subnet:                ipv6Subnet,
+		L3Mtu:                     l3Mtu,
 		Label:                     o.Name.ValueString(),
 		ReservedVlanId:            reservedVlanId,
 		RouteTarget:               "",
@@ -609,6 +639,7 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv6Enabled)
 	o.IPv4Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv4, diags)
 	o.IPv6Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv6, diags)
+	o.L3Mtu = utils.Int64ValueOrNull(ctx, in.L3Mtu, diags)
 }
 
 func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
@@ -690,6 +721,13 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 		})
 	}
 
+	if !o.L3Mtu.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "l3_mtu",
+			Value: apstra.QEIntVal(o.L3Mtu.ValueInt64()),
+		})
+	}
+
 	// not handling ipv6 gateway as a string match because of '::' expansion weirdness
 	//if !o.IPv6Gateway.IsNull() { nope! }
 
@@ -744,4 +782,35 @@ func (o *DatacenterVirtualNetwork) Ipv6Gateway(_ context.Context, _ path.Path, _
 	}
 
 	return net.ParseIP(o.IPv6Gateway.ValueString())
+}
+
+func (o *DatacenterVirtualNetwork) CompatibilityCheckAsFilter(_ context.Context, path path.Path, client *apstra.Client, diags *diag.Diagnostics) {
+	apstraVersion, err := version.NewVersion(client.ApiVersion())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed parsing Apstra API version %q", apstraVersion), err.Error())
+		return
+	}
+
+	if !o.L3Mtu.IsNull() && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
+		diags.AddAttributeWarning(
+			path.AtName("l3_mtu"),
+			errApiCompatibility,
+			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.\n\n"+
+				"Using `l3_mtu` with Apstra %s will cause this filter to match zero Virtual Networks.",
+				compatibility.MinVerForVnL3Mtu().Original(), apstraVersion))
+	}
+}
+
+func (o *DatacenterVirtualNetwork) CompatibilityCheckAsResource(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	apstraVersion, err := version.NewVersion(client.ApiVersion())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed parsing Apstra API version %q", apstraVersion), err.Error())
+		return
+	}
+
+	if utils.Known(o.L3Mtu) && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
+		diags.AddAttributeError(path.Root("l3_mtu"), errApiCompatibility,
+			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.",
+				compatibility.MinVerForVnL3Mtu().Original()))
+	}
 }

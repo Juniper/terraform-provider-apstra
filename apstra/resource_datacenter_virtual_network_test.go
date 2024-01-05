@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
@@ -21,6 +23,7 @@ resource "apstra_datacenter_virtual_network" "test" {
   vni             = %s
   routing_zone_id = "%s"
   bindings        = {%s}
+  l3_mtu          = %s
 }
 `
 	bindingTemplateHCL = `
@@ -35,7 +38,7 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 	ctx := context.Background()
 	bp, deleteBlueprint, err := testutils.BlueprintC(ctx)
 	if err != nil {
-		t.Fatal()
+		t.Fatal(err)
 	}
 	defer func() {
 		err = deleteBlueprint(ctx)
@@ -68,14 +71,6 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// l2_one_access_001_leaf1	l2_one_access_001_access1
-	// l2_one_access_002_leaf1	l2_one_access_002_access1
-	// l2_one_access_003_leaf1	l2_one_access_002_access1
-	// l2_esi_acs_dual_001_leaf1	l2_esi_acs_dual_001_access1
-	// l2_esi_acs_dual_001_leaf2	l2_esi_acs_dual_001_access2
-	// l2_esi_acs_dual_002_leaf1	l2_esi_acs_dual_002_access1	l2_esi_acs_dual_002_access_pair1
-	// l2_esi_acs_dual_002_leaf2	l2_esi_acs_dual_002_access2
-
 	labelToNodeId := make(map[string]string)
 	for k, v := range systemNodesResponse.Nodes {
 		labelToNodeId[v.Label] = k
@@ -89,16 +84,17 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 		vlanId    string
 		accessIds []string
 	}
-	type blueprintParams struct {
+	type vnParams struct {
 		name          string
 		blueprintId   string
 		vnType        string
 		vni           string
 		routingZoneId string
 		bindings      []bindingParams
+		l3Mtu         *int
 	}
 
-	params := []blueprintParams{
+	params := []vnParams{
 		{
 			name:          acctest.RandString(10),
 			blueprintId:   bp.Id().String(),
@@ -140,7 +136,7 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 		},
 	}
 
-	render := func(p blueprintParams) string {
+	render := func(p vnParams) string {
 		b := strings.Builder{}
 		for _, binding := range p.bindings {
 			quotedAccessIds := make([]string, len(binding.accessIds))
@@ -151,18 +147,33 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 				binding.leafId, binding.vlanId, strings.Join(quotedAccessIds, ","),
 			))
 		}
+		mtu := "null"
+		if p.l3Mtu != nil {
+			mtu = strconv.Itoa(*p.l3Mtu)
+		}
 		return fmt.Sprintf(resourceDatacenterVirtualNetworkTemplateHCL,
 			p.name,
 			p.blueprintId,
 			p.vnType,
 			p.vni,
 			p.routingZoneId,
-			b.String())
+			b.String(),
+			mtu)
+	}
+
+	apiVersion, err := version.NewVersion(bp.Client().ApiVersion())
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	resourceHCL := make([]string, len(params))
-	for i := range params {
-		resourceHCL[i] = render(params[i])
+	for i, paramset := range params {
+		l3MtuMinVersion, _ := version.NewVersion("4.2.0")
+		if apiVersion.GreaterThanOrEqual(l3MtuMinVersion) {
+			l3Mtu := 1280 + (2 * rand.Intn(3969)) // 1280 - 9216 even numbers only
+			paramset.l3Mtu = &l3Mtu
+		}
+		resourceHCL[i] = render(paramset)
 	}
 
 	resource.Test(t, resource.TestCase{

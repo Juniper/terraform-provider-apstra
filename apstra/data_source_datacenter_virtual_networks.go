@@ -64,7 +64,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 						"name", "type", "routing_zone_id", "vni", "reserve_vlan", "dhcp_service_enabled",
 						"ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet", "ipv6_subnet",
 						"ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
-						"ipv6_virtual_gateway",
+						"ipv6_virtual_gateway", "l3_mtu",
 					),
 				},
 				DeprecationMessage: "The `filter` attribute is deprecated and will be removed in a future " +
@@ -85,7 +85,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 							"name", "type", "routing_zone_id", "vni", "reserve_vlan", "dhcp_service_enabled",
 							"ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet", "ipv6_subnet",
 							"ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
-							"ipv6_virtual_gateway",
+							"ipv6_virtual_gateway", "l3_mtu",
 						),
 					},
 				},
@@ -143,6 +143,8 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 	}
 
 	var filters []blueprint.DatacenterVirtualNetwork
+
+	// populate a single filter from the `filter` configuration attribute
 	if !config.Filter.IsNull() {
 		var filter blueprint.DatacenterVirtualNetwork
 		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
@@ -150,13 +152,28 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 			return
 		}
 
+		// compatibility check
+		filter.CompatibilityCheckAsFilter(ctx, path.Root("filter"), bp.Client(), &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
 		filters = append(filters, filter)
 	}
 
+	// populate a list of filters from the `filters` configuration attribute
 	if !config.Filters.IsNull() {
 		resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 		if resp.Diagnostics.HasError() {
 			return
+		}
+
+		// compatibility checks
+		for i, filter := range filters {
+			filter.CompatibilityCheckAsFilter(ctx, path.Root("filters").AtListIndex(i), bp.Client(), &resp.Diagnostics)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 		}
 	}
 

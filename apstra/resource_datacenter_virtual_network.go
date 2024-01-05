@@ -188,6 +188,12 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
+	// check the configuration against the apstra api version
+	plan.CompatibilityCheckAsResource(ctx, bp.Client(), &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -323,6 +329,12 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
+	// check the configuration against the apstra api version
+	plan.CompatibilityCheckAsResource(ctx, bp.Client(), &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
