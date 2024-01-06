@@ -1,8 +1,5 @@
 # Usage notes:
-#   tag new release with:
-#     git tag vx.x.x
-#    build and push with:
-#      GPG_FINGERPRINT="<key-fingerprint>" GITHUB_TOKEN="<token>" goreleaser release --rm-dist
+#   see `release_process.md`
 #
 before:
   hooks:

@@ -11,4 +11,7 @@ import (
 
 	// staticcheck
 	_ "honnef.co/go/tools/cmd/staticcheck"
+
+	// release
+	_ "github.com/goreleaser/goreleaser"
 )

@@ -33,4 +33,8 @@ device-integration-tests:
 staticcheck:
 	go run honnef.co/go/tools/cmd/staticcheck ./...
 
+release:
+	printenv GITHUB_TOKEN > /dev/null || (echo "GITHUB_TOKEN not found in environment"; false)
+	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go run github.com/goreleaser/goreleaser release --clean
+
 .PHONY: all compliance compliance-check docs docs-check gofmt govet unit-tests integration-tests device-integration-tests staticcheck
