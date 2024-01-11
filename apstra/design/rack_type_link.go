@@ -21,6 +21,7 @@ import (
 )
 
 type RackLink struct {
+	Name             types.String `tfsdk:"name"`
 	TargetSwitchName types.String `tfsdk:"target_switch_name"`
 	LagMode          types.String `tfsdk:"lag_mode"`
 	LinksPerSwitch   types.Int64  `tfsdk:"links_per_switch"`
@@ -32,6 +33,10 @@ type RackLink struct {
 
 func (o RackLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Link name",
+			Computed:            true,
+		},
 		"target_switch_name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
 			Computed:            true,
@@ -69,6 +74,11 @@ func (o RackLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 
 func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Link name",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
 		"target_switch_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
 			Required:            true,
@@ -123,6 +133,10 @@ func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o RackLink) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Link name",
+			Computed:            true,
+		},
 		"target_switch_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
 			Computed:            true,
@@ -160,6 +174,7 @@ func (o RackLink) ResourceAttributesNested() map[string]resourceSchema.Attribute
 
 func (o RackLink) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"name":               types.StringType,
 		"target_switch_name": types.StringType,
 		"lag_mode":           types.StringType,
 		"links_per_switch":   types.Int64Type,
@@ -217,6 +232,7 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 	}
 
 	return &apstra.RackLinkRequest{
+		Label:              o.Name.ValueString(),
 		Tags:               tagIds,
 		LinkPerSwitchCount: linksPerSwitch,
 		LinkSpeed:          apstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
@@ -228,6 +244,7 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 }
 
 func (o *RackLink) LoadApiData(ctx context.Context, in *apstra.RackLink, diags *diag.Diagnostics) {
+	o.Name = types.StringValue(in.Label)
 	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
 	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
 	o.Speed = types.StringValue(string(in.LinkSpeed))
@@ -272,16 +289,16 @@ func (o *RackLink) LinkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *di
 	return apstra.RackLinkAttachmentTypeSingle
 }
 
-func NewLinkMap(ctx context.Context, in []apstra.RackLink, diags *diag.Diagnostics) types.Map {
-	links := make(map[string]RackLink, len(in))
-	for _, link := range in {
+func NewLinkSet(ctx context.Context, in []apstra.RackLink, diags *diag.Diagnostics) types.Set {
+	links := make([]RackLink, len(in))
+	for i, link := range in {
 		var l RackLink
 		l.LoadApiData(ctx, &link, diags)
 		if diags.HasError() {
-			return types.MapNull(types.ObjectType{AttrTypes: RackLink{}.AttrTypes()})
+			return types.SetNull(types.ObjectType{AttrTypes: RackLink{}.AttrTypes()})
 		}
-		links[link.Label] = l
+		links[i] = l
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, links, diags)
+	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, links, diags)
 }

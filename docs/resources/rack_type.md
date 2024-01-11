@@ -162,7 +162,7 @@ Read-Only:
 Required:
 
 - `count` (Number) Number of Access Switches of this type.
-- `links` (Attributes Map) Each Access Switch is required to have at least one Link to a Leaf Switch. (see [below for nested schema](#nestedatt--access_switches--links))
+- `links` (Attributes Set) Each Access Switch is required to have at least one Link to a Leaf Switch. (see [below for nested schema](#nestedatt--access_switches--links))
 - `logical_device_id` (String) Apstra Object ID of the Logical Device used to model this Access Switch.
 
 Optional:
@@ -181,6 +181,7 @@ Read-Only:
 
 Required:
 
+- `name` (String) Link name
 - `speed` (String) Speed of this Link.
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
@@ -268,7 +269,7 @@ Read-Only:
 Required:
 
 - `count` (Number) Number of Generic Systems of this type.
-- `links` (Attributes Map) Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch. (see [below for nested schema](#nestedatt--generic_systems--links))
+- `links` (Attributes Set) Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch. (see [below for nested schema](#nestedatt--generic_systems--links))
 - `logical_device_id` (String) Apstra Object ID of the Logical Device used to model this Generic System.
 
 Optional:
@@ -287,6 +288,7 @@ Read-Only:
 
 Required:
 
+- `name` (String) Link name
 - `speed` (String) Speed of this Link.
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 

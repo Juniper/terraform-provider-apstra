@@ -66,7 +66,7 @@ Read-Only:
 
 - `count` (Number) Count of Access Switches of this type.
 - `esi_lag_info` (Attributes) Interconnect information for Access Switches in ESI-LAG redundancy mode. (see [below for nested schema](#nestedatt--access_switches--esi_lag_info))
-- `links` (Attributes Map) Details links from this Access Switch to upstream switches within this Rack Type. (see [below for nested schema](#nestedatt--access_switches--links))
+- `links` (Attributes Set) Details links from this Access Switch to upstream switches within this Rack Type. (see [below for nested schema](#nestedatt--access_switches--links))
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--access_switches--logical_device))
 - `logical_device_id` (String) ID will always be `<null>` in data source contexts.
 - `redundancy_protocol` (String) Indicates whether 'the switch' is actually a LAG-capable redundant pair and if so, what type.
@@ -89,6 +89,7 @@ Read-Only:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
+- `name` (String) Link name
 - `speed` (String) Speed of this Link.
 - `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in data source contexts.
@@ -153,7 +154,7 @@ Read-Only:
 Read-Only:
 
 - `count` (Number) Number of Generic Systems of this type.
-- `links` (Attributes Map) Details links from this Generic System to upstream switches within this Rack Type. (see [below for nested schema](#nestedatt--generic_systems--links))
+- `links` (Attributes Set) Details links from this Generic System to upstream switches within this Rack Type. (see [below for nested schema](#nestedatt--generic_systems--links))
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--generic_systems--logical_device))
 - `logical_device_id` (String) ID will always be `<null>` in data source contexts.
 - `port_channel_id_max` (Number) Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.
@@ -168,6 +169,7 @@ Read-Only:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
+- `name` (String) Link name
 - `speed` (String) Speed of this Link.
 - `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in data source contexts.

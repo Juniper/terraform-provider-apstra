@@ -6,7 +6,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -34,7 +33,7 @@ type GenericSystem struct {
 	PortChannelIdMin types.Int64  `tfsdk:"port_channel_id_min"`
 	PortChannelIdMax types.Int64  `tfsdk:"port_channel_id_max"`
 	Count            types.Int64  `tfsdk:"count"`
-	Links            types.Map    `tfsdk:"links"`
+	Links            types.Set    `tfsdk:"links"`
 	TagIds           types.Set    `tfsdk:"tag_ids"`
 	Tags             types.Set    `tfsdk:"tags"`
 }
@@ -62,10 +61,9 @@ func (o GenericSystem) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 			MarkdownDescription: "Number of Generic Systems of this type.",
 			Computed:            true,
 		},
-		"links": dataSourceSchema.MapNestedAttribute{
+		"links": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Details links from this Generic System to upstream switches within this Rack Type.",
 			Computed:            true,
-			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: RackLink{}.DataSourceAttributes(),
 			},
@@ -122,10 +120,10 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
-		"links": resourceSchema.MapNestedAttribute{
+		"links": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch.",
 			Required:            true,
-			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RackLink{}.ResourceAttributes(),
 			},
@@ -169,7 +167,7 @@ func (o GenericSystem) ResourceAttributesNested() map[string]resourceSchema.Attr
 			MarkdownDescription: "Number of Generic Systems of this type.",
 			Computed:            true,
 		},
-		"links": resourceSchema.MapNestedAttribute{
+		"links": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch.",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
@@ -198,7 +196,7 @@ func (o GenericSystem) AttrTypes() map[string]attr.Type {
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
 		"count":               types.Int64Type,
-		"links":               types.MapType{ElemType: types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}},
+		"links":               types.SetType{ElemType: types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
 		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.AttrTypes()}},
 	}
@@ -213,25 +211,20 @@ func (o *GenericSystem) Request(ctx context.Context, path path.Path, rack *RackT
 		poIdMaxVal = int(o.PortChannelIdMax.ValueInt64())
 	}
 
-	links := o.GetLinks(ctx, diags)
+	links := make([]RackLink, len(o.Links.Elements()))
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	linkRequests := make([]apstra.RackLinkRequest, len(links))
-	i := 0
-	for name, link := range links {
-		lr := link.Request(ctx, path.AtName("links").AtMapKey(name), rack, diags)
-		if diags.HasError() {
-			return nil
-		}
-		lr.Label = name
+	for i, link := range links {
+		lr := link.Request(ctx, path.AtName("links").AtListIndex(i), rack, diags)
 		if diags.HasError() {
 			return nil
 		}
 
 		linkRequests[i] = *lr
-		i++
 	}
 
 	tagIds := make([]apstra.ObjectId, len(o.TagIds.Elements()))
@@ -256,24 +249,9 @@ func (o *GenericSystem) LoadApiData(ctx context.Context, in *apstra.RackElementG
 	o.PortChannelIdMin = types.Int64Value(int64(in.PortChannelIdMin))
 	o.PortChannelIdMax = types.Int64Value(int64(in.PortChannelIdMax))
 	o.Count = types.Int64Value(int64(in.Count))
-	o.Links = NewLinkMap(ctx, in.Links, diags)
+	o.Links = NewLinkSet(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = NewTagSet(ctx, in.Tags, diags)
-}
-
-func (o *GenericSystem) GetLinks(ctx context.Context, diags *diag.Diagnostics) map[string]RackLink {
-	links := make(map[string]RackLink, len(o.Links.Elements()))
-	d := o.Links.ElementsAs(ctx, &links, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return nil
-	}
-
-	// copy the link name from the map key into the object's Name field
-	for name, link := range links {
-		links[name] = link
-	}
-	return links
 }
 
 func (o *GenericSystem) CopyWriteOnlyElements(ctx context.Context, src *GenericSystem, diags *diag.Diagnostics) {
@@ -285,34 +263,32 @@ func (o *GenericSystem) CopyWriteOnlyElements(ctx context.Context, src *GenericS
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
-	var d diag.Diagnostics
-
-	srcLinks := make(map[string]RackLink, len(src.Links.Elements()))
-	d = src.Links.ElementsAs(ctx, &srcLinks, false)
-	diags.Append(d...)
+	// extract the source links because we need the tag IDs
+	srcLinks := make([]RackLink, len(src.Links.Elements()))
+	diags.Append(src.Links.ElementsAs(ctx, &srcLinks, false)...)
 	if diags.HasError() {
 		return
 	}
 
-	dstLinks := make(map[string]RackLink, len(o.Links.Elements()))
-	d = o.Links.ElementsAs(ctx, &dstLinks, false)
-	diags.Append(d...)
+	// extract the destination links because we'll copy the tag IDs here
+	dstLinks := make([]RackLink, len(o.Links.Elements()))
+	diags.Append(o.Links.ElementsAs(ctx, &dstLinks, false)...)
 	if diags.HasError() {
 		return
 	}
 
-	for name, dstLink := range dstLinks {
-		if srcLink, ok := srcLinks[name]; ok {
-			dstLink.CopyWriteOnlyElements(ctx, &srcLink, diags)
-			dstLinks[name] = dstLink
-		}
+	// copy from each source to each destination
+	for i := range dstLinks[:utils.Min(len(srcLinks), len(dstLinks))] {
+		dstLinks[i].CopyWriteOnlyElements(ctx, &srcLinks[i], diags)
 	}
-
-	o.Links = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, dstLinks, diags)
 	if diags.HasError() {
 		return
 	}
 
+	o.Links = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, dstLinks, diags)
+	if diags.HasError() {
+		return
+	}
 }
 
 func NewGenericSystemMap(ctx context.Context, in []apstra.RackElementGenericSystem, diags *diag.Diagnostics) types.Map {
