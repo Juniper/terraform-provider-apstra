@@ -470,6 +470,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterRoutingPolicy{} },
 		func() datasource.DataSource { return &dataSourceDatacenterRoutingZone{} },
 		func() datasource.DataSource { return &dataSourceDatacenterRoutingZones{} },
+		func() datasource.DataSource { return &dataSourceDatacenterSecurityPolicy{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSystemNode{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSystemNodes{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSvis{} },
