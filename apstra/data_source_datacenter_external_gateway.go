@@ -51,7 +51,23 @@ func (o *dataSourceDatacenterExternalGateway) Read(ctx context.Context, req data
 		return
 	}
 
-	config.Read(ctx, bp, &resp.Diagnostics)
+	err = config.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			switch config.Id.IsNull() {
+			case true:
+				resp.Diagnostics.AddError(
+					"External Gateway not found",
+					fmt.Sprintf("Blueprint %q External Gateway with Name %s not found", bp.Id(), config.Name))
+			case false:
+				resp.Diagnostics.AddError(
+					"External Gateway not found",
+					fmt.Sprintf("Blueprint %q External Gateway with ID %s not found", bp.Id(), config.Id))
+			}
+			return
+		}
+		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}

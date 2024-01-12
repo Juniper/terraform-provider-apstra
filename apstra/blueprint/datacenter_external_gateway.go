@@ -277,45 +277,34 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 	}
 }
 
-func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
 	var err error
 	var api *apstra.RemoteGateway
 
-	switch {
-	case !o.Id.IsNull():
-		api, err = bp.GetRemoteGateway(ctx, apstra.ObjectId(o.Id.ValueString()))
-		if utils.IsApstra404(err) {
-			diags.AddAttributeError(
-				path.Root("id"),
-				"External Gateway not found",
-				fmt.Sprintf("External Gateway with ID %s not found", o.Id))
-			return
-		}
-	case !o.Name.IsNull():
+	if o.Id.IsNull() {
 		api, err = bp.GetRemoteGatewayByName(ctx, o.Name.ValueString())
-		if utils.IsApstra404(err) {
-			diags.AddAttributeError(
-				path.Root("name"),
-				"External Gateway not found",
-				fmt.Sprintf("External Gateway with Name %s not found", o.Name))
-			return
+		if err != nil {
+			return err
 		}
 		o.Id = types.StringValue(api.Id.String())
-	}
-	if err != nil {
-		diags.AddError("Failed reading Remote Gateway", err.Error())
-		return
+	} else {
+		api, err = bp.GetRemoteGateway(ctx, apstra.ObjectId(o.Id.ValueString()))
+		if err != nil {
+			return err
+		}
 	}
 
 	o.LoadApiData(ctx, api.Data, diags)
 	if diags.HasError() {
-		return
+		return nil
 	}
 
 	o.ReadProtocolPassword(ctx, bp, diags)
 	if diags.HasError() {
-		return
+		return nil
 	}
+
+	return nil
 }
 
 func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {

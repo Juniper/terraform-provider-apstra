@@ -77,7 +77,17 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 		return
 	}
 
-	state.Read(ctx, bp, &resp.Diagnostics)
+	err = state.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(
+				"External Gateway not found",
+				fmt.Sprintf("Blueprint %q External Gateway with ID %s not found", bp.Id(), state.Id))
+			return
+		}
+		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+		return
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -125,7 +135,10 @@ func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req reso
 	}
 
 	plan.Id = types.StringValue(id.String())
-	plan.Read(ctx, bp, &resp.Diagnostics)
+	err = plan.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch just created External Gateway", err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -152,7 +165,14 @@ func (o *resourceDatacenterExternalGateway) Read(ctx context.Context, req resour
 		return
 	}
 
-	state.Read(ctx, bp, &resp.Diagnostics)
+	err = state.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -195,7 +215,10 @@ func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req reso
 		return
 	}
 
-	plan.Read(ctx, bp, &resp.Diagnostics)
+	err = plan.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to fetch just updated External Gateway", err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
