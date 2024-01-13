@@ -642,10 +642,10 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.L3Mtu = utils.Int64ValueOrNull(ctx, in.L3Mtu, diags)
 }
 
-func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
+func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 	nodeAttributes := []apstra.QEEAttribute{
 		apstra.NodeTypeVirtualNetwork.QEEAttribute(),
-		{Key: "name", Value: apstra.QEStringVal(vnResultName)},
+		{Key: "name", Value: apstra.QEStringVal(resultName)},
 	}
 
 	if !o.Name.IsNull() {
@@ -739,7 +739,7 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 		vnQuery.Match(new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
-				{Key: "name", Value: apstra.QEStringVal(vnResultName)},
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
 			}).In([]apstra.QEEAttribute{apstra.RelationshipTypeMemberVNs.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeSecurityZone.QEEAttribute(),
@@ -751,7 +751,7 @@ func (o *DatacenterVirtualNetwork) Query(vnResultName string) apstra.QEQuery {
 		vnQuery.Match(new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
-				{Key: "name", Value: apstra.QEStringVal(vnResultName)},
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
 			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeInstantiatedBy.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetworkInstance.QEEAttribute(),

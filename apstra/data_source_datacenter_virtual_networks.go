@@ -91,10 +91,9 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 				},
 			},
 			"graph_queries": schema.ListAttribute{
-				MarkdownDescription: "The graph datastore query based on `filter` used to " +
-					"perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` " +
-					"attributes are never part of the graph query because IPv6 zero " +
-					"compression rules make string matches unreliable.",
+				MarkdownDescription: "List of graph datastore queries derived from `filters` used to perform the " +
+					"lookup. Note that the `ipv6_subnet` and `ipv6_gateway` attributes are never part of the graph " +
+					"query because IPv6 zero compression rules make string matches unreliable.",
 				ElementType: types.StringType,
 				Computed:    true,
 			},
