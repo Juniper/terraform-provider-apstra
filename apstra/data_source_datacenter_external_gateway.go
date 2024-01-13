@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateway{}
@@ -56,11 +57,13 @@ func (o *dataSourceDatacenterExternalGateway) Read(ctx context.Context, req data
 		if utils.IsApstra404(err) {
 			switch config.Id.IsNull() {
 			case true:
-				resp.Diagnostics.AddError(
+				resp.Diagnostics.AddAttributeError(
+					path.Root("name"),
 					"External Gateway not found",
 					fmt.Sprintf("Blueprint %q External Gateway with Name %s not found", bp.Id(), config.Name))
 			case false:
-				resp.Diagnostics.AddError(
+				resp.Diagnostics.AddAttributeError(
+					path.Root("id"),
 					"External Gateway not found",
 					fmt.Sprintf("Blueprint %q External Gateway with ID %s not found", bp.Id(), config.Id))
 			}
