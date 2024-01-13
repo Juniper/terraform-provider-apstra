@@ -56,7 +56,7 @@ data "apstra_datacenter_virtual_networks" "prod_unreserved_with_dhcp" {
 
 ### Read-Only
 
-- `graph_queries` (List of String) The graph datastore query based on `filter` used to perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` attributes are never part of the graph query because IPv6 zero compression rules make string matches unreliable.
+- `graph_queries` (List of String) List of graph datastore queries derived from `filters` used to perform the lookup. Note that the `ipv6_subnet` and `ipv6_gateway` attributes are never part of the graph query because IPv6 zero compression rules make string matches unreliable.
 - `ids` (Set of String) Set of Virtual Network IDs
 
 <a id="nestedatt--filter"></a>

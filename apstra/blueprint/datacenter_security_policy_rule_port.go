@@ -34,6 +34,21 @@ func (o DatacenterSecurityPolicyRulePortRange) DataSourceAttributes() map[string
 	}
 }
 
+func (o DatacenterSecurityPolicyRulePortRange) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"from_port": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "First (low) port number in a range of ports matched by the policy rule. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+		"to_port": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Last (high) port number in a range of ports matched by the policy rule. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+	}
+}
+
 func (o *DatacenterSecurityPolicyRulePortRange) loadApiData(_ context.Context, data *apstra.PortRange, _ *diag.Diagnostics) {
 	o.FromPort = types.Int64Value(int64(data.First))
 	o.ToPort = types.Int64Value(int64(data.Last))

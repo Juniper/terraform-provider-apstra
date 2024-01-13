@@ -82,6 +82,58 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 	}
 }
 
+func (o DatacenterSecurityPolicyRule) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy Rule ID. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy Rule Name. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy Rule Description. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+		"protocol": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy Rule Protocol. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+		"action": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy Rule Action. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+		"source_ports": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of TCP/UDP source ports matched by this rule. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: DatacenterSecurityPolicyRulePortRange{}.DataSourceFilterAttributes(),
+			},
+		},
+		"destination_ports": dataSourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of TCP/UDP destination ports matched by this rule. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: DatacenterSecurityPolicyRulePortRange{}.DataSourceFilterAttributes(),
+			},
+		},
+		"established": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "When `true`, the rendered rule will use the NOS `established` or `tcp-established` " +
+				"keyword/feature for TCP access control list entries. Not currently supported for use in a filter. Do you need this? " +
+				"Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Computed: true,
+		},
+	}
+}
+
 func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apstra.PolicyRuleData, diags *diag.Diagnostics) {
 	var established types.Bool
 	if in.TcpStateQualifier != nil {
