@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_security_policy Data Source - terraform-provider-apstra"
-subcategory: "Reference Design: Shared"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source provides details of a specific Security Policy within a Datacenter Blueprint.
   At least one optional attribute is required.
