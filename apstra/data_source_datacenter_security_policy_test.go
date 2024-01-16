@@ -181,22 +181,22 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.name", "name_0"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.description", "description_0"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "ICMP"),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "icmp"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.action", "deny"),
 
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.1.name", "name_1"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.1.description", "description_1"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.1.protocol", "IP"),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.1.protocol", "ip"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.1.action", "deny_log"),
 
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.2.name", "name_2"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.2.description", "description_2"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.2.protocol", "TCP"),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.2.protocol", "tcp"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.2.action", "permit_log"),
 
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.3.name", "name_3"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.3.description", "description_3"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.3.protocol", "TCP"),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.3.protocol", "tcp"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.3.action", "permit_log"),
 
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.3.source_ports.#", "3"),
@@ -234,7 +234,7 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.name", "ssh_established"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.description", "ssh established"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "TCP"),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "tcp"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.action", "permit_log"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.established", "true"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "rules.0.source_ports.#", "1"),
