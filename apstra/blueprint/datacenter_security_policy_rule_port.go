@@ -63,7 +63,10 @@ func (o DatacenterSecurityPolicyRulePortRange) ResourceAttributes() map[string]r
 		"to_port": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Last (high) port number in a range of ports matched by the policy rule.",
 			Required:            true,
-			Validators:          []validator.Int64{int64validator.Between(1, 65535)},
+			Validators: []validator.Int64{
+				int64validator.Between(1, 65535),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("from_port")),
+			},
 		},
 	}
 }
