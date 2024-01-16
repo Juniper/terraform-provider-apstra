@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 type DatacenterSecurityPolicyRule struct {
@@ -49,7 +51,7 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 			Computed:            true,
 		},
 		"protocol": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Security Policy Rule Protocol; one of: %s", apstra.PolicyRuleProtocols),
+			MarkdownDescription: fmt.Sprintf("Security Policy Rule Protocol; one of: %s", strings.ToLower(fmt.Sprint(apstra.PolicyRuleProtocols))),
 			Computed:            true,
 		},
 		"action": dataSourceSchema.StringAttribute{
@@ -58,8 +60,10 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 		},
 		"source_ports": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. A `null` "+
-				"set matches any port. Applies only when `protocol` is %s or %s.",
-				apstra.PolicyRuleProtocolTcp, apstra.PolicyRuleProtocolUdp),
+				"set matches any port. Applies only when `protocol` is `%s` or `%s`.",
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+			),
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: DatacenterSecurityPolicyRulePortRange{}.DataSourceAttributes(),
@@ -67,8 +71,10 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 		},
 		"destination_ports": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. A `null` "+
-				"set matches any port. Applies only when `protocol` is %s or %s.",
-				apstra.PolicyRuleProtocolTcp, apstra.PolicyRuleProtocolUdp),
+				"set matches any port. Applies only when `protocol` is `%s` or `%s`.",
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+			),
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: DatacenterSecurityPolicyRulePortRange{}.DataSourceAttributes(),
@@ -142,7 +148,7 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
-	o.Protocol = types.StringValue(in.Protocol.Value)
+	o.Protocol = types.StringValue(utils.StringersToFriendlyString(in.Protocol))
 	o.Action = types.StringValue(in.Action.Value)
 	o.SrcPorts = newDatacenterPolicyRulePortRangeSet(ctx, in.SrcPort, diags)
 	o.DstPorts = newDatacenterPolicyRulePortRangeSet(ctx, in.DstPort, diags)

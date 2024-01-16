@@ -57,6 +57,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return nodeDeployModeToFriendlyString(in0)
 	case apstra.OverlayControlProtocol:
 		return overlayControlProtocolToFriendlyString(in0)
+	case apstra.PolicyRuleProtocol:
+		return policyRuleProtocolToFriendlyString(in0)
 	case apstra.RefDesign:
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
@@ -91,6 +93,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return nodeDeployModeFromFriendlyString(target, in...)
 	case *apstra.OverlayControlProtocol:
 		return overlayControlProtocolFromFriendlyString(target, in...)
+	case *apstra.PolicyRuleProtocol:
+		return policyRuleProtocolFromFriendlyString(target, in[0])
 	case *apstra.RefDesign:
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
@@ -182,6 +186,10 @@ func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) st
 	}
 
 	return in.String()
+}
+
+func policyRuleProtocolToFriendlyString(in apstra.PolicyRuleProtocol) string {
+	return strings.ToLower(in.String())
 }
 
 func refDesignToFriendlyString(in apstra.RefDesign) string {
@@ -306,6 +314,15 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 		return target.FromString(in[0])
 	}
 
+	return nil
+}
+
+func policyRuleProtocolFromFriendlyString(target *apstra.PolicyRuleProtocol, s string) error {
+	t := apstra.PolicyRuleProtocols.Parse(strings.ToUpper(s))
+	if t == nil {
+		return fmt.Errorf("cannot parse PolicyRuleProtocol %q", s)
+	}
+	target.Value = t.Value
 	return nil
 }
 
