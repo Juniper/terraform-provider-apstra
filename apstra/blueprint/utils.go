@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
@@ -39,4 +40,15 @@ func NodeTags(ctx context.Context, id string, client apstra.TwoStageL3ClosClient
 	}
 
 	return result
+}
+
+func friendlyPolicyRuleProtocols() []string {
+	enums := apstra.PolicyRuleProtocols.Members()
+	friendlyStrings := make([]string, len(enums))
+
+	for i, enum := range enums {
+		friendlyStrings[i] = utils.StringersToFriendlyString(enum)
+	}
+
+	return friendlyStrings
 }

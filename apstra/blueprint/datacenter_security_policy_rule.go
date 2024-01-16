@@ -57,7 +57,7 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 			Computed:            true,
 		},
 		"protocol": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Security Policy Rule Protocol; one of: %s", strings.ToLower(fmt.Sprint(apstra.PolicyRuleProtocols))),
+			MarkdownDescription: fmt.Sprintf("Security Policy Rule Protocol; one of: '%s'", strings.Join(friendlyPolicyRuleProtocols(), "', '")),
 			Computed:            true,
 		},
 		"action": dataSourceSchema.StringAttribute{
@@ -163,9 +163,9 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"protocol": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Protocol - One of: %s", apstra.PolicyRuleProtocols),
+			MarkdownDescription: fmt.Sprintf("Security Policy Rule Protocol; one of: '%s'", strings.Join(friendlyPolicyRuleProtocols(), "', '")),
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(apstra.PolicyRuleProtocols.Values()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(friendlyPolicyRuleProtocols()...)},
 		},
 		"action": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Action - One of: %s", apstra.PolicyRuleActions),
@@ -173,8 +173,11 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 			Validators:          []validator.String{stringvalidator.OneOf(apstra.PolicyRuleActions.Values()...)},
 		},
 		"source_ports": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. Valid only "+
-				"when `protocol` is `%s` or `%s`", apstra.PolicyRuleProtocolTcp, apstra.PolicyRuleProtocolUdp),
+			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. A `null` "+
+				"set matches any port. Valid only when `protocol` is `%s` or `%s`.",
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+			),
 			Optional: true,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
@@ -185,8 +188,11 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 			},
 		},
 		"destination_ports": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. Valid only "+
-				"when `protocol` is `%s` or `%s`", apstra.PolicyRuleProtocolTcp, apstra.PolicyRuleProtocolUdp),
+			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. A `null` "+
+				"set matches any port. Valid only when `protocol` is `%s` or `%s`.",
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+			),
 			Optional: true,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
@@ -227,7 +233,7 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 	}
 
 	o.Name = types.StringValue(in.Label)
-	o.Description = types.StringValue(in.Description)
+	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.Protocol = types.StringValue(utils.StringersToFriendlyString(in.Protocol))
 	o.Action = types.StringValue(in.Action.Value)
 	o.SrcPorts = newDatacenterPolicyRulePortRangeSet(ctx, in.SrcPort, diags)
@@ -236,12 +242,10 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 }
 
 func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.PolicyRuleData {
-	protocol := apstra.PolicyRuleProtocols.Parse(o.Protocol.ValueString())
-	if protocol == nil {
-		diags.AddAttributeError(
-			path.AtName("protocol"),
-			errStringParse,
-			fmt.Sprintf("failed to parse protocol %s", o.Protocol))
+	var protocol apstra.PolicyRuleProtocol
+	err := utils.ApiStringerFromFriendlyString(&protocol, o.Protocol.ValueString())
+	if err != nil {
+		diags.AddAttributeError(path, fmt.Sprintf("failed to parse policy rule protocol %s", o.Protocol), err.Error())
 		return nil
 	}
 
@@ -268,7 +272,7 @@ func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Pa
 	return &apstra.PolicyRuleData{
 		Label:             o.Name.ValueString(),
 		Description:       o.Description.ValueString(),
-		Protocol:          *protocol,
+		Protocol:          protocol,
 		Action:            *action,
 		SrcPort:           srcPort,
 		DstPort:           dstPort,

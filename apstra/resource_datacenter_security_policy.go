@@ -135,8 +135,11 @@ func (o *resourceDatacenterSecurityPolicy) Create(ctx context.Context, req resou
 		return
 	}
 
-	// set the ID into the plan object and then read it back from the API to get the rule IDs
+	// set the ID into the plan object and provisionally set state
 	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+
+	// read the policy back from the API to get the rule IDs
 	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("failed reading just-created Security Policy", err.Error())

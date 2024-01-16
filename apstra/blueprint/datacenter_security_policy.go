@@ -157,10 +157,10 @@ func (o DatacenterSecurityPolicy) ResourceAttributes() map[string]resourceSchema
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Indicates whether the Security Policy is enabled. Default value: `false`",
+			MarkdownDescription: "Indicates whether the Security Policy is enabled. Default value: `true`",
 			Optional:            true,
 			Computed:            true,
-			Default:             booldefault.StaticBool(false),
+			Default:             booldefault.StaticBool(true),
 		},
 		"source_application_point_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)",
