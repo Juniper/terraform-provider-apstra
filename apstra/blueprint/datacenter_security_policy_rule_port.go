@@ -76,7 +76,7 @@ func (o *DatacenterSecurityPolicyRulePortRange) loadApiData(_ context.Context, d
 	o.ToPort = types.Int64Value(int64(data.Last))
 }
 
-func (o *DatacenterSecurityPolicyRulePortRange) request(_ context.Context, _ path.Path, _ *diag.Diagnostics) *apstra.PortRange {
+func (o *DatacenterSecurityPolicyRulePortRange) request(_ context.Context, _ *diag.Diagnostics) *apstra.PortRange {
 	return &apstra.PortRange{
 		First: uint16(o.FromPort.ValueInt64()),
 		Last:  uint16(o.ToPort.ValueInt64()),
@@ -120,10 +120,7 @@ func portRangeSetToApstraPortRanges(ctx context.Context, portSet types.Set, diag
 
 	result := make(apstra.PortRanges, len(portRangeSlice))
 	for i, portRange := range portRangeSlice {
-		result[i] = apstra.PortRange{
-			First: uint16(portRange.FromPort.ValueInt64()),
-			Last:  uint16(portRange.ToPort.ValueInt64()),
-		}
+		result[i] = *portRange.request(ctx, diags)
 	}
 
 	return result
