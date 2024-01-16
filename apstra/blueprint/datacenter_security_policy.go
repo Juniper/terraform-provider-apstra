@@ -5,10 +5,16 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -128,6 +134,63 @@ func (o DatacenterSecurityPolicy) DataSourceFilterAttributes() map[string]dataSo
 	}
 }
 
+func (o DatacenterSecurityPolicy) ResourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"blueprint_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Blueprint ID.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy name.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy description, as seen in the Web UI.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"enabled": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates whether the Security Policy is enabled. Default value: `true`",
+			Optional:            true,
+			Computed:            true,
+			Default:             booldefault.StaticBool(true),
+		},
+		"source_application_point_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"destination_application_point_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Graph node ID of the destination Application Point (Virtual Network ID, Routing Zone ID, etc...)",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"rules": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Not currently supported for use in a filter. Do you need this? Let us know by " +
+				"[opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
+			Optional: true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: DatacenterSecurityPolicyRule{}.ResourceAttributes(),
+			},
+			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
+		},
+		"tags": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Tags. All tags supplied here are used to match the Security Policy, " +
+				"but a matching Security Policy may have additional tags not enumerated in this set.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+	}
+}
+
 func (o *DatacenterSecurityPolicy) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
 	var api *apstra.Policy
 	var err error
@@ -242,4 +305,30 @@ func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {
 	}
 
 	return matchQuery
+}
+
+func (o *DatacenterSecurityPolicy) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.PolicyData {
+	var srcApplicationPoint, dstApplicationPoint *apstra.PolicyApplicationPointData
+	if !o.SrcAppPointId.IsNull() {
+		srcApplicationPoint = &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(o.SrcAppPointId.ValueString())}
+	}
+	if !o.DstAppPointId.IsNull() {
+		dstApplicationPoint = &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(o.DstAppPointId.ValueString())}
+	}
+
+	var tags []string
+	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+	if tags == nil {
+		tags = make([]string, 0) // we must send an empty slice to wipe out current tags
+	}
+
+	return &apstra.PolicyData{
+		Enabled:             o.Enabled.ValueBool(),
+		Label:               o.Name.ValueString(),
+		Description:         o.Description.ValueString(),
+		SrcApplicationPoint: srcApplicationPoint,
+		DstApplicationPoint: dstApplicationPoint,
+		Rules:               policyRuleListToApstraPolicyRuleSlice(ctx, o.Rules, diags),
+		Tags:                tags,
+	}
 }

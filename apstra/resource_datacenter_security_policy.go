@@ -12,32 +12,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterExternalGateway{}
-var _ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
+var _ resource.ResourceWithConfigure = &resourceDatacenterSecurityPolicy{}
+var _ resource.ResourceWithImportState = &resourceDatacenterSecurityPolicy{}
 
-type resourceDatacenterExternalGateway struct {
-	lockFunc        func(context.Context, string) error
+type resourceDatacenterSecurityPolicy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourceDatacenterExternalGateway) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_external_gateway"
+func (o *resourceDatacenterSecurityPolicy) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_security_policy"
 }
 
-func (o *resourceDatacenterExternalGateway) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterSecurityPolicy) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourceDatacenterExternalGateway) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterSecurityPolicy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource creates a DCI External Gateway within a Blueprint. " +
-			"Prior to Apstra 4.2 these were called \"Remote EVPN Gateways\"",
-		Attributes: blueprint.DatacenterExternalGateway{}.ResourceAttributes(),
+		MarkdownDescription: docCategoryDatacenter + "This resource creates a Security Policy within a Datacenter Blueprint.",
+		Attributes:          blueprint.DatacenterSecurityPolicy{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (o *resourceDatacenterSecurityPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	var importId struct {
 		BlueprintId string `json:"blueprint_id"`
 		Id          string `json:"id"`
@@ -61,7 +60,7 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 	}
 
 	// create a state object preloaded with the critical details we need in advance
-	state := blueprint.DatacenterExternalGateway{
+	state := blueprint.DatacenterSecurityPolicy{
 		BlueprintId: types.StringValue(importId.BlueprintId),
 		Id:          types.StringValue(importId.Id),
 	}
@@ -82,10 +81,10 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(
 				"External Gateway not found",
-				fmt.Sprintf("Blueprint %q External Gateway with ID %s not found", bp.Id(), state.Id))
+				fmt.Sprintf("Blueprint %q Security Policy with ID %s not found", bp.Id(), state.Id))
 			return
 		}
-		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+		resp.Diagnostics.AddError("Failed to read Security Policy", err.Error())
 		return
 	}
 	if resp.Diagnostics.HasError() {
@@ -95,9 +94,9 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterSecurityPolicy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterExternalGateway
+	var plan blueprint.DatacenterSecurityPolicy
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -107,10 +106,10 @@ func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req reso
 	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, plan.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, plan.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -123,32 +122,39 @@ func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req reso
 		return
 	}
 
+	// create a request object
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	id, err := bp.CreateRemoteGateway(ctx, request)
+	// create the security policy
+	id, err := bp.CreatePolicy(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating external gateway", err.Error())
+		resp.Diagnostics.AddError("error creating security policy", err.Error())
 		return
 	}
 
+	// set the ID into the plan object and provisionally set state
 	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+
+	// read the policy back from the API to get the rule IDs
 	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to fetch just created External Gateway", err.Error())
+		resp.Diagnostics.AddError("failed reading just-created Security Policy", err.Error())
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// set the state
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (o *resourceDatacenterExternalGateway) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterSecurityPolicy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
-	var state blueprint.DatacenterExternalGateway
+	var state blueprint.DatacenterSecurityPolicy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -161,28 +167,30 @@ func (o *resourceDatacenterExternalGateway) Read(ctx context.Context, req resour
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, state.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
+	// read the state
 	err = state.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+		resp.Diagnostics.AddError("failed reading Security Policy", err.Error())
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterSecurityPolicy) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterExternalGateway
+	var plan blueprint.DatacenterSecurityPolicy
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -191,7 +199,7 @@ func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req reso
 	// get a client for the datacenter reference design
 	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, plan.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -204,31 +212,35 @@ func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req reso
 		return
 	}
 
+	// create a request object
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err = bp.UpdateRemoteGateway(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	// update the security policy
+	err = bp.UpdatePolicy(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating remote gateway", err.Error())
+		resp.Diagnostics.AddError("error creating security policy", err.Error())
 		return
 	}
 
+	// read the security policy back from the API to get the rule IDs
 	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
-		resp.Diagnostics.AddError("Failed to fetch just updated External Gateway", err.Error())
+		resp.Diagnostics.AddError("failed reading just-updated Security Policy", err.Error())
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// set the state
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
-func (o *resourceDatacenterExternalGateway) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterSecurityPolicy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
-	var state blueprint.DatacenterExternalGateway
+	var state blueprint.DatacenterSecurityPolicy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -240,7 +252,7 @@ func (o *resourceDatacenterExternalGateway) Delete(ctx context.Context, req reso
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, state.BlueprintId), err.Error())
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
@@ -253,12 +265,12 @@ func (o *resourceDatacenterExternalGateway) Delete(ctx context.Context, req reso
 		return
 	}
 
-	// Delete the remote gateway
-	err = bp.DeleteRemoteGateway(ctx, apstra.ObjectId(state.Id.ValueString()))
+	// Delete the security policy
+	err = bp.DeletePolicy(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting remote gateway", err.Error())
+		resp.Diagnostics.AddError("error deleting security policy", err.Error())
 	}
 }

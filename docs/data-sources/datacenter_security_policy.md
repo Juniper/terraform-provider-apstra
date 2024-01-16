@@ -63,7 +63,7 @@ Read-Only:
 - `established` (Boolean) When `true`, the rendered rule will use the NOS `established` or `tcp-established` keyword/feature for TCP access control list entries.
 - `id` (String) Security Policy Rule ID.
 - `name` (String) Security Policy Rule Name.
-- `protocol` (String) Security Policy Rule Protocol; one of: icmp, ip, tcp, udp
+- `protocol` (String) Security Policy Rule Protocol; one of: 'icmp', 'ip', 'tcp', 'udp'
 - `source_ports` (Attributes Set) Set of TCP/UDP source ports matched by this rule. A `null` set matches any port. Applies only when `protocol` is `tcp` or `udp`. (see [below for nested schema](#nestedatt--rules--source_ports))
 
 <a id="nestedatt--rules--destination_ports"></a>

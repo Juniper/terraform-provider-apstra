@@ -68,7 +68,6 @@ func (o routeTargets) String() string {
 func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 	ctx := context.Background()
 
-	// BlueprintB returns a bpClient and the template from which the blueprint was created
 	bpClient, bpDelete, err := testutils.BlueprintA(ctx)
 	if err != nil {
 		t.Fatal(errors.Join(err, bpDelete(ctx)))
