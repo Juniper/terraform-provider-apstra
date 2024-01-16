@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"strings"
 )
 
 const (
@@ -24,6 +27,9 @@ const (
 	resourceGroupNameVxlanVnIds          = "vni_virtual_network_ids"
 	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
 	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
+
+	exampleEnumOneFooFriendly = "FOO"
+	exampleEnumOneBarFriendly = "BAR"
 )
 
 type StringerWithFromString interface {
@@ -32,10 +38,11 @@ type StringerWithFromString interface {
 }
 
 // StringersToFriendlyString accepts stringers (probably apstra-go-sdk
-// string-able iota types) and returns a string that better reflects terminology
-// used by the Apstra web UI. For example, the API uses "distinct" where the web
-// UI uses "unique". This function turns apstra.AsnAllocationSchemeDistinct into
-// "unique".
+// string-able iota or enum types) and returns a string that better reflects
+// terminology used by the Apstra web UI.
+//
+// For example, the API uses "distinct" where the web UI uses "unique".
+// This function turns apstra.AsnAllocationSchemeDistinct into "unique".
 func StringersToFriendlyString(in ...fmt.Stringer) string {
 	if len(in) == 0 {
 		return ""
@@ -54,6 +61,10 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
+	case ExampleEnumOne:
+		return exampleEnumOneToFriendlyString(in0)
+	case ExampleEnumTwo:
+		return exampleEnumTwoToFriendlyString(in0, in[1:]...)
 	}
 
 	return in[0].String()
@@ -84,6 +95,10 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
+	case *ExampleEnumOne:
+		return exampleEnumOneFromFriendlyString(target, in[0])
+	case *ExampleEnumTwo:
+		return exampleEnumTwoFromFriendlyString(target, in[0])
 	}
 
 	return target.FromString(in[0])
@@ -125,6 +140,30 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 	}
 
 	return in.String()
+}
+
+func exampleEnumOneToFriendlyString(in ExampleEnumOne) string {
+	switch in {
+	case ExampleEnumOneFoo:
+		return exampleEnumOneFooFriendly
+	case ExampleEnumOneBar:
+		return exampleEnumOneBarFriendly
+	default:
+		return any(in).(ExampleEnumOne).Value
+	}
+}
+
+func exampleEnumTwoToFriendlyString(in ExampleEnumTwo, additionalInfo ...fmt.Stringer) string {
+	if len(additionalInfo) > 0 {
+		switch additionalInfo[0].String() {
+		case "title":
+			return cases.Title(language.Und).String(in.Value)
+		case "snake":
+			return "_" + in.Value + "_"
+		}
+	}
+
+	return in.Value
 }
 
 func nodeDeployModeToFriendlyString(in apstra.NodeDeployMode) string {
@@ -213,6 +252,31 @@ func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...s
 	}
 
 	return nil
+}
+
+func exampleEnumOneFromFriendlyString(target *ExampleEnumOne, in string) error {
+	switch in {
+	case exampleEnumOneFooFriendly:
+		target.Value = ExampleEnumOneFoo.Value
+		return nil
+	case exampleEnumOneBarFriendly:
+		target.Value = ExampleEnumOneBar.Value
+		return nil
+	}
+
+	t := ExampleEnumOneVals.Parse(in)
+	if t == nil {
+		return fmt.Errorf("failed to parse ExampleEnumOne value %q", in)
+	}
+
+	target.Value = t.Value
+	return nil
+}
+
+func exampleEnumTwoFromFriendlyString(target *ExampleEnumTwo, in string) error {
+	in = strings.ToLower(in)   // kill friendly "title" handling
+	in = strings.Trim(in, "_") // kill friendly "snake" handling
+	return target.FromString(in)
 }
 
 func nodeDeployModeFromFriendlyString(target *apstra.NodeDeployMode, in ...string) error {

@@ -14,6 +14,17 @@ func TestRosetta(t *testing.T) {
 	}
 
 	testCases := []tc{
+		{string: "FOO", stringers: []fmt.Stringer{ExampleEnumOneFoo}},
+		{string: "BAR", stringers: []fmt.Stringer{ExampleEnumOneBar}},
+		{string: "baz", stringers: []fmt.Stringer{ExampleEnumOneBaz}},
+
+		{string: "foo", stringers: []fmt.Stringer{ExampleEnumTwoFoo}},
+		{string: "_foo_", stringers: []fmt.Stringer{ExampleEnumTwoFoo, NewStringer("snake")}},
+		{string: "Foo", stringers: []fmt.Stringer{ExampleEnumTwoFoo, NewStringer("title")}},
+		{string: "bar", stringers: []fmt.Stringer{ExampleEnumTwoBar}},
+		{string: "_bar_", stringers: []fmt.Stringer{ExampleEnumTwoBar, NewStringer("snake")}},
+		{string: "Bar", stringers: []fmt.Stringer{ExampleEnumTwoBar, NewStringer("title")}},
+
 		{string: "unique", stringers: []fmt.Stringer{apstra.AsnAllocationSchemeDistinct}},
 		{string: "single", stringers: []fmt.Stringer{apstra.AsnAllocationSchemeSingle}},
 
@@ -47,6 +58,12 @@ func TestRosetta(t *testing.T) {
 		// test creating iota/stringer type from friendly string
 		var target StringerWithFromString
 		switch tc.stringers[0].(type) {
+		case ExampleEnumOne:
+			x := ExampleEnumOne{}
+			target = &x
+		case ExampleEnumTwo:
+			x := ExampleEnumTwo{}
+			target = &x
 		case apstra.ConfigletSection:
 			x := apstra.ConfigletSection(-1)
 			target = &x
