@@ -27,7 +27,7 @@ func (o *dataSourceDatacenterSecurityPolicy) Configure(ctx context.Context, req 
 
 func (o *dataSourceDatacenterSecurityPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific Security " +
+		MarkdownDescription: docCategoryDatacenter + "This data source provides details of a specific Security " +
 			"Policy within a Datacenter Blueprint.\n\nAt least one optional attribute is required.",
 		Attributes: blueprint.DatacenterSecurityPolicy{}.DataSourceAttributes(),
 	}

@@ -173,9 +173,8 @@ func (o DatacenterSecurityPolicy) ResourceAttributes() map[string]resourceSchema
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"rules": resourceSchema.ListNestedAttribute{
-			MarkdownDescription: "Not currently supported for use in a filter. Do you need this? Let us know by " +
-				"[opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)!",
-			Optional: true,
+			MarkdownDescription: "Ordered list of policy rules.",
+			Optional:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: DatacenterSecurityPolicyRule{}.ResourceAttributes(),
 			},
