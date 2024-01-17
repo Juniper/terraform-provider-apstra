@@ -100,7 +100,7 @@ resource "apstra_datacenter_security_policy" "server_traffic" {
 - `description` (String) Security Policy description, as seen in the Web UI.
 - `destination_application_point_id` (String) Graph node ID of the destination Application Point (Virtual Network ID, Routing Zone ID, etc...)
 - `enabled` (Boolean) Indicates whether the Security Policy is enabled. Default value: `true`
-- `rules` (Attributes List) Not currently supported for use in a filter. Do you need this? Let us know by [opening an issue](https://github.com/Juniper/terraform-provider-apstra/issues/new)! (see [below for nested schema](#nestedatt--rules))
+- `rules` (Attributes List) Ordered list of policy rules. (see [below for nested schema](#nestedatt--rules))
 - `source_application_point_id` (String) Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)
 - `tags` (Set of String) Set of Tags. All tags supplied here are used to match the Security Policy, but a matching Security Policy may have additional tags not enumerated in this set.
 
