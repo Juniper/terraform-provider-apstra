@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -592,22 +591,6 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 }
 
 func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.VirtualNetworkData, diags *diag.Diagnostics) {
-	bindings := make([]attr.Value, len(in.VnBindings))
-	for i := range in.VnBindings {
-		var binding VnBinding
-		binding.LoadApiData(ctx, in.VnBindings[i], diags)
-		if diags.HasError() {
-			return
-		}
-
-		var d diag.Diagnostics
-		bindings[i], d = types.ObjectValueFrom(ctx, VnBinding{}.attrTypes(), binding)
-		diags.Append(d...)
-	}
-	if diags.HasError() {
-		return
-	}
-
 	var virtualGatewayIpv4, virtualGatewayIpv6 string
 	if len(in.VirtualGatewayIpv4.To4()) == net.IPv4len {
 		virtualGatewayIpv4 = in.VirtualGatewayIpv4.String()
