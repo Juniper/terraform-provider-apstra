@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_datacenter_property_set Data Source - terraform-provider-apstra"
-subcategory: "Reference Design: Shared"
+subcategory: "Reference Design: Datacenter"
 description: |-
   This data source provides details of a specific Property Set imported into a Blueprint.
   At least one optional attribute is required.
