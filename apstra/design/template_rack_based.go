@@ -252,14 +252,18 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 		return
 	}
 
-	fap := in.FabricAddressingPolicy
-	if fap == nil {
-		o.FabricAddressing = types.StringNull()
-	} else {
-		if fap.SpineLeafLinks != fap.SpineSuperspineLinks {
-			diags.AddError(errProviderBug, "Spine/leaf and Spine/superspine addressing do not match - we cannot handle this situation")
+	fabricAddressing := types.StringNull()
+	if in.FabricAddressingPolicy != nil {
+		if in.FabricAddressingPolicy.SpineLeafLinks != in.FabricAddressingPolicy.SpineSuperspineLinks {
+			diags.AddError(errProviderBug,
+				fmt.Sprintf("Spine/Leaf and Spine/Luperspine addressing do not match: %q vs. %q\n"+
+					"We cannot handle this situation.",
+					in.FabricAddressingPolicy.SpineLeafLinks.String(),
+					in.FabricAddressingPolicy.SpineSuperspineLinks.String()),
+			)
+			return
 		}
-		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
+		fabricAddressing = types.StringValue(in.FabricAddressingPolicy.SpineLeafLinks.String())
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
@@ -267,6 +271,7 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
 	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
+	o.FabricAddressing = fabricAddressing
 }
 
 func (o *TemplateRackBased) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
