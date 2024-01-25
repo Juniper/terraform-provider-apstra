@@ -431,7 +431,7 @@ func (o *Blueprint) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics
 	var err error
 
 	if !o.FabricAddressing.IsNull() {
-		minVer = version.Must(version.NewVersion(compatibility.BlueprintRequestFabricAddressingMinVer))
+		minVer = version.Must(version.NewVersion("4.1.1"))
 	}
 	if err != nil {
 		diags.AddError(constants.ErrProviderBug,
