@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -296,7 +297,7 @@ func (o *DatacenterRoutingPolicy) Request(ctx context.Context, diags *diag.Diagn
 	var importPolicy apstra.DcRoutingPolicyImportPolicy
 	err := importPolicy.FromString(o.ImportPolicy.ValueString())
 	if err != nil {
-		diags.AddError(errProviderBug,
+		diags.AddError(constants.ErrProviderBug,
 			fmt.Sprintf("error parsing routing import policy %q - %s", o.ImportPolicy.ValueString(), err.Error()))
 		return nil
 	}
