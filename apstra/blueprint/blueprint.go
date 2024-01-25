@@ -451,7 +451,7 @@ func (o *Blueprint) CheckCompatibility(_ context.Context, client *apstra.Client,
 	}
 }
 
-func (o *Blueprint) GetFabricLinkIpVersion(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *Blueprint) GetFabricLinkAddressing(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetClient(bp.Client()).
 		SetBlueprintId(bp.Id()).

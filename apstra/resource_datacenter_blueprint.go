@@ -164,7 +164,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	plan.GetFabricLinkIpVersion(ctx, bp, &resp.Diagnostics)
+	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -214,7 +214,7 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 
 	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
-	state.GetFabricLinkIpVersion(ctx, bp, &resp.Diagnostics)
+	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 
 	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -287,7 +287,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	plan.GetFabricLinkIpVersion(ctx, bp, &resp.Diagnostics)
+	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

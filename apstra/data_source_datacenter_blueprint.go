@@ -96,7 +96,7 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 		return
 	}
 
-	state.GetFabricLinkIpVersion(ctx, bp, &resp.Diagnostics)
+	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
