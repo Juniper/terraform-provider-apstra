@@ -55,7 +55,7 @@ resource "apstra_template_rack_based" "r" {
 
 ### Optional
 
-- `fabric_link_addressing` (String) Fabric addressing scheme for Spine/leaf links. Required for Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.
+- `fabric_link_addressing` (String) Fabric addressing scheme for Spine/Leaf links. Required for Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.
 
 ### Read-Only
 
