@@ -427,17 +427,18 @@ func (o *Blueprint) SetFabricAddressingPolicy(ctx context.Context, bpClient *aps
 }
 
 func (o *Blueprint) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
-	var min, max *version.Version
+	var minVer, maxVer *version.Version
 	var err error
+
 	if !o.FabricAddressing.IsNull() {
-		min, err = version.NewVersion("4.1.1")
+		minVer = version.Must(version.NewVersion(compatibility.BlueprintRequestFabricAddressingMinVer))
 	}
 	if err != nil {
 		diags.AddError(constants.ErrProviderBug,
 			fmt.Sprintf("error parsing min/max version - %s", err.Error()))
 	}
 
-	return min, max
+	return minVer, maxVer
 }
 
 func (o *Blueprint) CheckCompatibility(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
