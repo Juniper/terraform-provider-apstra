@@ -267,7 +267,7 @@ func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *apstra.C
 			SpineLeafLinks:       apstra.AddressingSchemeIp4, // sensible default
 		}
 
-		if !o.FabricAddressing.IsNull() {
+		if utils.Known(o.FabricAddressing) {
 			var fabricAddressing apstra.AddressingScheme
 			err := fabricAddressing.FromString(o.FabricAddressing.ValueString())
 			if err != nil {
