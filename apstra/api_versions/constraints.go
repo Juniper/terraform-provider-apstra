@@ -5,7 +5,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-type attributeConstraints struct {
+type attributeConstraint struct {
 	path        path.Path
 	constraints version.Constraints
 }
@@ -16,14 +16,14 @@ type otherConstraint struct {
 }
 
 type Constraints struct {
-	attributeConstraints []attributeConstraints
+	attributeConstraints []attributeConstraint
 	otherConstraints     []otherConstraint
 }
 
 // AddAttributeConstraints should be used to add version constraints imposed by
 // the presence of an attribute or attribute value in the configuration.
 func (o *Constraints) AddAttributeConstraints(path path.Path, constraints version.Constraints) {
-	o.attributeConstraints = append(o.attributeConstraints, attributeConstraints{
+	o.attributeConstraints = append(o.attributeConstraints, attributeConstraint{
 		path:        path,
 		constraints: constraints,
 	})
