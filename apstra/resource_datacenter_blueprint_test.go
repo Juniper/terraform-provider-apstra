@@ -56,7 +56,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 	}
 
 	renderConfig := func(cfg config) string {
-		return fmt.Sprintf(resourceDatacenterBlueprintHCL,
+		return insecureProviderConfigHCL + fmt.Sprintf(resourceDatacenterBlueprintHCL,
 			cfg.name,
 			cfg.templateId,
 			stringOrNull(cfg.esiMacMsb),
@@ -80,7 +80,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "a1_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
@@ -94,7 +94,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "a2_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "4",
@@ -110,7 +110,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "a3_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "6",
@@ -126,7 +126,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "a3_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
@@ -140,7 +140,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "a3_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							ipv6Applications: "false",
@@ -167,7 +167,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "b1_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "4",
@@ -183,7 +183,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "b1_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "4",
@@ -209,7 +209,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "c1_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
@@ -223,7 +223,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "c1_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							fabricAddressing: "ipv4",
@@ -238,7 +238,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "c2_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							fabricAddressing: "ipv4_ipv6",
@@ -253,7 +253,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:             "c2_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							fabricAddressing: "ipv6",
@@ -278,7 +278,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "d1_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
@@ -293,7 +293,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "d1_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9170",
@@ -309,7 +309,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "d1_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9100",
@@ -325,7 +325,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "d1_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
@@ -341,7 +341,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Taint: []string{"apstra_datacenter_blueprint.test"},
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "d2_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9100",
@@ -357,7 +357,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						}...),
 					},
 					{
-						Config: insecureProviderConfigHCL + renderConfig(config{
+						Config: renderConfig(config{
 							name:       "d2_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9100",
@@ -384,7 +384,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			t.Parallel()
 			if !tCase.apiVersionConstraints.Check(apiVersion) {
 				t.Skipf("API version %s does not satisfy version constraints(%s) of test %q",
-					apiVersion.String(), tCase.apiVersionConstraints.String(), tName)
+					apiVersion, tCase.apiVersionConstraints, tName)
 			}
 			resource.Test(t, tCase.testCase)
 		})

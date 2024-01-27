@@ -292,18 +292,15 @@ func (o *TemplateRackBased) MinMaxApiVersions(_ context.Context, diags *diag.Dia
 
 func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *TemplateRackBased, diags *diag.Diagnostics) {
 	var srcSpine, dstSpine *Spine
-	var d diag.Diagnostics
 
 	// extract the source Spine object from src
-	d = src.Spine.As(ctx, &srcSpine, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	diags.Append(src.Spine.As(ctx, &srcSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
 
 	// extract the destination Spine object from o
-	d = o.Spine.As(ctx, &dstSpine, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	diags.Append(o.Spine.As(ctx, &dstSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
