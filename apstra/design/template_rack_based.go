@@ -201,7 +201,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
-	if !o.FabricAddressing.IsNull() {
+	if utils.Known(o.FabricAddressing) {
 		var addressingScheme apstra.AddressingScheme
 		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
