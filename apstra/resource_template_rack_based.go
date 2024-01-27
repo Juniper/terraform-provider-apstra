@@ -218,10 +218,3 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 		return
 	}
 }
-
-func (o *resourceTemplateRackBased) apiVersion() (*version.Version, error) {
-	if o.client == nil {
-		return nil, nil
-	}
-	return version.NewVersion(o.client.ApiVersion())
-}
