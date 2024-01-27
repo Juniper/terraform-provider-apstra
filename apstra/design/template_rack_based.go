@@ -118,6 +118,7 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links. Required for " +
 				"Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.",
 			Optional: true,
+			Computed: true,
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
