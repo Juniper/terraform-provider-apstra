@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -777,7 +778,7 @@ func (o *DatacenterVirtualNetwork) CompatibilityCheckAsFilter(_ context.Context,
 	if !o.L3Mtu.IsNull() && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
 		diags.AddAttributeWarning(
 			path.AtName("l3_mtu"),
-			errApiCompatibility,
+			constants.ErrApiCompatibility,
 			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.\n\n"+
 				"Using `l3_mtu` with Apstra %s will cause this filter to match zero Virtual Networks.",
 				compatibility.MinVerForVnL3Mtu().Original(), apstraVersion))
@@ -792,7 +793,7 @@ func (o *DatacenterVirtualNetwork) CompatibilityCheckAsResource(_ context.Contex
 	}
 
 	if utils.Known(o.L3Mtu) && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
-		diags.AddAttributeError(path.Root("l3_mtu"), errApiCompatibility,
+		diags.AddAttributeError(path.Root("l3_mtu"), constants.ErrApiCompatibility,
 			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.",
 				compatibility.MinVerForVnL3Mtu().Original()))
 	}

@@ -48,7 +48,7 @@ output "rack_based_template_id_to_name" {
 ### Read-Only
 
 - `asn_allocation_scheme` (String) "unique" is for 3-stage designs; "single" is for 5-stage designs.
-- `fabric_link_addressing` (String) Fabric addressing scheme for Spine/leaf links.
+- `fabric_link_addressing` (String) Fabric addressing scheme for Spine/Leaf links. Applies only to Apstra 4.1.0.
 - `overlay_control_protocol` (String) Defines the inter-rack virtual network overlay protocol in the fabric.
 - `rack_infos` (Attributes Map) Map of Rack Type info (count + details) (see [below for nested schema](#nestedatt--rack_infos))
 - `spine` (Attributes) Spine layer details (see [below for nested schema](#nestedatt--spine))

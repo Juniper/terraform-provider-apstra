@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -253,7 +254,7 @@ func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Pa
 	if action == nil {
 		diags.AddAttributeError(
 			path.AtName("action"),
-			errStringParse,
+			constants.ErrStringParse,
 			fmt.Sprintf("failed to parse action %s", o.Action))
 		return nil
 	}

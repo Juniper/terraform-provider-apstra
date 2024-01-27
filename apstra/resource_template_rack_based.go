@@ -81,6 +81,12 @@ func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
+	// check compatibility of config against API version
+	plan.CheckCompatibility(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// create a CreateRackBasedTemplateRequest
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -155,6 +161,12 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 	// retrieve values from plan
 	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// check compatibility of config against API version
+	plan.CheckCompatibility(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

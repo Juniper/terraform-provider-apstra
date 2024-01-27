@@ -37,7 +37,6 @@ func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
-		Capability:  apstra.TemplateCapabilityBlueprint,
 		Spine: &apstra.TemplateElementSpineRequest{
 			Count:         4,
 			LogicalDevice: "AOS-16x40-1",
@@ -46,7 +45,7 @@ func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
 			rackType.Id: {Count: 2},
 		},
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -82,7 +81,6 @@ func TemplateB(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
-		Capability:  apstra.TemplateCapabilityBlueprint,
 		Spine: &apstra.TemplateElementSpineRequest{
 			Count:         1,
 			LogicalDevice: "AOS-8x10-1",
@@ -91,7 +89,7 @@ func TemplateB(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 			"access_switch":      {Count: 3}, // single-single
 			"L2_ESI_Access_dual": {Count: 2}, // ESI-ESI
 		},
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -127,7 +125,6 @@ func TemplateC(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
-		Capability:  apstra.TemplateCapabilityBlueprint,
 		Spine: &apstra.TemplateElementSpineRequest{
 			Count:         1,
 			LogicalDevice: "AOS-8x10-1",
@@ -135,7 +132,7 @@ func TemplateC(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
 			"L2_ESI_Access_dual": {Count: 1}, // ESI-ESI
 		},
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -220,7 +217,6 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
-		Capability:  apstra.TemplateCapabilityBlueprint,
 		Spine: &apstra.TemplateElementSpineRequest{
 			Count:         1,
 			LogicalDevice: "AOS-8x10-1",
@@ -231,7 +227,7 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 			rcid: {Count: 1},
 			rdid: {Count: 1},
 		},
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -282,7 +278,6 @@ func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
-		Capability:  apstra.TemplateCapabilityBlueprint,
 		Spine: &apstra.TemplateElementSpineRequest{
 			Count:         1,
 			LogicalDevice: "AOS-32x40-1",
@@ -290,7 +285,7 @@ func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
 			rackTypeF.Id: {Count: 1},
 		},
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},

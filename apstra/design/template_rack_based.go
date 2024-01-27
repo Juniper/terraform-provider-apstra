@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -67,7 +69,7 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric addressing scheme for Spine/leaf links.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links. Applies only to Apstra 4.1.0.",
 			Computed:            true,
 		},
 		"rack_infos": dataSourceSchema.MapNestedAttribute{
@@ -113,7 +115,7 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			},
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric addressing scheme for Spine/leaf links. Required for " +
+			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links. Required for " +
 				"Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.",
 			Optional: true,
 		},
@@ -181,7 +183,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 		SpineAsnScheme: spineAsnScheme,
 	}
 
-	var fabricAddressingPolicy *apstra.FabricAddressingPolicy
+	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
 	if !o.FabricAddressing.IsNull() {
 		var addressingScheme apstra.AddressingScheme
 		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
@@ -190,7 +192,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 				fmt.Sprintf("error parsing fabric addressing scheme %q - %s",
 					o.FabricAddressing.ValueString(), err.Error()))
 		}
-		fabricAddressingPolicy = &apstra.FabricAddressingPolicy{
+		fabricAddressingPolicy = &apstra.TemplateFabricAddressingPolicy410Only{
 			SpineSuperspineLinks: addressingScheme,
 			SpineLeafLinks:       addressingScheme,
 		}
@@ -209,7 +211,6 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 
 	return &apstra.CreateRackBasedTemplateRequest{
 		DisplayName:       o.Name.ValueString(),
-		Capability:        apstra.TemplateCapabilityNone,
 		Spine:             s.Request(ctx, diags),
 		RackInfos:         rackInfos,
 		DhcpServiceIntent: &apstra.DhcpServiceIntent{Active: true},
@@ -251,14 +252,18 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 		return
 	}
 
-	fap := in.FabricAddressingPolicy
-	if fap == nil {
-		o.FabricAddressing = types.StringNull()
-	} else {
-		if fap.SpineLeafLinks != fap.SpineSuperspineLinks {
-			diags.AddError(errProviderBug, "Spine/leaf and Spine/superspine addressing do not match - we cannot handle this situation")
+	fabricAddressing := types.StringNull()
+	if in.FabricAddressingPolicy != nil {
+		if in.FabricAddressingPolicy.SpineLeafLinks != in.FabricAddressingPolicy.SpineSuperspineLinks {
+			diags.AddError(errProviderBug,
+				fmt.Sprintf("Spine/Leaf and Spine/Luperspine addressing do not match: %q vs. %q\n"+
+					"We cannot handle this situation.",
+					in.FabricAddressingPolicy.SpineLeafLinks.String(),
+					in.FabricAddressingPolicy.SpineSuperspineLinks.String()),
+			)
+			return
 		}
-		o.FabricAddressing = types.StringValue(fap.SpineLeafLinks.String())
+		fabricAddressing = types.StringValue(in.FabricAddressingPolicy.SpineLeafLinks.String())
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
@@ -266,38 +271,36 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
 	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
+	o.FabricAddressing = fabricAddressing
 }
 
 func (o *TemplateRackBased) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
-	var min, max *version.Version
+	var minVer, maxVer *version.Version
 	var err error
 	if o.FabricAddressing.IsNull() {
-		min, err = version.NewVersion("4.1.1")
+		minVer, err = version.NewVersion("4.1.1")
 	} else {
-		max, err = version.NewVersion("4.1.0")
+		maxVer, err = version.NewVersion("4.1.0")
 	}
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing min/max version - %s", err.Error()))
 	}
 
-	return min, max
+	return minVer, maxVer
 }
 
 func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *TemplateRackBased, diags *diag.Diagnostics) {
 	var srcSpine, dstSpine *Spine
-	var d diag.Diagnostics
 
 	// extract the source Spine object from src
-	d = src.Spine.As(ctx, &srcSpine, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	diags.Append(src.Spine.As(ctx, &srcSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
 
 	// extract the destination Spine object from o
-	d = o.Spine.As(ctx, &dstSpine, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	diags.Append(o.Spine.As(ctx, &dstSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
@@ -309,4 +312,12 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 	o.Spine = utils.ObjectValueOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
 }
 
-// 	state.CopyWriteOnlyElements(ctx, &plan, &resp.Diagnostics)
+func (o TemplateRackBased) CheckCompatibility(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	if compatibility.TemplateFabricAddressingRequiredVersions(client.ApiVersion()) && o.FabricAddressing.IsNull() {
+		diags.AddAttributeError(
+			path.Root("fabric_link_addressing"),
+			constants.ErrApiCompatibility,
+			"`fabric_link_addressing` required with Apstra "+client.ApiVersion(),
+		)
+	}
+}

@@ -54,7 +54,7 @@ func BlueprintA(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClie
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      bpname,
 		TemplateId: "L2_Virtual_EVPN",
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -100,7 +100,7 @@ func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.Objec
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -141,7 +141,7 @@ func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -182,7 +182,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -283,7 +283,7 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
@@ -323,7 +323,7 @@ func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.FabricAddressingPolicy{
+		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},

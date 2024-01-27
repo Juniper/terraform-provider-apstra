@@ -55,7 +55,8 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	}()
 
 	// enable IPv6
-	err = bpClient.SetFabricAddressingPolicy(ctx, &apstra.TwoStageL3ClosFabricAddressingPolicy{Ipv6Enabled: true})
+	ipv6Enabled := true
+	err = bpClient.SetFabricAddressingPolicy(ctx, &apstra.TwoStageL3ClosFabricAddressingPolicy{Ipv6Enabled: &ipv6Enabled})
 	if err != nil {
 		t.Fatal(err)
 	}

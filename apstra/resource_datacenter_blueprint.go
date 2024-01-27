@@ -85,6 +85,12 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	// check compatibility of config against API version
+	plan.CheckCompatibility(ctx, o.client, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Make a blueprint creation request.
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -119,10 +125,20 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// set the fabric addressing policy
-	plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	// set the fabric addressing policy if the plan requires us to do so
+	if !plan.EsiMacMsb.IsUnknown() || !plan.FabricMtu.IsUnknown() || !plan.Ipv6Applications.IsUnknown() {
+		// Lock the blueprint mutex.
+		err = o.lockFunc(ctx, id.String())
+		if err != nil {
+			resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
+			return
+		}
+
+		// set the fabric addressing policy, passing no prior state
+		plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// retrieve blueprint status
@@ -134,6 +150,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	fapData, err := bp.GetFabricAddressingPolicy(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy after creation", err.Error())
+		return
 	}
 
 	// load blueprint status
@@ -143,6 +160,11 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	}
 
 	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -192,6 +214,7 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 
 	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 
 	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -209,6 +232,12 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	// Retrieve state.
 	var state blueprint.Blueprint
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// check compatibility of config against API version
+	plan.CheckCompatibility(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -254,6 +283,11 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric AddressingPolicy after update", err.Error())
 	}
 	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

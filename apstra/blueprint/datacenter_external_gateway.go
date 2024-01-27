@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -372,7 +373,7 @@ func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp
 	}
 
 	if len(queryResponse.Items) < pwUsageCounts[password] {
-		diags.AddWarning(errProviderBug,
+		diags.AddWarning(constants.ErrProviderBug,
 			"graph query found more protocol session passwords than sessions - this should be impossible")
 		return
 	}

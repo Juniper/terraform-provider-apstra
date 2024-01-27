@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -301,7 +302,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	if ocp != apstra.OverlayControlProtocolEvpn {
 		diags.AddAttributeError(
 			path.Root("blueprint_id"),
-			errInvalidConfig,
+			constants.ErrInvalidConfig,
 			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosetta treatment
 	}
 

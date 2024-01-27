@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -295,7 +296,7 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	default:
 		// config validation should not have allowed this
 		diags.AddError(
-			errProviderBug,
+			constants.ErrProviderBug,
 			fmt.Sprintf("cannot proceed\n"+
 				"  device_key null: %t, device_key unknown: %t\n"+
 				"  initial_interface_map_id null: %t, initial_interface_map_id known: %t",
@@ -380,7 +381,7 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.C
 // DeviceKey value in the blueprint.
 func (o *DeviceAllocation) GetDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	if o.NodeId.IsNull() {
-		diags.AddError(errProviderBug, "GetDeviceKey invoked with null NodeId")
+		diags.AddError(constants.ErrProviderBug, "GetDeviceKey invoked with null NodeId")
 		return
 	}
 
