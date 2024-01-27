@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -118,6 +119,21 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 				"Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.",
 			Optional: true,
 			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(
+					apstra.AddressingSchemeIp4.String(),
+					apstra.AddressingSchemeIp46.String(),
+					apstra.AddressingSchemeIp6.String(),
+				),
+				apstravalidator.WhenValueIsString(
+					types.StringValue(apstra.AddressingSchemeIp6.String()),
+					apstravalidator.ValueAtMustBeString(
+						path.MatchRelative().AtParent().AtName("overlay_control_protocol"),
+						types.StringValue(OverlayControlProtocolStatic),
+						false,
+					),
+				),
+			},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
