@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -115,8 +114,8 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			},
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links. Required for " +
-				"Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.",
+			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Required for "+
+				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
 			Optional: true,
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
@@ -223,29 +222,6 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 }
 
-func (o *TemplateRackBased) Validate(ctx context.Context, diags *diag.Diagnostics) {
-	if o.RackInfos.IsUnknown() {
-		return
-	}
-
-	rackInfoMap := make(map[string]TemplateRackInfo, len(o.RackInfos.Elements()))
-	d := o.RackInfos.ElementsAs(ctx, &rackInfoMap, false)
-	diags.Append(d...)
-	if diags.HasError() {
-		return
-	}
-
-	idMap := make(map[string]struct{}, len(rackInfoMap))
-	for key := range rackInfoMap {
-		if _, ok := idMap[key]; ok {
-			diags.AddAttributeError(path.Root("rack_infos").AtMapKey(key), errInvalidConfig,
-				fmt.Sprintf("rack type id %q used multiple times", key))
-			return
-		}
-		idMap[key] = struct{}{}
-	}
-}
-
 func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) {
 	if in == nil {
 		diags.AddError(errProviderBug, "attempt to load TemplateRackBased from nil source")
@@ -274,22 +250,6 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 	o.FabricAddressing = fabricAddressing
 }
 
-func (o *TemplateRackBased) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
-	var minVer, maxVer *version.Version
-	var err error
-	if o.FabricAddressing.IsNull() {
-		minVer, err = version.NewVersion("4.1.1")
-	} else {
-		maxVer, err = version.NewVersion("4.1.0")
-	}
-	if err != nil {
-		diags.AddError(errProviderBug,
-			fmt.Sprintf("error parsing min/max version - %s", err.Error()))
-	}
-
-	return minVer, maxVer
-}
-
 func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *TemplateRackBased, diags *diag.Diagnostics) {
 	var srcSpine, dstSpine *Spine
 
@@ -312,12 +272,15 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 	o.Spine = utils.ObjectValueOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
 }
 
-func (o TemplateRackBased) CheckCompatibility(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	if compatibility.TemplateFabricAddressingRequiredVersions(client.ApiVersion()) && o.FabricAddressing.IsNull() {
-		diags.AddAttributeError(
+func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
+	var response apiversions.Constraints
+
+	if !o.FabricAddressing.IsNull() {
+		response.AddAttributeConstraints(
 			path.Root("fabric_link_addressing"),
-			constants.ErrApiCompatibility,
-			"`fabric_link_addressing` required with Apstra "+client.ApiVersion(),
+			version.MustConstraints(version.NewConstraint(apiversions.Apstra410)),
 		)
 	}
+
+	return response
 }
