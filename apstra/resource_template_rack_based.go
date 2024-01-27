@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -15,12 +15,9 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
 var _ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
-var _ versionValidator = &resourceTemplateRackBased{}
 
 type resourceTemplateRackBased struct {
-	client           *apstra.Client
-	minClientVersion *version.Version
-	maxClientVersion *version.Version
+	client *apstra.Client
 }
 
 func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -46,43 +43,38 @@ func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req reso
 		return
 	}
 
-	// validate the configuration
-	config.Validate(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// config-only validation begins here (there is none)
 
-	// Set the min/max API versions required by the client. These elements set within 'o'
-	// do not persist after ValidateConfig exits even though 'o' is a pointer receiver.
-	o.minClientVersion, o.maxClientVersion = config.MinMaxApiVersions(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+	// cannot proceed to api version compatibility validation without a client
 	if o.client == nil {
-		// Bail here because we can't validate config's API version needs if the client doesn't exist.
-		// This method should be called again (after the provider's Configure() method) with a non-nil
-		// client pointer.
 		return
 	}
 
-	// validate version compatibility between the API server and the configuration's min/max needs.
-	o.checkVersion(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	// config + api version validation begins here
+
+	// get the api version from the client
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
 		return
 	}
+
+	// validate the configuration
+	resp.Diagnostics.Append(
+		apiversions.ValidateConstraints(
+			ctx,
+			apiversions.ValidateConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: config.VersionConstrains(),
+			},
+		)...,
+	)
 }
 
 func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// retrieve values from plan
 	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// check compatibility of config against API version
-	plan.CheckCompatibility(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -108,7 +100,7 @@ func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.Cre
 	}
 
 	// parse the API response into a state object
-	state := design.TemplateRackBased{}
+	var state design.TemplateRackBased
 	state.Id = types.StringValue(string(id))
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
@@ -161,12 +153,6 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 	// retrieve values from plan
 	var plan design.TemplateRackBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// check compatibility of config against API version
-	plan.CheckCompatibility(ctx, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -231,23 +217,4 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 		)
 		return
 	}
-}
-
-func (o *resourceTemplateRackBased) apiVersion() (*version.Version, error) {
-	if o.client == nil {
-		return nil, nil
-	}
-	return version.NewVersion(o.client.ApiVersion())
-}
-
-func (o *resourceTemplateRackBased) cfgVersionMin() (*version.Version, error) {
-	return o.minClientVersion, nil
-}
-
-func (o *resourceTemplateRackBased) cfgVersionMax() (*version.Version, error) {
-	return o.maxClientVersion, nil
-}
-
-func (o *resourceTemplateRackBased) checkVersion(ctx context.Context, diags *diag.Diagnostics) {
-	checkVersionCompatibility(ctx, o, diags)
 }
