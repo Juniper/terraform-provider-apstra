@@ -57,6 +57,8 @@ resource "apstra_datacenter_virtual_network" "test" {
 ### Optional
 
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `export_route_targets` (Set of String) Export RTs for this Virtual Network.
+- `import_route_targets` (Set of String) Import RTs for this Virtual Network.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network. Default: true
 - `ipv4_subnet` (String) IPv4 subnet associated with the Virtual Network. When not specified, a prefix from within the IPv4 Resource Pool assigned to the `virtual_network_svi_subnets` role will be automatically assigned by Apstra.
 - `ipv4_virtual_gateway` (String) Specifies the IPv4 virtual gateway address within the Virtual Network. The configured value must be a valid IPv4 host address configured value within range specified by `ipv4_subnet`

@@ -44,7 +44,9 @@ locals {
 
 - `bindings` (Attributes Map) Details availability of the virtual network on leaf and access switches (see [below for nested schema](#nestedatt--bindings))
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `export_route_targets` (Set of String) Export RTs for this Virtual Network.
 - `had_prior_vni_config` (Boolean) Not applicable in data source context. Ignore.
+- `import_route_targets` (Set of String) Import RTs for this Virtual Network.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network.
 - `ipv4_subnet` (String) IPv4 subnet associated with the Virtual Network.
 - `ipv4_virtual_gateway` (String) Specifies the IPv4 virtual gateway address within the Virtual Network.
