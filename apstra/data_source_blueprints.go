@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -16,9 +15,7 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
 
 type dataSourceBlueprints struct {
-	client           *apstra.Client
-	minClientVersion *version.Version
-	maxClientVersion *version.Version
+	client *apstra.Client
 }
 
 func (o *dataSourceBlueprints) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
