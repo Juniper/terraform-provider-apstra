@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -118,6 +119,22 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links. Required for " +
 				"Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.",
 			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(
+					apstra.AddressingSchemeIp4.String(),
+					apstra.AddressingSchemeIp46.String(),
+					apstra.AddressingSchemeIp6.String(),
+				),
+				apstravalidator.WhenValueIsString(
+					types.StringValue(apstra.AddressingSchemeIp6.String()),
+					apstravalidator.ValueAtMustBeString(
+						path.MatchRelative().AtParent().AtName("overlay_control_protocol"),
+						types.StringValue(OverlayControlProtocolStatic),
+						false,
+					),
+				),
+			},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
@@ -184,7 +201,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
-	if !o.FabricAddressing.IsNull() {
+	if utils.Known(o.FabricAddressing) {
 		var addressingScheme apstra.AddressingScheme
 		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
