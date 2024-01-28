@@ -27,6 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"net"
 	"regexp"
+	"strconv"
 )
 
 type DatacenterVirtualNetwork struct {
@@ -649,7 +650,7 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 	if !o.Vni.IsNull() {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "vn_id",
-			Value: apstra.QEIntVal(int(o.Vni.ValueInt64())),
+			Value: apstra.QEStringVal(strconv.Itoa(int(o.Vni.ValueInt64()))),
 		})
 	}
 
