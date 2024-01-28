@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -769,33 +768,72 @@ func (o *DatacenterVirtualNetwork) Ipv6Gateway(_ context.Context, _ path.Path, _
 	return net.ParseIP(o.IPv6Gateway.ValueString())
 }
 
-func (o *DatacenterVirtualNetwork) CompatibilityCheckAsFilter(_ context.Context, path path.Path, client *apstra.Client, diags *diag.Diagnostics) {
-	apstraVersion, err := version.NewVersion(client.ApiVersion())
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed parsing Apstra API version %q", apstraVersion), err.Error())
+// ValidateConfigBindingsReservation ensures that all bindings use the same VLAN
+// ID when `reserve_vlan` is true.
+func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.Context, diags *diag.Diagnostics) {
+	// validation only possible when reserve_vlan is set "true"
+	if !o.ReserveVlan.ValueBool() {
+		return // skip 'false', 'unknown', 'null' values
+	}
+
+	// validation not possible when bindings are unknown
+	if o.Bindings.IsUnknown() {
 		return
 	}
 
-	if !o.L3Mtu.IsNull() && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
-		diags.AddAttributeWarning(
-			path.AtName("l3_mtu"),
-			constants.ErrApiCompatibility,
-			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.\n\n"+
-				"Using `l3_mtu` with Apstra %s will cause this filter to match zero Virtual Networks.",
-				compatibility.MinVerForVnL3Mtu().Original(), apstraVersion))
+	// validation not possible when any individual binding is unknown
+	for _, v := range o.Bindings.Elements() {
+		if v.IsUnknown() {
+			return
+		}
+	}
+
+	// extract bindings as a map
+	var bindings map[string]VnBinding
+	diags.Append(o.Bindings.ElementsAs(ctx, &bindings, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	// validate each binding
+	invalidConfigDueToNullVlan := false
+	reservedVlanIds := make(map[int64]struct{})
+	for _, binding := range bindings {
+		if binding.VlanId.IsUnknown() {
+			continue // skip further validation of unknown vlans
+		}
+		if binding.VlanId.IsNull() {
+			invalidConfigDueToNullVlan = true
+			continue // todo: should this be 'break' instead?
+		}
+		reservedVlanIds[binding.VlanId.ValueInt64()] = struct{}{}
+	}
+
+	// null vlan is invalid
+	if invalidConfigDueToNullVlan {
+		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'vlan_id' must be specified in each binding when 'reserve_vlan' is true"))
+	}
+
+	// we should have at most one VLAN ID across all bindings (zero when they're unknown)
+	if len(reservedVlanIds) > 1 {
+		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'vlan_id' attributes must match when 'reserve_vlan' is true"))
+		return
 	}
 }
 
-func (o *DatacenterVirtualNetwork) CompatibilityCheckAsResource(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	apstraVersion, err := version.NewVersion(client.ApiVersion())
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed parsing Apstra API version %q", apstraVersion), err.Error())
-		return
+func (o DatacenterVirtualNetwork) VersionConstraints() apiversions.Constraints {
+	var response apiversions.Constraints
+
+	if utils.Known(o.L3Mtu) {
+		response.AddAttributeConstraints(
+			path.Root("l3_mtu"),
+			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+		)
 	}
 
-	if utils.Known(o.L3Mtu) && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
-		diags.AddAttributeError(path.Root("l3_mtu"), constants.ErrApiCompatibility,
-			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.",
-				compatibility.MinVerForVnL3Mtu().Original()))
-	}
+	return response
 }

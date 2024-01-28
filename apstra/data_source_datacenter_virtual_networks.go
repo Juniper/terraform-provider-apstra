@@ -151,12 +151,6 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 			return
 		}
 
-		// compatibility check
-		filter.CompatibilityCheckAsFilter(ctx, path.Root("filter"), bp.Client(), &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
 		filters = append(filters, filter)
 	}
 
@@ -165,14 +159,6 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 		resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 		if resp.Diagnostics.HasError() {
 			return
-		}
-
-		// compatibility checks
-		for i, filter := range filters {
-			filter.CompatibilityCheckAsFilter(ctx, path.Root("filters").AtListIndex(i), bp.Client(), &resp.Diagnostics)
-			if resp.Diagnostics.HasError() {
-				return
-			}
 		}
 	}
 

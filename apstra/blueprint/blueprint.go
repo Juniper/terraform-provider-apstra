@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -155,8 +155,8 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"fabric_addressing": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Addressing scheme for both superspine/spine and spine/leaf links. Only "+
-				"applicable to Apstra versions 4.1.1 and later. Must be one of: %s",
-				strings.Join([]string{
+				"applicable to Apstra versions %s and later. Must be one of: %s",
+				apiversions.Apstra411, strings.Join([]string{
 					apstra.AddressingSchemeIp4.String(),
 					apstra.AddressingSchemeIp6.String(),
 					apstra.AddressingSchemeIp46.String(),
@@ -426,31 +426,6 @@ func (o *Blueprint) SetFabricAddressingPolicy(ctx context.Context, bpClient *aps
 	}
 }
 
-func (o *Blueprint) MinMaxApiVersions(_ context.Context, diags *diag.Diagnostics) (*version.Version, *version.Version) {
-	var minVer, maxVer *version.Version
-	var err error
-
-	if !o.FabricAddressing.IsNull() {
-		minVer = version.Must(version.NewVersion("4.1.1"))
-	}
-	if err != nil {
-		diags.AddError(constants.ErrProviderBug,
-			fmt.Sprintf("error parsing min/max version - %s", err.Error()))
-	}
-
-	return minVer, maxVer
-}
-
-func (o *Blueprint) CheckCompatibility(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	if compatibility.FabricL3MtuForbiddenInRequest(client.ApiVersion()) && !o.FabricMtu.IsUnknown() {
-		diags.AddAttributeError(
-			path.Root("fabric_mtu"),
-			constants.ErrApiCompatibility,
-			"`fabric_mtu` requires Apstra 4.2.0 or later",
-		)
-	}
-}
-
 func (o *Blueprint) GetFabricLinkAddressing(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetClient(bp.Client()).
@@ -509,4 +484,24 @@ func (o *Blueprint) GetFabricLinkAddressing(ctx context.Context, bp *apstra.TwoS
 	}
 
 	o.FabricAddressing = types.StringValue(addressingScheme.String())
+}
+
+func (o Blueprint) VersionConstraints() apiversions.Constraints {
+	var response apiversions.Constraints
+
+	if utils.Known(o.FabricAddressing) {
+		response.AddAttributeConstraints(
+			path.Root("fabric_addressing"),
+			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra411)),
+		)
+	}
+
+	if utils.Known(o.FabricMtu) {
+		response.AddAttributeConstraints(
+			path.Root("fabric_mtu"),
+			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+		)
+	}
+
+	return response
 }

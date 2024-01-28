@@ -2,22 +2,18 @@ package tfapstra
 
 import (
 	"context"
-	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
-var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprints{}
-var _ versionValidator = &dataSourceBlueprints{}
 
 type dataSourceBlueprints struct {
 	client           *apstra.Client
@@ -52,31 +48,6 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 			},
 		},
 	}
-}
-
-func (o *dataSourceBlueprints) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	if o.client == nil { // cannot proceed without a client
-		return
-	}
-
-	var config blueprints
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if config.RefDesign.ValueString() == apstra.RefDesignFreeform.String() {
-		var err error
-		o.minClientVersion, err = version.NewVersion("4.1.2")
-		if err != nil {
-			resp.Diagnostics.AddError(errProviderBug,
-				fmt.Sprintf("error parsing min/max version - %s", err.Error()))
-
-			return
-		}
-	}
-
-	o.checkVersion(ctx, &resp.Diagnostics)
 }
 
 func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -124,23 +95,4 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 type blueprints struct {
 	Ids       types.Set    `tfsdk:"ids"`
 	RefDesign types.String `tfsdk:"reference_design"`
-}
-
-func (o *dataSourceBlueprints) apiVersion() (*version.Version, error) {
-	if o.client == nil {
-		return nil, nil
-	}
-	return version.NewVersion(o.client.ApiVersion())
-}
-
-func (o *dataSourceBlueprints) cfgVersionMin() (*version.Version, error) {
-	return o.minClientVersion, nil
-}
-
-func (o *dataSourceBlueprints) cfgVersionMax() (*version.Version, error) {
-	return o.maxClientVersion, nil
-}
-
-func (o *dataSourceBlueprints) checkVersion(ctx context.Context, diags *diag.Diagnostics) {
-	checkVersionCompatibility(ctx, o, diags)
 }

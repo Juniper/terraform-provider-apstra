@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -49,58 +49,48 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 		return
 	}
 
-	// validation only possible when reserve_vlan is set "true"
-	if !config.ReserveVlan.ValueBool() {
-		return // skip 'false', 'unknown', 'null' values
-	}
+	// config-only validation begins here
 
-	// validation not possible when bindings are unknown
-	if config.Bindings.IsUnknown() {
-		return
-	}
-
-	// validation not possible when any individual binding is unknown
-	for _, v := range config.Bindings.Elements() {
-		if v.IsUnknown() {
-			return
-		}
-	}
-
-	// extract bindings as a map
-	var bindings map[string]blueprint.VnBinding
-	resp.Diagnostics.Append(config.Bindings.ElementsAs(ctx, &bindings, false)...)
+	// ensure that bindings are consistent when `reserve_vlan` is set
+	config.ValidateConfigBindingsReservation(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// validate each binding
-	invalidConfigDueToNullVlan := false
-	reservedVlanIds := make(map[int64]struct{})
-	for _, binding := range bindings {
-		if binding.VlanId.IsUnknown() {
-			continue // skip further validation of unknown vlans
-		}
-		if binding.VlanId.IsNull() {
-			invalidConfigDueToNullVlan = true
-			continue
-		}
-		reservedVlanIds[binding.VlanId.ValueInt64()] = struct{}{}
-	}
+	// config + api version validation begins here
 
-	// null vlan is invalid
-	if invalidConfigDueToNullVlan {
-		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
-			path.Root("bindings"),
-			"'vlan_id' must be specified in each binding when 'reserve_vlan' is true"))
-	}
-
-	// we should have at most one VLAN ID across all bindings (zero when they're unknown)
-	if len(reservedVlanIds) > 1 {
-		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
-			path.Root("bindings"),
-			"'vlan_id' attributes must match when 'reserve_vlan' is true"))
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.getBpClientFunc == nil {
 		return
 	}
+
+	bpClient, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
+		return
+	}
+
+	// get the api version from the client
+	apiVersion, err := version.NewVersion(bpClient.Client().ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", bpClient.Client().ApiVersion()), err.Error())
+		return
+	}
+
+	// validate the configuration
+	resp.Diagnostics.Append(
+		apiversions.ValidateConstraints(
+			ctx,
+			apiversions.ValidateConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: config.VersionConstraints(),
+			},
+		)...,
+	)
 }
 
 func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -185,12 +175,6 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
-
-	// check the configuration against the apstra api version
-	plan.CompatibilityCheckAsResource(ctx, bp.Client(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -329,12 +313,6 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
-		return
-	}
-
-	// check the configuration against the apstra api version
-	plan.CompatibilityCheckAsResource(ctx, bp.Client(), &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
