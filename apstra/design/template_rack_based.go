@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -117,6 +120,22 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Required for "+
 				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
 			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(
+					apstra.AddressingSchemeIp4.String(),
+					apstra.AddressingSchemeIp46.String(),
+					apstra.AddressingSchemeIp6.String(),
+				),
+				apstravalidator.WhenValueIsString(
+					types.StringValue(apstra.AddressingSchemeIp6.String()),
+					apstravalidator.ValueAtMustBeString(
+						path.MatchRelative().AtParent().AtName("overlay_control_protocol"),
+						types.StringValue(OverlayControlProtocolStatic),
+						false,
+					),
+				),
+			},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
@@ -183,7 +202,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
-	if !o.FabricAddressing.IsNull() {
+	if utils.Known(o.FabricAddressing) {
 		var addressingScheme apstra.AddressingScheme
 		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
