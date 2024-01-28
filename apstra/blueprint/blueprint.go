@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
@@ -245,11 +246,12 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"fabric_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: "MTU of fabric links. Must be an even number between 1280 and 9216. Requires Apstra 4.2 or later.",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("MTU of fabric links. Must be an even number between %d and %d. "+
+				"Requires Apstra %s or later.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Apstra420),
+			Optional: true,
+			Computed: true,
 			Validators: []validator.Int64{
-				int64validator.Between(1280, 9216),
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
 				apstravalidator.MustBeEvenOrOdd(true),
 			},
 		},

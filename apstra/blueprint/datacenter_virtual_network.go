@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -483,12 +484,13 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
-				"Requires Apstra 4.2 or later.",
+			MarkdownDescription: fmt.Sprintf("L3 MTU used by the L3 switch interfaces participating in the"+
+				" Virtual Network. Must be an even number between %d and %d. Requires Apstra %s or later.",
+				constants.L3MtuMin, constants.L3MtuMax, apiversions.Apstra420),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
-				int64validator.Between(1280, 9216),
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
 				apstravalidator.MustBeEvenOrOdd(true),
 			},
 		},

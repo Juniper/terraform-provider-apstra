@@ -7,8 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -31,6 +35,7 @@ type IpLink struct {
 	Ipv6AddressingType types.String `tfsdk:"ipv6_addressing_type"`
 	Primitive          types.String `tfsdk:"primitive"`
 	ChildPrimitives    types.Set    `tfsdk:"child_primitives"`
+	L3Mtu              types.Int64  `tfsdk:"l3_mtu"`
 }
 
 func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -87,6 +92,19 @@ func (o IpLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
 			Optional:    true,
 		},
+		"l3_mtu": dataSourceSchema.Int64Attribute{
+			// Frankly, I'm not clear what this text is trying to say. It's
+			// taken verbatim from the tooltip in 99.2.0-cl-4.2.0-1
+			MarkdownDescription: fmt.Sprintf("L3 MTU for sub-interfaces on leaf (spine/superspine) side and "+
+				"generic side. Configuration is applicable only when Fabric MTU is enabled. Value must be even "+
+				"number rom %d to %d, if not specified - Default IP Links to Generic Systems MTU from Virtual "+
+				"Network Policy s used", constants.L3MtuMin, constants.L3MtuMax),
+			Optional: true,
+			Validators: []validator.Int64{
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
 	}
 }
 
@@ -125,6 +143,11 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 
 	if o.Ipv6AddressingType.IsNull() {
 		obj.Ipv6AddressingType = apstra.CtPrimitiveIPv6AddressingTypeNone.String()
+	}
+
+	if !o.L3Mtu.IsNull() {
+		l3Mtu := uint16(o.L3Mtu.ValueInt64())
+		obj.L3Mtu = &l3Mtu
 	}
 
 	data, err := json.Marshal(&obj)
@@ -167,6 +190,20 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 	o.Ipv6AddressingType = types.StringValue(attributes.IPv6AddressingType.String())
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 	o.Name = types.StringValue(in.Label)
+	o.L3Mtu = utils.Int64ValueOrNull(ctx, attributes.L3Mtu, diags)
+}
+
+func (o IpLink) VersionConstraints() apiversions.Constraints {
+	var response apiversions.Constraints
+
+	if !o.L3Mtu.IsNull() {
+		response.AddAttributeConstraints(
+			path.Root("l3_mtu"),
+			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+		)
+	}
+
+	return response
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}
@@ -179,6 +216,7 @@ type ipLinkPrototype struct {
 	Ipv4AddressingType string       `json:"ipv4_addressing_type"`
 	Ipv6AddressingType string       `json:"ipv6_addressing_type"`
 	ChildPrimitives    []string     `json:"child_primitives,omitempty"`
+	L3Mtu              *uint16      `json:"l3_mtu,omitempty"`
 }
 
 func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {
@@ -205,6 +243,7 @@ func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *di
 		Vlan:               o.VlanId,
 		IPv4AddressingType: ipv4AddressingType,
 		IPv6AddressingType: ipv6AddressingType,
+		L3Mtu:              o.L3Mtu,
 	}
 }
 
