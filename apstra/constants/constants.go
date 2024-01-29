@@ -7,4 +7,7 @@ const (
 	ErrApiCompatibility      = "Apstra API version incompatibility"
 	ErrInvalidConfig         = "invalid configuration"
 	ErrStringParse           = "failed to parse string value"
+
+	L3MtuMin = 1280
+	L3MtuMax = 9216
 )
