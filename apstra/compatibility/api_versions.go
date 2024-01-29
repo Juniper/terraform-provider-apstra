@@ -2,35 +2,24 @@ package compatibility
 
 import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"strings"
 )
 
-const (
-	minVerForVnL3Mtu                               = "4.2.0"
-	fabricL3MtuForbiddenInRequestVersions          = "4.1.0, 4.1.1, 4.1.2"
-	templateFabricAddressingPolicyRequiredVersions = "4.1.0"
-)
-
-func MinVerForVnL3Mtu() *version.Version {
-	v, _ := version.NewVersion(minVerForVnL3Mtu) // this will not error
-	return v
-}
-
 func SupportedApiVersions() []string {
-	us := []string{
-		"4.1.0",
-		"4.1.1",
-		"4.1.2",
-		"4.2.0",
+	providerVersions := []string{
+		apiversions.Apstra410,
+		apiversions.Apstra411,
+		apiversions.Apstra412,
+		apiversions.Apstra420,
 	}
-	them := apstra.ApstraApiSupportedVersions()
+
+	sdkVersions := apstra.ApstraApiSupportedVersions()
 
 	var result []string
-	for i := range us {
-		if them.Includes(us[i]) {
-			result = append(result, us[i])
+	for i := range providerVersions {
+		if sdkVersions.Includes(providerVersions[i]) {
+			result = append(result, providerVersions[i])
 		}
 	}
 
@@ -50,22 +39,4 @@ func SupportedApiVersionsPretty() string {
 	}
 
 	return strings.Join(supportedVers, " ")
-}
-
-func FabricL3MtuForbiddenInRequest(clientVer string) bool {
-	forbiddenVersions := strings.Split(fabricL3MtuForbiddenInRequestVersions, ",")
-	for i, v := range forbiddenVersions {
-		forbiddenVersions[i] = strings.TrimSpace(v)
-	}
-
-	return utils.SliceContains(clientVer, forbiddenVersions)
-}
-
-func TemplateFabricAddressingRequiredVersions(clientVer string) bool {
-	forbiddenVersions := strings.Split(templateFabricAddressingPolicyRequiredVersions, ",")
-	for i, v := range forbiddenVersions {
-		forbiddenVersions[i] = strings.TrimSpace(v)
-	}
-
-	return utils.SliceContains(clientVer, forbiddenVersions)
 }

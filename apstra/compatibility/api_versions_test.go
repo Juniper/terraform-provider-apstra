@@ -1,16 +1,17 @@
 package compatibility
 
 import (
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"testing"
 )
 
 func TestSupportedApiVersions(t *testing.T) {
 	expected := []string{
-		"4.1.0",
-		"4.1.1",
-		"4.1.2",
-		"4.2.0",
+		apiversions.Apstra410,
+		apiversions.Apstra411,
+		apiversions.Apstra412,
+		apiversions.Apstra420,
 	}
 
 	result := SupportedApiVersions()
@@ -21,7 +22,7 @@ func TestSupportedApiVersions(t *testing.T) {
 }
 
 func TestSupportedApiVersionsPretty(t *testing.T) {
-	expected := "4.1.0, 4.1.1, 4.1.2, and 4.2.0"
+	expected := apiversions.Apstra410 + ", " + apiversions.Apstra411 + ", " + apiversions.Apstra412 + ", and " + apiversions.Apstra420
 	result := SupportedApiVersionsPretty()
 	if expected != result {
 		t.Fatalf("expected %q; got %q", expected, result)
