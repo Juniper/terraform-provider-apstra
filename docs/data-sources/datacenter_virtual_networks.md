@@ -65,6 +65,8 @@ data "apstra_datacenter_virtual_networks" "prod_unreserved_with_dhcp" {
 Optional:
 
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `export_route_targets` (Set of String) This is a set of *required* export RTs, not an exact-match list.
+- `import_route_targets` (Set of String) This is a set of *required* import RTs, not an exact-match list.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network.
 - `ipv4_subnet` (String) IPv4 subnet associated with the Virtual Network.
 - `ipv4_virtual_gateway` (String) Specifies the IPv4 virtual gateway address within the Virtual Network.
@@ -98,6 +100,8 @@ Read-Only:
 Optional:
 
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `export_route_targets` (Set of String) This is a set of *required* export RTs, not an exact-match list.
+- `import_route_targets` (Set of String) This is a set of *required* import RTs, not an exact-match list.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network.
 - `ipv4_subnet` (String) IPv4 subnet associated with the Virtual Network.
 - `ipv4_virtual_gateway` (String) Specifies the IPv4 virtual gateway address within the Virtual Network.
