@@ -173,7 +173,7 @@ func (o GenericSystem) ResourceAttributesNested() map[string]resourceSchema.Attr
 			MarkdownDescription: "Each Generic System is required to have at least one Link to a Leaf Switch or Access Switch.",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: RackLink{}.ResourceAttributes(),
+				Attributes: RackLink{}.ResourceAttributesNested(),
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
