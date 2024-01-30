@@ -11,23 +11,23 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourcePoolAllocation{}
+var _ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
 
-type resourcePoolAllocation struct {
+type resourceResourcePoolAllocation struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o *resourceResourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_datacenter_resource_pool_allocation"
 }
 
-func (o *resourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceResourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
 	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
 }
 
-func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceResourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource allocates a resource pool to a role within a Blueprint.",
 		Attributes:          blueprint.PoolAllocation{}.ResourceAttributes(),
@@ -42,7 +42,7 @@ func (o *resourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequ
 //  "pool_ids": [ "66e3fd04-cbb1-4262-8556-01335dd9d040" ]
 //}
 
-func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceResourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -87,7 +87,7 @@ func (o *resourcePoolAllocation) Create(ctx context.Context, req resource.Create
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceResourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -134,7 +134,7 @@ func (o *resourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceResourcePoolAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -174,7 +174,7 @@ func (o *resourcePoolAllocation) Update(ctx context.Context, req resource.Update
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourcePoolAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceResourcePoolAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

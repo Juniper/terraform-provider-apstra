@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -50,6 +51,8 @@ type DatacenterVirtualNetwork struct {
 	IPv4Gateway             types.String `tfsdk:"ipv4_virtual_gateway"`
 	IPv6Gateway             types.String `tfsdk:"ipv6_virtual_gateway"`
 	L3Mtu                   types.Int64  `tfsdk:"l3_mtu"`
+	ImportRouteTargets      types.Set    `tfsdk:"import_route_targets"`
+	ExportRouteTargets      types.Set    `tfsdk:"export_route_targets"`
 }
 
 func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -155,6 +158,16 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 				"Requires Apstra 4.2 or later.",
 			Computed: true,
 		},
+		"import_route_targets": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Import RTs for this Virtual Network.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
+		"export_route_targets": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Export RTs for this Virtual Network.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 	}
 }
 
@@ -254,6 +267,18 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
 				"Requires Apstra 4.2 or later.",
 			Optional: true,
+		},
+		"import_route_targets": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "This is a set of *required* import RTs, not an exact-match list.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.ValueStringsAre(apstravalidator.ParseRT())},
+		},
+		"export_route_targets": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "This is a set of *required* export RTs, not an exact-match list.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.ValueStringsAre(apstravalidator.ParseRT())},
 		},
 	}
 }
@@ -483,13 +508,32 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
-				"Requires Apstra 4.2 or later.",
+			MarkdownDescription: fmt.Sprintf("L3 MTU used by the L3 switch interfaces participating in the"+
+				" Virtual Network. Must be an even number between %d and %d. Requires Apstra %s or later.",
+				constants.L3MtuMin, constants.L3MtuMax, apiversions.Apstra420),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
-				int64validator.Between(1280, 9216),
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
 				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
+		"import_route_targets": resourceSchema.SetAttribute{
+			MarkdownDescription: "Import RTs for this Virtual Network.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
+			},
+		},
+		"export_route_targets": resourceSchema.SetAttribute{
+			MarkdownDescription: "Export RTs for this Virtual Network.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
 		},
 	}
@@ -568,6 +612,17 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		l3Mtu = &i
 	}
 
+	var rtPolicy *apstra.RtPolicy
+	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
+		rtPolicy = new(apstra.RtPolicy)
+		if !o.ImportRouteTargets.IsNull() {
+			diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &rtPolicy.ImportRTs, false)...)
+		}
+		if !o.ExportRouteTargets.IsNull() {
+			diags.Append(o.ExportRouteTargets.ElementsAs(ctx, &rtPolicy.ExportRTs, false)...)
+		}
+	}
+
 	return &apstra.VirtualNetworkData{
 		DhcpService:               apstra.DhcpServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
 		Ipv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
@@ -578,7 +633,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		Label:                     o.Name.ValueString(),
 		ReservedVlanId:            reservedVlanId,
 		RouteTarget:               "",
-		RtPolicy:                  nil,
+		RtPolicy:                  rtPolicy,
 		SecurityZoneId:            apstra.ObjectId(o.RoutingZoneId.ValueString()),
 		SviIps:                    nil,
 		VirtualGatewayIpv4:        ipv4Gateway,
@@ -625,6 +680,14 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.IPv4Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv4, diags)
 	o.IPv6Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv6, diags)
 	o.L3Mtu = utils.Int64ValueOrNull(ctx, in.L3Mtu, diags)
+
+	if in.RtPolicy == nil {
+		o.ImportRouteTargets = types.SetNull(types.StringType)
+		o.ExportRouteTargets = types.SetNull(types.StringType)
+	} else {
+		o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ImportRTs, diags)
+		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ExportRTs, diags)
+	}
 }
 
 func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
@@ -744,6 +807,34 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 			}))
 	}
 
+	// Add RT import/export matchers for the route_target_policy node as needed
+	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
+		nodeName := "n_route_target_policy"
+		rtQuery := new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
+			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeRouteTargetPolicy.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeRouteTargetPolicy.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(nodeName)},
+			})
+
+		for _, attrVal := range o.ImportRouteTargets.Elements() {
+			iRT := attrVal.(types.String).ValueString()
+			where := fmt.Sprintf("lambda %s: '%s' in (%s.import_RTs or [])", nodeName, iRT, nodeName)
+			rtQuery.Where(where)
+		}
+
+		for _, attrVal := range o.ExportRouteTargets.Elements() {
+			eRT := attrVal.(types.String).ValueString()
+			where := fmt.Sprintf("lambda %s: '%s' in (%s.export_RTs or [])", nodeName, eRT, nodeName)
+			rtQuery.Where(where)
+		}
+
+		vnQuery.Match(rtQuery)
+	}
+
 	return vnQuery
 }
 
@@ -769,33 +860,72 @@ func (o *DatacenterVirtualNetwork) Ipv6Gateway(_ context.Context, _ path.Path, _
 	return net.ParseIP(o.IPv6Gateway.ValueString())
 }
 
-func (o *DatacenterVirtualNetwork) CompatibilityCheckAsFilter(_ context.Context, path path.Path, client *apstra.Client, diags *diag.Diagnostics) {
-	apstraVersion, err := version.NewVersion(client.ApiVersion())
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed parsing Apstra API version %q", apstraVersion), err.Error())
+// ValidateConfigBindingsReservation ensures that all bindings use the same VLAN
+// ID when `reserve_vlan` is true.
+func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.Context, diags *diag.Diagnostics) {
+	// validation only possible when reserve_vlan is set "true"
+	if !o.ReserveVlan.ValueBool() {
+		return // skip 'false', 'unknown', 'null' values
+	}
+
+	// validation not possible when bindings are unknown
+	if o.Bindings.IsUnknown() {
 		return
 	}
 
-	if !o.L3Mtu.IsNull() && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
-		diags.AddAttributeWarning(
-			path.AtName("l3_mtu"),
-			constants.ErrApiCompatibility,
-			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.\n\n"+
-				"Using `l3_mtu` with Apstra %s will cause this filter to match zero Virtual Networks.",
-				compatibility.MinVerForVnL3Mtu().Original(), apstraVersion))
+	// validation not possible when any individual binding is unknown
+	for _, v := range o.Bindings.Elements() {
+		if v.IsUnknown() {
+			return
+		}
+	}
+
+	// extract bindings as a map
+	var bindings map[string]VnBinding
+	diags.Append(o.Bindings.ElementsAs(ctx, &bindings, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	// validate each binding
+	invalidConfigDueToNullVlan := false
+	reservedVlanIds := make(map[int64]struct{})
+	for _, binding := range bindings {
+		if binding.VlanId.IsUnknown() {
+			continue // skip further validation of unknown vlans
+		}
+		if binding.VlanId.IsNull() {
+			invalidConfigDueToNullVlan = true
+			continue // todo: should this be 'break' instead?
+		}
+		reservedVlanIds[binding.VlanId.ValueInt64()] = struct{}{}
+	}
+
+	// null vlan is invalid
+	if invalidConfigDueToNullVlan {
+		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'vlan_id' must be specified in each binding when 'reserve_vlan' is true"))
+	}
+
+	// we should have at most one VLAN ID across all bindings (zero when they're unknown)
+	if len(reservedVlanIds) > 1 {
+		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'vlan_id' attributes must match when 'reserve_vlan' is true"))
+		return
 	}
 }
 
-func (o *DatacenterVirtualNetwork) CompatibilityCheckAsResource(_ context.Context, client *apstra.Client, diags *diag.Diagnostics) {
-	apstraVersion, err := version.NewVersion(client.ApiVersion())
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed parsing Apstra API version %q", apstraVersion), err.Error())
-		return
+func (o DatacenterVirtualNetwork) VersionConstraints() apiversions.Constraints {
+	var response apiversions.Constraints
+
+	if utils.Known(o.L3Mtu) {
+		response.AddAttributeConstraints(
+			path.Root("l3_mtu"),
+			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+		)
 	}
 
-	if utils.Known(o.L3Mtu) && compatibility.MinVerForVnL3Mtu().GreaterThan(apstraVersion) {
-		diags.AddAttributeError(path.Root("l3_mtu"), constants.ErrApiCompatibility,
-			fmt.Sprintf("The `l3_mtu` attribute is applicable to Apstra %s and later only.",
-				compatibility.MinVerForVnL3Mtu().Original()))
-	}
+	return response
 }

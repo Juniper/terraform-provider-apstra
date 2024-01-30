@@ -45,7 +45,7 @@ func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req reso
 
 	// config-only validation begins here (there is none)
 
-	// cannot proceed to config + api version validation without a client
+	// cannot proceed to config + api version validation if the provider has not been configured
 	if o.client == nil {
 		return
 	}

@@ -1,7 +1,6 @@
 package tfapstra
 
 const (
-	errApiCompatibility                       = "Apstra API version incompatibility"
 	errApiData                                = "API produced unexpected result"
 	errApiError                               = "API response included an error"
 	errDataSourceConfigureProviderDataSummary = "Unexpected Data Source Configure Type."

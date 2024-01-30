@@ -12,7 +12,6 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfaceMaps{}
-var _ versionValidator = &dataSourceBlueprints{}
 
 type dataSourceInterfaceMaps struct {
 	client *apstra.Client

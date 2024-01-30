@@ -3,6 +3,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -202,9 +203,8 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			},
 		},
 
-		// version 4.1.1 and later
 		"c": {
-			apiVersionConstraints: version.MustConstraints(version.NewConstraint(">=4.1.1")),
+			apiVersionConstraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra411)),
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
@@ -271,9 +271,8 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			},
 		},
 
-		// version 4.2.0 and later
 		"d": {
-			apiVersionConstraints: version.MustConstraints(version.NewConstraint(">=4.2.0")),
+			apiVersionConstraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{

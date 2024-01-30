@@ -57,6 +57,8 @@ resource "apstra_datacenter_virtual_network" "test" {
 ### Optional
 
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `export_route_targets` (Set of String) Export RTs for this Virtual Network.
+- `import_route_targets` (Set of String) Import RTs for this Virtual Network.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network. Default: true
 - `ipv4_subnet` (String) IPv4 subnet associated with the Virtual Network. When not specified, a prefix from within the IPv4 Resource Pool assigned to the `virtual_network_svi_subnets` role will be automatically assigned by Apstra.
 - `ipv4_virtual_gateway` (String) Specifies the IPv4 virtual gateway address within the Virtual Network. The configured value must be a valid IPv4 host address configured value within range specified by `ipv4_subnet`
@@ -65,7 +67,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `ipv6_subnet` (String) IPv6 subnet associated with the Virtual Network. When not specified, a prefix from within the IPv6 Resource Pool assigned to the `virtual_network_svi_subnets_ipv6` role will be automatically assigned by Apstra.
 - `ipv6_virtual_gateway` (String) Specifies the IPv6 virtual gateway address within the Virtual Network. The configured value must be a valid IPv6 host address configured value within range specified by `ipv6_subnet`
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled. Requires `ipv6_connectivity_enabled` to be `true`
-- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
+- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Must be an even number between 1280 and 9216. Requires Apstra 4.2.0 or later.
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed. The only accepted values is `true`.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
 - `type` (String) Virtual Network Type

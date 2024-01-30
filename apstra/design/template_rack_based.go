@@ -69,8 +69,9 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links. Applies only to Apstra 4.1.0.",
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
+				"Apstra %s.", apiversions.Apstra410),
+			Computed: true,
 		},
 		"rack_infos": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
