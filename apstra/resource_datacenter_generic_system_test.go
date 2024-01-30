@@ -16,14 +16,14 @@ import (
 const (
 	resourceDataCenterGenericSystemHCL = `
 resource "apstra_datacenter_generic_system" "test" {
-  blueprint_id  	  = %s
-  name          	  = %s
-  hostname      	  = %s
-  asn           	  = %s
-  loopback_ipv4 	  = %s
-  loopback_ipv6 	  = %s
-  tags          	  = %s
-  deploy_mode   	  = %s
+  blueprint_id        = %s
+  name                = %s
+  hostname            = %s
+  asn                 = %s
+  loopback_ipv4       = %s
+  loopback_ipv6       = %s
+  tags                = %s
+  deploy_mode         = %s
   port_channel_id_min = %s
   port_channel_id_max = %s
   links               = [
