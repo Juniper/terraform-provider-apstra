@@ -77,7 +77,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		return strconv.Itoa(*in)
 	}
 
-	zeroasNull := func(in int) string {
+	zeroAsNull := func(in int) string {
 		if in == 0 {
 			return "null"
 		}
@@ -148,8 +148,8 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 			ipOrNull(in.loopback6),
 			renderTags(in.tags),
 			stringOrNull(in.deployMode),
-			zeroasNull(in.portChannelIdMin),
-			zeroasNull(in.portChannelIdMax),
+			zeroAsNull(in.portChannelIdMin),
+			zeroAsNull(in.portChannelIdMax),
 			renderLinks(in.links),
 		)
 	}
@@ -288,10 +288,8 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_transform_id", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.#", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.0", "b"),
-				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_min",
-					fmt.Sprint(portChannelIdMinA)),
-				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_max",
-					fmt.Sprint(portChannelIdMaxA)),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_min", fmt.Sprint(portChannelIdMinA)),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_max", fmt.Sprint(portChannelIdMaxA)),
 			}...),
 		},
 		{
@@ -332,10 +330,8 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_name", "xe-0/0/6"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_transform_id", "1"),
 				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags"),
-				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_min",
-					fmt.Sprint(portChannelIdMinB)),
-				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_max",
-					fmt.Sprint(portChannelIdMaxB)),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_min", fmt.Sprint(portChannelIdMinB)),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_max", fmt.Sprint(portChannelIdMaxB)),
 			}...),
 		},
 		{

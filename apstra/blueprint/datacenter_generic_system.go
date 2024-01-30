@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -108,16 +110,26 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:            true,
 		},
 		"port_channel_id_min": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Port Channel Id Min",
-			Optional:            true,
-			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
+				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
+				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
+				"need only be unique per system.", apiversions.Apstra412),
+			Optional: true,
+			Validators: []validator.Int64{
+				int64validator.Between(design.PoIdMin, design.PoIdMax),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+			},
 		},
 		"port_channel_id_max": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Port Channel Id Max",
-			Optional:            true,
+			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
+				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
+				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
+				"need only be unique per system.", apiversions.Apstra412),
+			Optional: true,
 			Validators: []validator.Int64{int64validator.AtLeast(1),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 			},
 		},
 		"external": resourceSchema.BoolAttribute{
@@ -697,6 +709,7 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 			return
 		}
 	}
+
 	// Set Port Channel Min and Max if we don't have prior state or if it needs to be updated
 	if state == nil || !o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin) {
 		o.setPortChannelIdMinMax(ctx, bp, diags)
@@ -773,13 +786,13 @@ func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstr
 	}
 }
 
-// setLoopbackIPv6 sets or clears the generic system loopback IPv6 attribute depending on o.LoopbackIpv6.IsNull()
+// setPortChannelIdMinMax sets or clears the generic system Po ID min/max depending on the zero value of
+// o.PortChannelIdMin and o.PortChannelIdMax (null/unknown/0 will "clear" the value from the web UI).
 func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
 	diags *diag.Diagnostics) {
 
 	err := bp.SetSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
 		int(o.PortChannelIdMax.ValueInt64()))
-
 	if err != nil {
 		diags.AddError("failed setting generic system Port Channel Id Min and Max", err.Error())
 	}
