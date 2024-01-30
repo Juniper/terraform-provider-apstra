@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
@@ -68,7 +69,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		return
 	}
 
-	// unfortunately we only learn the link IDs, not the generic system ID
+	// create the new generic system. unfortunately we only learn the link IDs, not the generic system ID
 	linkIds, err := bp.CreateLinksWithNewSystem(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create generic system", err.Error())
@@ -78,9 +79,20 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	// use link IDs to learn the generic system ID
 	genericSystemId, err := bp.SystemNodeFromLinkIds(ctx, linkIds, apstra.SystemNodeRoleGeneric)
 	if err != nil {
-		resp.Diagnostics.AddError("failed to determine new generic system ID from links", err.Error())
+		sb := new(strings.Builder)
+		for i, linkId := range linkIds {
+			if i == 0 {
+				sb.WriteString(`"` + string(linkId) + `"`)
+			} else {
+				sb.WriteString(`, "` + string(linkId) + `"`)
+			}
+		}
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed to determine new generic system ID from returned link IDs: [%s]", sb.String()),
+			err.Error())
 	}
 	plan.Id = types.StringValue(genericSystemId.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...) // provisional state in case of error below
 
 	// set generic system properties sending <nil> for prior state
 	plan.SetProperties(ctx, bp, nil, &resp.Diagnostics)

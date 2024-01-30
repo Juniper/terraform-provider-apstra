@@ -90,9 +90,11 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			},
 		},
 		"asn": resourceSchema.Int64Attribute{
-			MarkdownDescription: "AS number of the Generic System",
-			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
+			MarkdownDescription: "AS number of the Generic System. Note that in some circumstances Apstra may assign " +
+				"an ASN to the generic system even when none is supplied via this attribute. The automatically" +
+				"assigned value will be overwritten by Terraform during a subsequent apply operation.",
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.Between(1, math.MaxUint32)},
 		},
 		"loopback_ipv4": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address of loopback interface in CIDR notation",
