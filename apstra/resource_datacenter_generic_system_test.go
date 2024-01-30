@@ -16,16 +16,18 @@ import (
 const (
 	resourceDataCenterGenericSystemHCL = `
 resource "apstra_datacenter_generic_system" "test" {
-  blueprint_id  = %s
-  name          = %s
-  hostname      = %s
-  asn           = %s
-  loopback_ipv4 = %s
-  loopback_ipv6 = %s
-  tags          = %s
-  deploy_mode   = %s
-  links         = [
-%s  ]
+  blueprint_id  	  = %s
+  name          	  = %s
+  hostname      	  = %s
+  asn           	  = %s
+  loopback_ipv4 	  = %s
+  loopback_ipv6 	  = %s
+  tags          	  = %s
+  deploy_mode   	  = %s
+  port_channel_id_min = %s
+  port_channel_id_max = %s
+  links               = [
+                       %s  ]
 }
 `
 
@@ -75,6 +77,13 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		return strconv.Itoa(*in)
 	}
 
+	zeroasNull := func(in int) string {
+		if in == 0 {
+			return "null"
+		}
+		return strconv.Itoa(in)
+	}
+
 	ipOrNull := func(in *net.IPNet) string {
 		if in == nil {
 			return "null"
@@ -117,15 +126,17 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	}
 
 	type genericSystem struct {
-		bpId       string
-		name       string
-		hostname   string
-		asn        *int
-		loopback4  *net.IPNet
-		loopback6  *net.IPNet
-		tags       tagSlice
-		deployMode string
-		links      []link
+		bpId             string
+		name             string
+		hostname         string
+		asn              *int
+		loopback4        *net.IPNet
+		loopback6        *net.IPNet
+		tags             tagSlice
+		deployMode       string
+		portChannelIdMin int
+		portChannelIdMax int
+		links            []link
 	}
 	renderGenericSystem := func(in genericSystem) string {
 		return fmt.Sprintf(resourceDataCenterGenericSystemHCL,
@@ -137,6 +148,8 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 			ipOrNull(in.loopback6),
 			renderTags(in.tags),
 			stringOrNull(in.deployMode),
+			zeroasNull(in.portChannelIdMin),
+			zeroasNull(in.portChannelIdMax),
 			renderLinks(in.links),
 		)
 	}
@@ -184,9 +197,14 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	var asnA, asnB int
 	var lo4A, lo4B net.IPNet
 	var lo6A, lo6B net.IPNet
-
+	var portChannelIdMinA, portChannelIdMaxA, portChannelIdMinB, portChannelIdMaxB int
 	asnA = 5
 	asnB = 6
+	portChannelIdMinA = 1
+	portChannelIdMaxA = 5
+	portChannelIdMinB = 6
+	portChannelIdMaxB = 10
+
 	lo4A = net.IPNet{
 		IP:   net.IP{10, 0, 0, 5},
 		Mask: net.CIDRMask(32, 32),
@@ -207,17 +225,17 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	testCases := []testCase{
 		{
 			genericSystem: genericSystem{
-				//name:     "",
-				//hostname: "",
-				//tags:     []string{},
+				// name:     "",
+				// hostname: "",
+				// tags:     []string{},
 				links: []link{
 					{
-						//lagMode: apstra.RackLinkLagModeNone,
-						//groupLabel: "",
+						// lagMode: apstra.RackLinkLagModeNone,
+						// groupLabel: "",
 						targetSwitchId: leafIds[0],
 						targetSwitchIf: "xe-0/0/6",
 						targetSwitchTf: 1,
-						//tags:     []string{},
+						// tags:     []string{},
 					},
 				},
 			},
@@ -236,12 +254,14 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		},
 		{
 			genericSystem: genericSystem{
-				name:      "foo",
-				hostname:  "foo.com",
-				asn:       &asnA,
-				loopback4: &lo4A,
-				loopback6: &lo6A,
-				tags:      []string{"a"},
+				name:             "foo",
+				hostname:         "foo.com",
+				asn:              &asnA,
+				loopback4:        &lo4A,
+				loopback6:        &lo6A,
+				tags:             []string{"a"},
+				portChannelIdMin: portChannelIdMinA,
+				portChannelIdMax: portChannelIdMaxA,
 				links: []link{
 					{
 						lagMode:        apstra.RackLinkLagModeActive,
@@ -268,24 +288,31 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_transform_id", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.#", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags.0", "b"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_min",
+					fmt.Sprint(portChannelIdMinA)),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_max",
+					fmt.Sprint(portChannelIdMaxA)),
 			}...),
 		},
 		{
 			genericSystem: genericSystem{
-				//name:     "foo",
-				//hostname: "foo.com",
+				// name:     "foo",
+				// hostname: "foo.com",
 				asn:       &asnB,
 				loopback4: &lo4B,
 				loopback6: &lo6B,
-				//tags:     []string{"a"},
+				// tags:     []string{"a"},
+				portChannelIdMin: portChannelIdMinB,
+				portChannelIdMax: portChannelIdMaxB,
 				links: []link{
 					{
-						//lagMode:        apstra.RackLinkLagModeActive,
-						//groupLabel:     "foo",
+						// lagMode:        apstra.RackLinkLagModeActive,
+						// groupLabel:     "foo",
 						targetSwitchId: leafIds[0],
 						targetSwitchIf: "xe-0/0/6",
 						targetSwitchTf: 1,
-						//tags:           []string{"b"},
+
+						// tags:           []string{"b"},
 					},
 				},
 			},
@@ -305,13 +332,17 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_name", "xe-0/0/6"),
 				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.target_switch_if_transform_id", "1"),
 				resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "links.0.tags"),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_min",
+					fmt.Sprint(portChannelIdMinB)),
+				resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "port_channel_id_max",
+					fmt.Sprint(portChannelIdMaxB)),
 			}...),
 		},
 		{
 			genericSystem: genericSystem{
-				//name:     "foo",
-				//hostname: "foo.com",
-				//tags:     []string{"a"},
+				// name:     "foo",
+				// hostname: "foo.com",
+				// tags:     []string{"a"},
 				links: []link{
 					{
 						lagMode:        apstra.RackLinkLagModePassive,
@@ -352,9 +383,9 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		},
 		{
 			genericSystem: genericSystem{
-				//name:     "foo",
-				//hostname: "foo.com",
-				//tags:     []string{"a"},
+				// name:     "foo",
+				// hostname: "foo.com",
+				// tags:     []string{"a"},
 				deployMode: apstra.NodeDeployModeReady.String(),
 				links: []link{
 					{
@@ -397,9 +428,9 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		},
 		{
 			genericSystem: genericSystem{
-				//name:     "foo",
-				//hostname: "foo.com",
-				//tags:     []string{"a"},
+				// name:     "foo",
+				// hostname: "foo.com",
+				// tags:     []string{"a"},
 				deployMode: apstra.NodeDeployModeDeploy.String(),
 				links: []link{
 					{
@@ -442,9 +473,9 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		},
 		{
 			genericSystem: genericSystem{
-				//name:     "foo",
-				//hostname: "foo.com",
-				//tags:     []string{"a"},
+				// name:     "foo",
+				// hostname: "foo.com",
+				// tags:     []string{"a"},
 				links: []link{
 					{
 						lagMode:        apstra.RackLinkLagModeStatic,
@@ -452,7 +483,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 						targetSwitchId: leafIds[0],
 						targetSwitchIf: "xe-0/0/6",
 						targetSwitchTf: 1,
-						//tags:           []string{"c"},
+						// tags:           []string{"c"},
 					},
 					{
 						lagMode:        apstra.RackLinkLagModeStatic,
@@ -460,7 +491,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 						targetSwitchId: leafIds[0],
 						targetSwitchIf: "xe-0/0/7",
 						targetSwitchTf: 1,
-						//tags:           []string{"c"},
+						// tags:           []string{"c"},
 					},
 				},
 			},
@@ -478,17 +509,17 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		},
 		{
 			genericSystem: genericSystem{
-				//name:     "foo",
-				//hostname: "foo.com",
-				//tags:     []string{"a"},
+				// name:     "foo",
+				// hostname: "foo.com",
+				// tags:     []string{"a"},
 				links: []link{
 					{
-						//lagMode:        apstra.RackLinkLagModeStatic,
-						//groupLabel:     "baz",
+						// lagMode:        apstra.RackLinkLagModeStatic,
+						// groupLabel:     "baz",
 						targetSwitchId: leafIds[0],
 						targetSwitchIf: "xe-0/0/8",
 						targetSwitchTf: 1,
-						//tags:           []string{"c"},
+						// tags:           []string{"c"},
 					},
 				},
 			},

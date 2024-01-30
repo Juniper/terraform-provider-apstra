@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -27,17 +28,19 @@ import (
 )
 
 type DatacenterGenericSystem struct {
-	Id           types.String         `tfsdk:"id"`
-	BlueprintId  types.String         `tfsdk:"blueprint_id"`
-	Name         types.String         `tfsdk:"name"`
-	Hostname     types.String         `tfsdk:"hostname"`
-	Tags         types.Set            `tfsdk:"tags"`
-	Links        types.Set            `tfsdk:"links"`
-	Asn          types.Int64          `tfsdk:"asn"`
-	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
-	LoopbackIpv6 cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
-	External     types.Bool           `tfsdk:"external"`
-	DeployMode   types.String         `tfsdk:"deploy_mode"`
+	Id               types.String         `tfsdk:"id"`
+	BlueprintId      types.String         `tfsdk:"blueprint_id"`
+	Name             types.String         `tfsdk:"name"`
+	Hostname         types.String         `tfsdk:"hostname"`
+	Tags             types.Set            `tfsdk:"tags"`
+	Links            types.Set            `tfsdk:"links"`
+	Asn              types.Int64          `tfsdk:"asn"`
+	LoopbackIpv4     cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
+	LoopbackIpv6     cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
+	PortChannelIdMin types.Int64          `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64          `tfsdk:"port_channel_id_max"`
+	External         types.Bool           `tfsdk:"external"`
+	DeployMode       types.String         `tfsdk:"deploy_mode"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -103,6 +106,19 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation",
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Optional:            true,
+		},
+		"port_channel_id_min": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Port Channel Id Min",
+			Optional:            true,
+			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"port_channel_id_max": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Port Channel Id Max",
+			Optional:            true,
+			Validators: []validator.Int64{int64validator.AtLeast(1),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+			},
 		},
 		"external": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Set `true` to create an External Generic System",
@@ -681,6 +697,13 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 			return
 		}
 	}
+	// Set Port Channel Min and Max if we don't have prior state or if it needs to be updated
+	if state == nil || !o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin) {
+		o.setPortChannelIdMinMax(ctx, bp, diags)
+		if diags.HasError() {
+			return
+		}
+	}
 
 	// set deploy mode if we don't have prior state or the deploy mode needs to be updated
 	if state == nil || !o.DeployMode.Equal(state.DeployMode) {
@@ -747,5 +770,17 @@ func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstr
 	err = bp.SetGenericSystemLoopbackIpv6(ctx, apstra.ObjectId(o.Id.ValueString()), ipNet, 0)
 	if err != nil {
 		diags.AddError("failed setting generic system IPv6 loopback address", err.Error())
+	}
+}
+
+// setLoopbackIPv6 sets or clears the generic system loopback IPv6 attribute depending on o.LoopbackIpv6.IsNull()
+func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
+	diags *diag.Diagnostics) {
+
+	err := bp.SetSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
+		int(o.PortChannelIdMax.ValueInt64()))
+
+	if err != nil {
+		diags.AddError("failed setting generic system Port Channel Id Min and Max", err.Error())
 	}
 }

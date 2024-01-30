@@ -90,6 +90,8 @@ resource "apstra_datacenter_generic_system" "example" {
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation
 - `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation
 - `name` (String) Name displayed in the Apstra web UI.
+- `port_channel_id_max` (Number) Port Channel Id Max
+- `port_channel_id_min` (Number) Port Channel Id Min
 - `tags` (Set of String) Tag labels to be applied to this Generic System. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
 ### Read-Only
