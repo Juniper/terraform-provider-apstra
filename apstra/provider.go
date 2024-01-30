@@ -541,7 +541,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceManagedDevice{} },
 		func() resource.Resource { return &resourceManagedDeviceAck{} },
 		func() resource.Resource { return &resourceModularDeviceProfile{} },
-		func() resource.Resource { return &resourcePoolAllocation{} },
+		func() resource.Resource { return &resourceResourcePoolAllocation{} },
 		func() resource.Resource { return &resourcePropertySet{} },
 		func() resource.Resource { return &resourceRackType{} },
 		func() resource.Resource { return &resourceTag{} },
