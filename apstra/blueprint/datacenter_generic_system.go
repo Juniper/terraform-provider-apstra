@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -12,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
@@ -27,17 +30,19 @@ import (
 )
 
 type DatacenterGenericSystem struct {
-	Id           types.String         `tfsdk:"id"`
-	BlueprintId  types.String         `tfsdk:"blueprint_id"`
-	Name         types.String         `tfsdk:"name"`
-	Hostname     types.String         `tfsdk:"hostname"`
-	Tags         types.Set            `tfsdk:"tags"`
-	Links        types.Set            `tfsdk:"links"`
-	Asn          types.Int64          `tfsdk:"asn"`
-	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
-	LoopbackIpv6 cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
-	External     types.Bool           `tfsdk:"external"`
-	DeployMode   types.String         `tfsdk:"deploy_mode"`
+	Id               types.String         `tfsdk:"id"`
+	BlueprintId      types.String         `tfsdk:"blueprint_id"`
+	Name             types.String         `tfsdk:"name"`
+	Hostname         types.String         `tfsdk:"hostname"`
+	Tags             types.Set            `tfsdk:"tags"`
+	Links            types.Set            `tfsdk:"links"`
+	Asn              types.Int64          `tfsdk:"asn"`
+	LoopbackIpv4     cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
+	LoopbackIpv6     cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
+	PortChannelIdMin types.Int64          `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax types.Int64          `tfsdk:"port_channel_id_max"`
+	External         types.Bool           `tfsdk:"external"`
+	DeployMode       types.String         `tfsdk:"deploy_mode"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -105,6 +110,29 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation",
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Optional:            true,
+		},
+		"port_channel_id_min": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
+				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
+				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
+				"need only be unique per system.", apiversions.Apstra412),
+			Optional: true,
+			Validators: []validator.Int64{
+				int64validator.Between(design.PoIdMin, design.PoIdMax),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+			},
+		},
+		"port_channel_id_max": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
+				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
+				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
+				"need only be unique per system.", apiversions.Apstra412),
+			Optional: true,
+			Validators: []validator.Int64{int64validator.AtLeast(1),
+				int64validator.Between(design.PoIdMin, design.PoIdMax),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+			},
 		},
 		"external": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Set `true` to create an External Generic System",
@@ -684,6 +712,14 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 		}
 	}
 
+	// Set Port Channel Min and Max if we don't have prior state or if it needs to be updated
+	if state == nil || !o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin) {
+		o.setPortChannelIdMinMax(ctx, bp, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
 	// set deploy mode if we don't have prior state or the deploy mode needs to be updated
 	if state == nil || !o.DeployMode.Equal(state.DeployMode) {
 		err := utils.SetNodeDeployMode(ctx, bp, o.Id.ValueString(), o.DeployMode.ValueString())
@@ -749,5 +785,17 @@ func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstr
 	err = bp.SetGenericSystemLoopbackIpv6(ctx, apstra.ObjectId(o.Id.ValueString()), ipNet, 0)
 	if err != nil {
 		diags.AddError("failed setting generic system IPv6 loopback address", err.Error())
+	}
+}
+
+// setPortChannelIdMinMax sets or clears the generic system Po ID min/max depending on the zero value of
+// o.PortChannelIdMin and o.PortChannelIdMax (null/unknown/0 will "clear" the value from the web UI).
+func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
+	diags *diag.Diagnostics) {
+
+	err := bp.SetSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
+		int(o.PortChannelIdMax.ValueInt64()))
+	if err != nil {
+		diags.AddError("failed setting generic system Port Channel Id Min and Max", err.Error())
 	}
 }

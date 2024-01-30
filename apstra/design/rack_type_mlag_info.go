@@ -81,7 +81,7 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Port channel number used for L2 Peer Link.",
 			Required:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(poIdMin, poIdMax),
+				int64validator.Between(PoIdMin, PoIdMax),
 				apstravalidator.DifferentFrom(path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id")),
 			},
 		},
@@ -111,7 +111,7 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Port channel number used for L3 Peer Link. Omit to allow Apstra to choose.",
 			Optional:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(poIdMin, poIdMax),
+				int64validator.Between(PoIdMin, PoIdMax),
 				int64validator.AlsoRequires(
 					path.MatchRelative().AtParent().AtName("l3_peer_link_count"),
 					path.MatchRelative().AtParent().AtName("l3_peer_link_speed"),

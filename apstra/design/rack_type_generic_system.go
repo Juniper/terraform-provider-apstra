@@ -102,7 +102,7 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(poIdMin, poIdMax),
+				int64validator.Between(PoIdMin, PoIdMax),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
 				int64validator.AtMostSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
 			},
@@ -112,7 +112,7 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.Int64{
-				int64validator.Between(poIdMin, poIdMax),
+				int64validator.Between(PoIdMin, PoIdMax),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 			},

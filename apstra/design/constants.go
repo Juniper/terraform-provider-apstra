@@ -18,6 +18,6 @@ const (
 	VlanMin = 1
 	VlanMax = 4094
 
-	poIdMin = 0
-	poIdMax = 4096
+	PoIdMin = 0
+	PoIdMax = 4096
 )
