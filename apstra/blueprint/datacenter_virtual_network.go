@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
