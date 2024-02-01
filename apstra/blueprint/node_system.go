@@ -15,10 +15,11 @@ import (
 )
 
 type NodeTypeSystem struct {
-	BlueprintId types.String `tfsdk:"blueprint_id"`
-	Id          types.String `tfsdk:"id"`
-	Name        types.String `tfsdk:"name"`
-	Attributes  types.Object `tfsdk:"attributes"`
+	BlueprintId      types.String `tfsdk:"blueprint_id"`
+	Id               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	NullWhenNotFound types.Bool   `tfsdk:"null_when_not_found"`
+	Attributes       types.Object `tfsdk:"attributes"`
 }
 
 func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -38,6 +39,11 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Web UI name (Graph DB `label` field). Required when `id` is omitted.",
 			Optional:            true,
+		},
+		"null_when_not_found": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "When `true` and the specified object is not found, rather than raising an error, " +
+				"computed values are set to false.",
+			Optional: true,
 		},
 		"attributes": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Attributes of a `system` Graph DB node.",
@@ -86,6 +92,11 @@ func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.C
 	}
 
 	if desiredNode == nil {
+		if o.NullWhenNotFound.ValueBool() {
+			o.Attributes = types.ObjectNull(NodeTypeSystemAttributes{}.AttrTypes())
+			return
+		}
+
 		diags.AddError("node not found",
 			fmt.Sprintf("node %q not found in blueprint %q",
 				o.Id.ValueString(), o.BlueprintId.ValueString()))

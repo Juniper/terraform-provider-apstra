@@ -56,6 +56,7 @@ locals {
 
 - `id` (String) Apstra Graph DB node `id` field. Required when `name` is omitted.
 - `name` (String) Apstra Web UI name (Graph DB `label` field). Required when `id` is omitted.
+- `null_when_not_found` (Boolean) When `true` and the specified object is not found, rather than raising an error, computed values are set to false.
 
 ### Read-Only
 
