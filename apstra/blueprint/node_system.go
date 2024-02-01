@@ -42,7 +42,7 @@ func (o NodeTypeSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 		},
 		"null_when_not_found": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "When `true` and the specified object is not found, rather than raising an error, " +
-				"computed values are set to false.",
+				"computed values are set to `null`.",
 			Optional: true,
 		},
 		"attributes": dataSourceSchema.SingleNestedAttribute{
