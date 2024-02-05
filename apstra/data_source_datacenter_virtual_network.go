@@ -13,7 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetwork{}
-var _ datasourceWithSetBpClientFunc= &dataSourceDatacenterVirtualNetwork{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterVirtualNetwork{}
 
 type dataSourceDatacenterVirtualNetwork struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -94,4 +94,3 @@ func (o *dataSourceDatacenterVirtualNetwork) Read(ctx context.Context, req datas
 func (o *dataSourceDatacenterVirtualNetwork) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
 }
-

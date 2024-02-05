@@ -9,7 +9,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSystemNodes{}
-var _ datasourceWithSetClient= &dataSourceDatacenterSystemNodes{}
+var _ datasourceWithSetClient = &dataSourceDatacenterSystemNodes{}
 
 type dataSourceDatacenterSystemNodes struct {
 	client *apstra.Client
