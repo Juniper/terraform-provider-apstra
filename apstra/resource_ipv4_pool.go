@@ -12,8 +12,9 @@ import (
 	"net"
 )
 
-var _ resource.ResourceWithConfigure = &resourceAsnPool{}
-var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
+var _ resource.ResourceWithConfigure = &resourceIpv4Pool{}
+var _ resource.ResourceWithValidateConfig = &resourceIpv4Pool{}
+var _ resourceWithSetClient = &resourceIpv4Pool{}
 
 type resourceIpv4Pool struct {
 	client *apstra.Client
@@ -24,7 +25,7 @@ func (o *resourceIpv4Pool) Metadata(_ context.Context, req resource.MetadataRequ
 }
 
 func (o *resourceIpv4Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceIpv4Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -230,4 +231,8 @@ func (o *resourceIpv4Pool) Delete(ctx context.Context, req resource.DeleteReques
 		resp.Diagnostics.AddError(
 			"error deleting IPv4 pool", err.Error())
 	}
+}
+
+func (o *resourceIpv4Pool) setClient(client *apstra.Client) {
+	o.client = client
 }

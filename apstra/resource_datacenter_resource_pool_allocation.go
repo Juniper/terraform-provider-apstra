@@ -12,6 +12,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
+var _ resourceWithSetBpClientFunc = &resourceResourcePoolAllocation{}
+var _ resourceWithSetBpLockFunc = &resourceResourcePoolAllocation{}
 
 type resourceResourcePoolAllocation struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -23,8 +25,7 @@ func (o *resourceResourcePoolAllocation) Metadata(_ context.Context, req resourc
 }
 
 func (o *resourceResourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceResourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -215,4 +216,12 @@ func (o *resourceResourcePoolAllocation) Delete(ctx context.Context, req resourc
 	if err != nil {
 		resp.Diagnostics.AddError("failed setting resource allocation", err.Error())
 	}
+}
+
+func (o *resourceResourcePoolAllocation) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceResourcePoolAllocation) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

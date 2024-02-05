@@ -11,6 +11,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceBlueprintIbaDashboard{}
+var _ resourceWithSetBpClientFunc = &resourceBlueprintIbaDashboard{}
 
 type resourceBlueprintIbaDashboard struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -21,7 +22,7 @@ func (o *resourceBlueprintIbaDashboard) Metadata(_ context.Context, req resource
 }
 
 func (o *resourceBlueprintIbaDashboard) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -186,4 +187,8 @@ func (o *resourceBlueprintIbaDashboard) Delete(ctx context.Context, req resource
 		resp.Diagnostics.AddError("error deleting IBA Dashboard", err.Error())
 		return
 	}
+}
+
+func (o *resourceBlueprintIbaDashboard) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

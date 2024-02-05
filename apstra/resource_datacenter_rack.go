@@ -12,6 +12,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRack{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterRack{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterRack{}
 
 type resourceDatacenterRack struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -23,8 +25,7 @@ func (o *resourceDatacenterRack) Metadata(_ context.Context, req resource.Metada
 }
 
 func (o *resourceDatacenterRack) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterRack) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -207,4 +208,12 @@ func (o *resourceDatacenterRack) Delete(ctx context.Context, req resource.Delete
 			fmt.Sprintf("unable to delete Rack %s from Blueprint %s", state.Id, state.BlueprintId),
 			err.Error())
 	}
+}
+
+func (o *resourceDatacenterRack) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterRack) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

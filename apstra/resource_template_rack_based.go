@@ -15,6 +15,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
 var _ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
+var _ resourceWithSetClient = &resourceTemplateRackBased{}
 
 type resourceTemplateRackBased struct {
 	client *apstra.Client
@@ -25,7 +26,7 @@ func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.Met
 }
 
 func (o *resourceTemplateRackBased) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -217,4 +218,8 @@ func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.Del
 		)
 		return
 	}
+}
+
+func (o *resourceTemplateRackBased) setClient(client *apstra.Client) {
+	o.client = client
 }

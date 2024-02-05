@@ -12,6 +12,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceBlueprintIbaWidget{}
+var _ resourceWithSetBpClientFunc = &resourceBlueprintIbaWidget{}
 
 type resourceBlueprintIbaWidget struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -22,7 +23,7 @@ func (o *resourceBlueprintIbaWidget) Metadata(_ context.Context, req resource.Me
 }
 
 func (o *resourceBlueprintIbaWidget) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceBlueprintIbaWidget) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -165,4 +166,8 @@ func (o *resourceBlueprintIbaWidget) Delete(ctx context.Context, req resource.De
 		resp.Diagnostics.AddError("error deleting IBA Probe", err.Error())
 		return
 	}
+}
+
+func (o *resourceBlueprintIbaWidget) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

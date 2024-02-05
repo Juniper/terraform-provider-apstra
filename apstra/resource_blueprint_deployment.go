@@ -11,12 +11,18 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceBlueprintDeploy{}
+var _ resourceWithSetClient = &resourceBlueprintDeploy{}
+var _ resourceWithSetBpLockFunc = &resourceBlueprintDeploy{}
+var _ resourceWithSetBpUnlockFunc = &resourceBlueprintDeploy{}
+var _ resourceWithSetProviderVersion = &resourceBlueprintDeploy{}
+var _ resourceWithSetTerraformVersion = &resourceBlueprintDeploy{}
 
 type resourceBlueprintDeploy struct {
-	client          *apstra.Client
-	commentTemplate *blueprint.CommentTemplate
-	lockFunc        func(context.Context, string) error
-	unlockFunc      func(context.Context, string) error
+	client           *apstra.Client
+	lockFunc         func(context.Context, string) error
+	unlockFunc       func(context.Context, string) error
+	providerVersion  string
+	terraformVersion string
 }
 
 func (o *resourceBlueprintDeploy) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -24,13 +30,7 @@ func (o *resourceBlueprintDeploy) Metadata(_ context.Context, req resource.Metad
 }
 
 func (o *resourceBlueprintDeploy) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
-	o.commentTemplate = &blueprint.CommentTemplate{
-		ProviderVersion:  ResourceGetProviderVersion(ctx, req, resp),
-		TerraformVersion: ResourceGetTerraformVersion(ctx, req, resp),
-	}
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
-	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceBlueprintDeploy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -73,7 +73,12 @@ func (o *resourceBlueprintDeploy) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
-	plan.Deploy(ctx, o.commentTemplate, o.client, &resp.Diagnostics)
+	template := blueprint.CommentTemplate{
+		ProviderVersion:  o.providerVersion,
+		TerraformVersion: o.terraformVersion,
+	}
+
+	plan.Deploy(ctx, &template, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -149,7 +154,12 @@ func (o *resourceBlueprintDeploy) Update(ctx context.Context, req resource.Updat
 		}
 	}()
 
-	plan.Deploy(ctx, o.commentTemplate, o.client, &resp.Diagnostics)
+	template := blueprint.CommentTemplate{
+		ProviderVersion:  o.providerVersion,
+		TerraformVersion: o.terraformVersion,
+	}
+
+	plan.Deploy(ctx, &template, o.client, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -180,4 +190,23 @@ func (o *resourceBlueprintDeploy) Delete(ctx context.Context, req resource.Delet
 			fmt.Sprintf("error unlocking blueprint %q mutex", state.BlueprintId.ValueString()),
 			err.Error())
 	}
+}
+
+func (o *resourceBlueprintDeploy) setClient(client *apstra.Client) {
+	o.client = client
+}
+
+func (o *resourceBlueprintDeploy) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
+}
+
+func (o *resourceBlueprintDeploy) setBpUnlockFunc(f func(context.Context, string) error) {
+	o.unlockFunc = f
+}
+
+func (o *resourceBlueprintDeploy) setProviderVersion(v string) {
+	o.providerVersion = v
+}
+func (o *resourceBlueprintDeploy) setTerraformVersion(v string) {
+	o.terraformVersion = v
 }

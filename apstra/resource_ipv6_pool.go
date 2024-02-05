@@ -12,8 +12,9 @@ import (
 	"net"
 )
 
-var _ resource.ResourceWithConfigure = &resourceAsnPool{}
-var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
+var _ resource.ResourceWithConfigure = &resourceIpv6Pool{}
+var _ resource.ResourceWithValidateConfig = &resourceIpv6Pool{}
+var _ resourceWithSetClient = &resourceIpv6Pool{}
 
 type resourceIpv6Pool struct {
 	client *apstra.Client
@@ -24,7 +25,7 @@ func (o *resourceIpv6Pool) Metadata(_ context.Context, req resource.MetadataRequ
 }
 
 func (o *resourceIpv6Pool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceIpv6Pool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -230,4 +231,8 @@ func (o *resourceIpv6Pool) Delete(ctx context.Context, req resource.DeleteReques
 		resp.Diagnostics.AddError(
 			"error deleting IPv6 pool", err.Error())
 	}
+}
+
+func (o *resourceIpv6Pool) setClient(client *apstra.Client) {
+	o.client = client
 }

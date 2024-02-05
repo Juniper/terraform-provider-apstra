@@ -15,6 +15,10 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
 var _ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
+var _ resourceWithSetClient = &resourceDatacenterBlueprint{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterBlueprint{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterBlueprint{}
+var _ resourceWithSetBpUnlockFunc = &resourceDatacenterBlueprint{}
 
 type resourceDatacenterBlueprint struct {
 	client          *apstra.Client
@@ -28,10 +32,7 @@ func (o *resourceDatacenterBlueprint) Metadata(_ context.Context, req resource.M
 }
 
 func (o *resourceDatacenterBlueprint) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
-	o.unlockFunc = ResourceGetBlueprintUnlockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -305,4 +306,20 @@ func (o *resourceDatacenterBlueprint) Delete(ctx context.Context, req resource.D
 	if err != nil {
 		resp.Diagnostics.AddError("error unlocking blueprint mutex", err.Error())
 	}
+}
+
+func (o *resourceDatacenterBlueprint) setClient(client *apstra.Client) {
+	o.client = client
+}
+
+func (o *resourceDatacenterBlueprint) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterBlueprint) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
+}
+
+func (o *resourceDatacenterBlueprint) setBpUnlockFunc(f func(context.Context, string) error) {
+	o.unlockFunc = f
 }

@@ -11,6 +11,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceAgentProfile{}
+var _ resourceWithSetClient = &resourceAgentProfile{}
 
 type resourceAgentProfile struct {
 	client *apstra.Client
@@ -21,7 +22,7 @@ func (o *resourceAgentProfile) Metadata(_ context.Context, req resource.Metadata
 }
 
 func (o *resourceAgentProfile) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceAgentProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -147,4 +148,8 @@ func (o *resourceAgentProfile) Delete(ctx context.Context, req resource.DeleteRe
 		resp.Diagnostics.AddError("error deleting Agent Profile", err.Error())
 		return
 	}
+}
+
+func (o *resourceAgentProfile) setClient(client *apstra.Client) {
+	o.client = client
 }

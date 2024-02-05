@@ -15,6 +15,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceModularDeviceProfile{}
 var _ resource.ResourceWithValidateConfig = &resourceModularDeviceProfile{}
+var _ resourceWithSetClient = &resourceModularDeviceProfile{}
 
 type resourceModularDeviceProfile struct {
 	client *apstra.Client
@@ -45,7 +46,7 @@ func (o *resourceModularDeviceProfile) Metadata(_ context.Context, req resource.
 }
 
 func (o *resourceModularDeviceProfile) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceModularDeviceProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -154,4 +155,8 @@ func (o *resourceModularDeviceProfile) Delete(ctx context.Context, req resource.
 			"error deleting Modular Device Profile", err.Error())
 		return
 	}
+}
+
+func (o *resourceModularDeviceProfile) setClient(client *apstra.Client) {
+	o.client = client
 }

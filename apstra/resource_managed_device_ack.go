@@ -13,6 +13,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceManagedDeviceAck{}
+var _ resourceWithSetClient = &resourceManagedDeviceAck{}
 
 type resourceManagedDeviceAck struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *resourceManagedDeviceAck) Metadata(_ context.Context, req resource.Meta
 }
 
 func (o *resourceManagedDeviceAck) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceManagedDeviceAck) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -110,4 +111,8 @@ func (o *resourceManagedDeviceAck) Update(_ context.Context, _ resource.UpdateRe
 func (o *resourceManagedDeviceAck) Delete(_ context.Context, _ resource.DeleteRequest, _ *resource.DeleteResponse) {
 	// Nothing to do. The Terraform Plugin Framework will remove the resource
 	// from the terraform state for us. "ACK" is a one-way street.
+}
+
+func (o *resourceManagedDeviceAck) setClient(client *apstra.Client) {
+	o.client = client
 }

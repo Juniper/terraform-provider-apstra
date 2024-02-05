@@ -11,6 +11,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceTag{}
+var _ resourceWithSetClient = &resourceTag{}
 
 type resourceTag struct {
 	client *apstra.Client
@@ -21,7 +22,7 @@ func (o *resourceTag) Metadata(_ context.Context, req resource.MetadataRequest, 
 }
 
 func (o *resourceTag) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceTag) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -128,4 +129,8 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 		resp.Diagnostics.AddError("error deleting Tag", err.Error())
 		return
 	}
+}
+
+func (o *resourceTag) setClient(client *apstra.Client) {
+	o.client = client
 }

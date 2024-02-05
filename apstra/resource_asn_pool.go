@@ -14,6 +14,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceAsnPool{}
 var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
+var _ resourceWithSetClient = &resourceAsnPool{}
 
 type resourceAsnPool struct {
 	client *apstra.Client
@@ -24,7 +25,7 @@ func (o *resourceAsnPool) Metadata(_ context.Context, req resource.MetadataReque
 }
 
 func (o *resourceAsnPool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceAsnPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -235,4 +236,8 @@ func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest
 		resp.Diagnostics.AddError("error deleting ASN pool", err.Error())
 		return
 	}
+}
+
+func (o *resourceAsnPool) setClient(client *apstra.Client) {
+	o.client = client
 }

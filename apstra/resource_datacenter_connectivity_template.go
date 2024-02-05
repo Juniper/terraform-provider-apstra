@@ -12,6 +12,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplate{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterConnectivityTemplate{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplate{}
 
 type resourceDatacenterConnectivityTemplate struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -23,8 +25,7 @@ func (o *resourceDatacenterConnectivityTemplate) Metadata(_ context.Context, req
 }
 
 func (o *resourceDatacenterConnectivityTemplate) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterConnectivityTemplate) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -194,4 +195,12 @@ func (o *resourceDatacenterConnectivityTemplate) Delete(ctx context.Context, req
 		}
 		resp.Diagnostics.AddError(fmt.Sprintf("failed while deleting Connectivity Template %s", state.Id), err.Error())
 	}
+}
+
+func (o *resourceDatacenterConnectivityTemplate) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterConnectivityTemplate) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

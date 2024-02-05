@@ -11,6 +11,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceRackType{}
+var _ resourceWithSetClient = &resourceRackType{}
 
 type resourceRackType struct {
 	client *apstra.Client
@@ -21,7 +22,7 @@ func (o *resourceRackType) Metadata(_ context.Context, req resource.MetadataRequ
 }
 
 func (o *resourceRackType) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -185,4 +186,9 @@ func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteReques
 		resp.Diagnostics.AddError("error deleting Rack Type", err.Error())
 		return
 	}
+
+}
+
+func (o *resourceRackType) setClient(client *apstra.Client) {
+	o.client = client
 }

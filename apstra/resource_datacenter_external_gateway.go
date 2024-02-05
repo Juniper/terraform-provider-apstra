@@ -14,6 +14,8 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterExternalGateway{}
 var _ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterExternalGateway{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterExternalGateway{}
 
 type resourceDatacenterExternalGateway struct {
 	lockFunc        func(context.Context, string) error
@@ -25,8 +27,7 @@ func (o *resourceDatacenterExternalGateway) Metadata(_ context.Context, req reso
 }
 
 func (o *resourceDatacenterExternalGateway) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterExternalGateway) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -261,4 +262,12 @@ func (o *resourceDatacenterExternalGateway) Delete(ctx context.Context, req reso
 		}
 		resp.Diagnostics.AddError("error deleting remote gateway", err.Error())
 	}
+}
+
+func (o *resourceDatacenterExternalGateway) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterExternalGateway) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

@@ -14,6 +14,8 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterSecurityPolicy{}
 var _ resource.ResourceWithImportState = &resourceDatacenterSecurityPolicy{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterSecurityPolicy{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterSecurityPolicy{}
 
 type resourceDatacenterSecurityPolicy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -25,8 +27,7 @@ func (o *resourceDatacenterSecurityPolicy) Metadata(_ context.Context, req resou
 }
 
 func (o *resourceDatacenterSecurityPolicy) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterSecurityPolicy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -273,4 +274,12 @@ func (o *resourceDatacenterSecurityPolicy) Delete(ctx context.Context, req resou
 		}
 		resp.Diagnostics.AddError("error deleting security policy", err.Error())
 	}
+}
+
+func (o *resourceDatacenterSecurityPolicy) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterSecurityPolicy) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }
