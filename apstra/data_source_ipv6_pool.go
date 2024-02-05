@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceIpv6Pool{}
+var _ datasourceWithSetClient = &dataSourceIpv6Pool{}
 
 type dataSourceIpv6Pool struct {
 	client *apstra.Client
@@ -22,7 +23,7 @@ func (o *dataSourceIpv6Pool) Metadata(_ context.Context, req datasource.Metadata
 }
 
 func (o *dataSourceIpv6Pool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceIpv6Pool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -77,4 +78,8 @@ func (o *dataSourceIpv6Pool) Read(ctx context.Context, req datasource.ReadReques
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceIpv6Pool) setClient(client *apstra.Client) {
+	o.client = client
 }

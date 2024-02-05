@@ -9,7 +9,8 @@ import (
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintDeploy{}
+var _ datasourceWithSetClient = &dataSourceBlueprintDeploy{}
 
 type dataSourceBlueprintDeploy struct {
 	client *apstra.Client
@@ -20,7 +21,7 @@ func (o *dataSourceBlueprintDeploy) Metadata(_ context.Context, req datasource.M
 }
 
 func (o *dataSourceBlueprintDeploy) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceBlueprintDeploy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -42,4 +43,8 @@ func (o *dataSourceBlueprintDeploy) Read(ctx context.Context, req datasource.Rea
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceBlueprintDeploy) setClient(client *apstra.Client) {
+	o.client = client
 }

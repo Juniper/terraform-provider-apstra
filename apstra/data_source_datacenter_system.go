@@ -10,6 +10,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSystemNode{}
+var _ datasourceWithSetClient= &dataSourceDatacenterSystemNode{}
 
 type dataSourceDatacenterSystemNode struct {
 	client *apstra.Client
@@ -20,7 +21,7 @@ func (o *dataSourceDatacenterSystemNode) Metadata(_ context.Context, req datasou
 }
 
 func (o *dataSourceDatacenterSystemNode) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterSystemNode) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -62,4 +63,8 @@ func (o *dataSourceDatacenterSystemNode) Read(ctx context.Context, req datasourc
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterSystemNode) setClient(client *apstra.Client) {
+	o.client = client
 }

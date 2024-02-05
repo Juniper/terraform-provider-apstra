@@ -12,6 +12,8 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
+var _ datasourceWithSetClient = &dataSourceDatacenterBlueprint{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterBlueprint{}
 
 type dataSourceDatacenterBlueprint struct {
 	client          *apstra.Client
@@ -23,8 +25,7 @@ func (o *dataSourceDatacenterBlueprint) Metadata(_ context.Context, req datasour
 }
 
 func (o *dataSourceDatacenterBlueprint) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterBlueprint) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -103,4 +104,12 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceDatacenterBlueprint) setClient(client *apstra.Client) {
+	o.client = client
+}
+
+func (o *dataSourceDatacenterBlueprint) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

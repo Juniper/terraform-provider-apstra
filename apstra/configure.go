@@ -8,41 +8,39 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-func DataSourceGetClient(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) *apstra.Client {
-	if req.ProviderData == nil {
-		return nil
-	}
-
-	var pd *providerData
-	var ok bool
-	if pd, ok = req.ProviderData.(*providerData); ok {
-		return pd.client
-	}
-
-	resp.Diagnostics.AddError(
-		errDataSourceConfigureProviderDataSummary,
-		fmt.Sprintf(errDataSourceConfigureProviderDataDetail, *pd, req.ProviderData),
-	)
-	return nil
+type datasourceWithSetClient interface {
+	datasource.DataSourceWithConfigure
+	setClient(*apstra.Client)
 }
 
-func DataSourceGetTwoStageL3ClosClientFunc(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) func(context.Context, string) (*apstra.TwoStageL3ClosClient, error) {
+type datasourceWithSetBpClientFunc interface {
+	datasource.DataSourceWithConfigure
+	setBpClientFunc(func(context.Context, string) (*apstra.TwoStageL3ClosClient, error))
+}
+
+func configureDataSource(_ context.Context, ds datasource.DataSourceWithConfigure, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
-		return nil
+		// cannot continue
+		return
 	}
 
 	var pd *providerData
 	var ok bool
-	if pd, ok = req.ProviderData.(*providerData); ok {
-		return pd.getTwoStageL3ClosClient
+
+	if pd, ok = req.ProviderData.(*providerData); !ok {
+		resp.Diagnostics.AddError(
+			errDataSourceConfigureProviderDataSummary,
+			fmt.Sprintf(errDataSourceConfigureProviderDataDetail, *pd, req.ProviderData),
+		)
 	}
 
-	resp.Diagnostics.AddError(
-		errDataSourceConfigureProviderDataSummary,
-		fmt.Sprintf(errDataSourceConfigureProviderDataDetail, *pd, req.ProviderData),
-	)
+	if ds, ok := ds.(datasourceWithSetClient); ok {
+		ds.setClient(pd.client)
+	}
 
-	return nil
+	if ds, ok := ds.(datasourceWithSetBpClientFunc); ok {
+		ds.setBpClientFunc(pd.getTwoStageL3ClosClient)
+	}
 }
 
 func ResourceGetClient(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) *apstra.Client {

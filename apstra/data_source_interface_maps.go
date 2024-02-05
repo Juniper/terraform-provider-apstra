@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfaceMaps{}
+var _ datasourceWithSetClient = &dataSourceInterfaceMaps{}
 
 type dataSourceInterfaceMaps struct {
 	client *apstra.Client
@@ -22,7 +23,7 @@ func (o *dataSourceInterfaceMaps) Metadata(_ context.Context, req datasource.Met
 }
 
 func (o *dataSourceInterfaceMaps) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceInterfaceMaps) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -97,4 +98,8 @@ type interfaceMaps struct {
 	Ids             types.Set    `tfsdk:"ids"`
 	LogicalDeviceId types.String `tfsdk:"logical_device_id"`
 	DeviceProfileId types.String `tfsdk:"device_profile_id"`
+}
+
+func (o *dataSourceInterfaceMaps) setClient(client *apstra.Client) {
+	o.client = client
 }

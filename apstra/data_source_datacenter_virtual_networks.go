@@ -21,6 +21,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetworks{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterVirtualNetworks{}
 
 type dataSourceDatacenterVirtualNetworks struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -31,7 +32,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Metadata(_ context.Context, req da
 }
 
 func (o *dataSourceDatacenterVirtualNetworks) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -300,4 +301,8 @@ func (o *dataSourceDatacenterVirtualNetworks) getVnIdsWithFilter(ctx context.Con
 	}
 
 	return result, query
+}
+
+func (o *dataSourceDatacenterVirtualNetworks) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

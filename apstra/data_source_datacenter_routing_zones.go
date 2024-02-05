@@ -19,6 +19,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZones{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterRoutingZones{}
 
 type dataSourceDatacenterRoutingZones struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -29,7 +30,7 @@ func (o *dataSourceDatacenterRoutingZones) Metadata(_ context.Context, req datas
 }
 
 func (o *dataSourceDatacenterRoutingZones) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -197,4 +198,8 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 	config.IDs = types.SetValueMust(types.StringType, ids)
 	config.GraphQueries = types.ListValueMust(types.StringType, graphQueries)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterRoutingZones) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

@@ -10,6 +10,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAnomalies{}
+var _ datasourceWithSetClient = &dataSourceAnomalies{}
 
 type dataSourceAnomalies struct {
 	client *apstra.Client
@@ -20,7 +21,7 @@ func (o *dataSourceAnomalies) Metadata(_ context.Context, req datasource.Metadat
 }
 
 func (o *dataSourceAnomalies) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceAnomalies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -42,4 +43,8 @@ func (o *dataSourceAnomalies) Read(ctx context.Context, req datasource.ReadReque
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceAnomalies) setClient(client *apstra.Client) {
+	o.client = client
 }

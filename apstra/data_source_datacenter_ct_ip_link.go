@@ -12,8 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSource = &dataSourceDatacenterCtIpLink{}
 var _ datasource.DataSourceWithValidateConfig = &dataSourceDatacenterCtIpLink{}
+var _ datasourceWithSetClient = &dataSourceDatacenterCtIpLink{}
 
 type dataSourceDatacenterCtIpLink struct {
 	client *apstra.Client
@@ -24,7 +24,7 @@ func (o *dataSourceDatacenterCtIpLink) Metadata(_ context.Context, req datasourc
 }
 
 func (o *dataSourceDatacenterCtIpLink) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterCtIpLink) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -89,4 +89,8 @@ func (o *dataSourceDatacenterCtIpLink) Read(ctx context.Context, req datasource.
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterCtIpLink) setClient(client *apstra.Client) {
+	o.client = client
 }

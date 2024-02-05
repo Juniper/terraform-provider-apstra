@@ -14,6 +14,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidgets{}
+var _ datasourceWithSetBpClientFunc = &dataSourceBlueprintIbaWidgets{}
 
 type dataSourceBlueprintIbaWidgets struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -24,7 +25,7 @@ func (o *dataSourceBlueprintIbaWidgets) Metadata(_ context.Context, req datasour
 }
 
 func (o *dataSourceBlueprintIbaWidgets) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceBlueprintIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -92,4 +93,8 @@ func (o *dataSourceBlueprintIbaWidgets) Read(ctx context.Context, req datasource
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceBlueprintIbaWidgets) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

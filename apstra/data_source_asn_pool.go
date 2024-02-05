@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAsnPool{}
+var _ datasourceWithSetClient = &dataSourceAsnPool{}
 
 type dataSourceAsnPool struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceAsnPool) Metadata(_ context.Context, req datasource.MetadataR
 }
 
 func (o *dataSourceAsnPool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceAsnPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -78,4 +79,8 @@ func (o *dataSourceAsnPool) Read(ctx context.Context, req datasource.ReadRequest
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceAsnPool) setClient(client *apstra.Client) {
+	o.client = client
 }

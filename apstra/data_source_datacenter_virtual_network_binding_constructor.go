@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceVirtualNetworkBindingConstructor{}
+var _ datasourceWithSetBpClientFunc = &dataSourceVirtualNetworkBindingConstructor{}
 
 type dataSourceVirtualNetworkBindingConstructor struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -22,7 +23,7 @@ func (o *dataSourceVirtualNetworkBindingConstructor) Metadata(_ context.Context,
 }
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceVirtualNetworkBindingConstructor) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -63,4 +64,8 @@ func (o *dataSourceVirtualNetworkBindingConstructor) Read(ctx context.Context, r
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceVirtualNetworkBindingConstructor) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }
