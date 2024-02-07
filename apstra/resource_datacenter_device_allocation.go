@@ -16,8 +16,10 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
 var _ resourceWithSetBpClientFunc = &resourceDeviceAllocation{}
 var _ resourceWithSetBpLockFunc = &resourceDeviceAllocation{}
+var _ resourceWithSetExperimental = &resourceDeviceAllocation{}
 
 type resourceDeviceAllocation struct {
+	experimental    bool
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
@@ -311,4 +313,8 @@ func (o *resourceDeviceAllocation) setBpClientFunc(f func(context.Context, strin
 
 func (o *resourceDeviceAllocation) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDeviceAllocation) setExperimental(b bool) {
+	o.experimental = b
 }
