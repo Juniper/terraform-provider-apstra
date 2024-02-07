@@ -14,6 +14,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceLogicalDevice{}
 var _ resource.ResourceWithValidateConfig = &resourceLogicalDevice{}
+var _ resourceWithSetClient = &resourceLogicalDevice{}
 
 type resourceLogicalDevice struct {
 	client *apstra.Client
@@ -24,7 +25,7 @@ func (o *resourceLogicalDevice) Metadata(_ context.Context, req resource.Metadat
 }
 
 func (o *resourceLogicalDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -155,4 +156,8 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 		resp.Diagnostics.AddError("error deleting Logical Device", err.Error())
 		return
 	}
+}
+
+func (o *resourceLogicalDevice) setClient(client *apstra.Client) {
+	o.client = client
 }

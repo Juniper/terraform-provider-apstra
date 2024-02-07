@@ -17,6 +17,8 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
 var _ resource.ResourceWithModifyPlan = &resourceDatacenterVirtualNetwork{}
 var _ resource.ResourceWithValidateConfig = &resourceDatacenterVirtualNetwork{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterVirtualNetwork{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterVirtualNetwork{}
 
 type resourceDatacenterVirtualNetwork struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -28,8 +30,7 @@ func (o *resourceDatacenterVirtualNetwork) Metadata(_ context.Context, req resou
 }
 
 func (o *resourceDatacenterVirtualNetwork) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterVirtualNetwork) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -419,4 +420,12 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 		}
 		resp.Diagnostics.AddError("error deleting virtual network", err.Error())
 	}
+}
+
+func (o *resourceDatacenterVirtualNetwork) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterVirtualNetwork) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

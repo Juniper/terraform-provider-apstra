@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceVniPool{}
+var _ datasourceWithSetClient = &dataSourceVniPool{}
 
 type dataSourceVniPool struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceVniPool) Metadata(_ context.Context, req datasource.MetadataR
 }
 
 func (o *dataSourceVniPool) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceVniPool) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -78,4 +79,8 @@ func (o *dataSourceVniPool) Read(ctx context.Context, req datasource.ReadRequest
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceVniPool) setClient(client *apstra.Client) {
+	o.client = client
 }

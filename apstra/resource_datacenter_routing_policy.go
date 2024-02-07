@@ -12,6 +12,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingPolicy{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterRoutingPolicy{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingPolicy{}
 
 type resourceDatacenterRoutingPolicy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -23,8 +25,7 @@ func (o *resourceDatacenterRoutingPolicy) Metadata(_ context.Context, req resour
 }
 
 func (o *resourceDatacenterRoutingPolicy) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterRoutingPolicy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -191,4 +192,12 @@ func (o *resourceDatacenterRoutingPolicy) Delete(ctx context.Context, req resour
 		}
 		resp.Diagnostics.AddError("error deleting routing policy", err.Error())
 	}
+}
+
+func (o *resourceDatacenterRoutingPolicy) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterRoutingPolicy) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

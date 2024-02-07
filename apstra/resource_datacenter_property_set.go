@@ -15,6 +15,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterPropertySet{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterPropertySet{}
 
 type resourceDatacenterPropertySet struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -26,8 +28,7 @@ func (o *resourceDatacenterPropertySet) Metadata(_ context.Context, req resource
 }
 
 func (o *resourceDatacenterPropertySet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterPropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -374,4 +375,12 @@ func globalCatalogKeys(ctx context.Context, id apstra.ObjectId, client *apstra.C
 	}
 
 	return result
+}
+
+func (o *resourceDatacenterPropertySet) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterPropertySet) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

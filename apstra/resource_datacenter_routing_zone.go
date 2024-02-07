@@ -13,6 +13,8 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
 var _ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterRoutingZone{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingZone{}
 
 type resourceDatacenterRoutingZone struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -24,8 +26,7 @@ func (o *resourceDatacenterRoutingZone) Metadata(_ context.Context, req resource
 }
 
 func (o *resourceDatacenterRoutingZone) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterRoutingZone) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -349,4 +350,12 @@ func (o *resourceDatacenterRoutingZone) Delete(ctx context.Context, req resource
 		}
 		resp.Diagnostics.AddError("error deleting routing zone", err.Error())
 	}
+}
+
+func (o *resourceDatacenterRoutingZone) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterRoutingZone) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

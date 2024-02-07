@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceTemplates{}
+var _ datasourceWithSetClient = &dataSourceTemplates{}
 
 type dataSourceTemplates struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceTemplates) Metadata(_ context.Context, req datasource.Metadat
 }
 
 func (o *dataSourceTemplates) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceTemplates) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -99,4 +100,8 @@ type templates struct {
 	Ids                    types.Set    `tfsdk:"ids"`
 	Type                   types.String `tfsdk:"type"`
 	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
+}
+
+func (o *dataSourceTemplates) setClient(client *apstra.Client) {
+	o.client = client
 }

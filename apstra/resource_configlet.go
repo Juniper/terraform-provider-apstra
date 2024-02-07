@@ -16,6 +16,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceConfiglet{}
 var _ resource.ResourceWithValidateConfig = &resourceConfiglet{}
+var _ resourceWithSetClient = &resourceConfiglet{}
 
 type resourceConfiglet struct {
 	client *apstra.Client
@@ -26,7 +27,7 @@ func (o *resourceConfiglet) Metadata(_ context.Context, req resource.MetadataReq
 }
 
 func (o *resourceConfiglet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -217,4 +218,8 @@ func (o *resourceConfiglet) Delete(ctx context.Context, req resource.DeleteReque
 		resp.Diagnostics.AddError("error deleting Configlet", err.Error())
 		return
 	}
+}
+
+func (o *resourceConfiglet) setClient(client *apstra.Client) {
+	o.client = client
 }

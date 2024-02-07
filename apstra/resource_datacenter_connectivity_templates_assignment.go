@@ -12,6 +12,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplatesAssignment{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
 
 type resourceDatacenterConnectivityTemplatesAssignment struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -23,8 +25,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Metadata(_ context.C
 }
 
 func (o *resourceDatacenterConnectivityTemplatesAssignment) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterConnectivityTemplatesAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -217,4 +218,12 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())
 		return
 	}
+}
+
+func (o *resourceDatacenterConnectivityTemplatesAssignment) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterConnectivityTemplatesAssignment) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

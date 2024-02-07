@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSecurityPolicy{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterSecurityPolicy{}
 
 type dataSourceDatacenterSecurityPolicy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -22,7 +23,7 @@ func (o *dataSourceDatacenterSecurityPolicy) Metadata(_ context.Context, req dat
 }
 
 func (o *dataSourceDatacenterSecurityPolicy) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterSecurityPolicy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -77,4 +78,8 @@ func (o *dataSourceDatacenterSecurityPolicy) Read(ctx context.Context, req datas
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterSecurityPolicy) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

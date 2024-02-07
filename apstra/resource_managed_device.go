@@ -13,6 +13,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
+var _ resourceWithSetClient = &resourceManagedDevice{}
 
 type resourceManagedDevice struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *resourceManagedDevice) Metadata(_ context.Context, req resource.Metadat
 }
 
 func (o *resourceManagedDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceManagedDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -250,4 +251,8 @@ func (o *resourceManagedDevice) Delete(ctx context.Context, req resource.DeleteR
 			return
 		}
 	}
+}
+
+func (o *resourceManagedDevice) setClient(client *apstra.Client) {
+	o.client = client
 }

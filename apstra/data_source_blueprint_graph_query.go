@@ -11,6 +11,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterGraphQuery{}
+var _ datasourceWithSetClient = &dataSourceDatacenterGraphQuery{}
 
 type dataSourceDatacenterGraphQuery struct {
 	client *apstra.Client
@@ -21,7 +22,7 @@ func (o *dataSourceDatacenterGraphQuery) Metadata(_ context.Context, req datasou
 }
 
 func (o *dataSourceDatacenterGraphQuery) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterGraphQuery) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -73,4 +74,8 @@ func (o *dataSourceDatacenterGraphQuery) Read(ctx context.Context, req datasourc
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterGraphQuery) setClient(client *apstra.Client) {
+	o.client = client
 }

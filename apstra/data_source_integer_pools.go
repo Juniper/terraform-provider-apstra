@@ -9,6 +9,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceIntegerPools{}
+var _ datasourceWithSetClient = &dataSourceIntegerPools{}
 
 type dataSourceIntegerPools struct {
 	client *apstra.Client
@@ -19,7 +20,7 @@ func (o *dataSourceIntegerPools) Metadata(_ context.Context, req datasource.Meta
 }
 
 func (o *dataSourceIntegerPools) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceIntegerPools) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -56,4 +57,8 @@ func (o *dataSourceIntegerPools) Read(ctx context.Context, _ datasource.ReadRequ
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceIntegerPools) setClient(client *apstra.Client) {
+	o.client = client
 }

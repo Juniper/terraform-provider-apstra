@@ -14,6 +14,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceIntegerPool{}
 var _ resource.ResourceWithValidateConfig = &resourceIntegerPool{}
+var _ resourceWithSetClient = &resourceIntegerPool{}
 
 type resourceIntegerPool struct {
 	client *apstra.Client
@@ -24,7 +25,7 @@ func (o *resourceIntegerPool) Metadata(_ context.Context, req resource.MetadataR
 }
 
 func (o *resourceIntegerPool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceIntegerPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -235,4 +236,8 @@ func (o *resourceIntegerPool) Delete(ctx context.Context, req resource.DeleteReq
 		resp.Diagnostics.AddError("error deleting Integer pool", err.Error())
 		return
 	}
+}
+
+func (o *resourceIntegerPool) setClient(client *apstra.Client) {
+	o.client = client
 }

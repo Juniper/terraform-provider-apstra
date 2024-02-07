@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceLogicalDevice{}
+var _ datasourceWithSetClient = &dataSourceLogicalDevice{}
 
 type dataSourceLogicalDevice struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceLogicalDevice) Metadata(_ context.Context, req datasource.Met
 }
 
 func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -79,4 +80,8 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceLogicalDevice) setClient(client *apstra.Client) {
+	o.client = client
 }

@@ -17,6 +17,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateways{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterExternalGateways{}
 
 type dataSourceDatacenterExternalGateways struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -27,7 +28,7 @@ func (o *dataSourceDatacenterExternalGateways) Metadata(_ context.Context, req d
 }
 
 func (o *dataSourceDatacenterExternalGateways) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -152,4 +153,8 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterExternalGateways) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

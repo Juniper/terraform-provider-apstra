@@ -17,6 +17,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterRoutingPolicies{}
 
 type dataSourceDatacenterRoutingPolicies struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -27,7 +28,7 @@ func (o *dataSourceDatacenterRoutingPolicies) Metadata(_ context.Context, req da
 }
 
 func (o *dataSourceDatacenterRoutingPolicies) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterRoutingPolicies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -151,4 +152,8 @@ func (o *dataSourceDatacenterRoutingPolicies) Read(ctx context.Context, req data
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterRoutingPolicies) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

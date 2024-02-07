@@ -11,6 +11,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgent{}
+var _ datasourceWithSetClient = &dataSourceAgent{}
 
 type dataSourceAgent struct {
 	client *apstra.Client
@@ -21,7 +22,7 @@ func (o *dataSourceAgent) Metadata(_ context.Context, req datasource.MetadataReq
 }
 
 func (o *dataSourceAgent) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceAgent) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -62,4 +63,8 @@ func (o *dataSourceAgent) Read(ctx context.Context, req datasource.ReadRequest, 
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceAgent) setClient(client *apstra.Client) {
+	o.client = client
 }

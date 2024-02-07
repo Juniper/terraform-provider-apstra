@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceConfiglet{}
+var _ datasourceWithSetClient = &dataSourceConfiglet{}
 
 type dataSourceConfiglet struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceConfiglet) Metadata(_ context.Context, req datasource.Metadat
 }
 
 func (o *dataSourceConfiglet) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceConfiglet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -79,4 +80,8 @@ func (o *dataSourceConfiglet) Read(ctx context.Context, req datasource.ReadReque
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceConfiglet) setClient(client *apstra.Client) {
+	o.client = client
 }

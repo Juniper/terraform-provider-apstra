@@ -14,6 +14,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceVniPool{}
 var _ resource.ResourceWithValidateConfig = &resourceVniPool{}
+var _ resourceWithSetClient = &resourceVniPool{}
 
 type resourceVniPool struct {
 	client *apstra.Client
@@ -24,7 +25,7 @@ func (o *resourceVniPool) Metadata(_ context.Context, req resource.MetadataReque
 }
 
 func (o *resourceVniPool) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceVniPool) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -235,4 +236,8 @@ func (o *resourceVniPool) Delete(ctx context.Context, req resource.DeleteRequest
 		resp.Diagnostics.AddError("error deleting VNI pool", err.Error())
 		return
 	}
+}
+
+func (o *resourceVniPool) setClient(client *apstra.Client) {
+	o.client = client
 }

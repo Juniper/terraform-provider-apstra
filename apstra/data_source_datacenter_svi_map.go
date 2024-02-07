@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSvis{}
+var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterSvis{}
 
 type dataSourceDatacenterSvis struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -23,7 +24,7 @@ func (o *dataSourceDatacenterSvis) Metadata(_ context.Context, req datasource.Me
 }
 
 func (o *dataSourceDatacenterSvis) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.getBpClientFunc = DataSourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceDatacenterSvis) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -94,4 +95,8 @@ func (o *dataSourceDatacenterSvis) Read(ctx context.Context, req datasource.Read
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+func (o *dataSourceDatacenterSvis) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
 }

@@ -105,6 +105,7 @@ type providerData struct {
 	bpLockFunc              func(context.Context, string) error
 	bpUnlockFunc            func(context.Context, string) error
 	getTwoStageL3ClosClient func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	experimental            bool
 }
 
 func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {

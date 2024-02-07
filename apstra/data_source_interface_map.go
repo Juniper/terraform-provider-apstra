@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfaceMap{}
+var _ datasourceWithSetClient = &dataSourceInterfaceMap{}
 
 type dataSourceInterfaceMap struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceInterfaceMap) Metadata(_ context.Context, req datasource.Meta
 }
 
 func (o *dataSourceInterfaceMap) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceInterfaceMap) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -79,4 +80,8 @@ func (o *dataSourceInterfaceMap) Read(ctx context.Context, req datasource.ReadRe
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
+}
+
+func (o *dataSourceInterfaceMap) setClient(client *apstra.Client) {
+	o.client = client
 }

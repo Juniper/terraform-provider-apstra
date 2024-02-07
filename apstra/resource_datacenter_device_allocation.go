@@ -14,6 +14,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
+var _ resourceWithSetBpClientFunc = &resourceDeviceAllocation{}
+var _ resourceWithSetBpLockFunc = &resourceDeviceAllocation{}
 
 type resourceDeviceAllocation struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -25,8 +27,7 @@ func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.Meta
 }
 
 func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDeviceAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -302,4 +303,12 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 
 	state.DeviceKey = types.StringNull() // 'null' triggers clearing the 'system_id' field.
 	state.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)
+}
+
+func (o *resourceDeviceAllocation) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDeviceAllocation) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

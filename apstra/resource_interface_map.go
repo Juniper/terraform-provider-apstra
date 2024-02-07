@@ -33,6 +33,7 @@ const (
 
 var _ resource.ResourceWithConfigure = &resourceInterfaceMap{}
 var _ resource.ResourceWithValidateConfig = &resourceInterfaceMap{}
+var _ resourceWithSetClient = &resourceInterfaceMap{}
 
 type resourceInterfaceMap struct {
 	client *apstra.Client
@@ -43,7 +44,7 @@ func (o *resourceInterfaceMap) Metadata(_ context.Context, req resource.Metadata
 }
 
 func (o *resourceInterfaceMap) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -262,6 +263,10 @@ func (o *resourceInterfaceMap) Delete(ctx context.Context, req resource.DeleteRe
 			"error deleting Interface Map", err.Error())
 		return
 	}
+}
+
+func (o *resourceInterfaceMap) setClient(client *apstra.Client) {
+	o.client = client
 }
 
 type rInterfaceMap struct {

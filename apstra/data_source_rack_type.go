@@ -13,6 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceRackType{}
+var _ datasourceWithSetClient = &dataSourceRackType{}
 
 type dataSourceRackType struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *dataSourceRackType) Metadata(_ context.Context, req datasource.Metadata
 }
 
 func (o *dataSourceRackType) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceRackType) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -85,4 +86,8 @@ func (o *dataSourceRackType) Read(ctx context.Context, req datasource.ReadReques
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
+}
+
+func (o *dataSourceRackType) setClient(client *apstra.Client) {
+	o.client = client
 }

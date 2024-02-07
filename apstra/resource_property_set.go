@@ -13,6 +13,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourcePropertySet{}
+var _ resourceWithSetClient = &resourcePropertySet{}
 
 type resourcePropertySet struct {
 	client *apstra.Client
@@ -23,7 +24,7 @@ func (o *resourcePropertySet) Metadata(_ context.Context, req resource.MetadataR
 }
 
 func (o *resourcePropertySet) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.client = ResourceGetClient(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourcePropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -164,4 +165,8 @@ func (o *resourcePropertySet) Delete(ctx context.Context, req resource.DeleteReq
 		resp.Diagnostics.AddError("error deleting Property Set", err.Error())
 		return
 	}
+}
+
+func (o *resourcePropertySet) setClient(client *apstra.Client) {
+	o.client = client
 }

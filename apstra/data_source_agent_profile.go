@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceAgentProfile{}
+var _ datasourceWithSetClient = &dataSourceAgentProfile{}
 
 type dataSourceAgentProfile struct {
 	client *apstra.Client
@@ -22,7 +23,7 @@ func (o *dataSourceAgentProfile) Metadata(_ context.Context, req datasource.Meta
 }
 
 func (o *dataSourceAgentProfile) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceAgentProfile) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -78,4 +79,8 @@ func (o *dataSourceAgentProfile) Read(ctx context.Context, req datasource.ReadRe
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceAgentProfile) setClient(client *apstra.Client) {
+	o.client = client
 }

@@ -13,6 +13,8 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
+var _ resourceWithSetBpClientFunc = &resourceDatacenterGenericSystem{}
+var _ resourceWithSetBpLockFunc = &resourceDatacenterGenericSystem{}
 
 type resourceDatacenterGenericSystem struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -24,8 +26,7 @@ func (o *resourceDatacenterGenericSystem) Metadata(_ context.Context, req resour
 }
 
 func (o *resourceDatacenterGenericSystem) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	o.getBpClientFunc = ResourceGetTwoStageL3ClosClientFunc(ctx, req, resp)
-	o.lockFunc = ResourceGetBlueprintLockFunc(ctx, req, resp)
+	configureResource(ctx, o, req, resp)
 }
 
 func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -250,4 +251,12 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 		}
 		resp.Diagnostics.AddError("failed to delete generic system", err.Error())
 	}
+}
+
+func (o *resourceDatacenterGenericSystem) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
+func (o *resourceDatacenterGenericSystem) setBpLockFunc(f func(context.Context, string) error) {
+	o.lockFunc = f
 }

@@ -12,6 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceTemplateRackBased{}
+var _ datasourceWithSetClient = &dataSourceTemplateRackBased{}
 
 type dataSourceTemplateRackBased struct {
 	client *apstra.Client
@@ -22,7 +23,7 @@ func (o *dataSourceTemplateRackBased) Metadata(_ context.Context, req datasource
 }
 
 func (o *dataSourceTemplateRackBased) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	o.client = DataSourceGetClient(ctx, req, resp)
+	configureDataSource(ctx, o, req, resp)
 }
 
 func (o *dataSourceTemplateRackBased) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
@@ -84,4 +85,8 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (o *dataSourceTemplateRackBased) setClient(client *apstra.Client) {
+	o.client = client
 }
