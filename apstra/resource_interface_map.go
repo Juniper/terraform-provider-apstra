@@ -219,6 +219,11 @@ func (o *resourceInterfaceMap) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 
+	plan.validatePortSelections(ctx, ld, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	request := plan.request(ctx, ld, dp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -412,7 +417,19 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 
 		// ldpi (logical device port info) is the ldPortInfo (speed and roles)
 		// associated with this interface
-		ldpi := ldpiMap[planInterface.LogicalDevicePort.ValueString()]
+		ldpi, ok := ldpiMap[planInterface.LogicalDevicePort.ValueString()]
+		if !ok {
+			av, d := types.ObjectValueFrom(ctx, rInterfaceMapInterface{}.attrTypes(), &planInterface)
+			diags.Append(d...)
+			diags.AddAttributeError(
+				path.Root("interfaces").AtSetValue(av),
+				errInvalidConfig,
+				fmt.Sprintf("Specified interface %s does not exist in logical device %q.\n"+
+					"In addition to being a configuration bug, there may be a provider bug as well."+
+					"This condition should have been caught by earlier validation. Please report this"+
+					"error to the provider developers.", planInterface.LogicalDevicePort, ld.Id))
+			return nil
+		}
 
 		// extract candidate transformations from the DP PortInfo based on the
 		// configured physical interface name, and the speed indicated by the LD
