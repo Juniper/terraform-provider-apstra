@@ -65,6 +65,11 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 		return
 	}
 
+	// cannot proceed if the blueprint does not exist or is not yet known
+	if config.BlueprintId.IsUnknown() {
+		return
+	}
+
 	bpClient, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
