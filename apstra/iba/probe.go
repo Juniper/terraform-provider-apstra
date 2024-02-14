@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -21,6 +22,7 @@ type Probe struct {
 	PredefinedProbeId types.String `tfsdk:"predefined_probe_id"`
 	ProbeConfig       types.String `tfsdk:"probe_config"`
 	Stages            types.Set    `tfsdk:"stages"`
+	ProbeJson         types.String `tfsdk:"probe_json"`
 }
 
 func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -50,13 +52,22 @@ func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"predefined_probe_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Id of predefined IBA Probe",
-			Required:            true,
+			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"probe_config": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configuration elements for the IBA Probe",
-			Required:            true,
+			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
+				AtName("predefined_probe_id"))},
+		},
+		"probe_json": resourceSchema.StringAttribute{
+			MarkdownDescription: "Define the probe as json. If this is present, there can be no predefined probe.",
+			Optional:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{stringvalidator.ConflictsWith(path.MatchRelative().AtParent().
+				AtName("predefined_probe_id"))},
 		},
 	}
 }
@@ -72,7 +83,8 @@ func (o *Probe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *diag
 	o.Stages = utils.SetValueOrNull(ctx, types.StringType, s, diag)
 }
 
-func (o *Probe) Request(ctx context.Context, d *diag.Diagnostics) *apstra.IbaPredefinedProbeRequest {
+func (o *Probe) PredefinedProbeRequest(ctx context.Context, d *diag.Diagnostics) *apstra.IbaPredefinedProbeRequest {
+
 	return &apstra.IbaPredefinedProbeRequest{
 		Name: o.PredefinedProbeId.ValueString(),
 		Data: []byte(o.ProbeConfig.ValueString()),

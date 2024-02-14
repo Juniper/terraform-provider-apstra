@@ -38,7 +38,18 @@ output "o"{
   value = apstra_blueprint_iba_probe.p_device_health
 }
 
-#Output Looks somethng like this
+resource "apstra_blueprint_iba_probe" "p_device_traffic" {
+  blueprint_id = data.apstra_datacenter_blueprint.b.id
+  probe_json = file("device_traffic.json")
+}
+
+output "o2"{
+  value = apstra_blueprint_iba_probe.p_device_health
+}
+
+
+
+#Output Looks something like this
 #o = {
 #"blueprint_id" = "c151d0c1-fda1-495b-86e8-92d2499ac6f8"
 #"description" = "This probe alerts if the system health parameters (CPU, memory and disk usage) exceed their specified thresholds for the specified duration."
@@ -70,8 +81,12 @@ output "o"{
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID. Used to identify the Blueprint that the IBA Probe belongs to.
+
+### Optional
+
 - `predefined_probe_id` (String) Id of predefined IBA Probe
 - `probe_config` (String) Configuration elements for the IBA Probe
+- `probe_json` (String) Define the probe as json. If this is present, there can be no predefined probe.
 
 ### Read-Only
 
