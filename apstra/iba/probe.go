@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -15,14 +16,14 @@ import (
 )
 
 type Probe struct {
-	BlueprintId       types.String `tfsdk:"blueprint_id"`
-	Id                types.String `tfsdk:"id"`
-	Name              types.String `tfsdk:"name"`
-	Description       types.String `tfsdk:"description"`
-	PredefinedProbeId types.String `tfsdk:"predefined_probe_id"`
-	ProbeConfig       types.String `tfsdk:"probe_config"`
-	Stages            types.Set    `tfsdk:"stages"`
-	ProbeJson         types.String `tfsdk:"probe_json"`
+	BlueprintId       types.String         `tfsdk:"blueprint_id"`
+	Id                types.String         `tfsdk:"id"`
+	Name              types.String         `tfsdk:"name"`
+	Description       types.String         `tfsdk:"description"`
+	PredefinedProbeId types.String         `tfsdk:"predefined_probe_id"`
+	ProbeConfig       types.String         `tfsdk:"probe_config"`
+	Stages            types.Set            `tfsdk:"stages"`
+	ProbeJson         jsontypes.Normalized `tfsdk:"probe_json"`
 }
 
 func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -54,19 +55,20 @@ func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Id of predefined IBA Probe",
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
+				AtName("probe_config"))},
 		},
 		"probe_config": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configuration elements for the IBA Probe",
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
-				AtName("predefined_probe_id"))},
 		},
 		"probe_json": resourceSchema.StringAttribute{
+			CustomType:          jsontypes.NormalizedType{},
 			MarkdownDescription: "Define the probe as json. If this is present, there can be no predefined probe.",
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators: []validator.String{stringvalidator.ConflictsWith(path.MatchRelative().AtParent().
+			Validators: []validator.String{stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().
 				AtName("predefined_probe_id"))},
 		},
 	}
