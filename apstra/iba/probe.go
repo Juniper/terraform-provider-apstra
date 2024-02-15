@@ -21,7 +21,7 @@ type Probe struct {
 	Name              types.String         `tfsdk:"name"`
 	Description       types.String         `tfsdk:"description"`
 	PredefinedProbeId types.String         `tfsdk:"predefined_probe_id"`
-	ProbeConfig       types.String         `tfsdk:"probe_config"`
+	ProbeConfig       jsontypes.Normalized `tfsdk:"probe_config"`
 	Stages            types.Set            `tfsdk:"stages"`
 	ProbeJson         jsontypes.Normalized `tfsdk:"probe_json"`
 }
@@ -56,16 +56,19 @@ func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
-				AtName("probe_config"))},
+				AtName("probe_config")), stringvalidator.LengthAtLeast(1)},
 		},
 		"probe_config": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configuration elements for the IBA Probe",
+			CustomType:          jsontypes.NormalizedType{},
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
+				AtName("predefined_probe_id")), stringvalidator.LengthAtLeast(1)},
 		},
 		"probe_json": resourceSchema.StringAttribute{
-			CustomType:          jsontypes.NormalizedType{},
 			MarkdownDescription: "Define the probe as json. If this is present, there can be no predefined probe.",
+			CustomType:          jsontypes.NormalizedType{},
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().
@@ -83,12 +86,4 @@ func (o *Probe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *diag
 		s[i] = j["name"].(string)
 	}
 	o.Stages = utils.SetValueOrNull(ctx, types.StringType, s, diag)
-}
-
-func (o *Probe) PredefinedProbeRequest(ctx context.Context, d *diag.Diagnostics) *apstra.IbaPredefinedProbeRequest {
-
-	return &apstra.IbaPredefinedProbeRequest{
-		Name: o.PredefinedProbeId.ValueString(),
-		Data: []byte(o.ProbeConfig.ValueString()),
-	}
 }

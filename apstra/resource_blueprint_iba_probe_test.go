@@ -6,6 +6,7 @@ import (
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"regexp"
 	"testing"
 )
 
@@ -26,6 +27,10 @@ resource "apstra_blueprint_iba_probe" "p_device_health" {
   )
 }
 `
+	probeStrErr = `{
+    bad_json = bad
+	1 : "more badness"
+}`
 	probeStr = `{
   "label": "Device Traffic",
   "processors": [
@@ -176,7 +181,7 @@ func TestAccResourceProbe(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create and Read testing
+			// Create and Read testing to instantiate predefined probe
 			{
 				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeHCL, bpClient.Id()),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -184,12 +189,18 @@ func TestAccResourceProbe(t *testing.T) {
 					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_health", "id"),
 					resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_health", "name", "Device System Health")),
 			},
+			// Create and Read testing to instantiate probe with json definition
 			{
 				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeJsonHCL, bpClient.Id(), probeStr),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify ID has any value set
 					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_traffic", "id"),
 					resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_traffic", "name", "Device Traffic")),
+			},
+			// Test that bad json will fail
+			{
+				Config:      insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeJsonHCL, bpClient.Id(), probeStrErr),
+				ExpectError: regexp.MustCompile("Error: Invalid JSON String Value.*"),
 			},
 		},
 	})

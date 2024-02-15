@@ -60,7 +60,10 @@ func (o *resourceBlueprintIbaProbe) Create(ctx context.Context, req resource.Cre
 			return
 		}
 	} else {
-		probeReq := plan.PredefinedProbeRequest(ctx, &resp.Diagnostics)
+		probeReq := &apstra.IbaPredefinedProbeRequest{
+			Name: plan.PredefinedProbeId.ValueString(),
+			Data: []byte(plan.ProbeConfig.ValueString()),
+		}
 		if resp.Diagnostics.HasError() {
 			return
 		}
