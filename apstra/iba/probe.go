@@ -55,24 +55,21 @@ func (o Probe) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Id of predefined IBA Probe",
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
-				AtName("probe_config")), stringvalidator.LengthAtLeast(1)},
+			Validators:          []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("probe_config")), stringvalidator.LengthAtLeast(1)},
 		},
 		"probe_config": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configuration elements for the IBA Probe",
 			CustomType:          jsontypes.NormalizedType{},
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators: []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().
-				AtName("predefined_probe_id")), stringvalidator.LengthAtLeast(1)},
+			Validators:          []validator.String{stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("predefined_probe_id")), stringvalidator.LengthAtLeast(1)},
 		},
 		"probe_json": resourceSchema.StringAttribute{
 			MarkdownDescription: "Define the probe as json. If this is present, there can be no predefined probe.",
 			CustomType:          jsontypes.NormalizedType{},
 			Optional:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators: []validator.String{stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().
-				AtName("predefined_probe_id"))},
+			Validators:          []validator.String{stringvalidator.ExactlyOneOf(path.MatchRelative().AtParent().AtName("predefined_probe_id"))},
 		},
 	}
 }
