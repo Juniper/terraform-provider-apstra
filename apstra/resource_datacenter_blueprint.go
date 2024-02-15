@@ -119,20 +119,10 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// set the fabric addressing policy if the plan requires us to do so
-	if !plan.EsiMacMsb.IsUnknown() || !plan.FabricMtu.IsUnknown() || !plan.Ipv6Applications.IsUnknown() {
-		// Lock the blueprint mutex.
-		err = o.lockFunc(ctx, id.String())
-		if err != nil {
-			resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
-			return
-		}
-
-		// set the fabric addressing policy, passing no prior state
-		plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
-		if resp.Diagnostics.HasError() {
-			return
-		}
+	// set the fabric addressing policy, passing no prior state
+	plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// retrieve blueprint status
