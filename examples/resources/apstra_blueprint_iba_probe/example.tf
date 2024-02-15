@@ -23,7 +23,18 @@ output "o"{
   value = apstra_blueprint_iba_probe.p_device_health
 }
 
-#Output Looks somethng like this
+resource "apstra_blueprint_iba_probe" "p_device_traffic" {
+  blueprint_id = data.apstra_datacenter_blueprint.b.id
+  probe_json = file("device_traffic.json")
+}
+
+output "o2"{
+  value = apstra_blueprint_iba_probe.p_device_health
+}
+
+
+
+#Output Looks something like this
 #o = {
 #"blueprint_id" = "c151d0c1-fda1-495b-86e8-92d2499ac6f8"
 #"description" = "This probe alerts if the system health parameters (CPU, memory and disk usage) exceed their specified thresholds for the specified duration."

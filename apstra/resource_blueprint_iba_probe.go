@@ -50,20 +50,31 @@ func (o *resourceBlueprintIbaProbe) Create(ctx context.Context, req resource.Cre
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
-
+	var id apstra.ObjectId
 	// Convert the plan into an API Request
-	probeReq := plan.Request(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	if plan.PredefinedProbeId.IsUnknown() || plan.PredefinedProbeId.IsNull() {
+		// Create Probe from Json
+		id, err = bpClient.CreateIbaProbeFromJson(ctx, []byte(plan.ProbeJson.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
+			return
+		}
+	} else {
+		probeReq := &apstra.IbaPredefinedProbeRequest{
+			Name: plan.PredefinedProbeId.ValueString(),
+			Data: []byte(plan.ProbeConfig.ValueString()),
+		}
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Instantiate the probe
-	id, err := bpClient.InstantiateIbaPredefinedProbe(ctx, probeReq)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
-		return
+		// Instantiate the probe
+		id, err = bpClient.InstantiateIbaPredefinedProbe(ctx, probeReq)
+		if err != nil {
+			resp.Diagnostics.AddError("failed to create Iba Probe", err.Error())
+			return
+		}
 	}
-
 	// Fetch the probe details
 	api, err := bpClient.GetIbaProbe(ctx, id)
 	if err != nil {
