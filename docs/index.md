@@ -1,17 +1,18 @@
 ---
 page_title: "Provider: Apstra"
 description: |-
-  The Apstra provider allows Terraform to control Juniper Apstra fabrics.
+  The Apstra Provider allows Terraform to manage Juniper Apstra fabrics.
 ---
 
 # Apstra Provider
 
-The Apstra provider allows Terraform to control Juniper Apstra fabrics.
+The Apstra Provider allows Terraform to manage Juniper Apstra fabrics.
 
-It covers day 0 and day 1 operations (design and deployment), and a growing
-list of day 2 capabilities.
+It covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 capabilities within *Datacenter* Apstra reference design Blueprints.
 
-Use the navigation to the left to read about the available resources.
+Use the navigation tree to the left to read about the available resources and data sources.
+
+This release has been tested with Apstra versions 4.1.0, 4.1.1, 4.1.2, and 4.2.0.
 
 ## Configuration
 
@@ -60,7 +61,9 @@ may be set via environment variables: `APSTRA_API_TIMEOUT`,
 - `api_timeout` (Number) Timeout in seconds for completing API transactions with the Apstra server. Omit for default value of 10 seconds. Value of 0 results in infinite timeout.
 - `blueprint_mutex_enabled` (Boolean) Blueprint mutexes are indicators that changes are being made in a staging Blueprint and other automation processes (including other instances of Terraform) should wait before beginning to make changes of their own. Setting this attribute 'true' causes the provider to lock a blueprint-specific mutex before making any changes. [More info here](https://github.com/Juniper/terraform-provider-apstra/blob/main/kb/blueprint_mutex.md).
 - `blueprint_mutex_message` (String) Blueprint mutexes are signals that changes are being made in a staging Blueprint and other automation processes (including other instances of Terraform) should wait before beginning to make changes of their own. The mutexes embed a human-readable field to reduce confusion in the event a mutex needs to be cleared manually. This attribute overrides the default message in that field: "locked by terraform at $DATE".
-- `experimental` (Boolean) Sets a flag in the underlying Apstra SDK client object which enables *experimental* features. At this time, the only effect is bypassing version compatibility checks in the SDK. This provider release is tested with Apstra versions 4.1.0, 4.1.1, 4.1.2, and 4.2.0.
+- `experimental` (Boolean) Enable *experimental* features. In this release that means:
+  - Set the `experimental` flag in the underlying Apstra SDK client object. Doing so permits connections to Apstra instances not supported by the SDK.
+  - Enable use of the `system_attributes` object within the `apstra_datacenter_device_allocation resource.
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
 - `url` (String) URL of the apstra server, e.g. `https://apstra.example.com`
  It is possible to include Apstra API credentials in the URL using [standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure that these credentials aren't accidentally committed to version control, etc... The preferred approach is to pass the credentials as environment variables `APSTRA_USER`  and `APSTRA_PASS`.

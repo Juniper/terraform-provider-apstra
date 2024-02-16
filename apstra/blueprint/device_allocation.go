@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"strings"
 )
 
@@ -26,6 +27,7 @@ type DeviceAllocation struct {
 	NodeId                types.String `tfsdk:"node_id"`                  // computed
 	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`   // computed
 	DeployMode            types.String `tfsdk:"deploy_mode"`              // optional
+	SystemAttributes      types.Object `tfsdk:"system_attributes"`
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -37,8 +39,8 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"node_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Graph node label which identifies the switch. Strings like 'spine1' " +
-				"and 'rack_2_leaf_1' are appropriate here.",
+			MarkdownDescription: "Graph node label which identifies the system at the time this resource is initially " +
+				"created. Strings like 'spine1' and 'rack_002_leaf_1' are appropriate here.",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -96,9 +98,20 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "Set the [deploy mode](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/datacenter-deploy-mode-set.html) " +
 				"of the associated fabric node.",
-			Optional:   true,
-			Computed:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
+			DeprecationMessage: "The `deploy_mode` attribute will be removed in a future release. Please " +
+				"migrate your configuration to use `system_attributes` -> `deploy_mode` instead.",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
+				stringvalidator.ConflictsWith(path.MatchRoot("system_attributes")),
+			},
+		},
+		"system_attributes": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Attributes which should be set on the pre-existing system node.",
+			Optional:            true,
+			Computed:            true,
+			Attributes:          DeviceAllocationSystemAttributes{}.ResourceAttributes(),
 		},
 	}
 }
@@ -632,4 +645,112 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 	}
 
 	o.DeviceProfileNodeId = types.StringValue(result.Items[0].DeviceProfile.Id)
+}
+
+func (o DeviceAllocation) ValidateConfig(ctx context.Context, experimental types.Bool, diags *diag.Diagnostics) {
+	if !utils.Known(o.SystemAttributes) {
+		return // nothing to validate without system_attributes
+	}
+
+	if o.SystemAttributes.IsNull() {
+		return // nothing to validate without system_attributes
+	}
+
+	// unpack the system_attributes
+	var systemAttributes DeviceAllocationSystemAttributes
+	diags.Append(o.SystemAttributes.As(ctx, &systemAttributes, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return
+	}
+
+	systemAttributes.ValidateConfig(ctx, experimental, diags)
+	if diags.HasError() {
+		return
+	}
+}
+
+// EnsureSystemIsSwitchBeforeCreate is a validation function, but it must not be
+// run as a part of the resource ValidateConfig. This is because ValidateConfig
+// has access only to the configuration, but not the state. This function only
+// needs to run once: immediately prior to initial Create(). This is the *only*
+// time that `node_name` is required to be accurate, and we can't fall back on
+// `node_id` because it's not part of the configuration.
+func (o DeviceAllocation) EnsureSystemIsSwitchBeforeCreate(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	query := new(apstra.PathQuery).
+		SetBlueprintId(bp.Id()).
+		SetClient(bp.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "label", Value: apstra.QEStringVal(o.NodeName.ValueString())},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+		})
+
+	var queryResult struct {
+		Items []struct {
+			Node struct {
+				SystemType string `json:"system_type"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &queryResult)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("failed to run graph query in blueprint %s", o.BlueprintId),
+			fmt.Sprintf("query: %q\n\nerror: %s", query.String(), err.Error()),
+		)
+	}
+	if len(queryResult.Items) != 1 {
+		diags.AddError(
+			fmt.Sprintf("failed finding system node with label %s", o.NodeName),
+			fmt.Sprintf("expected 1 node, found %d nodes", len(queryResult.Items)))
+		return
+	}
+
+	if queryResult.Items[0].Node.SystemType != apstra.SystemTypeSwitch.String() {
+		diags.AddAttributeError(path.Root("system_attributes"),
+			constants.ErrInvalidConfig,
+			fmt.Sprintf(
+				"system_attributes must be specified only for %q type systems, but the system with label %s has type %q",
+				apstra.SystemTypeSwitch, o.NodeName, queryResult.Items[0].Node.SystemType))
+		return
+	}
+}
+
+func (o *DeviceAllocation) GetSystemAttributes(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	var systemAttributes DeviceAllocationSystemAttributes
+	systemAttributes.Get(ctx, bp, o.NodeId, diags)
+	if diags.HasError() {
+		return
+	}
+
+	var d diag.Diagnostics
+	o.SystemAttributes, d = types.ObjectValueFrom(ctx, systemAttributes.attrTypes(), systemAttributes)
+	diags.Append(d...)
+}
+
+func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *DeviceAllocation, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	if o.SystemAttributes.IsNull() {
+		return
+	}
+
+	planSA := new(DeviceAllocationSystemAttributes)
+	diags.Append(o.SystemAttributes.As(ctx, planSA, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return
+	}
+
+	var stateSA *DeviceAllocationSystemAttributes
+	if state != nil && !state.SystemAttributes.IsNull() {
+		stateSA = new(DeviceAllocationSystemAttributes)
+		diags.Append(state.SystemAttributes.As(ctx, stateSA, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	planSA.Set(ctx, stateSA, bp, o.NodeId, diags)
+	if diags.HasError() {
+		return
+	}
 }

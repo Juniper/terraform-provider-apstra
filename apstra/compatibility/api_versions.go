@@ -3,6 +3,7 @@ package compatibility
 import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"strings"
 )
 
@@ -14,16 +15,9 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra420,
 	}
 
-	sdkVersions := apstra.ApstraApiSupportedVersions()
+	sdkVersions := apstra.SupportedApiVersions()
 
-	var result []string
-	for i := range providerVersions {
-		if sdkVersions.Includes(providerVersions[i]) {
-			result = append(result, providerVersions[i])
-		}
-	}
-
-	return result
+	return utils.SliceIntersectionOfAB(providerVersions, sdkVersions)
 }
 
 func SupportedApiVersionsPretty() string {
