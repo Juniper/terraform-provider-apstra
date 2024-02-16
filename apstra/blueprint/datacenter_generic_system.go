@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
@@ -30,19 +31,20 @@ import (
 )
 
 type DatacenterGenericSystem struct {
-	Id               types.String         `tfsdk:"id"`
-	BlueprintId      types.String         `tfsdk:"blueprint_id"`
-	Name             types.String         `tfsdk:"name"`
-	Hostname         types.String         `tfsdk:"hostname"`
-	Tags             types.Set            `tfsdk:"tags"`
-	Links            types.Set            `tfsdk:"links"`
-	Asn              types.Int64          `tfsdk:"asn"`
-	LoopbackIpv4     cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
-	LoopbackIpv6     cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
-	PortChannelIdMin types.Int64          `tfsdk:"port_channel_id_min"`
-	PortChannelIdMax types.Int64          `tfsdk:"port_channel_id_max"`
-	External         types.Bool           `tfsdk:"external"`
-	DeployMode       types.String         `tfsdk:"deploy_mode"`
+	Id                types.String         `tfsdk:"id"`
+	BlueprintId       types.String         `tfsdk:"blueprint_id"`
+	Name              types.String         `tfsdk:"name"`
+	Hostname          types.String         `tfsdk:"hostname"`
+	Tags              types.Set            `tfsdk:"tags"`
+	Links             types.Set            `tfsdk:"links"`
+	Asn               types.Int64          `tfsdk:"asn"`
+	LoopbackIpv4      cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
+	LoopbackIpv6      cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
+	PortChannelIdMin  types.Int64          `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax  types.Int64          `tfsdk:"port_channel_id_max"`
+	External          types.Bool           `tfsdk:"external"`
+	DeployMode        types.String         `tfsdk:"deploy_mode"`
+	ClearCtsOnDestroy types.Bool           `tfsdk:"clear_cts_on_destroy"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -148,6 +150,12 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Computed:   true,
 			Default:    stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
+		},
+		"clear_cts_on_destroy": resourceSchema.BoolAttribute{
+			MarkdownDescription: "When `true`, Link deletion in `destroy` phase and `apply` phase (where a Link has " +
+				"been removed from the configuration) will automatically clear Connectivity Template assignments " +
+				"from interfaces associated with those Links.",
+			Optional: true,
 		},
 	}
 }
@@ -497,11 +505,39 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 		return
 	}
 
+	var ace apstra.ClientErr
+	var pendingDiags diag.Diagnostics
+
 	err := bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
-	if err != nil {
-		diags.AddError(
+	if err == nil {
+		return // success!
+	} else {
+		pendingDiags.AddError(
 			fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
 			err.Error())
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrCtAssignedToLink && ace.Detail() != nil && o.ClearCtsOnDestroy.ValueBool()) {
+			// we cannot handle the error
+			diags.Append(pendingDiags...)
+			return
+		}
+	}
+
+	// we got here because some links have CTs attached.
+
+	// try to clear the connectivity templates from the problem links
+	o.ClearConnectivityTemplatesFromLinks(ctx, ace.Detail().(apstra.ErrCtAssignedToLinkDetail).LinkIds, bp, diags)
+	if diags.HasError() {
+		diags.Append(pendingDiags...)
+		return
+	}
+
+	// try deleting the links again
+	err = bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
+	if err != nil {
+		diags.AddError("failed second attempt to delete links after attempting to handle the link deletion error",
+			err.Error())
+		diags.Append(pendingDiags...)
+		return
 	}
 }
 
@@ -797,5 +833,126 @@ func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp
 		int(o.PortChannelIdMax.ValueInt64()))
 	if err != nil {
 		diags.AddError("failed setting generic system Port Channel Id Min and Max", err.Error())
+	}
+}
+
+func interfacesFromLinkIds(ctx context.Context, linkIds []apstra.ObjectId, bp *apstra.TwoStageL3ClosClient) ([]apstra.ObjectId, error) {
+	linkIdStringVals := make(apstra.QEStringValIsIn, len(linkIds))
+	for i, linkId := range linkIds {
+		linkIdStringVals[i] = linkId.String()
+	}
+
+	query := new(apstra.PathQuery).
+		SetBlueprintId(bp.Id()).
+		SetClient(bp.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeLink.QEEAttribute(),
+			{Key: "id", Value: linkIdStringVals},
+		}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal("n_interface")},
+		})
+
+	var queryResult struct {
+		Items []struct {
+			Interface struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_interface"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &queryResult)
+	if err != nil {
+		return nil, fmt.Errorf("failed while querying for interfaces from link IDs - %w", err)
+	}
+
+	result := make([]apstra.ObjectId, len(queryResult.Items))
+	for i, item := range queryResult.Items {
+		result[i] = item.Interface.Id
+	}
+
+	return result, nil
+}
+
+func (o *DatacenterGenericSystem) ClearConnectivityTemplatesFromLinks(ctx context.Context, linkIds []apstra.ObjectId, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	//if linkIds == nil { // nil linkIDs means "discover all links and clear CTs from all"
+	//	query := new(apstra.PathQuery).
+	//		SetBlueprintId(bp.Id()).
+	//		SetClient(bp.Client()).
+	//		Node([]apstra.QEEAttribute{
+	//			apstra.NodeTypeSystem.QEEAttribute(),
+	//			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
+	//		}).
+	//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+	//		Node([]apstra.QEEAttribute{apstra.NodeTypeInterface.QEEAttribute()}).
+	//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+	//		Node([]apstra.QEEAttribute{
+	//			apstra.NodeTypeLink.QEEAttribute(),
+	//			{Key: "name", Value: apstra.QEStringVal("n_interface")},
+	//		})
+	//
+	//	var queryResult struct {
+	//		Items []struct {
+	//			Interface struct {
+	//				Id apstra.ObjectId `json:"id"`
+	//			} `json:"n_interface"`
+	//		} `json:"items"`
+	//	}
+	//
+	//	err := query.Do(ctx, &queryResult)
+	//	if err != nil {
+	//		diags.AddError("failed querying for link nodes while trying to clear connectivity templates", err.Error())
+	//		return
+	//	}
+	//
+	//	linkIds = make([]apstra.ObjectId, len(queryResult.Items))
+	//	for i, item := range queryResult.Items {
+	//		linkIds[i] = item.Interface.Id
+	//	}
+	//}
+	//
+	//if len(linkIds) == 0 {
+	//	return
+	//}
+
+	// first learn the interface IDs from the link IDs. This will give us both ends of each link, but that's okay.
+	interfaceIds, err := interfacesFromLinkIds(ctx, linkIds, bp)
+	if err != nil {
+		diags.AddError(
+			"failed determining interface ids from link ids while attempting to handle the link deletion error",
+			err.Error())
+		return
+	}
+
+	// now collect all interface-to-CT assignments
+	interfaceToCts, err := bp.GetAllInterfacesConnectivityTemplates(ctx)
+	if err != nil {
+		diags.AddError(
+			"failed determining current connectivity template assignments while attempting to handle the link deletion error",
+			err.Error())
+		return
+	}
+
+	// create a new assignments map which will clear the problem CTs
+	newAssignments := make(map[apstra.ObjectId]map[apstra.ObjectId]bool)
+	for _, interfaceId := range interfaceIds {
+		if ctIds, ok := interfaceToCts[interfaceId]; ok {
+			assignment := make(map[apstra.ObjectId]bool, len(ctIds))
+			for _, ctId := range ctIds {
+				assignment[ctId] = false
+			}
+			newAssignments[interfaceId] = assignment
+		}
+	}
+
+	// send the new assignments to apstra
+	err = bp.SetApplicationPointsConnectivityTemplates(ctx, newAssignments)
+	if err != nil {
+		diags.AddError(
+			"failed clearing connectivity templates from interfaces while attempting to handle the link deletion error",
+			err.Error())
+		return
 	}
 }
