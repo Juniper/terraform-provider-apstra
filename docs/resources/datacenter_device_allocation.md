@@ -91,8 +91,8 @@ resource "apstra_datacenter_device_allocation" "r" {
 ### Read-Only
 
 - `device_profile_node_id` (String) Device Profiles specify attributes of specific hardware models.
+- `id` (String) Graph node ID of the fabric node to which we're allocating an Interface Map (and possibly a Managed Device.)
 - `interface_map_name` (String) The Interface Map Name is recorded only at creation time toaid in detection of changes to the Interface Map made outside of Terraform.
-- `node_id` (String) Graph node ID of the fabric node to which we're allocating an Interface Map (and possibly a Managed Device.)
 
 <a id="nestedatt--system_attributes"></a>
 ### Nested Schema for `system_attributes`
