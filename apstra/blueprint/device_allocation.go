@@ -19,15 +19,15 @@ import (
 )
 
 type DeviceAllocation struct {
+	NodeId                types.String `tfsdk:"id"`                       // computed
 	BlueprintId           types.String `tfsdk:"blueprint_id"`             // required
 	NodeName              types.String `tfsdk:"node_name"`                // required
 	DeviceKey             types.String `tfsdk:"device_key"`               // optional
 	InitialInterfaceMapId types.String `tfsdk:"initial_interface_map_id"` // computed + optional
 	InterfaceMapName      types.String `tfsdk:"interface_map_name"`       // computed
-	NodeId                types.String `tfsdk:"node_id"`                  // computed
 	DeviceProfileNodeId   types.String `tfsdk:"device_profile_node_id"`   // computed
 	DeployMode            types.String `tfsdk:"deploy_mode"`              // optional
-	SystemAttributes      types.Object `tfsdk:"system_attributes"`
+	SystemAttributes      types.Object `tfsdk:"system_attributes"`        // optional
 }
 
 func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -81,7 +81,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
-		"node_id": resourceSchema.StringAttribute{
+		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Graph node ID of the fabric node to which we're allocating " +
 				"an Interface Map (and possibly a Managed Device.)",
 			Computed: true,
