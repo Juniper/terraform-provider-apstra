@@ -4,6 +4,8 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
+	"sort"
 	"strings"
 )
 
@@ -22,8 +24,13 @@ func SupportedApiVersions() []string {
 
 func SupportedApiVersionsPretty() string {
 	supportedVers := SupportedApiVersions()
-	stop := len(supportedVers) - 1
+	sort.Slice(supportedVers, func(i, j int) bool {
+		iv := version.Must(version.NewVersion(supportedVers[i]))
+		jv := version.Must(version.NewVersion(supportedVers[j]))
+		return iv.LessThan(jv)
+	})
 
+	stop := len(supportedVers) - 1
 	for i := range supportedVers {
 		if i == stop {
 			supportedVers[i] = "and " + supportedVers[i]

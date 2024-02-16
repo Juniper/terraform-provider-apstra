@@ -99,6 +99,7 @@ resource "apstra_datacenter_device_allocation" "r" {
 
 Optional:
 
+- `asn` (Number) ASN of the system node.
 - `deploy_mode` (String) Set the [deploy mode](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/datacenter-deploy-mode-set.html) of the associated fabric node.
 - `hostname` (String) Hostname of the System node.
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation, must use 32-bit mask.
