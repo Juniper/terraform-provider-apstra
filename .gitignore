@@ -1,2 +1,3 @@
 dist/
 test/terraform.tfstate*
+.testconfig.hcl
