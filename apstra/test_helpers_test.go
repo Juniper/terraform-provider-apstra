@@ -8,6 +8,7 @@ import (
 	"golang.org/x/exp/constraints"
 	"math/rand"
 	"net"
+	"strings"
 	"testing"
 )
 
@@ -64,12 +65,24 @@ func intPtrOrNull[A constraints.Integer](in *A) string {
 	return fmt.Sprintf("%d", *in)
 }
 
-//func ipOrNull(in *net.IPNet) string {
-//	if in == nil {
-//		return "null"
-//	}
-//	return `"` + in.String() + `"`
-//}
+func cidrOrNull(in *net.IPNet) string {
+	if in == nil {
+		return "null"
+	}
+	return `"` + in.String() + `"`
+}
+
+func stringSetOrNull(in []string) string {
+	sb := new(strings.Builder)
+	for i, s := range in {
+		if i == 0 {
+			sb.WriteString(fmt.Sprintf("%q", s))
+		} else {
+			sb.WriteString(fmt.Sprintf(", %q", s))
+		}
+	}
+	return "[ " + sb.String() + " ]"
+}
 
 func randIpv4NetMust(t *testing.T, cidrBlock string) *net.IPNet {
 	ip := randIpv4AddressMust(t, cidrBlock)

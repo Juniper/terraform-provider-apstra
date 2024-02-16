@@ -730,7 +730,7 @@ func (o *DeviceAllocation) GetSystemAttributes(ctx context.Context, bp *apstra.T
 }
 
 func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *DeviceAllocation, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	if o.SystemAttributes.IsNull() {
+	if o.SystemAttributes.IsUnknown() {
 		return
 	}
 

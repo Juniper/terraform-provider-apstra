@@ -75,7 +75,7 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	}
 
 	// if the user gave us system attributes, make sure that we're pointed at a switch
-	if !plan.SystemAttributes.IsNull() {
+	if !plan.SystemAttributes.IsUnknown() {
 		plan.EnsureSystemIsSwitchBeforeCreate(ctx, bp, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
@@ -240,6 +240,7 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	// InterfaceMapName must be immutable in order to be useful in detecting FFE modifications
 	state.InterfaceMapName = types.StringValue(previousInterfaceMapName.ValueString())
 
+	// read any apstra-assigned values
 	state.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -309,7 +310,15 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 
 	// update the system attributes as necessary
 	plan.SetSystemAttributes(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// copy the planned system attributes into the state
 	state.SystemAttributes = plan.SystemAttributes
+
+	// read any apstra-assigned values
+	state.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

@@ -216,7 +216,14 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 		return
 	}
 
-	o.DeployMode = types.StringValue(node.DeployMode)
+	var deployMode apstra.NodeDeployMode
+	err = deployMode.FromString(node.DeployMode)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to parse node %q deploy mode %q", nodeId, node.DeployMode), err.Error())
+		return
+	}
+
+	o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
 	o.Hostname = types.StringValue(node.Hostname)
 	o.Name = types.StringValue(node.Label)
 }
@@ -293,12 +300,22 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		return
 	}
 
+	ipv4 := o.LoopbackIpv4
+	if ipv4.IsUnknown() {
+		ipv4 = cidrtypes.NewIPv4PrefixNull()
+	}
+
+	ipv6 := o.LoopbackIpv6
+	if ipv6.IsUnknown() {
+		ipv6 = cidrtypes.NewIPv6PrefixNull()
+	}
+
 	patch := &struct {
 		IPv4Addr *string `json:"ipv4_addr"`
 		IPv6Addr *string `json:"ipv6_addr"`
 	}{
-		IPv4Addr: o.LoopbackIpv4.ValueStringPointer(),
-		IPv6Addr: o.LoopbackIpv6.ValueStringPointer(),
+		IPv4Addr: ipv4.ValueStringPointer(),
+		IPv6Addr: ipv6.ValueStringPointer(),
 	}
 
 	err = bp.PatchNode(ctx, loopbackNode.Id, &patch, nil)
@@ -359,12 +376,7 @@ func getDomainNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId 
 			"expected 1 node, got %d nodes", nodeId, len(queryResult.Items))
 	}
 
-	err = json.Unmarshal(queryResult.Items[0].Node, node)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return json.Unmarshal(queryResult.Items[0].Node, node)
 }
 
 func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, id int, node interface{}) error {
