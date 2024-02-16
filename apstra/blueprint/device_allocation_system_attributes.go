@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -16,11 +17,13 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
 	"regexp"
+	"strconv"
 )
 
 type DeviceAllocationSystemAttributes struct {
-	//Asn          types.Int64          `tfsdk:"asn"`
+	Asn          types.Int64          `tfsdk:"asn"`
 	Name         types.String         `tfsdk:"name"`
 	Hostname     types.String         `tfsdk:"hostname"`
 	LoopbackIpv4 cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
@@ -31,9 +34,9 @@ type DeviceAllocationSystemAttributes struct {
 
 func (o DeviceAllocationSystemAttributes) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":     types.StringType,
-		"hostname": types.StringType,
-		//"asn":  types.Int64Type,
+		"name":          types.StringType,
+		"hostname":      types.StringType,
+		"asn":           types.Int64Type,
 		"loopback_ipv4": cidrtypes.IPv4PrefixType{},
 		"loopback_ipv6": cidrtypes.IPv6PrefixType{},
 		"tags":          types.SetType{ElemType: types.StringType},
@@ -59,11 +62,12 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 				stringvalidator.LengthBetween(1, 32),
 			},
 		},
-		//"asn": resourceSchema.Int64Attribute{
-		//	Optional:            true,
-		//	MarkdownDescription: "ASN of the system node.",
-		//	Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
-		//},
+		"asn": resourceSchema.Int64Attribute{
+			Optional:            true,
+			MarkdownDescription: "ASN of the system node.",
+			Computed:            true,
+			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
+		},
 		"loopback_ipv4": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address of loopback interface in CIDR notation, must use 32-bit mask.",
 			CustomType:          cidrtypes.IPv4PrefixType{},
@@ -127,8 +131,20 @@ func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, exp
 func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
 	nId := apstra.ObjectId(nodeId.ValueString())
 
-	o.getNodeProperties(ctx, bp, nId, diags)
-	o.getNodeLoopbacks(ctx, bp, nId, diags)
+	o.getAsn(ctx, bp, nId, diags)
+	if diags.HasError() {
+		return
+	}
+
+	o.getLoopbacks(ctx, bp, nId, diags)
+	if diags.HasError() {
+		return
+	}
+
+	o.getProperties(ctx, bp, nId, diags)
+	if diags.HasError() {
+		return
+	}
 
 	tags, err := bp.GetNodeTags(ctx, nId)
 	if err != nil {
@@ -138,25 +154,32 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)
 }
 
-func (o *DeviceAllocationSystemAttributes) getNodeProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	var node struct {
-		DeployMode string `json:"deploy_mode,omitempty"`
-		Hostname   string `json:"hostname,omitempty"`
-		Label      string `json:"label,omitempty"`
+func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	var domainNode struct {
+		DomainId *string `json:"domain_id"`
 	}
 
-	err := bp.Client().GetNode(ctx, bp.Id(), nodeId, &node)
+	err := getDomainNode(ctx, bp, nodeId, &domainNode)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed to read node %s properties", nodeId), err.Error())
+		diags.AddError("failed while reading ASN domain node", err.Error())
 		return
 	}
 
-	o.DeployMode = types.StringValue(node.DeployMode)
-	o.Hostname = types.StringValue(node.Hostname)
-	o.Name = types.StringValue(node.Label)
+	if domainNode.DomainId == nil {
+		o.Asn = types.Int64Null()
+		return
+	}
+
+	asn, err := strconv.ParseUint(*domainNode.DomainId, 10, 32)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to parse ASN response from API: %q", *domainNode.DomainId), err.Error())
+		return
+	}
+
+	o.Asn = types.Int64Value(int64(asn))
 }
 
-func (o *DeviceAllocationSystemAttributes) getNodeLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+func (o *DeviceAllocationSystemAttributes) getLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
 	var loopbackNode struct {
 		IPv4Addr string `json:"ipv4_addr"`
 		IPv6Addr string `json:"ipv6_addr"`
@@ -180,15 +203,44 @@ func (o *DeviceAllocationSystemAttributes) getNodeLoopbacks(ctx context.Context,
 	}
 }
 
-func (o *DeviceAllocationSystemAttributes) Set(ctx context.Context, state *DeviceAllocationSystemAttributes, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
-	if state == nil || !o.Name.Equal(state.Name) || !o.Hostname.Equal(state.Hostname) {
-		o.setNodeProperties(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
+func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	var node struct {
+		DeployMode string `json:"deploy_mode,omitempty"`
+		Hostname   string `json:"hostname,omitempty"`
+		Label      string `json:"label,omitempty"`
 	}
 
-	//Asn // todo
+	err := bp.Client().GetNode(ctx, bp.Id(), nodeId, &node)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to read node %s properties", nodeId), err.Error())
+		return
+	}
+
+	o.DeployMode = types.StringValue(node.DeployMode)
+	o.Hostname = types.StringValue(node.Hostname)
+	o.Name = types.StringValue(node.Label)
+}
+
+func (o *DeviceAllocationSystemAttributes) Set(ctx context.Context, state *DeviceAllocationSystemAttributes, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
+	if state == nil || !o.Asn.Equal(state.Asn) {
+		o.setAsn(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
+		if diags.HasError() {
+			return
+		}
+	}
 
 	if state == nil || !o.LoopbackIpv4.Equal(state.LoopbackIpv4) || !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
 		o.setLoopbacks(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	if state == nil || !o.Name.Equal(state.Name) || !o.Hostname.Equal(state.Hostname) {
+		o.setProperties(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
+		if diags.HasError() {
+			return
+		}
 	}
 
 	if state == nil || !o.Tags.Equal(state.Tags) {
@@ -205,24 +257,28 @@ func (o *DeviceAllocationSystemAttributes) Set(ctx context.Context, state *Devic
 	}
 }
 
-func (o *DeviceAllocationSystemAttributes) setNodeProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if o.Name.IsNull() && o.Hostname.IsNull() && o.DeployMode.IsNull() {
+func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	var domainNode struct {
+		Id apstra.ObjectId `json:"id"`
+	}
+	err := getDomainNode(ctx, bp, nodeId, &domainNode)
+	if err != nil {
+		diags.AddError("failed to discover ASN domain node ID", err.Error())
 		return
 	}
 
-	node := struct {
-		DeployMode *string `json:"deploy_mode,omitempty"`
-		Hostname   *string `json:"hostname,omitempty"`
-		Label      *string `json:"label,omitempty"`
-	}{
-		DeployMode: o.DeployMode.ValueStringPointer(),
-		Hostname:   o.Hostname.ValueStringPointer(),
-		Label:      o.Name.ValueStringPointer(),
+	var patch struct {
+		DomainId *string `json:"domain_id"`
 	}
 
-	err := bp.PatchNode(ctx, nodeId, &node, nil)
+	if !o.Asn.IsNull() {
+		s := strconv.FormatInt(o.Asn.ValueInt64(), 10)
+		patch.DomainId = &s
+	}
+
+	err = bp.PatchNode(ctx, domainNode.Id, &patch, nil)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
+		diags.AddError(fmt.Sprintf("failed setting ASN to domain node %q", domainNode.Id), err.Error())
 		return
 	}
 }
@@ -250,6 +306,65 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		diags.AddError(fmt.Sprintf("failed setting loopback addresses to interface node %q", loopbackNode.Id), err.Error())
 		return
 	}
+}
+
+func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if o.Name.IsNull() && o.Hostname.IsNull() && o.DeployMode.IsNull() {
+		return
+	}
+
+	node := struct {
+		DeployMode *string `json:"deploy_mode,omitempty"`
+		Hostname   *string `json:"hostname,omitempty"`
+		Label      *string `json:"label,omitempty"`
+	}{
+		DeployMode: o.DeployMode.ValueStringPointer(),
+		Hostname:   o.Hostname.ValueStringPointer(),
+		Label:      o.Name.ValueStringPointer(),
+	}
+
+	err := bp.PatchNode(ctx, nodeId, &node, nil)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
+		return
+	}
+}
+
+func getDomainNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, node interface{}) error {
+	query := new(apstra.PathQuery).
+		SetBlueprintId(bp.Id()).
+		SetClient(bp.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(nodeId)},
+		}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeComposedOfSystems.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeDomain.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal("n_domain")},
+		})
+
+	var queryResult struct {
+		Items []struct {
+			Node json.RawMessage `json:"n_domain"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &queryResult)
+	if err != nil {
+		return fmt.Errorf("failed while querying for system %q domain node", nodeId)
+	}
+	if len(queryResult.Items) != 1 {
+		return fmt.Errorf("unexpected rewult while querying for system %q domain node: "+
+			"expected 1 node, got %d nodes", nodeId, len(queryResult.Items))
+	}
+
+	err = json.Unmarshal(queryResult.Items[0].Node, node)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, id int, node interface{}) error {
