@@ -23,14 +23,8 @@ jobs:
       - name: staticcheck
         run: make staticcheck
 
-      - name: index-md-a
-        run: md5sum docs/index.md
-
       - name: tfplugindocs
         run: make docs-check
-
-      - name: index-md-b
-        run: md5sum docs/index.md
 
       - name: compliance
         run: make compliance-check
