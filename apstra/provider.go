@@ -115,6 +115,11 @@ func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp 
 
 func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: fmt.Sprintf("The Apstra Provider allows Terraform to manage Juniper Apstra "+
+			"fabrics.\n\nIt covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 "+
+			"capabilities within *Datacenter* Apstra reference design Blueprints.\n\nUse the navigation tree to the "+
+			"left to read about the available resources and data sources.\n\nThis release has been tested with "+
+			"Apstra versions %s.", compatibility.SupportedApiVersionsPretty()),
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n It is possible " +
@@ -151,10 +156,11 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"experimental": schema.BoolAttribute{
-				MarkdownDescription: fmt.Sprintf("Sets a flag in the underlying Apstra SDK client object "+
-					"which enables *experimental* features. At this time, the only effect is bypassing version "+
-					"compatibility checks in the SDK. This provider release is tested with Apstra versions %s.",
-					compatibility.SupportedApiVersionsPretty()),
+				MarkdownDescription: "Enable *experimental* features. In this release that means:\n" +
+					"  - Set the `experimental` flag in the underlying Apstra SDK client object. Doing so permits " +
+					"connections to Apstra instances not supported by the SDK.\n" +
+					"  - Enable use of the `system_attributes` object within the `apstra_datacenter_device_allocation " +
+					"resource.",
 				Optional: true,
 			},
 			"api_timeout": schema.Int64Attribute{
@@ -430,6 +436,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		bpLockFunc:              bpLockFunc,
 		bpUnlockFunc:            bpUnlockFunc,
 		getTwoStageL3ClosClient: getTwoStageL3ClosClient,
+		experimental:            config.Experimental.ValueBool(),
 	}
 	resp.ResourceData = pd
 	resp.DataSourceData = pd

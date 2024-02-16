@@ -3,6 +3,9 @@ package compatibility
 import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
+	"sort"
 	"strings"
 )
 
@@ -14,22 +17,20 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra420,
 	}
 
-	sdkVersions := apstra.ApstraApiSupportedVersions()
+	sdkVersions := apstra.SupportedApiVersions()
 
-	var result []string
-	for i := range providerVersions {
-		if sdkVersions.Includes(providerVersions[i]) {
-			result = append(result, providerVersions[i])
-		}
-	}
-
-	return result
+	return utils.SliceIntersectionOfAB(providerVersions, sdkVersions)
 }
 
 func SupportedApiVersionsPretty() string {
 	supportedVers := SupportedApiVersions()
-	stop := len(supportedVers) - 1
+	sort.Slice(supportedVers, func(i, j int) bool {
+		iv := version.Must(version.NewVersion(supportedVers[i]))
+		jv := version.Must(version.NewVersion(supportedVers[j]))
+		return iv.LessThan(jv)
+	})
 
+	stop := len(supportedVers) - 1
 	for i := range supportedVers {
 		if i == stop {
 			supportedVers[i] = "and " + supportedVers[i]

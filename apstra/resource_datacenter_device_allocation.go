@@ -14,10 +14,13 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
+var _ resource.ResourceWithValidateConfig = &resourceDeviceAllocation{}
 var _ resourceWithSetBpClientFunc = &resourceDeviceAllocation{}
 var _ resourceWithSetBpLockFunc = &resourceDeviceAllocation{}
+var _ resourceWithSetExperimental = &resourceDeviceAllocation{}
 
 type resourceDeviceAllocation struct {
+	experimental    types.Bool
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
@@ -28,6 +31,20 @@ func (o *resourceDeviceAllocation) Metadata(_ context.Context, req resource.Meta
 
 func (o *resourceDeviceAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
+}
+
+func (o *resourceDeviceAllocation) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.DeviceAllocation
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	config.ValidateConfig(ctx, o.experimental, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (o *resourceDeviceAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
@@ -57,6 +74,14 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	// if the user gave us system attributes, make sure that we're pointed at a switch
+	if !plan.SystemAttributes.IsUnknown() {
+		plan.EnsureSystemIsSwitchBeforeCreate(ctx, bp, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -68,9 +93,9 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 
 	// Ensure the following are populated:
 	//   - SystemNodeId (from node_name)
-	//   - SystemNodeId
 	//   - InitialInterfaceMapId
 	//   - DeviceProfileNodeId
+	//   - InterfaceMapName
 	plan.PopulateDataFromGraphDb(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -110,6 +135,18 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 			return
 		}
 	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set system attributes
+	plan.SetSystemAttributes(ctx, nil, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// read back any apstra-assigned attributes
+	plan.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -203,6 +240,9 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	// InterfaceMapName must be immutable in order to be useful in detecting FFE modifications
 	state.InterfaceMapName = types.StringValue(previousInterfaceMapName.ValueString())
 
+	// read any apstra-assigned values
+	state.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -268,6 +308,18 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		}
 	}
 
+	// update the system attributes as necessary
+	plan.SetSystemAttributes(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// copy the planned system attributes into the state
+	state.SystemAttributes = plan.SystemAttributes
+
+	// read any apstra-assigned values
+	state.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -311,4 +363,8 @@ func (o *resourceDeviceAllocation) setBpClientFunc(f func(context.Context, strin
 
 func (o *resourceDeviceAllocation) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDeviceAllocation) setExperimental(b bool) {
+	o.experimental = types.BoolValue(b)
 }
