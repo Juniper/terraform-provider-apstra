@@ -308,6 +308,9 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	t.Helper()
 
 	client, err := GetTestClient(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	template := TemplateE(t, ctx)
 
