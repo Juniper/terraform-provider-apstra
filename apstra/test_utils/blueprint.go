@@ -7,6 +7,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"testing"
 )
 
 type Bfunc func(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error)
@@ -303,25 +304,16 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 	return bpClient, deleteFunc, nil
 }
 
-func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
+func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
+	t.Helper()
+
 	client, err := GetTestClient(ctx)
-	deleteFunc := func(ctx context.Context) error { return nil }
-	if err != nil {
-		return nil, deleteFunc, err
-	}
 
-	template, templateDelete, err := TemplateE(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return templateDelete(ctx)
-	}
+	template := TemplateE(t, ctx)
 
-	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
-		Label:      name,
+		Label:      acctest.RandString(10),
 		TemplateId: template.Id,
 		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
 			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
@@ -329,16 +321,20 @@ func BlueprintF(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		},
 	})
 	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
+		t.Fatal(err)
 	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(client.DeleteBlueprint(ctx, id), templateDelete(ctx))
-	}
+
+	t.Cleanup(func() {
+		err := client.DeleteBlueprint(ctx, id)
+		if err != nil {
+			t.Error(err)
+		}
+	})
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
 	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
+		t.Fatal(err)
 	}
 
-	return bpClient, deleteFunc, nil
+	return bpClient
 }
