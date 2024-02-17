@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"testing"
 )
 
 func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
@@ -260,21 +261,15 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 	return template, deleteFunc, err
 }
 
-func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
+func TemplateE(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
+	t.Helper()
 
 	client, err := GetTestClient(ctx)
 	if err != nil {
-		return nil, deleteFunc, err
+		t.Fatal(err)
 	}
 
-	rackTypeF, rackTypeFDelete, err := RackTypeF(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return rackTypeFDelete(ctx)
-	}
+	rackTypeF := RackTypeF(t, ctx)
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
@@ -300,20 +295,23 @@ func TemplateE(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	}
+
 	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
 	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
+		t.Fatal(err)
 	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(
-			rackTypeFDelete(ctx),
-			client.DeleteTemplate(ctx, id),
-		)
-	}
+
+	t.Cleanup(func() {
+		err := client.DeleteTemplate(ctx, id)
+		if err != nil {
+			t.Error(err)
+		}
+	})
 
 	template, err := client.GetRackBasedTemplate(ctx, id)
 	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
+		t.Fatal(err)
 	}
-	return template, deleteFunc, err
+
+	return template
 }

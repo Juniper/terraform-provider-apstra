@@ -2,9 +2,9 @@ package testutils
 
 import (
 	"context"
-	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"testing"
 )
 
 // RackTypeA has:
@@ -365,16 +365,16 @@ func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) err
 	return result, deleteFunc, err
 }
 
-func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
+func RackTypeF(t testing.TB, ctx context.Context) *apstra.RackType {
+	t.Helper()
 
 	client, err := GetTestClient(ctx)
 	if err != nil {
-		return nil, deleteFunc, err
+		t.Fatal(err)
 	}
 
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
-		DisplayName:              "rack type F",
+		DisplayName:              "type F - " + acctest.RandString(5),
 		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
@@ -386,15 +386,20 @@ func RackTypeF(ctx context.Context) (*apstra.RackType, func(context.Context) err
 		},
 	})
 	if err != nil {
-		return nil, nil, err
+		t.Fatal(err)
 	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRackType(ctx, id)
-	}
+
+	t.Cleanup(func() {
+		err := client.DeleteRackType(ctx, id)
+		if err != nil {
+			t.Error(err)
+		}
+	})
 
 	result, err := client.GetRackType(ctx, id)
 	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
+		t.Fatal(err)
 	}
-	return result, deleteFunc, err
+
+	return result
 }

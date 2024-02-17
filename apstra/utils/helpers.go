@@ -11,3 +11,7 @@ func (o Stringer) String() string {
 func NewStringer(s string) Stringer {
 	return Stringer{s: s}
 }
+
+func ToPtr[A any](a A) *A {
+	return &a
+}

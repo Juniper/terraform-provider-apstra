@@ -2,10 +2,10 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"net"
 	"strconv"
@@ -45,20 +45,9 @@ resource "apstra_datacenter_generic_system" "test" {
 func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	ctx := context.Background()
 
-	bpClient, bpDelete, err := testutils.BlueprintF(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.BlueprintF(t, ctx)
 
-	// enable IPv6
-	ipv6Enabled := true
-	err = bpClient.SetFabricAddressingPolicy(ctx, &apstra.TwoStageL3ClosFabricAddressingPolicy{Ipv6Enabled: &ipv6Enabled})
+	err := bpClient.SetFabricAddressingPolicy(ctx, &apstra.TwoStageL3ClosFabricAddressingPolicy{Ipv6Enabled: utils.ToPtr(true)})
 	if err != nil {
 		t.Fatal(err)
 	}
