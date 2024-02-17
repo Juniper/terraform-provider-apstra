@@ -34,16 +34,10 @@ func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 		}
 	}()
 
-	szId, szDelete, err := testutils.SecurityZoneA(ctx, bpClient)
+	szId := testutils.SecurityZoneA(t, ctx, bpClient)
 	if err != nil {
-		t.Fatal(errors.Join(err, szDelete(ctx)))
+		t.Fatal(err)
 	}
-	defer func() {
-		err = szDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
 
 	sz, err := bpClient.GetSecurityZone(ctx, szId)
 	if err != nil {

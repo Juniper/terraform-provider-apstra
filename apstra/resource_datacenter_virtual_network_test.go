@@ -48,7 +48,7 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 	}()
 
 	// security zone will evaporate when blueprint is deleted
-	szId, _, err := testutils.SecurityZoneA(ctx, bp)
+	szId := testutils.SecurityZoneA(t, ctx, bp)
 
 	type node struct {
 		Label string `json:"label"`
