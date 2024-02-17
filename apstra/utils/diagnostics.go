@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 const diagnosticWrapperDefaultSeparator = ", "
