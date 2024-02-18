@@ -4,11 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"log"
-	"os"
 )
 
 func main() {

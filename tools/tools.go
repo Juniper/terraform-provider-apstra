@@ -14,4 +14,7 @@ import (
 
 	// release
 	_ "github.com/goreleaser/goreleaser"
+
+	// gofumpt does strict formatting
+	_ "mvdan.cc/gofumpt"
 )
