@@ -99,10 +99,12 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 }
 
 func (o *DeviceAllocationSystemAttributes) IsEmpty() bool {
-	if //o.Asn.IsNull() &&
-	o.Name.IsNull() &&
+	if o.Asn.IsNull() &&
+		o.Name.IsNull() &&
 		o.Hostname.IsNull() &&
 		o.LoopbackIpv4.IsNull() &&
+		o.Tags.IsNull() &&
+		o.DeployMode.IsNull() &&
 		o.LoopbackIpv6.IsNull() {
 		return true
 	}
