@@ -734,8 +734,8 @@ func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *Devic
 		return
 	}
 
-	planSA := new(DeviceAllocationSystemAttributes)
-	diags.Append(o.SystemAttributes.As(ctx, planSA, basetypes.ObjectAsOptions{})...)
+	var planSA DeviceAllocationSystemAttributes
+	diags.Append(o.SystemAttributes.As(ctx, &planSA, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
