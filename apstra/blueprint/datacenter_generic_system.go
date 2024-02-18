@@ -877,46 +877,6 @@ func interfacesFromLinkIds(ctx context.Context, linkIds []apstra.ObjectId, bp *a
 }
 
 func (o *DatacenterGenericSystem) ClearConnectivityTemplatesFromLinks(ctx context.Context, linkIds []apstra.ObjectId, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	//if linkIds == nil { // nil linkIDs means "discover all links and clear CTs from all"
-	//	query := new(apstra.PathQuery).
-	//		SetBlueprintId(bp.Id()).
-	//		SetClient(bp.Client()).
-	//		Node([]apstra.QEEAttribute{
-	//			apstra.NodeTypeSystem.QEEAttribute(),
-	//			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
-	//		}).
-	//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-	//		Node([]apstra.QEEAttribute{apstra.NodeTypeInterface.QEEAttribute()}).
-	//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
-	//		Node([]apstra.QEEAttribute{
-	//			apstra.NodeTypeLink.QEEAttribute(),
-	//			{Key: "name", Value: apstra.QEStringVal("n_interface")},
-	//		})
-	//
-	//	var queryResult struct {
-	//		Items []struct {
-	//			Interface struct {
-	//				Id apstra.ObjectId `json:"id"`
-	//			} `json:"n_interface"`
-	//		} `json:"items"`
-	//	}
-	//
-	//	err := query.Do(ctx, &queryResult)
-	//	if err != nil {
-	//		diags.AddError("failed querying for link nodes while trying to clear connectivity templates", err.Error())
-	//		return
-	//	}
-	//
-	//	linkIds = make([]apstra.ObjectId, len(queryResult.Items))
-	//	for i, item := range queryResult.Items {
-	//		linkIds[i] = item.Interface.Id
-	//	}
-	//}
-	//
-	//if len(linkIds) == 0 {
-	//	return
-	//}
-
 	// first learn the interface IDs from the link IDs. This will give us both ends of each link, but that's okay.
 	interfaceIds, err := interfacesFromLinkIds(ctx, linkIds, bp)
 	if err != nil {
