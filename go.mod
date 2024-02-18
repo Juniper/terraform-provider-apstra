@@ -24,6 +24,7 @@ require (
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/text v0.14.0
 	honnef.co/go/tools v0.4.3
+	mvdan.cc/gofumpt v0.6.0
 )
 
 require (
