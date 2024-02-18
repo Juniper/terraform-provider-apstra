@@ -156,6 +156,9 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		Nodes map[string]systemNode `json:"nodes"`
 	}{}
 	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, &response)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var leafIds []apstra.ObjectId
 	for _, system := range response.Nodes {
 		if system.Role == "leaf" {
@@ -233,6 +236,34 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	lo6B = net.IPNet{
 		IP:   net.IP{0x20, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
 		Mask: net.CIDRMask(64, 128),
+	}
+
+	attachCtToPort := func(portName string) {
+		query := new(apstra.PathQuery).
+			SetBlueprintId(bpClient.Id()).
+			SetClient(bpClient.Client()).
+			Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(leafIds[0])}}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeInterface.QEEAttribute(),
+				{Key: "if_name", Value: apstra.QEStringVal(portName)},
+				{Key: "name", Value: apstra.QEStringVal("n_interface")},
+			})
+		var response struct {
+			Items []struct {
+				Interface struct {
+					Id apstra.ObjectId `json:"id"`
+				} `json:"n_interface"`
+			} `json:"items"`
+		}
+		err := query.Do(context.Background(), &response)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = bpClient.SetApplicationPointConnectivityTemplates(context.Background(), response.Items[0].Interface.Id, []apstra.ObjectId{*ct.Id})
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	type testStep struct {
@@ -555,7 +586,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				},
 			},
 		},
-		"destroy_with_cts": {
+		"destroy_with_attached_ct": {
 			steps: []testStep{
 				{
 					genericSystem: genericSystem{
@@ -571,31 +602,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				},
 				{
 					preConfig: func() {
-						query := new(apstra.PathQuery).
-							SetBlueprintId(bpClient.Id()).
-							SetClient(bpClient.Client()).
-							Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(leafIds[0])}}).
-							Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-							Node([]apstra.QEEAttribute{
-								apstra.NodeTypeInterface.QEEAttribute(),
-								{Key: "if_name", Value: apstra.QEStringVal("xe-0/0/7")},
-								{Key: "name", Value: apstra.QEStringVal("n_interface")},
-							})
-						var response struct {
-							Items []struct {
-								Interface struct {
-									Id apstra.ObjectId `json:"id"`
-								} `json:"n_interface"`
-							} `json:"items"`
-						}
-						err := query.Do(context.Background(), &response)
-						if err != nil {
-							t.Fatal(err)
-						}
-						err = bpClient.SetApplicationPointConnectivityTemplates(context.Background(), response.Items[0].Interface.Id, []apstra.ObjectId{*ct.Id})
-						if err != nil {
-							t.Fatal(err)
-						}
+						attachCtToPort("xe-0/0/7")
 					},
 					genericSystem: genericSystem{
 						clearCtsOnDestroy: true,
@@ -603,6 +610,45 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 							{
 								targetSwitchId: leafIds[0],
 								targetSwitchIf: "xe-0/0/7",
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+		"remove_link_with_attached_ct": {
+			steps: []testStep{
+				{
+					preConfig: func() {
+						t.Log("foo")
+					},
+					genericSystem: genericSystem{
+						clearCtsOnDestroy: true,
+						links: []link{
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/8",
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/9",
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					preConfig: func() {
+						attachCtToPort("xe-0/0/8")
+					},
+					genericSystem: genericSystem{
+						clearCtsOnDestroy: true,
+						links: []link{
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/9",
 								targetSwitchTf: 1,
 							},
 						},
