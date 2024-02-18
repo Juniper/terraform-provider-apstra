@@ -620,9 +620,6 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		"remove_link_with_attached_ct": {
 			steps: []testStep{
 				{
-					preConfig: func() {
-						t.Log("foo")
-					},
 					genericSystem: genericSystem{
 						clearCtsOnDestroy: true,
 						links: []link{

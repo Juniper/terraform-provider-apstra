@@ -24,17 +24,7 @@ data "apstra_ipv4_pool" "test" {
 
 func TestAccDataSourceIpv4Pool_A(t *testing.T) {
 	ctx := context.Background()
-	pool, deleteFunc, err := testutils.Ipv4PoolA(ctx)
-	if err != nil {
-		t.Error(err)
-		t.Fatal(deleteFunc(ctx))
-	}
-	defer func() {
-		err := deleteFunc(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	pool := testutils.Ipv4PoolA(t, ctx)
 
 	resource.Test(t, resource.TestCase{
 		//PreCheck:                 setup,
@@ -86,17 +76,7 @@ func TestAccDataSourceIpv4Pool_A(t *testing.T) {
 
 func TestAccDataSourceIpv4Pool_B(t *testing.T) {
 	ctx := context.Background()
-	pool, deleteFunc, err := testutils.Ipv4PoolB(ctx)
-	if err != nil {
-		t.Error(err)
-		t.Fatal(deleteFunc(ctx))
-	}
-	defer func() {
-		err := deleteFunc(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	pool := testutils.Ipv4PoolB(t, ctx)
 
 	resource.Test(t, resource.TestCase{
 		//PreCheck:                 setup,

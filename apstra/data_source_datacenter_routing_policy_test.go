@@ -2,10 +2,10 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
 )
@@ -29,32 +29,11 @@ func TestDataSourceDatacenterRoutingPolicy_A(t *testing.T) {
 	ctx := context.Background()
 
 	// BlueprintA returns a bpClient and the template from which the blueprint was created
-	bpClient, bpDelete, err := testutils.BlueprintA(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-
-	rpId, rpDelete, err := testutils.RoutingPolicyA(ctx, bpClient)
-	if err != nil {
-		t.Fatal(errors.Join(err, rpDelete(ctx)))
-	}
-	defer func() {
-		err = rpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.BlueprintA(t, ctx)
+	rpId := testutils.RoutingPolicyA(t, ctx, bpClient)
 
 	rp, err := bpClient.GetRoutingPolicy(ctx, rpId)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// generate the terraform config
 	dataSourceByIdHCL := fmt.Sprintf(dataSourceDataCenterRoutingPolicyByIdHCL, bpClient.Id(), rpId)

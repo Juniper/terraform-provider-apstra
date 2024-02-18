@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"strings"
 	"testing"
 )
 
@@ -36,29 +37,25 @@ func TestAccResourceDatacenterPropertySet(t *testing.T) {
 	ctx := context.Background()
 
 	// BlueprintA returns a bpClient and the template from which the blueprint was created
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
+	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
 
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-
-	d := diag.Diagnostics{}
 	TestPSData := func(state string) error {
-		if !utils.JSONEqual(types.StringValue(state), types.StringValue(data_string), &d) {
+		var diags diag.Diagnostics
+		if !utils.JSONEqual(types.StringValue(state), types.StringValue(data_string), &diags) {
 			return fmt.Errorf("input Data does not match output Input %v. Output %v", data_string, state)
 		}
+		if diags.HasError() {
+			var sb strings.Builder
+			for _, d := range diags.Errors() {
+				sb.WriteString(d.Summary() + "\n")
+				sb.WriteString(d.Detail() + "\n")
+			}
+			return errors.New(sb.String())
+		}
+
 		return nil
 	}
+
 	resource.Test(t, resource.TestCase{
 		// PreCheck:                 setup,
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

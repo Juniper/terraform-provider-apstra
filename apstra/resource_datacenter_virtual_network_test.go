@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -36,18 +37,8 @@ resource "apstra_datacenter_virtual_network" "test" {
 
 func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 	ctx := context.Background()
-	bp, deleteBlueprint, err := testutils.BlueprintC(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err = deleteBlueprint(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
-	// security zone will evaporate when blueprint is deleted
+	bp := testutils.BlueprintC(t, ctx)
 	szId := testutils.SecurityZoneA(t, ctx, bp)
 
 	type node struct {
@@ -58,18 +49,14 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 	systemNodesResponse := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
-	err = bp.GetNodes(ctx, apstra.NodeTypeSystem, systemNodesResponse)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err := bp.GetNodes(ctx, apstra.NodeTypeSystem, systemNodesResponse)
+	require.NoError(t, err)
 
 	redundancyGroupNodesResponse := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
 	err = bp.GetNodes(ctx, apstra.NodeTypeRedundancyGroup, redundancyGroupNodesResponse)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	labelToNodeId := make(map[string]string)
 	for k, v := range systemNodesResponse.Nodes {
@@ -161,15 +148,10 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 			mtu)
 	}
 
-	apiVersion, err := version.NewVersion(bp.Client().ApiVersion())
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	resourceHCL := make([]string, len(params))
 	for i, paramset := range params {
 		l3MtuMinVersion, _ := version.NewVersion("4.2.0")
-		if apiVersion.GreaterThanOrEqual(l3MtuMinVersion) {
+		if version.Must(version.NewVersion(bp.Client().ApiVersion())).GreaterThanOrEqual(l3MtuMinVersion) {
 			l3Mtu := 1280 + (2 * rand.Intn(3969)) // 1280 - 9216 even numbers only
 			paramset.l3Mtu = &l3Mtu
 		}

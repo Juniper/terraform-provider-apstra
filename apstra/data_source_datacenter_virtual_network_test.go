@@ -2,7 +2,6 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -31,16 +30,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 	ctx := context.Background()
 
 	// create a test blueprint
-	bp, bpDelete, err := testutils.BlueprintA(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bp := testutils.BlueprintA(t, ctx)
 
 	// create a security zone within the blueprint
 	name := acctest.RandString(5)

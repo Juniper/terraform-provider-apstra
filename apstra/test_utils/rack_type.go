@@ -4,21 +4,19 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 // RackTypeA has:
 // - 1 leaf switch with 10G uplink
 // - 1 access switch
-func RackTypeA(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func RackTypeA(t testing.TB, ctx context.Context) *apstra.RackType {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	leafLabel := "rack type A leaf"
-
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-A-" + acctest.RandString(10),
 		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
@@ -47,30 +45,25 @@ func RackTypeA(ctx context.Context) (*apstra.RackType, func(context.Context) err
 			},
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRackType(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, id)) })
 
 	result, err := client.GetRackType(ctx, id)
-	return result, deleteFunc, err
+	require.NoError(t, err)
+
+	return result
 }
 
 // RackTypeB has:
 // - 1 leaf switch ESI pair with 10G uplink
 // - 1 access switch dual-homed to ESI leaf "A"
 // - 1 pair (count = 2) access switches single-homed to ESI leaf "B"
-func RackTypeB(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func RackTypeB(t testing.TB, ctx context.Context) *apstra.RackType {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	leafLabel := "rack type B leaf"
-
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-B-" + acctest.RandString(10),
 		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
@@ -116,29 +109,23 @@ func RackTypeB(ctx context.Context) (*apstra.RackType, func(context.Context) err
 			},
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRackType(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, id)) })
 
 	result, err := client.GetRackType(ctx, id)
-	return result, deleteFunc, err
+	require.NoError(t, err)
+	return result
 }
 
 // RackTypeC has:
 // - 1 leaf switch ESI pair with 10G uplink
 // - 1 access switch dual-homed to both ESI leaf switches
-func RackTypeC(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func RackTypeC(t testing.TB, ctx context.Context) *apstra.RackType {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	leafLabel := "rack type C leaf"
-
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-C-" + acctest.RandString(10),
 		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
@@ -169,15 +156,13 @@ func RackTypeC(ctx context.Context) (*apstra.RackType, func(context.Context) err
 			},
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRackType(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, id)) })
 
 	result, err := client.GetRackType(ctx, id)
-	return result, deleteFunc, err
+	require.NoError(t, err)
+
+	return result
 }
 
 // RackTypeD has:
@@ -185,15 +170,12 @@ func RackTypeC(ctx context.Context) (*apstra.RackType, func(context.Context) err
 // - 1 access switch single homed to ESI leaf "A"
 // - 1 access switch ESI pair
 // - 1 access switch single homed to ESI leaf "B"
-func RackTypeD(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func RackTypeD(t testing.TB, ctx context.Context) *apstra.RackType {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	leafLabel := "rack type D leaf"
-
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-D-" + acctest.RandString(10),
 		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
@@ -261,15 +243,13 @@ func RackTypeD(ctx context.Context) (*apstra.RackType, func(context.Context) err
 			},
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRackType(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, id)) })
 
 	result, err := client.GetRackType(ctx, id)
-	return result, deleteFunc, err
+	require.NoError(t, err)
+
+	return result
 }
 
 // RackTypeE has:
@@ -277,15 +257,12 @@ func RackTypeD(ctx context.Context) (*apstra.RackType, func(context.Context) err
 // - 1 access switch homed to the first MLAG peer
 // - 1 access switch homed to the second MLAG peer
 // - 1 access switch homed to both MLAG peers
-func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func RackTypeE(t testing.TB, ctx context.Context) *apstra.RackType {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	leafLabel := "rack type E leaf"
-
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-E-" + acctest.RandString(10),
 		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
@@ -354,24 +331,19 @@ func RackTypeE(ctx context.Context) (*apstra.RackType, func(context.Context) err
 			},
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRackType(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, id)) })
 
 	result, err := client.GetRackType(ctx, id)
-	return result, deleteFunc, err
+	require.NoError(t, err)
+
+	return result
 }
 
 func RackTypeF(t testing.TB, ctx context.Context) *apstra.RackType {
 	t.Helper()
 
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := GetTestClient(t, ctx)
 
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "type F - " + acctest.RandString(5),
@@ -385,21 +357,11 @@ func RackTypeF(t testing.TB, ctx context.Context) *apstra.RackType {
 			},
 		},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		err := client.DeleteRackType(ctx, id)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, id)) })
 
 	result, err := client.GetRackType(ctx, id)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	return result
 }

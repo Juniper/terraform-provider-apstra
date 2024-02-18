@@ -2,47 +2,39 @@ package testutils
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-type Bfunc func(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error)
+type bFunc func(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient
 
-func MakeOrFindBlueprint(ctx context.Context, name string, f Bfunc) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
+func MakeOrFindBlueprint(t testing.TB, ctx context.Context, name string, f bFunc) *apstra.TwoStageL3ClosClient {
+	t.Helper()
 
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	client := GetTestClient(t, ctx)
 
 	status, err := client.GetBlueprintStatusByName(ctx, name)
 	if err != nil {
 		if utils.IsApstra404(err) {
-			return f(ctx, name)
+			return f(t, ctx, name)
 		}
-		return nil, deleteFunc, err
+
+		require.NoError(t, err)
 	}
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, status.Id)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	require.NoError(t, err)
 
-	return bpClient, deleteFunc, nil
+	return bpClient
 }
 
-func BlueprintA(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
+func BlueprintA(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient {
+	t.Helper()
 
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	client := GetTestClient(t, ctx)
 
 	var bpname string
 	if name == nil {
@@ -60,42 +52,20 @@ func BlueprintA(ctx context.Context, name ...string) (*apstra.TwoStageL3ClosClie
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
-
-	if err != nil {
-		return nil, deleteFunc, fmt.Errorf("error creating blueprint %w", err)
-	}
-
-	deleteFunc = func(ctx context.Context) error {
-		err := client.DeleteBlueprint(ctx, id)
-		if err != nil {
-			return err
-		}
-		return nil
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	require.NoError(t, err)
 
-	return bpClient, deleteFunc, nil
+	return bpClient
 }
 
-func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.ObjectId, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, "", deleteFunc, err
-	}
+func BlueprintB(t testing.TB, ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.ObjectId) {
+	t.Helper()
 
-	template, templateDelete, err := TemplateA(ctx)
-	if err != nil {
-		return nil, "", deleteFunc, errors.Join(err, templateDelete(ctx))
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return templateDelete(ctx)
-	}
-
+	client := GetTestClient(t, ctx)
+	template := TemplateA(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
@@ -106,37 +76,20 @@ func BlueprintB(ctx context.Context) (*apstra.TwoStageL3ClosClient, apstra.Objec
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
-	if err != nil {
-		return nil, template.Id, deleteFunc, fmt.Errorf("error creating blueprint %w", err)
-	}
-
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(client.DeleteBlueprint(ctx, id), templateDelete(ctx))
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	if err != nil {
-		return nil, template.Id, deleteFunc, err
-	}
+	require.NoError(t, err)
 
-	return bpClient, template.Id, deleteFunc, nil
+	return bpClient, template.Id
 }
 
-func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func BlueprintC(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
+	t.Helper()
 
-	template, templateDelete, err := TemplateB(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return templateDelete(ctx)
-	}
-
+	client := GetTestClient(t, ctx)
+	template := TemplateB(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
@@ -147,37 +100,18 @@ func BlueprintC(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, fmt.Errorf("error creating blueprint %w", err)
-	}
-
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteBlueprint(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	require.NoError(t, err)
 
-	return bpClient, deleteFunc, nil
+	return bpClient
 }
 
-func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	client, err := GetTestClient(ctx)
-	deleteFunc := func(ctx context.Context) error { return nil }
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-
-	template, templateDelete, err := TemplateC(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return templateDelete(ctx)
-	}
-
+func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
+	client := GetTestClient(t, ctx)
+	template := TemplateC(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
@@ -188,18 +122,11 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
-	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
-	}
-
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(templateDelete(ctx), client.DeleteBlueprint(ctx, id))
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
-	}
+	require.NoError(t, err)
 
 	leafQuery := new(apstra.PathQuery).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
@@ -217,10 +144,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 			} `json:"n_leaf"`
 		} `json:"items"`
 	}
-	err = leafQuery.Do(ctx, &leafQueryResult)
-	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
-	}
+	require.NoError(t, leafQuery.Do(ctx, &leafQueryResult))
 
 	accessQuery := new(apstra.PathQuery).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
@@ -238,10 +162,7 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 			} `json:"n_access"`
 		} `json:"items"`
 	}
-	err = accessQuery.Do(ctx, &accessQueryResult)
-	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
-	}
+	require.NoError(t, accessQuery.Do(ctx, &accessQueryResult))
 
 	leafIds := make([]string, len(leafQueryResult.Items))
 	accessIds := make([]string, len(accessQueryResult.Items))
@@ -256,29 +177,16 @@ func BlueprintD(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 		assignments[item.Access.Id] = "Juniper_vQFX__AOS-8x10-1"
 	}
 
-	err = bpClient.SetInterfaceMapAssignments(ctx, assignments)
-	if err != nil {
-		return nil, nil, errors.Join(err, deleteFunc(ctx))
-	}
+	require.NoError(t, bpClient.SetInterfaceMapAssignments(ctx, assignments))
 
-	return bpClient, deleteFunc, nil
+	return bpClient
 }
 
-func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func BlueprintE(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
+	t.Helper()
 
-	template, templateDelete, err := TemplateD(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return templateDelete(ctx)
-	}
-
+	client := GetTestClient(t, ctx)
+	template := TemplateD(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
@@ -289,31 +197,20 @@ func BlueprintE(ctx context.Context) (*apstra.TwoStageL3ClosClient, func(context
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
-	if err != nil {
-		return nil, deleteFunc, fmt.Errorf("error creating blueprint %w", err)
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(client.DeleteBlueprint(ctx, id), templateDelete(ctx))
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	require.NoError(t, err)
 
-	return bpClient, deleteFunc, nil
+	return bpClient
 }
 
 func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
 	t.Helper()
 
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	client := GetTestClient(t, ctx)
 	template := TemplateE(t, ctx)
-
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      acctest.RandString(10),
@@ -323,21 +220,11 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		err := client.DeleteBlueprint(ctx, id)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	return bpClient
 }

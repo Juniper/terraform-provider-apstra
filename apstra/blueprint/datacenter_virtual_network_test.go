@@ -2,26 +2,17 @@ package blueprint
 
 import (
 	"context"
-	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/stretchr/testify/require"
 	"sort"
 	"testing"
 )
 
 func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
 	ctx := context.Background()
-	bpClient, cleanup, err := testutils.BlueprintC(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := cleanup(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	bpClient := testutils.BlueprintC(t, ctx)
 
 	type node struct {
 		Id   string `json:"id"`
@@ -30,10 +21,8 @@ func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
 	getNodesResposne := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
-	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
-	if err != nil {
-		t.Fatal(errors.Join(cleanup(ctx), err))
-	}
+	err := bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
+	require.NoError(t, err)
 
 	var accessSwitchIds []string
 	for _, n := range getNodesResposne.Nodes {
@@ -43,9 +32,7 @@ func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
 	}
 
 	result, err := accessSwitchIdsToParentLeafIds(ctx, accessSwitchIds, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// resultData and expectedData are map[int]int representing count of access
 	// switches keyed by that parent switch count.
@@ -68,16 +55,8 @@ func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
 
 func TestRedunancyGroupIdToRedundancyGroupInfo(t *testing.T) {
 	ctx := context.Background()
-	bpClient, cleanup, err := testutils.BlueprintD(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := cleanup(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+
+	bpClient := testutils.BlueprintD(t, ctx)
 
 	type node struct {
 		Id   string `json:"id"`
@@ -86,10 +65,8 @@ func TestRedunancyGroupIdToRedundancyGroupInfo(t *testing.T) {
 	getNodesResposne := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
-	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
-	if err != nil {
-		t.Fatal(errors.Join(cleanup(ctx), err))
-	}
+	err := bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
+	require.NoError(t, err)
 
 	var accessNodes, leafNodes []string
 	for _, n := range getNodesResposne.Nodes {
@@ -130,16 +107,8 @@ func TestRedunancyGroupIdToRedundancyGroupInfo(t *testing.T) {
 
 func TestGetSystemRoles(t *testing.T) {
 	ctx := context.Background()
-	bpClient, cleanup, err := testutils.BlueprintD(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := cleanup(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+
+	bpClient := testutils.BlueprintD(t, ctx)
 
 	type node struct {
 		Id   string `json:"id"`
@@ -148,10 +117,8 @@ func TestGetSystemRoles(t *testing.T) {
 	getNodesResposne := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
-	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
-	if err != nil {
-		t.Fatal(errors.Join(cleanup(ctx), err))
-	}
+	err := bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, getNodesResposne)
+	require.NoError(t, err)
 
 	var systemIds []string
 	expected := make(map[string]apstra.SystemRole)
@@ -166,9 +133,7 @@ func TestGetSystemRoles(t *testing.T) {
 	}
 
 	result, err := getSystemRoles(ctx, systemIds, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	if !utils.MapsMatch(expected, result) {
 		t.Fatalf("expected: %v, got: %v", expected, result)

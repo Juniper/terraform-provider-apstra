@@ -4,10 +4,12 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
 	"math/rand"
 	"net"
 	"strconv"
 	"strings"
+	"testing"
 )
 
 func randomIpv4Net(prefixLength int) net.IPNet {
@@ -29,8 +31,9 @@ func randomIpv4Net(prefixLength int) net.IPNet {
 	return *ipNet
 }
 
-func RoutingPolicyA(ctx context.Context, client *apstra.TwoStageL3ClosClient) (apstra.ObjectId, func(context.Context) error, error) {
-	deleteFunc := func(_ context.Context) error { return nil }
+func RoutingPolicyA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient) apstra.ObjectId {
+	t.Helper()
+
 	id, err := client.CreateRoutingPolicy(ctx, &apstra.DcRoutingPolicyData{
 		Label:        acctest.RandString(10),
 		Description:  acctest.RandString(10),
@@ -48,12 +51,8 @@ func RoutingPolicyA(ctx context.Context, client *apstra.TwoStageL3ClosClient) (a
 		ExpectDefaultIpv6Route: acctest.RandInt()%2 == 0,
 		AggregatePrefixes:      []net.IPNet{randomIpv4Net(8)},
 	})
-	if err != nil {
-		return "", deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteRoutingPolicy(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRoutingPolicy(ctx, id)) })
 
-	return id, deleteFunc, nil
+	return id
 }

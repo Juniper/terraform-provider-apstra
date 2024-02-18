@@ -3,17 +3,16 @@ package tfapstra
 import (
 	"context"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"math/rand"
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 )
 
@@ -68,53 +67,19 @@ func (o routeTargets) String() string {
 func TestResourceDatacenterRoutingZone_A(t *testing.T) {
 	ctx := context.Background()
 
-	bpClient, bpDelete, err := testutils.BlueprintA(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	bpWg := new(sync.WaitGroup)
-	defer func() {
-		err := bpDelete(ctx)
-		bpWg.Done()
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-	bpWg.Add(1)
+	bpClient := testutils.BlueprintA(t, ctx)
 
-	vniPoolId, err := bpClient.Client().CreateVniPool(ctx, &apstra.VniPoolRequest{
-		DisplayName: acctest.RandString(5),
-		Ranges: []apstra.IntfIntRange{
-			apstra.IntRange{
-				First: 4096,
-				Last:  4096,
-			},
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		go func() {
-			bpWg.Wait()
-			err := bpClient.Client().DeleteVniPool(ctx, vniPoolId)
-			if err != nil {
-				t.Error(err)
-			}
-		}()
-	}()
+	vniPool := testutils.VniPool(t, ctx, 4096, 4096)
 
 	rgn := apstra.ResourceGroupNameEvpnL3Vni
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err := bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
 			Type: rgn.Type(),
 			Name: rgn,
 		},
-		PoolIds: []apstra.ObjectId{vniPoolId},
+		PoolIds: []apstra.ObjectId{vniPool.Id},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	type testCase struct {
 		name          string

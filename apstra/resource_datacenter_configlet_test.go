@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -36,39 +35,13 @@ const (
 
 func TestAccResourceDatacenterConfiglet(t *testing.T) {
 	ctx := context.Background()
-	client, err := testutils.GetTestClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := testutils.GetTestClient(t, ctx)
 
 	// Set up a Catalog Property Set
-	cc, data, deleteFunc, err := testutils.CatalogConfigletA(ctx, client)
-	if err != nil {
-		t.Fatal(errors.Join(err, deleteFunc(ctx, cc)))
-	}
-	defer func() {
-		err := deleteFunc(ctx, cc)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	cc, data := testutils.CatalogConfigletA(t, ctx, client)
 
 	// BlueprintA returns a bpClient and the template from which the blueprint was created
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
-
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
+	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
 
 	resource.Test(t, resource.TestCase{
 		// PreCheck:                 setup,
