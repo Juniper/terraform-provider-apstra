@@ -2,10 +2,12 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -249,7 +251,29 @@ func (o *resourceDatacenterGenericSystem) Delete(ctx context.Context, req resour
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("failed to delete generic system", err.Error())
+
+		var pendingDiags diag.Diagnostics
+		pendingDiags.AddError("failed to delete generic system", err.Error())
+
+		var ace apstra.ClientErr
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrCtAssignedToLink && ace.Detail() != nil && state.ClearCtsOnDestroy.ValueBool()) {
+			resp.Diagnostics.Append(pendingDiags...) // cannot handle error
+			return
+		}
+
+		// attempt to handle error by clearing CTs
+		state.ClearConnectivityTemplatesFromLinks(ctx, ace.Detail().(apstra.ErrCtAssignedToLinkDetail).LinkIds, bp, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			resp.Diagnostics.Append(pendingDiags...)
+			return
+		}
+
+		// try again
+		err = bp.DeleteGenericSystem(ctx, apstra.ObjectId(state.Id.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("failed to delete generic system after clearing CTs from interfaces", err.Error())
+			resp.Diagnostics.Append(pendingDiags...)
+		}
 	}
 }
 

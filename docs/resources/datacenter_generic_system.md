@@ -84,6 +84,7 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Optional
 
 - `asn` (Number) AS number of the Generic System. Note that in some circumstances Apstra may assign an ASN to the generic system even when none is supplied via this attribute. The automaticallyassigned value will be overwritten by Terraform during a subsequent apply operation.
+- `clear_cts_on_destroy` (Boolean) When `true`, Link deletion in `destroy` phase and `apply` phase (where a Link has been removed from the configuration) will automatically clear Connectivity Template assignments from interfaces associated with those Links.
 - `deploy_mode` (String) Set the Apstra Deploy Mode for this Generic System. Default: `deploy`
 - `external` (Boolean) Set `true` to create an External Generic System
 - `hostname` (String) System hostname.
