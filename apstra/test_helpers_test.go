@@ -73,6 +73,10 @@ func cidrOrNull(in *net.IPNet) string {
 }
 
 func stringSetOrNull(in []string) string {
+	if in == nil {
+		return "null"
+	}
+
 	sb := new(strings.Builder)
 	for i, s := range in {
 		if i == 0 {
