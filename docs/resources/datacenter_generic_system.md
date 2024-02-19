@@ -79,7 +79,7 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `links` (Attributes Set) Generic System link details (see [below for nested schema](#nestedatt--links))
+- `links` (Attributes Set) Generic System link details. Note that tagging Links requires Apstra 4.1.2 or newer. (see [below for nested schema](#nestedatt--links))
 
 ### Optional
 

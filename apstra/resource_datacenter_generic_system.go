@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -15,6 +17,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
+var _ resource.ResourceWithValidateConfig = &resourceDatacenterGenericSystem{}
 var _ resourceWithSetBpClientFunc = &resourceDatacenterGenericSystem{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterGenericSystem{}
 
@@ -36,6 +39,54 @@ func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.S
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Generic System within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterGenericSystem{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterGenericSystem) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config blueprint.DatacenterGenericSystem
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// config-only validation begins here (there is none)
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.getBpClientFunc == nil {
+		return
+	}
+
+	// cannot proceed if the blueprint is not yet known
+	if config.BlueprintId.IsUnknown() {
+		return
+	}
+
+	bpClient, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
+		return
+	}
+
+	// get the api version from the client
+	apiVersion, err := version.NewVersion(bpClient.Client().ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", bpClient.Client().ApiVersion()), err.Error())
+		return
+	}
+
+	// validate the configuration
+	resp.Diagnostics.Append(
+		apiversions.ValidateConstraints(
+			ctx,
+			apiversions.ValidateConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: config.VersionConstraints(ctx, &resp.Diagnostics),
+			},
+		)...,
+	)
 }
 
 func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
