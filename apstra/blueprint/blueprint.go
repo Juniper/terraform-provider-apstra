@@ -492,15 +492,19 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 
 	if utils.Known(o.FabricAddressing) {
 		response.AddAttributeConstraints(
-			path.Root("fabric_addressing"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra411)),
+			apiversions.AttributeConstraint{
+				Path:        path.Root("fabric_addressing"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra411)),
+			},
 		)
 	}
 
 	if utils.Known(o.FabricMtu) {
 		response.AddAttributeConstraints(
-			path.Root("fabric_mtu"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+			apiversions.AttributeConstraint{
+				Path:        path.Root("fabric_mtu"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
 		)
 	}
 

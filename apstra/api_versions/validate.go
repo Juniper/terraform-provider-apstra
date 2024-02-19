@@ -22,20 +22,20 @@ func ValidateConstraints(_ context.Context, req ValidateConstraintsRequest) diag
 	var response diag.Diagnostics
 
 	for _, constraint := range req.Constraints.attributeConstraints {
-		if !constraint.constraints.Check(req.Version) { // un-met version constraint?
+		if !constraint.Constraints.Check(req.Version) { // un-met version constraint?
 			response.AddAttributeError(
-				constraint.path,
+				constraint.Path,
 				fmt.Sprintf(errSummary, req.Version),
-				fmt.Sprintf(errAttributeDetail, constraint.constraints),
+				fmt.Sprintf(errAttributeDetail, constraint.Constraints),
 			)
 		}
 	}
 
 	for _, constraint := range req.Constraints.otherConstraints {
-		if !constraint.constraints.Check(req.Version) {
+		if !constraint.Constraints.Check(req.Version) {
 			response.AddError(
 				fmt.Sprintf(errSummary, req.Version),
-				fmt.Sprintf(errOtherDetail, constraint.message, constraint.constraints),
+				fmt.Sprintf(errOtherDetail, constraint.Message, constraint.Constraints),
 			)
 		}
 	}

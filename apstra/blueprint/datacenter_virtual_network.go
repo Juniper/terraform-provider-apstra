@@ -922,8 +922,10 @@ func (o DatacenterVirtualNetwork) VersionConstraints() apiversions.Constraints {
 
 	if utils.Known(o.L3Mtu) {
 		response.AddAttributeConstraints(
-			path.Root("l3_mtu"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+			apiversions.AttributeConstraint{
+				Path:        path.Root("l3_mtu"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
 		)
 	}
 

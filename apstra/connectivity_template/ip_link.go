@@ -198,8 +198,10 @@ func (o IpLink) VersionConstraints() apiversions.Constraints {
 
 	if !o.L3Mtu.IsNull() {
 		response.AddAttributeConstraints(
-			path.Root("l3_mtu"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)),
+			apiversions.AttributeConstraint{
+				Path:        path.Root("l3_mtu"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
 		)
 	}
 

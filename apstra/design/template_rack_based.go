@@ -295,8 +295,10 @@ func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
 
 	if !o.FabricAddressing.IsNull() {
 		response.AddAttributeConstraints(
-			path.Root("fabric_link_addressing"),
-			version.MustConstraints(version.NewConstraint(apiversions.Apstra410)),
+			apiversions.AttributeConstraint{
+				Path:        path.Root("fabric_link_addressing"),
+				Constraints: version.MustConstraints(version.NewConstraint(apiversions.Apstra410)),
+			},
 		)
 	}
 
