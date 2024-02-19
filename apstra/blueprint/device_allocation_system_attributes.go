@@ -73,20 +73,25 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 			CustomType:          cidrtypes.IPv4PrefixType{},
 			Optional:            true,
 			Computed:            true,
+			Validators:          []validator.String{stringvalidator.RegexMatches(regexp.MustCompile("/32$"), "must use a 32-bit mask")},
 		},
 		"loopback_ipv6": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation, must use 128-bit mask.",
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Optional:            true,
 			Computed:            true,
+			Validators:          []validator.String{stringvalidator.RegexMatches(regexp.MustCompile("/128$"), "must use a 128-bit mask")},
 		},
 		"tags": resourceSchema.SetAttribute{
 			MarkdownDescription: "Tag labels to be applied to the System node. If a Tag doesn't exist " +
 				"in the Blueprint it will be created automatically.",
 			ElementType: types.StringType,
 			Optional:    true,
-			Computed:    true,
-			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
+			Computed:    false, // the user controls this field directly
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "Set the [deploy mode](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/datacenter-deploy-mode-set.html) " +
@@ -113,14 +118,14 @@ func (o *DeviceAllocationSystemAttributes) IsEmpty() bool {
 }
 
 func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, experimental types.Bool, diags *diag.Diagnostics) {
-	if experimental.IsNull() {
-		return // resource not yet configured
-	}
-
 	if o.IsEmpty() {
 		diags.AddAttributeError(path.Root("system_attributes"), constants.ErrInvalidConfig,
 			"Object may be omitted, but must not be empty")
 		return
+	}
+
+	if experimental.IsNull() {
+		return // resource not yet configured
 	}
 
 	if !experimental.ValueBool() {
@@ -233,40 +238,26 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 func (o *DeviceAllocationSystemAttributes) Set(ctx context.Context, state *DeviceAllocationSystemAttributes, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
 	if state == nil || !o.Asn.Equal(state.Asn) {
 		o.setAsn(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
-		if diags.HasError() {
-			return
-		}
 	}
 
 	if state == nil || !o.LoopbackIpv4.Equal(state.LoopbackIpv4) || !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
 		o.setLoopbacks(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
-		if diags.HasError() {
-			return
-		}
 	}
 
-	if state == nil || !o.Name.Equal(state.Name) || !o.Hostname.Equal(state.Hostname) {
+	if state == nil || !o.Name.Equal(state.Name) || !o.Hostname.Equal(state.Hostname) || !o.DeployMode.Equal(state.DeployMode) {
 		o.setProperties(ctx, bp, apstra.ObjectId(nodeId.ValueString()), diags)
-		if diags.HasError() {
-			return
-		}
 	}
 
 	if state == nil || !o.Tags.Equal(state.Tags) {
-		var tags []string
-		diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
-		if diags.HasError() {
-			return
-		}
-
-		err := bp.SetNodeTags(ctx, apstra.ObjectId(nodeId.ValueString()), tags)
-		if err != nil {
-			diags.AddError(fmt.Sprintf("failed setting tags on node %q", nodeId), err.Error())
-		}
+		o.setTags(ctx, state, bp, apstra.ObjectId(nodeId.ValueString()), diags)
 	}
 }
 
 func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if !utils.Known(o.Asn) {
+		return
+	}
+
 	var domainNode struct {
 		Id apstra.ObjectId `json:"id"`
 	}
@@ -293,6 +284,10 @@ func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstr
 }
 
 func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if !utils.Known(o.LoopbackIpv4) && !utils.Known(o.LoopbackIpv6) {
+		return
+	}
+
 	var loopbackNode struct {
 		Id apstra.ObjectId `json:"id"`
 	}
@@ -302,22 +297,12 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		return
 	}
 
-	ipv4 := o.LoopbackIpv4
-	if ipv4.IsUnknown() {
-		ipv4 = cidrtypes.NewIPv4PrefixNull()
-	}
-
-	ipv6 := o.LoopbackIpv6
-	if ipv6.IsUnknown() {
-		ipv6 = cidrtypes.NewIPv6PrefixNull()
-	}
-
 	patch := &struct {
-		IPv4Addr *string `json:"ipv4_addr"`
-		IPv6Addr *string `json:"ipv6_addr"`
+		IPv4Addr string `json:"ipv4_addr,omitempty"`
+		IPv6Addr string `json:"ipv6_addr,omitempty"`
 	}{
-		IPv4Addr: ipv4.ValueStringPointer(),
-		IPv6Addr: ipv6.ValueStringPointer(),
+		IPv4Addr: o.LoopbackIpv4.ValueString(),
+		IPv6Addr: o.LoopbackIpv6.ValueString(),
 	}
 
 	err = bp.PatchNode(ctx, loopbackNode.Id, &patch, nil)
@@ -328,24 +313,46 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 }
 
 func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if o.Name.IsNull() && o.Hostname.IsNull() && o.DeployMode.IsNull() {
+	if !utils.Known(o.Name) && !utils.Known(o.Hostname) && !utils.Known(o.DeployMode) {
 		return
 	}
 
 	node := struct {
-		DeployMode *string `json:"deploy_mode,omitempty"`
-		Hostname   *string `json:"hostname,omitempty"`
-		Label      *string `json:"label,omitempty"`
+		DeployMode string `json:"deploy_mode,omitempty"`
+		Hostname   string `json:"hostname,omitempty"`
+		Label      string `json:"label,omitempty"`
 	}{
-		DeployMode: o.DeployMode.ValueStringPointer(),
-		Hostname:   o.Hostname.ValueStringPointer(),
-		Label:      o.Name.ValueStringPointer(),
+		DeployMode: o.DeployMode.ValueString(),
+		Hostname:   o.Hostname.ValueString(),
+		Label:      o.Name.ValueString(),
 	}
 
 	err := bp.PatchNode(ctx, nodeId, &node, nil)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
 		return
+	}
+}
+
+func (o *DeviceAllocationSystemAttributes) setTags(ctx context.Context, state *DeviceAllocationSystemAttributes, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	// not a Computed value, so IsNull() will suffice
+	if o.Tags.IsNull() && len(state.Tags.Elements()) == 0 {
+		// tags not supplied by user indicates we intend to clear them
+		return
+	}
+
+	var tags []string
+	// extract tags from user config, if any. not a Computed value. If null, we clear the tags.
+	if !o.Tags.IsNull() {
+		diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	err := bp.SetNodeTags(ctx, nodeId, tags)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed setting tags on node %q", nodeId), err.Error())
 	}
 }
 
