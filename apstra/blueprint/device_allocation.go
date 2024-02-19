@@ -108,10 +108,14 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"system_attributes": resourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Attributes which should be set on the pre-existing system node.",
-			Optional:            true,
-			Computed:            true,
-			Attributes:          DeviceAllocationSystemAttributes{}.ResourceAttributes(),
+			MarkdownDescription: "Attributes which should be set on the pre-existing system node may be configured " +
+				"here.\n\nNote that omitting a previously configured value (e.g. setting and then subsequently " +
+				"clearing `asn` from the configuration) will not cause the system to revert to an Apstra-assigned " +
+				"value. Omitting a configuration element says \"I have no opinion about this value\" to Terraform. " +
+				"There is no mechanism to revert to Apstra-assigned values for the attributes in this block.",
+			Optional:   true,
+			Computed:   true,
+			Attributes: DeviceAllocationSystemAttributes{}.ResourceAttributes(),
 		},
 	}
 }
@@ -652,10 +656,6 @@ func (o DeviceAllocation) ValidateConfig(ctx context.Context, experimental types
 		return // nothing to validate without system_attributes
 	}
 
-	if o.SystemAttributes.IsNull() {
-		return // nothing to validate without system_attributes
-	}
-
 	// unpack the system_attributes
 	var systemAttributes DeviceAllocationSystemAttributes
 	diags.Append(o.SystemAttributes.As(ctx, &systemAttributes, basetypes.ObjectAsOptions{})...)
@@ -730,16 +730,7 @@ func (o *DeviceAllocation) GetSystemAttributes(ctx context.Context, bp *apstra.T
 }
 
 func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *DeviceAllocation, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	if o.SystemAttributes.IsUnknown() {
-		return
-	}
-
-	var planSA DeviceAllocationSystemAttributes
-	diags.Append(o.SystemAttributes.As(ctx, &planSA, basetypes.ObjectAsOptions{})...)
-	if diags.HasError() {
-		return
-	}
-
+	// extract the state, if any
 	var stateSA *DeviceAllocationSystemAttributes
 	if state != nil && !state.SystemAttributes.IsNull() {
 		stateSA = new(DeviceAllocationSystemAttributes)
@@ -747,6 +738,26 @@ func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *Devic
 		if diags.HasError() {
 			return
 		}
+	}
+
+	// did the user configure `system_attributes`?
+	if !utils.Known(o.SystemAttributes) {
+		// `system_attributes` not configured - we may need to clear existing tags
+		if stateSA != nil && len(stateSA.Tags.Elements()) > 0 {
+			// tags exist. clear them.
+			err := bp.SetNodeTags(ctx, apstra.ObjectId(o.NodeId.ValueString()), []string{})
+			if err != nil {
+				diags.AddError(fmt.Sprintf("failed clearing tags from system node %s", o.NodeId), err.Error())
+				return
+			}
+		}
+		return
+	}
+
+	var planSA DeviceAllocationSystemAttributes
+	diags.Append(o.SystemAttributes.As(ctx, &planSA, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return
 	}
 
 	planSA.Set(ctx, stateSA, bp, o.NodeId, diags)
