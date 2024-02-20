@@ -130,10 +130,14 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
-
 	fapData, err := bp.GetFabricAddressingPolicy(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy after creation", err.Error())
+		return
+	}
+	fabSettings, err := bp.GetFabricSettings(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Settings after creation", err.Error())
 		return
 	}
 
@@ -144,6 +148,11 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	}
 
 	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.LoadFabricSettings(ctx, fabSettings, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -196,8 +205,14 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
+	fabricSettings, err := bp.GetFabricSettings(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to read fabric settings", err.Error())
+	}
+
 	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	state.LoadFabricSettings(ctx, fabricSettings, &resp.Diagnostics)
 	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 
 	// Set state.

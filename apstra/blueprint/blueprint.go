@@ -984,27 +984,147 @@ func (o *Blueprint) SetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 		if fabricSettings == nil {
 			return
 		}
-		bp.SetFabricSettings(ctx, &apstra.FabricSettings{
-			//JunosEvpnDuplicateMacRecoveryTime:     nil,
-			//MaxExternalRoutes:                     nil,
-			//EsiMacMsb:                             nil, // formerly fabric_settings
-			//JunosGracefulRestart:                  nil,
-			//OptimiseSzFootprint:                   nil,
-			//JunosEvpnRoutingInstanceVlanAware:     nil,
-			//EvpnGenerateType5HostRoutes:           nil,
-			//MaxFabricRoutes:                       nil,
-			//MaxMlagRoutes:                         nil,
-			//JunosExOverlayEcmp:                    nil,
-			//DefaultSviL3Mtu:                       nil,
-			//JunosEvpnMaxNexthopAndInterfaceNumber: nil,
-			//FabricL3Mtu:                           nil, // formerly fabric_settings
-			//Ipv6Enabled:                           nil, // formerly fabric_settings
-			//OverlayControlProtocol:                nil,
-			//ExternalRouterMtu:                     nil,
-			//MaxEvpnRoutes:                         nil,
-			//AntiAffinityPolicy:                    nil,
-		})
+		err := bp.SetFabricSettings(ctx, &apstra.FabricSettings{})
+		if err != nil {
+			return
+		}
 	} else {
+		// todo
+	}
+}
+func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	fabricSettings := o.fabricSettings()
+	if version.MustConstraints(version.NewConstraint(">" + apiversions.Apstra412)).Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		if fabricSettings == nil {
+			return
+		}
+	} else {
+		return // todo
+	}
+}
+func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.FabricSettings, diags *diag.Diagnostics) {
+	// load from settings object into o
+	if settings.MaxFabricRoutes != nil {
+		o.MaxExternalRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
+	}
+	if settings.MaxMlagRoutes != nil {
+		o.MaxMlagRoutesCount = types.Int64Value(int64(*settings.MaxMlagRoutes))
+	}
+	if settings.MaxEvpnRoutes != nil {
+		o.MaxEvpnRoutesCount = types.Int64Value(int64(*settings.MaxEvpnRoutes))
+	}
+	if settings.MaxFabricRoutes != nil {
+		o.MaxFabricRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
+	}
+	o.EvpnType5Routes = types.BoolValue(false)
+	if settings.EvpnGenerateType5HostRoutes.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.EvpnType5Routes = types.BoolValue(true)
+	}
+	o.JunosGracefulRestartEnabled = types.BoolValue(false)
+	if settings.JunosGracefulRestart.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosGracefulRestartEnabled = types.BoolValue(true)
+	}
+	o.OptimizeRoutingZoneFootprint = types.BoolValue(false)
+	if settings.OptimiseSzFootprint.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.OptimizeRoutingZoneFootprint = types.BoolValue(true)
+	}
+	o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(false)
+	if settings.JunosEvpnRoutingInstanceVlanAware.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(true)
+	}
+	o.JunosExOverlayEcmpEnabled = types.BoolValue(false)
+	if settings.JunosExOverlayEcmp.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosExOverlayEcmpEnabled = types.BoolValue(false)
+	}
+	o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled = types.BoolValue(false)
+	if settings.JunosEvpnMaxNexthopAndInterfaceNumber.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled = types.BoolValue(false)
+	}
+	//todo
+	//if o.AntiAffinityPolicy != nil {
+	//	antiAffinityMap := make(map[string]interface{})
+	//	antiAffinityMap["mode"] = o.AntiAffinityMode
+	//	antiAffinityMap["policy"] = o.AntiAffinityPolicy
+	//	o.attributeConstraints = append(o.attributeConstraints, attributeConstraint{
+	//		attribute: "anti_affinity",
+	//		value:     antiAffinityMap,
+	//	})
+	//}
 
+}
+func (o *Blueprint) FabricSettingsRequest(ctx context.Context, diags *diag.Diagnostics) *apstra.FabricSettings {
+	// take everything inside of o and fill out the data structure
+	var junosGracefulRestart *apstra.FeatureSwitchEnum
+	if utils.Known(o.JunosGracefulRestartEnabled) {
+		if o.JunosGracefulRestartEnabled.ValueBool() {
+			junosGracefulRestart = &apstra.FeatureSwitchEnumEnabled
+		} else {
+			junosGracefulRestart = &apstra.FeatureSwitchEnumDisabled
+		}
+	}
+
+	var optimizeSzFootprint *apstra.FeatureSwitchEnum
+	if utils.Known(o.OptimizeRoutingZoneFootprint) {
+		if o.OptimizeRoutingZoneFootprint.ValueBool() {
+			optimizeSzFootprint = &apstra.FeatureSwitchEnumEnabled
+		} else {
+			optimizeSzFootprint = &apstra.FeatureSwitchEnumDisabled
+		}
+	}
+
+	var junosEvpnRoutingInstanceVlanAware *apstra.FeatureSwitchEnum
+	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
+		if o.JunosEvpnRoutingInstanceModeMacVrf.ValueBool() {
+			junosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumEnabled
+		} else {
+			junosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumDisabled
+		}
+	}
+
+	var evpnGenerateType5HostRoutes *apstra.FeatureSwitchEnum
+	if utils.Known(o.EvpnType5Routes) {
+		if o.EvpnType5Routes.ValueBool() {
+			evpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumEnabled
+		} else {
+			evpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumDisabled
+		}
+	}
+
+	var junosExOverlayEcmp *apstra.FeatureSwitchEnum
+	if utils.Known(o.JunosExOverlayEcmpEnabled) {
+		if o.JunosExOverlayEcmpEnabled.ValueBool() {
+			junosExOverlayEcmp = &apstra.FeatureSwitchEnumEnabled
+		} else {
+			junosExOverlayEcmp = &apstra.FeatureSwitchEnumDisabled
+		}
+	}
+
+	var junosEvpnMaxNexthopAndInterfaceNumber *apstra.FeatureSwitchEnum
+	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled) {
+		if o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled.ValueBool() {
+			junosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumEnabled
+		} else {
+			junosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumDisabled
+		}
+	}
+
+	return &apstra.FabricSettings{
+		MaxExternalRoutes:                     utils.ToPtr(uint32(o.MaxExternalRoutesCount.ValueInt64())),
+		EsiMacMsb:                             utils.ToPtr(uint8(o.EsiMacMsb.ValueInt64())),
+		JunosGracefulRestart:                  junosGracefulRestart,
+		OptimiseSzFootprint:                   optimizeSzFootprint,
+		JunosEvpnRoutingInstanceVlanAware:     junosEvpnRoutingInstanceVlanAware,
+		EvpnGenerateType5HostRoutes:           evpnGenerateType5HostRoutes,
+		MaxFabricRoutes:                       utils.ToPtr(uint32(o.MaxFabricRoutesCount.ValueInt64())),
+		MaxMlagRoutes:                         utils.ToPtr(uint32(o.MaxMlagRoutesCount.ValueInt64())),
+		JunosExOverlayEcmp:                    junosExOverlayEcmp,
+		DefaultSviL3Mtu:                       utils.ToPtr(uint16(o.DefaultSviL3Mtu.ValueInt64())),
+		JunosEvpnMaxNexthopAndInterfaceNumber: junosEvpnMaxNexthopAndInterfaceNumber,
+		FabricL3Mtu:                           utils.ToPtr(uint16(o.FabricMtu.ValueInt64())),
+		Ipv6Enabled:                           utils.ToPtr(o.Ipv6Applications.ValueBool()),
+		OverlayControlProtocol:                nil, // is this even set here? I dont think its used.
+		ExternalRouterMtu:                     utils.ToPtr(uint16(o.DefaultIPLinksToGenericSystemsMTU.ValueInt64())),
+		MaxEvpnRoutes:                         utils.ToPtr(uint32(o.MaxEvpnRoutesCount.ValueInt64())),
+		AntiAffinityPolicy:                    nil, // todo
 	}
 }
