@@ -4404,8 +4404,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-testing/helper/acctest
 
 * Name: github.com/hashicorp/terraform-plugin-testing/helper/acctest
-* Version: v1.2.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-testing/blob/v1.2.0/LICENSE)
+* Version: v1.5.1
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-testing/blob/v1.5.1/LICENSE)
 
 ```
 Copyright (c) 2014 HashiCorp, Inc.
