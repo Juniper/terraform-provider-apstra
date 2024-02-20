@@ -133,7 +133,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
 					},
 					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Spine"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "not_set"),
@@ -162,7 +162,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						},
 					},
 					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Spine"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "SPINE1"),
@@ -193,7 +193,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						},
 					},
 					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Spine"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "SPINE2"),

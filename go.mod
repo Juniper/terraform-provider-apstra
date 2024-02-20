@@ -18,7 +18,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-nettypes v0.1.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.21.0
-	github.com/hashicorp/terraform-plugin-testing v1.2.0
+	github.com/hashicorp/terraform-plugin-testing v1.5.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/orsinium-labs/enum v1.3.0
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
