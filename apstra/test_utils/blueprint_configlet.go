@@ -4,57 +4,53 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func CatalogConfigletA(ctx context.Context, client *apstra.Client) (apstra.ObjectId, *apstra.ConfigletData,
-	func(context.Context, apstra.ObjectId) error, error) {
-	deleteFunc := func(ctx context.Context, in apstra.ObjectId) error { return client.DeleteConfiglet(ctx, in) }
+func CatalogConfigletA(t testing.TB, ctx context.Context, client *apstra.Client) (apstra.ObjectId, *apstra.ConfigletData) {
+	t.Helper()
+
 	name := "CatalogConfigletA"
+	configlet, err := client.GetConfigletByName(ctx, name)
+	if err != nil {
+		if !utils.IsApstra404(err) {
+			require.NoError(t, err) // we cannot handle non-404 errors
+		}
 
-	c, err := client.GetConfigletByName(ctx, name)
-	if utils.IsApstra404(err) {
-		var cg []apstra.ConfigletGenerator
-		cg = append(cg, apstra.ConfigletGenerator{
-			ConfigStyle:  apstra.PlatformOSJunos,
-			Section:      apstra.ConfigletSectionSystem,
-			TemplateText: "interfaces {\n   {% if 'leaf1' in hostname %}\n    xe-0/0/3 {\n      disable;\n    }\n   {% endif %}\n   {% if 'leaf2' in hostname %}\n    xe-0/0/2 {\n      disable;\n    }\n   {% endif %}\n}",
-		})
-
-		var refarchs []apstra.RefDesign
-		refarchs = append(refarchs, apstra.RefDesignTwoStageL3Clos)
-		data := apstra.ConfigletData{
+		configletData := apstra.ConfigletData{
 			DisplayName: name,
-			RefArchs:    refarchs,
-			Generators:  cg,
+			RefArchs:    []apstra.RefDesign{apstra.RefDesignTwoStageL3Clos},
+			Generators: []apstra.ConfigletGenerator{{
+				ConfigStyle:  apstra.PlatformOSJunos,
+				Section:      apstra.ConfigletSectionSystem,
+				TemplateText: "interfaces {\n   {% if 'leaf1' in hostname %}\n    xe-0/0/3 {\n      disable;\n    }\n   {% endif %}\n   {% if 'leaf2' in hostname %}\n    xe-0/0/2 {\n      disable;\n    }\n   {% endif %}\n}",
+			}},
 		}
 
-		id, err := client.CreateConfiglet(context.Background(), &data)
-		if err != nil {
-			return "", nil, nil, nil
-		}
+		id, err := client.CreateConfiglet(context.Background(), &configletData)
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, client.DeleteConfiglet(ctx, id)) })
 
-		return id, &data, deleteFunc, nil
+		return id, &configletData
 	}
-	return c.Id, c.Data, deleteFunc, nil
+
+	return configlet.Id, configlet.Data
 }
 
-func BlueprintConfigletA(ctx context.Context, client *apstra.TwoStageL3ClosClient, cid apstra.ObjectId, condition string) (apstra.ObjectId,
-	func(context.Context, apstra.ObjectId) error, error) {
-	deleteFunc := func(ctx context.Context, in apstra.ObjectId) error { return client.DeleteConfiglet(ctx, in) }
+func BlueprintConfigletA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cid apstra.ObjectId, condition string) apstra.ObjectId {
+	t.Helper()
 
 	id, err := client.ImportConfigletById(ctx, cid, condition, "")
-	if err != nil {
-		return "", nil, err
-	}
-	return id, deleteFunc, nil
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteConfiglet(ctx, id)) })
+
+	return id
 }
 
-// testWidgetsAB instantiates two predefined probes and creates widgets from them,
+// TestWidgetsAB instantiates two predefined probes and creates widgets from them,
 // returning the widget Object Id and the IbaWidgetData object used for creation
-
-func TestWidgetsAB(ctx context.Context, t *testing.T, bpClient *apstra.TwoStageL3ClosClient) (apstra.ObjectId,
-	apstra.IbaWidgetData, apstra.ObjectId, apstra.IbaWidgetData, func() error) {
+func TestWidgetsAB(t testing.TB, ctx context.Context, bpClient *apstra.TwoStageL3ClosClient) (apstra.ObjectId, apstra.IbaWidgetData, apstra.ObjectId, apstra.IbaWidgetData) {
 	probeAId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
 		Name: "bgp_session",
 		Data: []byte(`{
@@ -63,9 +59,8 @@ func TestWidgetsAB(ctx context.Context, t *testing.T, bpClient *apstra.TwoStageL
 			"Threshold": 40
 		}`),
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeAId)) })
 
 	probeBId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
 		Name: "drain_node_traffic_anomaly",
@@ -74,10 +69,8 @@ func TestWidgetsAB(ctx context.Context, t *testing.T, bpClient *apstra.TwoStageL
 			"Threshold": 100000
 		}`),
 	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeBId)) })
 
 	widgetA := apstra.IbaWidgetData{
 		Type:      apstra.IbaWidgetTypeStage,
@@ -86,9 +79,8 @@ func TestWidgetsAB(ctx context.Context, t *testing.T, bpClient *apstra.TwoStageL
 		StageName: "BGP Session",
 	}
 	widgetAId, err := bpClient.CreateIbaWidget(ctx, &widgetA)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetAId)) })
 
 	widgetB := apstra.IbaWidgetData{
 		Type:      apstra.IbaWidgetTypeStage,
@@ -97,25 +89,8 @@ func TestWidgetsAB(ctx context.Context, t *testing.T, bpClient *apstra.TwoStageL
 		StageName: "excess_range",
 	}
 	widgetBId, err := bpClient.CreateIbaWidget(ctx, &widgetB)
-	if err != nil {
-		t.Fatal(err)
-	}
-	cleanup := func() error {
-		err = bpClient.DeleteIbaWidget(ctx, widgetAId)
-		if err != nil {
-			return err
-		}
-		err = bpClient.DeleteIbaWidget(ctx, widgetBId)
-		if err != nil {
-			return err
-		}
-		err = bpClient.DeleteIbaProbe(ctx, probeAId)
-		if err != nil {
-			return err
-		}
-		err = bpClient.DeleteIbaProbe(ctx, probeBId)
-		return err
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetBId)) })
 
-	return widgetAId, widgetA, widgetBId, widgetB, cleanup
+	return widgetAId, widgetA, widgetBId, widgetB
 }

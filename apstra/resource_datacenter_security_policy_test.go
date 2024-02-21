@@ -2,7 +2,6 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
@@ -138,16 +137,7 @@ func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) strin
 func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 	ctx := context.Background()
 
-	bpClient, bpDelete, err := testutils.BlueprintA(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err := bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.BlueprintA(t, ctx)
 
 	// collect leaf switch IDs
 	leafIds := systemIds(ctx, t, bpClient, "leaf")

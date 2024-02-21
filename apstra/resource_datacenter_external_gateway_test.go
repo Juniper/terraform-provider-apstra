@@ -2,7 +2,6 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -61,16 +60,7 @@ func renderResourceDataCenterExternalGateway(tc testCaseResourceExternalGateway,
 func TestResourceDatacenterExternalGateway(t *testing.T) {
 	ctx := context.Background()
 
-	bp, bpDelete, err := testutils.BlueprintC(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bp := testutils.BlueprintC(t, ctx)
 
 	leafIds := systemIds(ctx, t, bp, "leaf")
 	uint8Val3 := uint8(3)

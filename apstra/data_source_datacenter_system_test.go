@@ -2,11 +2,11 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
 )
@@ -22,28 +22,15 @@ data "apstra_datacenter_system" "test" {
 
 func TestDatacenterSystem_A(t *testing.T) {
 	ctx := context.Background()
-	client, err := testutils.GetTestClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	client := testutils.GetTestClient(t, ctx)
 
 	// BlueprintB returns a bpClient and the template from which the blueprint was created
-	bpClient, templateId, bpDelete, err := testutils.BlueprintB(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err := bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient, templateId := testutils.BlueprintB(t, ctx)
 
 	// retrieve the origin template details because we need the spine tags
 	template, err := client.GetRackBasedTemplate(ctx, templateId)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Get all of the system nodes - we'll compare this data against the dataSource
 	type node struct {
@@ -58,9 +45,7 @@ func TestDatacenterSystem_A(t *testing.T) {
 		Nodes map[string]node `json:"nodes"`
 	}{}
 	err = bpClient.GetNodes(ctx, apstra.NodeTypeSystem, nodeResponse)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// find spine1
 	var spine1 *node

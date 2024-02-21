@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"os"
 	"testing"
-	"time"
 )
 
 const (
@@ -29,20 +27,7 @@ resource "apstra_datacenter_blueprint" "test" {
 func TestResourceDatacenterBlueprint(t *testing.T) {
 	ctx := context.Background()
 
-	apstraUrl, ok := os.LookupEnv(utils.EnvApstraUrl)
-	if !ok || apstraUrl == "" {
-		t.Fatalf("apstra url environment variable (%s) must be set and non-empty", utils.EnvApstraUrl)
-	}
-
-	clientCfg, err := utils.NewClientConfig(apstraUrl)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := clientCfg.NewClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := testutils.GetTestClient(t, ctx)
 
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 	rs := acctest.RandString(6)
@@ -82,12 +67,12 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				Steps: []resource.TestStep{
 					{
 						Config: renderConfig(config{
-							name:       "a1_" + rs,
+							name:       "a0_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a1_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a0_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -96,14 +81,14 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:             "a2_" + rs,
+							name:             "a1_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "4",
 							ipv6Applications: "false",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a2_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a1_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "4"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -112,14 +97,14 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:             "a3_" + rs,
+							name:             "a2_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "6",
 							ipv6Applications: "true",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a3_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a2_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "6"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "true"),
@@ -142,13 +127,13 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:             "a3_" + rs,
+							name:             "a4_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							ipv6Applications: "false",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a3_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "a4_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -169,14 +154,14 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				Steps: []resource.TestStep{
 					{
 						Config: renderConfig(config{
-							name:             "b1_" + rs,
+							name:             "b0_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							esiMacMsb:        "4",
 							ipv6Applications: "true",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "b1_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "b0_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "4"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "true"),
@@ -210,12 +195,12 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				Steps: []resource.TestStep{
 					{
 						Config: renderConfig(config{
-							name:       "c1_" + rs,
+							name:       "c0_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "c1_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "c0_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -254,13 +239,13 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:             "c2_" + rs,
+							name:             "c3_" + rs,
 							templateId:       "L2_Virtual_EVPN",
 							fabricAddressing: "ipv6",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "c2_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "c3_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -278,12 +263,12 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				Steps: []resource.TestStep{
 					{
 						Config: renderConfig(config{
-							name:       "d1_" + rs,
+							name:       "d0_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d1_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d0_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -309,13 +294,13 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:       "d1_" + rs,
+							name:       "d2_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9100",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d1_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d2_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -325,12 +310,12 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:       "d1_" + rs,
+							name:       "d3_" + rs,
 							templateId: "L2_Virtual_EVPN",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d1_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d3_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -341,13 +326,13 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					{
 						Taint: []string{"apstra_datacenter_blueprint.test"},
 						Config: renderConfig(config{
-							name:       "d2_" + rs,
+							name:       "d4_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9100",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d2_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d4_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -357,13 +342,13 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 					{
 						Config: renderConfig(config{
-							name:       "d2_" + rs,
+							name:       "d5_" + rs,
 							templateId: "L2_Virtual_EVPN",
 							fabricMtu:  "9100",
 						}),
 						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d2_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "d5_"+rs),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
@@ -378,7 +363,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
-		t.Logf("%s test case %q", time.Now().String(), tName)
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
 			if !tCase.apiVersionConstraints.Check(apiVersion) {

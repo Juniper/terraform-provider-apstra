@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -167,41 +166,54 @@ resource "apstra_blueprint_iba_probe" "p_device_health" {
 
 func TestAccResourceProbe(t *testing.T) {
 	ctx := context.Background()
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
 
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			// Create and Read testing to instantiate predefined probe
-			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeHCL, bpClient.Id()),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_health", "id"),
-					resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_health", "name", "Device System Health")),
-			},
-			// Create and Read testing to instantiate probe with json definition
-			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeJsonHCL, bpClient.Id(), probeStr),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					// Verify ID has any value set
-					resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_traffic", "id"),
-					resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_traffic", "name", "Device Traffic")),
-			},
-			// Test that bad json will fail
-			{
-				Config:      insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeJsonHCL, bpClient.Id(), probeStrErr),
-				ExpectError: regexp.MustCompile("Error: Invalid JSON String Value.*"),
+	type testCase struct {
+		steps []resource.TestStep
+	}
+
+	testCases := map[string]testCase{
+		"predefined": {
+			steps: []resource.TestStep{
+				{
+					Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeHCL, bpClient.Id()),
+					Check: resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_health", "id"),
+						resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_health", "name", "Device System Health"),
+					),
+				},
 			},
 		},
-	})
+		"from_json": {
+			steps: []resource.TestStep{
+				{
+					Config: insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeJsonHCL, bpClient.Id(), probeStr),
+					Check: resource.ComposeAggregateTestCheckFunc(
+						// Verify ID has any value set
+						resource.TestCheckResourceAttrSet("apstra_blueprint_iba_probe.p_device_traffic", "id"),
+						resource.TestCheckResourceAttr("apstra_blueprint_iba_probe.p_device_traffic", "name", "Device Traffic"),
+					),
+				},
+			},
+		},
+		"error": {
+			steps: []resource.TestStep{
+				{
+					Config:      insecureProviderConfigHCL + fmt.Sprintf(resourceBlueprintIbaProbeJsonHCL, bpClient.Id(), probeStrErr),
+					ExpectError: regexp.MustCompile("Error: Invalid JSON String Value.*"),
+					Destroy:     false,
+				},
+			},
+		},
+	}
+
+	for tName, tCase := range testCases {
+		tName, tCase := tName, tCase
+		t.Run(tName, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps:                    tCase.steps,
+			})
+		})
+	}
 }

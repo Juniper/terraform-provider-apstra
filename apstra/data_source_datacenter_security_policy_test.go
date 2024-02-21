@@ -2,11 +2,11 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -30,21 +30,10 @@ data "apstra_datacenter_security_policy" "test" {
 func TestDatacenterSecurityPolicy(t *testing.T) {
 	ctx := context.Background()
 
-	bp, bpDelete, err := testutils.BlueprintC(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bp := testutils.BlueprintC(t, ctx)
 
 	szs, err := bp.GetAllSecurityZones(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	if len(szs) != 1 {
 		t.Fatalf("expected one security zone, got %d", len(szs))
 	}

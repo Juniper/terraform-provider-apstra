@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -37,16 +36,7 @@ resource "apstra_blueprint_iba_widget" "w_device_health_high_cpu" {
 
 func TestAccResourceWidget(t *testing.T) {
 	ctx := context.Background()
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "1bb57", testutils.BlueprintA)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "widget", testutils.BlueprintA)
 
 	n1 := "Widget1"
 	n2 := "Widget2"

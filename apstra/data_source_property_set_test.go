@@ -2,12 +2,14 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"strings"
 	"testing"
 )
 
@@ -27,24 +29,26 @@ data "apstra_property_set" "test" {
 
 func TestAccDataSourcePropertySet(t *testing.T) {
 	ctx := context.Background()
-	ps, deleteFunc, err := testutils.PropertySetA(ctx)
-	if err != nil {
-		t.Error(err)
-		t.Fatal(deleteFunc(ctx))
-	}
-	defer func() {
-		err := deleteFunc(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
-	d := diag.Diagnostics{}
+
+	ps := testutils.PropertySetA(t, ctx)
+
 	TestPSData := func(state string) error {
-		if !utils.JSONEqual(types.StringValue(state), types.StringValue(string(ps.Data.Values)), &d) {
+		var diags diag.Diagnostics
+		if !utils.JSONEqual(types.StringValue(state), types.StringValue(string(ps.Data.Values)), &diags) {
 			return fmt.Errorf("input Data does not match output Input %v. Output %v", ps.Data, state)
 		}
+		if diags.HasError() {
+			var sb strings.Builder
+			for _, d := range diags.Errors() {
+				sb.WriteString(d.Summary() + "\n")
+				sb.WriteString(d.Detail() + "\n")
+			}
+			return errors.New(sb.String())
+		}
+
 		return nil
 	}
+
 	resource.Test(t, resource.TestCase{
 		//PreCheck:                 setup,
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

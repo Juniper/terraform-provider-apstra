@@ -2,10 +2,10 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
 )
@@ -23,40 +23,21 @@ func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 	ctx := context.Background()
 
 	// BlueprintB returns a bpClient and the template from which the blueprint was created
-	bpClient, bpDelete, err := testutils.BlueprintA(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.BlueprintA(t, ctx)
 
 	szId := testutils.SecurityZoneA(t, ctx, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	sz, err := bpClient.GetSecurityZone(ctx, szId)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	ip1 := net.ParseIP("1.1.1.1")
-	ip2 := net.ParseIP("2.2.2.2")
-	bpClient.SetSecurityZoneDhcpServers(ctx, sz.Id, []net.IP{ip1, ip2})
+	err = bpClient.SetSecurityZoneDhcpServers(ctx, sz.Id, []net.IP{net.ParseIP("1.1.1.1"), net.ParseIP("2.2.2.2")})
+	require.NoError(t, err)
 
 	rp, err := bpClient.GetDefaultRoutingPolicy(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// generate the terraform config
 	dataSourceHCL := fmt.Sprintf(dataSourceDataCenterRoutingZoneHCL, bpClient.Id(), szId)
-
-	// test check functions
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

@@ -2,39 +2,22 @@ package testutils
 
 import (
 	"context"
-	"errors"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func TemplateA(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
+	t.Helper()
 
-	tagA, tagADelete, err := TagA(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return tagADelete(ctx)
-	}
+	client := GetTestClient(t, ctx)
 
-	tagB, tagBDelete, err := TagA(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(tagADelete(ctx), tagBDelete(ctx))
-	}
+	tagA := TagA(t, ctx)
+	tagB := TagA(t, ctx)
 
 	rackType, err := client.GetRackType(ctx, "one_leaf")
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	require.NoError(t, err)
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
@@ -62,23 +45,19 @@ func TemplateA(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	}
 	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(tagADelete(ctx), tagBDelete(ctx), client.DeleteTemplate(ctx, id))
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, id)) })
 
 	template, err := client.GetRackBasedTemplate(ctx, id)
-	return template, deleteFunc, err
+	require.NoError(t, err)
+
+	return template
 }
 
-func TemplateB(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func TemplateB(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
@@ -106,23 +85,19 @@ func TemplateB(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	}
 	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteTemplate(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, id)) })
 
 	template, err := client.GetRackBasedTemplate(ctx, id)
-	return template, deleteFunc, err
+	require.NoError(t, err)
+
+	return template
 }
 
-func TemplateC(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func TemplateC(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	templateRequest := &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(10),
@@ -149,67 +124,22 @@ func TemplateC(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	}
 	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteTemplate(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, id)) })
 
 	template, err := client.GetRackBasedTemplate(ctx, id)
-	return template, deleteFunc, err
+	require.NoError(t, err)
+
+	return template
 }
 
-func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func TemplateD(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
+	t.Helper()
 
-	rackTypeA, rackTypeADelete, err := RackTypeA(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return rackTypeADelete(ctx)
-	}
-
-	rackTypeB, rackTypeBDelete, err := RackTypeB(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(
-			rackTypeADelete(ctx),
-			rackTypeBDelete(ctx),
-		)
-	}
-
-	rackTypeC, rackTypeCDelete, err := RackTypeC(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(
-			rackTypeADelete(ctx),
-			rackTypeBDelete(ctx),
-			rackTypeCDelete(ctx),
-		)
-	}
-
-	rackTypeD, rackTypeDDelete, err := RackTypeD(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(
-			rackTypeADelete(ctx),
-			rackTypeBDelete(ctx),
-			rackTypeCDelete(ctx),
-			rackTypeDDelete(ctx),
-		)
-	}
+	rackTypeA := RackTypeA(t, ctx)
+	rackTypeB := RackTypeB(t, ctx)
+	rackTypeC := RackTypeC(t, ctx)
+	rackTypeD := RackTypeD(t, ctx)
 
 	raid := rackTypeA.Id
 	rbid := rackTypeB.Id
@@ -243,31 +173,23 @@ func TemplateD(ctx context.Context) (*apstra.TemplateRackBased, func(context.Con
 		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	}
+
+	client := GetTestClient(t, ctx)
+
 	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return errors.Join(
-			rackTypeADelete(ctx),
-			rackTypeBDelete(ctx),
-			rackTypeCDelete(ctx),
-			rackTypeDDelete(ctx),
-			client.DeleteTemplate(ctx, id),
-		)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, id)) })
 
 	template, err := client.GetRackBasedTemplate(ctx, id)
-	return template, deleteFunc, err
+	require.NoError(t, err)
+
+	return template
 }
 
 func TemplateE(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 	t.Helper()
 
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := GetTestClient(t, ctx)
 
 	rackTypeF := RackTypeF(t, ctx)
 
@@ -297,21 +219,11 @@ func TemplateE(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 	}
 
 	id, err := client.CreateRackBasedTemplate(ctx, templateRequest)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		err := client.DeleteTemplate(ctx, id)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, id)) })
 
 	template, err := client.GetRackBasedTemplate(ctx, id)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	return template
 }

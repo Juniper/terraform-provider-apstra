@@ -4,34 +4,26 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-func PropertySetA(ctx context.Context) (*apstra.PropertySet, func(context.Context) error, error) {
-	deleteFunc := func(_ context.Context) error { return nil }
+func PropertySetA(t testing.TB, ctx context.Context) *apstra.PropertySet {
+	t.Helper()
 
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	client := GetTestClient(t, ctx)
 
-	name := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
 	request := apstra.PropertySetData{
-		Label:  name,
+		Label:  acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum),
 		Values: []byte(`{"value_int": 42, "value_json": {"inner_value_str": "innerstr", "inner_value_int": 4242}, "value_str": "str"}`),
 	}
 
 	id, err := client.CreatePropertySet(ctx, &request)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeletePropertySet(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeletePropertySet(ctx, id)) })
 
 	ps, err := client.GetPropertySet(ctx, id)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+	require.NoError(t, err)
 
-	return ps, deleteFunc, nil
+	return ps
 }

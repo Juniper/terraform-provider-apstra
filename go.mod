@@ -21,6 +21,7 @@ require (
 	github.com/hashicorp/terraform-plugin-testing v1.5.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/orsinium-labs/enum v1.3.0
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/exp v0.0.0-20240213143201-ec583247a57a
 	golang.org/x/text v0.14.0
 	honnef.co/go/tools v0.4.3
@@ -110,6 +111,7 @@ require (
 	github.com/cloudflare/circl v1.3.5 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidmz/go-pageant v1.0.2 // indirect
 	github.com/dghubble/go-twitter v0.0.0-20211115160449-93a8679adecb // indirect
 	github.com/dghubble/oauth1 v0.7.2 // indirect
@@ -231,6 +233,7 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/rivo/uniseg v0.4.2 // indirect
 	github.com/russross/blackfriday v1.6.0 // indirect

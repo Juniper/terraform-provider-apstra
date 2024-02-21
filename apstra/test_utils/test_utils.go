@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"testing"
 )
 
 const testConfigFile = "../.testconfig.hcl"
@@ -24,30 +25,33 @@ type testConfig struct {
 	Password string `hcl:"password,optional"`
 }
 
-func GetTestClient(ctx context.Context) (*apstra.Client, error) {
+func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
+	t.Helper()
+
 	testClientMutex.Lock()
 	defer testClientMutex.Unlock()
 
 	if sharedClient == nil {
 		err := testCfgFileToEnv()
 		if err != nil {
-			return nil, err
+			t.Fatal(err)
 		}
 
 		clientCfg, err := utils.NewClientConfig("")
 		if err != nil {
-			return nil, err
+			t.Fatal(err)
 		}
+
 		clientCfg.Experimental = true
 		clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 
 		sharedClient, err = clientCfg.NewClient(ctx)
 		if err != nil {
-			return nil, err
+			t.Fatal(err)
 		}
 	}
 
-	return sharedClient, nil
+	return sharedClient
 }
 
 func testCfgFileToEnv() error {

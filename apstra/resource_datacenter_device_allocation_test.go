@@ -2,7 +2,6 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -37,19 +36,10 @@ resource "apstra_datacenter_device_allocation" "test" {
 func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 	ctx := context.Background()
 
-	bpClient, bpDelete, err := testutils.BlueprintA(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.BlueprintA(t, ctx)
 
 	// set spine ASN pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err := bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
 			Type: apstra.ResourceTypeAsnPool,
 			Name: apstra.ResourceGroupNameSpineAsn,

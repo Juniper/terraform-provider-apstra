@@ -4,14 +4,14 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-func TagA(ctx context.Context) (*apstra.DesignTag, func(context.Context) error, error) {
-	deleteFunc := func(ctx context.Context) error { return nil }
-	client, err := GetTestClient(ctx)
-	if err != nil {
-		return nil, deleteFunc, err
-	}
+func TagA(t testing.TB, ctx context.Context) *apstra.DesignTag {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
 
 	tagData := &apstra.DesignTagData{
 		Label:       acctest.RandString(10),
@@ -22,16 +22,11 @@ func TagA(ctx context.Context) (*apstra.DesignTag, func(context.Context) error, 
 		Label:       tagData.Label,
 		Description: tagData.Description,
 	})
-	if err != nil {
-		return nil, deleteFunc, err
-	}
-
-	deleteFunc = func(ctx context.Context) error {
-		return client.DeleteTag(ctx, id)
-	}
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteTag(ctx, id)) })
 
 	return &apstra.DesignTag{
 		Id:   id,
 		Data: tagData,
-	}, deleteFunc, nil
+	}
 }

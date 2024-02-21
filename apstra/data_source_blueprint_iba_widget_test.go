@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -28,29 +27,10 @@ const (
 func TestAccDataSourceIbaWidget(t *testing.T) {
 	ctx := context.Background()
 
-	bpClient, bpDelete, err := testutils.MakeOrFindBlueprint(ctx, "BPA", testutils.BlueprintA)
-
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
-	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
 
 	// Set up Widgets
-	widgetIdA, widgetDataA, _, _, cleanup := testutils.TestWidgetsAB(ctx, t, bpClient)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err = cleanup()
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+	widgetIdA, widgetDataA, _, _ := testutils.TestWidgetsAB(t, ctx, bpClient)
 
 	resource.Test(t, resource.TestCase{
 		// PreCheck:                 setup,

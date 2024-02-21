@@ -2,8 +2,8 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -11,146 +11,109 @@ import (
 )
 
 const (
-	resourceDataCenterRack = `
+	resourceDataCenterRackHCL = `
 resource "apstra_datacenter_rack" "test" {
   blueprint_id = %q
   rack_type_id = %q
-  name         = %s
+  name         = %q
 }`
 )
-
-type stringList struct {
-	list []string
-}
-
-func (o *stringList) append(s string) string {
-	o.list = append(o.list, s)
-	return s
-}
-func (o stringList) last() string {
-	return o.list[len(o.list)-1]
-}
 
 func TestResourceDatacenterRack(t *testing.T) {
 	ctx := context.Background()
 
-	bp, bpDelete, err := testutils.BlueprintC(ctx)
-	if err != nil {
-		t.Fatal(errors.Join(err, bpDelete(ctx)))
+	bp := testutils.BlueprintC(t, ctx)
+
+	type config struct {
+		rackTypeId apstra.ObjectId
+		name       string
 	}
-	defer func() {
-		err = bpDelete(ctx)
-		if err != nil {
-			t.Error(err)
-		}
-	}()
+
+	renderConfig := func(in config) string {
+		return fmt.Sprintf(resourceDataCenterRackHCL,
+			bp.Id(),
+			in.rackTypeId,
+			in.name,
+		)
+	}
 
 	type step struct {
-		config string
-		check  resource.TestCheckFunc
+		config config
+		checks []resource.TestCheckFunc
 	}
 
 	type testCase struct {
 		steps []step
 	}
 
-	var names stringList
-
 	testCases := map[string]testCase{
 		"start_with_name": {
 			steps: []step{
 				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.append(fmt.Sprintf("%q", acctest.RandString(5)))),
-					check: resource.ComposeAggregateTestCheckFunc(
+					config: config{
+						rackTypeId: "access_switch",
+						name:       acctest.RandString(5),
+					},
+					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
 						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
 						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
+					},
 				},
 				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.append(fmt.Sprintf("%q", acctest.RandString(5)))),
-					check: resource.ComposeAggregateTestCheckFunc(
+					config: config{
+						rackTypeId: "access_switch",
+						name:       acctest.RandString(5),
+					},
+					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
 						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
 						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
+					},
 				},
 				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.last()),
-					check: resource.ComposeAggregateTestCheckFunc(
+					config: config{
+						rackTypeId: "L2_Virtual",
+						name:       acctest.RandString(5),
+					},
+					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
 						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
+						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "L2_Virtual"),
+					},
 				},
 				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", "null"),
-					check: resource.ComposeAggregateTestCheckFunc(
+					config: config{
+						rackTypeId: "L2_Virtual",
+						name:       acctest.RandString(5),
+					},
+					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
 						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
-				},
-				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.append(fmt.Sprintf("%q", acctest.RandString(5)))),
-					check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
-				},
-			},
-		},
-		"start_without_name": {
-			steps: []step{
-				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", "null"),
-					check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
-				},
-				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.append(fmt.Sprintf("%q", acctest.RandString(5)))),
-					check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
-				},
-				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.append(fmt.Sprintf("%q", acctest.RandString(5)))),
-					check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
-				},
-				{
-					config: insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterRack, bp.Id(), "access_switch", names.last()),
-					check: resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
-					),
+						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "L2_Virtual"),
+					},
 				},
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		steps := make([]resource.TestStep, len(tc.steps))
-		for i := 0; i < len(tc.steps); i++ {
+	for tName, tCase := range testCases {
+		tName, tCase := tName, tCase
+
+		steps := make([]resource.TestStep, len(tCase.steps))
+		for i, step := range tCase.steps {
+			check := resource.ComposeAggregateTestCheckFunc(append(step.checks, resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "name", step.config.name))...)
 			steps[i] = resource.TestStep{
-				Config: tc.steps[i].config,
-				Check:  tc.steps[i].check,
+				Config: renderConfig(tCase.steps[i].config),
+				Check:  check,
 			}
 		}
 
-		resource.Test(t, resource.TestCase{
-			ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-			Steps:                    steps,
+		t.Run(tName, func(t *testing.T) {
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps:                    steps,
+			})
 		})
 	}
 }
