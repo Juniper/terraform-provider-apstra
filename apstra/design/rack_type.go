@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"sort"
 	"strings"
 )
 
@@ -269,17 +270,17 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *apstra
 		return nil
 	}
 
-	leafSwitches := o.GetLeafSwitches(ctx, diags)
+	leafSwitches := o.leafSwitches(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
 
-	accessSwitches := o.GetAccessSwitches(ctx, diags)
+	accessSwitches := o.accessSwitches(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
 
-	genericSystems := o.GetGenericSystems(ctx, diags)
+	genericSystems := o.genericSystems(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -321,6 +322,17 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *apstra
 		genericSystemsRequests[i] = *req
 		i++
 	}
+
+	// sort the request slices so that leaf/access/generic wind up in predictable order
+	sort.Slice(leafSwitchRequests, func(i, j int) bool {
+		return leafSwitchRequests[i].Label < leafSwitchRequests[j].Label
+	})
+	sort.Slice(accessSwitchRequests, func(i, j int) bool {
+		return accessSwitchRequests[i].Label < accessSwitchRequests[j].Label
+	})
+	sort.Slice(genericSystemsRequests, func(i, j int) bool {
+		return genericSystemsRequests[i].Label < genericSystemsRequests[j].Label
+	})
 
 	return &apstra.RackTypeRequest{
 		DisplayName:              o.Name.ValueString(),
@@ -385,7 +397,7 @@ func ValidateRackType(ctx context.Context, in *apstra.RackType, diags *diag.Diag
 	}
 }
 
-func (o *RackType) GetLeafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]LeafSwitch {
+func (o *RackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]LeafSwitch {
 	leafSwitches := make(map[string]LeafSwitch, len(o.LeafSwitches.Elements()))
 	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
 	diags.Append(d...)
@@ -396,8 +408,8 @@ func (o *RackType) GetLeafSwitches(ctx context.Context, diags *diag.Diagnostics)
 	return leafSwitches
 }
 
-func (o *RackType) GetLeafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *LeafSwitch {
-	leafSwitches := o.GetLeafSwitches(ctx, diags)
+func (o *RackType) leafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *LeafSwitch {
+	leafSwitches := o.leafSwitches(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -409,7 +421,7 @@ func (o *RackType) GetLeafSwitchByName(ctx context.Context, requested string, di
 	return nil
 }
 
-func (o *RackType) GetAccessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]AccessSwitch {
+func (o *RackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]AccessSwitch {
 	accessSwitches := make(map[string]AccessSwitch, len(o.AccessSwitches.Elements()))
 	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, false)
 	diags.Append(d...)
@@ -420,8 +432,8 @@ func (o *RackType) GetAccessSwitches(ctx context.Context, diags *diag.Diagnostic
 	return accessSwitches
 }
 
-func (o *RackType) GetAccessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *AccessSwitch {
-	accessSwitches := o.GetAccessSwitches(ctx, diags)
+func (o *RackType) accessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *AccessSwitch {
+	accessSwitches := o.accessSwitches(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -433,7 +445,7 @@ func (o *RackType) GetAccessSwitchByName(ctx context.Context, requested string, 
 	return nil
 }
 
-func (o *RackType) GetGenericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]GenericSystem {
+func (o *RackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]GenericSystem {
 	genericSystems := make(map[string]GenericSystem, len(o.GenericSystems.Elements()))
 	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
@@ -444,8 +456,8 @@ func (o *RackType) GetGenericSystems(ctx context.Context, diags *diag.Diagnostic
 	return genericSystems
 }
 
-func (o *RackType) GetGenericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *GenericSystem {
-	genericSystems := o.GetGenericSystems(ctx, diags)
+func (o *RackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *GenericSystem {
+	genericSystems := o.genericSystems(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -462,13 +474,13 @@ func (o *RackType) GetGenericSystemByName(ctx context.Context, requested string,
 // RackType to be used as state.
 func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, diags *diag.Diagnostics) {
 	// first extract native go structs from the TF set of objects
-	dstLeafSwitches := o.GetLeafSwitches(ctx, diags)
-	dstAccessSwitches := o.GetAccessSwitches(ctx, diags)
-	dstGenericSystems := o.GetGenericSystems(ctx, diags)
+	dstLeafSwitches := o.leafSwitches(ctx, diags)
+	dstAccessSwitches := o.accessSwitches(ctx, diags)
+	dstGenericSystems := o.genericSystems(ctx, diags)
 
 	// invoke the CopyWriteOnlyElements on every leaf switch object
 	for name, dstLeafSwitch := range dstLeafSwitches {
-		srcLeafSwitch, ok := src.GetLeafSwitches(ctx, diags)[name]
+		srcLeafSwitch, ok := src.leafSwitches(ctx, diags)[name]
 		if !ok {
 			continue
 		}
@@ -485,7 +497,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 
 	// invoke the CopyWriteOnlyElements on every access switch object
 	for name, dstAccessSwitch := range dstAccessSwitches {
-		srcAccessSwitch, ok := src.GetAccessSwitches(ctx, diags)[name]
+		srcAccessSwitch, ok := src.accessSwitches(ctx, diags)[name]
 		if !ok {
 			continue
 		}
@@ -502,7 +514,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 
 	// invoke the CopyWriteOnlyElements on every generic system object
 	for name, dstGenericSystem := range dstGenericSystems {
-		srcGenericSystem, ok := src.GetGenericSystems(ctx, diags)[name]
+		srcGenericSystem, ok := src.genericSystems(ctx, diags)[name]
 		if !ok {
 			continue
 		}
@@ -532,8 +544,8 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 }
 
 func (o *RackType) GetSwitchRedundancyProtocolByName(ctx context.Context, name string, path path.Path, diags *diag.Diagnostics) fmt.Stringer {
-	leaf := o.GetLeafSwitchByName(ctx, name, diags)
-	access := o.GetAccessSwitchByName(ctx, name, diags)
+	leaf := o.leafSwitchByName(ctx, name, diags)
+	access := o.accessSwitchByName(ctx, name, diags)
 	if leaf == nil && access == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("target switch %q not found in rack type %q", name, o.Id))
