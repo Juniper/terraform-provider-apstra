@@ -194,8 +194,8 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 		}
 	}
 
-	leaf := rack.GetLeafSwitchByName(ctx, o.TargetSwitchName.ValueString(), diags)
-	access := rack.GetAccessSwitchByName(ctx, o.TargetSwitchName.ValueString(), diags)
+	leaf := rack.leafSwitchByName(ctx, o.TargetSwitchName.ValueString(), diags)
+	access := rack.accessSwitchByName(ctx, o.TargetSwitchName.ValueString(), diags)
 	if leaf == nil && access == nil {
 		diags.AddAttributeError(path, errInvalidConfig,
 			fmt.Sprintf("target switch %q not found in rack type %q", o.TargetSwitchName.ValueString(), rack.Id))
