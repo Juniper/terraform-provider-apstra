@@ -105,7 +105,7 @@ Optional:
 - `deploy_mode` (String) Set the [deploy mode](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/datacenter-deploy-mode-set.html) of the associated fabric node.
 - `hostname` (String) Hostname of the System node.
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation, must use 32-bit mask. Setting loopback addresses is supported only for Spine and Leaf switches.
-- `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation, must use 128-bit mask. Setting loopback addresses is supported only for Spine and Leaf switches.
+- `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation, must use 128-bit mask. Setting loopback addresses is supported only for Spine and Leaf switches. IPv6 must be enabled in the Blueprint to use this attribute.
 - `name` (String) Web UI label for the system node.
 - `tags` (Set of String) Tag labels to be applied to the System node. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
