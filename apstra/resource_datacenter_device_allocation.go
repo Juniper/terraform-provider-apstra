@@ -4,20 +4,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"regexp"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDeviceAllocation{}
-var _ resource.ResourceWithValidateConfig = &resourceDeviceAllocation{}
-var _ resourceWithSetBpClientFunc = &resourceDeviceAllocation{}
-var _ resourceWithSetBpLockFunc = &resourceDeviceAllocation{}
-var _ resourceWithSetExperimental = &resourceDeviceAllocation{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDeviceAllocation{}
+	_ resource.ResourceWithValidateConfig = &resourceDeviceAllocation{}
+	_ resourceWithSetBpClientFunc         = &resourceDeviceAllocation{}
+	_ resourceWithSetBpLockFunc           = &resourceDeviceAllocation{}
+	_ resourceWithSetExperimental         = &resourceDeviceAllocation{}
+)
 
 type resourceDeviceAllocation struct {
 	experimental    types.Bool

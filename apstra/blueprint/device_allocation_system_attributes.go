@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"net"
+	"regexp"
+	"strconv"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -17,9 +22,6 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"math"
-	"regexp"
-	"strconv"
 )
 
 type DeviceAllocationSystemAttributes struct {
@@ -64,23 +66,26 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 		},
 		"asn": resourceSchema.Int64Attribute{
 			Optional:            true,
-			MarkdownDescription: "ASN of the system node.",
+			MarkdownDescription: "ASN of the system node. Setting ASN is supported only for Spine and Leaf switches.",
 			Computed:            true,
 			Validators:          []validator.Int64{int64validator.Between(1, math.MaxUint32)},
 		},
 		"loopback_ipv4": resourceSchema.StringAttribute{
-			MarkdownDescription: "IPv4 address of loopback interface in CIDR notation, must use 32-bit mask.",
-			CustomType:          cidrtypes.IPv4PrefixType{},
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{stringvalidator.RegexMatches(regexp.MustCompile("/32$"), "must use a 32-bit mask")},
+			MarkdownDescription: "IPv4 address of loopback interface in CIDR notation, must use 32-bit mask. Setting " +
+				"loopback addresses is supported only for Spine and Leaf switches.",
+			CustomType: cidrtypes.IPv4PrefixType{},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.RegexMatches(regexp.MustCompile("/32$"), "must use a 32-bit mask")},
 		},
 		"loopback_ipv6": resourceSchema.StringAttribute{
-			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation, must use 128-bit mask.",
-			CustomType:          cidrtypes.IPv6PrefixType{},
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{stringvalidator.RegexMatches(regexp.MustCompile("/128$"), "must use a 128-bit mask")},
+			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation, must use 128-bit mask. Setting " +
+				"loopback addresses is supported only for Spine and Leaf switches. IPv6 must be enabled in the " +
+				"Blueprint to use this attribute.",
+			CustomType: cidrtypes.IPv6PrefixType{},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.RegexMatches(regexp.MustCompile("/128$"), "must use a 128-bit mask")},
 		},
 		"tags": resourceSchema.SetAttribute{
 			MarkdownDescription: "Tag labels to be applied to the System node. If a Tag doesn't exist " +
@@ -143,7 +148,7 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 		return
 	}
 
-	o.getLoopbacks(ctx, bp, nId, diags)
+	o.getLoopback0Addresses(ctx, bp, nId, diags)
 	if diags.HasError() {
 		return
 	}
@@ -162,19 +167,29 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 }
 
 func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	rawJson := getDomainNode(ctx, bp, nodeId, diags)
+	if diags.HasError() {
+		return
+	}
+
+	o.Asn = types.Int64Null() // set to null value in case we bail later
+
+	if len(rawJson) == 0 {
+		return // no domain node found
+	}
+
 	var domainNode struct {
 		DomainId *string `json:"domain_id"`
 	}
 
-	err := getDomainNode(ctx, bp, nodeId, &domainNode)
+	err := json.Unmarshal(rawJson, &domainNode)
 	if err != nil {
-		diags.AddError("failed while reading ASN domain node", err.Error())
+		diags.AddError(fmt.Sprintf("failed while unpacking system %q domain node", nodeId), err.Error())
 		return
 	}
 
 	if domainNode.DomainId == nil {
-		o.Asn = types.Int64Null()
-		return
+		return // no domain id found in domain node
 	}
 
 	asn, err := strconv.ParseUint(*domainNode.DomainId, 10, 32)
@@ -186,27 +201,58 @@ func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstr
 	o.Asn = types.Int64Value(int64(asn))
 }
 
-func (o *DeviceAllocationSystemAttributes) getLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	var loopbackNode struct {
-		IPv4Addr string `json:"ipv4_addr"`
-		IPv6Addr string `json:"ipv6_addr"`
-	}
-
-	err := getLoopbackInterfaceNode(ctx, bp, nodeId, 0, &loopbackNode)
-	if err != nil {
-		diags.AddError("failed while reading loopback node IPv4 and IPv6 addresses", err.Error())
+func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	idx := 0
+	rawJson := getLoopbackInterfaceNode(ctx, bp, nodeId, idx, diags)
+	if diags.HasError() {
 		return
 	}
 
 	o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
 	o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
 
-	if loopbackNode.IPv4Addr != "" {
-		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(loopbackNode.IPv4Addr)
+	if len(rawJson) == 0 {
+		return // no loopback idx interface node found
 	}
 
-	if loopbackNode.IPv6Addr != "" {
-		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(loopbackNode.IPv6Addr)
+	var loopbackNode struct {
+		IPv4Addr *string `json:"ipv4_addr"`
+		IPv6Addr *string `json:"ipv6_addr"`
+	}
+
+	err := json.Unmarshal(rawJson, &loopbackNode)
+	if err != nil {
+		diags.AddError(
+			fmt.Sprintf("failed while unpacking system %q loopback %d interface node", nodeId, idx),
+			err.Error(),
+		)
+		return
+	}
+
+	if loopbackNode.IPv4Addr == nil && loopbackNode.IPv6Addr == nil {
+		return // no loopback IP addresses found in domain node
+	}
+
+	if loopbackNode.IPv4Addr != nil && len(*loopbackNode.IPv4Addr) != 0 {
+		_, _, err := net.ParseCIDR(*loopbackNode.IPv4Addr)
+		if err != nil {
+			diags.AddError(
+				fmt.Sprintf("failed to parse `ipv4_addr` from API response %q", string(rawJson)),
+				err.Error())
+			return
+		}
+		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(*loopbackNode.IPv4Addr)
+	}
+
+	if loopbackNode.IPv6Addr != nil && len(*loopbackNode.IPv6Addr) != 0 {
+		_, _, err := net.ParseCIDR(*loopbackNode.IPv6Addr)
+		if err != nil {
+			diags.AddError(
+				fmt.Sprintf("failed to parse `ipv6_addr` from API response %q", string(rawJson)),
+				err.Error())
+			return
+		}
+		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(*loopbackNode.IPv6Addr)
 	}
 }
 
@@ -258,25 +304,42 @@ func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstr
 		return
 	}
 
-	var domainNode struct {
-		Id apstra.ObjectId `json:"id"`
-	}
-	err := getDomainNode(ctx, bp, nodeId, &domainNode)
-	if err != nil {
-		diags.AddError("failed to discover ASN domain node ID", err.Error())
+	rawJson := getDomainNode(ctx, bp, nodeId, diags)
+	if diags.HasError() {
 		return
 	}
 
-	var patch struct {
-		DomainId *string `json:"domain_id"`
+	if len(rawJson) == 0 {
+		diags.AddAttributeError(
+			path.Root("system_attributes").AtName("asn"), "Cannot set ASN",
+			fmt.Sprintf("system %q has no associated domain (ASN) node -- is it a spine or leaf switch?", nodeId))
+		return
 	}
 
-	if !o.Asn.IsNull() {
-		s := strconv.FormatInt(o.Asn.ValueInt64(), 10)
-		patch.DomainId = &s
+	var domainNode struct {
+		Id *apstra.ObjectId `json:"id"`
 	}
 
-	err = bp.PatchNode(ctx, domainNode.Id, &patch, nil)
+	err := json.Unmarshal(rawJson, &domainNode)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed while unpacking system %q domain node", nodeId), err.Error())
+		return
+	}
+
+	if domainNode.Id == nil {
+		diags.AddError(
+			fmt.Sprintf("failed parsing domain node linked with node %q", nodeId),
+			fmt.Sprintf("domain node has no field `id`: %q", string(rawJson)))
+		return
+	}
+
+	patch := struct {
+		DomainId string `json:"domain_id"`
+	}{
+		DomainId: strconv.FormatInt(o.Asn.ValueInt64(), 10),
+	}
+
+	err = bp.PatchNode(ctx, *domainNode.Id, &patch, nil)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed setting ASN to domain node %q", domainNode.Id), err.Error())
 		return
@@ -288,12 +351,42 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		return
 	}
 
-	var loopbackNode struct {
-		Id apstra.ObjectId `json:"id"`
+	idx := 0
+	rawJson := getLoopbackInterfaceNode(ctx, bp, nodeId, idx, diags)
+	if diags.HasError() {
+		return
 	}
-	err := getLoopbackInterfaceNode(ctx, bp, nodeId, 0, &loopbackNode)
+
+	if len(rawJson) == 0 && utils.Known(o.LoopbackIpv4) {
+		diags.AddAttributeError(
+			path.Root("system_attributes").AtName("loopback_ipv4"),
+			"Cannot set loopback address",
+			fmt.Sprintf("system %q has no associated loopback %d node -- is it a spine or leaf switch?", nodeId, idx))
+	}
+	if len(rawJson) == 0 && utils.Known(o.LoopbackIpv6) {
+		diags.AddAttributeError(
+			path.Root("system_attributes").AtName("loopback_ipv6"),
+			"Cannot set loopback address",
+			fmt.Sprintf("system %q has no associated loopback %d node -- is it a spine or leaf switch?", nodeId, idx))
+	}
+	if diags.HasError() {
+		return
+	}
+
+	var loopbackNode struct {
+		Id *apstra.ObjectId `json:"id"`
+	}
+
+	err := json.Unmarshal(rawJson, &loopbackNode)
 	if err != nil {
-		diags.AddError("failed to discover loopback node ID", err.Error())
+		diags.AddError(fmt.Sprintf("failed while unpacking system %q loopback %d node", nodeId, idx), err.Error())
+		return
+	}
+
+	if loopbackNode.Id == nil {
+		diags.AddError(
+			fmt.Sprintf("failed parsing loopback %d node linked with node %q", idx, nodeId),
+			fmt.Sprintf("loopback %d node has no field `id`: %q", idx, string(rawJson)))
 		return
 	}
 
@@ -305,7 +398,7 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		IPv6Addr: o.LoopbackIpv6.ValueString(),
 	}
 
-	err = bp.PatchNode(ctx, loopbackNode.Id, &patch, nil)
+	err = bp.PatchNode(ctx, *loopbackNode.Id, &patch, nil)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed setting loopback addresses to interface node %q", loopbackNode.Id), err.Error())
 		return
@@ -356,7 +449,7 @@ func (o *DeviceAllocationSystemAttributes) setTags(ctx context.Context, state *D
 	}
 }
 
-func getDomainNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, node interface{}) error {
+func getDomainNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) json.RawMessage {
 	query := new(apstra.PathQuery).
 		SetBlueprintId(bp.Id()).
 		SetClient(bp.Client()).
@@ -378,17 +471,25 @@ func getDomainNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId 
 
 	err := query.Do(ctx, &queryResult)
 	if err != nil {
-		return fmt.Errorf("failed while querying for system %q domain node", nodeId)
-	}
-	if len(queryResult.Items) != 1 {
-		return fmt.Errorf("unexpected rewult while querying for system %q domain node: "+
-			"expected 1 node, got %d nodes", nodeId, len(queryResult.Items))
+		diags.AddError(fmt.Sprintf("failed while querying for system %q domain node", nodeId), err.Error())
+		return nil
 	}
 
-	return json.Unmarshal(queryResult.Items[0].Node, node)
+	switch len(queryResult.Items) {
+	case 0:
+		return nil
+	case 1:
+		return queryResult.Items[0].Node
+	default:
+		diags.AddError(
+			fmt.Sprintf("unexpected rewult while querying for system %q domain node", nodeId),
+			fmt.Sprintf("node has graph relationships with %d domain nodes", len(queryResult.Items)),
+		)
+		return nil
+	}
 }
 
-func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, id int, node interface{}) error {
+func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, idx int, diags *diag.Diagnostics) json.RawMessage {
 	query := new(apstra.PathQuery).
 		SetBlueprintId(bp.Id()).
 		SetClient(bp.Client()).
@@ -400,7 +501,7 @@ func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClie
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeInterface.QEEAttribute(),
 			{Key: "if_type", Value: apstra.QEStringVal("loopback")},
-			{Key: "loopback_id", Value: apstra.QEIntVal(id)},
+			{Key: "loopback_id", Value: apstra.QEIntVal(idx)},
 			{Key: "name", Value: apstra.QEStringVal("n_interface")},
 		})
 
@@ -412,12 +513,20 @@ func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClie
 
 	err := query.Do(ctx, &queryResult)
 	if err != nil {
-		return fmt.Errorf("failed while querying for system %q loopback %d node", nodeId, id)
-	}
-	if len(queryResult.Items) != 1 {
-		return fmt.Errorf("unexpected rewult while querying for system %q loopback %d node: "+
-			"expected 1 node, got %d nodes", nodeId, id, len(queryResult.Items))
+		diags.AddError(fmt.Sprintf("failed while querying for system %q loopback %d node", nodeId, idx), err.Error())
+		return nil
 	}
 
-	return json.Unmarshal(queryResult.Items[0].Node, node)
+	switch len(queryResult.Items) {
+	case 0:
+		return nil
+	case 1:
+		return queryResult.Items[0].Node
+	default:
+		diags.AddError(
+			fmt.Sprintf("unexpected rewult while querying for system %q loopback node %d", nodeId, idx),
+			fmt.Sprintf("node has graph relationships with %d loopback nodes with id %d", len(queryResult.Items), idx),
+		)
+		return nil
+	}
 }
