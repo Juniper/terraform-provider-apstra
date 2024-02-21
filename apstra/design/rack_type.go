@@ -456,18 +456,18 @@ func (o *RackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) 
 	return genericSystems
 }
 
-func (o *RackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *GenericSystem {
-	genericSystems := o.genericSystems(ctx, diags)
-	if diags.HasError() {
-		return nil
-	}
-
-	if gs, ok := genericSystems[requested]; ok {
-		return &gs
-	}
-
-	return nil
-}
+//func (o *RackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *GenericSystem {
+//	genericSystems := o.genericSystems(ctx, diags)
+//	if diags.HasError() {
+//		return nil
+//	}
+//
+//	if gs, ok := genericSystems[requested]; ok {
+//		return &gs
+//	}
+//
+//	return nil
+//}
 
 // CopyWriteOnlyElements copies elements (IDs of nested design API objects)
 // from 'src' (plan or state - something which knows these facts) into 'o' a
