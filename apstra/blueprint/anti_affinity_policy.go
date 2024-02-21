@@ -1,8 +1,12 @@
 package blueprint
 
 import (
+	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -14,6 +18,15 @@ type AntiAffinityPolicy struct {
 	MaxLinksCountPerSystemPerSlot types.Int64 `tfsdk:"max_links_count_per_system_per_slot"`
 	MaxLinksCountPerPort          types.Int64 `tfsdk:"max_links_count_per_port"`
 	MaxLinksCountPerSystemPerPort types.Int64 `tfsdk:"max_links_count_per_system_per_port"`
+}
+
+func (o AntiAffinityPolicy) attrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"max_links_count_per_slot":            types.Int64Type,
+		"max_links_count_per_system_per_slot": types.Int64Type,
+		"max_links_count_per_port":            types.Int64Type,
+		"max_links_count_per_system_per_port": types.Int64Type,
+	}
 }
 
 func (o AntiAffinityPolicy) datasourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -73,4 +86,11 @@ func (o AntiAffinityPolicy) resourceAttributes() map[string]resourceSchema.Attri
 			Validators: []validator.Int64{int64validator.Between(0, math.MaxUint8)},
 		},
 	}
+}
+
+func (o *AntiAffinityPolicy) loadApiData(_ context.Context, in *apstra.AntiAffinityPolicy, _ *diag.Diagnostics) {
+	o.MaxLinksCountPerPort = types.Int64Value(int64(in.MaxLinksPerPort))
+	o.MaxLinksCountPerSlot = types.Int64Value(int64(in.MaxLinksPerSlot))
+	o.MaxLinksCountPerSystemPerPort = types.Int64Value(int64(in.MaxPerSystemLinksPerPort))
+	o.MaxLinksCountPerSystemPerSlot = types.Int64Value(int64(in.MaxPerSystemLinksPerSlot))
 }

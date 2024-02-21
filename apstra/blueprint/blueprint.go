@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"math"
 	"strings"
 )
@@ -1004,15 +1005,19 @@ func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 }
 func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.FabricSettings, diags *diag.Diagnostics) {
 	// load from settings object into o
+	o.MaxFabricRoutesCount = types.Int64Null()
 	if settings.MaxFabricRoutes != nil {
-		o.MaxExternalRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
+		o.MaxFabricRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
 	}
+	o.MaxMlagRoutesCount = types.Int64Null()
 	if settings.MaxMlagRoutes != nil {
 		o.MaxMlagRoutesCount = types.Int64Value(int64(*settings.MaxMlagRoutes))
 	}
+	o.MaxEvpnRoutesCount = types.Int64Null()
 	if settings.MaxEvpnRoutes != nil {
 		o.MaxEvpnRoutesCount = types.Int64Value(int64(*settings.MaxEvpnRoutes))
 	}
+	o.MaxFabricRoutesCount = types.Int64Null()
 	if settings.MaxFabricRoutes != nil {
 		o.MaxFabricRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
 	}
@@ -1040,18 +1045,19 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 	if settings.JunosEvpnMaxNexthopAndInterfaceNumber.Value == apstra.FeatureSwitchEnumEnabled.Value {
 		o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled = types.BoolValue(false)
 	}
-	//todo
-	//if o.AntiAffinityPolicy != nil {
-	//	antiAffinityMap := make(map[string]interface{})
-	//	antiAffinityMap["mode"] = o.AntiAffinityMode
-	//	antiAffinityMap["policy"] = o.AntiAffinityPolicy
-	//	o.attributeConstraints = append(o.attributeConstraints, attributeConstraint{
-	//		attribute: "anti_affinity",
-	//		value:     antiAffinityMap,
-	//	})
-	//}
-
+	var aap AntiAffinityPolicy
+	aap.loadApiData(ctx, settings.AntiAffinityPolicy, diags)
+	if diags.HasError() {
+		return
+	}
+	var d diag.Diagnostics
+	o.AntiAffinityPolicy, d = types.ObjectValueFrom(ctx, AntiAffinityPolicy{}.attrTypes(), aap)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
 }
+
 func (o *Blueprint) FabricSettingsRequest(ctx context.Context, diags *diag.Diagnostics) *apstra.FabricSettings {
 	// take everything inside of o and fill out the data structure
 	var junosGracefulRestart *apstra.FeatureSwitchEnum
@@ -1108,6 +1114,17 @@ func (o *Blueprint) FabricSettingsRequest(ctx context.Context, diags *diag.Diagn
 		}
 	}
 
+	var aap AntiAffinityPolicy
+	diags.Append(o.AntiAffinityPolicy.As(ctx, &aap, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return nil
+	}
+	var antiAffinityMode apstra.AntiAffinityMode
+	err := antiAffinityMode.FromString(o.AntiAffinityMode.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to process antiafinity mode %s", o.AntiAffinityMode), err.Error())
+		return nil
+	}
 	return &apstra.FabricSettings{
 		MaxExternalRoutes:                     utils.ToPtr(uint32(o.MaxExternalRoutesCount.ValueInt64())),
 		EsiMacMsb:                             utils.ToPtr(uint8(o.EsiMacMsb.ValueInt64())),
@@ -1122,9 +1139,15 @@ func (o *Blueprint) FabricSettingsRequest(ctx context.Context, diags *diag.Diagn
 		JunosEvpnMaxNexthopAndInterfaceNumber: junosEvpnMaxNexthopAndInterfaceNumber,
 		FabricL3Mtu:                           utils.ToPtr(uint16(o.FabricMtu.ValueInt64())),
 		Ipv6Enabled:                           utils.ToPtr(o.Ipv6Applications.ValueBool()),
-		OverlayControlProtocol:                nil, // is this even set here? I dont think its used.
 		ExternalRouterMtu:                     utils.ToPtr(uint16(o.DefaultIPLinksToGenericSystemsMTU.ValueInt64())),
 		MaxEvpnRoutes:                         utils.ToPtr(uint32(o.MaxEvpnRoutesCount.ValueInt64())),
-		AntiAffinityPolicy:                    nil, // todo
+		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
+			Algorithm:                apstra.AlgorithmHeuristic,
+			MaxLinksPerPort:          int(aap.MaxLinksCountPerPort.ValueInt64()),
+			MaxLinksPerSlot:          int(aap.MaxLinksCountPerSlot.ValueInt64()),
+			MaxPerSystemLinksPerPort: int(aap.MaxLinksCountPerSystemPerPort.ValueInt64()),
+			MaxPerSystemLinksPerSlot: int(aap.MaxLinksCountPerSystemPerSlot.ValueInt64()),
+			Mode:                     antiAffinityMode,
+		},
 	}
 }
