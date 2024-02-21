@@ -79,7 +79,8 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 		},
 		"loopback_ipv6": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address of loopback interface in CIDR notation, must use 128-bit mask. Setting " +
-				"loopback addresses is supported only for Spine and Leaf switches.",
+				"loopback addresses is supported only for Spine and Leaf switches. IPv6 must be enabled in the " +
+				"Blueprint to use this attribute.",
 			CustomType: cidrtypes.IPv6PrefixType{},
 			Optional:   true,
 			Computed:   true,

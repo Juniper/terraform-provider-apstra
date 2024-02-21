@@ -3,9 +3,10 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/t aJuniper/apstra-go-sdk/apstra"
 	"net"
 	"testing"
 )
@@ -21,8 +22,7 @@ resource "apstra_datacenter_device_allocation" "test" {
 }
 `
 
-	resourceDataCenterDeviceAllocationSystemAttributesHCL = `
-    {
+	resourceDataCenterDeviceAllocationSystemAttributesHCL = ` {
 		name          = %s
 		hostname      = %s
 		asn           = %s
@@ -30,14 +30,13 @@ resource "apstra_datacenter_device_allocation" "test" {
 		loopback_ipv6 = %s
 		deploy_mode   = %s
 		tags          = %s
-    }
-`
+    }`
 )
 
 func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 	ctx := context.Background()
 
-	bpClient := testutils.BlueprintA(t, ctx)
+	bpClient := testutils.BlueprintC(t, ctx)
 
 	// set spine ASN pool
 	err := bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
@@ -66,7 +65,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 	type systemAttributes struct {
 		name         string
 		hostname     string
-		asn          int
+		asn          *int
 		loopbackIpv4 *net.IPNet
 		loopbackIpv6 *net.IPNet
 		deployMode   string
@@ -81,7 +80,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 		return fmt.Sprintf(resourceDataCenterDeviceAllocationSystemAttributesHCL,
 			stringOrNull(in.name),
 			stringOrNull(in.hostname),
-			intPtrOrNull(&in.asn),
+			intPtrOrNull(in.asn),
 			cidrOrNull(in.loopbackIpv4),
 			cidrOrNull(in.loopbackIpv6),
 			stringOrNull(in.deployMode),
@@ -119,13 +118,14 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 			steps: []testStep{
 				{
 					config: deviceAllocation{
-						blueprintId:           bpClient.Id().String(),
-						nodeName:              "spine1",
-						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
+						blueprintId: bpClient.Id().String(),
+						nodeName:    "spine1",
+						//initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Spine"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "not_set"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "spine1"),
@@ -138,23 +138,22 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 					config: deviceAllocation{
 						blueprintId:           bpClient.Id().String(),
 						nodeName:              "spine1",
-						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
 						systemAttributes: &systemAttributes{
 							name:     "SPINE1",
 							hostname: "spine1.test",
-							asn:      1,
+							asn:      utils.ToPtr(1),
 							loopbackIpv4: &net.IPNet{
 								IP:   net.IP{1, 1, 1, 1},
 								Mask: net.CIDRMask(32, 32),
 							},
-							loopbackIpv6: nil,
-							deployMode:   "ready",
-							tags:         []string{"one"},
+							deployMode: "ready",
+							tags:       []string{"one"},
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Spine"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "SPINE1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "spine1.test"),
@@ -169,23 +168,22 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 					config: deviceAllocation{
 						blueprintId:           bpClient.Id().String(),
 						nodeName:              "spine1",
-						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
 						systemAttributes: &systemAttributes{
 							name:     "SPINE2",
 							hostname: "spine2.test",
-							asn:      2,
+							asn:      utils.ToPtr(2),
 							loopbackIpv4: &net.IPNet{
 								IP:   net.IP{2, 2, 2, 2},
 								Mask: net.CIDRMask(32, 32),
 							},
-							loopbackIpv6: nil,
-							deployMode:   "drain",
-							tags:         []string{"two", "2"},
+							deployMode: "drain",
+							tags:       []string{"two", "2"},
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Spine"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "SPINE2"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "spine2.test"),
@@ -195,6 +193,300 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "two"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "2"),
+					},
+				},
+			},
+		},
+		"leaf_start_minimal": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeNone)),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							name:         "leaf_start_minimal_name",
+							hostname:     "leafstartminimalhostname.com",
+							asn:          utils.ToPtr(1),
+							loopbackIpv4: &net.IPNet{IP: net.IP{1, 1, 1, 1}, Mask: net.CIDRMask(32, 32)},
+							deployMode:   "drain",
+							tags:         []string{"one", "1"},
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_minimal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartminimalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_minimal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartminimalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							name: "l2_one_access_001_leaf1",
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "l2_one_access_001_leaf1"),
+					},
+				},
+			},
+		},
+		"leaf_start_maximal": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							name:         "leaf_start_maximal_name",
+							hostname:     "leafstartmaximalhostname.com",
+							asn:          utils.ToPtr(1),
+							loopbackIpv4: &net.IPNet{IP: net.IP{1, 1, 1, 1}, Mask: net.CIDRMask(32, 32)},
+							deployMode:   "drain",
+							tags:         []string{"one", "1"},
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_maximal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartmaximalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_maximal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartmaximalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							name: "l2_one_access_001_leaf1",
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "l2_one_access_001_leaf1"),
+					},
+				},
+			},
+		},
+		"access_start_minimal": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeNone)),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+						systemAttributes: &systemAttributes{
+							name:       "access_start_minimal_name",
+							hostname:   "accessstartminimalhostname.com",
+							deployMode: "drain",
+							tags:       []string{"one", "1"},
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_minimal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartminimalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_minimal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartminimalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+						systemAttributes: &systemAttributes{
+							name: "l2_one_access_001_access1",
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "l2_one_access_001_access1"),
+					},
+				},
+			},
+		},
+		"access_start_maximal": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+						systemAttributes: &systemAttributes{
+							name:       "access_start_maximal_name",
+							hostname:   "accessstartmaximalhostname.com",
+							deployMode: "drain",
+							tags:       []string{"one", "1"},
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_maximal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartmaximalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
+						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "initial_interface_map_id", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_maximal_name"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartmaximalhostname.com"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "drain"),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_access1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
+						systemAttributes: &systemAttributes{
+							name: "l2_one_access_001_access1",
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "l2_one_access_001_access1"),
 					},
 				},
 			},
