@@ -3,6 +3,8 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -15,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"strings"
 )
 
 type DeviceAllocation struct {
@@ -575,7 +576,6 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 		})
 
 	err := query.Do(ctx, &response)
-
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()

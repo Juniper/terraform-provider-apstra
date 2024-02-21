@@ -3,12 +3,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"testing"
+
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/t aJuniper/apstra-go-sdk/apstra"
-	"net"
-	"testing"
 )
 
 const (
@@ -120,7 +121,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 					config: deviceAllocation{
 						blueprintId: bpClient.Id().String(),
 						nodeName:    "spine1",
-						//initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
+						// initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Spine",
 						initialInterfaceMapId: "Juniper_vQFX__AOS-8x10-1",
 					},
 					checks: []resource.TestCheckFunc{
