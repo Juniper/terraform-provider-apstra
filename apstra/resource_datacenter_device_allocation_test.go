@@ -21,7 +21,8 @@ resource "apstra_datacenter_device_allocation" "test" {
 }
 `
 
-	resourceDataCenterDeviceAllocationSystemAttributesHCL = `    {
+	resourceDataCenterDeviceAllocationSystemAttributesHCL = `
+    {
 		name          = %s
 		hostname      = %s
 		asn           = %s
