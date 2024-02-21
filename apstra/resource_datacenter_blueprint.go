@@ -124,7 +124,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
+	// todo do i need a fabricSettings plan.SetFabricSettings() here?
 	// retrieve blueprint status
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
@@ -260,7 +260,11 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
+	// todo do i need a plan.SetFabricSettings() here?  review with ChrisM
+	plan.SetFabricSettings(ctx, bp, &resp.Diagnostics) // todo no &state here like the SetFabricAddressingPolicy, is it needed?
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	// fetch and load blueprint info
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
@@ -277,6 +281,14 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	}
 	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	//todo review this with Chris
+	fabSettings, err := bp.GetFabricSettings(ctx)
+	plan.LoadFabricSettings(ctx, fabSettings, &resp.Diagnostics)
+	if err != nil {
+		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric Settings after update", err.Error())
 		return
 	}
 

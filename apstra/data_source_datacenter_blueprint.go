@@ -84,6 +84,12 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 		return
 	}
 
+	fabSettings, err := bp.GetFabricSettings(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError("error retrieving Blueprint Fabric Settings", err.Error())
+		return
+	}
+
 	// create new state object
 	var state blueprint.Blueprint
 
@@ -93,6 +99,11 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 	}
 
 	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	state.LoadFabricSettings(ctx, fabSettings, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
