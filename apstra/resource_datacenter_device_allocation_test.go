@@ -6,10 +6,10 @@ import (
 	"net"
 	"testing"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/t aJuniper/apstra-go-sdk/apstra"
 )
 
 const (
