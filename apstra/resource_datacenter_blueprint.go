@@ -98,7 +98,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// commit the ID to the state
+	// Commit the ID to the state in case we're not able to run to completion
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -112,35 +112,38 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// get a client for the datacenter reference design
+	// Get a client for the datacenter reference design
 	bp, err := o.getBpClientFunc(ctx, id.String())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
-	// set the fabric settings
+	// Set the fabric settings
 	plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// retrieve blueprint status
+	// Retrieve blueprint status
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
-	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
-	// load blueprint status
+	// Load blueprint status
 	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Retrieve and load the fabric settings
+	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve and load the fabric link addressing
 	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -169,30 +172,31 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// Some interesting details are in BlueprintStatus.
+	// Retrieve the blueprint status
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("fetching blueprint %q", state.Id.ValueString()),
-			err.Error(),
-		)
+		resp.Diagnostics.AddError(fmt.Sprintf("fetching blueprint %q", state.Id.ValueString()), err.Error())
 		return
 	}
+
+	// Load the blueprint status
 	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Retrieve and load the fabric settings
 	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// todo can this be optimized because its immutable
+	// Retrieve and load the fabric link addressing
 	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -232,32 +236,37 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// set the blueprint name
+	// Update the blueprint name if necessary
 	plan.SetName(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Update the blueprint settings if necessary
 	plan.SetFabricSettings(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// fetch and load blueprint info
+	// Retrieve and blueprint status
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint after update", err.Error())
 	}
+
+	// Load the blueprint status
 	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Retrieve and load the fabric settings
 	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Retrieve and laod the fabric link addressing
 	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
