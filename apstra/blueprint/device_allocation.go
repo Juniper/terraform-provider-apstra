@@ -728,7 +728,7 @@ func (o *DeviceAllocation) GetSystemAttributes(ctx context.Context, bp *apstra.T
 	o.DeployMode = systemAttributes.DeployMode
 
 	var d diag.Diagnostics
-	o.SystemAttributes, d = types.ObjectValueFrom(ctx, systemAttributes.attrTypes(), systemAttributes)
+	o.SystemAttributes, d = types.ObjectValueFrom(ctx, systemAttributes.AttrTypes(), systemAttributes)
 	diags.Append(d...)
 }
 

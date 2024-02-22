@@ -353,10 +353,13 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	state.InitialInterfaceMapId = types.StringNull()
-	state.SetInterfaceMap(ctx, bp, &resp.Diagnostics)
+	plan := state                                                                                      // clone the state into a "destroy plan"
+	plan.SystemAttributes = types.ObjectNull(blueprint.DeviceAllocationSystemAttributes{}.AttrTypes()) // no tags
+	plan.InitialInterfaceMapId = types.StringNull()                                                    // 'null' triggers clearing the interface map
+	plan.DeviceKey = types.StringNull()                                                                // 'null' triggers clearing the system_id
 
-	state.DeviceKey = types.StringNull() // 'null' triggers clearing the 'system_id' field.
+	plan.SetSystemAttributes(ctx, &state, bp, &resp.Diagnostics)
+	state.SetInterfaceMap(ctx, bp, &resp.Diagnostics)
 	state.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)
 }
 
