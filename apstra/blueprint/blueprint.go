@@ -3,6 +3,9 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"math"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
@@ -23,8 +26,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"math"
-	"strings"
 )
 
 type Blueprint struct {
@@ -105,7 +106,8 @@ func (o Blueprint) attrTypes() map[string]attr.Type {
 		"junos_ex_overlay_ecmp_enabled":                        types.BoolType,
 		// Anti Affinity
 		"anti_affinity_mode":   types.StringType,
-		"anti_affinity_policy": types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()}}
+		"anti_affinity_policy": types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()},
+	}
 }
 
 func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -1022,7 +1024,7 @@ func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 
 func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.FabricSettings, diags *diag.Diagnostics) {
 	// load from settings object into a blueprint object,
-	//This LoadFabricSettings is  used by resource_datacenter_blueprints Create,Read,Update methods.
+	// This LoadFabricSettings is  used by resource_datacenter_blueprints Create,Read,Update methods.
 	o.MaxFabricRoutesCount = types.Int64Null()
 	if settings.MaxFabricRoutes != nil {
 		o.MaxFabricRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))

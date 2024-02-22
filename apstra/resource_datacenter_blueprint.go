@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -13,12 +14,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
-var _ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
-var _ resourceWithSetClient = &resourceDatacenterBlueprint{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterBlueprint{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterBlueprint{}
-var _ resourceWithSetBpUnlockFunc = &resourceDatacenterBlueprint{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDatacenterBlueprint{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
+	_ resourceWithSetClient               = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpClientFunc         = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpUnlockFunc         = &resourceDatacenterBlueprint{}
+)
 
 type resourceDatacenterBlueprint struct {
 	client          *apstra.Client
