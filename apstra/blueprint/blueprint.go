@@ -867,71 +867,112 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 
 	if utils.Known(o.DefaultIPLinksToGenericSystemsMTU) {
 		response.AddAttributeConstraints(
-			path.Root("default_ip_links_to_generic_systems_mtu"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("default_ip_links_to_generic_systems_mtu"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.DefaultSviL3Mtu) {
 		response.AddAttributeConstraints(
-			path.Root("default_svi_l3_mtu"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("default_svi_l3_mtu"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.OptimizeRoutingZoneFootprint) {
 		response.AddAttributeConstraints(
-			path.Root("optimize_routing_zone_footprint"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("optimize_routing_zone_footprint"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.MaxExternalRoutesCount) {
 		response.AddAttributeConstraints(
-			path.Root("max_external_routes_count"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("max_external_routes_count"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.MaxMlagRoutesCount) {
 		response.AddAttributeConstraints(
-			path.Root("max_mlag_routes_count"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("max_mlag_routes_count"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.MaxEvpnRoutesCount) {
 		response.AddAttributeConstraints(
-			path.Root("max_evpn_routes_count"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("max_evpn_routes_count"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.MaxFabricRoutesCount) {
 		response.AddAttributeConstraints(
-			path.Root("max_fabric_routes_count"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("max_fabric_routes_count"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
 
 	if utils.Known(o.EvpnType5Routes) {
 		response.AddAttributeConstraints(
-			path.Root("evpn_type_5_routes"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("evpn_type_5_routes"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
+
 	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
 		response.AddAttributeConstraints(
-			path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
+
 	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled) {
 		response.AddAttributeConstraints(
-			path.Root("junos_evpn_max_nexthop_and_interface_number_disabled"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("junos_evpn_max_nexthop_and_interface_number_disabled"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
+
 	if utils.Known(o.JunosGracefulRestartEnabled) {
 		response.AddAttributeConstraints(
-			path.Root("junos_graceful_restart_enabled"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("junos_graceful_restart_enabled"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
+
 	if utils.Known(o.JunosExOverlayEcmpEnabled) {
 		response.AddAttributeConstraints(
-			path.Root("junos_ex_overlay_ecmp_enabled"),
-			version.MustConstraints(version.NewConstraint(">="+apiversions.Apstra420)))
+			apiversions.AttributeConstraint{
+				Path:        path.Root("junos_ex_overlay_ecmp_enabled"),
+				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			},
+		)
 	}
+
 	return response
 }
 
