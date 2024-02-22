@@ -492,6 +492,24 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 				},
 			},
 		},
+		"bug_584": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_001_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							deployMode: "drain",
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+					},
+				},
+			},
+		},
 	}
 
 	for tName, tCase := range testCases {
