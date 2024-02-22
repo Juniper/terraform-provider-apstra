@@ -119,40 +119,24 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// set the fabric addressing policy, passing no prior state
-	plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
+	// set the fabric settings
+	plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// todo do i need a fabricSettings plan.SetFabricSettings() here?
+
 	// retrieve blueprint status
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy after creation", err.Error())
-		return
-	}
-	fabSettings, err := bp.GetFabricSettings(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Settings after creation", err.Error())
+	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// load blueprint status
 	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.LoadFabricSettings(ctx, fabSettings, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -198,22 +182,21 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		)
 		return
 	}
-
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to read fabric addressing policy", err.Error())
+	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	fabricSettings, err := bp.GetFabricSettings(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to read fabric settings", err.Error())
+	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
-	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
-	state.LoadFabricSettings(ctx, fabricSettings, &resp.Diagnostics)
+	// todo can this be optimized because its immutable
 	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -255,16 +238,11 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// set the fabric addressing policy
-	plan.SetFabricAddressingPolicy(ctx, bp, &state, &resp.Diagnostics)
+	plan.SetFabricSettings(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// todo do i need a plan.SetFabricSettings() here?  review with ChrisM
-	plan.SetFabricSettings(ctx, bp, &resp.Diagnostics) // todo no &state here like the SetFabricAddressingPolicy, is it needed?
-	if resp.Diagnostics.HasError() {
-		return
-	}
+
 	// fetch and load blueprint info
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
@@ -275,20 +253,8 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric AddressingPolicy after update", err.Error())
-	}
-	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	//todo review this with Chris
-	fabSettings, err := bp.GetFabricSettings(ctx)
-	plan.LoadFabricSettings(ctx, fabSettings, &resp.Diagnostics)
-	if err != nil {
-		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric Settings after update", err.Error())
 		return
 	}
 
