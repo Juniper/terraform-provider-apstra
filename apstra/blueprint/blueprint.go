@@ -713,10 +713,13 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 		return
 	}
 
+	// struct used for GET and PATCH
 	type node struct {
 		Label string          `json:"label,omitempty"`
 		Id    apstra.ObjectId `json:"id,omitempty"`
 	}
+
+	// GET target
 	response := &struct {
 		Nodes map[string]node `json:"nodes"`
 	}{}
@@ -734,10 +737,13 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 			fmt.Sprintf("expecting 1 got %d nodes", len(response.Nodes)))
 		return
 	}
+
+	// pull the only value from the map
 	var nodeId apstra.ObjectId
 	for _, v := range response.Nodes {
 		nodeId = v.Id
 	}
+
 	err = bpClient.PatchNode(ctx, nodeId, &node{Label: o.Name.ValueString()}, nil)
 	if err != nil {
 		diags.AddError(
