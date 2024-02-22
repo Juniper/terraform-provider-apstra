@@ -204,7 +204,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed: true,
 		},
 		"default_svi_l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Default L3 MTU for SVI interfaces. Should be an even number in a range 1280..9216" +
+			MarkdownDescription: "Default L3 MTU for SVI interfaces. Should be an even number in a range 1280..9216. " +
 				"Requires Apstra 4.2 or later.",
 			Computed: true,
 		},
@@ -230,8 +230,8 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				" not render any maximum-route commands on BGP sessions, implying that only vendor defaults are used. " +
 				"An integer between 1-2**32-1 will set a maximum limit of routes in BGP config. The value 0 (zero) " +
 				"intends the device to never apply a limit to number of EVPN routes (effectively unlimited). " +
-				"Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session. " +
-				"For EVPN blueprints, this should be combined with max_evpn_routes to permit routes across the " +
+				"_Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session._ " +
+				"For EVPN blueprints, this should be combined with `max_evpn_routes_count` to permit routes across the " +
 				"l3 peer link which may contain many /32 and /128 from EVPN type-2 routes that convert into " +
 				"BGP route advertisements.",
 			Computed: true,
@@ -242,7 +242,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				"not render any maximum-route commands on BGP sessions, implying that only vendor defaults are used. " +
 				"An integer between 1-2**32-1 will set a maximum limit of routes in BGP config. The value 0 (zero) " +
 				"intends the device to never apply a limit to number of EVPN routes (effectively unlimited). " +
-				"Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session.",
+				"_Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session._",
 		},
 		"max_fabric_routes_count": dataSourceSchema.Int64Attribute{
 			Computed: true,
@@ -258,12 +258,12 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		},
 		"evpn_type_5_routes": dataSourceSchema.StringAttribute{
 			Computed: true,
-			MarkdownDescription: "Default disabled. When enabled all EVPN vteps in the fabric will redistribute " +
+			MarkdownDescription: "When enabled all EVPN vteps in the fabric will redistribute " +
 				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table. " +
 				"Currently, this option is only certified for Juniper JunOS. FRR (SONiC) does this implicitly " +
 				"and cannot be disabled. This setting will be ignored. On Arista and Cisco, no configuration is " +
 				"rendered and will result in a blueprint warning that it is not supported by AOS. This value is " +
-				"disabled by default, as it generates a very large number of routes in the BGP routing table and " +
+				"_disabled by default_, as it generates a very large number of routes in the BGP routing table and " +
 				"takes large amounts of TCAM allocation space. When these /32 & /128 routes are generated, it assists " +
 				"in direct unicast routing to host destinations on VNIs that are not stretched to the ingress vtep, " +
 				"and avoids a route lookup to a subnet (eg, /24) that may be hosted on many leafs. The directed host " +
@@ -272,9 +272,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		},
 		"junos_evpn_routing_instance_mode": dataSourceSchema.StringAttribute{
 			Computed: true,
-			MarkdownDescription: "Changing this value will result in a complete restart of all " +
-				"EVPN processes on the entire fabric." +
-				"In releases before 4.2, Apstra used a single default switch instance as the " +
+			MarkdownDescription: "In releases before 4.2, Apstra used a single default switch instance as the " +
 				"configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for all new " +
 				"blueprints and normalized the configuration of Junos to Junos Evolved. This option allows you to " +
 				"transition Junos devices to the MAC-VRF configuration model for any blueprints deployed before the " +
@@ -282,28 +280,25 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		},
 		"junos_evpn_max_nexthop_and_interface_number": dataSourceSchema.StringAttribute{
 			Computed: true,
-			MarkdownDescription: "Changing this value will result in a disruptive restart of the PFE." +
-				"Enables configuring the maximum number of nexthops and interface numbers reserved " +
+			MarkdownDescription: "Enables configuring the maximum number of nexthops and interface numbers reserved " +
 				"for use in EVPN-VXLAN overlay network on Junos leaf devices. Default is enabled.",
 		},
 		"junos_graceful_restart": dataSourceSchema.StringAttribute{
-			Computed: true,
-			MarkdownDescription: "Changing this value may result in a flap of all BGP sessions as the sessions are re-negotiated" +
-				"Enables the Graceful Restart feature on Junos devices",
+			Computed:            true,
+			MarkdownDescription: "Enables the Graceful Restart feature on Junos devices",
 		},
 		"junos_ex_overlay_ecmp": dataSourceSchema.StringAttribute{
-			Computed: true,
-			MarkdownDescription: "Changing this value will result in a disruptive restart of the PFE on EX-series devices" +
-				"Enables VXLAN Overlay ECMP on Junos EX-series devices",
+			Computed:            true,
+			MarkdownDescription: "Enables VXLAN Overlay ECMP on Junos EX-series devices",
 		},
 		"anti_affinity_mode": dataSourceSchema.StringAttribute{
 			Computed: true,
-			MarkdownDescription: "Changing this value sets the anti_affinity_mode. The anti-affinity policy has three modes:" +
-				"Disabled (default) - ports selection is based on assigned interface maps and interface names (provided or auto-assigned). " +
-				"Port breakouts could terminate on the same physical ports." +
-				"Enabled (loose) - controls interface names that were not defined by the user. Does not control or override user-defined cabling. " +
-				"(If you haven't explicitly assigned any interface names, loose and strict are effectively the same policy.)" +
-				"Enabled (strict) - completely controls port distribution and could override user-defined assignments. " +
+			MarkdownDescription: "The anti-affinity policy has three modes:\n" +
+				"\t* `Disabled` (default) - ports selection is based on assigned interface maps and interface names (provided or auto-assigned). " +
+				"Port breakouts could terminate on the same physical ports.\n" +
+				"\t* `loose` - controls interface names that were not defined by the user. Does not control or override user-defined cabling. " +
+				"(If you haven't explicitly assigned any interface names, loose and strict are effectively the same policy.)\n" +
+				"\t* `strict` - completely controls port distribution and could override user-defined assignments. " +
 				"When you enable the strict policy, a statement appears at the top of the cabling map " +
 				"(Staged/Active > Physical > Links and Staged/Active > Physical > Topology Selection) stating that the " +
 				"anti-affinity policy is enabled.",
@@ -452,7 +447,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"default_svi_l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Default L3 MTU for SVI interfaces. Should be an even number in a range %d and %d."+
+			MarkdownDescription: fmt.Sprintf("Default L3 MTU for SVI interfaces. Should be an even number in a range %d and %d. "+
 				"Requires Apstra 4.2 or later.", constants.L3MtuMin, constants.L3MtuMax),
 			Optional: true,
 			Computed: true,
@@ -488,8 +483,8 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				" not render any maximum-route commands on BGP sessions, implying that only vendor defaults are used. " +
 				"An integer between 1-2**32-1 will set a maximum limit of routes in BGP config. The value 0 (zero) " +
 				"intends the device to never apply a limit to number of EVPN routes (effectively unlimited). " +
-				"Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session. " +
-				"For EVPN blueprints, this should be combined with max_evpn_routes to permit routes across the " +
+				"_Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session._ " +
+				"For EVPN blueprints, this should be combined with `max_evpn_routes_count` to permit routes across the " +
 				"l3 peer link which may contain many /32 and /128 from EVPN type-2 routes that convert into " +
 				"BGP route advertisements.",
 			Optional: true,
@@ -503,7 +498,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"not render any maximum-route commands on BGP sessions, implying that only vendor defaults are used. " +
 				"An integer between 1-2**32-1 will set a maximum limit of routes in BGP config. The value 0 (zero) " +
 				"intends the device to never apply a limit to number of EVPN routes (effectively unlimited). " +
-				"Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session.",
+				"_Note: Device vendors typically shut down BGP sessions if maximums are exceeded on a session._",
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -559,7 +554,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"junos_evpn_max_nexthop_and_interface_number": resourceSchema.StringAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: "Changing this value will result in a disruptive restart of the PFE." +
+			MarkdownDescription: "**Changing this value will result in a disruptive restart of the PFE.**" +
 				"Enables configuring the maximum number of nexthops and interface numbers reserved " +
 				"for use in EVPN-VXLAN overlay network on Junos leaf devices. Default is enabled.",
 			Validators: []validator.String{
@@ -569,7 +564,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"junos_graceful_restart": resourceSchema.StringAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: "Changing this value may result in a flap of all BGP sessions as the sessions are re-negotiated" +
+			MarkdownDescription: "**Changing this value may result in a flap of all BGP sessions as the sessions are re-negotiated.**" +
 				"Enables the Graceful Restart feature on Junos devices",
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
@@ -578,7 +573,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"junos_ex_overlay_ecmp": resourceSchema.StringAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: "Changing this value will result in a disruptive restart of the PFE on EX-series devices" +
+			MarkdownDescription: "**Changing this value will result in a disruptive restart of the PFE on EX-series devices.**" +
 				"Enables VXLAN Overlay ECMP on Junos EX-series devices",
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
@@ -587,12 +582,12 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"anti_affinity_mode": resourceSchema.StringAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: "Changing this value sets the anti_affinity_mode. The anti-affinity policy has three modes:" +
-				"Disabled (default) - ports selection is based on assigned interface maps and interface names (provided or auto-assigned). " +
-				"Port breakouts could terminate on the same physical ports." +
-				"Enabled (loose) - controls interface names that were not defined by the user. Does not control or override user-defined cabling. " +
-				"(If you haven't explicitly assigned any interface names, loose and strict are effectively the same policy.)" +
-				"Enabled (strict) - completely controls port distribution and could override user-defined assignments. " +
+			MarkdownDescription: "The anti-affinity policy has three modes:\n" +
+				"\t* `Disabled` (default) - ports selection is based on assigned interface maps and interface names (provided or auto-assigned). " +
+				"Port breakouts could terminate on the same physical ports.\n" +
+				"\t* `loose` - controls interface names that were not defined by the user. Does not control or override user-defined cabling. " +
+				"(If you haven't explicitly assigned any interface names, loose and strict are effectively the same policy.)\n" +
+				"\t* `strict` - completely controls port distribution and could override user-defined assignments. " +
 				"When you enable the strict policy, a statement appears at the top of the cabling map " +
 				"(Staged/Active > Physical > Links and Staged/Active > Physical > Topology Selection) stating that the " +
 				"anti-affinity policy is enabled.",
