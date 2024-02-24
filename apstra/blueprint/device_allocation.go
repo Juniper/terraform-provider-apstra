@@ -669,21 +669,28 @@ func (o DeviceAllocation) ValidateConfig(ctx context.Context, experimental types
 	}
 }
 
-// EnsureSystemIsSwitchBeforeCreate is a validation function, but it must not be
-// run as a part of the resource ValidateConfig. This is because ValidateConfig
-// has access only to the configuration, but not the state. This function only
-// needs to run once: immediately prior to initial Create(). This is the *only*
-// time that `node_name` is required to be accurate, and we can't fall back on
-// `node_id` because it's not part of the configuration.
-func (o DeviceAllocation) EnsureSystemIsSwitchBeforeCreate(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+// EnsureSystemIsSwitch is a validation function, but it must not be run as a
+// part of the resource ValidateConfig. This is because ValidateConfig has
+// access only to the configuration, but not the state. This function runs in
+// Create() and Update().
+func (o DeviceAllocation) EnsureSystemIsSwitch(ctx context.Context, bp *apstra.TwoStageL3ClosClient, experimental bool, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetBlueprintId(bp.Id()).
-		SetClient(bp.Client()).
-		Node([]apstra.QEEAttribute{
+		SetClient(bp.Client())
+
+	if utils.Known(o.NodeId) {
+		query.Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+		})
+	} else {
+		query.Node([]apstra.QEEAttribute{
 			apstra.NodeTypeSystem.QEEAttribute(),
 			{Key: "label", Value: apstra.QEStringVal(o.NodeName.ValueString())},
 			{Key: "name", Value: apstra.QEStringVal("n_system")},
 		})
+	}
 
 	var queryResult struct {
 		Items []struct {
@@ -711,7 +718,7 @@ func (o DeviceAllocation) EnsureSystemIsSwitchBeforeCreate(ctx context.Context, 
 		diags.AddAttributeError(path.Root("system_attributes"),
 			constants.ErrInvalidConfig,
 			fmt.Sprintf(
-				"system_attributes must be specified only for %q type systems, but the system with label %s has type %q",
+				"system_attributes may be specified only for %q type systems, but the system with label %s has type %q",
 				apstra.SystemTypeSwitch, o.NodeName, queryResult.Items[0].Node.SystemType))
 		return
 	}

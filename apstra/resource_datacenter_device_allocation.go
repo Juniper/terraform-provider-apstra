@@ -79,7 +79,7 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 
 	// if the user gave us system attributes, make sure that we're pointed at a switch
 	if !plan.SystemAttributes.IsUnknown() {
-		plan.EnsureSystemIsSwitchBeforeCreate(ctx, bp, &resp.Diagnostics)
+		plan.EnsureSystemIsSwitch(ctx, bp, o.experimental.ValueBool(), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -269,6 +269,14 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
+	}
+
+	// if the user gave us system attributes, make sure that we're pointed at a switch
+	if !plan.SystemAttributes.IsUnknown() {
+		state.EnsureSystemIsSwitch(ctx, bp, o.experimental.ValueBool(), &resp.Diagnostics) // use state for node_id
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// Lock the blueprint mutex.

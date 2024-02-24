@@ -428,7 +428,6 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 }
 
 func (o *DeviceAllocationSystemAttributes) setTags(ctx context.Context, state *DeviceAllocationSystemAttributes, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	// not a Computed value, so IsNull() will suffice
 	if len(o.Tags.Elements()) == 0 && (state == nil || len(state.Tags.Elements()) == 0) {
 		// user supplied no tags (requiring us to clear them), but state indicates no tags exist
 		return
