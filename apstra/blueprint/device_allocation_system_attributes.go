@@ -34,7 +34,7 @@ type DeviceAllocationSystemAttributes struct {
 	DeployMode   types.String         `tfsdk:"deploy_mode"`
 }
 
-func (o DeviceAllocationSystemAttributes) attrTypes() map[string]attr.Type {
+func (o DeviceAllocationSystemAttributes) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"name":          types.StringType,
 		"hostname":      types.StringType,

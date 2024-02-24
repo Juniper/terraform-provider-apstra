@@ -373,8 +373,7 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, bp *apstra.TwoSt
 func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var deviceKeyPtr *string
 	if !o.DeviceKey.IsNull() {
-		dk := o.DeviceKey.ValueString()
-		deviceKeyPtr = &dk
+		deviceKeyPtr = utils.ToPtr(o.DeviceKey.ValueString())
 	}
 
 	patch := &struct {
@@ -383,15 +382,13 @@ func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.C
 		SystemId: deviceKeyPtr,
 	}
 
-	nodeId := apstra.ObjectId(o.NodeId.ValueString())
-	blueprintId := apstra.ObjectId(o.BlueprintId.ValueString())
-	err := client.PatchNode(ctx, blueprintId, nodeId, &patch, nil)
+	err := client.PatchNode(ctx, apstra.ObjectId(o.BlueprintId.ValueString()), apstra.ObjectId(o.NodeId.ValueString()), &patch, nil)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			o.BlueprintId = types.StringNull()
 			return
 		}
-		diags.AddError(fmt.Sprintf("failed to (re)assign system_id for node '%s'", nodeId), err.Error())
+		diags.AddError(fmt.Sprintf("failed to (re)assign system_id for node '%s'", apstra.ObjectId(o.NodeId.ValueString())), err.Error())
 	}
 }
 
@@ -735,7 +732,7 @@ func (o *DeviceAllocation) GetSystemAttributes(ctx context.Context, bp *apstra.T
 	o.DeployMode = systemAttributes.DeployMode
 
 	var d diag.Diagnostics
-	o.SystemAttributes, d = types.ObjectValueFrom(ctx, systemAttributes.attrTypes(), systemAttributes)
+	o.SystemAttributes, d = types.ObjectValueFrom(ctx, systemAttributes.AttrTypes(), systemAttributes)
 	diags.Append(d...)
 }
 

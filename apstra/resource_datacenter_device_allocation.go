@@ -361,11 +361,14 @@ func (o *resourceDeviceAllocation) Delete(ctx context.Context, req resource.Dele
 		return
 	}
 
-	state.InitialInterfaceMapId = types.StringNull()
-	state.SetInterfaceMap(ctx, bp, &resp.Diagnostics)
+	plan := state                                                                                      // clone the state into a "destroy plan"
+	plan.SystemAttributes = types.ObjectNull(blueprint.DeviceAllocationSystemAttributes{}.AttrTypes()) // clear out SA so it has no tags (other details irrelevant)
+	plan.InitialInterfaceMapId = types.StringNull()                                                    // 'null' triggers clearing the interface map
+	plan.DeviceKey = types.StringNull()                                                                // 'null' triggers clearing the system_id
 
-	state.DeviceKey = types.StringNull() // 'null' triggers clearing the 'system_id' field.
-	state.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)
+	plan.SetSystemAttributes(ctx, &state, bp, &resp.Diagnostics) // wipes out tags only
+	plan.SetInterfaceMap(ctx, bp, &resp.Diagnostics)             // clear the interface map association
+	plan.SetNodeSystemId(ctx, bp.Client(), &resp.Diagnostics)    // clear the system_id (managed device ID) from the system node
 }
 
 func (o *resourceDeviceAllocation) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
