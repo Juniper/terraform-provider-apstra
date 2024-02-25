@@ -6544,8 +6544,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/zclconf/go-cty/cty
 
 * Name: github.com/zclconf/go-cty/cty
-* Version: v1.14.0
-* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.14.0/LICENSE)
+* Version: v1.14.1
+* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.14.1/LICENSE)
 
 ```
 MIT License
