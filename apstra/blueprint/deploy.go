@@ -211,7 +211,7 @@ func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Di
 	o.StagedRevision = types.Int64Value(int64(status.Version))
 }
 
-var CommentTemplateReplacements = []string{"{{`{{.TerraformVersion}}`}}", "{{`{{.ProviderVersion}}`}}"}
+var CommentTemplateReplacements = []string{"{{.TerraformVersion}}", "{{.ProviderVersion}}"}
 
 type CommentTemplate struct {
 	ProviderVersion  string
