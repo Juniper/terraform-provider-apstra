@@ -158,15 +158,21 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 		return
 	}
 
-	tags, err := bp.GetNodeTags(ctx, nId)
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed to readtags from node %s", nodeId), err.Error())
-		return
+	if !utils.Known(o.Tags) {
+		tags, err := bp.GetNodeTags(ctx, nId)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed to readtags from node %s", nodeId), err.Error())
+			return
+		}
+		o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)
 	}
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)
 }
 
 func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if utils.Known(o.Asn) {
+		return
+	}
+
 	rawJson := getDomainNode(ctx, bp, nodeId, diags)
 	if diags.HasError() {
 		return
@@ -202,16 +208,19 @@ func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstr
 }
 
 func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if utils.Known(o.LoopbackIpv4) && utils.Known(o.LoopbackIpv6) {
+		return
+	}
+
 	idx := 0
 	rawJson := getLoopbackInterfaceNode(ctx, bp, nodeId, idx, diags)
 	if diags.HasError() {
 		return
 	}
 
-	o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
-	o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
-
 	if len(rawJson) == 0 {
+		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
+		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
 		return // no loopback idx interface node found
 	}
 
@@ -230,33 +239,45 @@ func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Con
 	}
 
 	if loopbackNode.IPv4Addr == nil && loopbackNode.IPv6Addr == nil {
+		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
+		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
 		return // no loopback IP addresses found in domain node
 	}
 
-	if loopbackNode.IPv4Addr != nil && len(*loopbackNode.IPv4Addr) != 0 {
-		_, _, err := net.ParseCIDR(*loopbackNode.IPv4Addr)
-		if err != nil {
-			diags.AddError(
-				fmt.Sprintf("failed to parse `ipv4_addr` from API response %q", string(rawJson)),
-				err.Error())
-			return
+	if !utils.Known(o.LoopbackIpv4) {
+		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
+		if loopbackNode.IPv4Addr != nil && len(*loopbackNode.IPv4Addr) != 0 {
+			_, _, err := net.ParseCIDR(*loopbackNode.IPv4Addr)
+			if err != nil {
+				diags.AddError(
+					fmt.Sprintf("failed to parse `ipv4_addr` from API response %q", string(rawJson)),
+					err.Error())
+				return
+			}
+			o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(*loopbackNode.IPv4Addr)
 		}
-		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(*loopbackNode.IPv4Addr)
 	}
 
-	if loopbackNode.IPv6Addr != nil && len(*loopbackNode.IPv6Addr) != 0 {
-		_, _, err := net.ParseCIDR(*loopbackNode.IPv6Addr)
-		if err != nil {
-			diags.AddError(
-				fmt.Sprintf("failed to parse `ipv6_addr` from API response %q", string(rawJson)),
-				err.Error())
-			return
+	if !utils.Known(o.LoopbackIpv6) {
+		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
+		if loopbackNode.IPv6Addr != nil && len(*loopbackNode.IPv6Addr) != 0 {
+			_, _, err := net.ParseCIDR(*loopbackNode.IPv6Addr)
+			if err != nil {
+				diags.AddError(
+					fmt.Sprintf("failed to parse `ipv6_addr` from API response %q", string(rawJson)),
+					err.Error())
+				return
+			}
+			o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(*loopbackNode.IPv6Addr)
 		}
-		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(*loopbackNode.IPv6Addr)
 	}
 }
 
 func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if utils.Known(o.DeployMode) && utils.Known(o.Hostname) && utils.Known(o.Name) {
+		return
+	}
+
 	var node struct {
 		DeployMode string `json:"deploy_mode,omitempty"`
 		Hostname   string `json:"hostname,omitempty"`
@@ -276,9 +297,15 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 		return
 	}
 
-	o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
-	o.Hostname = types.StringValue(node.Hostname)
-	o.Name = types.StringValue(node.Label)
+	if !utils.Known(o.DeployMode) {
+		o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
+	}
+	if !utils.Known(o.Hostname) {
+		o.Hostname = types.StringValue(node.Hostname)
+	}
+	if !utils.Known(o.Name) {
+		o.Name = types.StringValue(node.Label)
+	}
 }
 
 func (o *DeviceAllocationSystemAttributes) Set(ctx context.Context, state *DeviceAllocationSystemAttributes, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
@@ -410,17 +437,24 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 		return
 	}
 
+	var deployMode apstra.NodeDeployMode
+	err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error in rosetta function with deploy_mode = %s", o.DeployMode), err.Error())
+		return
+	}
+
 	node := struct {
 		DeployMode string `json:"deploy_mode,omitempty"`
 		Hostname   string `json:"hostname,omitempty"`
 		Label      string `json:"label,omitempty"`
 	}{
-		DeployMode: o.DeployMode.ValueString(),
+		DeployMode: deployMode.String(),
 		Hostname:   o.Hostname.ValueString(),
 		Label:      o.Name.ValueString(),
 	}
 
-	err := bp.PatchNode(ctx, nodeId, &node, nil)
+	err = bp.PatchNode(ctx, nodeId, &node, nil)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
 		return

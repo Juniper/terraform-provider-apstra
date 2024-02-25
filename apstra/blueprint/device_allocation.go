@@ -723,6 +723,13 @@ func (o DeviceAllocation) EnsureSystemIsSwitch(ctx context.Context, bp *apstra.T
 
 func (o *DeviceAllocation) GetSystemAttributes(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	var systemAttributes DeviceAllocationSystemAttributes
+	if !o.SystemAttributes.IsUnknown() {
+		diags.Append(o.SystemAttributes.As(ctx, &systemAttributes, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return
+		}
+	}
+
 	systemAttributes.Get(ctx, bp, o.NodeId, diags)
 	if diags.HasError() {
 		return
