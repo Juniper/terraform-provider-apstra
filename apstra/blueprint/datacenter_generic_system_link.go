@@ -153,14 +153,32 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 	o.TargetSwitchIfTransformId = types.Int64Value(int64(transformId))
 }
 
-// updateParams checks/updates the following link parameters.
-// - transform ID
-// - group label
-// - LAG mode
-// - tags
-// Because the DatacenterGenericSystemLink object doesn't know the link ID,
-// the ID of the link's graph node is passed as a function argument.
-func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstra.ObjectId, state *DatacenterGenericSystemLink, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *DatacenterGenericSystemLink) lagParams(ctx context.Context, id apstra.ObjectId, state *DatacenterGenericSystemLink, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) *apstra.LinkLagParams {
+	if o.Tags.Equal(state.Tags) && o.LagMode.Equal(state.LagMode) && o.GroupLabel.Equal(state.GroupLabel) {
+		return nil // nothing to do
+	}
+
+	var tags []string
+	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+	if tags == nil {
+		tags = []string{} // convert nil -> empty slice to clear tags
+	}
+
+	var lagMode apstra.RackLinkLagMode
+	err := lagMode.FromString(o.LagMode.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to parse lag mode %s", o.LagMode), err.Error())
+		return nil
+	}
+
+	return &apstra.LinkLagParams{
+		GroupLabel: o.GroupLabel.ValueString(),
+		LagMode:    lagMode,
+		Tags:       tags,
+	}
+}
+
+func (o *DatacenterGenericSystemLink) updateTransformId(ctx context.Context, state *DatacenterGenericSystemLink, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// set the transform ID if it has changed
 	if !o.TargetSwitchIfTransformId.Equal(state.TargetSwitchIfTransformId) {
 		err := client.SetTransformIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()),
@@ -175,33 +193,57 @@ func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstr
 			}
 		}
 	}
-
-	// set the tags, lag mode and group label if any have changed
-	if !o.Tags.Equal(state.Tags) || !o.LagMode.Equal(state.LagMode) || !o.GroupLabel.Equal(state.GroupLabel) {
-		var tags []string
-		diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
-		if tags == nil {
-			tags = []string{} // convert nil -> empty slice to clear tags
-		}
-
-		var lagMode apstra.RackLinkLagMode
-		err := lagMode.FromString(o.LagMode.ValueString())
-		if err != nil {
-			diags.AddError(fmt.Sprintf("failed to parse lag mode %s", o.LagMode), err.Error())
-			return
-		}
-
-		// set lag params + tag set
-		err = client.SetLinkLagParams(ctx, &apstra.SetLinkLagParamsRequest{id: apstra.LinkLagParams{
-			GroupLabel: o.GroupLabel.ValueString(),
-			LagMode:    lagMode,
-			Tags:       tags,
-		}})
-		if err != nil {
-			diags.AddError(fmt.Sprintf("failed to set link %s LAG parameters", id), err.Error())
-		}
-	}
 }
+
+//// updateParams checks/updates the following link parameters.
+//// - transform ID
+//// - group label
+//// - LAG mode
+//// - tags
+//// Because the DatacenterGenericSystemLink object doesn't know the link ID,
+//// the ID of the link's graph node is passed as a function argument.
+//func (o *DatacenterGenericSystemLink) updateParams(ctx context.Context, id apstra.ObjectId, state *DatacenterGenericSystemLink, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+//	// set the transform ID if it has changed
+//	if !o.TargetSwitchIfTransformId.Equal(state.TargetSwitchIfTransformId) {
+//		err := client.SetTransformIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()),
+//			o.TargetSwitchIfName.ValueString(), int(o.TargetSwitchIfTransformId.ValueInt64()))
+//		if err != nil {
+//			var ace apstra.ClientErr
+//			if errors.As(err, &ace) && ace.Type() == apstra.ErrCannotChangeTransform {
+//				diags.AddWarning("could not change interface transform", err.Error())
+//			} else {
+//				diags.AddError("failed to set interface transform", err.Error())
+//				return
+//			}
+//		}
+//	}
+//
+//	// set the tags, lag mode and group label if any have changed
+//	if !o.Tags.Equal(state.Tags) || !o.LagMode.Equal(state.LagMode) || !o.GroupLabel.Equal(state.GroupLabel) {
+//		var tags []string
+//		diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+//		if tags == nil {
+//			tags = []string{} // convert nil -> empty slice to clear tags
+//		}
+//
+//		var lagMode apstra.RackLinkLagMode
+//		err := lagMode.FromString(o.LagMode.ValueString())
+//		if err != nil {
+//			diags.AddError(fmt.Sprintf("failed to parse lag mode %s", o.LagMode), err.Error())
+//			return
+//		}
+//
+//		// set lag params + tag set
+//		err = client.SetLinkLagParams(ctx, &apstra.SetLinkLagParamsRequest{id: apstra.LinkLagParams{
+//			GroupLabel: o.GroupLabel.ValueString(),
+//			LagMode:    lagMode,
+//			Tags:       tags,
+//		}})
+//		if err != nil {
+//			diags.AddError(fmt.Sprintf("failed to set link %s LAG parameters", id), err.Error())
+//		}
+//	}
+//}
 
 func (o *DatacenterGenericSystemLink) versionConstraintsAsGenericSystemLink(_ context.Context, path path.Path, _ *diag.Diagnostics) apiversions.Constraints {
 	var result apiversions.Constraints

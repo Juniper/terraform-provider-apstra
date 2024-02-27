@@ -548,7 +548,8 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 // it operates only on the links passed as a function argument because only
 // those links need to be updated/validated.
 func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLinks, stateLinks []*DatacenterGenericSystemLink, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	// one at a time, check/update each link
+	// create an empty request with room for each link to be modified
+	request := make(apstra.SetLinkLagParamsRequest, len(planLinks))
 	for i, link := range planLinks {
 		// we don't keep the link ID, but we have each link's target switch and
 		// interface name. That's enough to uniquely identify the link from the
@@ -558,7 +559,22 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLink
 			return
 		}
 
-		link.updateParams(ctx, linkId, stateLinks[i], bp, diags) // collect all errors
+		linkParams := link.lagParams(ctx, linkId, stateLinks[i], bp, diags)
+		if linkParams != nil {
+			request[linkId] = *linkParams
+		}
+	}
+
+	if len(request) != 0 {
+		err := bp.SetLinkLagParams(ctx, &request)
+		if err != nil {
+			diags.AddError("failed updating generic system link parameters", err.Error()) // collect all errors
+		}
+	}
+
+	// one at a time, check/update each link transform ID
+	for i, link := range planLinks {
+		link.updateTransformId(ctx, stateLinks[i], bp, diags) // collect all errors
 	}
 }
 
