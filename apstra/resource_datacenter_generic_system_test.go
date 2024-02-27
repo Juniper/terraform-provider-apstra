@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"net"
@@ -273,11 +275,13 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	}
 
 	type testCase struct {
-		steps []testStep
+		steps              []testStep
+		versionConstraints version.Constraints
 	}
 
 	testCases := map[string]testCase{
 		"lots_of_changes": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(">" + apiversions.Apstra411)), // tags allowed in 4.1.1 only
 			steps: []testStep{
 				{
 					genericSystem: genericSystem{
@@ -659,6 +663,11 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
+
+			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bpClient.Client().ApiVersion()))) {
+				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
+			}
+
 			steps := make([]resource.TestStep, len(tCase.steps))
 			for i, step := range tCase.steps {
 				step.genericSystem.bpId = bpClient.Id().String()
@@ -668,6 +677,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 					PreConfig: step.preConfig,
 				}
 			}
+
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps:                    steps,
