@@ -12,9 +12,13 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 )
 
-const testConfigFile = "../.testconfig.hcl"
+const (
+	testConfigFile = "../.testconfig.hcl"
+	timeout        = 60 * time.Second // probably should be added to env vars and to test hcl file
+)
 
 var sharedClient *apstra.Client
 var testClientMutex sync.Mutex
@@ -42,6 +46,7 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 			t.Fatal(err)
 		}
 
+		clientCfg.Timeout = timeout
 		clientCfg.Experimental = true
 		clientCfg.HttpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = true
 

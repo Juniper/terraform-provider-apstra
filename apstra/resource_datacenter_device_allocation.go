@@ -2,9 +2,10 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
+
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -122,24 +123,15 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 		}
 	}
 
-	switch {
-	case plan.DeployMode.IsNull(): // not expected with Optional+Computed, nothing to do here
-	case plan.DeployMode.IsUnknown(): // config is null, get the Computed value
-		deployMode, err := utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("failed to fetch node deploy mode", err.Error())
+	// Deprecated attribute in use?
+	if utils.Known(plan.DeployMode) {
+		// validators ensure that system_attributes object has been omitted. instantiate a fresh one and copy the deploy mode in there
+		sa, d := types.ObjectValueFrom(ctx, blueprint.DeviceAllocationSystemAttributes{}.AttrTypes(), basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(d...)
+		if resp.Diagnostics.HasError() {
 			return
 		}
-		plan.DeployMode = types.StringValue(deployMode)
-	default: // value provided via config
-		err = utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("failed while setting node deploy mode", err.Error())
-			return
-		}
-	}
-	if resp.Diagnostics.HasError() {
-		return
+		plan.SystemAttributes = sa
 	}
 
 	// set system attributes
@@ -207,16 +199,6 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	deployMode, err := utils.GetNodeDeployMode(ctx, bp, state.NodeId.ValueString())
-	if err != nil {
-		var ace apstra.ClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-	}
-	state.DeployMode = types.StringValue(deployMode)
-
 	state.GetInterfaceMapName(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -241,10 +223,19 @@ func (o *resourceDeviceAllocation) Read(ctx context.Context, req resource.ReadRe
 	}
 
 	// InterfaceMapName must be immutable in order to be useful in detecting FFE modifications
-	state.InterfaceMapName = types.StringValue(previousInterfaceMapName.ValueString())
+	state.InterfaceMapName = previousInterfaceMapName
 
-	// read any apstra-assigned values
+	// read all apstra-assigned values; blow away existing values to ensure all values are read
+	state.SystemAttributes = types.ObjectUnknown(blueprint.DeviceAllocationSystemAttributes{}.AttrTypes())
 	state.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
+
+	// copy the deploy mode to the deprecated root-level attribute
+	var sa blueprint.DeviceAllocationSystemAttributes
+	resp.Diagnostics.Append(state.SystemAttributes.As(ctx, &sa, basetypes.ObjectAsOptions{})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	state.DeployMode = sa.DeployMode
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -279,6 +270,17 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		}
 	}
 
+	// Deprecated attribute in use?
+	if utils.Known(plan.DeployMode) {
+		// validators ensure that system_attributes object has been omitted. instantiate a fresh one and copy the deploy mode in there
+		sa, d := types.ObjectValueFrom(ctx, blueprint.DeviceAllocationSystemAttributes{}.AttrTypes(), basetypes.ObjectAsOptions{})
+		resp.Diagnostics.Append(d...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		plan.SystemAttributes = sa
+	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -287,28 +289,6 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 			err.Error())
 		return
 	}
-
-	switch {
-	case plan.DeployMode.IsNull(): // not expected with Optional+Computed, nothing to do here
-	case plan.DeployMode.IsUnknown(): // config is null, get the Computed value
-		deployMode, err := utils.GetNodeDeployMode(ctx, bp, plan.NodeId.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("failed reading node deploy mode", err.Error())
-			return
-		}
-
-		plan.DeployMode = types.StringValue(deployMode)
-	default: // value provided via config
-		err := utils.SetNodeDeployMode(ctx, bp, plan.NodeId.ValueString(), plan.DeployMode.ValueString())
-		if err != nil {
-			resp.Diagnostics.AddError("failed setting node deploy mode", err.Error())
-			return
-		}
-	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	state.DeployMode = plan.DeployMode
 
 	if !plan.DeviceKey.Equal(state.DeviceKey) {
 		// device key has changed
@@ -325,11 +305,23 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// copy the planned system attributes into the state
+	// read back any apstra-assigned attributes
+	plan.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// read and save any apstra-assigned values
+	plan.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
 	state.SystemAttributes = plan.SystemAttributes
 
-	// read any apstra-assigned values
-	state.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
+	// copy the deploy mode to the deprecated root-level attribute
+	var sa blueprint.DeviceAllocationSystemAttributes
+	resp.Diagnostics.Append(state.SystemAttributes.As(ctx, &sa, basetypes.ObjectAsOptions{})...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	state.DeployMode = sa.DeployMode
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
