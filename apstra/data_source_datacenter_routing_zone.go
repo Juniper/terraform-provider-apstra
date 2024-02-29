@@ -76,22 +76,22 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		}
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("Failed reading Routing Zone", err.Error())
+		resp.Diagnostics.AddError("failed reading Routing Zone", err.Error())
+		return
+	}
+	if api.Data == nil {
+		resp.Diagnostics.AddError("failed reading Routing Zone", "api response has no payload")
 		return
 	}
 
 	config.Id = types.StringValue(api.Id.String())
-	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	config.LoadApiData(ctx, *api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, api.Id)
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
 		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
 		return
 	}
