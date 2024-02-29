@@ -136,18 +136,20 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		return
 	}
 
+	// make a security zone request
 	request := plan.Request(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// create the security zone
 	id, err := bp.CreateSecurityZone(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating security zone", err.Error())
 		return
 	}
 
-	// partial state set
+	// record the new security zone ID
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
@@ -164,17 +166,15 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		}
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, id)
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
-	}
-
-	// Set prior config trackers according to whether the plan knows a value (only possible in Create())
+	// Set prior config trackers according to whether a value was planned. Must be done before plan.Read()
 	plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
 	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 
-	plan.Id = types.StringValue(id.String())
-	plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
+	// read any apstra-assigned values associated with the new routing zone
+	err = plan.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		resp.Diagnostics.AddError("failed while fetching detail of just-created Routing Zone", err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -201,32 +201,24 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
+	// create a new state object with relevant values copied from prior state
+	var newState blueprint.DatacenterRoutingZone
+	newState.Id = state.Id
+	newState.HadPriorVlanIdConfig = state.HadPriorVlanIdConfig
+	newState.HadPriorVniConfig = state.HadPriorVniConfig
+
+	// read the current status from the API
+	err = newState.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
-		return
-	}
 
-	state.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed while reading blueprint %s routing zone %s details", bp.Id(), newState.Id),
+			err.Error())
 	}
-
-	dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, sz.Id)
-	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
-		return
-	}
-
-	state.LoadApiDhcpServers(ctx, dhcpServers, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -290,9 +282,12 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		}
 	}
 
-	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
-		resp.Diagnostics.AddError("error retrieving just-created security zone", err.Error())
+		resp.Diagnostics.AddError("failed while updating routing zone", err.Error())
+	}
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// if the plan modifier didn't take action...
@@ -305,11 +300,6 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	if plan.HadPriorVniConfig.IsUnknown() {
 		// ...then the trigger value is set according to whether a VNI value is known.
 		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
-	}
-
-	plan.LoadApiData(ctx, sz.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
