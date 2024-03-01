@@ -88,14 +88,13 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Make a blueprint creation request.
-	request := plan.Request(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Create the blueprint.
-	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
+	id, err := o.client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:      apstra.RefDesignTwoStageL3Clos,
+		Label:          plan.Name.ValueString(),
+		TemplateId:     apstra.ObjectId(plan.TemplateId.ValueString()),
+		FabricSettings: plan.FabricSettings(ctx, &resp.Diagnostics),
+	})
 	if err != nil {
 		resp.Diagnostics.AddError("failed creating Rack Based Blueprint", err.Error())
 		return
@@ -108,13 +107,6 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Lock the blueprint mutex.
-	err = o.lockFunc(ctx, id.String())
-	if err != nil {
-		resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
-		return
-	}
-
 	// Get a client for the datacenter reference design
 	bp, err := o.getBpClientFunc(ctx, id.String())
 	if err != nil {
@@ -122,10 +114,28 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Set the fabric settings
-	plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
+	// get the api version from the client
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
 		return
+	}
+
+	// only Apstra 4.2.1 allows us to set fabric settings as part of blueprint creation
+	if !apiversions.Ge421.Check(apiVersion) {
+		// did we really need to lock the blueprint here? nothing else knows it exists yet.
+		//// Lock the blueprint mutex.
+		//err = o.lockFunc(ctx, id.String())
+		//if err != nil {
+		//	resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
+		//	return
+		//}
+
+		// Set the fabric settings
+		plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// Retrieve blueprint status
@@ -142,12 +152,6 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 
 	// Retrieve and load the fabric settings
 	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve and load the fabric link addressing
-	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -198,13 +202,6 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// todo can this be optimized because its immutable
-	// Retrieve and load the fabric link addressing
-	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
 	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -251,7 +248,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// Retrieve and blueprint status
+	// Retrieve blueprint status
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint after update", err.Error())
@@ -265,12 +262,6 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 
 	// Retrieve and load the fabric settings
 	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve and laod the fabric link addressing
-	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

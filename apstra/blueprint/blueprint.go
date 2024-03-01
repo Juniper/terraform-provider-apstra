@@ -14,7 +14,6 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -61,10 +60,10 @@ type Blueprint struct {
 	MaxFabricRoutesCount   types.Int64 `tfsdk:"max_fabric_routes_count"`
 	EvpnType5Routes        types.Bool  `tfsdk:"evpn_type_5_routes"`
 	// Vendor Specific
-	JunosEvpnRoutingInstanceModeMacVrf            types.Bool `tfsdk:"junos_evpn_routing_instance_mode_mac_vrf"`
-	JunosEvpnMaxNexthopAndInterfaceNumberDisabled types.Bool `tfsdk:"junos_evpn_max_nexthop_and_interface_number_disabled"`
-	JunosGracefulRestartEnabled                   types.Bool `tfsdk:"junos_graceful_restart_enabled"`
-	JunosExOverlayEcmpEnabled                     types.Bool `tfsdk:"junos_ex_overlay_ecmp_enabled"`
+	JunosEvpnRoutingInstanceModeMacVrf    types.Bool `tfsdk:"junos_evpn_routing_instance_mode_mac_vrf"`
+	JunosEvpnMaxNexthopAndInterfaceNumber types.Bool `tfsdk:"junos_evpn_max_nexthop_and_interface_number"`
+	JunosGracefulRestart                  types.Bool `tfsdk:"junos_graceful_restart"`
+	JunosExOverlayEcmp                    types.Bool `tfsdk:"junos_ex_overlay_ecmp"`
 	// Anti Affinity
 	AntiAffinityMode   types.String `tfsdk:"anti_affinity_mode"`
 	AntiAffinityPolicy types.Object `tfsdk:"anti_affinity_policy"`
@@ -102,10 +101,10 @@ func (o Blueprint) attrTypes() map[string]attr.Type {
 		"max_fabric_routes_count":   types.Int64Type,
 		"evpn_type_5_routes":        types.BoolType,
 		// Vendor Specific
-		"junos_evpn_routing_instance_mode_mac_vrf":             types.BoolType,
-		"junos_evpn_max_nexthop_and_interface_number_disabled": types.BoolType,
-		"junos_graceful_restart_enabled":                       types.BoolType,
-		"junos_ex_overlay_ecmp_enabled":                        types.BoolType,
+		"junos_evpn_routing_instance_mode_mac_vrf":    types.BoolType,
+		"junos_evpn_max_nexthop_and_interface_number": types.BoolType,
+		"junos_graceful_restart":                      types.BoolType,
+		"junos_ex_overlay_ecmp":                       types.BoolType,
 		// Anti Affinity
 		"anti_affinity_mode":   types.StringType,
 		"anti_affinity_policy": types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()},
@@ -239,7 +238,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "When enabled, all EVPN VTEPs in the fabric will redistribute " +
 				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table.",
 		},
-		"junos_evpn_routing_instance_mode": dataSourceSchema.BoolAttribute{
+		"junos_evpn_routing_instance_mode_mac_vrf": dataSourceSchema.BoolAttribute{
 			Computed: true,
 			MarkdownDescription: "In releases before 4.2, Apstra used a single default switch instance as the " +
 				"configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for all new " +
@@ -312,7 +311,6 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 					apstra.AddressingSchemeIp46.String(),
 				}, ", ")),
 			Optional: true,
-			Computed: true,
 			// todo once depreciated 4.1.0 add this
 			// Default: stringdefault.StaticString(apstra.AddressingSchemeIp4.String()),
 			Validators: []validator.String{stringvalidator.OneOf(
@@ -490,7 +488,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"on VNIs that are not stretched to the ingress VTEP, and avoid a route lookup to a subnet (eg, /24) "+
 				"that may be hosted on many leafs. Requires Apstra %s.", apiversions.Ge420),
 		},
-		"junos_evpn_routing_instance_mode": resourceSchema.BoolAttribute{
+		"junos_evpn_routing_instance_mode_mac_vrf": resourceSchema.BoolAttribute{
 			Computed: true,
 			Optional: true,
 			MarkdownDescription: fmt.Sprintf("In releases before 4.2, Apstra used a single default switch "+
@@ -555,66 +553,6 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators: []validator.Object{objectvalidator.AlsoRequires(path.MatchRoot("anti_affinity_mode"))},
 		},
 	}
-}
-
-func (o Blueprint) Request(_ context.Context, diags *diag.Diagnostics) *apstra.CreateBlueprintFromTemplateRequest {
-	// start with a nil pointer for fabric addressing policy
-	var fabricAddressingPolicy *apstra.BlueprintRequestFabricAddressingPolicy
-
-	// if the user supplied either value, we must create the fabric addressing policy object
-	if !o.FabricAddressing.IsUnknown() || !o.FabricMtu.IsUnknown() {
-		fabricAddressingPolicy = &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4, // sensible default
-			SpineLeafLinks:       apstra.AddressingSchemeIp4, // sensible default
-		}
-
-		if utils.Known(o.FabricAddressing) {
-			var fabricAddressing apstra.AddressingScheme
-			err := fabricAddressing.FromString(o.FabricAddressing.ValueString())
-			if err != nil {
-				diags.AddError(
-					constants.ErrProviderBug,
-					fmt.Sprintf("error parsing fabric_addressing %q - %s",
-						o.FabricAddressing.ValueString(), err.Error()))
-				return nil
-			}
-			fabricAddressingPolicy.SpineSuperspineLinks = fabricAddressing
-			fabricAddressingPolicy.SpineLeafLinks = fabricAddressing
-		}
-
-		if utils.Known(o.FabricMtu) {
-			fabricMtu := uint16(o.FabricMtu.ValueInt64())
-			fabricAddressingPolicy.FabricL3Mtu = &fabricMtu
-		}
-	}
-
-	return &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:              apstra.RefDesignTwoStageL3Clos,
-		Label:                  o.Name.ValueString(),
-		TemplateId:             apstra.ObjectId(o.TemplateId.ValueString()),
-		FabricAddressingPolicy: fabricAddressingPolicy,
-	}
-}
-
-func (o Blueprint) FabricAddressingRequest(_ context.Context, _ *diag.Diagnostics) *apstra.TwoStageL3ClosFabricAddressingPolicy {
-	var result apstra.TwoStageL3ClosFabricAddressingPolicy
-
-	if utils.Known(o.Ipv6Applications) {
-		ipv6Enabled := o.Ipv6Applications.ValueBool()
-		result.Ipv6Enabled = &ipv6Enabled
-	}
-
-	if utils.Known(o.EsiMacMsb) {
-		esiMacMsb := uint8(o.EsiMacMsb.ValueInt64())
-		result.EsiMacMsb = &esiMacMsb
-	}
-
-	if utils.Known(o.FabricMtu) {
-		fabricMtu := uint16(o.FabricMtu.ValueInt64())
-		result.FabricL3Mtu = &fabricMtu
-	}
-
-	return &result
 }
 
 func (o *Blueprint) LoadApiData(_ context.Context, in *apstra.BlueprintStatus, _ *diag.Diagnostics) {
@@ -697,42 +635,6 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 	}
 }
 
-func (o *Blueprint) SetFabricAddressingPolicy(ctx context.Context, bpClient *apstra.TwoStageL3ClosClient, state *Blueprint, diags *diag.Diagnostics) {
-	switch {
-	case utils.Known(o.EsiMacMsb): // we have a value; do not return in default action
-	case utils.Known(o.FabricMtu): // we have a value; do not return in default action
-	case utils.Known(o.Ipv6Applications): // we have a value; do not return in default action
-	default:
-		return // no relevant values set in the plan
-	}
-
-	if state != nil {
-		switch {
-		case utils.Known(o.EsiMacMsb) && !o.EsiMacMsb.Equal(state.EsiMacMsb): // plan and state not in agreement
-		case utils.Known(o.FabricMtu) && !o.FabricMtu.Equal(state.FabricMtu): // plan and state not in agreement
-		case utils.Known(o.Ipv6Applications) && !o.Ipv6Applications.Equal(state.Ipv6Applications): // plan and state not in agreement
-		default:
-			return // no plan values represent changes from the current state
-		}
-	}
-
-	fapRequest := o.FabricAddressingRequest(ctx, diags)
-	if diags.HasError() {
-		return
-	}
-
-	if fapRequest == nil {
-		// nothing to do
-		return
-	}
-
-	err := bpClient.SetFabricAddressingPolicy(ctx, fapRequest)
-	if err != nil {
-		diags.AddError("failed setting blueprint fabric addressing policy", err.Error())
-		return
-	}
-}
-
 func (o *Blueprint) GetFabricLinkAddressing(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetClient(bp.Client()).
@@ -800,7 +702,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("fabric_addressing"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra411)),
+				Constraints: apiversions.Ge411,
 			},
 		)
 	}
@@ -809,7 +711,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("fabric_mtu"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -818,7 +720,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("default_ip_links_to_generic_mtu"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -827,7 +729,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("default_svi_l3_mtu"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -836,7 +738,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("optimize_routing_zone_footprint"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -845,7 +747,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("max_external_routes_count"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -854,7 +756,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("max_mlag_routes_count"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -863,7 +765,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("max_evpn_routes_count"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -872,7 +774,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("max_fabric_routes_count"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -881,7 +783,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("evpn_type_5_routes"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -890,34 +792,34 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
 
-	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled) {
+	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_evpn_max_nexthop_and_interface_number_disabled"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Path:        path.Root("junos_evpn_max_nexthop_and_interface_number"),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
 
-	if utils.Known(o.JunosGracefulRestartEnabled) {
+	if utils.Known(o.JunosGracefulRestart) {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_graceful_restart_enabled"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Path:        path.Root("junos_graceful_restart"),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
 
-	if utils.Known(o.JunosExOverlayEcmpEnabled) {
+	if utils.Known(o.JunosExOverlayEcmp) {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_ex_overlay_ecmp_enabled"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+				Path:        path.Root("junos_ex_overlay_ecmp"),
+				Constraints: apiversions.Ge420,
 			},
 		)
 	}
@@ -986,9 +888,9 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 	if settings.EvpnGenerateType5HostRoutes.Value == apstra.FeatureSwitchEnumEnabled.Value {
 		o.EvpnType5Routes = types.BoolValue(true)
 	}
-	o.JunosGracefulRestartEnabled = types.BoolValue(false)
+	o.JunosGracefulRestart = types.BoolValue(false)
 	if settings.JunosGracefulRestart.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosGracefulRestartEnabled = types.BoolValue(true)
+		o.JunosGracefulRestart = types.BoolValue(true)
 	}
 	o.OptimizeRoutingZoneFootprint = types.BoolValue(false)
 	if settings.OptimiseSzFootprint.Value == apstra.FeatureSwitchEnumEnabled.Value {
@@ -998,13 +900,13 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 	if settings.JunosEvpnRoutingInstanceVlanAware.Value == apstra.FeatureSwitchEnumEnabled.Value {
 		o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(true)
 	}
-	o.JunosExOverlayEcmpEnabled = types.BoolValue(false)
+	o.JunosExOverlayEcmp = types.BoolValue(false)
 	if settings.JunosExOverlayEcmp.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosExOverlayEcmpEnabled = types.BoolValue(false)
+		o.JunosExOverlayEcmp = types.BoolValue(false)
 	}
-	o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled = types.BoolValue(false)
+	o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(false)
 	if settings.JunosEvpnMaxNexthopAndInterfaceNumber.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled = types.BoolValue(false)
+		o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(false)
 	}
 	var aap AntiAffinityPolicy
 	aap.loadApiData(ctx, settings.AntiAffinityPolicy, diags)
@@ -1022,8 +924,8 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics) *apstra.FabricSettings {
 	// take everything inside of the blueprint object  and fill out the fabricSettings data structure
 	var junosGracefulRestart *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosGracefulRestartEnabled) {
-		if o.JunosGracefulRestartEnabled.ValueBool() {
+	if utils.Known(o.JunosGracefulRestart) {
+		if o.JunosGracefulRestart.ValueBool() {
 			junosGracefulRestart = &apstra.FeatureSwitchEnumEnabled
 		} else {
 			junosGracefulRestart = &apstra.FeatureSwitchEnumDisabled
@@ -1058,8 +960,8 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	var junosExOverlayEcmp *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosExOverlayEcmpEnabled) {
-		if o.JunosExOverlayEcmpEnabled.ValueBool() {
+	if utils.Known(o.JunosExOverlayEcmp) {
+		if o.JunosExOverlayEcmp.ValueBool() {
 			junosExOverlayEcmp = &apstra.FeatureSwitchEnumEnabled
 		} else {
 			junosExOverlayEcmp = &apstra.FeatureSwitchEnumDisabled
@@ -1067,8 +969,8 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	var junosEvpnMaxNexthopAndInterfaceNumber *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled) {
-		if o.JunosEvpnMaxNexthopAndInterfaceNumberDisabled.ValueBool() {
+	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
+		if o.JunosEvpnMaxNexthopAndInterfaceNumber.ValueBool() {
 			junosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumEnabled
 		} else {
 			junosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumDisabled
