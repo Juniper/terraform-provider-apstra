@@ -88,20 +88,22 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	// make a blueprint creation request
+	request := plan.Request(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Create the blueprint.
-	id, err := o.client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:      apstra.RefDesignTwoStageL3Clos,
-		Label:          plan.Name.ValueString(),
-		TemplateId:     apstra.ObjectId(plan.TemplateId.ValueString()),
-		FabricSettings: plan.FabricSettings(ctx, &resp.Diagnostics),
-	})
+	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("failed creating Rack Based Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("failed creating Blueprint from Template %s", request.TemplateId), err.Error())
 		return
 	}
 
 	// Commit the ID to the state in case we're not able to run to completion
 	plan.Id = types.StringValue(id.String())
+	//plan.AntiAffinityPolicy = types.ObjectNull(blueprint.AntiAffinityPolicy{}.AttrTypes())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return

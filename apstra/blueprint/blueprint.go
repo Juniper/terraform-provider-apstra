@@ -30,10 +30,11 @@ import (
 )
 
 type Blueprint struct {
-	Id                    types.String `tfsdk:"id"`
-	Name                  types.String `tfsdk:"name"`
-	TemplateId            types.String `tfsdk:"template_id"`
-	FabricAddressing      types.String `tfsdk:"fabric_addressing"`
+	Id               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	TemplateId       types.String `tfsdk:"template_id"`
+	FabricAddressing types.String `tfsdk:"fabric_addressing"`
+	// blueprint status
 	Status                types.String `tfsdk:"status"`
 	SuperspineCount       types.Int64  `tfsdk:"superspine_count"`
 	SpineCount            types.Int64  `tfsdk:"spine_count"`
@@ -45,7 +46,9 @@ type Blueprint struct {
 	Version               types.Int64  `tfsdk:"version"`
 	BuildWarningsCount    types.Int64  `tfsdk:"build_warnings_count"`
 	BuildErrorsCount      types.Int64  `tfsdk:"build_errors_count"`
-	EsiMacMsb             types.Int64  `tfsdk:"esi_mac_msb"`
+
+	// fabric settings
+	EsiMacMsb types.Int64 `tfsdk:"esi_mac_msb"`
 	// MTU Settings
 	FabricMtu                  types.Int64 `tfsdk:"fabric_mtu"`
 	DefaultIPLinksToGenericMTU types.Int64 `tfsdk:"default_ip_links_to_generic_mtu"`
@@ -852,6 +855,31 @@ func (o *Blueprint) SetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 	}
 }
 
+func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateBlueprintFromTemplateRequest {
+	result := apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:      apstra.RefDesignTwoStageL3Clos,
+		Label:          o.Name.ValueString(),
+		TemplateId:     apstra.ObjectId(o.TemplateId.ValueString()),
+		FabricSettings: o.FabricSettings(ctx, diags),
+	}
+
+	if utils.Known(o.FabricAddressing) {
+		result.FabricSettings.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
+			utils.ToPtr(path.Root("fabric_addressing")), diags)
+		if diags.HasError() {
+			return nil
+		}
+
+		result.FabricSettings.SpineSuperspineLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
+			utils.ToPtr(path.Root("fabric_addressing")), diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
+	return &result
+}
+
 func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	fabricSettings, err := bp.GetFabricSettings(ctx)
 	if err != nil {
@@ -868,22 +896,27 @@ func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.FabricSettings, diags *diag.Diagnostics) {
 	// load from settings object into a blueprint object,
 	// This LoadFabricSettings is  used by resource_datacenter_blueprints Create,Read,Update methods.
-	o.MaxFabricRoutesCount = types.Int64Null()
-	if settings.MaxFabricRoutes != nil {
-		o.MaxFabricRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
-	}
-	o.MaxMlagRoutesCount = types.Int64Null()
-	if settings.MaxMlagRoutes != nil {
-		o.MaxMlagRoutesCount = types.Int64Value(int64(*settings.MaxMlagRoutes))
-	}
+
 	o.MaxEvpnRoutesCount = types.Int64Null()
 	if settings.MaxEvpnRoutes != nil {
 		o.MaxEvpnRoutesCount = types.Int64Value(int64(*settings.MaxEvpnRoutes))
 	}
+
+	o.MaxExternalRoutesCount = types.Int64Null()
+	if settings.MaxExternalRoutes != nil {
+		o.MaxExternalRoutesCount = types.Int64Value(int64(*settings.MaxExternalRoutes))
+	}
+
 	o.MaxFabricRoutesCount = types.Int64Null()
 	if settings.MaxFabricRoutes != nil {
 		o.MaxFabricRoutesCount = types.Int64Value(int64(*settings.MaxFabricRoutes))
 	}
+
+	o.MaxMlagRoutesCount = types.Int64Null()
+	if settings.MaxMlagRoutes != nil {
+		o.MaxMlagRoutesCount = types.Int64Value(int64(*settings.MaxMlagRoutes))
+	}
+
 	o.EvpnType5Routes = types.BoolValue(false)
 	if settings.EvpnGenerateType5HostRoutes.Value == apstra.FeatureSwitchEnumEnabled.Value {
 		o.EvpnType5Routes = types.BoolValue(true)
@@ -908,11 +941,18 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 	if settings.JunosEvpnMaxNexthopAndInterfaceNumber.Value == apstra.FeatureSwitchEnumEnabled.Value {
 		o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(false)
 	}
+
+	o.AntiAffinityMode = types.StringNull()
+	if settings.AntiAffinityPolicy != nil {
+		o.AntiAffinityMode = types.StringValue(settings.AntiAffinityPolicy.Mode.String())
+	}
+
 	var aap AntiAffinityPolicy
 	aap.loadApiData(ctx, settings.AntiAffinityPolicy, diags)
 	if diags.HasError() {
 		return
 	}
+
 	var d diag.Diagnostics
 	o.AntiAffinityPolicy, d = types.ObjectValueFrom(ctx, AntiAffinityPolicy{}.attrTypes(), aap)
 	diags.Append(d...)
@@ -922,97 +962,128 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 }
 
 func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics) *apstra.FabricSettings {
-	// take everything inside of the blueprint object  and fill out the fabricSettings data structure
-	var junosGracefulRestart *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosGracefulRestart) {
-		if o.JunosGracefulRestart.ValueBool() {
-			junosGracefulRestart = &apstra.FeatureSwitchEnumEnabled
-		} else {
-			junosGracefulRestart = &apstra.FeatureSwitchEnumDisabled
-		}
-	}
+	var result apstra.FabricSettings
 
-	var optimizeSzFootprint *apstra.FeatureSwitchEnum
-	if utils.Known(o.OptimizeRoutingZoneFootprint) {
-		if o.OptimizeRoutingZoneFootprint.ValueBool() {
-			optimizeSzFootprint = &apstra.FeatureSwitchEnumEnabled
-		} else {
-			optimizeSzFootprint = &apstra.FeatureSwitchEnumDisabled
+	if utils.Known(o.AntiAffinityMode) && utils.Known(o.AntiAffinityPolicy) {
+		var aap AntiAffinityPolicy
+		diags.Append(o.AntiAffinityPolicy.As(ctx, &aap, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return nil
 		}
-	}
 
-	var junosEvpnRoutingInstanceVlanAware *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
-		if o.JunosEvpnRoutingInstanceModeMacVrf.ValueBool() {
-			junosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumEnabled
-		} else {
-			junosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumDisabled
-		}
-	}
-
-	var evpnGenerateType5HostRoutes *apstra.FeatureSwitchEnum
-	if utils.Known(o.EvpnType5Routes) {
-		if o.EvpnType5Routes.ValueBool() {
-			evpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumEnabled
-		} else {
-			evpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumDisabled
-		}
-	}
-
-	var junosExOverlayEcmp *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosExOverlayEcmp) {
-		if o.JunosExOverlayEcmp.ValueBool() {
-			junosExOverlayEcmp = &apstra.FeatureSwitchEnumEnabled
-		} else {
-			junosExOverlayEcmp = &apstra.FeatureSwitchEnumDisabled
-		}
-	}
-
-	var junosEvpnMaxNexthopAndInterfaceNumber *apstra.FeatureSwitchEnum
-	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
-		if o.JunosEvpnMaxNexthopAndInterfaceNumber.ValueBool() {
-			junosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumEnabled
-		} else {
-			junosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumDisabled
-		}
-	}
-
-	var aap AntiAffinityPolicy
-	diags.Append(o.AntiAffinityPolicy.As(ctx, &aap, basetypes.ObjectAsOptions{})...)
-	if diags.HasError() {
-		return nil
-	}
-	var antiAffinityMode apstra.AntiAffinityMode
-	err := antiAffinityMode.FromString(o.AntiAffinityMode.ValueString())
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed to process antiafinity mode %s", o.AntiAffinityMode), err.Error())
-		return nil
-	}
-	return &apstra.FabricSettings{
-		MaxExternalRoutes:                     utils.ToPtr(uint32(o.MaxExternalRoutesCount.ValueInt64())),
-		EsiMacMsb:                             utils.ToPtr(uint8(o.EsiMacMsb.ValueInt64())),
-		JunosGracefulRestart:                  junosGracefulRestart,
-		OptimiseSzFootprint:                   optimizeSzFootprint,
-		JunosEvpnRoutingInstanceVlanAware:     junosEvpnRoutingInstanceVlanAware,
-		EvpnGenerateType5HostRoutes:           evpnGenerateType5HostRoutes,
-		MaxFabricRoutes:                       utils.ToPtr(uint32(o.MaxFabricRoutesCount.ValueInt64())),
-		MaxMlagRoutes:                         utils.ToPtr(uint32(o.MaxMlagRoutesCount.ValueInt64())),
-		JunosExOverlayEcmp:                    junosExOverlayEcmp,
-		DefaultSviL3Mtu:                       utils.ToPtr(uint16(o.DefaultSviL3Mtu.ValueInt64())),
-		JunosEvpnMaxNexthopAndInterfaceNumber: junosEvpnMaxNexthopAndInterfaceNumber,
-		FabricL3Mtu:                           utils.ToPtr(uint16(o.FabricMtu.ValueInt64())),
-		Ipv6Enabled:                           utils.ToPtr(o.Ipv6Applications.ValueBool()),
-		ExternalRouterMtu:                     utils.ToPtr(uint16(o.DefaultIPLinksToGenericMTU.ValueInt64())),
-		MaxEvpnRoutes:                         utils.ToPtr(uint32(o.MaxEvpnRoutesCount.ValueInt64())),
-		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
-			Algorithm:                apstra.AlgorithmHeuristic,
+		result.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
+			Algorithm: apstra.AlgorithmHeuristic,
+			//Mode:                     0, // handled below
 			MaxLinksPerPort:          int(aap.MaxLinksCountPerPort.ValueInt64()),
 			MaxLinksPerSlot:          int(aap.MaxLinksCountPerSlot.ValueInt64()),
 			MaxPerSystemLinksPerPort: int(aap.MaxLinksCountPerSystemPerPort.ValueInt64()),
 			MaxPerSystemLinksPerSlot: int(aap.MaxLinksCountPerSystemPerSlot.ValueInt64()),
-			Mode:                     antiAffinityMode,
-		},
+		}
+
+		err := result.AntiAffinityPolicy.Mode.FromString(o.AntiAffinityMode.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed to process antiafinity mode %s", o.AntiAffinityMode), err.Error())
+			return nil
+		}
 	}
+
+	if utils.Known(o.DefaultSviL3Mtu) {
+		result.DefaultSviL3Mtu = utils.ToPtr(uint16(o.DefaultSviL3Mtu.ValueInt64()))
+	}
+
+	if utils.Known(o.EsiMacMsb) {
+		result.EsiMacMsb = utils.ToPtr(uint8(o.EsiMacMsb.ValueInt64()))
+	}
+
+	if utils.Known(o.EvpnType5Routes) {
+		result.EvpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumDisabled
+		if o.EvpnType5Routes.ValueBool() {
+			result.EvpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumEnabled
+		}
+	}
+
+	if utils.Known(o.DefaultIPLinksToGenericMTU) {
+		result.ExternalRouterMtu = utils.ToPtr(uint16(o.DefaultIPLinksToGenericMTU.ValueInt64()))
+	}
+
+	if utils.Known(o.FabricMtu) {
+		result.FabricL3Mtu = utils.ToPtr(uint16(o.FabricMtu.ValueInt64()))
+	}
+
+	if utils.Known(o.Ipv6Applications) {
+		result.Ipv6Enabled = utils.ToPtr(o.Ipv6Applications.ValueBool())
+	}
+
+	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
+		result.JunosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumDisabled
+		if o.JunosEvpnMaxNexthopAndInterfaceNumber.ValueBool() {
+			result.JunosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumEnabled
+		}
+	}
+
+	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
+		result.JunosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumDisabled
+		if o.JunosEvpnRoutingInstanceModeMacVrf.ValueBool() {
+			result.JunosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumEnabled
+		}
+	}
+
+	if utils.Known(o.JunosExOverlayEcmp) {
+		result.JunosExOverlayEcmp = &apstra.FeatureSwitchEnumDisabled
+		if o.JunosExOverlayEcmp.ValueBool() {
+			result.JunosExOverlayEcmp = &apstra.FeatureSwitchEnumEnabled
+		}
+	}
+
+	if utils.Known(o.JunosGracefulRestart) {
+		result.JunosGracefulRestart = &apstra.FeatureSwitchEnumDisabled
+		if o.JunosGracefulRestart.ValueBool() {
+			result.JunosGracefulRestart = &apstra.FeatureSwitchEnumEnabled
+		}
+	}
+
+	if utils.Known(o.MaxEvpnRoutesCount) {
+		result.MaxEvpnRoutes = utils.ToPtr(uint32(o.MaxEvpnRoutesCount.ValueInt64()))
+	}
+
+	if utils.Known(o.MaxExternalRoutesCount) {
+		result.MaxExternalRoutes = utils.ToPtr(uint32(o.MaxExternalRoutesCount.ValueInt64()))
+	}
+
+	if utils.Known(o.MaxFabricRoutesCount) {
+		result.MaxFabricRoutes = utils.ToPtr(uint32(o.MaxFabricRoutesCount.ValueInt64()))
+	}
+
+	if utils.Known(o.MaxMlagRoutesCount) {
+		result.MaxMlagRoutes = utils.ToPtr(uint32(o.MaxMlagRoutesCount.ValueInt64()))
+	}
+
+	if utils.Known(o.OptimizeRoutingZoneFootprint) {
+		result.OptimiseSzFootprint = &apstra.FeatureSwitchEnumDisabled
+		if o.OptimizeRoutingZoneFootprint.ValueBool() {
+			result.OptimiseSzFootprint = &apstra.FeatureSwitchEnumEnabled
+		}
+	}
+
+	// fabric link addressing details are immutable and must not be set
+	// when calling SetFabricSettings - these details are handled as a
+	// special case by Request()
+	//
+	//if utils.Known(o.FabricAddressing) {
+	//	result.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
+	//		utils.ToPtr(path.Root("fabric_addressing")), diags)
+	//	if diags.HasError() {
+	//		return nil
+	//	}
+	//
+	//	result.SpineSuperspineLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
+	//		utils.ToPtr(path.Root("fabric_addressing")), diags)
+	//	if diags.HasError() {
+	//		return nil
+	//	}
+	//}
+
+	return &result
 }
 
 func (o *Blueprint) Equal(ctx context.Context, in *Blueprint, diags diag.Diagnostics) bool {
