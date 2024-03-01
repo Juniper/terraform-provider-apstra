@@ -196,7 +196,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed: true,
 		},
 		"fabric_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("MTU of fabric links."),
+			MarkdownDescription: "MTU of fabric links.",
 			Computed:            true,
 		},
 		"default_ip_links_to_generic_mtu": dataSourceSchema.Int64Attribute{
