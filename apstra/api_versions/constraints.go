@@ -5,6 +5,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
+var Ge420 = version.MustConstraints(version.NewConstraint(">=" + Apstra420))
+
 type AttributeConstraint struct {
 	Path        path.Path
 	Constraints version.Constraints
