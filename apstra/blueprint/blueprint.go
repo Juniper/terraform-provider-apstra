@@ -1076,65 +1076,65 @@ func (o *Blueprint) Equal(ctx context.Context, in *Blueprint, diags diag.Diagnos
 	return a.Equal(b)
 }
 
-func fabricSettingsNeedsUpdate(plan, state *apstra.FabricSettings) bool {
-	if state == nil {
-		return true
-	}
-
-	if plan.AntiAffinityPolicy != nil && (state.AntiAffinityPolicy == nil || *plan.AntiAffinityPolicy != *state.AntiAffinityPolicy) {
-		return true
-	}
-	if plan.EsiMacMsb != nil && (state.EsiMacMsb == nil || *plan.EsiMacMsb != *state.EsiMacMsb) {
-		return true
-	}
-	if plan.MaxExternalRoutes != nil && (state.MaxExternalRoutes == nil || *plan.MaxExternalRoutes != *state.MaxExternalRoutes) {
-		return true
-	}
-	if plan.JunosEvpnMaxNexthopAndInterfaceNumber != nil && (state.JunosEvpnMaxNexthopAndInterfaceNumber == nil || *plan.JunosEvpnMaxNexthopAndInterfaceNumber != *state.JunosEvpnMaxNexthopAndInterfaceNumber) {
-		return true
-	}
-	if plan.JunosEvpnRoutingInstanceVlanAware != nil && (state.JunosEvpnRoutingInstanceVlanAware == nil || *plan.JunosEvpnRoutingInstanceVlanAware != *state.JunosEvpnRoutingInstanceVlanAware) {
-		return true
-	}
-	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
-		return true
-	}
-	if plan.JunosGracefulRestart != nil && (state.JunosGracefulRestart == nil || *plan.JunosGracefulRestart != *state.JunosGracefulRestart) {
-		return true
-	}
-	if plan.EvpnGenerateType5HostRoutes != nil && (state.EvpnGenerateType5HostRoutes == nil || *plan.EvpnGenerateType5HostRoutes != *state.EvpnGenerateType5HostRoutes) {
-		return true
-	}
-	if plan.MaxFabricRoutes != nil && (state.MaxFabricRoutes == nil || *plan.MaxFabricRoutes != *state.MaxFabricRoutes) {
-		return true
-	}
-	if plan.MaxMlagRoutes != nil && (state.MaxMlagRoutes == nil || *plan.MaxMlagRoutes != *state.MaxMlagRoutes) {
-		return true
-	}
-	if plan.DefaultSviL3Mtu != nil && (state.DefaultSviL3Mtu == nil || *plan.DefaultSviL3Mtu != *state.DefaultSviL3Mtu) {
-		return true
-	}
-	if plan.FabricL3Mtu != nil && (state.FabricL3Mtu == nil || *plan.FabricL3Mtu != *state.FabricL3Mtu) {
-		return true
-	}
-	if plan.Ipv6Enabled != nil && (state.Ipv6Enabled == nil || *plan.Ipv6Enabled != *state.Ipv6Enabled) {
-		return true
-	}
-	if plan.OverlayControlProtocol != nil && (state.OverlayControlProtocol == nil || *plan.OverlayControlProtocol != *state.OverlayControlProtocol) {
-		return true
-	}
-	if plan.ExternalRouterMtu != nil && (state.ExternalRouterMtu == nil || *plan.ExternalRouterMtu != *state.ExternalRouterMtu) {
-		return true
-	}
-	if plan.MaxEvpnRoutes != nil && (state.MaxEvpnRoutes == nil || *plan.MaxEvpnRoutes != *state.MaxEvpnRoutes) {
-		return true
-	}
-	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
-		return true
-	}
-
-	return false
-}
+//func fabricSettingsNeedsUpdate(plan, state *apstra.FabricSettings) bool {
+//	if state == nil {
+//		return true
+//	}
+//
+//	if plan.AntiAffinityPolicy != nil && (state.AntiAffinityPolicy == nil || *plan.AntiAffinityPolicy != *state.AntiAffinityPolicy) {
+//		return true
+//	}
+//	if plan.EsiMacMsb != nil && (state.EsiMacMsb == nil || *plan.EsiMacMsb != *state.EsiMacMsb) {
+//		return true
+//	}
+//	if plan.MaxExternalRoutes != nil && (state.MaxExternalRoutes == nil || *plan.MaxExternalRoutes != *state.MaxExternalRoutes) {
+//		return true
+//	}
+//	if plan.JunosEvpnMaxNexthopAndInterfaceNumber != nil && (state.JunosEvpnMaxNexthopAndInterfaceNumber == nil || *plan.JunosEvpnMaxNexthopAndInterfaceNumber != *state.JunosEvpnMaxNexthopAndInterfaceNumber) {
+//		return true
+//	}
+//	if plan.JunosEvpnRoutingInstanceVlanAware != nil && (state.JunosEvpnRoutingInstanceVlanAware == nil || *plan.JunosEvpnRoutingInstanceVlanAware != *state.JunosEvpnRoutingInstanceVlanAware) {
+//		return true
+//	}
+//	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
+//		return true
+//	}
+//	if plan.JunosGracefulRestart != nil && (state.JunosGracefulRestart == nil || *plan.JunosGracefulRestart != *state.JunosGracefulRestart) {
+//		return true
+//	}
+//	if plan.EvpnGenerateType5HostRoutes != nil && (state.EvpnGenerateType5HostRoutes == nil || *plan.EvpnGenerateType5HostRoutes != *state.EvpnGenerateType5HostRoutes) {
+//		return true
+//	}
+//	if plan.MaxFabricRoutes != nil && (state.MaxFabricRoutes == nil || *plan.MaxFabricRoutes != *state.MaxFabricRoutes) {
+//		return true
+//	}
+//	if plan.MaxMlagRoutes != nil && (state.MaxMlagRoutes == nil || *plan.MaxMlagRoutes != *state.MaxMlagRoutes) {
+//		return true
+//	}
+//	if plan.DefaultSviL3Mtu != nil && (state.DefaultSviL3Mtu == nil || *plan.DefaultSviL3Mtu != *state.DefaultSviL3Mtu) {
+//		return true
+//	}
+//	if plan.FabricL3Mtu != nil && (state.FabricL3Mtu == nil || *plan.FabricL3Mtu != *state.FabricL3Mtu) {
+//		return true
+//	}
+//	if plan.Ipv6Enabled != nil && (state.Ipv6Enabled == nil || *plan.Ipv6Enabled != *state.Ipv6Enabled) {
+//		return true
+//	}
+//	if plan.OverlayControlProtocol != nil && (state.OverlayControlProtocol == nil || *plan.OverlayControlProtocol != *state.OverlayControlProtocol) {
+//		return true
+//	}
+//	if plan.ExternalRouterMtu != nil && (state.ExternalRouterMtu == nil || *plan.ExternalRouterMtu != *state.ExternalRouterMtu) {
+//		return true
+//	}
+//	if plan.MaxEvpnRoutes != nil && (state.MaxEvpnRoutes == nil || *plan.MaxEvpnRoutes != *state.MaxEvpnRoutes) {
+//		return true
+//	}
+//	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
+//		return true
+//	}
+//
+//	return false
+//}
 
 func (o *Blueprint) fabricSettingsNeedsUpdate(state *Blueprint) bool {
 	if state == nil {
