@@ -3,10 +3,9 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"math"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
@@ -34,7 +33,8 @@ type Blueprint struct {
 	Name             types.String `tfsdk:"name"`
 	TemplateId       types.String `tfsdk:"template_id"`
 	FabricAddressing types.String `tfsdk:"fabric_addressing"`
-	// blueprint status
+
+	// status
 	Status                types.String `tfsdk:"status"`
 	SuperspineCount       types.Int64  `tfsdk:"superspine_count"`
 	SpineCount            types.Int64  `tfsdk:"spine_count"`
@@ -44,40 +44,36 @@ type Blueprint struct {
 	ExternalCount         types.Int64  `tfsdk:"external_router_count"`
 	HasUncommittedChanges types.Bool   `tfsdk:"has_uncommitted_changes"`
 	Version               types.Int64  `tfsdk:"version"`
-	BuildWarningsCount    types.Int64  `tfsdk:"build_warnings_count"`
 	BuildErrorsCount      types.Int64  `tfsdk:"build_errors_count"`
+	BuildWarningsCount    types.Int64  `tfsdk:"build_warnings_count"`
 
 	// fabric settings
-	EsiMacMsb types.Int64 `tfsdk:"esi_mac_msb"`
-	// MTU Settings
-	FabricMtu                  types.Int64 `tfsdk:"fabric_mtu"`
-	DefaultIPLinksToGenericMTU types.Int64 `tfsdk:"default_ip_links_to_generic_mtu"`
-	DefaultSviL3Mtu            types.Int64 `tfsdk:"default_svi_l3_mtu"`
-	// Fabric Design
-	Ipv6Applications             types.Bool `tfsdk:"ipv6_applications"`
-	OptimizeRoutingZoneFootprint types.Bool `tfsdk:"optimize_routing_zone_footprint"`
-	// Route Options
-	MaxExternalRoutesCount types.Int64 `tfsdk:"max_external_routes_count"`
-	MaxMlagRoutesCount     types.Int64 `tfsdk:"max_mlag_routes_count"`
-	MaxEvpnRoutesCount     types.Int64 `tfsdk:"max_evpn_routes_count"`
-	MaxFabricRoutesCount   types.Int64 `tfsdk:"max_fabric_routes_count"`
-	EvpnType5Routes        types.Bool  `tfsdk:"evpn_type_5_routes"`
-	// Vendor Specific
-	JunosEvpnRoutingInstanceModeMacVrf    types.Bool `tfsdk:"junos_evpn_routing_instance_mode_mac_vrf"`
-	JunosEvpnMaxNexthopAndInterfaceNumber types.Bool `tfsdk:"junos_evpn_max_nexthop_and_interface_number"`
-	JunosGracefulRestart                  types.Bool `tfsdk:"junos_graceful_restart"`
-	JunosExOverlayEcmp                    types.Bool `tfsdk:"junos_ex_overlay_ecmp"`
-	// Anti Affinity
-	AntiAffinityMode   types.String `tfsdk:"anti_affinity_mode"`
-	AntiAffinityPolicy types.Object `tfsdk:"anti_affinity_policy"`
+	AntiAffinityMode                      types.String `tfsdk:"anti_affinity_mode"`
+	AntiAffinityPolicy                    types.Object `tfsdk:"anti_affinity_policy"`
+	DefaultIPLinksToGenericMTU            types.Int64  `tfsdk:"default_ip_links_to_generic_mtu"`
+	DefaultSviL3Mtu                       types.Int64  `tfsdk:"default_svi_l3_mtu"`
+	EsiMacMsb                             types.Int64  `tfsdk:"esi_mac_msb"`
+	EvpnType5Routes                       types.Bool   `tfsdk:"evpn_type_5_routes"`
+	FabricMtu                             types.Int64  `tfsdk:"fabric_mtu"`
+	Ipv6Applications                      types.Bool   `tfsdk:"ipv6_applications"`
+	JunosEvpnMaxNexthopAndInterfaceNumber types.Bool   `tfsdk:"junos_evpn_max_nexthop_and_interface_number"`
+	JunosEvpnRoutingInstanceModeMacVrf    types.Bool   `tfsdk:"junos_evpn_routing_instance_mode_mac_vrf"`
+	JunosExOverlayEcmp                    types.Bool   `tfsdk:"junos_ex_overlay_ecmp"`
+	JunosGracefulRestart                  types.Bool   `tfsdk:"junos_graceful_restart"`
+	MaxEvpnRoutesCount                    types.Int64  `tfsdk:"max_evpn_routes_count"`
+	MaxExternalRoutesCount                types.Int64  `tfsdk:"max_external_routes_count"`
+	MaxFabricRoutesCount                  types.Int64  `tfsdk:"max_fabric_routes_count"`
+	MaxMlagRoutesCount                    types.Int64  `tfsdk:"max_mlag_routes_count"`
+	OptimizeRoutingZoneFootprint          types.Bool   `tfsdk:"optimize_routing_zone_footprint"`
 }
 
 func (o Blueprint) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"id":                      types.StringType,
-		"name":                    types.StringType,
-		"template_id":             types.StringType,
-		"fabric_addressing":       types.StringType,
+		"id":                types.StringType,
+		"name":              types.StringType,
+		"template_id":       types.StringType,
+		"fabric_addressing": types.StringType,
+
 		"status":                  types.StringType,
 		"superspine_count":        types.Int64Type,
 		"spine_count":             types.Int64Type,
@@ -87,30 +83,26 @@ func (o Blueprint) attrTypes() map[string]attr.Type {
 		"external_router_count":   types.Int64Type,
 		"has_uncommitted_changes": types.BoolType,
 		"version":                 types.Int64Type,
-		"build_warnings_count":    types.Int64Type,
 		"build_errors_count":      types.Int64Type,
-		"esi_mac_msb":             types.Int64Type,
-		// MTU Settings
-		"fabric_mtu":                      types.Int64Type,
-		"default_ip_links_to_generic_mtu": types.Int64Type,
-		"default_svi_l3_mtu":              types.Int64Type,
-		// Fabric Design
-		"ipv6_applications":               types.BoolType,
-		"optimize_routing_zone_footprint": types.BoolType,
-		// Route Options
-		"max_external_routes_count": types.Int64Type,
-		"max_mlag_routes_count":     types.Int64Type,
-		"max_evpn_routes_count":     types.Int64Type,
-		"max_fabric_routes_count":   types.Int64Type,
-		"evpn_type_5_routes":        types.BoolType,
-		// Vendor Specific
-		"junos_evpn_routing_instance_mode_mac_vrf":    types.BoolType,
+		"build_warnings_count":    types.Int64Type,
+
+		"anti_affinity_mode":                          types.StringType,
+		"anti_affinity_policy":                        types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()},
+		"default_ip_links_to_generic_mtu":             types.Int64Type,
+		"default_svi_l3_mtu":                          types.Int64Type,
+		"esi_mac_msb":                                 types.Int64Type,
+		"evpn_type_5_routes":                          types.BoolType,
+		"fabric_mtu":                                  types.Int64Type,
+		"ipv6_applications":                           types.BoolType,
 		"junos_evpn_max_nexthop_and_interface_number": types.BoolType,
-		"junos_graceful_restart":                      types.BoolType,
+		"junos_evpn_routing_instance_mode_mac_vrf":    types.BoolType,
 		"junos_ex_overlay_ecmp":                       types.BoolType,
-		// Anti Affinity
-		"anti_affinity_mode":   types.StringType,
-		"anti_affinity_policy": types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()},
+		"junos_graceful_restart":                      types.BoolType,
+		"max_evpn_routes_count":                       types.Int64Type,
+		"max_external_routes_count":                   types.Int64Type,
+		"max_fabric_routes_count":                     types.Int64Type,
+		"max_mlag_routes_count":                       types.Int64Type,
+		"optimize_routing_zone_footprint":             types.BoolType,
 	}
 }
 
@@ -178,89 +170,13 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Currently active blueprint version",
 			Computed:            true,
 		},
-		"build_warnings_count": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Number of build warnings.",
-			Computed:            true,
-		},
 		"build_errors_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of build errors.",
 			Computed:            true,
 		},
-		"esi_mac_msb": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "ESI MAC address most significant byte.",
+		"build_warnings_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of build warnings.",
 			Computed:            true,
-		},
-		"ipv6_applications": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
-				"connectivity points. This adds resource requirements and device configurations, " +
-				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
-				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links.",
-			Computed: true,
-		},
-		"fabric_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "MTU of fabric links.",
-			Computed:            true,
-		},
-		"default_ip_links_to_generic_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Default L3 MTU for IP links to generic systems.",
-			Computed:            true,
-		},
-		"default_svi_l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Default L3 MTU for SVI interfaces.",
-			Computed:            true,
-		},
-		"optimize_routing_zone_footprint": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "When `true`: routing zones will not be rendered on leafs where it is not required," +
-				"which results in less resource consumption. Routing zone will only be rendered for systems which have " +
-				"other structures configured on top of routing zone, such as virtual networks, protocol sessions, " +
-				"static routes, sub-interfaces, etc.",
-			Computed: true,
-		},
-		"max_external_routes_count": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Maximum number of routes to accept from external routers. When `null` no " +
-				"maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.",
-			Computed: true,
-		},
-		"max_mlag_routes_count": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Maximum number of routes to accept across MLAG peer switches. When `null` no " +
-				"maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.",
-			Computed: true,
-		},
-		"max_evpn_routes_count": dataSourceSchema.Int64Attribute{
-			Computed: true,
-			MarkdownDescription: "Maximum number of EVPN routes to accept on an EVPN switch. When `null` no " +
-				"maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.",
-		},
-		"max_fabric_routes_count": dataSourceSchema.Int64Attribute{
-			Computed: true,
-			MarkdownDescription: "Maximum number of routes to accept between fabric nodes. " +
-				"The value 0 (zero) indicates that no limit is configured.",
-		},
-		"evpn_type_5_routes": dataSourceSchema.BoolAttribute{
-			Computed: true,
-			MarkdownDescription: "When enabled, all EVPN VTEPs in the fabric will redistribute " +
-				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table.",
-		},
-		"junos_evpn_routing_instance_mode_mac_vrf": dataSourceSchema.BoolAttribute{
-			Computed: true,
-			MarkdownDescription: "In releases before 4.2, Apstra used a single default switch instance as the " +
-				"configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for all new " +
-				"blueprints and normalized the configuration of Junos to Junos Evolved. This option indicates whether " +
-				"the blueprint is configured to transition Junos devices to the MAC-VRF configuration model for any " +
-				"blueprints deployed before the 4.2 release. All models use the VLAN-Aware service type.",
-		},
-		"junos_evpn_max_nexthop_and_interface_number": dataSourceSchema.BoolAttribute{
-			Computed: true,
-			MarkdownDescription: "Enables configuring the maximum number of nexthops and interface numbers reserved " +
-				"for use in EVPN-VXLAN overlay network on Junos leaf devices. Default is enabled.",
-		},
-		"junos_graceful_restart": dataSourceSchema.BoolAttribute{
-			Computed:            true,
-			MarkdownDescription: "Enables the Graceful Restart feature on Junos devices",
-		},
-		"junos_ex_overlay_ecmp": dataSourceSchema.BoolAttribute{
-			Computed:            true,
-			MarkdownDescription: "Enables VXLAN Overlay ECMP on Junos EX-series devices",
 		},
 		"anti_affinity_mode": dataSourceSchema.StringAttribute{
 			Computed: true,
@@ -283,6 +199,82 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				"links could be time-consuming. With the anti-affinity policy you can apply certain constraints to " +
 				"the cabling map to control automatic port assignments.",
 			Attributes: AntiAffinityPolicy{}.datasourceAttributes(),
+		},
+		"default_ip_links_to_generic_mtu": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Default L3 MTU for IP links to generic systems.",
+			Computed:            true,
+		},
+		"default_svi_l3_mtu": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Default L3 MTU for SVI interfaces.",
+			Computed:            true,
+		},
+		"esi_mac_msb": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "ESI MAC address most significant byte.",
+			Computed:            true,
+		},
+		"evpn_type_5_routes": dataSourceSchema.BoolAttribute{
+			Computed: true,
+			MarkdownDescription: "When enabled, all EVPN VTEPs in the fabric will redistribute " +
+				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table.",
+		},
+		"fabric_mtu": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "MTU of fabric links.",
+			Computed:            true,
+		},
+		"ipv6_applications": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
+				"connectivity points. This adds resource requirements and device configurations, " +
+				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
+				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links.",
+			Computed: true,
+		},
+		"junos_evpn_max_nexthop_and_interface_number": dataSourceSchema.BoolAttribute{
+			Computed: true,
+			MarkdownDescription: "Enables configuring the maximum number of nexthops and interface numbers reserved " +
+				"for use in EVPN-VXLAN overlay network on Junos leaf devices. Default is enabled.",
+		},
+		"junos_evpn_routing_instance_mode_mac_vrf": dataSourceSchema.BoolAttribute{
+			Computed: true,
+			MarkdownDescription: "In releases before 4.2, Apstra used a single default switch instance as the " +
+				"configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for all new " +
+				"blueprints and normalized the configuration of Junos to Junos Evolved. This option indicates whether " +
+				"the blueprint is configured to transition Junos devices to the MAC-VRF configuration model for any " +
+				"blueprints deployed before the 4.2 release. All models use the VLAN-Aware service type.",
+		},
+		"junos_ex_overlay_ecmp": dataSourceSchema.BoolAttribute{
+			Computed:            true,
+			MarkdownDescription: "Enables VXLAN Overlay ECMP on Junos EX-series devices",
+		},
+		"junos_graceful_restart": dataSourceSchema.BoolAttribute{
+			Computed:            true,
+			MarkdownDescription: "Enables the Graceful Restart feature on Junos devices",
+		},
+		"max_evpn_routes_count": dataSourceSchema.Int64Attribute{
+			Computed: true,
+			MarkdownDescription: "Maximum number of EVPN routes to accept on an EVPN switch. When `null` no " +
+				"maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.",
+		},
+		"max_external_routes_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Maximum number of routes to accept from external routers. When `null` no " +
+				"maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.",
+			Computed: true,
+		},
+		"max_fabric_routes_count": dataSourceSchema.Int64Attribute{
+			Computed: true,
+			MarkdownDescription: "Maximum number of routes to accept between fabric nodes. " +
+				"The value 0 (zero) indicates that no limit is configured.",
+		},
+		"max_mlag_routes_count": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Maximum number of routes to accept across MLAG peer switches. When `null` no " +
+				"maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.",
+			Computed: true,
+		},
+		"optimize_routing_zone_footprint": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "When `true`: routing zones will not be rendered on leafs where it is not required," +
+				"which results in less resource consumption. Routing zone will only be rendered for systems which have " +
+				"other structures configured on top of routing zone, such as virtual networks, protocol sessions, " +
+				"static routes, sub-interfaces, etc.",
+			Computed: true,
 		},
 	}
 }
@@ -361,166 +353,13 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Currently active blueprint version",
 			Computed:            true,
 		},
-		"build_warnings_count": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Number of build warnings.",
-			Computed:            true,
-		},
 		"build_errors_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of build errors.",
 			Computed:            true,
 		},
-		"esi_mac_msb": resourceSchema.Int64Attribute{
-			MarkdownDescription: "ESI MAC address most significant byte. Must be an even number " +
-				"between 0 and 254 inclusive.",
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.AtLeast(0),
-				int64validator.AtMost(254),
-				apstravalidator.MustBeEvenOrOdd(true),
-			},
-		},
-		"ipv6_applications": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
-				"connectivity points. This adds resource requirements and device configurations, " +
-				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
-				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot " +
-				"be disabled without re-creating the Blueprint.",
-			Optional: true,
-			Computed: true,
-			PlanModifiers: []planmodifier.Bool{
-				boolplanmodifier.UseStateForUnknown(),
-				boolplanmodifier.RequiresReplaceIf(
-					apstraplanmodifier.BoolRequiresReplaceWhenSwitchingTo(false),
-					"Switching from \"false\" to \"true\" requires the Blueprint to be replaced",
-					"Switching from `false` to `true` requires the Blueprint to be replaced",
-				),
-			},
-		},
-		"fabric_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("MTU of fabric links. Must be an even number between %d and %d. "+
-				"Requires Apstra %s.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
-				apstravalidator.MustBeEvenOrOdd(true),
-			},
-		},
-		"default_ip_links_to_generic_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Default L3 MTU for IP links to generic systems. A null or empty "+
-				"value implies AOS will not render explicit MTU value and system defaults will be used. Should be an "+
-				"even number between %d and %d. Requires Apstra %s", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
-				apstravalidator.MustBeEvenOrOdd(true),
-			},
-		},
-		"default_svi_l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Default L3 MTU for SVI interfaces. Should be an even number "+
-				"between %d and %d. Requires Apstra %s.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
-				apstravalidator.MustBeEvenOrOdd(true),
-			},
-		},
-		"optimize_routing_zone_footprint": resourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("When `true`: routing zones will not be rendered on leafs where "+
-				"they are not required, resulting in less resource consumption. Requires Apstra %s", apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-		},
-		"max_external_routes_count": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Maximum number of routes to accept from external routers. When "+
-				"`null`, no maximum-route commands will be rendered into BGP session configurations. OS vendor defaults "+
-				"will be used. Requires Apstra %s.", apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.Between(1, math.MaxUint32),
-			},
-		},
-		"max_mlag_routes_count": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Maximum number of routes to accept across MLAG peer links. When "+
-				"`null, no maximum-route commands will be rendered into BGP session configurations. OS vendor defaults "+
-				"will be used. Requires Apstra %s.", apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.Between(1, math.MaxUint32),
-			},
-		},
-		"max_evpn_routes_count": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Maximum number of EVPN routes to accept on Leaf Switches. When "+
-				"`null, no maximum-route commands will be rendered into BGP session configurations. OS vendor defaults "+
-				"will be used. Requires Apstra %s.", apiversions.Ge420),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.Int64{
-				int64validator.Between(1, math.MaxUint32),
-			},
-		},
-		"max_fabric_routes_count": resourceSchema.Int64Attribute{
-			Computed: true,
-			Optional: true,
-			MarkdownDescription: fmt.Sprintf("Maximum number of underlay routes to accept between fabric nodes. "+
-				"When `null` no, maximum-route commands will be rendered on BGP sessions. OS vendor defaults will be "+
-				"used. Setting this option may be required in the event of leaking EVPN routes from a Security Zone "+
-				"into the default Security Zone (VRF) which possibly generating a large number of /32 and /128 routes. "+
-				"It is suggested that this value be effectively unlimited on all Blueprints to ensure BGP stability in "+
-				"the underlay. Unlimited is also suggested for non-EVPN Blueprints considering the impact to traffic if "+
-				"spine-leaf sessions go offline. Requires Apstra %s.", apiversions.Ge420),
-			Validators: []validator.Int64{
-				int64validator.Between(1, math.MaxUint32),
-			},
-		},
-		"evpn_type_5_routes": resourceSchema.BoolAttribute{
-			Computed: true,
-			Optional: true,
-			MarkdownDescription: fmt.Sprintf("When `true`, all EVPN VTEPs in the fabric will redistribute "+
-				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table. Currently, "+
-				"this option is only certified for Juniper Junos. FRR (SONiC) does this implicitly and cannot be "+
-				"disabled. This setting will be ignored. On Arista and Cisco, no configuration is rendered and will "+
-				"result in a Blueprint warning that it is not supported by AOS. This value is disabled by default, as "+
-				"it generates a very large number of routes in the BGP routing table and takes large amounts of TCAM. "+
-				"When these /32 & /128 routes are generated, they enable direct unicast routing to host destinations "+
-				"on VNIs that are not stretched to the ingress VTEP, and avoid a route lookup to a subnet (eg, /24) "+
-				"that may be hosted on many leafs. Requires Apstra %s.", apiversions.Ge420),
-		},
-		"junos_evpn_routing_instance_mode_mac_vrf": resourceSchema.BoolAttribute{
-			Computed: true,
-			Optional: true,
-			MarkdownDescription: fmt.Sprintf("In releases before 4.2, Apstra used a single default switch "+
-				"instance as the configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for "+
-				"all new blueprints and normalized the configuration of Junos to Junos Evolved. This option allows you "+
-				"to transition Junos devices to the MAC-VRF configuration model for any blueprints deployed before the "+
-				"4.2 release. All models use the VLAN-Aware service type. Requires Apstra %s", apiversions.Ge420),
-		},
-		"junos_evpn_max_nexthop_and_interface_number": resourceSchema.BoolAttribute{
-			Computed: true,
-			Optional: true,
-			MarkdownDescription: fmt.Sprintf("**Changing this value will result in a disruptive restart of the "+
-				"PFE.** Enables configuring the maximum number of nexthops and interface numbers reserved for use in "+
-				"EVPN-VXLAN overlay network on Junos leaf devices. AOS default is `true`. Requires Apstra %s",
-				apiversions.Ge420),
-		},
-		"junos_graceful_restart": resourceSchema.BoolAttribute{
-			Computed: true,
-			Optional: true,
-			MarkdownDescription: fmt.Sprintf("**Changing this value may result in a flap of all BGP sessions as "+
-				"the sessions are re-negotiated.** When `true`, the bgp graceful restart feature is enabled on Junos "+
-				"devices. Requires Apstra %s", apiversions.Ge420),
-		},
-		"junos_ex_overlay_ecmp": resourceSchema.BoolAttribute{
-			Computed: true,
-			Optional: true,
-			MarkdownDescription: fmt.Sprintf("**Changing this value will result in a disruptive restart of the "+
-				"PFE on EX-series devices.** When `true,`VXLAN Overlay ECMP will be enabled on Junos EX-series devices. "+
-				"Requires Apstra %s.", apiversions.Ge420),
+		"build_warnings_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of build warnings.",
+			Computed:            true,
 		},
 		"anti_affinity_mode": resourceSchema.StringAttribute{
 			Computed: true,
@@ -555,12 +394,166 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Attributes: AntiAffinityPolicy{}.resourceAttributes(),
 			Validators: []validator.Object{objectvalidator.AlsoRequires(path.MatchRoot("anti_affinity_mode"))},
 		},
+		"default_ip_links_to_generic_mtu": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Default L3 MTU for IP links to generic systems. A null or empty "+
+				"value implies AOS will not render explicit MTU value and system defaults will be used. Should be an "+
+				"even number between %d and %d. Requires Apstra %s", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
+		"default_svi_l3_mtu": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Default L3 MTU for SVI interfaces. Should be an even number "+
+				"between %d and %d. Requires Apstra %s.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
+		"esi_mac_msb": resourceSchema.Int64Attribute{
+			MarkdownDescription: "ESI MAC address most significant byte. Must be an even number " +
+				"between 0 and 254 inclusive.",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.AtLeast(0),
+				int64validator.AtMost(254),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
+		"evpn_type_5_routes": resourceSchema.BoolAttribute{
+			Computed: true,
+			Optional: true,
+			MarkdownDescription: fmt.Sprintf("When `true`, all EVPN VTEPs in the fabric will redistribute "+
+				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table. Currently, "+
+				"this option is only certified for Juniper Junos. FRR (SONiC) does this implicitly and cannot be "+
+				"disabled. This setting will be ignored. On Arista and Cisco, no configuration is rendered and will "+
+				"result in a Blueprint warning that it is not supported by AOS. This value is disabled by default, as "+
+				"it generates a very large number of routes in the BGP routing table and takes large amounts of TCAM. "+
+				"When these /32 & /128 routes are generated, they enable direct unicast routing to host destinations "+
+				"on VNIs that are not stretched to the ingress VTEP, and avoid a route lookup to a subnet (eg, /24) "+
+				"that may be hosted on many leafs. Requires Apstra %s.", apiversions.Ge420),
+		},
+		"fabric_mtu": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("MTU of fabric links. Must be an even number between %d and %d. "+
+				"Requires Apstra %s.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(constants.L3MtuMin, constants.L3MtuMax),
+				apstravalidator.MustBeEvenOrOdd(true),
+			},
+		},
+		"ipv6_applications": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
+				"connectivity points. This adds resource requirements and device configurations, " +
+				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
+				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot " +
+				"be disabled without re-creating the Blueprint.",
+			Optional: true,
+			Computed: true,
+			PlanModifiers: []planmodifier.Bool{
+				boolplanmodifier.UseStateForUnknown(),
+				boolplanmodifier.RequiresReplaceIf(
+					apstraplanmodifier.BoolRequiresReplaceWhenSwitchingTo(false),
+					"Switching from \"false\" to \"true\" requires the Blueprint to be replaced",
+					"Switching from `false` to `true` requires the Blueprint to be replaced",
+				),
+			},
+		},
+		"junos_evpn_max_nexthop_and_interface_number": resourceSchema.BoolAttribute{
+			Computed: true,
+			Optional: true,
+			MarkdownDescription: fmt.Sprintf("**Changing this value will result in a disruptive restart of the "+
+				"PFE.** Enables configuring the maximum number of nexthops and interface numbers reserved for use in "+
+				"EVPN-VXLAN overlay network on Junos leaf devices. AOS default is `true`. Requires Apstra %s",
+				apiversions.Ge420),
+		},
+		"junos_evpn_routing_instance_mode_mac_vrf": resourceSchema.BoolAttribute{
+			Computed: true,
+			Optional: true,
+			MarkdownDescription: fmt.Sprintf("In releases before 4.2, Apstra used a single default switch "+
+				"instance as the configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for "+
+				"all new blueprints and normalized the configuration of Junos to Junos Evolved. This option allows you "+
+				"to transition Junos devices to the MAC-VRF configuration model for any blueprints deployed before the "+
+				"4.2 release. All models use the VLAN-Aware service type. Requires Apstra %s", apiversions.Ge420),
+		},
+		"junos_ex_overlay_ecmp": resourceSchema.BoolAttribute{
+			Computed: true,
+			Optional: true,
+			MarkdownDescription: fmt.Sprintf("**Changing this value will result in a disruptive restart of the "+
+				"PFE on EX-series devices.** When `true,`VXLAN Overlay ECMP will be enabled on Junos EX-series devices. "+
+				"Requires Apstra %s.", apiversions.Ge420),
+		},
+		"junos_graceful_restart": resourceSchema.BoolAttribute{
+			Computed: true,
+			Optional: true,
+			MarkdownDescription: fmt.Sprintf("**Changing this value may result in a flap of all BGP sessions as "+
+				"the sessions are re-negotiated.** When `true`, the bgp graceful restart feature is enabled on Junos "+
+				"devices. Requires Apstra %s", apiversions.Ge420),
+		},
+		"max_evpn_routes_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Maximum number of EVPN routes to accept on Leaf Switches. When "+
+				"`null, no maximum-route commands will be rendered into BGP session configurations. OS vendor defaults "+
+				"will be used. Requires Apstra %s.", apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(1, math.MaxUint32),
+			},
+		},
+		"max_external_routes_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Maximum number of routes to accept from external routers. When "+
+				"`null`, no maximum-route commands will be rendered into BGP session configurations. OS vendor defaults "+
+				"will be used. Requires Apstra %s.", apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(1, math.MaxUint32),
+			},
+		},
+		"max_fabric_routes_count": resourceSchema.Int64Attribute{
+			Computed: true,
+			Optional: true,
+			MarkdownDescription: fmt.Sprintf("Maximum number of underlay routes to accept between fabric nodes. "+
+				"When `null` no, maximum-route commands will be rendered on BGP sessions. OS vendor defaults will be "+
+				"used. Setting this option may be required in the event of leaking EVPN routes from a Security Zone "+
+				"into the default Security Zone (VRF) which possibly generating a large number of /32 and /128 routes. "+
+				"It is suggested that this value be effectively unlimited on all Blueprints to ensure BGP stability in "+
+				"the underlay. Unlimited is also suggested for non-EVPN Blueprints considering the impact to traffic if "+
+				"spine-leaf sessions go offline. Requires Apstra %s.", apiversions.Ge420),
+			Validators: []validator.Int64{
+				int64validator.Between(1, math.MaxUint32),
+			},
+		},
+		"max_mlag_routes_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Maximum number of routes to accept across MLAG peer links. When "+
+				"`null, no maximum-route commands will be rendered into BGP session configurations. OS vendor defaults "+
+				"will be used. Requires Apstra %s.", apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Int64{
+				int64validator.Between(1, math.MaxUint32),
+			},
+		},
+		"optimize_routing_zone_footprint": resourceSchema.BoolAttribute{
+			MarkdownDescription: fmt.Sprintf("When `true`: routing zones will not be rendered on leafs where "+
+				"they are not required, resulting in less resource consumption. Requires Apstra %s", apiversions.Ge420),
+			Optional: true,
+			Computed: true,
+		},
 	}
 }
 
 func (o *Blueprint) LoadApiData(_ context.Context, in *apstra.BlueprintStatus, _ *diag.Diagnostics) {
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
+
 	o.Status = types.StringValue(in.Status)
 	o.SuperspineCount = types.Int64Value(int64(in.SuperspineCount))
 	o.SpineCount = types.Int64Value(int64(in.SpineCount))
@@ -572,23 +565,6 @@ func (o *Blueprint) LoadApiData(_ context.Context, in *apstra.BlueprintStatus, _
 	o.Version = types.Int64Value(int64(in.Version))
 	o.BuildErrorsCount = types.Int64Value(int64(in.BuildErrorsCount))
 	o.BuildWarningsCount = types.Int64Value(int64(in.BuildWarningsCount))
-}
-
-func (o *Blueprint) LoadFabricAddressingPolicy(_ context.Context, in *apstra.TwoStageL3ClosFabricAddressingPolicy, _ *diag.Diagnostics) {
-	o.EsiMacMsb = types.Int64Null()
-	if in.EsiMacMsb != nil {
-		o.EsiMacMsb = types.Int64Value(int64(*in.EsiMacMsb))
-	}
-
-	o.FabricMtu = types.Int64Null()
-	if in.FabricL3Mtu != nil {
-		o.FabricMtu = types.Int64Value(int64(*in.FabricL3Mtu))
-	}
-
-	o.Ipv6Applications = types.BoolValue(false)
-	if in.Ipv6Enabled != nil {
-		o.Ipv6Applications = types.BoolValue(*in.Ipv6Enabled)
-	}
 }
 
 func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3ClosClient, state *Blueprint, diags *diag.Diagnostics) {
@@ -638,6 +614,8 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 	}
 }
 
+// GetFabricLinkAddressing is used only in the data source - the attribute it
+// fetches is immutable, so the resource has no need to call this function.
 func (o *Blueprint) GetFabricLinkAddressing(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetClient(bp.Client()).
@@ -702,151 +680,127 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
 	if utils.Known(o.FabricAddressing) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("fabric_addressing"),
-				Constraints: apiversions.Ge411,
-			},
-		)
-	}
-
-	if utils.Known(o.FabricMtu) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("fabric_mtu"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("fabric_addressing"),
+			Constraints: apiversions.Ge411,
+		})
 	}
 
 	if utils.Known(o.DefaultIPLinksToGenericMTU) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("default_ip_links_to_generic_mtu"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("default_ip_links_to_generic_mtu"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
 	if utils.Known(o.DefaultSviL3Mtu) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("default_svi_l3_mtu"),
-				Constraints: apiversions.Ge420,
-			},
-		)
-	}
-
-	if utils.Known(o.OptimizeRoutingZoneFootprint) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("optimize_routing_zone_footprint"),
-				Constraints: apiversions.Ge420,
-			},
-		)
-	}
-
-	if utils.Known(o.MaxExternalRoutesCount) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("max_external_routes_count"),
-				Constraints: apiversions.Ge420,
-			},
-		)
-	}
-
-	if utils.Known(o.MaxMlagRoutesCount) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("max_mlag_routes_count"),
-				Constraints: apiversions.Ge420,
-			},
-		)
-	}
-
-	if utils.Known(o.MaxEvpnRoutesCount) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("max_evpn_routes_count"),
-				Constraints: apiversions.Ge420,
-			},
-		)
-	}
-
-	if utils.Known(o.MaxFabricRoutesCount) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("max_fabric_routes_count"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("default_svi_l3_mtu"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
 	if utils.Known(o.EvpnType5Routes) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("evpn_type_5_routes"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("evpn_type_5_routes"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
-	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+	if utils.Known(o.FabricMtu) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("fabric_mtu"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
 	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_evpn_max_nexthop_and_interface_number"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("junos_evpn_max_nexthop_and_interface_number"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
-	if utils.Known(o.JunosGracefulRestart) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_graceful_restart"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
 	if utils.Known(o.JunosExOverlayEcmp) {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("junos_ex_overlay_ecmp"),
-				Constraints: apiversions.Ge420,
-			},
-		)
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("junos_ex_overlay_ecmp"),
+			Constraints: apiversions.Ge420,
+		})
+	}
+
+	if utils.Known(o.JunosGracefulRestart) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("junos_graceful_restart"),
+			Constraints: apiversions.Ge420,
+		})
+	}
+
+	if utils.Known(o.MaxEvpnRoutesCount) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("max_evpn_routes_count"),
+			Constraints: apiversions.Ge420,
+		})
+	}
+
+	if utils.Known(o.MaxExternalRoutesCount) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("max_external_routes_count"),
+			Constraints: apiversions.Ge420,
+		})
+	}
+
+	if utils.Known(o.MaxFabricRoutesCount) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("max_fabric_routes_count"),
+			Constraints: apiversions.Ge420,
+		})
+	}
+
+	if utils.Known(o.MaxMlagRoutesCount) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("max_mlag_routes_count"),
+			Constraints: apiversions.Ge420,
+		})
+	}
+
+	if utils.Known(o.OptimizeRoutingZoneFootprint) {
+		response.AddAttributeConstraints(apiversions.AttributeConstraint{
+			Path:        path.Root("optimize_routing_zone_footprint"),
+			Constraints: apiversions.Ge420,
+		})
 	}
 
 	return response
 }
 
 func (o *Blueprint) SetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *Blueprint, diags *diag.Diagnostics) {
+	if !o.fabricSettingsNeedsUpdate(state) {
+		return
+	}
+
 	planFS := o.FabricSettings(ctx, diags)
 	if diags.HasError() {
 		return
 	}
 
-	var stateFS *apstra.FabricSettings
-	if state != nil {
-		stateFS = state.FabricSettings(ctx, diags)
-		if diags.HasError() {
-			return
-		}
-	}
-
-	if !fabricSettingsNeedsUpdate(planFS, stateFS) {
-		return
-	}
+	//var stateFS *apstra.FabricSettings
+	//if state != nil {
+	//	stateFS = state.FabricSettings(ctx, diags)
+	//	if diags.HasError() {
+	//		return
+	//	}
+	//}
+	//
+	//if !fabricSettingsNeedsUpdate(planFS, stateFS) {
+	//	return
+	//}
 
 	err := bp.SetFabricSettings(ctx, planFS)
 	if err != nil {
@@ -897,6 +851,69 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 	// load from settings object into a blueprint object,
 	// This LoadFabricSettings is  used by resource_datacenter_blueprints Create,Read,Update methods.
 
+	o.AntiAffinityMode = types.StringNull()
+	if settings.AntiAffinityPolicy != nil {
+		o.AntiAffinityMode = types.StringValue(settings.AntiAffinityPolicy.Mode.String())
+	}
+
+	var aap AntiAffinityPolicy
+	aap.loadApiData(ctx, settings.AntiAffinityPolicy, diags)
+	if diags.HasError() {
+		return
+	}
+
+	var d diag.Diagnostics
+	o.AntiAffinityPolicy, d = types.ObjectValueFrom(ctx, AntiAffinityPolicy{}.attrTypes(), aap)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
+	o.DefaultIPLinksToGenericMTU = types.Int64Null()
+	if settings.DefaultSviL3Mtu != nil {
+		o.DefaultIPLinksToGenericMTU = types.Int64Value(int64(*settings.DefaultSviL3Mtu))
+	}
+
+	o.EsiMacMsb = types.Int64Null()
+	if settings.EsiMacMsb != nil {
+		o.EsiMacMsb = types.Int64Value(int64(*settings.EsiMacMsb))
+	}
+
+	o.EvpnType5Routes = types.BoolValue(false)
+	if settings.EvpnGenerateType5HostRoutes.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.EvpnType5Routes = types.BoolValue(true)
+	}
+
+	o.FabricMtu = types.Int64Null()
+	if settings.FabricL3Mtu != nil {
+		o.FabricMtu = types.Int64Value(int64(*settings.FabricL3Mtu))
+	}
+
+	o.Ipv6Applications = types.BoolNull()
+	if settings.Ipv6Enabled != nil {
+		o.Ipv6Applications = types.BoolValue(*settings.Ipv6Enabled)
+	}
+
+	o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(false)
+	if settings.JunosEvpnMaxNexthopAndInterfaceNumber.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(true)
+	}
+
+	o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(false)
+	if settings.JunosEvpnRoutingInstanceVlanAware.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(true)
+	}
+
+	o.JunosExOverlayEcmp = types.BoolValue(false)
+	if settings.JunosExOverlayEcmp.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosExOverlayEcmp = types.BoolValue(true)
+	}
+
+	o.JunosGracefulRestart = types.BoolValue(false)
+	if settings.JunosGracefulRestart.Value == apstra.FeatureSwitchEnumEnabled.Value {
+		o.JunosGracefulRestart = types.BoolValue(true)
+	}
+
 	o.MaxEvpnRoutesCount = types.Int64Null()
 	if settings.MaxEvpnRoutes != nil {
 		o.MaxEvpnRoutesCount = types.Int64Value(int64(*settings.MaxEvpnRoutes))
@@ -917,47 +934,9 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 		o.MaxMlagRoutesCount = types.Int64Value(int64(*settings.MaxMlagRoutes))
 	}
 
-	o.EvpnType5Routes = types.BoolValue(false)
-	if settings.EvpnGenerateType5HostRoutes.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.EvpnType5Routes = types.BoolValue(true)
-	}
-	o.JunosGracefulRestart = types.BoolValue(false)
-	if settings.JunosGracefulRestart.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosGracefulRestart = types.BoolValue(true)
-	}
 	o.OptimizeRoutingZoneFootprint = types.BoolValue(false)
 	if settings.OptimiseSzFootprint.Value == apstra.FeatureSwitchEnumEnabled.Value {
 		o.OptimizeRoutingZoneFootprint = types.BoolValue(true)
-	}
-	o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(false)
-	if settings.JunosEvpnRoutingInstanceVlanAware.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosEvpnRoutingInstanceModeMacVrf = types.BoolValue(true)
-	}
-	o.JunosExOverlayEcmp = types.BoolValue(false)
-	if settings.JunosExOverlayEcmp.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosExOverlayEcmp = types.BoolValue(false)
-	}
-	o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(false)
-	if settings.JunosEvpnMaxNexthopAndInterfaceNumber.Value == apstra.FeatureSwitchEnumEnabled.Value {
-		o.JunosEvpnMaxNexthopAndInterfaceNumber = types.BoolValue(false)
-	}
-
-	o.AntiAffinityMode = types.StringNull()
-	if settings.AntiAffinityPolicy != nil {
-		o.AntiAffinityMode = types.StringValue(settings.AntiAffinityPolicy.Mode.String())
-	}
-
-	var aap AntiAffinityPolicy
-	aap.loadApiData(ctx, settings.AntiAffinityPolicy, diags)
-	if diags.HasError() {
-		return
-	}
-
-	var d diag.Diagnostics
-	o.AntiAffinityPolicy, d = types.ObjectValueFrom(ctx, AntiAffinityPolicy{}.attrTypes(), aap)
-	diags.Append(d...)
-	if diags.HasError() {
-		return
 	}
 }
 
@@ -1101,16 +1080,26 @@ func fabricSettingsNeedsUpdate(plan, state *apstra.FabricSettings) bool {
 	if state == nil {
 		return true
 	}
-	if plan.MaxExternalRoutes != nil && (state.MaxExternalRoutes == nil || *plan.MaxExternalRoutes != *state.MaxExternalRoutes) {
+
+	if plan.AntiAffinityPolicy != nil && (state.AntiAffinityPolicy == nil || *plan.AntiAffinityPolicy != *state.AntiAffinityPolicy) {
 		return true
 	}
 	if plan.EsiMacMsb != nil && (state.EsiMacMsb == nil || *plan.EsiMacMsb != *state.EsiMacMsb) {
 		return true
 	}
-	if plan.JunosGracefulRestart != nil && (state.JunosGracefulRestart == nil || *plan.JunosGracefulRestart != *state.JunosGracefulRestart) {
+	if plan.MaxExternalRoutes != nil && (state.MaxExternalRoutes == nil || *plan.MaxExternalRoutes != *state.MaxExternalRoutes) {
+		return true
+	}
+	if plan.JunosEvpnMaxNexthopAndInterfaceNumber != nil && (state.JunosEvpnMaxNexthopAndInterfaceNumber == nil || *plan.JunosEvpnMaxNexthopAndInterfaceNumber != *state.JunosEvpnMaxNexthopAndInterfaceNumber) {
 		return true
 	}
 	if plan.JunosEvpnRoutingInstanceVlanAware != nil && (state.JunosEvpnRoutingInstanceVlanAware == nil || *plan.JunosEvpnRoutingInstanceVlanAware != *state.JunosEvpnRoutingInstanceVlanAware) {
+		return true
+	}
+	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
+		return true
+	}
+	if plan.JunosGracefulRestart != nil && (state.JunosGracefulRestart == nil || *plan.JunosGracefulRestart != *state.JunosGracefulRestart) {
 		return true
 	}
 	if plan.EvpnGenerateType5HostRoutes != nil && (state.EvpnGenerateType5HostRoutes == nil || *plan.EvpnGenerateType5HostRoutes != *state.EvpnGenerateType5HostRoutes) {
@@ -1122,13 +1111,7 @@ func fabricSettingsNeedsUpdate(plan, state *apstra.FabricSettings) bool {
 	if plan.MaxMlagRoutes != nil && (state.MaxMlagRoutes == nil || *plan.MaxMlagRoutes != *state.MaxMlagRoutes) {
 		return true
 	}
-	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
-		return true
-	}
 	if plan.DefaultSviL3Mtu != nil && (state.DefaultSviL3Mtu == nil || *plan.DefaultSviL3Mtu != *state.DefaultSviL3Mtu) {
-		return true
-	}
-	if plan.JunosEvpnMaxNexthopAndInterfaceNumber != nil && (state.JunosEvpnMaxNexthopAndInterfaceNumber == nil || *plan.JunosEvpnMaxNexthopAndInterfaceNumber != *state.JunosEvpnMaxNexthopAndInterfaceNumber) {
 		return true
 	}
 	if plan.FabricL3Mtu != nil && (state.FabricL3Mtu == nil || *plan.FabricL3Mtu != *state.FabricL3Mtu) {
@@ -1146,11 +1129,69 @@ func fabricSettingsNeedsUpdate(plan, state *apstra.FabricSettings) bool {
 	if plan.MaxEvpnRoutes != nil && (state.MaxEvpnRoutes == nil || *plan.MaxEvpnRoutes != *state.MaxEvpnRoutes) {
 		return true
 	}
-	if plan.AntiAffinityPolicy != nil && (state.AntiAffinityPolicy == nil || *plan.AntiAffinityPolicy != *state.AntiAffinityPolicy) {
-		return true
-	}
 	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
 		return true
 	}
+
+	return false
+}
+
+func (o *Blueprint) fabricSettingsNeedsUpdate(state *Blueprint) bool {
+	if state == nil {
+		return true
+	}
+
+	if !o.AntiAffinityMode.Equal(state.AntiAffinityMode) {
+		return true
+	}
+	if !o.AntiAffinityPolicy.Equal(state.AntiAffinityPolicy) {
+		return true
+	}
+	if !o.DefaultIPLinksToGenericMTU.Equal(state.DefaultIPLinksToGenericMTU) {
+		return true
+	}
+	if !o.DefaultSviL3Mtu.Equal(state.DefaultSviL3Mtu) {
+		return true
+	}
+	if !o.EsiMacMsb.Equal(state.EsiMacMsb) {
+		return true
+	}
+	if !o.EvpnType5Routes.Equal(state.EvpnType5Routes) {
+		return true
+	}
+	if !o.FabricAddressing.Equal(state.FabricAddressing) {
+		return true
+	}
+	if !o.Ipv6Applications.Equal(state.Ipv6Applications) {
+		return true
+	}
+	if !o.JunosEvpnMaxNexthopAndInterfaceNumber.Equal(state.JunosEvpnMaxNexthopAndInterfaceNumber) {
+		return true
+	}
+	if !o.JunosEvpnRoutingInstanceModeMacVrf.Equal(state.JunosEvpnRoutingInstanceModeMacVrf) {
+		return true
+	}
+	if !o.JunosExOverlayEcmp.Equal(state.JunosExOverlayEcmp) {
+		return true
+	}
+	if !o.JunosGracefulRestart.Equal(state.JunosGracefulRestart) {
+		return true
+	}
+	if !o.MaxEvpnRoutesCount.Equal(state.MaxEvpnRoutesCount) {
+		return true
+	}
+	if !o.MaxExternalRoutesCount.Equal(state.MaxExternalRoutesCount) {
+		return true
+	}
+	if !o.MaxFabricRoutesCount.Equal(state.MaxFabricRoutesCount) {
+		return true
+	}
+	if !o.MaxMlagRoutesCount.Equal(state.MaxMlagRoutesCount) {
+		return true
+	}
+	if !o.OptimizeRoutingZoneFootprint.Equal(state.OptimizeRoutingZoneFootprint) {
+		return true
+	}
+
 	return false
 }
