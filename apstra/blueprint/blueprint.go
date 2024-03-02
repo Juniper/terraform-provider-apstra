@@ -17,7 +17,6 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -68,44 +67,44 @@ type Blueprint struct {
 	OptimizeRoutingZoneFootprint          types.Bool   `tfsdk:"optimize_routing_zone_footprint"`
 }
 
-func (o Blueprint) attrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"id":                types.StringType,
-		"name":              types.StringType,
-		"template_id":       types.StringType,
-		"fabric_addressing": types.StringType,
-
-		"status":                  types.StringType,
-		"superspine_count":        types.Int64Type,
-		"spine_count":             types.Int64Type,
-		"leaf_switch_count":       types.Int64Type,
-		"access_switch_count":     types.Int64Type,
-		"generic_system_count":    types.Int64Type,
-		"external_router_count":   types.Int64Type,
-		"has_uncommitted_changes": types.BoolType,
-		"version":                 types.Int64Type,
-		"build_errors_count":      types.Int64Type,
-		"build_warnings_count":    types.Int64Type,
-
-		"anti_affinity_mode":                          types.StringType,
-		"anti_affinity_policy":                        types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()},
-		"default_ip_links_to_generic_mtu":             types.Int64Type,
-		"default_svi_l3_mtu":                          types.Int64Type,
-		"esi_mac_msb":                                 types.Int64Type,
-		"evpn_type_5_routes":                          types.BoolType,
-		"fabric_mtu":                                  types.Int64Type,
-		"ipv6_applications":                           types.BoolType,
-		"junos_evpn_max_nexthop_and_interface_number": types.BoolType,
-		"junos_evpn_routing_instance_mode_mac_vrf":    types.BoolType,
-		"junos_ex_overlay_ecmp":                       types.BoolType,
-		"junos_graceful_restart":                      types.BoolType,
-		"max_evpn_routes_count":                       types.Int64Type,
-		"max_external_routes_count":                   types.Int64Type,
-		"max_fabric_routes_count":                     types.Int64Type,
-		"max_mlag_routes_count":                       types.Int64Type,
-		"optimize_routing_zone_footprint":             types.BoolType,
-	}
-}
+//func (o Blueprint) attrTypes() map[string]attr.Type {
+//	return map[string]attr.Type{
+//		"id":                types.StringType,
+//		"name":              types.StringType,
+//		"template_id":       types.StringType,
+//		"fabric_addressing": types.StringType,
+//
+//		"status":                  types.StringType,
+//		"superspine_count":        types.Int64Type,
+//		"spine_count":             types.Int64Type,
+//		"leaf_switch_count":       types.Int64Type,
+//		"access_switch_count":     types.Int64Type,
+//		"generic_system_count":    types.Int64Type,
+//		"external_router_count":   types.Int64Type,
+//		"has_uncommitted_changes": types.BoolType,
+//		"version":                 types.Int64Type,
+//		"build_errors_count":      types.Int64Type,
+//		"build_warnings_count":    types.Int64Type,
+//
+//		"anti_affinity_mode":                          types.StringType,
+//		"anti_affinity_policy":                        types.ObjectType{AttrTypes: AntiAffinityPolicy{}.attrTypes()},
+//		"default_ip_links_to_generic_mtu":             types.Int64Type,
+//		"default_svi_l3_mtu":                          types.Int64Type,
+//		"esi_mac_msb":                                 types.Int64Type,
+//		"evpn_type_5_routes":                          types.BoolType,
+//		"fabric_mtu":                                  types.Int64Type,
+//		"ipv6_applications":                           types.BoolType,
+//		"junos_evpn_max_nexthop_and_interface_number": types.BoolType,
+//		"junos_evpn_routing_instance_mode_mac_vrf":    types.BoolType,
+//		"junos_ex_overlay_ecmp":                       types.BoolType,
+//		"junos_graceful_restart":                      types.BoolType,
+//		"max_evpn_routes_count":                       types.Int64Type,
+//		"max_external_routes_count":                   types.Int64Type,
+//		"max_fabric_routes_count":                     types.Int64Type,
+//		"max_mlag_routes_count":                       types.Int64Type,
+//		"optimize_routing_zone_footprint":             types.BoolType,
+//	}
+//}
 
 func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
