@@ -79,9 +79,9 @@ resource "apstra_blueprint_deployment" "as_needed" {
 - `max_fabric_routes_count` (Number) Maximum number of routes to accept between fabric nodes. The value 0 (zero) indicates that no limit is configured.
 - `max_mlag_routes_count` (Number) Maximum number of routes to accept across MLAG peer switches. When `null` no maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.
 - `optimize_routing_zone_footprint` (Boolean) When `true`: routing zones will not be rendered on leafs where it is not required,which results in less resource consumption. Routing zone will only be rendered for systems which have other structures configured on top of routing zone, such as virtual networks, protocol sessions, static routes, sub-interfaces, etc.
-- `spine_count` (Number) The count of spine switches in the topology.
+- `spine_switch_count` (Number) The count of spine switches in the topology.
 - `status` (String) Deployment status of the Blueprint
-- `superspine_count` (Number) The count of superspine switches in the topology.
+- `superspine_switch_count` (Number) The count of superspine switches in the topology.
 - `template_id` (String) This attribute is always `null` in data source context. Ignore.
 - `version` (Number) Currently active blueprint version
 

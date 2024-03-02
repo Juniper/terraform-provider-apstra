@@ -36,8 +36,8 @@ type Blueprint struct {
 
 	// status
 	Status                types.String `tfsdk:"status"`
-	SuperspineCount       types.Int64  `tfsdk:"superspine_count"`
-	SpineCount            types.Int64  `tfsdk:"spine_count"`
+	SuperspineCount       types.Int64  `tfsdk:"superspine_switch_count"`
+	SpineCount            types.Int64  `tfsdk:"spine_switch_count"`
 	LeafCount             types.Int64  `tfsdk:"leaf_switch_count"`
 	AccessCount           types.Int64  `tfsdk:"access_switch_count"`
 	GenericCount          types.Int64  `tfsdk:"generic_system_count"`
@@ -75,8 +75,8 @@ type Blueprint struct {
 //		"fabric_addressing": types.StringType,
 //
 //		"status":                  types.StringType,
-//		"superspine_count":        types.Int64Type,
-//		"spine_count":             types.Int64Type,
+//		"superspine_switch_count": types.Int64Type,
+//		"spine_switch_count":      types.Int64Type,
 //		"leaf_switch_count":       types.Int64Type,
 //		"access_switch_count":     types.Int64Type,
 //		"generic_system_count":    types.Int64Type,
@@ -138,11 +138,11 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Deployment status of the Blueprint",
 			Computed:            true,
 		},
-		"superspine_count": dataSourceSchema.Int64Attribute{
+		"superspine_switch_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "The count of superspine switches in the topology.",
 			Computed:            true,
 		},
-		"spine_count": dataSourceSchema.Int64Attribute{
+		"spine_switch_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "The count of spine switches in the topology.",
 			Computed:            true,
 		},
@@ -321,12 +321,12 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Deployment status of the Blueprint",
 			Computed:            true,
 		},
-		"superspine_count": resourceSchema.Int64Attribute{
-			MarkdownDescription: "For 5-stage topologies, the count of superspine devices",
+		"superspine_switch_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "For 5-stage topologies, the count of superspine switches in the topology.",
 			Computed:            true,
 		},
-		"spine_count": resourceSchema.Int64Attribute{
-			MarkdownDescription: "The count of spine devices in the topology.",
+		"spine_switch_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "For 3-stage and 5-stage topologies, the count of spine switches in the topology.",
 			Computed:            true,
 		},
 		"leaf_switch_count": resourceSchema.Int64Attribute{
@@ -806,7 +806,7 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 
 	o.DefaultSviL3Mtu = types.Int64Null()
 	if settings.DefaultSviL3Mtu != nil {
-		o.DefaultIpLinksToGenericMtu = types.Int64Value(int64(*settings.DefaultSviL3Mtu))
+		o.DefaultSviL3Mtu = types.Int64Value(int64(*settings.DefaultSviL3Mtu))
 	}
 
 	o.EsiMacMsb = types.Int64Null()

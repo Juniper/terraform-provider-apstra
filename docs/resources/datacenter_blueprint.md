@@ -133,9 +133,9 @@ resource "apstra_blueprint_deployment" "deploy" {
 - `has_uncommitted_changes` (Boolean) Indicates whether the staging blueprint has uncommitted changes.
 - `id` (String) Blueprint ID assigned by Apstra.
 - `leaf_switch_count` (Number) The count of leaf switches in the topology.
-- `spine_count` (Number) The count of spine devices in the topology.
+- `spine_switch_count` (Number) For 3-stage and 5-stage topologies, the count of spine switches in the topology.
 - `status` (String) Deployment status of the Blueprint
-- `superspine_count` (Number) For 5-stage topologies, the count of superspine devices
+- `superspine_switch_count` (Number) For 5-stage topologies, the count of superspine switches in the topology.
 - `version` (Number) Currently active blueprint version
 
 <a id="nestedatt--anti_affinity_policy"></a>

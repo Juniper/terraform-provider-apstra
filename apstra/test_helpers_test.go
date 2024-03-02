@@ -3,13 +3,15 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"net"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"golang.org/x/exp/constraints"
-	"math/rand"
-	"net"
-	"strings"
-	"testing"
 )
 
 func systemIds(ctx context.Context, t *testing.T, bp *apstra.TwoStageL3ClosClient, role string) []string {
@@ -58,11 +60,11 @@ func stringOrNull(in string) string {
 	return `"` + in + `"`
 }
 
-func intPtrOrNull[A constraints.Integer](in *A) string {
-	if in == nil {
+func boolPtrOrNull(b *bool) string {
+	if b == nil {
 		return "null"
 	}
-	return fmt.Sprintf("%d", *in)
+	return strconv.FormatBool(*b)
 }
 
 func cidrOrNull(in *net.IPNet) string {
@@ -70,6 +72,13 @@ func cidrOrNull(in *net.IPNet) string {
 		return "null"
 	}
 	return `"` + in.String() + `"`
+}
+
+func intPtrOrNull[A constraints.Integer](in *A) string {
+	if in == nil {
+		return "null"
+	}
+	return fmt.Sprintf("%d", *in)
 }
 
 func stringSetOrNull(in []string) string {
