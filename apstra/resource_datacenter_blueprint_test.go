@@ -3,12 +3,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"testing"
 )
 
 const (
@@ -76,7 +77,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "fabric_addressing", "ipv4"),
 						}...),
 					},
 					{
@@ -92,7 +92,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "4"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "fabric_addressing", "ipv4"),
 						}...),
 					},
 					{
@@ -108,7 +107,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "6"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "true"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "fabric_addressing", "ipv4"),
 						}...),
 					},
 					{
@@ -122,7 +120,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "6"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "true"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "fabric_addressing", "ipv4"),
 						}...),
 					},
 					{
@@ -137,7 +134,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "esi_mac_msb", "2"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "fabric_addressing", "ipv4"),
 						}...),
 					},
 				},

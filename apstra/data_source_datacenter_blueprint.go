@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
-var _ datasourceWithSetClient = &dataSourceDatacenterBlueprint{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterBlueprint{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
+	_ datasourceWithSetClient            = &dataSourceDatacenterBlueprint{}
+	_ datasourceWithSetBpClientFunc      = &dataSourceDatacenterBlueprint{}
+)
 
 type dataSourceDatacenterBlueprint struct {
 	client          *apstra.Client
@@ -87,11 +90,6 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 	}
 
 	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

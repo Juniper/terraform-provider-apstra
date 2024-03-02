@@ -141,7 +141,7 @@ resource "apstra_blueprint_deployment" "deploy" {
 <a id="nestedatt--anti_affinity_policy"></a>
 ### Nested Schema for `anti_affinity_policy`
 
-Required:
+Optional:
 
 - `max_links_count_per_port` (Number) Maximum total number of links connected to the interfaces of the specific port regardless of the system they are targeted to. It controls how many links can be connected to one port in one system. Example: Several transformations of one port. In this case, it controls how many transformations can be used in links.
 - `max_links_count_per_slot` (Number) Maximum total number of links connected to ports/interfaces of the specified slot regardless of the systemthey are targeted to. It controls how many links can be connected to one slot of one system. Example: A line card slot in a chassis.

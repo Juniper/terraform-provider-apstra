@@ -63,8 +63,8 @@ resource "apstra_blueprint_deployment" "as_needed" {
 - `default_svi_l3_mtu` (Number) Default L3 MTU for SVI interfaces.
 - `esi_mac_msb` (Number) ESI MAC address most significant byte.
 - `evpn_type_5_routes` (Boolean) When enabled, all EVPN VTEPs in the fabric will redistribute ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table.
-- `external_router_count` (Number) The count of external routers attached to the topology.
-- `fabric_addressing` (String) Addressing scheme for both superspine/spine and spine/leaf links.
+- `external_router_count` (Number) The count of external routers in the topology.
+- `fabric_addressing` (String) This attribute is always `null` in data source context. Ignore.
 - `fabric_mtu` (Number) MTU of fabric links.
 - `generic_system_count` (Number) The count of generic systems in the topology.
 - `has_uncommitted_changes` (Boolean) Indicates whether the staging blueprint has uncommitted changes.
@@ -79,10 +79,10 @@ resource "apstra_blueprint_deployment" "as_needed" {
 - `max_fabric_routes_count` (Number) Maximum number of routes to accept between fabric nodes. The value 0 (zero) indicates that no limit is configured.
 - `max_mlag_routes_count` (Number) Maximum number of routes to accept across MLAG peer switches. When `null` no maximum-route commands will be rendered on BGP sessions. OS vendor defaults are used.
 - `optimize_routing_zone_footprint` (Boolean) When `true`: routing zones will not be rendered on leafs where it is not required,which results in less resource consumption. Routing zone will only be rendered for systems which have other structures configured on top of routing zone, such as virtual networks, protocol sessions, static routes, sub-interfaces, etc.
-- `spine_count` (Number) The count of spine devices in the topology.
+- `spine_count` (Number) The count of spine switches in the topology.
 - `status` (String) Deployment status of the Blueprint
-- `superspine_count` (Number) For 5-stage topologies, the count of superspine devices
-- `template_id` (String) Template ID will always be null in 'data source' context.
+- `superspine_count` (Number) The count of superspine switches in the topology.
+- `template_id` (String) This attribute is always `null` in data source context. Ignore.
 - `version` (Number) Currently active blueprint version
 
 <a id="nestedatt--anti_affinity_policy"></a>

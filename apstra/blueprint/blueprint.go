@@ -3,9 +3,11 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"math"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
@@ -25,7 +27,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 type Blueprint struct {
@@ -50,7 +51,7 @@ type Blueprint struct {
 	// fabric settings
 	AntiAffinityMode                      types.String `tfsdk:"anti_affinity_mode"`
 	AntiAffinityPolicy                    types.Object `tfsdk:"anti_affinity_policy"`
-	DefaultIPLinksToGenericMTU            types.Int64  `tfsdk:"default_ip_links_to_generic_mtu"`
+	DefaultIpLinksToGenericMtu            types.Int64  `tfsdk:"default_ip_links_to_generic_mtu"`
 	DefaultSviL3Mtu                       types.Int64  `tfsdk:"default_svi_l3_mtu"`
 	EsiMacMsb                             types.Int64  `tfsdk:"esi_mac_msb"`
 	EvpnType5Routes                       types.Bool   `tfsdk:"evpn_type_5_routes"`
@@ -127,11 +128,11 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"template_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Template ID will always be null in 'data source' context.",
+			MarkdownDescription: "This attribute is always `null` in data source context. Ignore.",
 			Computed:            true,
 		},
 		"fabric_addressing": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Addressing scheme for both superspine/spine and spine/leaf links.",
+			MarkdownDescription: "This attribute is always `null` in data source context. Ignore.",
 			Computed:            true,
 		},
 		"status": dataSourceSchema.StringAttribute{
@@ -139,11 +140,11 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 		},
 		"superspine_count": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "For 5-stage topologies, the count of superspine devices",
+			MarkdownDescription: "The count of superspine switches in the topology.",
 			Computed:            true,
 		},
 		"spine_count": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "The count of spine devices in the topology.",
+			MarkdownDescription: "The count of spine switches in the topology.",
 			Computed:            true,
 		},
 		"leaf_switch_count": dataSourceSchema.Int64Attribute{
@@ -159,7 +160,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 		},
 		"external_router_count": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "The count of external routers attached to the topology.",
+			MarkdownDescription: "The count of external routers in the topology.",
 			Computed:            true,
 		},
 		"has_uncommitted_changes": dataSourceSchema.BoolAttribute{
@@ -614,68 +615,6 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 	}
 }
 
-// GetFabricLinkAddressing is used only in the data source - the attribute it
-// fetches is immutable, so the resource has no need to call this function.
-func (o *Blueprint) GetFabricLinkAddressing(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	query := new(apstra.PathQuery).
-		SetClient(bp.Client()).
-		SetBlueprintId(bp.Id()).
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeFabricAddressingPolicy.QEEAttribute(),
-			{Key: "name", Value: apstra.QEStringVal("n_fabric_addressing_policy")},
-		})
-
-	var result struct {
-		Items []struct {
-			FabricAddressingPolicy struct {
-				SpineLeafLinks       string `json:"spine_leaf_links"`
-				SpineSuperspineLinks string `json:"spine_superspine_links"`
-			} `json:"n_fabric_addressing_policy"`
-		} `json:"items"`
-	}
-
-	err := query.Do(ctx, &result)
-	if err != nil {
-		diags.AddError("failed querying for blueprint fabric addressing policy", err.Error())
-		return
-	}
-
-	switch len(result.Items) {
-	case 0:
-		diags.AddError(
-			"failed querying for blueprint fabric addressing policy",
-			fmt.Sprintf("query produced no results: %q", query.String()))
-		return
-	case 1:
-		// expected case handled below
-	default:
-		diags.AddError(
-			"failed querying for blueprint fabric addressing policy",
-			fmt.Sprintf("query produced %d results (expected 1): %q", len(result.Items), query.String()))
-		return
-	}
-
-	if result.Items[0].FabricAddressingPolicy.SpineLeafLinks != result.Items[0].FabricAddressingPolicy.SpineSuperspineLinks {
-		diags.AddError(
-			"failed querying for blueprint fabric addressing policy",
-			fmt.Sprintf("spine_leaf_links addressing does not match spine_superspine_links addressing:\n"+
-				"%q vs. %q\nquery: %q",
-				result.Items[0].FabricAddressingPolicy.SpineLeafLinks,
-				result.Items[0].FabricAddressingPolicy.SpineSuperspineLinks,
-				query.String()))
-		return
-	}
-
-	var addressingScheme apstra.AddressingScheme
-	err = addressingScheme.FromString(result.Items[0].FabricAddressingPolicy.SpineLeafLinks)
-	if err != nil {
-		diags.AddError("failed to parse fabric addressing", err.Error())
-		return
-	}
-
-	o.FabricAddressing = types.StringValue(addressingScheme.String())
-}
-
 func (o Blueprint) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
@@ -686,7 +625,7 @@ func (o Blueprint) VersionConstraints() apiversions.Constraints {
 		})
 	}
 
-	if utils.Known(o.DefaultIPLinksToGenericMTU) {
+	if utils.Known(o.DefaultIpLinksToGenericMtu) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("default_ip_links_to_generic_mtu"),
 			Constraints: apiversions.Ge420,
@@ -790,18 +729,6 @@ func (o *Blueprint) SetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 		return
 	}
 
-	//var stateFS *apstra.FabricSettings
-	//if state != nil {
-	//	stateFS = state.FabricSettings(ctx, diags)
-	//	if diags.HasError() {
-	//		return
-	//	}
-	//}
-	//
-	//if !fabricSettingsNeedsUpdate(planFS, stateFS) {
-	//	return
-	//}
-
 	err := bp.SetFabricSettings(ctx, planFS)
 	if err != nil {
 		diags.AddError("failed to set fabric settings", err.Error())
@@ -847,31 +774,40 @@ func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3
 	}
 }
 
-func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.FabricSettings, diags *diag.Diagnostics) {
-	// load from settings object into a blueprint object,
-	// This LoadFabricSettings is  used by resource_datacenter_blueprints Create,Read,Update methods.
-
-	o.AntiAffinityMode = types.StringNull()
-	if settings.AntiAffinityPolicy != nil {
-		o.AntiAffinityMode = types.StringValue(settings.AntiAffinityPolicy.Mode.String())
-	}
-
-	var aap AntiAffinityPolicy
-	aap.loadApiData(ctx, settings.AntiAffinityPolicy, diags)
+func (o *Blueprint) LoadAntiAffninityPolicy(ctx context.Context, antiAffinitypolicy *apstra.AntiAffinityPolicy, diags *diag.Diagnostics) {
+	var policy AntiAffinityPolicy
+	policy.loadApiData(ctx, antiAffinitypolicy, diags)
 	if diags.HasError() {
 		return
 	}
 
 	var d diag.Diagnostics
-	o.AntiAffinityPolicy, d = types.ObjectValueFrom(ctx, AntiAffinityPolicy{}.attrTypes(), aap)
+	o.AntiAffinityPolicy, d = types.ObjectValueFrom(ctx, policy.attrTypes(), policy)
 	diags.Append(d...)
-	if diags.HasError() {
-		return
+}
+
+func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.FabricSettings, diags *diag.Diagnostics) {
+	o.AntiAffinityMode = types.StringNull()
+	if settings.AntiAffinityPolicy != nil {
+		o.AntiAffinityMode = types.StringValue(settings.AntiAffinityPolicy.Mode.String())
 	}
 
-	o.DefaultIPLinksToGenericMTU = types.Int64Null()
+	o.AntiAffinityPolicy = types.ObjectNull(new(AntiAffinityPolicy).attrTypes())
+	if settings.AntiAffinityPolicy != nil {
+		o.LoadAntiAffninityPolicy(ctx, settings.AntiAffinityPolicy, diags)
+		if diags.HasError() {
+			return
+		}
+	}
+
+	o.DefaultIpLinksToGenericMtu = types.Int64Null()
+	if settings.ExternalRouterMtu != nil {
+		o.DefaultIpLinksToGenericMtu = types.Int64Value(int64(*settings.ExternalRouterMtu))
+	}
+
+	o.DefaultSviL3Mtu = types.Int64Null()
 	if settings.DefaultSviL3Mtu != nil {
-		o.DefaultIPLinksToGenericMTU = types.Int64Value(int64(*settings.DefaultSviL3Mtu))
+		o.DefaultIpLinksToGenericMtu = types.Int64Value(int64(*settings.DefaultSviL3Mtu))
 	}
 
 	o.EsiMacMsb = types.Int64Null()
@@ -952,7 +888,7 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 
 		result.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
 			Algorithm: apstra.AlgorithmHeuristic,
-			//Mode:                     0, // handled below
+			// Mode:                     0, // handled below
 			MaxLinksPerPort:          int(aap.MaxLinksCountPerPort.ValueInt64()),
 			MaxLinksPerSlot:          int(aap.MaxLinksCountPerSlot.ValueInt64()),
 			MaxPerSystemLinksPerPort: int(aap.MaxLinksCountPerSystemPerPort.ValueInt64()),
@@ -981,8 +917,8 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 		}
 	}
 
-	if utils.Known(o.DefaultIPLinksToGenericMTU) {
-		result.ExternalRouterMtu = utils.ToPtr(uint16(o.DefaultIPLinksToGenericMTU.ValueInt64()))
+	if utils.Known(o.DefaultIpLinksToGenericMtu) {
+		result.ExternalRouterMtu = utils.ToPtr(uint16(o.DefaultIpLinksToGenericMtu.ValueInt64()))
 	}
 
 	if utils.Known(o.FabricMtu) {
@@ -1044,97 +980,8 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 		}
 	}
 
-	// fabric link addressing details are immutable and must not be set
-	// when calling SetFabricSettings - these details are handled as a
-	// special case by Request()
-	//
-	//if utils.Known(o.FabricAddressing) {
-	//	result.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
-	//		utils.ToPtr(path.Root("fabric_addressing")), diags)
-	//	if diags.HasError() {
-	//		return nil
-	//	}
-	//
-	//	result.SpineSuperspineLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
-	//		utils.ToPtr(path.Root("fabric_addressing")), diags)
-	//	if diags.HasError() {
-	//		return nil
-	//	}
-	//}
-
 	return &result
 }
-
-func (o *Blueprint) Equal(ctx context.Context, in *Blueprint, diags diag.Diagnostics) bool {
-	a, d := types.ObjectValueFrom(ctx, in.attrTypes(), o)
-	diags.Append(d...)
-	b, d := types.ObjectValueFrom(ctx, in.attrTypes(), in)
-	diags.Append(d...)
-	if diags.HasError() {
-		return false
-	}
-	return a.Equal(b)
-}
-
-//func fabricSettingsNeedsUpdate(plan, state *apstra.FabricSettings) bool {
-//	if state == nil {
-//		return true
-//	}
-//
-//	if plan.AntiAffinityPolicy != nil && (state.AntiAffinityPolicy == nil || *plan.AntiAffinityPolicy != *state.AntiAffinityPolicy) {
-//		return true
-//	}
-//	if plan.EsiMacMsb != nil && (state.EsiMacMsb == nil || *plan.EsiMacMsb != *state.EsiMacMsb) {
-//		return true
-//	}
-//	if plan.MaxExternalRoutes != nil && (state.MaxExternalRoutes == nil || *plan.MaxExternalRoutes != *state.MaxExternalRoutes) {
-//		return true
-//	}
-//	if plan.JunosEvpnMaxNexthopAndInterfaceNumber != nil && (state.JunosEvpnMaxNexthopAndInterfaceNumber == nil || *plan.JunosEvpnMaxNexthopAndInterfaceNumber != *state.JunosEvpnMaxNexthopAndInterfaceNumber) {
-//		return true
-//	}
-//	if plan.JunosEvpnRoutingInstanceVlanAware != nil && (state.JunosEvpnRoutingInstanceVlanAware == nil || *plan.JunosEvpnRoutingInstanceVlanAware != *state.JunosEvpnRoutingInstanceVlanAware) {
-//		return true
-//	}
-//	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
-//		return true
-//	}
-//	if plan.JunosGracefulRestart != nil && (state.JunosGracefulRestart == nil || *plan.JunosGracefulRestart != *state.JunosGracefulRestart) {
-//		return true
-//	}
-//	if plan.EvpnGenerateType5HostRoutes != nil && (state.EvpnGenerateType5HostRoutes == nil || *plan.EvpnGenerateType5HostRoutes != *state.EvpnGenerateType5HostRoutes) {
-//		return true
-//	}
-//	if plan.MaxFabricRoutes != nil && (state.MaxFabricRoutes == nil || *plan.MaxFabricRoutes != *state.MaxFabricRoutes) {
-//		return true
-//	}
-//	if plan.MaxMlagRoutes != nil && (state.MaxMlagRoutes == nil || *plan.MaxMlagRoutes != *state.MaxMlagRoutes) {
-//		return true
-//	}
-//	if plan.DefaultSviL3Mtu != nil && (state.DefaultSviL3Mtu == nil || *plan.DefaultSviL3Mtu != *state.DefaultSviL3Mtu) {
-//		return true
-//	}
-//	if plan.FabricL3Mtu != nil && (state.FabricL3Mtu == nil || *plan.FabricL3Mtu != *state.FabricL3Mtu) {
-//		return true
-//	}
-//	if plan.Ipv6Enabled != nil && (state.Ipv6Enabled == nil || *plan.Ipv6Enabled != *state.Ipv6Enabled) {
-//		return true
-//	}
-//	if plan.OverlayControlProtocol != nil && (state.OverlayControlProtocol == nil || *plan.OverlayControlProtocol != *state.OverlayControlProtocol) {
-//		return true
-//	}
-//	if plan.ExternalRouterMtu != nil && (state.ExternalRouterMtu == nil || *plan.ExternalRouterMtu != *state.ExternalRouterMtu) {
-//		return true
-//	}
-//	if plan.MaxEvpnRoutes != nil && (state.MaxEvpnRoutes == nil || *plan.MaxEvpnRoutes != *state.MaxEvpnRoutes) {
-//		return true
-//	}
-//	if plan.JunosExOverlayEcmp != nil && (state.JunosExOverlayEcmp == nil || *plan.JunosExOverlayEcmp != *state.JunosExOverlayEcmp) {
-//		return true
-//	}
-//
-//	return false
-//}
 
 func (o *Blueprint) fabricSettingsNeedsUpdate(state *Blueprint) bool {
 	if state == nil {
@@ -1147,7 +994,7 @@ func (o *Blueprint) fabricSettingsNeedsUpdate(state *Blueprint) bool {
 	if !o.AntiAffinityPolicy.Equal(state.AntiAffinityPolicy) {
 		return true
 	}
-	if !o.DefaultIPLinksToGenericMTU.Equal(state.DefaultIPLinksToGenericMTU) {
+	if !o.DefaultIpLinksToGenericMtu.Equal(state.DefaultIpLinksToGenericMtu) {
 		return true
 	}
 	if !o.DefaultSviL3Mtu.Equal(state.DefaultSviL3Mtu) {
