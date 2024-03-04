@@ -86,7 +86,7 @@ func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.C
 	case !o.Name.IsNull():
 		for _, n := range nodeResponse.Nodes {
 			if n.Label == o.Name.ValueString() {
-				desiredNode = &n
+				desiredNode = n
 				ok = true
 				break
 			}
