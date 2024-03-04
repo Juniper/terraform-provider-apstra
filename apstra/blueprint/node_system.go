@@ -73,34 +73,29 @@ func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.C
 	}
 
 	// pick out the desired node from the node slice in the response object
-	var desiredNode *node
+	var desiredNode node
+	var ok bool
 	switch {
 	case !o.Id.IsNull():
-		for _, n := range nodeResponse.Nodes {
-			if n.Id == o.Id.ValueString() {
-				desiredNode = &n
-				break
-			}
+		desiredNode, ok = nodeResponse.Nodes[o.Id.ValueString()]
+		if !ok {
+			diags.AddError("Node not found",
+				fmt.Sprintf("Node with ID %q not found in blueprint %q",
+					o.Id.ValueString(), o.BlueprintId.ValueString()))
 		}
 	case !o.Name.IsNull():
 		for _, n := range nodeResponse.Nodes {
 			if n.Label == o.Name.ValueString() {
-				desiredNode = &n
+				desiredNode = n
+				ok = true
 				break
 			}
 		}
-	}
-
-	if desiredNode == nil {
-		if o.NullWhenNotFound.ValueBool() {
-			o.Attributes = types.ObjectNull(NodeTypeSystemAttributes{}.AttrTypes())
-			return
+		if !ok {
+			diags.AddError("Node not found",
+				fmt.Sprintf("Node with Name %q not found in blueprint %q",
+					o.Name.ValueString(), o.BlueprintId.ValueString()))
 		}
-
-		diags.AddError("node not found",
-			fmt.Sprintf("node %q not found in blueprint %q",
-				o.Id.ValueString(), o.BlueprintId.ValueString()))
-		return
 	}
 
 	tagResponse := &struct {
