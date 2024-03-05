@@ -323,9 +323,9 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"fabric_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Addressing scheme for both superspine/spine and spine/leaf links. Only "+
-				"applicable to Apstra versions %s and later. Must be one of: %s",
-				apiversions.Apstra411, strings.Join([]string{
+			MarkdownDescription: fmt.Sprintf("Addressing scheme for both superspine/spine and spine/leaf links. "+
+				"Requires Apstra %s. Must be one of: %s",
+				apiversions.Ge411, strings.Join([]string{
 					apstra.AddressingSchemeIp4.String(),
 					apstra.AddressingSchemeIp6.String(),
 					apstra.AddressingSchemeIp46.String(),
