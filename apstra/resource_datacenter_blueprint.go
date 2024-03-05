@@ -185,11 +185,9 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 	// Retrieve the blueprint status
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError(fmt.Sprintf("fetching blueprint %q", state.Id.ValueString()), err.Error())
+		// no 404 check or RemoveResource() here because Apstra's /api/blueprints
+		// endpoint may return bogus 404s due to race condition (?)
+		resp.Diagnostics.AddError(fmt.Sprintf("failed fetching blueprint %s status", state.Id), err.Error())
 		return
 	}
 
@@ -255,6 +253,7 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint after update", err.Error())
+		return
 	}
 
 	// Load the blueprint status
