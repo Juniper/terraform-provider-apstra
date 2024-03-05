@@ -252,23 +252,29 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		"max_evpn_routes_count": dataSourceSchema.Int64Attribute{
 			Computed: true,
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
-				"A positive integer value indicates the value to be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used.",
+				"A positive integer value indicates the route limit being rendered into to the device BGP " +
+				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
+				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
+				"value into the configuration, so NOS default is being used.",
 		},
 		"max_external_routes_count": dataSourceSchema.Int64Attribute{
 			Computed: true,
 			MarkdownDescription: "Maximum number of routes to accept from external routers. " +
-				"A positive integer value indicates the value to be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used.",
+				"A positive integer value indicates the route limit being rendered into to the device BGP " +
+				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
+				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
+				"value into the configuration, so NOS default is being used.",
 		},
 		"max_fabric_routes_count": dataSourceSchema.Int64Attribute{
 			Computed: true,
 			MarkdownDescription: "Maximum number of underlay routes permitted between fabric nodes. " +
-				"A positive integer value indicates the value to be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used." +
+				"A positive integer value indicates the route limit being rendered into to the device BGP " +
+				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
+				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
+				"value into the configuration, so NOS default is being used." +
 				"Setting this option may be required in the event of leaking EVPN routes from a Security Zone " +
 				"into the default Security Zone (VRF) which may generate a large number of /32 and /128 routes. " +
 				"It is suggested that this value be effectively unlimited on all Blueprints to ensure BGP stability in " +
@@ -277,9 +283,11 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 		},
 		"max_mlag_routes_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of routes to accept between MLAG peers. " +
-				"A positive integer value indicates the value to be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used.",
+				"A positive integer value indicates the route limit being rendered into to the device BGP " +
+				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
+				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
+				"value into the configuration, so NOS default is being used.",
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -516,18 +524,22 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"max_evpn_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
-				"When a positive integer is used here, that value will be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used.",
+				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
+				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
+				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
+				"rendered into the BGP configuration (default device behavior).",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},
 		},
 		"max_external_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of routes to accept from external routers. " +
-				"When a positive integer is used here, that value will be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used.",
+				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
+				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
+				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
+				"rendered into the BGP configuration (default device behavior).",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},
@@ -536,9 +548,11 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Computed: true,
 			Optional: true,
 			MarkdownDescription: "Maximum number of underlay routes permitted between fabric nodes. " +
-				"When a positive integer is used here, that value will be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used." +
+				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
+				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
+				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
+				"rendered into the BGP configuration (default device behavior)." +
 				"Setting this option may be required in the event of leaking EVPN routes from a Security Zone " +
 				"into the default Security Zone (VRF) which may generate a large number of /32 and /128 routes. " +
 				"It is suggested that this value be effectively unlimited on all Blueprints to ensure BGP stability in " +
@@ -548,9 +562,11 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"max_mlag_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of routes to accept between MLAG peers. " +
-				"When a positive integer is used here, that value will be rendered into the device BGP configuration. " +
-				"When the value is `0`, no limit will be permitted in the device configuration, possibly overriding OS " +
-				"default behavior. When the value is `-1`, the OS default will be used.",
+				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
+				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
+				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
+				"rendered into the BGP configuration (default device behavior).",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},

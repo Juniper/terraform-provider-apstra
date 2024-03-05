@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -92,6 +94,21 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// -1 is a special case in the resource, not relevant
+	// to the data source. Set these to null instead.
+	if state.MaxEvpnRoutesCount.ValueInt64() < 0 {
+		state.MaxEvpnRoutesCount = types.Int64Null()
+	}
+	if state.MaxExternalRoutesCount.ValueInt64() < 0 {
+		state.MaxExternalRoutesCount = types.Int64Null()
+	}
+	if state.MaxFabricRoutesCount.ValueInt64() < 0 {
+		state.MaxFabricRoutesCount = types.Int64Null()
+	}
+	if state.MaxMlagRoutesCount.ValueInt64() < 0 {
+		state.MaxMlagRoutesCount = types.Int64Null()
 	}
 
 	// set state

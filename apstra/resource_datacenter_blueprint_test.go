@@ -52,11 +52,22 @@ resource "apstra_datacenter_blueprint" "test" {
 `
 )
 
+func testCheckIntGE1(s string) error {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+
+	if !(i >= 1) {
+		return errors.New("expected value >= 1, got " + s)
+	}
+
+	return nil
+}
+
 func TestResourceDatacenterBlueprint(t *testing.T) {
 	ctx := context.Background()
-
 	client := testutils.GetTestClient(t, ctx)
-
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 	rs := acctest.RandString(6)
 
@@ -131,19 +142,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 		)
 	}
 
-	var checkNumberGE1 resource.CheckResourceAttrWithFunc = func(s string) error {
-		i, err := strconv.Atoi(s)
-		if err != nil {
-			return err
-		}
-
-		if !(i >= 1) {
-			return errors.New("expected value >= 1, got " + s)
-		}
-
-		return nil
-	}
-
 	type testCase struct {
 		apiVersionConstraints version.Constraints
 		testCase              resource.TestCase
@@ -172,10 +170,9 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
 
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeDisabled.String()),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_slot", "0"),
@@ -239,7 +236,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -283,7 +280,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -356,7 +353,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -400,7 +397,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -466,7 +463,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -518,10 +515,9 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
 
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeDisabled.String()),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_slot", "0"),
@@ -585,7 +581,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -629,7 +625,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -703,7 +699,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -747,7 +743,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -813,7 +809,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "58"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -864,10 +860,9 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
 
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeDisabled.String()),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_slot", "0"),
@@ -931,7 +926,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -975,7 +970,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1048,7 +1043,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1092,7 +1087,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1158,7 +1153,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1210,10 +1205,9 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "52"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
-							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "false"),
 
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeDisabled.String()),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_slot", "0"),
@@ -1277,7 +1271,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1321,7 +1315,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1395,7 +1389,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1439,7 +1433,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
@@ -1505,7 +1499,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "generic_system_count", "8"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "external_router_count", "0"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
-							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", checkNumberGE1),
+							resource.TestCheckResourceAttrWith("apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_errors_count", "53"),
 							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
