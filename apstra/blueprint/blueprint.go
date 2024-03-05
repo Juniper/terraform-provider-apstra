@@ -526,9 +526,9 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
 				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
-				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
-				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
-				"rendered into the BGP configuration (default device behavior).",
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
+				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
+				"be rendered into the BGP configuration (default device behavior).",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},
@@ -537,9 +537,9 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Maximum number of routes to accept from external routers. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
 				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
-				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
-				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
-				"rendered into the BGP configuration (default device behavior).",
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
+				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
+				"be rendered into the BGP configuration (default device behavior).",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},
@@ -550,9 +550,9 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Maximum number of underlay routes permitted between fabric nodes. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
 				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
-				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
-				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
-				"rendered into the BGP configuration (default device behavior)." +
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
+				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
+				"be rendered into the BGP configuration (default device behavior)." +
 				"Setting this option may be required in the event of leaking EVPN routes from a Security Zone " +
 				"into the default Security Zone (VRF) which may generate a large number of /32 and /128 routes. " +
 				"It is suggested that this value be effectively unlimited on all Blueprints to ensure BGP stability in " +
@@ -564,9 +564,9 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Maximum number of routes to accept between MLAG peers. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
 				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
-				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. Using a " +
-				"`-1`, will clear any prior configuration from Apstra, ensuring that no maximum value will be " +
-				"rendered into the BGP configuration (default device behavior).",
+				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
+				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
+				"be rendered into the BGP configuration (default device behavior).",
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},
