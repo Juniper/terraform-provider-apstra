@@ -47,9 +47,9 @@ func BlueprintA(t testing.TB, ctx context.Context, name ...string) *apstra.TwoSt
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      bpname,
 		TemplateId: "L2_Virtual_EVPN",
-		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -71,9 +71,9 @@ func BlueprintB(t testing.TB, ctx context.Context) (*apstra.TwoStageL3ClosClient
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -95,9 +95,9 @@ func BlueprintC(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -117,9 +117,9 @@ func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -192,9 +192,9 @@ func BlueprintE(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      name,
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -215,9 +215,9 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
 		Label:      acctest.RandString(10),
 		TemplateId: template.Id,
-		FabricAddressingPolicy: &apstra.BlueprintRequestFabricAddressingPolicy{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)

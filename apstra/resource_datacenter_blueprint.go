@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -13,12 +14,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
-var _ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
-var _ resourceWithSetClient = &resourceDatacenterBlueprint{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterBlueprint{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterBlueprint{}
-var _ resourceWithSetBpUnlockFunc = &resourceDatacenterBlueprint{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDatacenterBlueprint{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
+	_ resourceWithSetClient               = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpClientFunc         = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpUnlockFunc         = &resourceDatacenterBlueprint{}
+)
 
 type resourceDatacenterBlueprint struct {
 	client          *apstra.Client
@@ -85,7 +88,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Make a blueprint creation request.
+	// make a blueprint creation request
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -94,71 +97,64 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	// Create the blueprint.
 	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("failed creating Rack Based Blueprint", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("failed creating Blueprint from Template %s", request.TemplateId), err.Error())
 		return
 	}
 
-	// commit the ID to the state
+	// Commit the ID to the state in case we're not able to run to completion
 	plan.Id = types.StringValue(id.String())
+	//plan.AntiAffinityPolicy = types.ObjectNull(blueprint.AntiAffinityPolicy{}.AttrTypes())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Lock the blueprint mutex.
-	err = o.lockFunc(ctx, id.String())
-	if err != nil {
-		resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
-		return
-	}
-
-	// get a client for the datacenter reference design
+	// Get a client for the datacenter reference design
 	bp, err := o.getBpClientFunc(ctx, id.String())
 	if err != nil {
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
-	// set the fabric addressing policy if the plan requires us to do so
-	if !plan.EsiMacMsb.IsUnknown() || !plan.FabricMtu.IsUnknown() || !plan.Ipv6Applications.IsUnknown() {
-		// Lock the blueprint mutex.
-		err = o.lockFunc(ctx, id.String())
-		if err != nil {
-			resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
-			return
-		}
+	// get the api version from the client
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
 
-		// set the fabric addressing policy, passing no prior state
-		plan.SetFabricAddressingPolicy(ctx, bp, nil, &resp.Diagnostics)
+	// Apstra 4.2.1 allows us to set *some* fabric settings as part of blueprint creation.
+	// Depending on what's in the plan, we might not need to invoke SetFabricSettings().
+	if !apiversions.Ge421.Check(apiVersion) || plan.Ipv6Applications.ValueBool() {
+		// did we really need to lock the blueprint here? nothing else knows it exists yet.
+		//// Lock the blueprint mutex.
+		//err = o.lockFunc(ctx, id.String())
+		//if err != nil {
+		//	resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
+		//	return
+		//}
+
+		// Set the fabric settings
+		plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 	}
 
-	// retrieve blueprint status
+	// Retrieve blueprint status
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
 	}
 
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy after creation", err.Error())
-		return
-	}
-
-	// load blueprint status
+	// Load blueprint status
 	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
+	// Retrieve and load the fabric settings
+	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -186,29 +182,26 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 		return
 	}
 
-	// Some interesting details are in BlueprintStatus.
+	// Retrieve the blueprint status
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("fetching blueprint %q", state.Id.ValueString()),
-			err.Error(),
-		)
+		// no 404 check or RemoveResource() here because Apstra's /api/blueprints
+		// endpoint may return bogus 404s due to race condition (?)
+		resp.Diagnostics.AddError(fmt.Sprintf("failed fetching blueprint %s status", state.Id), err.Error())
 		return
 	}
 
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to read fabric addressing policy", err.Error())
-		return
-	}
-
+	// Load the blueprint status
 	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
-	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
-	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve and load the fabric settings
+	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -244,38 +237,33 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 		return
 	}
 
-	// set the blueprint name
+	// Update the blueprint name if necessary
 	plan.SetName(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// set the fabric addressing policy
-	plan.SetFabricAddressingPolicy(ctx, bp, &state, &resp.Diagnostics)
+	// Update the blueprint settings if necessary
+	plan.SetFabricSettings(ctx, bp, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// fetch and load blueprint info
+	// Retrieve blueprint status
 	apiData, err := bp.Client().GetBlueprintStatus(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint after update", err.Error())
+		return
 	}
+
+	// Load the blueprint status
 	plan.LoadApiData(ctx, apiData, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("failed retrieving Datacenter Blueprint Fabric AddressingPolicy after update", err.Error())
-	}
-	plan.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	plan.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
+	// Retrieve and load the fabric settings
+	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -101,10 +101,27 @@ resource "apstra_blueprint_deployment" "deploy" {
 
 ### Optional
 
+- `anti_affinity_mode` (String) The anti-affinity policy has three modes:
+	* `Disabled` (default) - ports selection is based on assigned interface maps and interface names (provided or auto-assigned). Port breakouts could terminate on the same physical ports.
+	* `loose` - controls interface names that were not defined by the user. Does not control or override user-defined cabling. (If you haven't explicitly assigned any interface names, loose and strict are effectively the same policy.)
+	* `strict` - completely controls port distribution and could override user-defined assignments. When you enable the strict policy, a statement appears at the top of the cabling map (Staged/Active > Physical > Links and Staged/Active > Physical > Topology Selection) stating that the anti-affinity policy is enabled.
+- `anti_affinity_policy` (Attributes) When designing high availability (HA) systems, you want parallel links between two devices to terminate on different physical ports, thus avoiding transceiver failures from impacting both links on a device. Depending on the number of interfaces on a system, manually modifying these links could be time-consuming. With the anti-affinity policy you can apply certain constraints to the cabling map to control automatic port assignments. (see [below for nested schema](#nestedatt--anti_affinity_policy))
+- `default_ip_links_to_generic_mtu` (Number) Default L3 MTU for IP links to generic systems. A null or empty value implies AOS will not render explicit MTU value and system defaults will be used. Should be an even number between 1280 and 9216. Requires Apstra >=4.2.0
+- `default_svi_l3_mtu` (Number) Default L3 MTU for SVI interfaces. Should be an even number between 1280 and 9216. Requires Apstra >=4.2.0.
 - `esi_mac_msb` (Number) ESI MAC address most significant byte. Must be an even number between 0 and 254 inclusive.
-- `fabric_addressing` (String) Addressing scheme for both superspine/spine and spine/leaf links. Only applicable to Apstra versions 4.1.1 and later. Must be one of: ipv4, ipv6, ipv4_ipv6
-- `fabric_mtu` (Number) MTU of fabric links. Must be an even number between 1280 and 9216. Requires Apstra 4.2.0 or later.
-- `ipv6_applications` (Boolean) Enables support for IPv6 virtual networks and IPv6 external connectivity points. This adds resource requirements and device configurations, including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled without re-creating the Blueprint.
+- `evpn_type_5_routes` (Boolean) When `true`, all EVPN VTEPs in the fabric will redistribute ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table. Currently, this option is only certified for Juniper Junos. FRR (SONiC) does this implicitly and cannot be disabled. This setting will be ignored. On Arista and Cisco, no configuration is rendered and will result in a Blueprint warning that it is not supported by AOS. This value is disabled by default, as it generates a very large number of routes in the BGP routing table and takes large amounts of TCAM. When these /32 & /128 routes are generated, they enable direct unicast routing to host destinations on VNIs that are not stretched to the ingress VTEP, and avoid a route lookup to a subnet (eg, /24) that may be hosted on many leafs. Requires Apstra >=4.2.0.
+- `fabric_addressing` (String) Addressing scheme for both superspine/spine and spine/leaf links. Requires Apstra >=4.1.1. Must be one of: ipv4, ipv6, ipv4_ipv6
+- `fabric_mtu` (Number) MTU of fabric links. Must be an even number between 1280 and 9216. Requires Apstra >=4.2.0.
+- `ipv6_applications` (Boolean) Enables support for IPv6 virtual networks and IPv6 external connectivity points. This adds resource requirements and device configurations, including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled without re-creating the Blueprint. Applies only to EVPN blueprints.
+- `junos_evpn_max_nexthop_and_interface_number` (Boolean) **Changing this value will result in a disruptive restart of the PFE.** Enables configuring the maximum number of nexthops and interface numbers reserved for use in EVPN-VXLAN overlay network on Junos leaf devices. AOS default is `true`. Requires Apstra >=4.2.0
+- `junos_evpn_routing_instance_mode_mac_vrf` (Boolean) In releases before 4.2, Apstra used a single default switch instance as the configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for all new blueprints and normalized the configuration of Junos to Junos Evolved. This option allows you to transition Junos devices to the MAC-VRF configuration model for any blueprints deployed before the 4.2 release. All models use the VLAN-Aware service type. Requires Apstra >=4.2.0
+- `junos_ex_overlay_ecmp` (Boolean) **Changing this value will result in a disruptive restart of the PFE on EX-series devices.** When `true,`VXLAN Overlay ECMP will be enabled on Junos EX-series devices. Requires Apstra >=4.2.0.
+- `junos_graceful_restart` (Boolean) **Changing this value may result in a flap of all BGP sessions as the sessions are re-negotiated.** When `true`, the bgp graceful restart feature is enabled on Junos devices. Requires Apstra >=4.2.0
+- `max_evpn_routes_count` (Number) Maximum number of EVPN routes to accept on Leaf Switches. A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a zero will render a `0` into the same line of configuration resulting in platform-specific behavior: Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will be rendered into the BGP configuration (default device behavior).
+- `max_external_routes_count` (Number) Maximum number of routes to accept from external routers. A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a zero will render a `0` into the same line of configuration resulting in platform-specific behavior: Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will be rendered into the BGP configuration (default device behavior).
+- `max_fabric_routes_count` (Number) Maximum number of underlay routes permitted between fabric nodes. A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a zero will render a `0` into the same line of configuration resulting in platform-specific behavior: Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will be rendered into the BGP configuration (default device behavior).Setting this option may be required in the event of leaking EVPN routes from a Security Zone into the default Security Zone (VRF) which may generate a large number of /32 and /128 routes. It is suggested that this value be effectively unlimited on all Blueprints to ensure BGP stability in the underlay. Unlimited is also suggested for non-EVPN Blueprints considering the impact to traffic if spine-leaf sessions go offline.
+- `max_mlag_routes_count` (Number) Maximum number of routes to accept between MLAG peers. A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a zero will render a `0` into the same line of configuration resulting in platform-specific behavior: Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will be rendered into the BGP configuration (default device behavior).
+- `optimize_routing_zone_footprint` (Boolean) When `true`: routing zones will not be rendered on leafs where they are not required, resulting in less resource consumption. Requires Apstra >=4.2.0
 
 ### Read-Only
 
@@ -116,10 +133,20 @@ resource "apstra_blueprint_deployment" "deploy" {
 - `has_uncommitted_changes` (Boolean) Indicates whether the staging blueprint has uncommitted changes.
 - `id` (String) Blueprint ID assigned by Apstra.
 - `leaf_switch_count` (Number) The count of leaf switches in the topology.
-- `spine_count` (Number) The count of spine devices in the topology.
+- `spine_switch_count` (Number) For 3-stage and 5-stage topologies, the count of spine switches in the topology.
 - `status` (String) Deployment status of the Blueprint
-- `superspine_count` (Number) For 5-stage topologies, the count of superspine devices
+- `superspine_switch_count` (Number) For 5-stage topologies, the count of superspine switches in the topology.
 - `version` (Number) Currently active blueprint version
+
+<a id="nestedatt--anti_affinity_policy"></a>
+### Nested Schema for `anti_affinity_policy`
+
+Optional:
+
+- `max_links_count_per_port` (Number) Maximum total number of links connected to the interfaces of the specific port regardless of the system they are targeted to. It controls how many links can be connected to one port in one system. Example: Several transformations of one port. In this case, it controls how many transformations can be used in links.
+- `max_links_count_per_slot` (Number) Maximum total number of links connected to ports/interfaces of the specified slot regardless of the systemthey are targeted to. It controls how many links can be connected to one slot of one system. Example: A line card slot in a chassis.
+- `max_links_count_per_system_per_port` (Number) Restricts the number of interfaces on a port used to connect to a certain system. It controls how many links can be connected from one system to one port of another system. This is the one that you will most likely use, for port breakouts.
+- `max_links_count_per_system_per_slot` (Number) Restricts the number of links to a certain system connected to the ports/interfaces in a specific slot. It controls how many links can be connected to one system to one slot of another system.
 
 
 

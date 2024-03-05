@@ -3,6 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-framework/types"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
-var _ datasourceWithSetClient = &dataSourceDatacenterBlueprint{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterBlueprint{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
+	_ datasourceWithSetClient            = &dataSourceDatacenterBlueprint{}
+	_ datasourceWithSetBpClientFunc      = &dataSourceDatacenterBlueprint{}
+)
 
 type dataSourceDatacenterBlueprint struct {
 	client          *apstra.Client
@@ -78,12 +83,6 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 		return
 	}
 
-	fapData, err := bp.GetFabricAddressingPolicy(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint Fabric Addressing Policy", err.Error())
-		return
-	}
-
 	// create new state object
 	var state blueprint.Blueprint
 
@@ -92,14 +91,24 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 		return
 	}
 
-	state.LoadFabricAddressingPolicy(ctx, fapData, &resp.Diagnostics)
+	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	state.GetFabricLinkAddressing(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	// -1 is a special case in the resource, not relevant
+	// to the data source. Set these to null instead.
+	if state.MaxEvpnRoutesCount.ValueInt64() < 0 {
+		state.MaxEvpnRoutesCount = types.Int64Null()
+	}
+	if state.MaxExternalRoutesCount.ValueInt64() < 0 {
+		state.MaxExternalRoutesCount = types.Int64Null()
+	}
+	if state.MaxFabricRoutesCount.ValueInt64() < 0 {
+		state.MaxFabricRoutesCount = types.Int64Null()
+	}
+	if state.MaxMlagRoutesCount.ValueInt64() < 0 {
+		state.MaxMlagRoutesCount = types.Int64Null()
 	}
 
 	// set state
