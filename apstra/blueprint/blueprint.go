@@ -389,16 +389,17 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"anti_affinity_mode": resourceSchema.StringAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: "The anti-affinity policy has three modes:\n" +
-				"\t* `Disabled` (default) - ports selection is based on assigned interface maps and interface names " +
-				"(provided or auto-assigned). Port breakouts could terminate on the same physical ports.\n" +
-				"\t* `loose` - controls interface names that were not defined by the user. Does not control or override " +
-				"user-defined cabling. (If you haven't explicitly assigned any interface names, loose and strict are " +
-				"effectively the same policy.)\n" +
-				"\t* `strict` - completely controls port distribution and could override user-defined assignments. " +
-				"When you enable the strict policy, a statement appears at the top of the cabling map " +
-				"(Staged/Active > Physical > Links and Staged/Active > Physical > Topology Selection) stating that the " +
+			MarkdownDescription: fmt.Sprintf("The anti-affinity policy has three modes:\n"+
+				"\t* `%s` (default) - ports selection is based on assigned interface maps and interface names "+
+				"(provided or auto-assigned). Port breakouts could terminate on the same physical ports.\n"+
+				"\t* `%s` - controls interface names that were not defined by the user. Does not control or override "+
+				"user-defined cabling. (If you haven't explicitly assigned any interface names, loose and strict are "+
+				"effectively the same policy.)\n"+
+				"\t* `%s` - completely controls port distribution and could override user-defined assignments. "+
+				"When you enable the strict policy, a statement appears at the top of the cabling map "+
+				"(Staged/Active > Physical > Links and Staged/Active > Physical > Topology Selection) stating that the "+
 				"anti-affinity policy is enabled.",
+				apstra.AntiAffinityModeDisabled, apstra.AntiAffinityModeEnabledLoose, apstra.AntiAffinityModeEnabledStrict),
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					apstra.AntiAffinityModeDisabled.String(),
