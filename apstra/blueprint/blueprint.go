@@ -525,7 +525,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"max_evpn_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
-				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
 				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
 				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
 				"be rendered into the BGP configuration (default device behavior).",
@@ -536,7 +536,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"max_external_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of routes to accept from external routers. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
-				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
 				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
 				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
 				"be rendered into the BGP configuration (default device behavior).",
@@ -549,7 +549,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional: true,
 			MarkdownDescription: "Maximum number of underlay routes permitted between fabric nodes. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
-				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
 				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
 				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
 				"be rendered into the BGP configuration (default device behavior)." +
@@ -563,7 +563,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"max_mlag_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of routes to accept between MLAG peers. " +
 				"A positive integer will be rendered into the device BGP configuration as a maximum limit. Using a " +
-				" zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
+				"zero will render a `0` into the same line of configuration resulting in platform-specific behavior: " +
 				"Either *unlimited routes permitted*, or *no routes permitted* depending on the NOS in use. A `-1` " +
 				"can be used to force clear any prior configuration from Apstra, ensuring that no maximum value will " +
 				"be rendered into the BGP configuration (default device behavior).",
