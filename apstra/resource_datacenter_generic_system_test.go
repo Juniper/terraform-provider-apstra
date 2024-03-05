@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"net"
 	"strconv"
 	"strings"
@@ -51,10 +52,8 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 
 	bpClient := testutils.BlueprintF(t, ctx)
 
-	err := bpClient.SetFabricAddressingPolicy(ctx, &apstra.TwoStageL3ClosFabricAddressingPolicy{Ipv6Enabled: utils.ToPtr(true)})
-	if err != nil {
-		t.Fatal(err)
-	}
+	err := bpClient.SetFabricSettings(ctx, &apstra.FabricSettings{Ipv6Enabled: utils.ToPtr(true)})
+	require.NoError(t, err)
 
 	stringOrNull := func(in string) string {
 		if in == "" {
@@ -157,10 +156,10 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	response := struct {
 		Nodes map[string]systemNode `json:"nodes"`
 	}{}
+
 	err = bpClient.Client().GetNodes(ctx, bpClient.Id(), apstra.NodeTypeSystem, &response)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	var leafIds []apstra.ObjectId
 	for _, system := range response.Nodes {
 		if system.Role == "leaf" {
@@ -175,15 +174,11 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 	err = bpClient.SetInterfaceMapAssignments(ctx, apstra.SystemIdToInterfaceMapAssignment{
 		leafIds[0].String(): "Juniper_QFX5100-48T_Junos__AOS-48x10_6x40-1",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// discover the routing zones
 	szs, err := bpClient.GetAllSecurityZones(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// create a connectivity template
 	ct := apstra.ConnectivityTemplate{
@@ -199,14 +194,13 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		},
 	}
 	err = ct.SetIds()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = ct.SetUserData()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = bpClient.CreateConnectivityTemplate(ctx, &ct)
+	require.NoError(t, err)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,13 +253,10 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 			} `json:"items"`
 		}
 		err := query.Do(context.Background(), &response)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
+
 		err = bpClient.SetApplicationPointConnectivityTemplates(context.Background(), response.Items[0].Interface.Id, []apstra.ObjectId{*ct.Id})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}
 
 	type testStep struct {
