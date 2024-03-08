@@ -3,11 +3,12 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"testing"
 )
 
 const (
@@ -55,7 +56,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 		{
 			Data: &apstra.VirtualNetworkData{
 				Ipv4Enabled:    true,
-				Ipv4Subnet:     randIpv4NetMust(t, "10.0.0.0/16"),
+				Ipv4Subnet:     randIpv4Net(t, "10.0.0.0/16"),
 				Label:          acctest.RandString(5),
 				SecurityZoneId: zoneId,
 				VnType:         apstra.VnTypeVxlan,
@@ -65,7 +66,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 		{
 			Data: &apstra.VirtualNetworkData{
 				Ipv4Enabled:    true,
-				Ipv4Subnet:     randIpv4NetMust(t, "10.1.0.0/16"),
+				Ipv4Subnet:     randIpv4Net(t, "10.1.0.0/16"),
 				Label:          acctest.RandString(5),
 				SecurityZoneId: zoneId,
 				VnType:         apstra.VnTypeVlan,

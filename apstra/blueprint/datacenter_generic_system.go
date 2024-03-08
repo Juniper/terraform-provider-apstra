@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"net"
+	"regexp"
+	"sort"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -19,16 +24,13 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"math"
-	"net"
-	"regexp"
-	"sort"
 )
 
 type DatacenterGenericSystem struct {
@@ -116,23 +118,28 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:            true,
 		},
 		"port_channel_id_min": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
+			MarkdownDescription: fmt.Sprintf("`%d` allows any available port-channel to be "+
 				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
-				"need only be unique per system.", apiversions.Apstra412),
+				"need only be unique per system. Default: `%d`", design.PoIdMin, apiversions.Apstra412, design.PoIdMin),
 			Optional: true,
+			Computed: true,
+			Default:  int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
 			},
 		},
 		"port_channel_id_max": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
+			MarkdownDescription: fmt.Sprintf("`%d` allows any available port-channel to be "+
 				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
-				"need only be unique per system.", apiversions.Apstra412),
+				"need only be unique per system. Default: `%d`", design.PoIdMin, apiversions.Apstra412, design.PoIdMin),
 			Optional: true,
-			Validators: []validator.Int64{int64validator.AtLeast(1),
+			Computed: true,
+			Default:  int64default.StaticInt64(design.PoIdMin),
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
@@ -196,10 +203,12 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 	request := apstra.CreateLinksWithNewSystemRequest{
 		Links: make([]apstra.CreateLinkRequest, len(planLinks)),
 		System: apstra.CreateLinksWithNewSystemRequestSystem{
-			Hostname:      o.Hostname.ValueString(),
-			Label:         o.Name.ValueString(),
-			LogicalDevice: &bogusLdTemplateUsedInEveryRequest,
-			Type:          systemType,
+			Hostname:         o.Hostname.ValueString(),
+			Label:            o.Name.ValueString(),
+			LogicalDevice:    &bogusLdTemplateUsedInEveryRequest,
+			Type:             systemType,
+			PortChannelIdMin: int(o.PortChannelIdMin.ValueInt64()),
+			PortChannelIdMax: int(o.PortChannelIdMax.ValueInt64()),
 		},
 	}
 
@@ -339,6 +348,14 @@ func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *
 	// v6 loopback isn't computed, so will never be unknown
 	if overwriteKnownValues && nodeInfo.LoopbackIpv6 != nil {
 		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(nodeInfo.LoopbackIpv6.String())
+	}
+
+	if overwriteKnownValues || o.PortChannelIdMin.IsUnknown() {
+		o.PortChannelIdMin = types.Int64Value(int64(nodeInfo.PortChannelIdMin))
+	}
+
+	if overwriteKnownValues || o.PortChannelIdMax.IsUnknown() {
+		o.PortChannelIdMax = types.Int64Value(int64(nodeInfo.PortChannelIdMax))
 	}
 
 	return nil
@@ -742,40 +759,40 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 }
 
 func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
-	// set ASN if we don't have prior state or the ASN needs to be updated
-	if state == nil || !o.Asn.Equal(state.Asn) {
+	// set ASN if necessary
+	if utils.Known(o.Asn) && !o.Asn.Equal(state.Asn) {
 		o.setAsn(ctx, bp, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 
-	// set loopback v4 if we don't have prior state or the v4 address needs to be updated
-	if state == nil || !o.LoopbackIpv4.Equal(state.LoopbackIpv4) {
+	// set v4 loopback if necessary
+	if utils.Known(o.LoopbackIpv4) && !o.LoopbackIpv4.Equal(state.LoopbackIpv4) {
 		o.setLoopbackIPv4(ctx, bp, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 
-	// set loopback v6 if we don't have prior state or the v6 address needs to be updated
-	if state == nil || !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
+	// set v6 loopback if necessary
+	if utils.Known(o.LoopbackIpv6) && !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
 		o.setLoopbackIPv6(ctx, bp, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 
-	// Set Port Channel Min and Max if we don't have prior state or if it needs to be updated
-	if state == nil || !o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin) {
+	// set port channel min and max if necessary - values are defaulted so guaranteed known
+	if !o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin) {
 		o.setPortChannelIdMinMax(ctx, bp, diags)
 		if diags.HasError() {
 			return
 		}
 	}
 
-	// set deploy mode if we don't have prior state or the deploy mode needs to be updated
-	if state == nil || !o.DeployMode.Equal(state.DeployMode) {
+	// set deploy mode if necessary - value is defaulted so guaranteed known
+	if !o.DeployMode.Equal(state.DeployMode) {
 		err := utils.SetNodeDeployMode(ctx, bp, o.Id.ValueString(), o.DeployMode.ValueString())
 		if err != nil {
 			diags.AddError("failed to set node deploy mode", err.Error())
@@ -844,9 +861,7 @@ func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstr
 
 // setPortChannelIdMinMax sets or clears the generic system Po ID min/max depending on the zero value of
 // o.PortChannelIdMin and o.PortChannelIdMax (null/unknown/0 will "clear" the value from the web UI).
-func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
-	diags *diag.Diagnostics) {
-
+func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	err := bp.SetSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
 		int(o.PortChannelIdMax.ValueInt64()))
 	if err != nil {

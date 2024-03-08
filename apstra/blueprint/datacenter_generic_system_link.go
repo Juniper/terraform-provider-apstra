@@ -59,7 +59,7 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 		},
 		"lag_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "LAG negotiation mode of the Link. All links with the same " +
-				"`group_label` must use the value.",
+				"`group_label` must use the same value.",
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(

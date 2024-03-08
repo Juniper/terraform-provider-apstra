@@ -9,12 +9,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"golang.org/x/exp/constraints"
 )
 
-func systemIds(ctx context.Context, t *testing.T, bp *apstra.TwoStageL3ClosClient, role string) []string {
+func systemIds(ctx context.Context, t testing.TB, bp *apstra.TwoStageL3ClosClient, role string) []string {
+	t.Helper()
+
 	query := new(apstra.PathQuery).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
 		SetBlueprintId(bp.Id()).
@@ -74,6 +78,13 @@ func cidrOrNull(in *net.IPNet) string {
 	return `"` + in.String() + `"`
 }
 
+func ipOrNull(in *net.IP) string {
+	if in == nil {
+		return "null"
+	}
+	return `"` + in.String() + `"`
+}
+
 func intPtrOrNull[A constraints.Integer](in *A) string {
 	if in == nil {
 		return "null"
@@ -81,24 +92,48 @@ func intPtrOrNull[A constraints.Integer](in *A) string {
 	return fmt.Sprintf("%d", *in)
 }
 
+func intZeroAsNull[A constraints.Integer](in A) string {
+	if in == 0 {
+		return "null"
+	}
+	return fmt.Sprintf("%d", in)
+}
+
 func stringSetOrNull(in []string) string {
 	if in == nil {
 		return "null"
 	}
 
-	sb := new(strings.Builder)
-	for i, s := range in {
-		if i == 0 {
-			sb.WriteString(fmt.Sprintf("%q", s))
-		} else {
-			sb.WriteString(fmt.Sprintf(", %q", s))
-		}
+	if len(in) == 0 {
+		return "[]"
 	}
-	return "[ " + sb.String() + " ]"
+
+	return `["` + strings.Join(in, `","`) + `"]`
 }
 
-func randIpv4NetMust(t *testing.T, cidrBlock string) *net.IPNet {
-	ip := randIpv4AddressMust(t, cidrBlock)
+func randIpv4NetWithPrefixLen(t testing.TB, cidrBlock string, cidrBits int) *net.IPNet {
+	t.Helper()
+	ip := randIpv4Address(t, cidrBlock)
+
+	return &net.IPNet{
+		IP:   ip,
+		Mask: net.CIDRMask(cidrBits, 32),
+	}
+}
+
+func randIpv6NetWithPrefixLen(t testing.TB, cidrBlock string, cidrBits int) *net.IPNet {
+	t.Helper()
+	ip := randIpv6Address(t, cidrBlock)
+
+	return &net.IPNet{
+		IP:   ip,
+		Mask: net.CIDRMask(cidrBits, 128),
+	}
+}
+
+func randIpv4Net(t testing.TB, cidrBlock string) *net.IPNet {
+	t.Helper()
+	ip := randIpv4Address(t, cidrBlock)
 
 	_, ipNet, _ := net.ParseCIDR(cidrBlock)
 	cidrBlockPrefixLen, _ := ipNet.Mask.Size()
@@ -109,15 +144,29 @@ func randIpv4NetMust(t *testing.T, cidrBlock string) *net.IPNet {
 	return result
 }
 
-func randIpv4AddressMust(t *testing.T, cidrBlock string) net.IP {
+func randIpv4Address(t testing.TB, cidrBlock string) net.IP {
+	t.Helper()
+
 	s, err := acctest.RandIpAddress(cidrBlock)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	ip := net.ParseIP(s)
 	if ip == nil {
-		t.Fatalf("randIpv4AddressMust failed to parse IP address %q", s)
+		t.Fatalf("randIpv4Address failed to parse IP address %q", s)
+	}
+
+	return ip
+}
+
+func randIpv6Address(t testing.TB, cidrBlock string) net.IP {
+	t.Helper()
+
+	s, err := acctest.RandIpAddress(cidrBlock)
+	require.NoError(t, err)
+
+	ip := net.ParseIP(s)
+	if ip == nil {
+		t.Fatalf("randIpv6Address failed to parse IP address %q", s)
 	}
 
 	return ip

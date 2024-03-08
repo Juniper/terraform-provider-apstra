@@ -1935,8 +1935,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/hcl/v2
 
 * Name: github.com/hashicorp/hcl/v2
-* Version: v2.19.1
-* License: [MPL-2.0](https://github.com/hashicorp/hcl/blob/v2.19.1/LICENSE)
+* Version: v2.20.0
+* License: [MPL-2.0](https://github.com/hashicorp/hcl/blob/v2.20.0/LICENSE)
 
 ```
 Copyright (c) 2014 HashiCorp, Inc.
@@ -2300,8 +2300,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.5.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.5.0/LICENSE)
+* Version: v1.6.1
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.6.1/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -3802,8 +3802,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.21.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.21.0/LICENSE)
+* Version: v0.22.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.22.0/LICENSE)
 
 ```
 Copyright (c) 2020 HashiCorp, Inc.
@@ -4534,8 +4534,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-testing/helper/acctest
 
 * Name: github.com/hashicorp/terraform-plugin-testing/helper/acctest
-* Version: v1.5.1
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-testing/blob/v1.5.1/LICENSE)
+* Version: v1.7.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-testing/blob/v1.7.0/LICENSE)
 
 ```
 Copyright (c) 2014 HashiCorp, Inc.
@@ -6544,8 +6544,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/zclconf/go-cty/cty
 
 * Name: github.com/zclconf/go-cty/cty
-* Version: v1.14.1
-* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.14.1/LICENSE)
+* Version: v1.14.3
+* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.14.3/LICENSE)
 
 ```
 MIT License
@@ -6575,8 +6575,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.19.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.19.0:LICENSE)
+* Version: v0.21.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.21.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -6686,8 +6686,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys/unix
 
 * Name: golang.org/x/sys/unix
-* Version: v0.17.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.17.0:LICENSE)
+* Version: v0.18.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.18.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -6972,8 +6972,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.61.0
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.61.0/LICENSE)
+* Version: v1.61.1
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.61.1/LICENSE)
 
 ```
 

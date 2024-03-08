@@ -3,12 +3,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"math/rand"
-	"testing"
 )
 
 const (
@@ -48,7 +49,7 @@ func TestDatacenterExternalGateway(t *testing.T) {
 			RouteTypes:     apstra.RemoteGatewayRouteTypesAll,
 			LocalGwNodes:   leafIds,
 			GwAsn:          rand.Uint32(),
-			GwIp:           randIpv4AddressMust(t, "10.0.0.0/8"),
+			GwIp:           randIpv4Address(t, "10.0.0.0/8"),
 			GwName:         acctest.RandString(5),
 			Ttl:            &ttl,
 			KeepaliveTimer: &keepalive,
@@ -59,7 +60,7 @@ func TestDatacenterExternalGateway(t *testing.T) {
 			RouteTypes:     apstra.RemoteGatewayRouteTypesFiveOnly,
 			LocalGwNodes:   leafIds,
 			GwAsn:          rand.Uint32(),
-			GwIp:           randIpv4AddressMust(t, "10.0.0.0/8"),
+			GwIp:           randIpv4Address(t, "10.0.0.0/8"),
 			GwName:         acctest.RandString(5),
 			Ttl:            &ttl,
 			KeepaliveTimer: &keepalive,
@@ -135,7 +136,7 @@ func TestDatacenterExternalGateway(t *testing.T) {
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		//Steps:                    stepsById,
+		// Steps:                    stepsById,
 		Steps: append(stepsById, stepsByName...),
 	})
 }

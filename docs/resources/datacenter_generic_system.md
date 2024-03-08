@@ -91,8 +91,8 @@ resource "apstra_datacenter_generic_system" "example" {
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation
 - `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation
 - `name` (String) Name displayed in the Apstra web UI.
-- `port_channel_id_max` (Number) Omit this attribute to allow any available port-channel to be used. In Apstra version 4.1.2 and earlier, all port channel min/max constraints had to be unique per blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they need only be unique per system.
-- `port_channel_id_min` (Number) Omit this attribute to allow any available port-channel to be used. In Apstra version 4.1.2 and earlier, all port channel min/max constraints had to be unique per blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they need only be unique per system.
+- `port_channel_id_max` (Number) `0` allows any available port-channel to be used. In Apstra version 4.1.2 and earlier, all port channel min/max constraints had to be unique per blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they need only be unique per system. Default: `0`
+- `port_channel_id_min` (Number) `0` allows any available port-channel to be used. In Apstra version 4.1.2 and earlier, all port channel min/max constraints had to be unique per blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they need only be unique per system. Default: `0`
 - `tags` (Set of String) Tag labels to be applied to this Generic System. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
 ### Read-Only
@@ -111,7 +111,7 @@ Required:
 Optional:
 
 - `group_label` (String) This field is used to collect multiple links into aggregation groups. For example, to create two LAG pairs from four physical links, you might use `group_label` value "bond0" on two links and "bond1" on the other two links. Apstra assigns a unique group ID to each link by default.
-- `lag_mode` (String) LAG negotiation mode of the Link. All links with the same `group_label` must use the value.
+- `lag_mode` (String) LAG negotiation mode of the Link. All links with the same `group_label` must use the same value.
 - `tags` (Set of String) Names of Tag to be applied to this Link. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
 

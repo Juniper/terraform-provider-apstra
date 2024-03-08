@@ -144,12 +144,19 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("failed to determine new generic system ID from returned link IDs: [%s]", sb.String()),
 			err.Error())
+		return
 	}
 	plan.Id = types.StringValue(genericSystemId.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...) // provisional state in case of error below
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set generic system properties sending <nil> for prior state
-	plan.SetProperties(ctx, bp, nil, &resp.Diagnostics)
+	plan.SetProperties(ctx, bp, &blueprint.DatacenterGenericSystem{
+		PortChannelIdMin: plan.PortChannelIdMin,
+		PortChannelIdMax: plan.PortChannelIdMax,
+	}, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
