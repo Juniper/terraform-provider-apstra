@@ -126,7 +126,10 @@ func (o *resourceDeviceAllocation) Create(ctx context.Context, req resource.Crea
 	// Deprecated attribute in use?
 	if utils.Known(plan.DeployMode) {
 		// validators ensure that system_attributes object has been omitted. instantiate a fresh one and copy the deploy mode in there
-		sa, d := types.ObjectValueFrom(ctx, blueprint.DeviceAllocationSystemAttributes{}.AttrTypes(), basetypes.ObjectAsOptions{})
+		sa, d := types.ObjectValueFrom(ctx, blueprint.DeviceAllocationSystemAttributes{}.AttrTypes(), blueprint.DeviceAllocationSystemAttributes{
+			DeployMode: plan.DeployMode,
+			Tags:       types.SetNull(types.StringType),
+		})
 		resp.Diagnostics.Append(d...)
 		if resp.Diagnostics.HasError() {
 			return

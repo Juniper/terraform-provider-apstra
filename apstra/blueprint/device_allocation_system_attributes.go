@@ -36,9 +36,9 @@ type DeviceAllocationSystemAttributes struct {
 
 func (o DeviceAllocationSystemAttributes) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"asn":           types.Int64Type,
 		"name":          types.StringType,
 		"hostname":      types.StringType,
-		"asn":           types.Int64Type,
 		"loopback_ipv4": cidrtypes.IPv4PrefixType{},
 		"loopback_ipv6": cidrtypes.IPv6PrefixType{},
 		"tags":          types.SetType{ElemType: types.StringType},
