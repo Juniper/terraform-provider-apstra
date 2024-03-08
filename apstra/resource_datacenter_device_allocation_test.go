@@ -19,6 +19,7 @@ resource "apstra_datacenter_device_allocation" "test" {
 	blueprint_id             = %q
 	node_name                = %q
 	initial_interface_map_id = %q
+    deploy_mode              = %s
 	system_attributes        = %s
 }
 `
@@ -94,6 +95,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 		nodeName              string
 		initialInterfaceMapId string
 		systemAttributes      *systemAttributes
+		deployMode            string
 	}
 
 	renderDeviceAllocation := func(in deviceAllocation) string {
@@ -101,6 +103,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 			in.blueprintId,
 			in.nodeName,
 			in.initialInterfaceMapId,
+			stringOrNull(in.deployMode),
 			renderSystemAttributes(in.systemAttributes),
 		)
 	}
@@ -526,6 +529,21 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(apstra.NodeDeployModeDrain)),
+					},
+				},
+			},
+		},
+		"bug_609_deprecated_option": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_one_access_003_leaf1",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						deployMode:            "drain",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 					},
 				},
 			},
