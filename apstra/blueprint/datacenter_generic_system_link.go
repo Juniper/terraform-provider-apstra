@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -70,8 +70,8 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			},
 		},
 		"tags": resourceSchema.SetAttribute{
-			MarkdownDescription: "Names of Tag to be applied to this Link. If a Tag doesn't exist " +
-				"in the Blueprint it will be created automatically.",
+			MarkdownDescription: fmt.Sprintf("Names of Tag to be applied to this Link. If a Tag doesn't exist "+
+				"in the Blueprint it will be created automatically. Requires Apstra %s", apiversions.Ge412.String()),
 			ElementType: types.StringType,
 			Optional:    true,
 			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
@@ -202,7 +202,7 @@ func (o *DatacenterGenericSystemLink) versionConstraintsAsGenericSystemLink(_ co
 	if utils.Known(o.Tags) {
 		result.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.AtName("tags"),
-			Constraints: version.MustConstraints(version.NewConstraint("> " + apiversions.Apstra411)),
+			Constraints: apiversions.Ge412,
 		})
 	}
 

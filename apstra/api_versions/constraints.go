@@ -7,6 +7,7 @@ import (
 
 var (
 	Ge411 = version.MustConstraints(version.NewConstraint(">=" + Apstra411))
+	Ge412 = version.MustConstraints(version.NewConstraint(">=" + Apstra412))
 	Ge420 = version.MustConstraints(version.NewConstraint(">=" + Apstra420))
 	Ge421 = version.MustConstraints(version.NewConstraint(">=" + Apstra421))
 )

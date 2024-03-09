@@ -2,16 +2,12 @@ package tfapstra
 
 import (
 	"context"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-var (
-	Ge411 = apiversions.Ge411
-
-	ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
-)
+var ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
 
 func ResourceName(ctx context.Context, r resource.Resource) string {
 	var pMdReq provider.MetadataRequest

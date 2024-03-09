@@ -760,7 +760,7 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 
 func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
 	// set ASN if necessary
-	if utils.Known(o.Asn) && !o.Asn.Equal(state.Asn) {
+	if utils.NullableValueRequiresUpdate(o.Asn, state.Asn) {
 		o.setAsn(ctx, bp, diags)
 		if diags.HasError() {
 			return
@@ -768,7 +768,7 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 	}
 
 	// set v4 loopback if necessary
-	if utils.Known(o.LoopbackIpv4) && !o.LoopbackIpv4.Equal(state.LoopbackIpv4) {
+	if utils.NullableValueRequiresUpdate(o.LoopbackIpv4, state.LoopbackIpv4) {
 		o.setLoopbackIPv4(ctx, bp, diags)
 		if diags.HasError() {
 			return
@@ -776,7 +776,7 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 	}
 
 	// set v6 loopback if necessary
-	if utils.Known(o.LoopbackIpv6) && !o.LoopbackIpv6.Equal(state.LoopbackIpv6) {
+	if utils.NullableValueRequiresUpdate(o.LoopbackIpv6, state.LoopbackIpv6) {
 		o.setLoopbackIPv6(ctx, bp, diags)
 		if diags.HasError() {
 			return
