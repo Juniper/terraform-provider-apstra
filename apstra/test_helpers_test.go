@@ -78,12 +78,12 @@ func cidrOrNull(in *net.IPNet) string {
 	return `"` + in.String() + `"`
 }
 
-func ipOrNull(in *net.IP) string {
-	if in == nil {
-		return "null"
-	}
-	return `"` + in.String() + `"`
-}
+//func ipOrNull(in *net.IP) string {
+//	if in == nil {
+//		return "null"
+//	}
+//	return `"` + in.String() + `"`
+//}
 
 func intPtrOrNull[A constraints.Integer](in *A) string {
 	if in == nil {
