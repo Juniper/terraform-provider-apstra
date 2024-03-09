@@ -493,7 +493,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 							},
 							{
 								targetSwitchId: leafIds[0],
-								targetSwitchIf: "xe-0/0/5",
+								targetSwitchIf: "xe-0/0/6",
 								targetSwitchTf: 1,
 							},
 						},
