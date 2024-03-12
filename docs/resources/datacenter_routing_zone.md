@@ -31,7 +31,7 @@ resource "apstra_datacenter_routing_zone" "blue" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `name` (String) VRF name displayed in the Apstra web UI.
+- `name` (String) Name displayed in the Apstra web UI.
 
 ### Optional
 
@@ -48,6 +48,7 @@ resource "apstra_datacenter_routing_zone" "blue" {
 - `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration, this attribute can be ignored.
 - `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration, this attribute can be ignored.
 - `id` (String) Apstra graph node ID.
+- `vrf_name` (String) VRF name. Copied from the `name` field on initial create.
 
 
 

@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -18,8 +19,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZones{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterRoutingZones{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZones{}
+	_ datasourceWithSetBpClientFunc      = &dataSourceDatacenterRoutingZones{}
+)
 
 type dataSourceDatacenterRoutingZones struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -61,7 +64,7 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 					),
 					apstravalidator.AtLeastNAttributes(
 						1,
-						"name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
+						"name", "vrf_name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
 						"import_route_targets", "export_route_targets", "junos_evpn_irb_mode",
 					),
 				},
@@ -78,7 +81,7 @@ func (o *dataSourceDatacenterRoutingZones) Schema(_ context.Context, _ datasourc
 					Validators: []validator.Object{
 						apstravalidator.AtLeastNAttributes(
 							1,
-							"name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
+							"name", "vrf_name", "vlan_id", "vni", "dhcp_servers", "routing_policy_id",
 							"import_route_targets", "export_route_targets", "junos_evpn_irb_mode",
 						),
 					},

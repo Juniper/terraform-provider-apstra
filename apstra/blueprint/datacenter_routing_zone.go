@@ -30,6 +30,7 @@ type DatacenterRoutingZone struct {
 	Id                   types.String `tfsdk:"id"`
 	BlueprintId          types.String `tfsdk:"blueprint_id"`
 	Name                 types.String `tfsdk:"name"`
+	VrfName              types.String `tfsdk:"vrf_name"`
 	VlanId               types.Int64  `tfsdk:"vlan_id"`
 	HadPriorVlanIdConfig types.Bool   `tfsdk:"had_prior_vlan_id_config"`
 	Vni                  types.Int64  `tfsdk:"vni"`
@@ -61,7 +62,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
+			MarkdownDescription: "Name displayed in the Apstra web UI.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -69,6 +70,10 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
 					"only underscore, dash and alphanumeric characters allowed."),
 			},
+		},
+		"vrf_name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "VRF name.",
+			Computed:            true,
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
@@ -133,7 +138,11 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
+			MarkdownDescription: "Name displayed in the Apstra web UI.",
+			Optional:            true,
+		},
+		"vrf_name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "VRF name.",
 			Optional:            true,
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -196,13 +205,18 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name displayed in the Apstra web UI.",
+			MarkdownDescription: "Name displayed in the Apstra web UI.",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
 					"only underscore, dash and alphanumeric characters allowed."),
 				stringvalidator.LengthBetween(1, 15),
 			},
+		},
+		"vrf_name": resourceSchema.StringAttribute{
+			MarkdownDescription: "VRF name. Copied from the `name` field on initial create.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"vlan_id": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
@@ -313,7 +327,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 
 	return &apstra.SecurityZoneData{
 		SzType:           apstra.SecurityZoneTypeEVPN,
-		VrfName:          o.Name.ValueString(),
+		VrfName:          o.VrfName.ValueString(),
 		Label:            o.Name.ValueString(),
 		RoutingPolicyId:  apstra.ObjectId(o.RoutingPolicyId.ValueString()),
 		VlanId:           vlan,
@@ -337,6 +351,10 @@ func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Dia
 
 func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.SecurityZoneData, diags *diag.Diagnostics) {
 	if !utils.Known(o.Name) { // required attribute
+		o.Name = types.StringValue(data.Label)
+	}
+
+	if !utils.Known(o.VrfName) { // computed attribute
 		o.Name = types.StringValue(data.VrfName)
 	}
 
@@ -508,6 +526,10 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 
 	if utils.Known(o.Name) {
 		result = append(result, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Name.ValueString())})
+	}
+
+	if utils.Known(o.VrfName) {
+		result = append(result, apstra.QEEAttribute{Key: "vrf_name", Value: apstra.QEStringVal(o.VrfName.ValueString())})
 	}
 
 	if utils.Known(o.Vni) {
