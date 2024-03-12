@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -97,7 +96,6 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AgentProfilePlatforms()...)},
-			Default:             stringdefault.StaticString(apstra.AgentPlatformJunos.String()),
 		},
 		"packages": resourceSchema.MapAttribute{
 			MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
@@ -118,9 +116,7 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *apstra.AgentProfileConfig {
 	var platform string
-	if o.Platform.IsNull() || o.Platform.IsUnknown() {
-		platform = ""
-	} else {
+	if utils.Known(o.Platform) {
 		platform = o.Platform.ValueString()
 	}
 
