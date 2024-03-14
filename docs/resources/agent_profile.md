@@ -39,7 +39,7 @@ resource "apstra_agent_profile" "profile_with_options" {
 
 - `open_options` (Map of String) Passes configured parameters to offbox agents. For example, to use HTTPS as the API connection from offbox agents to devices, use the key-value pair: proto-https - port-443.
 - `packages` (Map of String) List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) to be included with agents deployed using this profile.
-- `platform` (String) Indicates the platform supported by the Agent Profile.
+- `platform` (String) Specifies the platform supported by the Agent Profile.
 
 ### Read-Only
 
