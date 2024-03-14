@@ -3,6 +3,8 @@ package systemAgents
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -18,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
 )
 
 type ManagedDevice struct {
@@ -186,8 +187,8 @@ func (o *ManagedDevice) ValidateAgentProfile(ctx context.Context, client *apstra
 	if agentProfile.Platform == "" && o.OffBox.ValueBool() {
 		diags.AddAttributeError(
 			path.Root("agent_profile_id"),
-			"Agent Profile needs platform for Off-box Systems",
-			fmt.Sprintf("selected agent_profile_id %q (%s) must specify the platform type",
+			"Agent Profile must specify `platform` for when `offbox` is `true`",
+			fmt.Sprintf("The selected Agent Profile %q (%s) does not have `platform` configured",
 				agentProfile.Label, agentProfile.Id))
 	}
 }
@@ -205,7 +206,6 @@ func (o *ManagedDevice) Acknowledge(ctx context.Context, si *apstra.ManagedSyste
 		)
 		return
 	}
-
 }
 
 func (o *ManagedDevice) GetDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {

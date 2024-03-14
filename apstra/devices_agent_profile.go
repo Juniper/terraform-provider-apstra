@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -92,8 +93,7 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 		},
 		"platform": resourceSchema.StringAttribute{
-			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
-			Computed:            true,
+			MarkdownDescription: "Specifies the platform supported by the Agent Profile.",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AgentProfilePlatforms()...)},
 		},
