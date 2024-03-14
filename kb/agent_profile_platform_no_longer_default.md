@@ -18,8 +18,9 @@ attribute from the Agent Profile has failed. If the provider has just been upgra
 possible that the configuration was written to depend on the `junos` platform default of an earlier release,
 and that clearing the `platform` is not the intended outcome.
 
-The occurs when the `platform` attribute cannot be cleared from the Agent Profile because:
-- The Agent Profile in use by a Managed Device Agent.
+The error occurs when the `platform` attribute cannot be cleared from the Agent Profile because all of the
+following are true:
+- The Agent Profile is used by a Managed Device Agent.
 - Tha Managed Device Agent does not have its own `platform` specified.
 - The Managed Device associated with the Managed Device Agent has been [acknowledged](https://www.juniper.net/documentation/us/en/software/apstra4.2/apstra-user-guide/topics/task/device-add.html).
 
