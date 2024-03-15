@@ -3,10 +3,9 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"strings"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 const (
@@ -27,9 +26,6 @@ const (
 	resourceGroupNameVxlanVnIds          = "vni_virtual_network_ids"
 	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
 	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
-
-	exampleEnumOneFooFriendly = "FOO"
-	exampleEnumOneBarFriendly = "BAR"
 )
 
 type StringerWithFromString interface {
@@ -53,8 +49,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return asnAllocationSchemeToFriendlyString(in0)
 	case apstra.ConfigletSection:
 		return configletSectionToFriendlyString(in0, in[1:]...)
-	case apstra.NodeDeployMode:
-		return nodeDeployModeToFriendlyString(in0)
+	case apstra.DeployMode:
+		return deployModeToFriendlyString(in0)
 	case apstra.OverlayControlProtocol:
 		return overlayControlProtocolToFriendlyString(in0)
 	case apstra.PolicyRuleProtocol:
@@ -63,10 +59,6 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
-	case ExampleEnumOne:
-		return exampleEnumOneToFriendlyString(in0)
-	case ExampleEnumTwo:
-		return exampleEnumTwoToFriendlyString(in0, in[1:]...)
 	}
 
 	return in[0].String()
@@ -89,7 +81,7 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return asnAllocationSchemeFromFriendlyString(target, in...)
 	case *apstra.ConfigletSection:
 		return configletSectionFromFriendlyString(target, in...)
-	case *apstra.NodeDeployMode:
+	case *apstra.DeployMode:
 		return nodeDeployModeFromFriendlyString(target, in...)
 	case *apstra.OverlayControlProtocol:
 		return overlayControlProtocolFromFriendlyString(target, in...)
@@ -99,10 +91,6 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
-	case *ExampleEnumOne:
-		return exampleEnumOneFromFriendlyString(target, in[0])
-	case *ExampleEnumTwo:
-		return exampleEnumTwoFromFriendlyString(target, in[0])
 	}
 
 	return target.FromString(in[0])
@@ -146,33 +134,9 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 	return in.String()
 }
 
-func exampleEnumOneToFriendlyString(in ExampleEnumOne) string {
+func deployModeToFriendlyString(in apstra.DeployMode) string {
 	switch in {
-	case ExampleEnumOneFoo:
-		return exampleEnumOneFooFriendly
-	case ExampleEnumOneBar:
-		return exampleEnumOneBarFriendly
-	default:
-		return any(in).(ExampleEnumOne).Value
-	}
-}
-
-func exampleEnumTwoToFriendlyString(in ExampleEnumTwo, additionalInfo ...fmt.Stringer) string {
-	if len(additionalInfo) > 0 {
-		switch additionalInfo[0].String() {
-		case "title":
-			return cases.Title(language.Und).String(in.Value)
-		case "snake":
-			return "_" + in.Value + "_"
-		}
-	}
-
-	return in.Value
-}
-
-func nodeDeployModeToFriendlyString(in apstra.NodeDeployMode) string {
-	switch in {
-	case apstra.NodeDeployModeNone:
+	case apstra.DeployModeNone:
 		return nodeDeployModeNotSet
 	}
 
@@ -262,44 +226,17 @@ func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...s
 	return nil
 }
 
-func exampleEnumOneFromFriendlyString(target *ExampleEnumOne, in string) error {
-	switch in {
-	case exampleEnumOneFooFriendly:
-		target.Value = ExampleEnumOneFoo.Value
-		return nil
-	case exampleEnumOneBarFriendly:
-		target.Value = ExampleEnumOneBar.Value
-		return nil
-	}
-
-	t := ExampleEnumOneVals.Parse(in)
-	if t == nil {
-		return fmt.Errorf("failed to parse ExampleEnumOne value %q", in)
-	}
-
-	target.Value = t.Value
-	return nil
-}
-
-func exampleEnumTwoFromFriendlyString(target *ExampleEnumTwo, in string) error {
-	in = strings.ToLower(in)   // kill friendly "title" handling
-	in = strings.Trim(in, "_") // kill friendly "snake" handling
-	return target.FromString(in)
-}
-
-func nodeDeployModeFromFriendlyString(target *apstra.NodeDeployMode, in ...string) error {
+func nodeDeployModeFromFriendlyString(target *apstra.DeployMode, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case nodeDeployModeNotSet:
-		*target = apstra.NodeDeployModeNone
-	default:
-		return target.FromString(in[0])
+		return target.FromString(apstra.DeployModeNone.String())
 	}
 
-	return nil
+	return target.FromString(in[0])
 }
 
 func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProtocol, in ...string) error {
@@ -310,11 +247,9 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 	switch in[0] {
 	case overlayControlProtocolStatic:
 		*target = apstra.OverlayControlProtocolNone
-	default:
-		return target.FromString(in[0])
 	}
 
-	return nil
+	return target.FromString(in[0])
 }
 
 func policyRuleProtocolFromFriendlyString(target *apstra.PolicyRuleProtocol, s string) error {
@@ -353,9 +288,7 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6
 	case resourceGroupNameVxlanVnIds:
 		*target = apstra.ResourceGroupNameVxlanVnIds
-	default:
-		return target.FromString(in[0])
 	}
 
-	return nil
+	return target.FromString(in[0])
 }

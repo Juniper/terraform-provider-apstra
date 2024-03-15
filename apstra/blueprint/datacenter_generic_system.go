@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"net"
+	"regexp"
+	"sort"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -25,10 +30,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"math"
-	"net"
-	"regexp"
-	"sort"
 )
 
 type DatacenterGenericSystem struct {
@@ -132,7 +133,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
 				"need only be unique per system.", apiversions.Apstra412),
 			Optional: true,
-			Validators: []validator.Int64{int64validator.AtLeast(1),
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
@@ -147,10 +149,10 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 		},
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Set the Apstra Deploy Mode for this Generic System. Default: `%s`",
-				apstra.NodeDeployModeDeploy),
+				apstra.DeployModeDeploy),
 			Optional:   true,
 			Computed:   true,
-			Default:    stringdefault.StaticString(apstra.NodeDeployModeDeploy.String()),
+			Default:    stringdefault.StaticString(apstra.DeployModeDeploy.String()),
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 		"clear_cts_on_destroy": resourceSchema.BoolAttribute{
@@ -844,9 +846,7 @@ func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstr
 
 // setPortChannelIdMinMax sets or clears the generic system Po ID min/max depending on the zero value of
 // o.PortChannelIdMin and o.PortChannelIdMax (null/unknown/0 will "clear" the value from the web UI).
-func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
-	diags *diag.Diagnostics) {
-
+func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	err := bp.SetSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
 		int(o.PortChannelIdMax.ValueInt64()))
 	if err != nil {

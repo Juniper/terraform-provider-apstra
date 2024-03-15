@@ -2,7 +2,9 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -10,8 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceAgentProfile{}
-var _ resourceWithSetClient = &resourceAgentProfile{}
+var (
+	_ resource.ResourceWithConfigure = &resourceAgentProfile{}
+	_ resourceWithSetClient          = &resourceAgentProfile{}
+)
 
 type resourceAgentProfile struct {
 	client *apstra.Client
@@ -111,6 +115,13 @@ func (o *resourceAgentProfile) Update(ctx context.Context, req resource.UpdateRe
 	}
 	err := o.client.UpdateAgentProfile(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
+		var ace apstra.ClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrAgentProfilePlatformRequired {
+			resp.Diagnostics.AddError("Cannot clear Agent Profile 'platform' attribute",
+				"Details: https://github.com/Juniper/terraform-provider-apstra/blob/main/kb/agent_profile_platform_no_longer_default.md")
+			return
+		}
+
 		resp.Diagnostics.AddError("error updating Agent Profile", err.Error())
 		return
 	}

@@ -3,6 +3,11 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -11,10 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"net"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const (
@@ -433,7 +434,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 						// name:     "foo",
 						// hostname: "foo.com",
 						// tags:     []string{"a"},
-						deployMode: apstra.NodeDeployModeReady.String(),
+						deployMode: apstra.DeployModeReady.String(),
 						links: []link{
 							{
 								lagMode:        apstra.RackLinkLagModePassive,
@@ -457,7 +458,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 						resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "asn"),
 						resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv4"),
 						resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv6"),
-						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", apstra.NodeDeployModeReady.String()),
+						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", apstra.DeployModeReady.String()),
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.#", "2"),
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.group_label", "bar"),
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.lag_mode", apstra.RackLinkLagModePassive.String()),
@@ -478,7 +479,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 						// name:     "foo",
 						// hostname: "foo.com",
 						// tags:     []string{"a"},
-						deployMode: apstra.NodeDeployModeDeploy.String(),
+						deployMode: apstra.DeployModeDeploy.String(),
 						links: []link{
 							{
 								lagMode:        apstra.RackLinkLagModePassive,
@@ -502,7 +503,7 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 						resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "asn"),
 						resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv4"),
 						resource.TestCheckNoResourceAttr("apstra_datacenter_generic_system.test", "loopback_ipv6"),
-						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", apstra.NodeDeployModeDeploy.String()),
+						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", apstra.DeployModeDeploy.String()),
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.#", "2"),
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.group_label", "bar"),
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "links.0.lag_mode", apstra.RackLinkLagModePassive.String()),

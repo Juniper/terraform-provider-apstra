@@ -290,7 +290,7 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 		return
 	}
 
-	var deployMode apstra.NodeDeployMode
+	var deployMode apstra.DeployMode
 	err = deployMode.FromString(node.DeployMode)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse node %q deploy mode %q", nodeId, node.DeployMode), err.Error())
@@ -437,7 +437,7 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 		return
 	}
 
-	var deployMode apstra.NodeDeployMode
+	var deployMode apstra.DeployMode
 	err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error in rosetta function with deploy_mode = %s", o.DeployMode), err.Error())
