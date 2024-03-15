@@ -437,27 +437,48 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 		return
 	}
 
-	var deployMode apstra.DeployMode
-	err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
-	if err != nil {
-		diags.AddError(fmt.Sprintf("error in rosetta function with deploy_mode = %s", o.DeployMode), err.Error())
-		return
-	}
+	if utils.Known(o.DeployMode) {
+		var deployMode apstra.DeployMode
+		err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error in rosetta function with deploy_mode = %s", o.DeployMode), err.Error())
+			return
+		}
 
-	node := struct {
-		DeployMode string `json:"deploy_mode,omitempty"`
-		Hostname   string `json:"hostname,omitempty"`
-		Label      string `json:"label,omitempty"`
-	}{
-		DeployMode: deployMode.String(),
-		Hostname:   o.Hostname.ValueString(),
-		Label:      o.Name.ValueString(),
-	}
+		var deployModePayload *string
+		if deployMode != apstra.DeployModeNone {
+			deployModePayload = utils.ToPtr(deployMode.String())
+		}
 
-	err = bp.PatchNode(ctx, nodeId, &node, nil)
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
-		return
+		patch := struct {
+			DeployMode *string `json:"deploy_mode"`
+			Hostname   string  `json:"hostname,omitempty"`
+			Label      string  `json:"label,omitempty"`
+		}{
+			DeployMode: deployModePayload,
+			Hostname:   o.Hostname.ValueString(),
+			Label:      o.Name.ValueString(),
+		}
+
+		err = bp.PatchNode(ctx, nodeId, &patch, nil)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
+			return
+		}
+	} else {
+		patch := struct {
+			Hostname string `json:"hostname,omitempty"`
+			Label    string `json:"label,omitempty"`
+		}{
+			Hostname: o.Hostname.ValueString(),
+			Label:    o.Name.ValueString(),
+		}
+
+		err := bp.PatchNode(ctx, nodeId, &patch, nil)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed while patching system node %q", nodeId), err.Error())
+			return
+		}
 	}
 }
 

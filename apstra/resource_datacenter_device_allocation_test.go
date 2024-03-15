@@ -550,6 +550,67 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 				},
 			},
 		},
+		"deploy_to_not_set": {
+			steps: []testStep{
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_esi_acs_dual_001_leaf2",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							deployMode: utils.StringersToFriendlyString(apstra.DeployModeReady),
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeReady)),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_esi_acs_dual_001_leaf2",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							deployMode: utils.StringersToFriendlyString(apstra.DeployModeNone),
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeNone)),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_esi_acs_dual_001_leaf2",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+						systemAttributes: &systemAttributes{
+							deployMode: utils.StringersToFriendlyString(apstra.DeployModeReady),
+						},
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeReady)),
+					},
+				},
+				{
+					config: deviceAllocation{
+						blueprintId:           bpClient.Id().String(),
+						nodeName:              "l2_esi_acs_dual_001_leaf2",
+						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
+					},
+					checks: []resource.TestCheckFunc{
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(apstra.DeployModeReady)),
+					},
+				},
+			},
+		},
 	}
 
 	for tName, tCase := range testCases {

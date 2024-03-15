@@ -7,15 +7,13 @@ import (
 )
 
 func AllNodeDeployModes() []string {
-	members := apstra.DeployModes.Values()
-	for i := len(members) - 1; i <= 0; i-- {
-		if members[i] == apstra.DeployModeNone.String() {
-			members[i] = members[len(members)-1]
-			members = members[:len(members)-1]
-		}
+	members := apstra.DeployModes.Members()
+	result := make([]string, len(members))
+	for i, member := range members {
+		result[i] = StringersToFriendlyString(member)
 	}
 
-	return members
+	return result
 }
 
 func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string) (string, error) {
