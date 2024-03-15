@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"math"
 	"math/rand"
 	"net"
@@ -65,6 +66,37 @@ func stringOrNull(in string) string {
 		return "null"
 	}
 	return `"` + in + `"`
+}
+
+func stringMapOrNull(in map[string]string, depth int) string {
+	if in == nil {
+		return "null"
+	}
+
+	if len(in) == 0 {
+		return "{}"
+	}
+
+	whitespace := strings.Repeat("  ", depth)
+
+	var longestKey int
+	for k := range in {
+		keyLen := len(k)
+		if keyLen > longestKey {
+			longestKey = keyLen
+		}
+	}
+
+	formatString := fmt.Sprintf("%s  %%-%ds = %%q\n", whitespace, longestKey)
+
+	sb := new(strings.Builder)
+	sb.WriteString("{\n")
+	for k, v := range in {
+		sb.WriteString(fmt.Sprintf(formatString, k, v))
+	}
+	sb.WriteString(whitespace + "}")
+
+	return sb.String()
 }
 
 func boolPtrOrNull(b *bool) string {
@@ -375,6 +407,24 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 	}
 }
 
+func (o *testChecks) extractFromState(t testing.TB, id string, targetMap map[string]string) {
+	o.checks = append(o.checks, extractValueFromTerraformState(t, o.path, id, targetMap))
+	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", o.path, id)
+}
+
 func (o *testChecks) string() string {
 	return o.logLines.string()
+}
+
+func extractValueFromTerraformState(t testing.TB, name string, id string, targetMap map[string]string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", name)
+		}
+
+		targetMap[t.Name()] = rs.Primary.Attributes[id]
+
+		return nil
+	}
 }

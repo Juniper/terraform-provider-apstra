@@ -61,12 +61,12 @@ func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) strin
 func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, rName string, immutableAttributes map[string]string) testChecks {
 	result := newTestChecks(rType + "." + rName)
 
-	// stash immutable attributes in a map for reuse
+	// stash immutable attributes in map for reuse
 	if _, ok := immutableAttributes["vrf_name"]; !ok {
 		immutableAttributes["vrf_name"] = o.name
 	}
 
-	// required attributes can always be checked
+	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
@@ -145,8 +145,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 	}
 
 	type extraCheck struct {
-		testFuncName  string
-		testFuncAargs []string
+		testFuncName string
+		testFuncArgs []string
 	}
 
 	type testStep struct {
@@ -170,8 +170,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 					},
 					extraChecks: []extraCheck{
 						{
-							testFuncName:  "TestCheckResourceAttr",
-							testFuncAargs: []string{"vni", strconv.Itoa(4096)},
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"vni", strconv.Itoa(4096)},
 						},
 					},
 				},
@@ -256,7 +256,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 
 				// add extra checks
 				for _, ec := range step.extraChecks {
-					checks.append(t, ec.testFuncName, ec.testFuncAargs...)
+					checks.append(t, ec.testFuncName, ec.testFuncArgs...)
 				}
 
 				chkLog := checks.string()
