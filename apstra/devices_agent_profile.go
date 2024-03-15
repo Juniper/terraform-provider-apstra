@@ -115,9 +115,9 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 }
 
 func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *apstra.AgentProfileConfig {
-	var platform string
-	if utils.Known(o.Platform) {
-		platform = o.Platform.ValueString()
+	platform := o.Platform.ValueStringPointer()
+	if platform == nil {
+		platform = utils.ToPtr("") // pointer to empty string clears the platform value
 	}
 
 	packages := make(apstra.AgentPackages)
