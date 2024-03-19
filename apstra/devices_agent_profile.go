@@ -134,7 +134,7 @@ func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *ap
 
 	return &apstra.AgentProfileConfig{
 		Label:       o.Name.ValueString(),
-		Platform:    platform,
+		Platform:    *platform,
 		Packages:    packages,
 		OpenOptions: options,
 	}

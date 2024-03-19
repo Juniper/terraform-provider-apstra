@@ -847,7 +847,7 @@ func (o *DatacenterGenericSystem) setLoopbackIPv6(ctx context.Context, bp *apstr
 // setPortChannelIdMinMax sets or clears the generic system Po ID min/max depending on the zero value of
 // o.PortChannelIdMin and o.PortChannelIdMax (null/unknown/0 will "clear" the value from the web UI).
 func (o *DatacenterGenericSystem) setPortChannelIdMinMax(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	err := bp.SetSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
+	err := bp.SetGenericSystemPortChannelMinMax(ctx, apstra.ObjectId(o.Id.ValueString()), int(o.PortChannelIdMin.ValueInt64()),
 		int(o.PortChannelIdMax.ValueInt64()))
 	if err != nil {
 		diags.AddError("failed setting generic system Port Channel Id Min and Max", err.Error())
