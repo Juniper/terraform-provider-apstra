@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -11,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -93,11 +93,9 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 		},
 		"platform": resourceSchema.StringAttribute{
-			MarkdownDescription: "Indicates the platform supported by the Agent Profile.",
-			Computed:            true,
+			MarkdownDescription: "Specifies the platform supported by the Agent Profile.",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AgentProfilePlatforms()...)},
-			Default:             stringdefault.StaticString(apstra.AgentPlatformJunos.String()),
 		},
 		"packages": resourceSchema.MapAttribute{
 			MarkdownDescription: "List of [packages](https://www.juniper.net/documentation/us/en/software/apstra4.1/apstra-user-guide/topics/topic-map/packages.html) " +
@@ -117,11 +115,9 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 }
 
 func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *apstra.AgentProfileConfig {
-	var platform string
-	if o.Platform.IsNull() || o.Platform.IsUnknown() {
-		platform = ""
-	} else {
-		platform = o.Platform.ValueString()
+	platform := o.Platform.ValueStringPointer()
+	if platform == nil {
+		platform = utils.ToPtr("") // pointer to empty string clears the platform value
 	}
 
 	packages := make(apstra.AgentPackages)

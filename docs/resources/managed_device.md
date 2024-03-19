@@ -61,11 +61,11 @@ resource "apstra_managed_device" "example" {
 
 - `agent_profile_id` (String) ID of the Agent Profile used when instantiating the Agent. An Agent Profile isrequired to specify the login credentials and platform type.
 - `management_ip` (String) Management IP address of the system.
-- `off_box` (Boolean) Indicates that an *offbox* agent should be created (required for Junos devices, default: `true`)
 
 ### Optional
 
 - `device_key` (String) Key which uniquely identifies a System asset. Possibly a MAC address or serial number.
+- `off_box` (Boolean) Indicates that an *offbox* agent should be created (required for Junos devices, default: `true`)
 
 ### Read-Only
 

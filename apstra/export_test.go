@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ResourceAgentProfile            = resourceAgentProfile{}
 	ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
 	ResourceDatacenterRoutingZone   = resourceDatacenterRoutingZone{}
 )

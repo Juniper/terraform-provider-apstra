@@ -2,14 +2,15 @@ package utils
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func AllNodeDeployModes() []string {
-	modes := apstra.AllNodeDeployModes()
-	result := make([]string, len(modes))
-	for i := range modes {
-		result[i] = StringersToFriendlyString(modes[i])
+	members := apstra.DeployModes.Members()
+	result := make([]string, len(members))
+	for i, member := range members {
+		result[i] = StringersToFriendlyString(member)
 	}
 
 	return result
@@ -26,7 +27,7 @@ func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 		return "", err
 	}
 
-	var deployMode apstra.NodeDeployMode
+	var deployMode apstra.DeployMode
 	err = deployMode.FromString(node.DeployMode)
 	if err != nil {
 		return "", err
@@ -36,31 +37,25 @@ func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 }
 
 func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string, modeString string) error {
-	var modeIota apstra.NodeDeployMode
+	var modeIota apstra.DeployMode
 	err := ApiStringerFromFriendlyString(&modeIota, modeString)
 	if err != nil {
 		return err
 	}
 
-	type patch struct {
+	patch := struct {
 		Id         string  `json:"id"`
 		DeployMode *string `json:"deploy_mode"`
+	}{
+		Id: nodeId,
 	}
 
-	var stringPtr *string
-	if modeIota == apstra.NodeDeployModeNone {
-		stringPtr = nil
-	} else {
+	if modeIota != apstra.DeployModeNone {
 		s := modeIota.String()
-		stringPtr = &s
+		patch.DeployMode = &s
 	}
 
-	setDeployMode := patch{
-		Id:         nodeId,
-		DeployMode: stringPtr,
-	}
-
-	err = client.Client().PatchNode(ctx, client.Id(), apstra.ObjectId(nodeId), &setDeployMode, nil)
+	err = client.Client().PatchNode(ctx, client.Id(), apstra.ObjectId(nodeId), &patch, nil)
 	if err != nil {
 		return err
 	}

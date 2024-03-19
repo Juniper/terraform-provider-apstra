@@ -3,6 +3,8 @@ package systemAgents
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,12 +14,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
 )
 
 type ManagedDevice struct {
@@ -27,15 +29,6 @@ type ManagedDevice struct {
 	DeviceKey      types.String `tfsdk:"device_key"`
 	AgentProfileId types.String `tfsdk:"agent_profile_id"`
 	OffBox         types.Bool   `tfsdk:"off_box"`
-}
-
-func (o *ManagedDevice) Request(_ context.Context, _ *diag.Diagnostics) *apstra.SystemAgentRequest {
-	return &apstra.SystemAgentRequest{
-		AgentTypeOffbox: apstra.AgentTypeOffbox(o.OffBox.ValueBool()),
-		ManagementIp:    o.ManagementIp.ValueString(),
-		Profile:         apstra.ObjectId(o.AgentProfileId.ValueString()),
-		OperationMode:   apstra.SystemManagementLevelFullControl,
-	}
 }
 
 func (o ManagedDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -143,9 +136,20 @@ func (o ManagedDevice) ResourceAttributes() map[string]resourceSchema.Attribute 
 		},
 		"off_box": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates that an *offbox* agent should be created (required for Junos devices, default: `true`)",
-			Required:            true,
+			Optional:            true,
+			Computed:            true,
+			Default:             booldefault.StaticBool(true),
 			PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 		},
+	}
+}
+
+func (o *ManagedDevice) Request(_ context.Context, _ *diag.Diagnostics) *apstra.SystemAgentRequest {
+	return &apstra.SystemAgentRequest{
+		AgentTypeOffbox: apstra.AgentTypeOffbox(o.OffBox.ValueBool()),
+		ManagementIp:    o.ManagementIp.ValueString(),
+		Profile:         apstra.ObjectId(o.AgentProfileId.ValueString()),
+		OperationMode:   apstra.SystemManagementLevelFullControl,
 	}
 }
 
@@ -180,11 +184,11 @@ func (o *ManagedDevice) ValidateAgentProfile(ctx context.Context, client *apstra
 	}
 
 	// require platform (assignment will fail without platform)
-	if agentProfile.Platform == "" {
+	if agentProfile.Platform == "" && o.OffBox.ValueBool() {
 		diags.AddAttributeError(
 			path.Root("agent_profile_id"),
-			"Agent Profile needs platform",
-			fmt.Sprintf("selected agent_profile_id %q (%s) must specify the platform type",
+			"Agent Profile must specify `platform` for when `offbox` is `true`",
+			fmt.Sprintf("The selected Agent Profile %q (%s) does not have `platform` configured",
 				agentProfile.Label, agentProfile.Id))
 	}
 }
@@ -202,7 +206,6 @@ func (o *ManagedDevice) Acknowledge(ctx context.Context, si *apstra.ManagedSyste
 		)
 		return
 	}
-
 }
 
 func (o *ManagedDevice) GetDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
