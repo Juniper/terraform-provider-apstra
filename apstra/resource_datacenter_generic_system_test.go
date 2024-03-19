@@ -649,6 +649,39 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 				},
 			},
 		},
+		"exercise_deploy_mode": {
+			steps: []testStep{
+				{
+					genericSystem: genericSystem{
+						links: []link{
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/10",
+								targetSwitchTf: 1,
+							},
+						},
+					},
+					testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", "deploy"),
+					}...),
+				},
+				{
+					genericSystem: genericSystem{
+						deployMode: "not_set",
+						links: []link{
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/10",
+								targetSwitchTf: 1,
+							},
+						},
+					},
+					testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", "not_set"),
+					}...),
+				},
+			},
+		},
 	}
 
 	for tName, tCase := range testCases {
