@@ -24,6 +24,7 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -122,6 +123,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
 				"need only be unique per system.", apiversions.Apstra412),
 			Optional: true,
+			Computed: true,
+			Default:  int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
@@ -133,8 +136,9 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
 				"need only be unique per system.", apiversions.Apstra412),
 			Optional: true,
+			Computed: true,
+			Default:  int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
-				int64validator.AtLeast(1),
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
@@ -198,10 +202,12 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 	request := apstra.CreateLinksWithNewSystemRequest{
 		Links: make([]apstra.CreateLinkRequest, len(planLinks)),
 		System: apstra.CreateLinksWithNewSystemRequestSystem{
-			Hostname:      o.Hostname.ValueString(),
-			Label:         o.Name.ValueString(),
-			LogicalDevice: &bogusLdTemplateUsedInEveryRequest,
-			Type:          systemType,
+			Hostname:         o.Hostname.ValueString(),
+			Label:            o.Name.ValueString(),
+			LogicalDevice:    &bogusLdTemplateUsedInEveryRequest,
+			Type:             systemType,
+			PortChannelIdMin: int(o.PortChannelIdMin.ValueInt64()),
+			PortChannelIdMax: int(o.PortChannelIdMax.ValueInt64()),
 		},
 	}
 
@@ -341,6 +347,12 @@ func (o *DatacenterGenericSystem) ReadSystemProperties(ctx context.Context, bp *
 	// v6 loopback isn't computed, so will never be unknown
 	if overwriteKnownValues && nodeInfo.LoopbackIpv6 != nil {
 		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(nodeInfo.LoopbackIpv6.String())
+	}
+
+	// Port Channel Min & Max
+	if overwriteKnownValues {
+		o.PortChannelIdMin = types.Int64Value(int64(nodeInfo.PortChannelIdMin))
+		o.PortChannelIdMax = types.Int64Value(int64(nodeInfo.PortChannelIdMax))
 	}
 
 	return nil
@@ -768,8 +780,8 @@ func (o *DatacenterGenericSystem) SetProperties(ctx context.Context, bp *apstra.
 		}
 	}
 
-	// Set Port Channel Min and Max if we don't have prior state or if it needs to be updated
-	if state == nil || !o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin) {
+	// Set Port Channel Min and Max if prior state indicates update is needed
+	if state != nil && (!o.PortChannelIdMax.Equal(state.PortChannelIdMax) || !o.PortChannelIdMin.Equal(state.PortChannelIdMin)) {
 		o.setPortChannelIdMinMax(ctx, bp, diags)
 		if diags.HasError() {
 			return
