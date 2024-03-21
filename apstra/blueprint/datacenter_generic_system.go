@@ -123,10 +123,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
 				"need only be unique per system.", apiversions.Apstra412),
 			Optional: true,
-			// change this to make default
 			Computed: true,
 			Default:  int64default.StaticInt64(design.PoIdMin),
-
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
@@ -138,8 +136,9 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
 				"need only be unique per system.", apiversions.Apstra412),
 			Optional: true,
+			Computed: true,
+			Default:  int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
-				int64validator.AtLeast(1),
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
