@@ -313,6 +313,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 			resp.Diagnostics.AddError("Incompatible Apstra API Version specified.", "Possible explanation: "+
 				"you may be trying to use an unsupported version of the API. Setting `experimental = true` will "+
 				"bypass compatibility checks.")
+			return
 		}
 
 		ver := p.Version
