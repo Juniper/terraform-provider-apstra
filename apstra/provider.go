@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
@@ -307,6 +308,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// Create the Apstra client.
 	client, err := clientCfg.NewClient(ctx)
 	if err != nil {
+		var ace apstra.ClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrCompatibility {
+			resp.Diagnostics.AddError("Incompatible Apstra API Version specified.", "Possible explanation: "+
+				"you may be trying to use an unsupported version of the API. Setting `experimental = true` will "+
+				"bypass compatibility checks.")
+			return
+		}
+
 		ver := p.Version
 		if ver == "0.0.0" {
 			ver = "latest"
