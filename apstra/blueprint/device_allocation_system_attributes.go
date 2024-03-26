@@ -129,10 +129,6 @@ func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, exp
 		return
 	}
 
-	if experimental.IsNull() {
-		return // resource not yet configured
-	}
-
 }
 
 func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
