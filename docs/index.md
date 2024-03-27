@@ -12,7 +12,7 @@ It covers day 0 and day 1 operations (design and deployment), and a growing list
 
 Use the navigation tree to the left to read about the available resources and data sources.
 
-This release has been tested with Apstra versions 4.1.0, 4.1.1, 4.1.2, and 4.2.0.
+This release has been tested with Apstra versions 4.1.0, 4.1.1, 4.1.2, 4.2.0, and 4.2.1.
 
 ## Configuration
 
@@ -63,7 +63,6 @@ may be set via environment variables: `APSTRA_API_TIMEOUT`,
 - `blueprint_mutex_message` (String) Blueprint mutexes are signals that changes are being made in a staging Blueprint and other automation processes (including other instances of Terraform) should wait before beginning to make changes of their own. The mutexes embed a human-readable field to reduce confusion in the event a mutex needs to be cleared manually. This attribute overrides the default message in that field: "locked by terraform at $DATE".
 - `experimental` (Boolean) Enable *experimental* features. In this release that means:
   - Set the `experimental` flag in the underlying Apstra SDK client object. Doing so permits connections to Apstra instances not supported by the SDK.
-  - Enable use of the `system_attributes` object within the `apstra_datacenter_device_allocation resource.
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.
 - `url` (String) URL of the apstra server, e.g. `https://apstra.example.com`
  It is possible to include Apstra API credentials in the URL using [standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be taken to ensure that these credentials aren't accidentally committed to version control, etc... The preferred approach is to pass the credentials as environment variables `APSTRA_USER`  and `APSTRA_PASS`.
