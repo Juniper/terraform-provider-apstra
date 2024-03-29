@@ -159,9 +159,7 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 			"experimental": schema.BoolAttribute{
 				MarkdownDescription: "Enable *experimental* features. In this release that means:\n" +
 					"  - Set the `experimental` flag in the underlying Apstra SDK client object. Doing so permits " +
-					"connections to Apstra instances not supported by the SDK.\n" +
-					"  - Enable use of the `system_attributes` object within the `apstra_datacenter_device_allocation " +
-					"resource.",
+					"connections to Apstra instances not supported by the SDK.\n",
 				Optional: true,
 			},
 			"api_timeout": schema.Int64Attribute{
