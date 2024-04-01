@@ -22,29 +22,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-type TemplateRackBased struct {
+type TemplatePodBased struct {
 	Id                     types.String `tfsdk:"id"`
 	Name                   types.String `tfsdk:"name"`
-	Spine                  types.Object `tfsdk:"spine"`
-	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
+	SuperSpine             types.Object `tfsdk:"super_spine"`
 	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
 	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
-	RackInfos              types.Map    `tfsdk:"rack_infos"`
+	PodInfos               types.Map    `tfsdk:"pod_infos"`
 }
 
-func (o TemplateRackBased) AttrTypes() map[string]attr.Type {
+func (o TemplatePodBased) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":                       types.StringType,
 		"name":                     types.StringType,
 		"spine":                    types.ObjectType{AttrTypes: Spine{}.AttrTypes()},
-		"asn_allocation_scheme":    types.StringType,
 		"overlay_control_protocol": types.StringType,
 		"fabric_link_addressing":   types.StringType,
-		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: RackType{}.AttrTypes()}},
+		"pod_infos":                types.MapType{ElemType: types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}},
 	}
 }
 
-func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Template ID. Required when `id` is omitted.",
@@ -66,83 +64,39 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 				stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("id")),
 			},
 		},
-		"spine": dataSourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Spine layer details",
+		"super_spine": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Super Spine layer details",
 			Computed:            true,
-			Attributes:          Spine{}.DataSourceAttributes(),
-		},
-		"asn_allocation_scheme": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
-				AsnAllocationUnique, AsnAllocationSingle),
-			Computed: true,
+			Attributes:          SuperSpine{}.DataSourceAttributes(),
 		},
 		"overlay_control_protocol": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
+			MarkdownDescription: "Defines the inter-pod virtual network overlay protocol in the fabric.",
 			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
+			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Superspine links. Applies only to "+
 				"Apstra %s.", apiversions.Apstra410),
 			Computed: true,
 		},
-		"rack_infos": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Rack Type info (count + details)",
+		"pod_infos": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Pod Type information (count + details)",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: TemplateRackInfo{}.DataSourceAttributesNested(),
+				Attributes: TemplatePodInfo{}.DataSourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o TemplateRackBased) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
-	return map[string]dataSourceSchema.Attribute{
-		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the pod inside the 5 stage template.",
-			Computed:            true,
-		},
-		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the pod inside the 5 stage template.",
-			Computed:            true,
-		},
-		"spine": dataSourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Spine layer details",
-			Computed:            true,
-			Attributes:          Spine{}.DataSourceAttributes(),
-		},
-		"asn_allocation_scheme": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
-				AsnAllocationUnique, AsnAllocationSingle),
-			Computed: true,
-		},
-		"overlay_control_protocol": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
-			Computed:            true,
-		},
-		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
-				"Apstra %s.", apiversions.Apstra410),
-			Computed: true,
-		},
-		"rack_infos": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Rack Type info (count + details)",
-			Computed:            true,
-			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: TemplateRackInfo{}.DataSourceAttributesNested(),
-			},
-		},
-	}
-}
-
-func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID of the Rack Based Template.",
+			MarkdownDescription: "Apstra ID of the Pod Based Template.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra name of the Rack Based Template.",
+			MarkdownDescription: "Apstra name of the Pod Based Template.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -151,14 +105,8 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			Required:            true,
 			Attributes:          Spine{}.ResourceAttributes(),
 		},
-		"asn_allocation_scheme": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
-				AsnAllocationUnique, AsnAllocationSingle),
-			Validators: []validator.String{stringvalidator.OneOf(AsnAllocationUnique, AsnAllocationSingle)},
-			Required:   true,
-		},
 		"overlay_control_protocol": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Defines the inter-rack virtual network overlay protocol in the fabric. [%q,%q]",
+			MarkdownDescription: fmt.Sprintf("Defines the inter-pod virtual network overlay protocol in the fabric. [%q,%q]",
 				OverlayControlProtocolEvpn, OverlayControlProtocolStatic),
 			Required: true,
 			Validators: []validator.String{
@@ -187,57 +135,18 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 				),
 			},
 		},
-		"rack_infos": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Rack Type info (count + details)",
+		"pod_infos": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Pod Type info (count + details)",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: TemplateRackInfo{}.ResourceAttributesNested(),
+				Attributes: TemplatePodInfo{}.ResourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o TemplateRackBased) ResourceAttributesNested() map[string]resourceSchema.Attribute {
-	return map[string]resourceSchema.Attribute{
-		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the pod inside the 5 stage template.",
-			Computed:            true,
-		},
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the pod inside the 5 stage template.",
-			Computed:            true,
-		},
-		"spine": resourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Spine layer details",
-			Computed:            true,
-			Attributes:          Spine{}.ResourceAttributes(),
-		},
-		"asn_allocation_scheme": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
-				AsnAllocationUnique, AsnAllocationSingle),
-			Computed: true,
-		},
-		"overlay_control_protocol": resourceSchema.StringAttribute{
-			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
-			Computed:            true,
-		},
-		"fabric_link_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
-				"Apstra %s.", apiversions.Apstra410),
-			Computed: true,
-		},
-		"rack_infos": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Rack Type info (count + details)",
-			Computed:            true,
-			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: TemplateRackInfo{}.ResourceAttributesNested(),
-			},
-		},
-	}
-}
-
-func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateRackBasedTemplateRequest {
+func (o *TemplatePodBased) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreatePodBasedTemplateRequest {
 	var d diag.Diagnostics
 
 	s := Spine{}
@@ -247,16 +156,16 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 		return nil
 	}
 
-	rtMap := make(map[string]TemplateRackInfo, len(o.RackInfos.Elements()))
-	d = o.RackInfos.ElementsAs(ctx, &rtMap, false)
+	rtMap := make(map[string]TemplatePodInfo, len(o.PodInfos.Elements()))
+	d = o.PodInfos.ElementsAs(ctx, &rtMap, false)
 	diags.Append(d...)
 	if diags.HasError() {
 		return nil
 	}
 
-	rackInfos := make(map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo, len(rtMap))
+	podInfos := make(map[apstra.ObjectId]apstra.TemplatePodBasedPodInfo, len(rtMap))
 	for k := range rtMap {
-		rackInfos[apstra.ObjectId(k)] = apstra.TemplateRackBasedRackInfo{
+		podInfos[apstra.ObjectId(k)] = apstra.TemplatePodBasedPodInfo{
 			Count: int(rtMap[k].Count.ValueInt64()),
 		}
 	}
@@ -265,17 +174,6 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 
 	antiAffinityPolicy := &apstra.AntiAffinityPolicy{
 		Algorithm: apstra.AlgorithmHeuristic,
-	}
-
-	var spineAsnScheme apstra.AsnAllocationScheme
-	err = utils.ApiStringerFromFriendlyString(&spineAsnScheme, o.AsnAllocation.ValueString())
-	if err != nil {
-		diags.AddError(errProviderBug,
-			fmt.Sprintf("error parsing ASN allocation scheme %q - %s",
-				o.AsnAllocation.ValueString(), err.Error()))
-	}
-	asnAllocationPolicy := &apstra.AsnAllocationPolicy{
-		SpineAsnScheme: spineAsnScheme,
 	}
 
 	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
@@ -304,23 +202,22 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 		OverlayControlProtocol: overlayControlProtocol,
 	}
 
-	return &apstra.CreateRackBasedTemplateRequest{
+	return &apstra.CreatePodBasedTemplateRequest{
 		DisplayName:       o.Name.ValueString(),
 		Spine:             s.Request(ctx, diags),
-		RackInfos:         rackInfos,
+		PodInfos:          podInfos,
 		DhcpServiceIntent: &apstra.DhcpServiceIntent{Active: true},
 		// todo: is this the right AntiAffinityPolicy?
 		//  I'd have sent <nil>, but blocked by sdk issue #2 (crash on nil pointer deref)
 		AntiAffinityPolicy:     antiAffinityPolicy,
-		AsnAllocationPolicy:    asnAllocationPolicy,
 		FabricAddressingPolicy: fabricAddressingPolicy,
 		VirtualNetworkPolicy:   virtualNetworkPolicy,
 	}
 }
 
-func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) {
+func (o *TemplatePodBased) LoadApiData(ctx context.Context, in *apstra.TemplatePodBasedData, diags *diag.Diagnostics) {
 	if in == nil {
-		diags.AddError(errProviderBug, "attempt to load TemplateRackBased from nil source")
+		diags.AddError(errProviderBug, "attempt to load TemplatePodBased from nil source")
 		return
 	}
 
@@ -340,13 +237,12 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 
 	o.Name = types.StringValue(in.DisplayName)
 	o.Spine = NewDesignTemplateSpineObject(ctx, &in.Spine, diags)
-	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
 	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
-	o.RackInfos = NewRackInfoMap(ctx, in, diags)
+	o.PodInfos = NewPodInfoMap(ctx, in, diags)
 	o.FabricAddressing = fabricAddressing
 }
 
-func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *TemplateRackBased, diags *diag.Diagnostics) {
+func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *TemplatePodBased, diags *diag.Diagnostics) {
 	var srcSpine, dstSpine *Spine
 
 	// extract the source Spine object from src
@@ -368,7 +264,7 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 	o.Spine = utils.ObjectValueOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
 }
 
-func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
+func (o TemplatePodBased) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
 	if !o.FabricAddressing.IsNull() {
