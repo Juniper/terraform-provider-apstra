@@ -23,22 +23,20 @@ import (
 )
 
 type TemplatePodBased struct {
-	Id                     types.String `tfsdk:"id"`
-	Name                   types.String `tfsdk:"name"`
-	SuperSpine             types.Object `tfsdk:"super_spine"`
-	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
-	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
-	PodInfos               types.Map    `tfsdk:"pod_infos"`
+	Id               types.String `tfsdk:"id"`
+	Name             types.String `tfsdk:"name"`
+	SuperSpine       types.Object `tfsdk:"super_spine"`
+	FabricAddressing types.String `tfsdk:"fabric_link_addressing"`
+	PodInfos         types.Map    `tfsdk:"pod_infos"`
 }
 
 func (o TemplatePodBased) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"id":                       types.StringType,
-		"name":                     types.StringType,
-		"spine":                    types.ObjectType{AttrTypes: Spine{}.AttrTypes()},
-		"overlay_control_protocol": types.StringType,
-		"fabric_link_addressing":   types.StringType,
-		"pod_infos":                types.MapType{ElemType: types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}},
+		"id":                     types.StringType,
+		"name":                   types.StringType,
+		"super_spine":            types.ObjectType{AttrTypes: SuperSpine{}.AttrTypes()},
+		"fabric_link_addressing": types.StringType,
+		"pod_infos":              types.MapType{ElemType: types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}},
 	}
 }
 
@@ -60,18 +58,12 @@ func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Att
 			MarkdownDescription: "Web UI name of the Template. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
-			Validators: []validator.String{
-				stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("id")),
-			},
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"super_spine": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Super Spine layer details",
 			Computed:            true,
 			Attributes:          SuperSpine{}.DataSourceAttributes(),
-		},
-		"overlay_control_protocol": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Defines the inter-pod virtual network overlay protocol in the fabric.",
-			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Superspine links. Applies only to "+
@@ -79,10 +71,10 @@ func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Att
 			Computed: true,
 		},
 		"pod_infos": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Pod Type information (count + details)",
+			MarkdownDescription: "Map of Pod Type info (count + details)",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: TemplatePodInfo{}.DataSourceAttributes(),
+				Attributes: TemplateRackBased{}.DataSourceAttributesNested(),
 			},
 		},
 	}
@@ -100,19 +92,10 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"spine": resourceSchema.SingleNestedAttribute{
+		"super_spine": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Spine layer details",
 			Required:            true,
 			Attributes:          Spine{}.ResourceAttributes(),
-		},
-		"overlay_control_protocol": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Defines the inter-pod virtual network overlay protocol in the fabric. [%q,%q]",
-				OverlayControlProtocolEvpn, OverlayControlProtocolStatic),
-			Required: true,
-			Validators: []validator.String{
-				stringvalidator.OneOf(OverlayControlProtocolEvpn, OverlayControlProtocolStatic),
-				// todo make sure not ipv6 with evpn
-			},
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Required for "+
@@ -136,37 +119,33 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"pod_infos": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Pod Type info (count + details)",
+			MarkdownDescription: "Map of Pod Type info (count + details) keyed by Rack Based Template ID.",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: TemplatePodInfo{}.ResourceAttributes(),
+				Attributes: TemplateRackBased{}.ResourceAttributesNested(),
 			},
 		},
 	}
 }
 
 func (o *TemplatePodBased) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreatePodBasedTemplateRequest {
-	var d diag.Diagnostics
-
-	s := Spine{}
-	d = o.Spine.As(ctx, &s, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	ss := SuperSpine{}
+	diags.Append(o.SuperSpine.As(ctx, &ss, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return nil
 	}
 
-	rtMap := make(map[string]TemplatePodInfo, len(o.PodInfos.Elements()))
-	d = o.PodInfos.ElementsAs(ctx, &rtMap, false)
-	diags.Append(d...)
+	piMap := make(map[string]TemplatePodInfo, len(o.PodInfos.Elements()))
+	diags.Append(o.PodInfos.ElementsAs(ctx, &piMap, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
-	podInfos := make(map[apstra.ObjectId]apstra.TemplatePodBasedPodInfo, len(rtMap))
-	for k := range rtMap {
-		podInfos[apstra.ObjectId(k)] = apstra.TemplatePodBasedPodInfo{
-			Count: int(rtMap[k].Count.ValueInt64()),
+	podInfos := make(map[apstra.ObjectId]apstra.TemplatePodBasedInfo, len(piMap))
+	for k, v := range piMap {
+		podInfos[apstra.ObjectId(k)] = apstra.TemplatePodBasedInfo{
+			Count: int(v.Count.ValueInt64()),
 		}
 	}
 
@@ -191,27 +170,12 @@ func (o *TemplatePodBased) Request(ctx context.Context, diags *diag.Diagnostics)
 		}
 	}
 
-	var overlayControlProtocol apstra.OverlayControlProtocol
-	err = utils.ApiStringerFromFriendlyString(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
-	if err != nil {
-		diags.AddError(errProviderBug,
-			fmt.Sprintf("error parsing overlay control protocol %q - %s",
-				o.OverlayControlProtocol.ValueString(), err.Error()))
-	}
-	virtualNetworkPolicy := &apstra.VirtualNetworkPolicy{
-		OverlayControlProtocol: overlayControlProtocol,
-	}
-
 	return &apstra.CreatePodBasedTemplateRequest{
-		DisplayName:       o.Name.ValueString(),
-		Spine:             s.Request(ctx, diags),
-		PodInfos:          podInfos,
-		DhcpServiceIntent: &apstra.DhcpServiceIntent{Active: true},
-		// todo: is this the right AntiAffinityPolicy?
-		//  I'd have sent <nil>, but blocked by sdk issue #2 (crash on nil pointer deref)
+		DisplayName:            o.Name.ValueString(),
+		Superspine:             ss.Request(ctx, diags),
+		PodInfos:               podInfos,
 		AntiAffinityPolicy:     antiAffinityPolicy,
 		FabricAddressingPolicy: fabricAddressingPolicy,
-		VirtualNetworkPolicy:   virtualNetworkPolicy,
 	}
 }
 
@@ -236,32 +200,31 @@ func (o *TemplatePodBased) LoadApiData(ctx context.Context, in *apstra.TemplateP
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
-	o.Spine = NewDesignTemplateSpineObject(ctx, &in.Spine, diags)
-	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
+	o.SuperSpine = NewDesignTemplateSuperSpineObject(ctx, &in.Superspine, diags)
 	o.PodInfos = NewPodInfoMap(ctx, in, diags)
 	o.FabricAddressing = fabricAddressing
 }
 
 func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *TemplatePodBased, diags *diag.Diagnostics) {
-	var srcSpine, dstSpine *Spine
+	var srcSuperSpine, dstSuperSpine *SuperSpine
 
 	// extract the source Spine object from src
-	diags.Append(src.Spine.As(ctx, &srcSpine, basetypes.ObjectAsOptions{})...)
+	diags.Append(src.SuperSpine.As(ctx, &srcSuperSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
 
 	// extract the destination Spine object from o
-	diags.Append(o.Spine.As(ctx, &dstSpine, basetypes.ObjectAsOptions{})...)
+	diags.Append(o.SuperSpine.As(ctx, &dstSuperSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
 
-	// clone missing Spine bits
-	dstSpine.CopyWriteOnlyElements(ctx, srcSpine, diags)
+	// clone missing SuperSpine bits
+	dstSuperSpine.CopyWriteOnlyElements(ctx, srcSuperSpine, diags)
 
 	// repackage the destination Spine in o
-	o.Spine = utils.ObjectValueOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
+	o.SuperSpine = utils.ObjectValueOrNull(ctx, SuperSpine{}.AttrTypes(), dstSuperSpine, diags)
 }
 
 func (o TemplatePodBased) VersionConstraints() apiversions.Constraints {

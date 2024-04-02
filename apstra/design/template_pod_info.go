@@ -23,6 +23,7 @@ func (o TemplatePodInfo) AttrTypes() map[string]attr.Type {
 		"pod_type": types.ObjectType{AttrTypes: TemplateRackBased{}.AttrTypes()},
 	}
 }
+
 func (o TemplatePodInfo) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"count": dataSourceSchema.Int64Attribute{
@@ -52,61 +53,28 @@ func (o TemplatePodInfo) ResourceAttributes() map[string]resourceSchema.Attribut
 	}
 }
 
-func (o *TemplatePodInfo) LoadApiData(ctx context.Context, in *apstra.TemplateRackBasedRackInfo, diags *diag.Diagnostics) {
+func (o *TemplatePodInfo) LoadApiData(ctx context.Context, in *apstra.TemplatePodBasedInfo, diags *diag.Diagnostics) {
 	if in.Count == 0 {
 		diags.AddError(errProviderBug, "attempt to load TemplatePodInfo with 0 instances of rack type")
 		return
 	}
 
 	o.Count = types.Int64Value(int64(in.Count))
-	o.PodType = NewPodTypeObject(ctx, in.RackTypeData, diags)
+	o.PodType = NewTemplateRackBasedObject(ctx, in.TemplateRackBasedData, diags)
 }
 
 func NewPodInfoMap(ctx context.Context, in *apstra.TemplatePodBasedData, diags *diag.Diagnostics) types.Map {
-	rackTypeMap := make(map[apstra.ObjectId]TemplatePodInfo, len(in.RackBasedTemplates))
-	for i, apiData := range in.RackBasedTemplates {
-
-		podIdToCount := make(map[apstra.ObjectId]int, len(in.RackBasedTemplateCounts))
-		for _, rbtc := range in.RackBasedTemplateCounts {
-			podIdToCount[rbtc.RackBasedTemplateId] = rbtc.Count
-		}
-
-		podIdToRtd := make(map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo, len(in.RackBasedTemplates))
-		for _, rtd := range in.RackBasedTemplates {
-			podIdToRtd[rtd.Id] = rtd.Data.RackInfo
-		}
-
-		trbri := apstra.TemplateRackBasedRackInfo{
-			Count:        podidtocount,
-			RackTypeData: podidtortd,
-		}
-
+	podTypeMap := make(map[apstra.ObjectId]TemplatePodInfo)
+	for key, apiData := range in.PodInfo {
 		var tpi TemplatePodInfo
 		tpi.LoadApiData(ctx, &apiData, diags)
 		if diags.HasError() {
 			return types.MapNull(types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()})
 		}
-		rackTypeMap[i] = tpi
+		podTypeMap[key] = tpi
 	}
 
-	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}, rackTypeMap)
+	result, d := types.MapValueFrom(ctx, types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}, podTypeMap)
 	diags.Append(d...)
 	return result
-}
-
-func NewPodTypeObject(ctx context.Context, in *apstra.RackTypeData, diags *diag.Diagnostics) types.Object {
-	var pt RackType
-	pt.Id = types.StringNull()
-	pt.LoadApiData(ctx, in, diags)
-	if diags.HasError() {
-		return types.ObjectNull(RackType{}.AttrTypes())
-	}
-
-	rtdObj, d := types.ObjectValueFrom(ctx, RackType{}.AttrTypes(), &pt)
-	diags.Append(d...)
-	if diags.HasError() {
-		return types.ObjectNull(RackType{}.AttrTypes())
-	}
-
-	return rtdObj
 }

@@ -143,7 +143,6 @@ func (o *Spine) LoadApiData(ctx context.Context, in *apstra.Spine, diags *diag.D
 		o.SuperSpineLinkCount = types.Int64Value(int64(in.LinkPerSuperspineCount))
 	}
 
-	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = NewTagSet(ctx, in.Tags, diags)
 }
 
@@ -164,6 +163,8 @@ func NewDesignTemplateSpineObject(ctx context.Context, in *apstra.Spine, diags *
 
 	var s Spine
 	s.LogicalDeviceId = types.StringNull()
+	s.TagIds = types.SetNull(types.StringType)
+
 	s.LoadApiData(ctx, in, diags)
 	if diags.HasError() {
 		return types.ObjectNull(Spine{}.AttrTypes())
