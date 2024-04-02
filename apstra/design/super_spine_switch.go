@@ -139,24 +139,25 @@ func (o *SuperSpine) CopyWriteOnlyElements(ctx context.Context, src *SuperSpine,
 }
 
 func NewDesignTemplateSuperSpineObject(ctx context.Context, in *apstra.Superspine, diags *diag.Diagnostics) types.Object {
-	panic("NewDesignTemplateSuperSpineObject?")
-	//if in == nil {
-	//	diags.AddError(errProviderBug, "attempt to generate Spine object from nil source")
-	//	return types.ObjectNull(SuperSpine{}.AttrTypes())
-	//}
-	//
-	//var s SuperSpine
-	//s.LogicalDeviceId = types.StringNull()
-	//s.LoadApiData(ctx, in, diags)
-	//if diags.HasError() {
-	//	return types.ObjectNull(SuperSpine{}.AttrTypes())
-	//}
-	//
-	//result, d := types.ObjectValueFrom(ctx, s.AttrTypes(), &s)
-	//diags.Append(d...)
-	//if diags.HasError() {
-	//	return types.ObjectNull(SuperSpine{}.AttrTypes())
-	//}
-	//
-	//return result
+	if in == nil {
+		diags.AddError(errProviderBug, "attempt to generate SuperSpine object from nil source")
+		return types.ObjectNull(Spine{}.AttrTypes())
+	}
+
+	var ss SuperSpine
+	ss.LogicalDeviceId = types.StringNull()
+	ss.TagIds = types.SetNull(types.StringType)
+
+	ss.LoadApiData(ctx, in, diags)
+	if diags.HasError() {
+		return types.ObjectNull(SuperSpine{}.AttrTypes())
+	}
+
+	result, d := types.ObjectValueFrom(ctx, ss.AttrTypes(), &ss)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ObjectNull(SuperSpine{}.AttrTypes())
+	}
+
+	return result
 }
