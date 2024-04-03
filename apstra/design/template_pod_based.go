@@ -74,7 +74,7 @@ func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Att
 			MarkdownDescription: "Map of Pod Type info (count + details)",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: TemplateRackBased{}.DataSourceAttributesNested(),
+				Attributes: TemplatePodInfo{}.DataSourceAttributes(),
 			},
 		},
 	}
