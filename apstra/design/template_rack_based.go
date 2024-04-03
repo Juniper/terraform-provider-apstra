@@ -40,7 +40,7 @@ func (o TemplateRackBased) AttrTypes() map[string]attr.Type {
 		"asn_allocation_scheme":    types.StringType,
 		"overlay_control_protocol": types.StringType,
 		"fabric_link_addressing":   types.StringType,
-		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: RackType{}.AttrTypes()}},
+		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: TemplateRackInfo{}.AttrTypes()}},
 	}
 }
 
@@ -382,13 +382,13 @@ func NewTemplateRackBasedObject(ctx context.Context, in *apstra.TemplateRackBase
 	trb.Id = types.StringNull()
 	trb.LoadApiData(ctx, in, diags)
 	if diags.HasError() {
-		return types.ObjectNull(RackType{}.AttrTypes())
+		return types.ObjectNull(TemplateRackBased{}.AttrTypes())
 	}
 
-	trbObj, d := types.ObjectValueFrom(ctx, RackType{}.AttrTypes(), &trb)
+	trbObj, d := types.ObjectValueFrom(ctx, TemplateRackBased{}.AttrTypes(), &trb)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ObjectNull(RackType{}.AttrTypes())
+		return types.ObjectNull(TemplateRackBased{}.AttrTypes())
 	}
 
 	return trbObj

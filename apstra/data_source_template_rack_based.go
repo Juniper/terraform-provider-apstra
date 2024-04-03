@@ -54,10 +54,11 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 				resp.Diagnostics.AddError(
 					"Rack Based Template not found",
 					fmt.Sprintf("Rack Based Template with name %q does not exist", config.Name.ValueString()))
+				return
 			case apstra.ErrWrongType:
 				resp.Diagnostics.AddError(fmt.Sprintf("Specified Template has wrong type: %s", api.Type()), err.Error())
+				return
 			}
-			return
 		}
 	case !config.Id.IsNull():
 		api, err = o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(config.Id.ValueString()))
@@ -67,10 +68,11 @@ func (o *dataSourceTemplateRackBased) Read(ctx context.Context, req datasource.R
 				resp.Diagnostics.AddError(
 					"Rack Based Template not found",
 					fmt.Sprintf("Rack Based Template with ID %q does not exist", config.Id.ValueString()))
+				return
 			case apstra.ErrWrongType:
 				resp.Diagnostics.AddError("Specified Template has wrong type", err.Error())
+				return
 			}
-			return
 		}
 	}
 	if err != nil {
