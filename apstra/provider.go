@@ -561,7 +561,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceRackType{} },
 		func() resource.Resource { return &resourceTag{} },
 		// func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
-		// func() resource.Resource { return &resourceTemplateP },
+		func() resource.Resource { return &resourceTemplatePodBased{} },
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceVniPool{} },
 	}

@@ -93,12 +93,12 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"super_spine": resourceSchema.SingleNestedAttribute{
-			MarkdownDescription: "Spine layer details",
+			MarkdownDescription: "SuperSpine layer details",
 			Required:            true,
-			Attributes:          Spine{}.ResourceAttributes(),
+			Attributes:          SuperSpine{}.ResourceAttributes(),
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Required for "+
+			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/SuperSpine links. Required for "+
 				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
 			Optional: true,
 			Computed: true,
@@ -119,11 +119,11 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"pod_infos": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Pod Type info (count + details) keyed by Rack Based Template ID.",
+			MarkdownDescription: "Map of Pod Type info (count + details) keyed by Pod Based Template ID.",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: TemplateRackBased{}.ResourceAttributesNested(),
+				Attributes: TemplatePodInfo{}.ResourceAttributes(),
 			},
 		},
 	}
@@ -208,13 +208,13 @@ func (o *TemplatePodBased) LoadApiData(ctx context.Context, in *apstra.TemplateP
 func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *TemplatePodBased, diags *diag.Diagnostics) {
 	var srcSuperSpine, dstSuperSpine *SuperSpine
 
-	// extract the source Spine object from src
+	// extract the source SuperSpine object from src
 	diags.Append(src.SuperSpine.As(ctx, &srcSuperSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
 	}
 
-	// extract the destination Spine object from o
+	// extract the destination SuperSpine object from o
 	diags.Append(o.SuperSpine.As(ctx, &dstSuperSpine, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return
@@ -223,8 +223,16 @@ func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *Templ
 	// clone missing SuperSpine bits
 	dstSuperSpine.CopyWriteOnlyElements(ctx, srcSuperSpine, diags)
 
-	// repackage the destination Spine in o
+	// repackage the destination SuperSpine in o
 	o.SuperSpine = utils.ObjectValueOrNull(ctx, SuperSpine{}.AttrTypes(), dstSuperSpine, diags)
+	//
+	//dstPodInfoMap := make(map[string]TemplatePodInfo)
+	//diags.Append(o.PodInfos.ElementsAs(ctx, &dstPodInfoMap, false)...)
+	//
+	//srcPodInfoMap := make(map[string]TemplatePodInfo)
+	//diags.Append(o.PodInfos.ElementsAs(ctx, &srcPodInfoMap, false)...)
+	//
+	//
 }
 
 func (o TemplatePodBased) VersionConstraints() apiversions.Constraints {
