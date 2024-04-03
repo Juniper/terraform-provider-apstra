@@ -300,11 +300,11 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 		// initial_interface_map_id known, device_key not supplied
 		o.deviceProfileNodeIdFromInterfaceMapCatalogId(ctx, client, diags) // this will clear BlueprintId on 404
 	case !o.DeviceKey.IsNull() && o.InitialInterfaceMapId.IsUnknown():
-		// device_key known, initial_interface_map_id not supplied
-		o.deviceProfileNodeIdFromDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
-	case utils.Known(o.InitialInterfaceMapId) && !o.DeviceKey.IsNull():
-		// device_key and initial_interface_map_id both supplied
-		o.deviceProfileNodeIdFromDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
+		// device_key known, initial_interface_map_id unknown.
+		o.deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
+	case !o.DeviceKey.IsNull() && utils.Known(o.InitialInterfaceMapId):
+		// device_key known, initial_interface_map_id known.
+		o.deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
 		if o.BlueprintId.IsNull() {
 			return
 		}
@@ -594,7 +594,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromInterfaceMapCatalogId(ctx cont
 	}
 }
 
-func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+func (o *DeviceAllocation) deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	gasi := utils.GetAllSystemsInfo(ctx, client, diags)
 	if diags.HasError() {
 		return
@@ -614,8 +614,14 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromDeviceKey(ctx context.Context,
 		SetClient(client).
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())}}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLogicalDevice.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{apstra.NodeTypeLogicalDevice.QEEAttribute()}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeLogicalDevice.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{apstra.NodeTypeInterfaceMap.QEEAttribute()}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeDeviceProfile.QEEAttribute()}).
 		Node([]apstra.QEEAttribute{
-			{Key: "type", Value: apstra.QEStringVal("device_profile")},
+			apstra.NodeTypeDeviceProfile.QEEAttribute(),
 			{Key: "device_profile_id", Value: apstra.QEStringVal(si.Facts.AosHclModel.String())},
 			{Key: "name", Value: apstra.QEStringVal("n_device_profile")},
 		})
