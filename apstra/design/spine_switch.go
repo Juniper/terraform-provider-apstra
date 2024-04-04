@@ -2,6 +2,7 @@ package design
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -89,11 +90,11 @@ func (o Spine) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"tag_ids": resourceSchema.SetAttribute{
 			ElementType:         types.StringType,
 			Optional:            true,
-			MarkdownDescription: "Set of Tag IDs to be applied to this Access Switch",
+			MarkdownDescription: "Set of Tag IDs to be applied to Spine Switches",
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"tags": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Tags (Name + Description) applied to this Spine Switch",
+			MarkdownDescription: "Set of Tags (Name + Description) applied to Spine Switches",
 			Computed:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: Tag{}.ResourceAttributesNested(),

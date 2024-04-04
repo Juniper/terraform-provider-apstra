@@ -5,11 +5,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
-	"math/rand"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -21,11 +23,12 @@ import (
 const (
 	resourceTemplatePodBasedHCL = `
 resource %q %q {
-  name = %q
+  name                   = %q
+  fabric_link_addressing = %s
   super_spine = {
     logical_device_id = %q
-    per_plane_count = %d
-    plane_count = %d
+    per_plane_count   = %d
+    plane_count       = %s
   }
   pod_infos = {%s 
   }
@@ -35,11 +38,12 @@ resource %q %q {
 )
 
 type resourceTestPodTemplate struct {
-	name          string
-	ssLd          string
-	perPlaneCount int
-	planeCount    int
-	podInfo       map[string]int
+	name                 string
+	fabricLinkAddressing *string
+	ssLd                 string
+	perPlaneCount        int
+	planeCount           *int
+	podInfo              map[string]int
 }
 
 func (o resourceTestPodTemplate) render(rType, rName string) string {
@@ -50,9 +54,10 @@ func (o resourceTestPodTemplate) render(rType, rName string) string {
 	return fmt.Sprintf(resourceTemplatePodBasedHCL,
 		rType, rName,
 		o.name,
+		stringPtrOrNull(o.fabricLinkAddressing),
 		o.ssLd,
 		o.perPlaneCount,
-		o.planeCount,
+		intPtrOrNull(o.planeCount),
 		sb.String(),
 	)
 }
@@ -63,13 +68,23 @@ func (o resourceTestPodTemplate) testChecks(t testing.TB, rType, rName string) t
 	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
+
+	if o.fabricLinkAddressing != nil {
+		result.append(t, "TestCheckResourceAttr", "fabric_link_addressing", *o.fabricLinkAddressing)
+	}
+
 	result.append(t, "TestCheckResourceAttr", "super_spine.logical_device_id", o.ssLd)
 	result.append(t, "TestCheckResourceAttr", "super_spine.per_plane_count", strconv.Itoa(o.perPlaneCount))
-	result.append(t, "TestCheckResourceAttr", "super_spine.plane_count", strconv.Itoa(o.planeCount))
+
+	if o.planeCount == nil {
+		result.append(t, "TestCheckResourceAttr", "super_spine.plane_count", "1")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "super_spine.plane_count", strconv.Itoa(*o.planeCount))
+	}
 
 	result.append(t, "TestCheckResourceAttr", "pod_infos.%", strconv.Itoa(len(o.podInfo)))
 	for k, v := range o.podInfo {
-		result.append(t, "TestCheckResourceAttr", fmt.Sprintf("pod_infos[%s].count", k), strconv.Itoa(v))
+		result.append(t, "TestCheckResourceAttr", fmt.Sprintf("pod_infos.%s.count", k), strconv.Itoa(v))
 	}
 
 	return result
@@ -89,17 +104,59 @@ func TestResourceTemplatePodBased(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"minimal": {
+		"apstra_410_only": {
+			apiVersionConstraints: apiversions.Eq410,
+			steps: []testStep{
+				{
+					config: resourceTestPodTemplate{
+						name:                 acctest.RandString(6),
+						fabricLinkAddressing: utils.ToPtr(apstra.AddressingSchemeIp4.String()),
+						ssLd:                 "AOS-4x40_8x10-1",
+						perPlaneCount:        2,
+						podInfo: map[string]int{
+							"pod_single": 1,
+							"pod_mlag":   1,
+						},
+					},
+				},
+				{
+					config: resourceTestPodTemplate{
+						name:                 acctest.RandString(6),
+						fabricLinkAddressing: utils.ToPtr(apstra.AddressingSchemeIp4.String()),
+						ssLd:                 "AOS-4x40_8x10-1",
+						perPlaneCount:        4,
+						planeCount:           utils.ToPtr(2),
+						podInfo: map[string]int{
+							"pod_single": 2,
+							"pod_mlag":   2,
+						},
+					},
+				},
+			},
+		},
+		"apstra_411_and_later": {
 			apiVersionConstraints: apiversions.Ge411,
 			steps: []testStep{
 				{
 					config: resourceTestPodTemplate{
 						name:          acctest.RandString(6),
-						ssLd:          "AOS-32x40-3",
+						ssLd:          "AOS-4x40_8x10-1",
 						perPlaneCount: 2,
-						planeCount:    4,
 						podInfo: map[string]int{
-							"pod1": rand.Intn(3) + 2,
+							"pod_single": 1,
+							"pod_mlag":   1,
+						},
+					},
+				},
+				{
+					config: resourceTestPodTemplate{
+						name:          acctest.RandString(6),
+						ssLd:          "AOS-24x10-2",
+						perPlaneCount: 4,
+						planeCount:    utils.ToPtr(2),
+						podInfo: map[string]int{
+							"pod_single": 2,
+							"pod_mlag":   2,
 						},
 					},
 				},

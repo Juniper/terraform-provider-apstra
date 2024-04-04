@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -13,9 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
-var _ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
-var _ resourceWithSetClient = &resourceTemplateRackBased{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceTemplateRackBased{}
+	_ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
+	_ resourceWithSetClient               = &resourceTemplateRackBased{}
+)
 
 type resourceTemplateRackBased struct {
 	client *apstra.Client
@@ -31,8 +34,8 @@ func (o *resourceTemplateRackBased) Configure(ctx context.Context, req resource.
 
 func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as " +
-			"pod in a 5-stage design.",
+		MarkdownDescription: docCategoryDesign + "This resource creates a Rack Based Template for use either as " +
+			"a complete 3-stage Blueprint, or as pod in a 5-stage Blueprint.",
 		Attributes: design.TemplateRackBased{}.ResourceAttributes(),
 	}
 }

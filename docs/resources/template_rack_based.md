@@ -2,12 +2,12 @@
 page_title: "apstra_template_rack_based Resource - terraform-provider-apstra"
 subcategory: "Design"
 description: |-
-  This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as pod in a 5-stage design.
+  This resource creates a Rack Based Template for use either as a complete 3-stage Blueprint, or as pod in a 5-stage Blueprint.
 ---
 
 # apstra_template_rack_based (Resource)
 
-This resource creates a Rack Based Template for as a 3-stage Clos design, or for use as pod in a 5-stage design.
+This resource creates a Rack Based Template for use either as a complete 3-stage Blueprint, or as pod in a 5-stage Blueprint.
 
 
 ## Example Usage
@@ -350,12 +350,12 @@ Optional:
 
 - `super_spine_link_count` (Number) Count of links to each super Spine switch.
 - `super_spine_link_speed` (String) Speed of links to super Spine switches.
-- `tag_ids` (Set of String) Set of Tag IDs to be applied to this Access Switch
+- `tag_ids` (Set of String) Set of Tag IDs to be applied to Spine Switches
 
 Read-Only:
 
 - `logical_device` (Attributes) Logical Device attributes as represented in the Global Catalog. (see [below for nested schema](#nestedatt--spine--logical_device))
-- `tags` (Attributes Set) Set of Tags (Name + Description) applied to this Spine Switch (see [below for nested schema](#nestedatt--spine--tags))
+- `tags` (Attributes Set) Set of Tags (Name + Description) applied to Spine Switches (see [below for nested schema](#nestedatt--spine--tags))
 
 <a id="nestedatt--spine--logical_device"></a>
 ### Nested Schema for `spine.logical_device`
