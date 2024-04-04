@@ -233,10 +233,12 @@ func nodeDeployModeFromFriendlyString(target *apstra.DeployMode, in ...string) e
 
 	switch in[0] {
 	case nodeDeployModeNotSet:
-		return target.FromString(apstra.DeployModeNone.String())
+		*target = apstra.DeployModeNone
+	default:
+		return target.FromString(in[0])
 	}
 
-	return target.FromString(in[0])
+	return nil
 }
 
 func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProtocol, in ...string) error {
@@ -247,10 +249,11 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 	switch in[0] {
 	case overlayControlProtocolStatic:
 		*target = apstra.OverlayControlProtocolNone
-		return nil
+	default:
+		return target.FromString(in[0])
 	}
 
-	return target.FromString(in[0])
+	return nil
 }
 
 func policyRuleProtocolFromFriendlyString(target *apstra.PolicyRuleProtocol, s string) error {
@@ -289,7 +292,9 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6
 	case resourceGroupNameVxlanVnIds:
 		*target = apstra.ResourceGroupNameVxlanVnIds
+	default:
+		return target.FromString(in[0])
 	}
 
-	return target.FromString(in[0])
+	return nil
 }
