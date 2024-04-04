@@ -247,6 +247,7 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 	switch in[0] {
 	case overlayControlProtocolStatic:
 		*target = apstra.OverlayControlProtocolNone
+		return nil
 	}
 
 	return target.FromString(in[0])
