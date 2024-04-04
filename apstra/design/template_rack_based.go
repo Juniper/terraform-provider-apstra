@@ -32,6 +32,18 @@ type TemplateRackBased struct {
 	RackInfos              types.Map    `tfsdk:"rack_infos"`
 }
 
+func (o TemplateRackBased) AttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"id":                       types.StringType,
+		"name":                     types.StringType,
+		"spine":                    types.ObjectType{AttrTypes: Spine{}.AttrTypes()},
+		"asn_allocation_scheme":    types.StringType,
+		"overlay_control_protocol": types.StringType,
+		"fabric_link_addressing":   types.StringType,
+		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: TemplateRackInfo{}.AttrTypes()}},
+	}
+}
+
 func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
@@ -50,9 +62,46 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 			MarkdownDescription: "Web UI name of the Template. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
-			Validators: []validator.String{
-				stringvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("id")),
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"spine": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Spine layer details",
+			Computed:            true,
+			Attributes:          Spine{}.DataSourceAttributes(),
+		},
+		"asn_allocation_scheme": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
+				AsnAllocationUnique, AsnAllocationSingle),
+			Computed: true,
+		},
+		"overlay_control_protocol": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
+			Computed:            true,
+		},
+		"fabric_link_addressing": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
+				"Apstra %s.", apiversions.Apstra410),
+			Computed: true,
+		},
+		"rack_infos": dataSourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Rack Type info (count + details)",
+			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: TemplateRackInfo{}.DataSourceAttributesNested(),
 			},
+		},
+	}
+}
+
+func (o TemplateRackBased) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the pod inside the 5 stage template.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Name of the pod inside the 5 stage template.",
+			Computed:            true,
 		},
 		"spine": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Spine layer details",
@@ -137,7 +186,7 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Rack Type info (count + details)",
+			MarkdownDescription: "Map of Rack Type info (count + details) keyed by Rack Type ID.",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
@@ -147,31 +196,54 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 	}
 }
 
-func (o TemplateRackBased) AttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"id":                       types.StringType,
-		"name":                     types.StringType,
-		"spine":                    types.ObjectType{AttrTypes: Spine{}.AttrTypes()},
-		"asn_allocation_scheme":    types.StringType,
-		"overlay_control_protocol": types.StringType,
-		"fabric_link_addressing":   types.StringType,
-		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: RackType{}.AttrTypes()}},
+func (o TemplateRackBased) ResourceAttributesNested() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the pod inside the 5 stage template.",
+			Computed:            true,
+		},
+		"name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Name of the pod inside the 5 stage template.",
+			Computed:            true,
+		},
+		"spine": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "Spine layer details",
+			Computed:            true,
+			Attributes:          Spine{}.ResourceAttributes(),
+		},
+		"asn_allocation_scheme": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("%q is for 3-stage designs; %q is for 5-stage designs.",
+				AsnAllocationUnique, AsnAllocationSingle),
+			Computed: true,
+		},
+		"overlay_control_protocol": resourceSchema.StringAttribute{
+			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
+			Computed:            true,
+		},
+		"fabric_link_addressing": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
+				"Apstra %s.", apiversions.Apstra410),
+			Computed: true,
+		},
+		"rack_infos": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Rack Type info (count + details)",
+			Computed:            true,
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: TemplateRackInfo{}.ResourceAttributesNested(),
+			},
+		},
 	}
 }
 
 func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateRackBasedTemplateRequest {
-	var d diag.Diagnostics
-
 	s := Spine{}
-	d = o.Spine.As(ctx, &s, basetypes.ObjectAsOptions{})
-	diags.Append(d...)
+	diags.Append(o.Spine.As(ctx, &s, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return nil
 	}
 
 	rtMap := make(map[string]TemplateRackInfo, len(o.RackInfos.Elements()))
-	d = o.RackInfos.ElementsAs(ctx, &rtMap, false)
-	diags.Append(d...)
+	diags.Append(o.RackInfos.ElementsAs(ctx, &rtMap, false)...)
 	if diags.HasError() {
 		return nil
 	}
@@ -303,4 +375,21 @@ func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
 	}
 
 	return response
+}
+
+func NewTemplateRackBasedObject(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Object {
+	var trb TemplateRackBased
+	trb.Id = types.StringNull()
+	trb.LoadApiData(ctx, in, diags)
+	if diags.HasError() {
+		return types.ObjectNull(TemplateRackBased{}.AttrTypes())
+	}
+
+	trbObj, d := types.ObjectValueFrom(ctx, TemplateRackBased{}.AttrTypes(), &trb)
+	diags.Append(d...)
+	if diags.HasError() {
+		return types.ObjectNull(TemplateRackBased{}.AttrTypes())
+	}
+
+	return trbObj
 }

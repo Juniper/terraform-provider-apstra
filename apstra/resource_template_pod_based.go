@@ -3,7 +3,6 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -14,34 +13,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var (
-	_ resource.ResourceWithConfigure      = &resourceTemplateRackBased{}
-	_ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
-	_ resourceWithSetClient               = &resourceTemplateRackBased{}
-)
+var _ resource.ResourceWithConfigure = &resourceTemplatePodBased{}
+var _ resource.ResourceWithValidateConfig = &resourceTemplatePodBased{}
+var _ resourceWithSetClient = &resourceTemplatePodBased{}
 
-type resourceTemplateRackBased struct {
+type resourceTemplatePodBased struct {
 	client *apstra.Client
 }
 
-func (o *resourceTemplateRackBased) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_template_rack_based"
+func (o *resourceTemplatePodBased) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_template_pod_based"
 }
 
-func (o *resourceTemplateRackBased) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceTemplatePodBased) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceTemplatePodBased) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates a Rack Based Template for use either as " +
-			"a complete 3-stage Blueprint, or as pod in a 5-stage Blueprint.",
-		Attributes: design.TemplateRackBased{}.ResourceAttributes(),
+		MarkdownDescription: docCategoryDesign + "This resource creates a Pod Based Template for a 5-stage Clos design",
+		Attributes:          design.TemplatePodBased{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config design.TemplateRackBased
+func (o *resourceTemplatePodBased) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config design.TemplatePodBased
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -75,36 +71,36 @@ func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req reso
 	)
 }
 
-func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceTemplatePodBased) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// retrieve values from plan
-	var plan design.TemplateRackBased
+	var plan design.TemplatePodBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// create a CreateRackBasedTemplateRequest
+	// create a CreatePodBasedTemplateRequest
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// create the RackBasedTemplate object (nested objects are referenced by ID)
-	id, err := o.client.CreateRackBasedTemplate(ctx, request)
+	// create the PodBasedTemplate object (nested objects are referenced by ID)
+	id, err := o.client.CreatePodBasedTemplate(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating rack-based template", err.Error())
+		resp.Diagnostics.AddError("error creating Pod-based template", err.Error())
 		return
 	}
 
 	// retrieve the rack-based template object with fully-enumerated embedded objects
-	api, err := o.client.GetRackBasedTemplate(ctx, id)
+	api, err := o.client.GetPodBasedTemplate(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("error retrieving rack-based template info after creation", err.Error())
+		resp.Diagnostics.AddError("error retrieving Pod-based template info after creation", err.Error())
 		return
 	}
 
 	// parse the API response into a state object
-	var state design.TemplateRackBased
+	var state design.TemplatePodBased
 	state.Id = types.StringValue(string(id))
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
@@ -115,30 +111,30 @@ func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.Cre
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceTemplatePodBased) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
-	var state design.TemplateRackBased
+	var state design.TemplatePodBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get Rack Based Template from API and then update what is in state from what the API returns
-	api, err := o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
+	// Get Pod Based Template from API and then update what is in state from what the API returns
+	api, err := o.client.GetPodBasedTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError(
-			"error reading Rack Based Template",
+			"error reading Pod Based Template",
 			fmt.Sprintf("Could not Read %q - %s", state.Id.ValueString(), err),
 		)
 		return
 	}
 
 	// Create new state object
-	var newState design.TemplateRackBased
+	var newState design.TemplatePodBased
 	newState.Id = types.StringValue(string(api.Id))
 	newState.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -153,41 +149,41 @@ func (o *resourceTemplateRackBased) Read(ctx context.Context, req resource.ReadR
 }
 
 // Update resource
-func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceTemplatePodBased) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// retrieve values from plan
-	var plan design.TemplateRackBased
+	var plan design.TemplatePodBased
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// create a CreateRackBasedTemplateRequest
+	// create a CreatePodBasedTemplateRequest
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// update
-	err := o.client.UpdateRackBasedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err := o.client.UpdatePodBasedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error updating Rack Based Template",
+			"error updating Pod Based Template",
 			fmt.Sprintf("Could not update %q - %s", plan.Id.ValueString(), err),
 		)
 		return
 	}
 
-	api, err := o.client.GetRackBasedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	api, err := o.client.GetPodBasedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"error retrieving recently updated Rack Based Template",
+			"error retrieving recently updated Pod Based Template",
 			fmt.Sprintf("Could not fetch %q - %s", plan.Id.ValueString(), err),
 		)
 		return
 	}
 
 	// Create new state object
-	var newState design.TemplateRackBased
+	var newState design.TemplatePodBased
 	newState.Id = types.StringValue(string(api.Id))
 	newState.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -202,27 +198,27 @@ func (o *resourceTemplateRackBased) Update(ctx context.Context, req resource.Upd
 }
 
 // Delete resource
-func (o *resourceTemplateRackBased) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state design.TemplateRackBased
+func (o *resourceTemplatePodBased) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state design.TemplatePodBased
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Delete Rack Based Template by calling API
+	// Delete Pod based Template by calling API
 	err := o.client.DeleteTemplate(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError(
-			"error deleting Rack Based Template",
-			fmt.Sprintf("could not delete Rack Based Template %q - %s", state.Id.ValueString(), err),
+			"error deleting Pod based Template",
+			fmt.Sprintf("could not delete Pod based Template %q - %s", state.Id.ValueString(), err),
 		)
 		return
 	}
 }
 
-func (o *resourceTemplateRackBased) setClient(client *apstra.Client) {
+func (o *resourceTemplatePodBased) setClient(client *apstra.Client) {
 	o.client = client
 }

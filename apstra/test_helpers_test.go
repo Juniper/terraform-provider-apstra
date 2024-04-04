@@ -5,13 +5,14 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"math"
 	"math/rand"
 	"net"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/assert"
@@ -54,12 +55,12 @@ func systemIds(ctx context.Context, t *testing.T, bp *apstra.TwoStageL3ClosClien
 	return ids
 }
 
-//func stringPtrOrNull(in *string) string {
-//	if in == nil {
-//		return "null"
-//	}
-//	return `"` + *in + `"`
-//}
+func stringPtrOrNull(in *string) string {
+	if in == nil {
+		return "null"
+	}
+	return `"` + *in + `"`
+}
 
 func stringOrNull(in string) string {
 	if in == "" {

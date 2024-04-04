@@ -17,6 +17,13 @@ type TemplateRackInfo struct {
 	RackType types.Object `tfsdk:"rack_type"`
 }
 
+func (o TemplateRackInfo) AttrTypes() map[string]attr.Type {
+	return map[string]attr.Type{
+		"count":     types.Int64Type,
+		"rack_type": types.ObjectType{AttrTypes: RackType{}.AttrTypes()},
+	}
+}
+
 func (o TemplateRackInfo) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"count": dataSourceSchema.Int64Attribute{
@@ -46,13 +53,6 @@ func (o TemplateRackInfo) ResourceAttributesNested() map[string]resourceSchema.A
 	}
 }
 
-func (o TemplateRackInfo) AttrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"count":     types.Int64Type,
-		"rack_type": types.ObjectType{AttrTypes: RackType{}.AttrTypes()},
-	}
-}
-
 func (o *TemplateRackInfo) LoadApiData(ctx context.Context, in *apstra.TemplateRackBasedRackInfo, diags *diag.Diagnostics) {
 	if in.Count == 0 {
 		diags.AddError(errProviderBug, "attempt to load TemplateRackInfo with 0 instances of rack type")
@@ -69,7 +69,7 @@ func NewRackInfoMap(ctx context.Context, in *apstra.TemplateRackBasedData, diags
 		var tri TemplateRackInfo
 		tri.LoadApiData(ctx, &apiData, diags)
 		if diags.HasError() {
-			return types.MapNull(types.ObjectType{AttrTypes: TemplateRackInfo{}.AttrTypes()})
+			return types.MapNull(types.ObjectType{AttrTypes: tri.AttrTypes()})
 		}
 		rackTypeMap[key] = tri
 	}

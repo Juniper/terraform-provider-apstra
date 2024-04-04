@@ -514,7 +514,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceRackTypes{} },
 		func() datasource.DataSource { return &dataSourceTag{} },
 		// func() datasource.DataSource { return &dataSourceTemplateL3Collapsed{} },
-		// func() datasource.DataSource { return &dataSourceTemplatePodBased{}},
+		func() datasource.DataSource { return &dataSourceTemplatePodBased{} },
 		func() datasource.DataSource { return &dataSourceTemplateRackBased{} },
 		func() datasource.DataSource { return &dataSourceTemplates{} },
 		func() datasource.DataSource { return &dataSourceVirtualNetworkBindingConstructor{} },
@@ -561,7 +561,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceRackType{} },
 		func() resource.Resource { return &resourceTag{} },
 		// func() resource.Resource { return &resourceSourceTemplateL3Collapsed{} },
-		// func() resource.Resource { return &resourceSourceTemplatePodBased{} },
+		func() resource.Resource { return &resourceTemplatePodBased{} },
 		func() resource.Resource { return &resourceTemplateRackBased{} },
 		func() resource.Resource { return &resourceVniPool{} },
 	}
