@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/device"
-	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -29,7 +28,7 @@ func (o *dataSourceDeviceConfig) Configure(ctx context.Context, req datasource.C
 func (o *dataSourceDeviceConfig) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDevices + "This data source gets the device configuration information.",
-		Attributes:          systemAgents.ManagedDevice{}.DataSourceAttributes(),
+		Attributes:          device.CfgInfo{}.DataSourceAttributes(),
 	}
 }
 

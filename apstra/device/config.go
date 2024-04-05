@@ -35,7 +35,7 @@ func (o CfgInfo) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "Last boot time of the system.",
 			Computed:            true,
 		},
-		"deviated": dataSourceSchema.StringAttribute{
+		"deviated": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Boolean `true` if the configuration has deviated.",
 			Computed:            true,
 		},
@@ -43,27 +43,27 @@ func (o CfgInfo) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "System error message",
 			Computed:            true,
 		},
-		"contiguous_failures": dataSourceSchema.BoolAttribute{
+		"contiguous_failures": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Indicates the system's contiguous error count.",
 			Computed:            true,
 		},
-		"user_golden_config_update_version": dataSourceSchema.BoolAttribute{
+		"user_golden_config_update_version": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Version number of the system's golden configuration",
 			Computed:            true,
 		},
-		"user_full_config_deploy_version": dataSourceSchema.BoolAttribute{
+		"user_full_config_deploy_version": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Version number of the system's full configuration deployed",
 			Computed:            true,
 		},
-		"aos_config_version": dataSourceSchema.BoolAttribute{
+		"aos_config_version": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Version number of the aos config",
 			Computed:            true,
 		},
-		"config_expected": dataSourceSchema.BoolAttribute{
+		"config_expected": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Expected system configuration",
 			Computed:            true,
 		},
-		"config_actual": dataSourceSchema.BoolAttribute{
+		"config_actual": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Actual system configuration",
 			Computed:            true,
 		},
