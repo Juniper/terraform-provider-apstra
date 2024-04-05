@@ -33,12 +33,16 @@ data "apstra_device_config" "device_a" {
 
 ### Required
 
-- `agent_id` (String) Apstra ID for the Managed Device Agent.
+- `system_id` (String) Apstra ID for the System, as found in Devices -> Managed Devices in the GUI.
 
 ### Read-Only
 
-- `agent_profile_id` (String) Agent Profile ID associated with the Agent.
-- `device_key` (String) Key which uniquely identifies a System asset probably the serial number.
-- `management_ip` (String) Management IP address of the system managed by the Agent.
-- `off_box` (Boolean) Indicates whether the agent runs on the switch (true) or on an Apstra node (false).
-- `system_id` (String) Apstra ID for the System managed by the Agent.
+- `aos_config_version` (Number) Version number of the aos config
+- `config_actual` (String) Actual system configuration
+- `config_expected` (String) Expected system configuration
+- `contiguous_failures` (Number) Indicates the system's contiguous error count.
+- `deviated` (Boolean) Boolean `true` if the configuration has deviated.
+- `error_message` (String) System error message
+- `last_boot_time` (String) Last boot time of the system.
+- `user_full_config_deploy_version` (Number) Version number of the system's full configuration deployed
+- `user_golden_config_update_version` (Number) Version number of the system's golden configuration
