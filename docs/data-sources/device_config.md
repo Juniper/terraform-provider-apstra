@@ -2,12 +2,12 @@
 page_title: "apstra_device_config Data Source - terraform-provider-apstra"
 subcategory: "Devices"
 description: |-
-  This data source gets the device configuration information.
+  This data source retrieves device configuration and related configuration metadata from a Managed Device.
 ---
 
 # apstra_device_config (Data Source)
 
-This data source gets the device configuration information.
+This data source retrieves device configuration and related configuration metadata from a Managed Device.
 
 
 ## Example Usage
@@ -33,16 +33,16 @@ data "apstra_device_config" "device_a" {
 
 ### Required
 
-- `system_id` (String) Apstra ID for the System, as found in Devices -> Managed Devices in the GUI.
+- `system_id` (String) Apstra ID for the System (Managed Device), as found in Devices -> Managed Devices in the GUI.
 
 ### Read-Only
 
-- `aos_config_version` (Number) Version number of the aos config
-- `config_actual` (String) Actual system configuration
-- `config_expected` (String) Expected system configuration
-- `contiguous_failures` (Number) Indicates the system's contiguous error count.
-- `deviated` (Boolean) Boolean `true` if the configuration has deviated.
-- `error_message` (String) System error message
+- `aos_config_version` (Number) Version number of the AOS config.
+- `config_actual` (String) Actual System configuration.
+- `config_expected` (String) Expected System configuration.
+- `contiguous_failures` (Number) Indicates the System's contiguous error count.
+- `deviated` (Boolean) Indicates if the configuration has deviated.
+- `error_message` (String) Configuration related error message, if any.
 - `last_boot_time` (String) Last boot time of the system.
-- `user_full_config_deploy_version` (Number) Version number of the system's full configuration deployed
-- `user_golden_config_update_version` (Number) Version number of the system's golden configuration
+- `user_full_config_deploy_version` (Number) Version number of the System's full configuration deployed.
+- `user_golden_config_update_version` (Number) Version number of the System's golden configuration

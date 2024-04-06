@@ -27,8 +27,9 @@ func (o *dataSourceDeviceConfig) Configure(ctx context.Context, req datasource.C
 
 func (o *dataSourceDeviceConfig) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDevices + "This data source gets the device configuration information.",
-		Attributes:          device.CfgInfo{}.DataSourceAttributes(),
+		MarkdownDescription: docCategoryDevices +
+			"This data source retrieves device configuration and related configuration metadata from a Managed Device.",
+		Attributes: device.CfgInfo{}.DataSourceAttributes(),
 	}
 }
 

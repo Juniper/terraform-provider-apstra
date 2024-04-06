@@ -27,44 +27,45 @@ func (o CfgInfo) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 
 	return map[string]dataSourceSchema.Attribute{
 		"system_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID for the System, as found in Devices -> Managed Devices in the GUI.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Apstra ID for the System (Managed Device), as found in " +
+				"Devices -> Managed Devices in the GUI.",
+			Required:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"last_boot_time": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Last boot time of the system.",
 			Computed:            true,
 		},
 		"deviated": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Boolean `true` if the configuration has deviated.",
+			MarkdownDescription: "Indicates if the configuration has deviated.",
 			Computed:            true,
 		},
 		"error_message": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "System error message",
+			MarkdownDescription: "Configuration related error message, if any.",
 			Computed:            true,
 		},
 		"contiguous_failures": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Indicates the system's contiguous error count.",
+			MarkdownDescription: "Indicates the System's contiguous error count.",
 			Computed:            true,
 		},
 		"user_golden_config_update_version": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Version number of the system's golden configuration",
+			MarkdownDescription: "Version number of the System's golden configuration",
 			Computed:            true,
 		},
 		"user_full_config_deploy_version": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Version number of the system's full configuration deployed",
+			MarkdownDescription: "Version number of the System's full configuration deployed.",
 			Computed:            true,
 		},
 		"aos_config_version": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "Version number of the aos config",
+			MarkdownDescription: "Version number of the AOS config.",
 			Computed:            true,
 		},
 		"config_expected": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Expected system configuration",
+			MarkdownDescription: "Expected System configuration.",
 			Computed:            true,
 		},
 		"config_actual": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Actual system configuration",
+			MarkdownDescription: "Actual System configuration.",
 			Computed:            true,
 		},
 	}
