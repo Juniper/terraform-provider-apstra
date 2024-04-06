@@ -275,6 +275,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		resp.Diagnostics.AddError("Error creating Apstra client configuration", err.Error())
 		return
 	}
+	clientCfg.UserAgent = fmt.Sprintf("terraform-provider-apstra/%s", p.Version)
 
 	// Set the experimental flag according to the configuration
 	clientCfg.Experimental = config.Experimental.ValueBool()
