@@ -9,4 +9,6 @@ const (
 	Apstra412 = "4.1.2"
 	Apstra420 = "4.2.0"
 	Apstra421 = "4.2.1"
+
+	Le420 = "<=" + Apstra420
 )
