@@ -85,21 +85,23 @@ func (o TemplateCollapsed) ResourceAttributes() map[string]resourceSchema.Attrib
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"rack_type": resourceSchema.ObjectAttribute{
+		"rack_type": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "rack type layer details",
-			Required:            true,
+			Computed:            true,
+			Attributes:          RackType{}.ResourceAttributesNested(),
 		},
 		"rack_type_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "rack type id ",
 			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"mesh_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "mesh_link_count integer ",
-			Computed:            true,
+			Required:            true,
 		},
 		"mesh_link_speed": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "mesh_link_speed details ",
-			Computed:            true,
+			Required:            true,
 		},
 	}
 }
