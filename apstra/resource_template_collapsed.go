@@ -30,7 +30,7 @@ func (o *resourceTemplateCollapsed) Configure(ctx context.Context, req resource.
 
 func (o *resourceTemplateCollapsed) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This resource creates a Collapsed Fabric design",
+		MarkdownDescription: docCategoryDesign + "This resource creates a Template for a spine-less (collapsed) Blueprint",
 		Attributes:          design.TemplateCollapsed{}.ResourceAttributes(),
 	}
 }
@@ -49,11 +49,14 @@ func (o *resourceTemplateCollapsed) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
+	// Fetch the API version
 	apiVer, err := version.NewVersion(o.client.ApiVersion())
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("failed parsing API Version %q", o.client.ApiVersion()), err.Error())
 		return
 	}
+
+	// Apstra <= 4.2.0 requires an anti-affinity policy in the request
 	if version.MustConstraints(version.NewConstraint(apiversions.Le420)).Check(apiVer) {
 		request.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
 			Algorithm: apstra.AlgorithmHeuristic,
@@ -68,7 +71,7 @@ func (o *resourceTemplateCollapsed) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	// save the state in case we run into a problem later
+	// save the ID to the state in case we run into a problem later
 	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
@@ -79,10 +82,8 @@ func (o *resourceTemplateCollapsed) Create(ctx context.Context, req resource.Cre
 		return
 	}
 
-	// parse the API response into a state object
+	// load API response and set state
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-
-	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -108,17 +109,11 @@ func (o *resourceTemplateCollapsed) Read(ctx context.Context, req resource.ReadR
 		return
 	}
 
-	// Create new state object
+	// load API response and set state
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update resource
 func (o *resourceTemplateCollapsed) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// retrieve values from plan
 	var plan design.TemplateCollapsed
@@ -133,11 +128,14 @@ func (o *resourceTemplateCollapsed) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
+	// Fetch the API version
 	apiVer, err := version.NewVersion(o.client.ApiVersion())
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("failed parsing API Version %q", o.client.ApiVersion()), err.Error())
 		return
 	}
+
+	// Apstra <= 4.2.0 requires an anti-affinity policy in the request
 	if version.MustConstraints(version.NewConstraint(apiversions.Le420)).Check(apiVer) {
 		request.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
 			Algorithm: apstra.AlgorithmHeuristic,
@@ -164,17 +162,11 @@ func (o *resourceTemplateCollapsed) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	// Create new state object
+	// load API response and set state
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete resource
 func (o *resourceTemplateCollapsed) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state design.TemplateCollapsed
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

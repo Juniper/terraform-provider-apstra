@@ -2,7 +2,10 @@ package design
 
 import (
 	"context"
+	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -54,9 +57,10 @@ func (o TemplateCollapsed) DataSourceAttributes() map[string]dataSourceSchema.At
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"rack_type": dataSourceSchema.ObjectAttribute{
+		"rack_type": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "rack_type details",
 			Computed:            true,
+			Attributes:          RackType{}.DataSourceAttributesNested(),
 		},
 		"rack_type_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "rack_type_id details ",
@@ -98,16 +102,17 @@ func (o TemplateCollapsed) ResourceAttributes() map[string]resourceSchema.Attrib
 		"mesh_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "mesh_link_count integer ",
 			Required:            true,
+			Validators:          []validator.Int64{int64validator.Between(1, 64)},
 		},
 		"mesh_link_speed": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "mesh_link_speed details ",
 			Required:            true,
+			Validators:          []validator.String{apstravalidator.ParseSpeed()},
 		},
 	}
 }
 
 func (o *TemplateCollapsed) Request(_ context.Context, _ *diag.Diagnostics) *apstra.CreateL3CollapsedTemplateRequest {
-
 	return &apstra.CreateL3CollapsedTemplateRequest{
 		DisplayName:          o.Name.ValueString(),
 		RackTypeIds:          []apstra.ObjectId{apstra.ObjectId(o.RackTypeId.ValueString())},
@@ -124,14 +129,23 @@ func (o *TemplateCollapsed) LoadApiData(ctx context.Context, in *apstra.Template
 		diags.AddError(errProviderBug, "attempt to load TemplateCollapsed from nil source")
 		return
 	}
+
 	if len(in.RackTypes) != 1 {
-		diags.AddError("cannot load the RackType", "API response load RackTypes was not 1 element")
+		diags.AddError(
+			fmt.Sprintf(errApiParseWithTypeAndId, "TemplateCollapsed", o.Id.ValueString()),
+			fmt.Sprintf("collapsed template has %d rack types, expected 1", len(in.RackTypes)),
+		)
 		return
 	}
+
 	if in.RackTypes[0].Data == nil {
-		diags.AddError("cannot load the RackType", "API response contains NIL RackType Data")
+		diags.AddError(
+			fmt.Sprintf(errApiParseWithTypeAndId, "TemplateCollapsed", o.Id.ValueString()),
+			"RackType Data is <nil>",
+		)
 		return
 	}
+
 	o.Name = types.StringValue(in.DisplayName)
 	o.RackType = NewRackTypeObject(ctx, in.RackTypes[0].Data, diags)
 	o.MeshLinkCount = types.Int64Value(int64(in.MeshLinkCount))
