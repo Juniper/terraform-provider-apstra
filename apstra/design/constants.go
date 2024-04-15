@@ -7,6 +7,7 @@ const (
 	errProviderBug           = "Provider Bug. Please report this issue to the provider maintainers."
 	errApiGetWithTypeAndId   = "API error getting %s %q"
 	errApiPatchWithTypeAndId = "API error patching %s %q"
+	errApiParseWithTypeAndId = "failed parsing API response for %s %q"
 	errInvalidConfig         = "invalid configuration"
 
 	AsnAllocationSingle = "single"
