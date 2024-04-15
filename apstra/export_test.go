@@ -11,6 +11,7 @@ var (
 	ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
 	ResourceDatacenterRoutingZone   = resourceDatacenterRoutingZone{}
 	ResourceTemplatePodBased        = resourceTemplatePodBased{}
+	ResourceTemplateCollapsed       = resourceTemplateCollapsed{}
 )
 
 func ResourceName(ctx context.Context, r resource.Resource) string {
