@@ -126,14 +126,6 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	// Apstra 4.2.1 allows us to set *some* fabric settings as part of blueprint creation.
 	// Depending on what's in the plan, we might not need to invoke SetFabricSettings().
 	if !apiversions.Ge421.Check(apiVersion) || plan.Ipv6Applications.ValueBool() {
-		// did we really need to lock the blueprint here? nothing else knows it exists yet.
-		//// Lock the blueprint mutex.
-		//err = o.lockFunc(ctx, id.String())
-		//if err != nil {
-		//	resp.Diagnostics.AddError("failed locking blueprint mutex", err.Error())
-		//	return
-		//}
-
 		// Set the fabric settings
 		plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
@@ -145,6 +137,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("error retrieving Datacenter Blueprint after creation", err.Error())
+		return
 	}
 
 	// Load blueprint status
