@@ -766,11 +766,19 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 }
 
 func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateBlueprintFromTemplateRequest {
+	fabricSettings := o.FabricSettings(ctx, diags)
+	if diags.HasError() {
+		return nil
+	}
+
+	// IPv6 cannot be enabled as part of blueprint creation
+	fabricSettings.Ipv6Enabled = nil
+
 	result := apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:      apstra.RefDesignTwoStageL3Clos,
 		Label:          o.Name.ValueString(),
 		TemplateId:     apstra.ObjectId(o.TemplateId.ValueString()),
-		FabricSettings: o.FabricSettings(ctx, diags),
+		FabricSettings: fabricSettings,
 	}
 
 	if utils.Known(o.FabricAddressing) {

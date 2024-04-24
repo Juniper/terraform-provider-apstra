@@ -1530,12 +1530,32 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				},
 			},
 		},
+		"evpn_start_with_ipv6": {
+			testCase: resource.TestCase{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps: []resource.TestStep{
+					{
+						Config: renderConfig(config{
+							name:             "esv6AV_0_" + rs,
+							templateId:       "L2_Virtual_EVPN",
+							ipv6Applications: utils.ToPtr(true),
+						}),
+						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
+							resource.TestCheckResourceAttrSet("apstra_datacenter_blueprint.test", "id"),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "name", "esv6AV_0_"+rs),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "template_id", "L2_Virtual_EVPN"),
+							resource.TestCheckResourceAttr("apstra_datacenter_blueprint.test", "ipv6_applications", "true"),
+						}...),
+					},
+				},
+			},
+		},
 	}
 
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
-			t.Parallel()
+			//t.Parallel()
 			if !tCase.apiVersionConstraints.Check(apiVersion) {
 				t.Skipf("API version %s does not satisfy version constraints(%s) of test %q",
 					apiVersion, tCase.apiVersionConstraints, tName)
