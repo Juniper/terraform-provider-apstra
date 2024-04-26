@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"sort"
 
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -521,29 +523,50 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 		return
 	}
 
-	var ace apstra.ClientErr
-	var pendingDiags diag.Diagnostics
-
 	err := bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
 	if err == nil {
 		return // success!
-	} else {
-		pendingDiags.AddError(
-			fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
-			err.Error())
-		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrCtAssignedToLink && ace.Detail() != nil && o.ClearCtsOnDestroy.ValueBool()) {
-			// we cannot handle the error
-			diags.Append(pendingDiags...)
-			return
-		}
 	}
 
-	// we got here because some links have CTs attached.
+	var ace apstra.ClientErr
 
+	// see if we can handle this error...
+	if !errors.As(err, &ace) || ace.Type() != apstra.ErrCtAssignedToLink || ace.Detail() == nil {
+		// cannot handle error
+		diags.AddError("failed while deleting Links from Generic System", err.Error())
+		return
+	}
+
+	// the error detail has to be the correct type...
+	detail, ok := ace.Detail().(apstra.ErrCtAssignedToLinkDetail)
+	if !ok {
+		diags.AddError(
+			constants.ErrProviderBug+fmt.Sprintf(" - ErrCtAssignedToLink has unexpected detail type: %T", detail),
+			err.Error(),
+		)
+		return
+	}
+
+	// see if the user could have avoided this problem...
+	if !o.ClearCtsOnDestroy.ValueBool() {
+		diags.AddWarning(
+			fmt.Sprintf("Cannot delete links with Connectivity Templates assigned: %v", detail.LinkIds),
+			"You can set 'clear_cts_on_destroy = true' to override this behavior",
+		)
+		return
+	}
+
+	// prep an error diagnostic in case we can't figure this out
+	var pendingDiags diag.Diagnostics
+	pendingDiags.AddError(
+		fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
+		err.Error())
+
+	// we got here because some links have CTs attached.
 	// try to clear the connectivity templates from the problem links
 	o.ClearConnectivityTemplatesFromLinks(ctx, ace.Detail().(apstra.ErrCtAssignedToLinkDetail).LinkIds, bp, diags)
 	if diags.HasError() {
-		diags.Append(pendingDiags...)
+		diags.Append(pendingDiags...) // throw the pending diagnostic on the pile and give up
 		return
 	}
 
@@ -552,7 +575,7 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 	if err != nil {
 		diags.AddError("failed second attempt to delete links after attempting to handle the link deletion error",
 			err.Error())
-		diags.Append(pendingDiags...)
+		diags.Append(pendingDiags...) // throw the pending diagnostic on the pile and give up
 		return
 	}
 }
@@ -582,15 +605,141 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLink
 	if len(request) != 0 {
 		err := bp.SetLinkLagParams(ctx, &request)
 		if err != nil {
-			diags.AddError("failed updating generic system link parameters", err.Error()) // collect all errors
+			// we may be able to figure this out...
+			var pendingDiags diag.Diagnostics
+			pendingDiags.AddError("failed updating generic system link parameters", err.Error())
+
+			var ace apstra.ClientErr
+			if !errors.As(err, &ace) || ace.Type() != apstra.ErrLagHasAssignedStructrues || ace.Detail() == nil {
+				diags.Append(pendingDiags...) // cannot handle error
+				return
+			}
+
+			detail, ok := ace.Detail().(apstra.ErrLagHasAssignedStructuresDetail)
+			if !ok || len(detail.GroupLabels) == 0 {
+				diags.Append(pendingDiags...) // cannot handle error
+				return
+			}
+
+			var lagIds []apstra.ObjectId
+			for _, groupLabel := range detail.GroupLabels {
+				lagId, err := lagLinkIdFromGsIdAndGroupLabel(ctx, bp, apstra.ObjectId(o.Id.ValueString()), groupLabel)
+				if err != nil {
+					// return both errors
+					diags.Append(pendingDiags...)
+					diags.AddError("failed to determine upstream switch LAG port ID", err.Error())
+					continue
+				}
+
+				lagIds = append(lagIds, lagId)
+			}
+
+			if !o.ClearCtsOnDestroy.ValueBool() {
+				diags.Append(pendingDiags...) // cannot handle error
+				diags.AddWarning(
+					fmt.Sprintf("Cannot orphan LAGs with Connectivity Templates assigned: %v", lagIds),
+					"You can set 'clear_cts_on_destroy = true' to override this behavior",
+				)
+				return
+			}
+
+			o.ClearConnectivityTemplatesFromLinks(ctx, lagIds, bp, diags)
+
+			// try again...
+			err = bp.SetLinkLagParams(ctx, &request)
+			if err != nil {
+				diags.AddError("failed updating generic system LAG parameters after clearing CTs", err.Error()) // cannot handle error
+				return
+			}
 		}
 	}
 
 	// one at a time, check/update each link transform ID
 	for i, link := range planLinks {
-		link.updateTransformId(ctx, stateLinks[i], bp, diags) // collect all errors
+		link.updateTransformId(ctx, stateLinks[i], bp, diags)
 	}
 }
+
+func lagLinkIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3ClosClient, gsId apstra.ObjectId, groupLabel string) (apstra.ObjectId, error) {
+	query := new(apstra.PathQuery).SetBlueprintId(bp.Id()).SetClient(bp.Client()).
+		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(gsId.String())}}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeLink.QEEAttribute(),
+			{Key: "group_label", Value: apstra.QEStringVal(groupLabel)},
+			{Key: "link_type", Value: apstra.QEStringVal("aggregate_link")},
+			{Key: "name", Value: apstra.QEStringVal("n_link")},
+		})
+
+	var result struct {
+		Items []struct {
+			Link struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_link"`
+		} `json:"items"`
+	}
+
+	if err := query.Do(ctx, &result); err != nil {
+		return "", err
+	}
+
+	switch len(result.Items) {
+	case 0:
+		return "", fmt.Errorf("query failed to find LAG link ID for system %q group label %q - %s", gsId, groupLabel, query.String())
+	case 1:
+		return result.Items[0].Link.Id, nil
+	default:
+		return "", fmt.Errorf("query found multiple find LAG link IDs for system %q group label %q - %s", gsId, groupLabel, query.String())
+	}
+}
+
+//func switchLagIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3ClosClient, gsId apstra.ObjectId, groupLabel string) (apstra.ObjectId, error) {
+//	query := new(apstra.PathQuery).SetBlueprintId(bp.Id()).SetClient(bp.Client()).
+//		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(gsId.String())}}).
+//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+//		Node([]apstra.QEEAttribute{
+//			apstra.NodeTypeInterface.QEEAttribute(),
+//			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
+//		}).
+//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+//		Node([]apstra.QEEAttribute{
+//			apstra.NodeTypeLink.QEEAttribute(),
+//			{Key: "group_label", Value: apstra.QEStringVal(groupLabel)},
+//			{Key: "link_type", Value: apstra.QEStringVal("aggregate_link")},
+//		}).
+//		In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+//		Node([]apstra.QEEAttribute{
+//			apstra.NodeTypeInterface.QEEAttribute(),
+//			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
+//			{Key: "name", Value: apstra.QEStringVal("n_application_point")},
+//		})
+//
+//	var result struct {
+//		Items []struct {
+//			ApplicationPoint struct {
+//				Id apstra.ObjectId `json:"id"`
+//			} `json:"n_application_point"`
+//		} `json:"items"`
+//	}
+//
+//	if err := query.Do(ctx, &result); err != nil {
+//		return "", err
+//	}
+//
+//	switch len(result.Items) {
+//	case 0:
+//		return "", fmt.Errorf("query failed to find upstream interface ID for system %q group label %q - %s", gsId, groupLabel, query.String())
+//	case 1:
+//		return result.Items[0].ApplicationPoint.Id, nil
+//	default:
+//		return "", fmt.Errorf("query found multiple find upstream interface IDs for system %q group label %q - %s", gsId, groupLabel, query.String())
+//	}
+//}
 
 // linkIds performs the graph queries necessary to return the link IDs which
 // connect this Generic System (o) to the systems+interfaces specified by links.
