@@ -162,9 +162,13 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 		"clear_cts_on_destroy": resourceSchema.BoolAttribute{
-			MarkdownDescription: "When `true`, Link deletion in `destroy` phase and `apply` phase (where a Link has " +
-				"been removed from the configuration) will automatically clear Connectivity Template assignments " +
-				"from interfaces associated with those Links.",
+			MarkdownDescription: "When `true`, Connectivity Templates associated with this Generic System will be " +
+				"automatically cleared in a variety of circumstances where they would ordinarily block Generic System " +
+				"changes, including:\n" +
+				"  - Deletion of the Generic System\n" +
+				"  - Deletion of a Generic System Link or LAG interface\n" +
+				"  - Orphaning a LAG interface by reassigning all of its member links to new roles by changing their " +
+				"`group_label` attribute\n",
 			Optional: true,
 		},
 	}
