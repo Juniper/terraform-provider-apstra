@@ -523,14 +523,14 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 		return
 	}
 
+	// try to delete the links
 	err := bp.DeleteLinksFromSystem(ctx, linkIdsToDelete)
 	if err == nil {
 		return // success!
 	}
 
-	var ace apstra.ClientErr
-
 	// see if we can handle this error...
+	var ace apstra.ClientErr
 	if !errors.As(err, &ace) || ace.Type() != apstra.ErrCtAssignedToLink || ace.Detail() == nil {
 		// cannot handle error
 		diags.AddError("failed while deleting Links from Generic System", err.Error())
@@ -562,7 +562,6 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 		fmt.Sprintf("failed deleting links %v from generic system %s", linkIdsToDelete, o.Id),
 		err.Error())
 
-	// we got here because some links have CTs attached.
 	// try to clear the connectivity templates from the problem links
 	o.ClearConnectivityTemplatesFromLinks(ctx, ace.Detail().(apstra.ErrCtAssignedToLinkDetail).LinkIds, bp, diags)
 	if diags.HasError() {
