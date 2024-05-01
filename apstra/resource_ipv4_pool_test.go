@@ -68,16 +68,41 @@ func (o ipv4PoolConfig) render(rType, rName string) string {
 }
 
 func (o ipv4PoolConfig) testChecks(t testing.TB, rType, rName string) testChecks {
+	t.Helper()
 	result := newTestChecks(rType + "." + rName)
+
+	var totalIPs int
+	prefixes := make([]net.IPNet, len(o.subnets))
+	for i, s := range o.subnets {
+		ip, prefix, err := net.ParseCIDR(s)
+		require.NoError(t, err)
+		require.EqualValuesf(t, ip.String(), prefix.IP.String(), "%s is not a base address", s)
+
+		prefixes[i] = *prefix
+
+		ones, bits := prefix.Mask.Size()
+		totalIPs += int(math.Pow(2, float64(bits-ones)))
+	}
 
 	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
+	result.append(t, "TestCheckResourceAttr", "status", "not_in_use")
+	result.append(t, "TestCheckResourceAttr", "total", strconv.Itoa(totalIPs))
+	result.append(t, "TestCheckResourceAttr", "used", "0")
+	result.append(t, "TestCheckResourceAttr", "used_percentage", "0")
 	result.append(t, "TestCheckResourceAttr", "subnets.#", strconv.Itoa(len(o.subnets)))
 
-	for i, s := range o.subnets {
-		// todo: add tests for each subnet
-		_, _ = i, s
+	for _, p := range prefixes {
+		ones, bits := p.Mask.Size()
+		v := map[string]string{
+			"network":         p.String(),
+			"status":          "pool_element_available",
+			"total":           strconv.Itoa(int(math.Pow(2, float64(bits-ones)))),
+			"used":            "0",
+			"used_percentage": "0",
+		}
+		result.appendSetNestedCheck(t, "subnets.*", v)
 	}
 
 	return result
@@ -85,7 +110,7 @@ func (o ipv4PoolConfig) testChecks(t testing.TB, rType, rName string) testChecks
 
 func TestAccResourceIpv4Pool(t *testing.T) {
 	ctx := context.Background()
-	testutils.TestCfgFileToEnv()
+	require.NoError(t, testutils.TestCfgFileToEnv())
 
 	type testCase struct {
 		stepConfigs []ipv4PoolConfig
@@ -104,14 +129,15 @@ func TestAccResourceIpv4Pool(t *testing.T) {
 				},
 			},
 		},
-		"lots": {
-			stepConfigs: []ipv4PoolConfig{
-				{
-					name:    acctest.RandString(6),
-					subnets: ipv4Subnets(t, "10.0.0.0/8", 28, 50),
-				},
-			},
-		},
+		// AOS-46273
+		//"lots": {
+		//	stepConfigs: []ipv4PoolConfig{
+		//		{
+		//			name:    acctest.RandString(6),
+		//			subnets: ipv4Subnets(t, "10.0.0.0/8", 28, 50),
+		//		},
+		//	},
+		//},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceIpv4Pool)
@@ -144,68 +170,4 @@ func TestAccResourceIpv4Pool(t *testing.T) {
 			})
 		})
 	}
-
-	//var (
-	//	testAccResourceIpv4PoolCfg1Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	//	testAccResourceIpv4PoolCfg1Subnets = strings.Join([]string{
-	//		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.0.0/16"),
-	//	}, ",")
-	//	testAccResourceIpv4PoolCfg1 = fmt.Sprintf(resourceIpv4PoolTemplateHCL, testAccResourceIpv4PoolCfg1Name, testAccResourceIpv4PoolCfg1Subnets)
-	//
-	//	testAccResourceIpv4PoolCfg2Name    = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
-	//	testAccResourceIpv4PoolCfg2Subnets = strings.Join([]string{
-	//		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.1.0/24"),
-	//		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.0.0/24"),
-	//		fmt.Sprintf(resourceIpv4PoolSubnetTemplateHCL, "192.168.2.0/23"),
-	//	}, ",")
-	//	testAccResourceIpv4PoolCfg2 = fmt.Sprintf(resourceIpv4PoolTemplateHCL, testAccResourceIpv4PoolCfg2Name, testAccResourceIpv4PoolCfg2Subnets)
-	//)
-	//
-	//resource.Test(t, resource.TestCase{
-	//	ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-	//	Steps: []resource.TestStep{
-	//		// Create and Read testing
-	//		{
-	//			Config: insecureProviderConfigHCL + testAccResourceIpv4PoolCfg1,
-	//			Check: resource.ComposeAggregateTestCheckFunc(
-	//				// Verify ID has any value set
-	//				resource.TestCheckResourceAttrSet("apstra_ipv4_pool.test", "id"),
-	//				// Verify name and overall usage statistics
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "name", testAccResourceIpv4PoolCfg1Name),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "status", "not_in_use"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "total", "65536"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "used", "0"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "used_percentage", "0"),
-	//				// Verify number of subnets
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.#", "1"),
-	//				// Verify first subnet
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.0.network", "192.168.0.0/16"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.0.status", "pool_element_available"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.0.total", "65536"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.0.used", "0"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.0.used_percentage", "0"),
-	//			),
-	//		},
-	//		// Update and Read testing
-	//		{
-	//			Config: insecureProviderConfigHCL + testAccResourceIpv4PoolCfg2,
-	//			Check: resource.ComposeAggregateTestCheckFunc(
-	//				// Verify ID has any value set
-	//				resource.TestCheckResourceAttrSet("apstra_ipv4_pool.test", "id"),
-	//				// Verify name and overall usage statistics
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "name", testAccResourceIpv4PoolCfg2Name),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "status", "not_in_use"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "total", "1024"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "used", "0"),
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "used_percentage", "0"),
-	//				// Verify number of subnets
-	//				resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.#", "3"),
-	//				//// cannot verify subnets here because they're not sorted
-	//				//resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.0.network", "192.168.0.0/24"),
-	//				//resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.1.network", "192.168.1.0/24"),
-	//				//resource.TestCheckResourceAttr("apstra_ipv4_pool.test", "subnets.2.network", "192.168.2.0/23"),
-	//			),
-	//		},
-	//	},
-	//})
 }
