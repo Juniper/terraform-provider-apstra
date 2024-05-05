@@ -408,6 +408,11 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 	}
 }
 
+func (o *testChecks) appendSetNestedCheck(t testing.TB, attrName string, m map[string]string) {
+	o.checks = append(o.checks, resource.TestCheckTypeSetElemNestedAttrs(o.path, attrName, m))
+	o.logLines.appendf("TestCheckTypeSetElemNestedAttrs(%s, %s)", attrName, m)
+}
+
 func (o *testChecks) extractFromState(t testing.TB, id string, targetMap map[string]string) {
 	o.checks = append(o.checks, extractValueFromTerraformState(t, o.path, id, targetMap))
 	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", o.path, id)

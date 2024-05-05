@@ -10,6 +10,7 @@ var (
 	ResourceAgentProfile            = resourceAgentProfile{}
 	ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
 	ResourceDatacenterRoutingZone   = resourceDatacenterRoutingZone{}
+	ResourceIpv4Pool                = resourceIpv4Pool{}
 	ResourceTemplatePodBased        = resourceTemplatePodBased{}
 	ResourceTemplateCollapsed       = resourceTemplateCollapsed{}
 )
