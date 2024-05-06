@@ -36,7 +36,7 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 	defer testClientMutex.Unlock()
 
 	if sharedClient == nil {
-		err := testCfgFileToEnv()
+		err := TestCfgFileToEnv()
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -59,7 +59,7 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 	return sharedClient
 }
 
-func testCfgFileToEnv() error {
+func TestCfgFileToEnv() error {
 	absPath, err := filepath.Abs(testConfigFile)
 	if err != nil {
 		return fmt.Errorf("error expanding config file path %s - %w", testConfigFile, err)
