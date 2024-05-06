@@ -260,6 +260,36 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	attachCtToLag := func(groupLabel string) {
+		query := new(apstra.PathQuery).
+			SetBlueprintId(bpClient.Id()).
+			SetClient(bpClient.Client()).
+			Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(leafIds[0])}}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeInterface.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal("n_interface")},
+			}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeLink.QEEAttribute(),
+				{Key: "group_label", Value: apstra.QEStringVal(groupLabel)},
+				{Key: "link_type", Value: apstra.QEStringVal("aggregate_link")},
+			})
+		var response struct {
+			Items []struct {
+				Interface struct {
+					Id apstra.ObjectId `json:"id"`
+				} `json:"n_interface"`
+			} `json:"items"`
+		}
+		err := query.Do(context.Background(), &response)
+		require.NoError(t, err)
+
+		err = bpClient.SetApplicationPointConnectivityTemplates(context.Background(), response.Items[0].Interface.Id, []apstra.ObjectId{*ct.Id})
+		require.NoError(t, err)
+	}
+
 	type testStep struct {
 		genericSystem genericSystem
 		testCheckFunc resource.TestCheckFunc
@@ -679,6 +709,65 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 					testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 						resource.TestCheckResourceAttr("apstra_datacenter_generic_system.test", "deploy_mode", "not_set"),
 					}...),
+				},
+			},
+		},
+		"orphan_lag_with_attached_ct": {
+			steps: []testStep{
+				{
+					genericSystem: genericSystem{
+						clearCtsOnDestroy: true,
+						links: []link{
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/11",
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/12",
+								targetSwitchTf: 1,
+								groupLabel:     "foo",
+								lagMode:        apstra.RackLinkLagModeActive,
+							},
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/13",
+								targetSwitchTf: 1,
+								groupLabel:     "bar",
+								lagMode:        apstra.RackLinkLagModeActive,
+							},
+						},
+					},
+				},
+				{
+					preConfig: func() {
+						attachCtToLag("bar")
+					},
+					genericSystem: genericSystem{
+						clearCtsOnDestroy: true,
+						links: []link{
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/11",
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/12",
+								targetSwitchTf: 1,
+								groupLabel:     "foo",
+								lagMode:        apstra.RackLinkLagModeActive,
+							},
+							{
+								targetSwitchId: leafIds[0],
+								targetSwitchIf: "xe-0/0/13",
+								targetSwitchTf: 1,
+								groupLabel:     "foo",
+								lagMode:        apstra.RackLinkLagModeActive,
+							},
+						},
+					},
 				},
 			},
 		},
