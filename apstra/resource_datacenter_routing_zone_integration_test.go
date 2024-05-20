@@ -29,6 +29,7 @@ const (
   routing_policy_id    = %s
   import_route_targets = %s
   export_route_targets = %s
+  junos_evpn_irb_mode = %s
 }
 `
 )
@@ -41,6 +42,7 @@ type testRoutingZone struct {
 	routingPolicy string
 	importRTs     []string
 	exportRTs     []string
+	irbMode       string
 }
 
 func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) string {
@@ -55,6 +57,7 @@ func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) strin
 		stringOrNull(o.routingPolicy),
 		stringSetOrNull(o.importRTs),
 		stringSetOrNull(o.exportRTs),
+		stringOrNull(o.irbMode),
 	)
 }
 
@@ -105,6 +108,10 @@ func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, r
 		for _, exportRT := range o.exportRTs {
 			result.append(t, "TestCheckTypeSetElemAttr", "export_route_targets.*", exportRT)
 		}
+	}
+
+	if o.irbMode != "" {
+		result.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
 	}
 
 	return result
@@ -231,6 +238,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
 						exportRTs:     randomRTs(t, 1, 3),
+						irbMode:       "symmetric",
 					},
 				},
 			},
