@@ -202,14 +202,8 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	// create a new state object with relevant values copied from prior state
-	var newState blueprint.DatacenterRoutingZone
-	newState.Id = state.Id
-	newState.HadPriorVlanIdConfig = state.HadPriorVlanIdConfig
-	newState.HadPriorVniConfig = state.HadPriorVniConfig
-
 	// read the current status from the API
-	err = newState.Read(ctx, bp, &resp.Diagnostics)
+	err = state.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -217,7 +211,7 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		}
 
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed while reading blueprint %s routing zone %s details", bp.Id(), newState.Id),
+			fmt.Sprintf("failed while reading blueprint %s routing zone %s details", bp.Id(), state.Id),
 			err.Error())
 	}
 	if resp.Diagnostics.HasError() {
