@@ -238,7 +238,6 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
 						exportRTs:     randomRTs(t, 1, 3),
-						irbMode:       "symmetric",
 					},
 				},
 			},
