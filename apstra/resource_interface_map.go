@@ -289,7 +289,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	if err != nil {
 		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
-				fmt.Sprintf("logical device %q not found", o.DeviceProfileId))
+				fmt.Sprintf("logical device %q not found", o.LogicalDeviceId))
 		} else {
 			diags.AddError("failed to fetch logical device", err.Error())
 		}
