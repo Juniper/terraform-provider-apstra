@@ -355,7 +355,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 	}
 
 	if !utils.Known(o.VrfName) { // computed attribute
-		o.Name = types.StringValue(data.VrfName)
+		o.VrfName = types.StringValue(data.VrfName)
 	}
 
 	if !utils.Known(o.VlanId) { // optional + computed attribute
