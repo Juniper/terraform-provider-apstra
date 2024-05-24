@@ -60,10 +60,10 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 	//   - HadPriorVlanIdConfig
 	//   - HadPriorVniConfig
 	//
-	// Whenever these attributes are found `true`, but the corresponding config
-	// element is `null`, we conclude that the attribute been removed from the
-	// configuration and set the attribute to `unknown` to achieve modification
-	// and record a new choice made by the API.
+	// Whenever these "prior" attributes are found `true` and the corresponding
+	// config element is `null`, we can conclude that the attribute has just
+	// been removed from the configuration and set the attribute to `unknown` to
+	// achieve modification and record a new choice made by the API.
 
 	// No state means there couldn't have been a previous config.
 	// No plan means we're doing Delete().
@@ -259,6 +259,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
+	// create a request we'll use when invoking UpdateSecurityZone
 	request := plan.Request(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -270,6 +271,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
+	// update DHCP server list if necessary
 	if !plan.DhcpServers.Equal(state.DhcpServers) {
 		dhcpRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
@@ -283,6 +285,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		}
 	}
 
+	// collect any values calculated by apstra
 	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("failed while updating routing zone", err.Error())
