@@ -265,6 +265,11 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
+	// set new "prior" markers
+	plan.HadPriorVlanIdConfig = types.BoolValue(utils.Known(plan.VlanId))
+	plan.HadPriorVniConfig = types.BoolValue(utils.Known(plan.Vni))
+
+	// send the update
 	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating security zone", err.Error())
@@ -292,18 +297,6 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	}
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// if the plan modifier didn't take action...
-	if plan.HadPriorVlanIdConfig.IsUnknown() {
-		// ...then the trigger value is set according to whether a VLAN ID value is known.
-		plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
-	}
-
-	// if the plan modifier didn't take action...
-	if plan.HadPriorVniConfig.IsUnknown() {
-		// ...then the trigger value is set according to whether a VNI value is known.
-		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
