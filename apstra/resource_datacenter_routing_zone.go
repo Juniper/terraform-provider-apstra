@@ -202,8 +202,14 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
+	// Create "newState" with unknown values to ensure that the Read() method doesn't short circuit.
+	var newState blueprint.DatacenterRoutingZone
+	newState.Id = state.Id
+	newState.HadPriorVlanIdConfig = state.HadPriorVlanIdConfig
+	newState.HadPriorVniConfig = state.HadPriorVniConfig
+
 	// read the current status from the API
-	err = state.Read(ctx, bp, &resp.Diagnostics)
+	err = newState.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -219,7 +225,7 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
