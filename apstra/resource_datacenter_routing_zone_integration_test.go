@@ -29,7 +29,7 @@ const (
   routing_policy_id    = %s
   import_route_targets = %s
   export_route_targets = %s
-  junos_evpn_irb_mode = %s
+  junos_evpn_irb_mode  = %s
 }
 `
 )
@@ -79,6 +79,8 @@ func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, r
 
 	if o.vlan != nil {
 		result.append(t, "TestCheckResourceAttr", "vlan_id", strconv.Itoa(*o.vlan))
+	} else {
+		result.append(t, "TestCheckResourceAttrSet", "vlan_id")
 	}
 
 	if o.vni != nil {
@@ -125,7 +127,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 
 	attachVniPool := func(t testing.TB, ctx context.Context, min, max uint32) {
 		// create a VNI pool
-		vniPool := testutils.VniPool(t, ctx, min, max, false)
+		vniPool := testutils.VniPool(t, ctx, min, max, true)
 
 		// link the VNI pool to the blueprint
 		rgn := apstra.ResourceGroupNameEvpnL3Vni
@@ -171,14 +173,18 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 		"create_minimal": {
 			steps: []testStep{
 				{
-					preConfig: func(t testing.TB) { attachVniPool(t, ctx, 4096, 4096) },
+					preConfig: func(t testing.TB) { attachVniPool(t, ctx, 5000, 5099) },
 					config: testRoutingZone{
 						name: acctest.RandString(6),
 					},
 					extraChecks: []extraCheck{
 						{
-							testFuncName: "TestCheckResourceAttr",
-							testFuncArgs: []string{"vni", strconv.Itoa(4096)},
+							testFuncName: "TestCheckResourceAttrPair",
+							testFuncArgs: []string{"name", "vrf_name"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(5000), strconv.Itoa(5099)},
 						},
 					},
 				},
@@ -223,6 +229,12 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 						importRTs:     randomRTs(t, 1, 3),
 						exportRTs:     randomRTs(t, 1, 3),
 					},
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttrPair",
+							testFuncArgs: []string{"name", "vrf_name"},
+						},
+					},
 				},
 				{
 					config: testRoutingZone{
@@ -238,6 +250,168 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
 						exportRTs:     randomRTs(t, 1, 3),
+					},
+				},
+			},
+		},
+		"prior_begin_empty": {
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+					},
+					preConfig: func(t testing.TB) { attachVniPool(t, ctx, 6100, 6199) },
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttrPair",
+							testFuncArgs: []string{"name", "vrf_name"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vni_config", "false"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vlan_id_config", "false"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vlan_id", strconv.Itoa(2), strconv.Itoa(100)},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(6100), strconv.Itoa(6199)},
+						},
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						vlan: utils.ToPtr(rand.Intn(100) + 100),
+						vni:  utils.ToPtr(rand.Intn(100) + 6200),
+					},
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vni_config", "true"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vlan_id_config", "true"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vlan_id", strconv.Itoa(100), strconv.Itoa(199)},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(6200), strconv.Itoa(6299)},
+						},
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+					},
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vni_config", "false"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vlan_id_config", "false"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vlan_id", strconv.Itoa(2), strconv.Itoa(100)},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(6100), strconv.Itoa(6199)},
+						},
+					},
+				},
+			},
+		},
+		"prior_begin_populated": {
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						vlan: utils.ToPtr(rand.Intn(100) + 300),
+						vni:  utils.ToPtr(rand.Intn(100) + 6300),
+					},
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttrPair",
+							testFuncArgs: []string{"name", "vrf_name"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vni_config", "true"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vlan_id_config", "true"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vlan_id", strconv.Itoa(300), strconv.Itoa(399)},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(6300), strconv.Itoa(6399)},
+						},
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+					},
+					preConfig: func(t testing.TB) { attachVniPool(t, ctx, 6400, 6499) },
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vni_config", "false"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vlan_id_config", "false"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vlan_id", strconv.Itoa(2), strconv.Itoa(100)},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(6400), strconv.Itoa(6499)},
+						},
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						vlan: utils.ToPtr(rand.Intn(100) + 500),
+						vni:  utils.ToPtr(rand.Intn(100) + 6500),
+					},
+					extraChecks: []extraCheck{
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vni_config", "true"},
+						},
+						{
+							testFuncName: "TestCheckResourceAttr",
+							testFuncArgs: []string{"had_prior_vlan_id_config", "true"},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vlan_id", strconv.Itoa(500), strconv.Itoa(599)},
+						},
+						{
+							testFuncName: "TestCheckResourceInt64AttrBetween",
+							testFuncArgs: []string{"vni", strconv.Itoa(6500), strconv.Itoa(6599)},
+						},
 					},
 				},
 			},
