@@ -12,14 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
-
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	testcheck "github.com/Juniper/terraform-provider-apstra/apstra/test_check_funcs"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"golang.org/x/exp/constraints"
 )
 
@@ -405,6 +404,28 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 		}
 		o.checks = append(o.checks, resource.TestCheckTypeSetElemAttr(o.path, testCheckFuncArgs[0], testCheckFuncArgs[1]))
 		o.logLines.appendf("TestCheckTypeSetElemAttr(%s, %q, %q)", o.path, testCheckFuncArgs[0], testCheckFuncArgs[1])
+	case "TestCheckResourceAttrPair":
+		if len(testCheckFuncArgs) != 2 {
+			t.Fatalf("%s requires 2 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
+		}
+		o.checks = append(o.checks, resource.TestCheckResourceAttrPair(o.path, testCheckFuncArgs[0], o.path, testCheckFuncArgs[1]))
+		o.logLines.appendf("TestCheckResourceAttrPair(%s, %q, %s, %q)", o.path, testCheckFuncArgs[0], o.path, testCheckFuncArgs[1])
+	case "TestCheckResourceInt64AttrBetween":
+		if len(testCheckFuncArgs) != 3 {
+			t.Fatalf("%s requires 3 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
+		}
+
+		int64min, err := strconv.ParseInt(testCheckFuncArgs[1], 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("TestCheckResourceInt64AttrBetween min value %q does not parse to int64 - %s", testCheckFuncArgs[1], err))
+		}
+		int64max, err := strconv.ParseInt(testCheckFuncArgs[2], 10, 64)
+		if err != nil {
+			panic(fmt.Sprintf("TestCheckResourceInt64AttrBetween max value %q does not parse to int64 - %s", testCheckFuncArgs[2], err))
+		}
+
+		o.checks = append(o.checks, testcheck.TestCheckResourceInt64AttrBetween(o.path, testCheckFuncArgs[0], int64min, int64max))
+		o.logLines.appendf("TestCheckResourceInt64AttrBetween(%s, %q, %d, %d)", o.path, testCheckFuncArgs[0], int64min, int64max)
 	}
 }
 
