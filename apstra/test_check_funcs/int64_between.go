@@ -46,12 +46,12 @@ func testCheckResourceAttr(is *terraform.InstanceState, name, key string, min, m
 func modulePrimaryInstanceState(ms *terraform.ModuleState, name string) (*terraform.InstanceState, error) {
 	rs, ok := ms.Resources[name]
 	if !ok {
-		return nil, fmt.Errorf("Not found: %s in %s", name, ms.Path)
+		return nil, fmt.Errorf("not found: %s in %s", name, ms.Path)
 	}
 
 	is := rs.Primary
 	if is == nil {
-		return nil, fmt.Errorf("No primary instance: %s in %s", name, ms.Path)
+		return nil, fmt.Errorf("no primary instance: %s in %s", name, ms.Path)
 	}
 
 	return is, nil
@@ -78,7 +78,7 @@ func checkIfIndexesIntoTypeSet(key string, f resource.TestCheckFunc) resource.Te
 	return func(s *terraform.State) error {
 		err := f(s)
 		if err != nil && indexesIntoTypeSet(key) {
-			return fmt.Errorf("Error in test check: %s\nTest check address %q likely indexes into TypeSet\nThis is currently not possible in the SDK", err, key)
+			return fmt.Errorf("error in test check: %s\nTest check address %q likely indexes into TypeSet\nThis is currently not possible in the SDK", err, key)
 		}
 		return err
 	}
