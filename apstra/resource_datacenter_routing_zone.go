@@ -60,10 +60,10 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 	//   - HadPriorVlanIdConfig
 	//   - HadPriorVniConfig
 	//
-	// Whenever these attributes are found `true`, but the corresponding config
-	// element is `null`, we conclude that the attribute been removed from the
-	// configuration and set the attribute to `unknown` to achieve modification
-	// and record a new choice made by the API.
+	// Whenever these "prior" attributes are found `true` and the corresponding
+	// config element is `null`, we can conclude that the attribute has just
+	// been removed from the configuration and set the attribute to `unknown` to
+	// achieve modification and record a new choice made by the API.
 
 	// No state means there couldn't have been a previous config.
 	// No plan means we're doing Delete().
@@ -202,8 +202,14 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
+	// Create "newState" with unknown values to ensure that the Read() method doesn't short circuit.
+	var newState blueprint.DatacenterRoutingZone
+	newState.Id = state.Id
+	newState.HadPriorVlanIdConfig = state.HadPriorVlanIdConfig
+	newState.HadPriorVniConfig = state.HadPriorVniConfig
+
 	// read the current status from the API
-	err = state.Read(ctx, bp, &resp.Diagnostics)
+	err = newState.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -219,7 +225,7 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
 func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -253,17 +259,24 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		return
 	}
 
+	// create a request we'll use when invoking UpdateSecurityZone
 	request := plan.Request(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// set new "prior" markers
+	plan.HadPriorVlanIdConfig = types.BoolValue(utils.Known(plan.VlanId))
+	plan.HadPriorVniConfig = types.BoolValue(utils.Known(plan.Vni))
+
+	// send the update
 	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating security zone", err.Error())
 		return
 	}
 
+	// update DHCP server list if necessary
 	if !plan.DhcpServers.Equal(state.DhcpServers) {
 		dhcpRequest := plan.DhcpServerRequest(ctx, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
@@ -277,24 +290,13 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 		}
 	}
 
+	// collect any values calculated by apstra
 	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("failed while updating routing zone", err.Error())
 	}
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// if the plan modifier didn't take action...
-	if plan.HadPriorVlanIdConfig.IsUnknown() {
-		// ...then the trigger value is set according to whether a VLAN ID value is known.
-		plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
-	}
-
-	// if the plan modifier didn't take action...
-	if plan.HadPriorVniConfig.IsUnknown() {
-		// ...then the trigger value is set according to whether a VNI value is known.
-		plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

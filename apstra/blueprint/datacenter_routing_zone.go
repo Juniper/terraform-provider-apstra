@@ -315,7 +315,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		diags.AddAttributeError(
 			path.Root("blueprint_id"),
 			constants.ErrInvalidConfig,
-			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", ocp.String())) // todo: need rosetta treatment
+			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", utils.StringersToFriendlyString(ocp)))
 	}
 
 	var importRTs, exportRTs []string
@@ -355,7 +355,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 	}
 
 	if !utils.Known(o.VrfName) { // computed attribute
-		o.Name = types.StringValue(data.VrfName)
+		o.VrfName = types.StringValue(data.VrfName)
 	}
 
 	if !utils.Known(o.VlanId) { // optional + computed attribute
