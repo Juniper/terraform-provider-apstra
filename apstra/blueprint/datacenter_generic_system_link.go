@@ -118,7 +118,7 @@ func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstr
 	switchEndpoint := in.OppositeEndpointBySystemId(genericSystemId)
 
 	o.TargetSwitchId = types.StringValue(switchEndpoint.System.Id.String())
-	o.TargetSwitchIfName = types.StringValue(*switchEndpoint.Interface.IfName)
+	o.TargetSwitchIfName = types.StringPointerValue(switchEndpoint.Interface.IfName)
 	o.GroupLabel = types.StringValue(in.GroupLabel)
 	o.LagMode = utils.StringValueOrNull(ctx, switchEndpoint.Interface.LagMode.String(), diags)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.TagLabels, diags)
