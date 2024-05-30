@@ -11,11 +11,10 @@ import (
 
 func SupportedApiVersions() []string {
 	providerVersions := []string{
-		apiversions.Apstra410,
-		apiversions.Apstra411,
-		apiversions.Apstra412,
 		apiversions.Apstra420,
 		apiversions.Apstra421,
+		apiversions.Apstra4211,
+		apiversions.Apstra422,
 	}
 
 	sdkVersions := apstra.SupportedApiVersions()

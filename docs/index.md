@@ -12,7 +12,7 @@ It covers day 0 and day 1 operations (design and deployment), and a growing list
 
 Use the navigation tree to the left to read about the available resources and data sources.
 
-This release has been tested with Apstra versions 4.1.0, 4.1.1, 4.1.2, 4.2.0, and 4.2.1.
+This release has been tested with Apstra versions 4.2.0, 4.2.1, 4.2.1.1, and 4.2.2.
 
 ## Configuration
 
