@@ -22,7 +22,7 @@ func TestSupportedApiVersions(t *testing.T) {
 }
 
 func TestSupportedApiVersionsPretty(t *testing.T) {
-	expected := apiversions.Apstra410 + ", " + apiversions.Apstra411 + ", " + apiversions.Apstra412 + ", " + apiversions.Apstra420 + ", and " + apiversions.Apstra421
+	expected := apiversions.Apstra410 + ", " + apiversions.Apstra411 + ", " + apiversions.Apstra412 + ", " + apiversions.Apstra420 + ", " + apiversions.Apstra421 + ", " + apiversions.Apstra4211 + ", and " + apiversions.Apstra422
 	result := SupportedApiVersionsPretty()
 	if expected != result {
 		t.Fatalf("expected %q; got %q", expected, result)
