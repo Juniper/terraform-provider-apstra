@@ -33,7 +33,7 @@ data "apstra_agents" "agents" {
 
 ### Read-Only
 
-- `ids` (Set of String) Set of Routing Zone IDs
+- `ids` (Set of String) Set of Agent IDs
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
