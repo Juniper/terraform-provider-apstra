@@ -34,7 +34,7 @@ func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest,
 			"All of the `filter` attributes are optional.",
 		Attributes: map[string]schema.Attribute{
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "Set of Routing Zone IDs",
+				MarkdownDescription: "Set of Agent IDs",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
