@@ -8,14 +8,14 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceFreeformPropertySet{}
-var _ datasourceWithSetClient = &dataSourceFreeformPropertySet{}
+var _ datasourceWithSetFfBpClientFunc = &dataSourceFreeformPropertySet{}
 
 type dataSourceFreeformPropertySet struct {
 	getBpClientFunc func(context.Context, string) (*apstra.FreeformClient, error)
-	client          *apstra.Client
 }
 
 func (o *dataSourceFreeformPropertySet) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -34,38 +34,62 @@ func (o *dataSourceFreeformPropertySet) Schema(_ context.Context, _ datasource.S
 	}
 }
 func (o *dataSourceFreeformPropertySet) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state blueprint.FreeformPropertySet
+	var config blueprint.FreeformPropertySet
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// get a client for the Freeform reference design
-	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
+	bp, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", config.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
 
-	api, err := bp.GetPropertySet(ctx, apstra.ObjectId(state.Id.ValueString()))
-	if err != nil {
+	var api *apstra.FreeformPropertySet
+	switch {
+	case !config.Id.IsNull():
+		api, err = bp.GetPropertySet(ctx, apstra.ObjectId(config.Id.ValueString()))
 		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
+			resp.Diagnostics.AddAttributeError(
+				path.Root("id"),
+				"Property Set not found",
+				fmt.Sprintf("Property Set with ID %s not found", config.Id))
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving PropertySet", err.Error())
+	case !config.Name.IsNull():
+		api, err = bp.GetPropertySetByName(ctx, config.Name.ValueString())
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("name"),
+				"Property Set not found",
+				fmt.Sprintf("Property Set with Name %s not found", config.Name))
+			return
+		}
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("failed reading Property Set", err.Error())
+		return
+	}
+	if api.Data == nil {
+		resp.Diagnostics.AddError("failed reading Property Set", "api response has no payload")
 		return
 	}
 
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-func (o *dataSourceFreeformPropertySet) setClient(client *apstra.Client) {
-	o.client = client
+func (o *dataSourceFreeformPropertySet) setBpClientFunc(f func(context.Context, string) (*apstra.FreeformClient, error)) {
+	o.getBpClientFunc = f
 }

@@ -24,25 +24,16 @@ type FreeformPropertySet struct {
 	Values      jsontypes.Normalized `tfsdk:"values"`
 }
 
-//func (o FreeformPropertySet) AttrTypes() map[string]attr.Type {
-//	return map[string]attr.Type{
-//		"blueprint_id": types.StringType,
-//		"id":           types.StringType,
-//		"name":         types.StringType,
-//		"data":         types.StringType,
-//	}
-//}
-
 func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
-				"the Blueprint that the Property Set has been imported into.",
+				"the Blueprint where the Property Set lives.",
 			Required:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an imported Property Set by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Freeform Property Set by `id`. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -54,19 +45,20 @@ func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.
 			},
 		},
 		"system_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "The system ID where the Property Set is associated.",
+			Computed:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up an imported Property Set by `name`. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "A map of values in the Property Set in JSON format",
+		"values": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "A map of values in the Property Set in JSON format.",
+			CustomType:          jsontypes.NormalizedType{},
 			Computed:            true,
-		},
-		"values": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "List of Keys that have been imported.",
-			Computed:            true,
-			ElementType:         types.StringType,
 		},
 	}
 }
@@ -74,27 +66,30 @@ func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.
 func (o FreeformPropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Used to identify the Blueprint that the Property Set is imported into.",
+			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Property Set ID to be imported.",
-			Required:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
-			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			MarkdownDescription: "ID of the Property Set.",
+			Computed:            true,
+		},
+		"system_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "The system ID where the Property Set is associated.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Property Set name as shown in the Web UI.",
-			Computed:            true,
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"values": resourceSchema.StringAttribute{
 			MarkdownDescription: "A map of values in the Property Set in JSON format.",
 			CustomType:          jsontypes.NormalizedType{},
-			Computed:            true,
+			Required:            true,
 		},
 	}
 }

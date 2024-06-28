@@ -13,7 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZone{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterRoutingZone{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterRoutingZone{}
 
 type dataSourceDatacenterRoutingZone struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -61,7 +61,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
-				"Routing Zone  not found",
+				"Routing Zone not found",
 				fmt.Sprintf("Routing Zone with ID %s not found", config.Id))
 			return
 		}

@@ -12,7 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaDashboard{}
-var _ datasourceWithSetBpClientFunc = &dataSourceBlueprintIbaDashboard{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceBlueprintIbaDashboard{}
 
 type dataSourceBlueprintIbaDashboard struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

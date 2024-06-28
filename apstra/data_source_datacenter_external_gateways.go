@@ -17,7 +17,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateways{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterExternalGateways{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterExternalGateways{}
 
 type dataSourceDatacenterExternalGateways struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
