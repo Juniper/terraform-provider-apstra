@@ -15,6 +15,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"sort"
+	"strings"
 )
 
 type PoolAllocation struct {
@@ -26,6 +28,9 @@ type PoolAllocation struct {
 }
 
 func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
+	sortedRoles := utils.AllResourceGroupNameStrings()
+	sort.Strings(sortedRoles)
+
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID of the Blueprint to which the Resource Pool should be allocated.",
@@ -43,9 +48,10 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 			},
 		},
 		"role": resourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric Role (Apstra Resource Group Name)",
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			MarkdownDescription: "Fabric Role (Apstra Resource Group Name) must be one of:\n\n  - " +
+				strings.Join(sortedRoles, "\n  - ") + "\n",
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{
 				stringvalidator.OneOf(
 					utils.AllResourceGroupNameStrings()...,
