@@ -84,11 +84,12 @@ var blueprintMutexes map[string]apstra.Mutex
 // mutex which we use to control access to blueprintMutexes
 var blueprintMutexesMutex sync.Mutex
 
-// map of blueprint clients keyed by blueprint ID
+// maps of blueprint clients keyed by blueprint ID
 var twoStageL3ClosClients map[string]apstra.TwoStageL3ClosClient
+var freeformClients map[string]apstra.FreeformClient
 
 // mutex which we use to control access to twoStageL3ClosClients
-var twoStageL3ClosClientsMutex sync.Mutex
+var blueprintClientsMutex sync.Mutex
 
 // Provider fulfils the provider.Provider interface
 type Provider struct {
@@ -106,6 +107,7 @@ type providerData struct {
 	bpLockFunc              func(context.Context, string) error
 	bpUnlockFunc            func(context.Context, string) error
 	getTwoStageL3ClosClient func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	getFreeformClient       func(context.Context, string) (*apstra.FreeformClient, error)
 	experimental            bool
 }
 
@@ -411,8 +413,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	// resource or data source.
 	getTwoStageL3ClosClient := func(ctx context.Context, bpId string) (*apstra.TwoStageL3ClosClient, error) {
 		// ensure exclusive access to the blueprint client cache
-		twoStageL3ClosClientsMutex.Lock()
-		defer twoStageL3ClosClientsMutex.Unlock()
+		blueprintClientsMutex.Lock()
+		defer blueprintClientsMutex.Unlock()
 
 		// do we already have this client?
 		if twoStageL3ClosClient, ok := twoStageL3ClosClients[bpId]; ok {
@@ -436,6 +438,33 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return twoStageL3ClosClient, nil
 	}
 
+	getFreeformClient := func(ctx context.Context, bpId string) (*apstra.FreeformClient, error) {
+		// ensure exclusive access to the blueprint client cache
+		blueprintClientsMutex.Lock()
+		defer blueprintClientsMutex.Unlock()
+
+		// do we already have this client?
+		if freeformClient, ok := freeformClients[bpId]; ok {
+			return &freeformClient, nil // client found. return it.
+		}
+
+		// create new client (this is the expensive-ish API call we're trying to avoid)
+		freeformClient, err := client.NewFreeformClient(ctx, apstra.ObjectId(bpId))
+		if err != nil {
+			return nil, err
+		}
+
+		// create the cache if necessary
+		if freeformClients == nil {
+			freeformClients = make(map[string]apstra.FreeformClient)
+		}
+
+		// save a copy of the client in the map / cache
+		freeformClients[bpId] = *freeformClient
+
+		return freeformClient, nil
+	}
+
 	// data passed to Resource and DataSource Configure() methods
 	pd := &providerData{
 		client:                  client,
@@ -444,6 +473,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		bpLockFunc:              bpLockFunc,
 		bpUnlockFunc:            bpUnlockFunc,
 		getTwoStageL3ClosClient: getTwoStageL3ClosClient,
+		getFreeformClient:       getFreeformClient,
 		experimental:            config.Experimental.ValueBool(),
 	}
 	resp.ResourceData = pd

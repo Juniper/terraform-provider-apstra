@@ -12,7 +12,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRack{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterRack{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRack{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterRack{}
 
 type resourceDatacenterRack struct {

@@ -14,7 +14,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterExternalGateway{}
 var _ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterExternalGateway{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterExternalGateway{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterExternalGateway{}
 
 type resourceDatacenterExternalGateway struct {

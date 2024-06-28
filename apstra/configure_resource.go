@@ -12,9 +12,14 @@ type resourceWithSetClient interface {
 	setClient(*apstra.Client)
 }
 
-type resourceWithSetBpClientFunc interface {
+type resourceWithSetDcBpClientFunc interface {
 	resource.ResourceWithConfigure
 	setBpClientFunc(func(context.Context, string) (*apstra.TwoStageL3ClosClient, error))
+}
+
+type resourceWithSetFfBpClientFunc interface {
+	resource.ResourceWithConfigure
+	setBpClientFunc(func(context.Context, string) (*apstra.FreeformClient, error))
 }
 
 type resourceWithSetBpLockFunc interface {
@@ -61,8 +66,16 @@ func configureResource(_ context.Context, rs resource.ResourceWithConfigure, req
 		rs.setClient(pd.client)
 	}
 
-	if rs, ok := rs.(resourceWithSetBpClientFunc); ok {
+	if rs, ok := rs.(resourceWithSetDcBpClientFunc); ok {
 		rs.setBpClientFunc(pd.getTwoStageL3ClosClient)
+	}
+
+	if rs, ok := rs.(resourceWithSetDcBpClientFunc); ok {
+		rs.setBpClientFunc(pd.getTwoStageL3ClosClient)
+	}
+
+	if rs, ok := rs.(resourceWithSetFfBpClientFunc); ok {
+		rs.setBpClientFunc(pd.getFreeformClient)
 	}
 
 	if rs, ok := rs.(resourceWithSetBpLockFunc); ok {

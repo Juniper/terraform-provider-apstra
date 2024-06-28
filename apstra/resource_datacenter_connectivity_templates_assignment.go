@@ -12,7 +12,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplatesAssignment{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
 
 type resourceDatacenterConnectivityTemplatesAssignment struct {

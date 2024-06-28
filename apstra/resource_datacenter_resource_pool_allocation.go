@@ -12,7 +12,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
-var _ resourceWithSetBpClientFunc = &resourceResourcePoolAllocation{}
+var _ resourceWithSetDcBpClientFunc = &resourceResourcePoolAllocation{}
 var _ resourceWithSetBpLockFunc = &resourceResourcePoolAllocation{}
 
 type resourceResourcePoolAllocation struct {

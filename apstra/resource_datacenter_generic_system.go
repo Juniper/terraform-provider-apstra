@@ -18,7 +18,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
 var _ resource.ResourceWithValidateConfig = &resourceDatacenterGenericSystem{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterGenericSystem{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterGenericSystem{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterGenericSystem{}
 
 type resourceDatacenterGenericSystem struct {
