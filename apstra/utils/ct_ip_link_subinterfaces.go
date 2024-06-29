@@ -56,9 +56,6 @@ func GetCtIpLinkSubinterfaces(ctx context.Context, client *apstra.TwoStageL3Clos
 		Match(iplQuery).
 		Match(siQuery)
 
-	qs := query.String()
-	_ = qs
-
 	// collect the query response here
 	var queryResponse struct {
 		Items []struct {
