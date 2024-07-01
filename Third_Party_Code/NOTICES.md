@@ -791,11 +791,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ```
 
-## github.com/golang/protobuf
+## github.com/golang/protobuf/ptypes/empty
 
-* Name: github.com/golang/protobuf
-* Version: v1.5.3
-* License: [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.3/LICENSE)
+* Name: github.com/golang/protobuf/ptypes/empty
+* Version: v1.5.4
+* License: [BSD-3-Clause](https://github.com/golang/protobuf/blob/v1.5.4/LICENSE)
 
 ```
 Copyright 2010 The Go Authors.  All rights reserved.
@@ -5418,8 +5418,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.5.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.5.0/LICENSE)
+* Version: v1.9.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.9.0/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -6920,8 +6920,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.21.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.21.0/LICENSE)
+* Version: v0.23.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.23.0/LICENSE)
 
 ```
 Copyright (c) 2020 HashiCorp, Inc.
@@ -10187,8 +10187,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.19.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.19.0:LICENSE)
+* Version: v0.21.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.21.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10298,8 +10298,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.21.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.21.0:LICENSE)
+* Version: v0.23.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.23.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10372,8 +10372,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20240213162025-012b6fc9bca9
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/012b6fc9bca9/googleapis/rpc/LICENSE)
+* Version: v0.0.0-20240227224415-6ceb2ff114de
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/6ceb2ff114de/googleapis/rpc/LICENSE)
 
 ```
 
@@ -10584,8 +10584,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.61.0
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.61.0/LICENSE)
+* Version: v1.63.2
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.63.2/LICENSE)
 
 ```
 
@@ -10796,8 +10796,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.32.0
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.32.0/LICENSE)
+* Version: v1.34.0
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.34.0/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.

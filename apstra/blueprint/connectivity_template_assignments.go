@@ -17,6 +17,7 @@ type ConnectivityTemplateAssignments struct {
 	BlueprintId            types.String `tfsdk:"blueprint_id"`
 	ConnectivityTemplateId types.String `tfsdk:"connectivity_template_id"`
 	ApplicationPointIds    types.Set    `tfsdk:"application_point_ids"`
+	//IpLinkInfos            types.Map    `tfsdk:"ip_link_infos"`
 }
 
 func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -43,6 +44,27 @@ func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourc
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
+		//"ip_link_infos": resourceSchema.MapAttribute{
+		//	MarkdownDescription: "This is a Map of Application Point ID to Map of VLAN to IP Info. Outer map keys must " +
+		//		"be values which appear in the `application_point_ids` attribute. Inner map keys are VLAN numbers in " +
+		//		"the range 0 - 4904 which are specified by IP Link primitives in the Connectivity Template. VLAN \"0\" " +
+		//		"stands in for \"Untagged\" IP Link primitives.",
+		//	ElementType: types.MapType{
+		//		ElemType: types.ObjectType{
+		//			AttrTypes: IpLinkIps{}.AttrTypes(),
+		//		},
+		//	},
+		//	Optional: true,
+		//},
+		//"ip_link_infos": resourceSchema.MapNestedAttribute{
+		//	MarkdownDescription: "This is a Map of Application Point ID to Map of VLAN to IP Info. Outer map keys must " +
+		//		"be values which appear in the `application_point_ids` attribute. Inner map keys are VLAN numbers in " +
+		//		"the range 0 - 4904 which are specified by IP Link primitives in the Connectivity Template. VLAN \"0\" " +
+		//		"stands in for \"Untagged\" IP Link primitives.",
+		//	NestedObject: resourceSchema.MapNestedAttribute{
+		//	},
+		//	Optional:     true,
+		//},
 	}
 }
 
@@ -88,3 +110,69 @@ func (o *ConnectivityTemplateAssignments) Request(ctx context.Context, state *Co
 
 	return result
 }
+
+//func (o *ConnectivityTemplateAssignments) SetSubinterfaces(ctx context.Context, oState *ConnectivityTemplateAssignments, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+//	if oState != nil && o.ApplicationPointIds.Equal(oState.ApplicationPointIds) {
+//		return // no changes required
+//	}
+//
+//	// extract the config into a two-dimensional ip_link_infos map
+//	var config map[string]map[string]IpLinkIps
+//	diags.Append(o.IpLinkInfos.ElementsAs(ctx, &config, false)...)
+//	if diags.HasError() {
+//		return
+//	}
+//
+//	//// extract the state into a two-dimensional ip_link_infos map
+//	//var state map[string]map[string]IpLinkIps
+//	//if state != nil {
+//	//	diags.Append(oState.IpLinkInfos.ElementsAs(ctx, &state, false)...)
+//	//	if diags.HasError() {
+//	//		return
+//	//	}
+//	//}
+//
+//	// extract apIds - these are the valid keys for the outer map
+//	var apIds []apstra.ObjectId
+//	diags.Append(o.ApplicationPointIds.ElementsAs(ctx, &apIds, false)...)
+//	if diags.HasError() {
+//		return
+//	}
+//
+//	for _, ap := range apIds {
+//		vlanToSubinterfaces := utils.GetCtIpLinkSubinterfaces(ctx, bp, apstra.ObjectId(o.ConnectivityTemplateId.ValueString()), ap, diags)
+//		if diags.HasError() {
+//			return
+//		}
+//
+//		update := make(map[apstra.ObjectId]apstra.TwoStageL3ClosSubinterface)
+//		for vlan, siId := range vlanToSubinterfaces {
+//			ipInfo, ok := config[ap.String()][strconv.Itoa(int(vlan))]
+//			if !ok {
+//				continue // no configuration specified for this subinterface
+//			}
+//
+//			update[siId] = apstra.TwoStageL3ClosSubinterface{}
+//
+//		}
+//
+//		err := bp.UpdateSubinterfaces(ctx, update)
+//
+//	}
+//
+//	//extractSubinterfaceIdsByVlan := func(assignments *ConnectivityTemplateAssignments) map[int64]IpLinkIps {
+//	//	if assignments == nil {
+//	//		return nil
+//	//	}
+//	//
+//	//	var result map[int64]IpLinkIps
+//	//
+//	//	return nil
+//	//}
+//	//
+//	//vlanToSubinterfaces := utils.GetCtIpLinkSubinterfaces(ctx, bp, "", "", diags)
+//	//if diags.HasError() {
+//	//	return
+//	//}
+//
+//}
