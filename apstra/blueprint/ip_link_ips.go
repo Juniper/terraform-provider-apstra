@@ -1,14 +1,13 @@
 package blueprint
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
 type IpLinkIps struct {
-	//Vlan       types.Int64          `tfsdk:"vlan"`
+	// Vlan       types.Int64          `tfsdk:"vlan"`
 	SwitchIpv4 cidrtypes.IPv4Prefix `tfsdk:"switch_ipv4"`
 	PeerIpv4   cidrtypes.IPv4Prefix `tfsdk:"peer_ipv4"`
 	SwitchIpv6 cidrtypes.IPv6Prefix `tfsdk:"switch_ipv6"`
@@ -66,7 +65,7 @@ func (o *IpLinkIps) ResourceAttributes() map[string]resourceSchema.Attribute {
 //
 //}
 
-func (o *IpLinkIps) request() *apstra.TwoStageL3ClosSubinterface{
-	var result apstra.TwoStageL3ClosSubinterface
-	result.
-}
+//func (o *IpLinkIps) request() *apstra.TwoStageL3ClosSubinterface{
+//	var result apstra.TwoStageL3ClosSubinterface
+//	result.
+//}

@@ -1,6 +1,10 @@
 package utils
 
-import "github.com/Juniper/apstra-go-sdk/apstra"
+import (
+	"sort"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+)
 
 func AllInterfaceNumberingIpv4Types() []string {
 	members := apstra.InterfaceNumberingIpv4Types.Members()
@@ -9,6 +13,7 @@ func AllInterfaceNumberingIpv4Types() []string {
 		result[i] = StringersToFriendlyString(member)
 	}
 
+	sort.Strings(result)
 	return result
 }
 
@@ -19,5 +24,6 @@ func AllInterfaceNumberingIpv6Types() []string {
 		result[i] = StringersToFriendlyString(member)
 	}
 
+	sort.Strings(result)
 	return result
 }

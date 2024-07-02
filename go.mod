@@ -8,7 +8,7 @@ toolchain go1.21.1
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20240702143435-8faf43c4bcb5
+	github.com/Juniper/apstra-go-sdk v0.0.0-20240702234852-df533bbdf346
 	github.com/apparentlymart/go-cidr v1.1.0
 	github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4
 	github.com/google/go-cmp v0.6.0
