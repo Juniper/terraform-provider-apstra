@@ -219,6 +219,14 @@ func randomIPs(t testing.TB, n int, ipv4Cidr, ipv6Cidr string) []string {
 	return result
 }
 
+func randomStrings(strCount int, strLen int) []string {
+	result := make([]string, strCount)
+	for i := 0; i < strCount; i++ {
+		result[i] = acctest.RandString(strLen)
+	}
+	return result
+}
+
 type lineNumberer struct {
 	lines []string
 	base  int

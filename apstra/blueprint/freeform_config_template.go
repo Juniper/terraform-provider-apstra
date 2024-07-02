@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 )
 
 type FreeformConfigTemplate struct {
@@ -21,7 +22,6 @@ type FreeformConfigTemplate struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Name        types.String `tfsdk:"name"`
 	Text        types.String `tfsdk:"text"`
-	TemplateId  types.String `tfsdk:"template_id"`
 	Tags        types.Set    `tfsdk:"tags"`
 }
 
@@ -44,11 +44,6 @@ func (o FreeformConfigTemplate) DataSourceAttributes() map[string]dataSourceSche
 					path.MatchRoot("name"),
 				}...),
 			},
-		},
-		"template_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "The Template ID of the configuration template in global catalog\n",
-			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up an imported Config Template by `name`. Required when `id` is omitted.",
@@ -81,17 +76,15 @@ func (o FreeformConfigTemplate) ResourceAttributes() map[string]resourceSchema.A
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Config Template.",
 			Computed:            true,
-		},
-		"template_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "The template ID of the config template in the global catalog.",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Config Template name as shown in the Web UI.",
+			MarkdownDescription: "Config Template name as shown in the Web UI. Must end with `.jinja`.",
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(7),
+				stringvalidator.RegexMatches(regexp.MustCompile(".jinja$"), "must end with '.jinja'"),
+			},
 		},
 		"text": resourceSchema.StringAttribute{
 			MarkdownDescription: "Configuration Jinja2 template text",
@@ -115,16 +108,14 @@ func (o *FreeformConfigTemplate) Request(ctx context.Context, diags *diag.Diagno
 	}
 
 	return &apstra.ConfigTemplateData{
-		Label:      o.Name.ValueString(),
-		Text:       o.Text.ValueString(),
-		Tags:       tags,
-		TemplateId: apstra.ObjectId(o.TemplateId.ValueString()),
+		Label: o.Name.ValueString(),
+		Text:  o.Text.ValueString(),
+		Tags:  tags,
 	}
 }
 
 func (o *FreeformConfigTemplate) LoadApiData(ctx context.Context, in *apstra.ConfigTemplateData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Text = types.StringValue(in.Text)
-	o.TemplateId = types.StringValue(string(in.TemplateId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }
