@@ -228,3 +228,18 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 
 	return bpClient
 }
+
+func FfBlueprintA(t testing.TB, ctx context.Context) *apstra.FreeformClient {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	id, err := client.CreateFreeformBlueprint(ctx, acctest.RandString(6))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+
+	bpClient, err := client.NewFreeformClient(ctx, id)
+	require.NoError(t, err)
+
+	return bpClient
+}
