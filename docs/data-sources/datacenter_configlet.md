@@ -16,10 +16,11 @@ At least one optional attribute is required.
 ## Example Usage
 
 ```terraform
-# This example uses the `apstra_datacenter_configlets` data source to get a list
-# of all imported configlets, and then uses the apstra_datacenter_configlet data source
-# to inspect the results
+data "apstra_freeform_config_template" "interfaces" {
+  blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
+  name         = "interfaces.jinja"
 
+}
 
 data "apstra_datacenter_blueprint" "b" {
   name = "test"
