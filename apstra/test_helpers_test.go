@@ -4,6 +4,7 @@ package tfapstra_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -225,6 +226,22 @@ func randomStrings(strCount int, strLen int) []string {
 		result[i] = acctest.RandString(strLen)
 	}
 	return result
+}
+
+func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage {
+	t.Helper()
+	preResult := make(map[string]any)
+	for i := 0; i < count; i++ {
+		if rand.Int()%2 == 0 {
+			preResult["a"+acctest.RandString(strLen-1)] = rand.Intn(maxInt)
+		} else {
+			preResult["a"+acctest.RandString(strLen-1)] = acctest.RandString(strLen)
+		}
+	}
+	marshalResult, err := json.Marshal(&preResult)
+	require.NoError(t, err)
+
+	return marshalResult
 }
 
 type lineNumberer struct {

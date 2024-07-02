@@ -11,6 +11,7 @@ var (
 	ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
 	ResourceDatacenterRoutingZone   = resourceDatacenterRoutingZone{}
 	ResourceFreeformConfigTemplate  = resourceFreeformConfigTemplate{}
+	ResourceFreeformPropertySet     = resourceFreeformPropertySet{}
 	ResourceIpv4Pool                = resourceIpv4Pool{}
 	ResourceTemplatePodBased        = resourceTemplatePodBased{}
 	ResourceTemplateCollapsed       = resourceTemplateCollapsed{}
