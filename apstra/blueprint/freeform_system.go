@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -85,6 +86,7 @@ func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 }
 
 func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
+	hostnameRegexp := "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$"
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -100,29 +102,33 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Freeform System name as shown in the Web UI.",
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_")},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "Hostname of the Freeform System.",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Required:            true,
+			Validators: []validator.String{
+				stringvalidator.RegexMatches(regexp.MustCompile(hostnameRegexp), "must match regex "+hostnameRegexp),
+			},
 		},
-		"deploy_mode": dataSourceSchema.StringAttribute{
+		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "Deploy mode of the System",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
-		"type": dataSourceSchema.StringAttribute{
+		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`", apstra.SystemTypeInternal, apstra.SystemTypeExternal),
 			Required:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.OneOf(apstra.SystemTypeInternal.String(), apstra.SystemTypeExternal.String())},
 		},
-		"device_profile_id": dataSourceSchema.StringAttribute{
+		"device_profile_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device profile ID of the System",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"system_id": dataSourceSchema.StringAttribute{
+		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID (usually serial number) of the Managed Device to associate with this System",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -166,7 +172,7 @@ func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *
 func (o *FreeformSystem) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Hostname = types.StringValue(in.Hostname)
-	o.Type = types.StringValue(string(rune(in.Type)))
+	o.Type = types.StringValue(in.Type.String())
 	o.DeviceProfileId = types.StringValue(string(in.DeviceProfileId))
 	o.SystemId = types.StringPointerValue((*string)(in.SystemId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here

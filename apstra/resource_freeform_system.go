@@ -3,7 +3,6 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
