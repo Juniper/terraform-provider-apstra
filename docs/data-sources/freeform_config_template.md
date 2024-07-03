@@ -32,10 +32,10 @@ data "apstra_freeform_config_template" "interfaces" {
 
 ### Optional
 
-- `id` (String) Populate this field to look up the Config Template by `id`. Required when `name` is omitted.
-- `name` (String) Populate this field to look up an imported Config Template by `name`. Required when `id` is omitted.
-- `tags` (Set of String) Set of Tag labels
+- `id` (String) Populate this field to look up the Config Template by ID. Required when `name` is omitted.
+- `name` (String) Populate this field to look up an imported Config Template by Name. Required when `id` is omitted.
 
 ### Read-Only
 
+- `tags` (Set of String) Set of Tag labels
 - `text` (String) Configuration Jinja2 template text

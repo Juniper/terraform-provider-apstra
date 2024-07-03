@@ -19,9 +19,9 @@ const (
 	resourceFreeformConfigTemplateHcl = `
 resource %q %q {
   blueprint_id = %q
-  name = %q
-  text = %q
-  tags = %s
+  name         = %q
+  text         = %q
+  tags         = %s
 }
 `
 )

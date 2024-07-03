@@ -70,10 +70,6 @@ func configureResource(_ context.Context, rs resource.ResourceWithConfigure, req
 		rs.setBpClientFunc(pd.getTwoStageL3ClosClient)
 	}
 
-	if rs, ok := rs.(resourceWithSetDcBpClientFunc); ok {
-		rs.setBpClientFunc(pd.getTwoStageL3ClosClient)
-	}
-
 	if rs, ok := rs.(resourceWithSetFfBpClientFunc); ok {
 		rs.setBpClientFunc(pd.getFreeformClient)
 	}

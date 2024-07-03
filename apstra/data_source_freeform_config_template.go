@@ -34,6 +34,7 @@ func (o *dataSourceFreeformConfigTemplate) Schema(_ context.Context, _ datasourc
 		Attributes: blueprint.FreeformConfigTemplate{}.DataSourceAttributes(),
 	}
 }
+
 func (o *dataSourceFreeformConfigTemplate) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config blueprint.FreeformConfigTemplate
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)

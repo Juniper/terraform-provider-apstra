@@ -34,7 +34,7 @@ func (o FreeformConfigTemplate) DataSourceAttributes() map[string]dataSourceSche
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Config Template by `id`. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Config Template by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -46,7 +46,7 @@ func (o FreeformConfigTemplate) DataSourceAttributes() map[string]dataSourceSche
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an imported Config Template by `name`. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up an imported Config Template by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -54,13 +54,11 @@ func (o FreeformConfigTemplate) DataSourceAttributes() map[string]dataSourceSche
 		"text": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Configuration Jinja2 template text",
 			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"tags": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Tag labels",
 			ElementType:         types.StringType,
-			Optional:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Computed:            true,
 		},
 	}
 }

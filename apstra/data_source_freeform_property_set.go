@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceFreeformPropertySet{}
@@ -28,7 +29,7 @@ func (o *dataSourceFreeformPropertySet) Configure(ctx context.Context, req datas
 
 func (o *dataSourceFreeformPropertySet) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform PropertySet.\n\n" +
+		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Property Set.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.FreeformPropertySet{}.DataSourceAttributes(),
 	}
@@ -81,6 +82,7 @@ func (o *dataSourceFreeformPropertySet) Read(ctx context.Context, req datasource
 		return
 	}
 
+	config.Id = types.StringValue(api.Id.String())
 	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return

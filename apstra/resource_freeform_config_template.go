@@ -118,7 +118,6 @@ func (o *resourceFreeformConfigTemplate) Read(ctx context.Context, req resource.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update resource
 func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan blueprint.FreeformConfigTemplate
@@ -162,7 +161,6 @@ func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete resource
 func (o *resourceFreeformConfigTemplate) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state blueprint.FreeformConfigTemplate
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -174,8 +172,7 @@ func (o *resourceFreeformConfigTemplate) Delete(ctx context.Context, req resourc
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
-			return
+			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
