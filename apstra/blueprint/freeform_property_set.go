@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"

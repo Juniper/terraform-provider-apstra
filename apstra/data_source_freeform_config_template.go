@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceFreeformConfigTemplate{}
-var _ datasourceWithSetFfBpClientFunc = &dataSourceFreeformConfigTemplate{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceFreeformConfigTemplate{}
+	_ datasourceWithSetFfBpClientFunc    = &dataSourceFreeformConfigTemplate{}
+)
 
 type dataSourceFreeformConfigTemplate struct {
 	getBpClientFunc func(context.Context, string) (*apstra.FreeformClient, error)
