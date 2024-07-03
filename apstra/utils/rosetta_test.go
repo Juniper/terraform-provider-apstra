@@ -41,6 +41,10 @@ func TestRosetta(t *testing.T) {
 		{string: "vni_virtual_network_ids", stringers: []fmt.Stringer{apstra.ResourceGroupNameVxlanVnIds}},
 		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4}},
 		{string: "leaf_l3_peer_links_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6}},
+
+		//{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSpineLeafIp6}},             // todo: enable_rosetta_for_pools_with_leading_ipv6
+		//{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}}, // todo: enable_rosetta_for_pools_with_leading_ipv6
+		//{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},        // todo: enable_rosetta_for_pools_with_leading_ipv6
 	}
 
 	for i, tc := range testCases {

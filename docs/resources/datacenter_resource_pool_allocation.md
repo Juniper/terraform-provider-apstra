@@ -65,7 +65,39 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
 
 - `blueprint_id` (String) Apstra ID of the Blueprint to which the Resource Pool should be allocated.
 - `pool_ids` (Set of String) Apstra IDs of the Resource Pools to be allocated to the given Blueprint role.
-- `role` (String) Fabric Role (Apstra Resource Group Name)
+- `role` (String) Fabric Role (Apstra Resource Group Name) must be one of:
+
+  - access_asns
+  - access_l3_peer_link_link_ips
+  - access_loopback_ips
+  - evpn_l3_vnis
+  - generic_asns
+  - generic_loopback_ips
+  - generic_loopback_ips_ipv6
+  - ipv6_spine_leaf_link_ips
+  - ipv6_spine_superspine_link_ips
+  - ipv6_to_generic_link_ips
+  - leaf_asns
+  - leaf_l3_peer_links
+  - leaf_l3_peer_links_ipv6
+  - leaf_leaf_link_ips
+  - leaf_loopback_ips
+  - leaf_loopback_ips_ipv6
+  - mlag_domain_svi_subnets
+  - mlag_domain_svi_subnets_ipv6
+  - spine_asns
+  - spine_leaf_link_ips
+  - spine_loopback_ips
+  - spine_loopback_ips_ipv6
+  - spine_superspine_link_ips
+  - superspine_asns
+  - superspine_loopback_ips
+  - superspine_loopback_ips_ipv6
+  - to_generic_link_ips
+  - virtual_network_svi_subnets
+  - virtual_network_svi_subnets_ipv6
+  - vni_virtual_network_ids
+  - vtep_ips
 
 ### Optional
 
