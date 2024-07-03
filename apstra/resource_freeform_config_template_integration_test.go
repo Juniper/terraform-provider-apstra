@@ -5,23 +5,24 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"testing"
+
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"math/rand"
-	"strconv"
-	"testing"
 )
 
 const (
 	resourceFreeformConfigTemplateHcl = `
 resource %q %q {
   blueprint_id = %q
-  name = %q
-  text = %q
-  tags = %s
+  name         = %q
+  text         = %q
+  tags         = %s
 }
 `
 )

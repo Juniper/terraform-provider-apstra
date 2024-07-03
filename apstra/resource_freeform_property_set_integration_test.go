@@ -6,12 +6,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"testing"
+
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"testing"
 )
 
 const (
@@ -28,7 +29,7 @@ resource %q %q {
 type resourceFreeformPropertySet struct {
 	blueprintId string
 	name        string
-	system_id   string
+	systemId    string
 	values      json.RawMessage
 }
 
@@ -36,7 +37,7 @@ func (o resourceFreeformPropertySet) render(rType, rName string) string {
 	return fmt.Sprintf(resourceFreeformPropertySetHcl,
 		rType, rName,
 		o.blueprintId,
-		stringOrNull(o.system_id),
+		stringOrNull(o.systemId),
 		o.name,
 		string(o.values),
 	)
@@ -51,8 +52,8 @@ func (o resourceFreeformPropertySet) testChecks(t testing.TB, rType, rName strin
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
 	result.append(t, "TestCheckResourceAttr", "values", string(o.values))
 
-	if o.system_id != "" {
-		result.append(t, "TestCheckResourceAttr", "system_id", o.system_id)
+	if o.systemId != "" {
+		result.append(t, "TestCheckResourceAttr", "system_id", o.systemId)
 	}
 
 	return result

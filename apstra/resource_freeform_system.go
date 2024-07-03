@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceFreeformSystem{}
-var _ resourceWithSetFfBpClientFunc = &resourceFreeformSystem{}
-var _ resourceWithSetBpLockFunc = &resourceFreeformSystem{}
+var (
+	_ resource.ResourceWithConfigure = &resourceFreeformSystem{}
+	_ resourceWithSetFfBpClientFunc  = &resourceFreeformSystem{}
+	_ resourceWithSetBpLockFunc      = &resourceFreeformSystem{}
+)
 
 type resourceFreeformSystem struct {
 	getBpClientFunc func(context.Context, string) (*apstra.FreeformClient, error)
@@ -118,7 +121,6 @@ func (o *resourceFreeformSystem) Read(ctx context.Context, req resource.ReadRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update resource
 func (o *resourceFreeformSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan blueprint.FreeformSystem
@@ -158,11 +160,11 @@ func (o *resourceFreeformSystem) Update(ctx context.Context, req resource.Update
 		resp.Diagnostics.AddError("error updating Freeform System", err.Error())
 		return
 	}
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete resource
 func (o *resourceFreeformSystem) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state blueprint.FreeformSystem
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -174,8 +176,7 @@ func (o *resourceFreeformSystem) Delete(ctx context.Context, req resource.Delete
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
-			return
+			return // 404 is okay
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return

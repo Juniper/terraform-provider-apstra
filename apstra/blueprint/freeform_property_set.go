@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -33,7 +34,7 @@ func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Freeform Property Set by `id`. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up a Freeform Property Set by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -50,7 +51,7 @@ func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up an imported Property Set by `name`. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up an imported Property Set by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -74,6 +75,7 @@ func (o FreeformPropertySet) ResourceAttributes() map[string]resourceSchema.Attr
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Property Set.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "The system ID where the Property Set is associated.",

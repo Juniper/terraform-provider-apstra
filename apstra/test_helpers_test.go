@@ -230,7 +230,8 @@ func randomStrings(strCount int, strLen int) []string {
 
 func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage {
 	t.Helper()
-	preResult := make(map[string]any)
+
+	preResult := make(map[string]any, count)
 	for i := 0; i < count; i++ {
 		if rand.Int()%2 == 0 {
 			preResult["a"+acctest.RandString(strLen-1)] = rand.Intn(maxInt)
@@ -238,10 +239,11 @@ func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage
 			preResult["a"+acctest.RandString(strLen-1)] = acctest.RandString(strLen)
 		}
 	}
-	marshalResult, err := json.Marshal(&preResult)
+
+	result, err := json.Marshal(&preResult)
 	require.NoError(t, err)
 
-	return marshalResult
+	return result
 }
 
 type lineNumberer struct {

@@ -26,6 +26,12 @@ const (
 	resourceGroupNameVxlanVnIds          = "vni_virtual_network_ids"
 	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
 	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
+
+	// search for todos with 'enable_rosetta_for_pools_with_leading_ipv6' to enable rosetta for these items.
+	// total 18 occurences between this file and the test file
+	// resourceGroupNameSpineLeafLinkIpv6       = "spine_leaf_link_ips_ipv6"       // todo: enable_rosetta_for_pools_with_leading_ipv6
+	// resourceGroupNameSpineSuperspineLinkIpv6 = "spine_superspine_link_ips_ipv6" // todo: enable_rosetta_for_pools_with_leading_ipv6
+	// resourceGroupNameToGenericLinkIpv6       = "to_generic_link_ips_ipv6"       // todo: enable_rosetta_for_pools_with_leading_ipv6
 )
 
 type StringerWithFromString interface {
@@ -173,6 +179,12 @@ func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 		return resourceGroupNameLeafL3PeerLinksIpv6
 	case apstra.ResourceGroupNameVxlanVnIds:
 		return resourceGroupNameVxlanVnIds
+		// case apstra.ResourceGroupNameSpineLeafIp6: //       todo: enable_rosetta_for_pools_with_leading_ipv6
+		//	return resourceGroupNameSpineLeafLinkIpv6 //       todo: enable_rosetta_for_pools_with_leading_ipv6
+		// case apstra.ResourceGroupNameSuperspineSpineIp6: // todo: enable_rosetta_for_pools_with_leading_ipv6
+		//	return resourceGroupNameSpineSuperspineLinkIpv6 // todo: enable_rosetta_for_pools_with_leading_ipv6
+		// case apstra.ResourceGroupNameToGenericLinkIpv6: //  todo: enable_rosetta_for_pools_with_leading_ipv6
+		//	return resourceGroupNameToGenericLinkIpv6 //       todo: enable_rosetta_for_pools_with_leading_ipv6
 	}
 
 	return in.String()
@@ -292,6 +304,12 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6
 	case resourceGroupNameVxlanVnIds:
 		*target = apstra.ResourceGroupNameVxlanVnIds
+	// case resourceGroupNameSpineLeafLinkIpv6: //              todo: enable_rosetta_for_pools_with_leading_ipv6
+	//	*target = apstra.ResourceGroupNameSpineLeafIp6 //       todo: enable_rosetta_for_pools_with_leading_ipv6
+	// case resourceGroupNameSpineSuperspineLinkIpv6: //        todo: enable_rosetta_for_pools_with_leading_ipv6
+	//	*target = apstra.ResourceGroupNameSuperspineSpineIp6 // todo: enable_rosetta_for_pools_with_leading_ipv6
+	// case resourceGroupNameToGenericLinkIpv6: //              todo: enable_rosetta_for_pools_with_leading_ipv6
+	//	*target = apstra.ResourceGroupNameToGenericLinkIpv6 //  todo: enable_rosetta_for_pools_with_leading_ipv6
 	default:
 		return target.FromString(in[0])
 	}

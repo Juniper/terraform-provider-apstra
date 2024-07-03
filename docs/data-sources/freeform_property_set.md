@@ -2,13 +2,13 @@
 page_title: "apstra_freeform_property_set Data Source - terraform-provider-apstra"
 subcategory: "Reference Design: Freeform"
 description: |-
-  This data source provides details of a specific Freeform PropertySet.
+  This data source provides details of a specific Freeform Property Set.
   At least one optional attribute is required.
 ---
 
 # apstra_freeform_property_set (Data Source)
 
-This data source provides details of a specific Freeform PropertySet.
+This data source provides details of a specific Freeform Property Set.
 
 At least one optional attribute is required.
 
@@ -57,8 +57,8 @@ output "foo" {value = data.apstra_freeform_property_set.foo}
 
 ### Optional
 
-- `id` (String) Populate this field to look up a Freeform Property Set by `id`. Required when `name` is omitted.
-- `name` (String) Populate this field to look up an imported Property Set by `name`. Required when `id` is omitted.
+- `id` (String) Populate this field to look up a Freeform Property Set by ID. Required when `name` is omitted.
+- `name` (String) Populate this field to look up an imported Property Set by Name. Required when `id` is omitted.
 
 ### Read-Only
 

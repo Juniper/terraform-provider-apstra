@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
@@ -64,10 +65,6 @@ func configureResource(_ context.Context, rs resource.ResourceWithConfigure, req
 
 	if rs, ok := rs.(resourceWithSetClient); ok {
 		rs.setClient(pd.client)
-	}
-
-	if rs, ok := rs.(resourceWithSetDcBpClientFunc); ok {
-		rs.setBpClientFunc(pd.getTwoStageL3ClosClient)
 	}
 
 	if rs, ok := rs.(resourceWithSetDcBpClientFunc); ok {

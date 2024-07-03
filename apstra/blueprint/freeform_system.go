@@ -2,6 +2,8 @@ package blueprint
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -37,7 +39,7 @@ func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Freeform System by `id`. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Freeform System by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -49,7 +51,7 @@ func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up System by `name`. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up System by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -77,7 +79,7 @@ func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 		"tags": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Tag labels",
 			ElementType:         types.StringType,
-			Optional:            true,
+			Computed:            true,
 		},
 	}
 }
@@ -98,34 +100,30 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Freeform System name as shown in the Web UI.",
 			Required:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "Hostname of the Freeform System.",
 			Optional:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"deploy_mode": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "deploy mode of the System",
+			MarkdownDescription: "Deploy mode of the System",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "type of the System, either Internal or External",
+			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`", apstra.SystemTypeInternal, apstra.SystemTypeExternal),
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(apstra.SystemTypeInternal.String(), apstra.SystemTypeExternal.String())},
 		},
 		"device_profile_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "device profile ID of the System",
+			MarkdownDescription: "Device profile ID of the System",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"system_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Device System ID assigned to the System",
+			MarkdownDescription: "ID (usually serial number) of the Managed Device to associate with this System",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
