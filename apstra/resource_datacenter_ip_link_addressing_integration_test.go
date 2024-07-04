@@ -134,6 +134,35 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	// discover IPv4 and IPv6 pools
+	ip4PoolIds, err := bp.Client().ListIp4PoolIds(ctx)
+	require.NoError(t, err)
+	require.Greater(t, len(ip4PoolIds), 0)
+	ip6PoolIds, err := bp.Client().ListIp6PoolIds(ctx)
+	require.NoError(t, err)
+	require.Greater(t, len(ip6PoolIds), 0)
+
+	// assign IPv4 and IPv6 pools to routing zones
+	for _, rzId := range rzIds {
+		rzId := rzId
+		require.NoError(t, bp.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+			ResourceGroup: apstra.ResourceGroup{
+				Type:           apstra.ResourceTypeIp4Pool,
+				Name:           apstra.ResourceGroupNameToGenericLinkIpv4,
+				SecurityZoneId: &rzId,
+			},
+			PoolIds: ip4PoolIds,
+		}))
+		require.NoError(t, bp.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+			ResourceGroup: apstra.ResourceGroup{
+				Type:           apstra.ResourceTypeIp6Pool,
+				Name:           apstra.ResourceGroupNameToGenericLinkIpv6,
+				SecurityZoneId: &rzId,
+			},
+			PoolIds: ip6PoolIds,
+		}))
+	}
+
 	// prep Connectivity Template subpolicies
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(rzIds))
 	for i, rzId := range rzIds {
@@ -206,13 +235,113 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 		versionConstraints version.Constraints
 	}
 
+	var slash31otherEnd net.IPNet
+	getSlash31Endpoint := func() *net.IPNet {
+		if slash31otherEnd.IP != nil {
+			var result net.IPNet
+			result.IP = make([]byte, len(slash31otherEnd.IP))
+			result.Mask = make([]byte, len(slash31otherEnd.Mask))
+			copy(result.IP, slash31otherEnd.IP)
+			copy(result.Mask, slash31otherEnd.Mask)
+			slash31otherEnd = net.IPNet{}
+			return &result
+		}
+
+		result := randomSlash31(t, "192.0.2.0/24")
+		slash31otherEnd.IP = make([]byte, len(result.IP))
+		slash31otherEnd.Mask = make([]byte, len(result.Mask))
+		copy(slash31otherEnd.IP, result.IP)
+		copy(slash31otherEnd.Mask, result.Mask)
+		slash31otherEnd.IP[3]++
+		return &result
+	}
+
+	var slash127otherEnd net.IPNet
+	getSlash127Endpoint := func() *net.IPNet {
+		if slash127otherEnd.IP != nil {
+			var result net.IPNet
+			result.IP = make([]byte, len(slash127otherEnd.IP))
+			result.Mask = make([]byte, len(slash127otherEnd.Mask))
+			copy(result.IP, slash127otherEnd.IP)
+			copy(result.Mask, slash127otherEnd.Mask)
+			slash127otherEnd = net.IPNet{}
+			return &result
+		}
+
+		result := randomSlash127(t, "2001:db8::/32")
+		slash127otherEnd.IP = make([]byte, len(result.IP))
+		slash127otherEnd.Mask = make([]byte, len(result.Mask))
+		copy(slash127otherEnd.IP, result.IP)
+		copy(slash127otherEnd.Mask, result.Mask)
+		slash127otherEnd.IP[15]++
+		return &result
+	}
+
 	testCases := map[string]testCase{
-		"create_minimal": {
+		"empty-all_numbered-empty": {
 			steps: []testStep{
 				{
 					config: resourceDataCenterIpLinkAddressing{
 						blueprintId: bp.Id(),
 						linkId:      linkId,
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId:            bp.Id(),
+						linkId:                 linkId,
+						switchIpv4AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
+						switchIpv4Address:      getSlash31Endpoint(),
+						switchIpv6AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
+						switchIpv6Address:      getSlash127Endpoint(),
+						genericIpv4AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
+						genericIpv4Address:     getSlash31Endpoint(),
+						genericIpv6AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
+						genericIpv6Address:     getSlash127Endpoint(),
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId: bp.Id(),
+						linkId:      linkId,
+					},
+				},
+			},
+		},
+		"all_numbered-empty-all_numbered": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId:            bp.Id(),
+						linkId:                 linkId,
+						switchIpv4AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
+						switchIpv4Address:      getSlash31Endpoint(),
+						switchIpv6AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
+						switchIpv6Address:      getSlash127Endpoint(),
+						genericIpv4AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
+						genericIpv4Address:     getSlash31Endpoint(),
+						genericIpv6AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
+						genericIpv6Address:     getSlash127Endpoint(),
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId: bp.Id(),
+						linkId:      linkId,
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId:            bp.Id(),
+						linkId:                 linkId,
+						switchIpv4AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
+						switchIpv4Address:      getSlash31Endpoint(),
+						switchIpv6AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
+						switchIpv6Address:      getSlash127Endpoint(),
+						genericIpv4AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
+						genericIpv4Address:     getSlash31Endpoint(),
+						genericIpv6AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
+						genericIpv6Address:     getSlash127Endpoint(),
 					},
 				},
 			},
