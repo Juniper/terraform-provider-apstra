@@ -5418,8 +5418,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.9.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.9.0/LICENSE)
+* Version: v1.8.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.8.0/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -6920,8 +6920,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.23.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.23.0/LICENSE)
+* Version: v0.22.2
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.22.2/LICENSE)
 
 ```
 Copyright (c) 2020 HashiCorp, Inc.
@@ -10187,8 +10187,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.21.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.21.0:LICENSE)
+* Version: v0.19.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.19.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10298,8 +10298,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.23.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.23.0:LICENSE)
+* Version: v0.21.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.21.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10796,8 +10796,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.34.0
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.34.0/LICENSE)
+* Version: v1.33.0
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.33.0/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.
