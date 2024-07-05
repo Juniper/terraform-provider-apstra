@@ -136,28 +136,14 @@ func stringSetOrNull(in []string) string {
 	return "[ " + sb.String() + " ]"
 }
 
-func randIpv4NetMust(t testing.TB, cidrBlock string) *net.IPNet {
+func randIpNetMust(t testing.TB, cidrBlock string) *net.IPNet {
 	t.Helper()
 
 	ip := randIpv46AddressMust(t, cidrBlock)
 
 	_, ipNet, _ := net.ParseCIDR(cidrBlock)
-	cidrBlockPrefixLen, _ := ipNet.Mask.Size()
-	targetPrefixLen := rand.Intn(31-cidrBlockPrefixLen) + cidrBlockPrefixLen
-
-	_, result, _ := net.ParseCIDR(fmt.Sprintf("%s/%d", ip.String(), targetPrefixLen))
-
-	return result
-}
-
-func randIpv6NetMust(t testing.TB, cidrBlock string) *net.IPNet {
-	t.Helper()
-
-	ip := randIpv46AddressMust(t, cidrBlock)
-
-	_, ipNet, _ := net.ParseCIDR(cidrBlock)
-	cidrBlockPrefixLen, _ := ipNet.Mask.Size()
-	targetPrefixLen := rand.Intn(127-cidrBlockPrefixLen) + cidrBlockPrefixLen
+	cidrBlockPrefixLen, totalBits := ipNet.Mask.Size()
+	targetPrefixLen := rand.Intn((totalBits-1)-cidrBlockPrefixLen) + cidrBlockPrefixLen
 
 	_, result, _ := net.ParseCIDR(fmt.Sprintf("%s/%d", ip.String(), targetPrefixLen))
 
