@@ -17,6 +17,7 @@ type ConnectivityTemplateAssignments struct {
 	BlueprintId            types.String `tfsdk:"blueprint_id"`
 	ConnectivityTemplateId types.String `tfsdk:"connectivity_template_id"`
 	ApplicationPointIds    types.Set    `tfsdk:"application_point_ids"`
+	IpLinkIds              types.Map    `tfsdk:"ip_links_ids"`
 }
 
 func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -42,6 +43,14 @@ func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourc
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
+		},
+		"ip_links_ids": resourceSchema.MapAttribute{
+			MarkdownDescription: "New Logical Links are created when Connectivity Templates containing *IP Link* " +
+				"primitives are attached to a switch interface. These logical links may or may not be VLAN-tagged. " +
+				"This attribute is a two-dimensional map. The outer map is keyed by Application Point ID. The inner " +
+				"map is keyed by VLAN number. Untagged Logical Links are represented in the inner map by key `0`.",
+			Computed:    true,
+			ElementType: types.MapType{ElemType: types.StringType},
 		},
 	}
 }
