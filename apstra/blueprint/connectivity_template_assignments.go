@@ -17,7 +17,6 @@ type ConnectivityTemplateAssignments struct {
 	BlueprintId            types.String `tfsdk:"blueprint_id"`
 	ConnectivityTemplateId types.String `tfsdk:"connectivity_template_id"`
 	ApplicationPointIds    types.Set    `tfsdk:"application_point_ids"`
-	//IpLinkInfos            types.Map    `tfsdk:"ip_link_infos"`
 }
 
 func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -44,27 +43,6 @@ func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourc
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
-		//"ip_link_infos": resourceSchema.MapAttribute{
-		//	MarkdownDescription: "This is a Map of Application Point ID to Map of VLAN to IP Info. Outer map keys must " +
-		//		"be values which appear in the `application_point_ids` attribute. Inner map keys are VLAN numbers in " +
-		//		"the range 0 - 4904 which are specified by IP Link primitives in the Connectivity Template. VLAN \"0\" " +
-		//		"stands in for \"Untagged\" IP Link primitives.",
-		//	ElementType: types.MapType{
-		//		ElemType: types.ObjectType{
-		//			AttrTypes: IpLinkIps{}.AttrTypes(),
-		//		},
-		//	},
-		//	Optional: true,
-		//},
-		//"ip_link_infos": resourceSchema.MapNestedAttribute{
-		//	MarkdownDescription: "This is a Map of Application Point ID to Map of VLAN to IP Info. Outer map keys must " +
-		//		"be values which appear in the `application_point_ids` attribute. Inner map keys are VLAN numbers in " +
-		//		"the range 0 - 4904 which are specified by IP Link primitives in the Connectivity Template. VLAN \"0\" " +
-		//		"stands in for \"Untagged\" IP Link primitives.",
-		//	NestedObject: resourceSchema.MapNestedAttribute{
-		//	},
-		//	Optional:     true,
-		//},
 	}
 }
 
