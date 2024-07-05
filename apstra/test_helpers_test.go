@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/rand"
 	"net"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -67,13 +66,6 @@ func stringOrNull(in string) string {
 		return "null"
 	}
 	return `"` + in + `"`
-}
-
-func stringerOrNull(in fmt.Stringer) string {
-	if in == nil || (reflect.ValueOf(in).Kind() == reflect.Ptr && reflect.ValueOf(in).IsNil()) {
-		return "null"
-	}
-	return `"` + in.String() + `"`
 }
 
 func stringMapOrNull(in map[string]string, depth int) string {

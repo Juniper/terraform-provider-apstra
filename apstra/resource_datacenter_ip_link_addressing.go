@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"math"
 	"net"
 	"net/netip"
+
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"

@@ -37,14 +37,14 @@ const (
 type resourceDataCenterIpLinkAddressing struct {
 	blueprintId            apstra.ObjectId
 	linkId                 apstra.ObjectId
-	switchIpv4AddressType  *apstra.InterfaceNumberingIpv4Type
-	switchIpv4Address      *net.IPNet
-	switchIpv6AddressType  *apstra.InterfaceNumberingIpv6Type
-	switchIpv6Address      *net.IPNet
-	genericIpv4AddressType *apstra.InterfaceNumberingIpv4Type
-	genericIpv4Address     *net.IPNet
-	genericIpv6AddressType *apstra.InterfaceNumberingIpv6Type
-	genericIpv6Address     *net.IPNet
+	switchIpv4AddressType  string
+	switchIpv4Address      string
+	switchIpv6AddressType  string
+	switchIpv6Address      string
+	genericIpv4AddressType string
+	genericIpv4Address     string
+	genericIpv6AddressType string
+	genericIpv6Address     string
 }
 
 func (o resourceDataCenterIpLinkAddressing) render(rType, rName string) string {
@@ -52,14 +52,14 @@ func (o resourceDataCenterIpLinkAddressing) render(rType, rName string) string {
 		rType, rName,
 		o.blueprintId,
 		o.linkId,
-		stringerOrNull(o.switchIpv4AddressType),
-		stringerOrNull(o.switchIpv4Address),
-		stringerOrNull(o.switchIpv6AddressType),
-		stringerOrNull(o.switchIpv6Address),
-		stringerOrNull(o.genericIpv4AddressType),
-		stringerOrNull(o.genericIpv4Address),
-		stringerOrNull(o.genericIpv6AddressType),
-		stringerOrNull(o.genericIpv6Address),
+		stringOrNull(o.switchIpv4AddressType),
+		stringOrNull(o.switchIpv4Address),
+		stringOrNull(o.switchIpv6AddressType),
+		stringOrNull(o.switchIpv6Address),
+		stringOrNull(o.genericIpv4AddressType),
+		stringOrNull(o.genericIpv4Address),
+		stringOrNull(o.genericIpv6AddressType),
+		stringOrNull(o.genericIpv6Address),
 	)
 }
 
@@ -70,40 +70,40 @@ func (o resourceDataCenterIpLinkAddressing) testChecks(t testing.TB, bpId apstra
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
 	result.append(t, "TestCheckResourceAttr", "link_id", o.linkId.String())
 
-	if o.switchIpv4AddressType == nil {
+	if o.switchIpv4AddressType == "" {
 		result.append(t, "TestCheckResourceAttr", "switch_ipv4_address_type", "none")
 	} else {
-		result.append(t, "TestCheckResourceAttr", "switch_ipv4_address_type", o.switchIpv4AddressType.String())
+		result.append(t, "TestCheckResourceAttr", "switch_ipv4_address_type", o.switchIpv4AddressType)
 	}
-	if o.switchIpv4Address != nil {
-		result.append(t, "TestCheckResourceAttr", "switch_ipv4_address", o.switchIpv4Address.String())
+	if o.switchIpv4Address != "" {
+		result.append(t, "TestCheckResourceAttr", "switch_ipv4_address", o.switchIpv4Address)
 	}
 
-	if o.switchIpv6AddressType == nil {
+	if o.switchIpv6AddressType == "" {
 		result.append(t, "TestCheckResourceAttr", "switch_ipv6_address_type", "none")
 	} else {
-		result.append(t, "TestCheckResourceAttr", "switch_ipv6_address_type", o.switchIpv6AddressType.String())
+		result.append(t, "TestCheckResourceAttr", "switch_ipv6_address_type", o.switchIpv6AddressType)
 	}
-	if o.switchIpv6Address != nil {
-		result.append(t, "TestCheckResourceAttr", "switch_ipv6_address", o.switchIpv6Address.String())
+	if o.switchIpv6Address != "" {
+		result.append(t, "TestCheckResourceAttr", "switch_ipv6_address", o.switchIpv6Address)
 	}
 
-	if o.genericIpv4AddressType == nil {
+	if o.genericIpv4AddressType == "" {
 		result.append(t, "TestCheckResourceAttr", "generic_ipv4_address_type", "none")
 	} else {
-		result.append(t, "TestCheckResourceAttr", "generic_ipv4_address_type", o.genericIpv4AddressType.String())
+		result.append(t, "TestCheckResourceAttr", "generic_ipv4_address_type", o.genericIpv4AddressType)
 	}
-	if o.genericIpv4Address != nil {
-		result.append(t, "TestCheckResourceAttr", "generic_ipv4_address", o.genericIpv4Address.String())
+	if o.genericIpv4Address != "" {
+		result.append(t, "TestCheckResourceAttr", "generic_ipv4_address", o.genericIpv4Address)
 	}
 
-	if o.genericIpv6AddressType == nil {
+	if o.genericIpv6AddressType == "" {
 		result.append(t, "TestCheckResourceAttr", "generic_ipv6_address_type", "none")
 	} else {
-		result.append(t, "TestCheckResourceAttr", "generic_ipv6_address_type", o.genericIpv6AddressType.String())
+		result.append(t, "TestCheckResourceAttr", "generic_ipv6_address_type", o.genericIpv6AddressType)
 	}
-	if o.genericIpv6Address != nil {
-		result.append(t, "TestCheckResourceAttr", "generic_ipv6_address", o.genericIpv6Address.String())
+	if o.genericIpv6Address != "" {
+		result.append(t, "TestCheckResourceAttr", "generic_ipv6_address", o.genericIpv6Address)
 	}
 
 	return result
@@ -290,14 +290,14 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 					config: resourceDataCenterIpLinkAddressing{
 						blueprintId:            bp.Id(),
 						linkId:                 linkId,
-						switchIpv4AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
-						switchIpv4Address:      getSlash31Endpoint(),
-						switchIpv6AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
-						switchIpv6Address:      getSlash127Endpoint(),
-						genericIpv4AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
-						genericIpv4Address:     getSlash31Endpoint(),
-						genericIpv6AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
-						genericIpv6Address:     getSlash127Endpoint(),
+						switchIpv4AddressType:  "numbered",
+						switchIpv4Address:      getSlash31Endpoint().String(),
+						switchIpv6AddressType:  "numbered",
+						switchIpv6Address:      getSlash127Endpoint().String(),
+						genericIpv4AddressType: "numbered",
+						genericIpv4Address:     getSlash31Endpoint().String(),
+						genericIpv6AddressType: "numbered",
+						genericIpv6Address:     getSlash127Endpoint().String(),
 					},
 				},
 				{
@@ -314,14 +314,14 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 					config: resourceDataCenterIpLinkAddressing{
 						blueprintId:            bp.Id(),
 						linkId:                 linkId,
-						switchIpv4AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
-						switchIpv4Address:      getSlash31Endpoint(),
-						switchIpv6AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
-						switchIpv6Address:      getSlash127Endpoint(),
-						genericIpv4AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
-						genericIpv4Address:     getSlash31Endpoint(),
-						genericIpv6AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
-						genericIpv6Address:     getSlash127Endpoint(),
+						switchIpv4AddressType:  "numbered",
+						switchIpv4Address:      getSlash31Endpoint().String(),
+						switchIpv6AddressType:  "numbered",
+						switchIpv6Address:      getSlash127Endpoint().String(),
+						genericIpv4AddressType: "numbered",
+						genericIpv4Address:     getSlash31Endpoint().String(),
+						genericIpv6AddressType: "numbered",
+						genericIpv6Address:     getSlash127Endpoint().String(),
 					},
 				},
 				{
@@ -334,14 +334,64 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 					config: resourceDataCenterIpLinkAddressing{
 						blueprintId:            bp.Id(),
 						linkId:                 linkId,
-						switchIpv4AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
-						switchIpv4Address:      getSlash31Endpoint(),
-						switchIpv6AddressType:  utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
-						switchIpv6Address:      getSlash127Endpoint(),
-						genericIpv4AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv4TypeNumbered),
-						genericIpv4Address:     getSlash31Endpoint(),
-						genericIpv6AddressType: utils.ToPtr(apstra.InterfaceNumberingIpv6TypeNumbered),
-						genericIpv6Address:     getSlash127Endpoint(),
+						switchIpv4AddressType:  "numbered",
+						switchIpv4Address:      getSlash31Endpoint().String(),
+						switchIpv6AddressType:  "numbered",
+						switchIpv6Address:      getSlash127Endpoint().String(),
+						genericIpv4AddressType: "numbered",
+						genericIpv4Address:     getSlash31Endpoint().String(),
+						genericIpv6AddressType: "numbered",
+						genericIpv6Address:     getSlash127Endpoint().String(),
+					},
+				},
+			},
+		},
+		"empty-link_local-empty": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId: bp.Id(),
+						linkId:      linkId,
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId:            bp.Id(),
+						linkId:                 linkId,
+						switchIpv6AddressType:  "link_local",
+						genericIpv6AddressType: "link_local",
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId: bp.Id(),
+						linkId:      linkId,
+					},
+				},
+			},
+		},
+		"link_local-empty-link_local": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId:            bp.Id(),
+						linkId:                 linkId,
+						switchIpv6AddressType:  "link_local",
+						genericIpv6AddressType: "link_local",
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId: bp.Id(),
+						linkId:      linkId,
+					},
+				},
+				{
+					config: resourceDataCenterIpLinkAddressing{
+						blueprintId:            bp.Id(),
+						linkId:                 linkId,
+						switchIpv6AddressType:  "link_local",
+						genericIpv6AddressType: "link_local",
 					},
 				},
 			},
@@ -353,7 +403,7 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel() // don't use parallel because test cases all work on the same link
 
 			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
 				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())

@@ -3,9 +3,10 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"net"
 	"strings"
+
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
