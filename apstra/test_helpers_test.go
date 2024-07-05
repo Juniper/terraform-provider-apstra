@@ -139,7 +139,7 @@ func stringSetOrNull(in []string) string {
 func randIpNetMust(t testing.TB, cidrBlock string) *net.IPNet {
 	t.Helper()
 
-	ip := randIpv46AddressMust(t, cidrBlock)
+	ip := randIpvAddressMust(t, cidrBlock)
 
 	_, ipNet, _ := net.ParseCIDR(cidrBlock)
 	cidrBlockPrefixLen, totalBits := ipNet.Mask.Size()
@@ -150,7 +150,7 @@ func randIpNetMust(t testing.TB, cidrBlock string) *net.IPNet {
 	return result
 }
 
-func randIpv46AddressMust(t testing.TB, cidrBlock string) net.IP {
+func randIpvAddressMust(t testing.TB, cidrBlock string) net.IP {
 	t.Helper()
 
 	s, err := acctest.RandIpAddress(cidrBlock)
@@ -160,7 +160,7 @@ func randIpv46AddressMust(t testing.TB, cidrBlock string) net.IP {
 
 	ip := net.ParseIP(s)
 	if ip == nil {
-		t.Fatalf("randIpv46AddressMust failed to parse IP address %q", s)
+		t.Fatalf("randIpvAddressMust failed to parse IP address %q", s)
 	}
 
 	return ip
@@ -177,7 +177,7 @@ func randomRT(t testing.TB) string {
 	case 1: // 32-bits:16-bits
 		return fmt.Sprintf("%d:%d", rand.Uint32(), uint16(rand.Uint32()))
 	case 2: // IPv4:16-bits
-		return fmt.Sprintf("%s:%d", randIpv46AddressMust(t, "192.0.2.0/24").String(), uint16(rand.Uint32()))
+		return fmt.Sprintf("%s:%d", randIpvAddressMust(t, "192.0.2.0/24").String(), uint16(rand.Uint32()))
 	}
 
 	panic(nil)
@@ -222,7 +222,7 @@ func randomIPs(t testing.TB, n int, ipv4Cidr, ipv6Cidr string) []string {
 func randomSlash31(t testing.TB, cidrBlock string) net.IPNet {
 	t.Helper()
 
-	ip := randIpv46AddressMust(t, cidrBlock)
+	ip := randIpvAddressMust(t, cidrBlock)
 	_, ipNet, err := net.ParseCIDR(ip.String() + "/31")
 	require.NoError(t, err)
 	return *ipNet
@@ -231,7 +231,7 @@ func randomSlash31(t testing.TB, cidrBlock string) net.IPNet {
 func randomSlash127(t testing.TB, cidrBlock string) net.IPNet {
 	t.Helper()
 
-	ip := randIpv46AddressMust(t, cidrBlock)
+	ip := randIpvAddressMust(t, cidrBlock)
 	_, ipNet, err := net.ParseCIDR(ip.String() + "/127")
 	require.NoError(t, err)
 	return *ipNet
