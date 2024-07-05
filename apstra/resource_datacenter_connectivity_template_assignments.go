@@ -41,48 +41,6 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Schema(_ context.Con
 	}
 }
 
-//func (o *resourceDatacenterConnectivityTemplateAssignments) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-//	var config blueprint.ConnectivityTemplateAssignments
-//	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-//	if resp.Diagnostics.HasError() {
-//		return
-//	}
-//
-//	// extract apIds - these are the valid keys for the outer map
-//	var apIds []string
-//	resp.Diagnostics.Append(config.ApplicationPointIds.ElementsAs(ctx, &apIds, false)...)
-//	if resp.Diagnostics.HasError() {
-//		return
-//	}
-//
-//	// extract the two-dimensional ip_link_infos map
-//	var ipLinkInfos map[string]map[string]blueprint.IpLinkIps
-//	resp.Diagnostics.Append(config.IpLinkInfos.ElementsAs(ctx, &ipLinkInfos, false)...)
-//	if resp.Diagnostics.HasError() {
-//		return
-//	}
-//
-//	// validate the keys in the ip_link_infos map
-//	for apId, vlanMap := range ipLinkInfos {
-//		if !utils.SliceContains(apId, apIds) {
-//			resp.Diagnostics.AddAttributeError(
-//				path.Root("ip_link_infos").AtMapKey(apId),
-//				"'ip_link_infos' key not found in 'application_point_ids'",
-//				fmt.Sprintf("value %q used as key in 'ip_link_info' map does not appear in 'application_point_ids'", apId))
-//		}
-//
-//		for vlanString := range vlanMap {
-//			vlanId, err := strconv.Atoi(vlanString)
-//			if err != nil || vlanId < design.VlanMin-1 || vlanId > design.VlanMax {
-//				resp.Diagnostics.AddAttributeError(
-//					path.Root("ip_link_infos").AtMapKey(apId).AtMapKey(vlanString),
-//					"Invalid VLAN used as key",
-//					fmt.Sprintf("Only values %d - %d may be used as inner map keys, got %q", design.VlanMin-1, design.VlanMax, vlanString))
-//			}
-//		}
-//	}
-//}
-
 func (o *resourceDatacenterConnectivityTemplateAssignments) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var plan blueprint.ConnectivityTemplateAssignments
