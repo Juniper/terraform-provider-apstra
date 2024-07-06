@@ -134,6 +134,9 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Read(ctx context.Con
 
 	// Fetch IP link IDs
 	state.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -184,6 +187,9 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Update(ctx context.C
 
 	// Fetch IP link IDs
 	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
