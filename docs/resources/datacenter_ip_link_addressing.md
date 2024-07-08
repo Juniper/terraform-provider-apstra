@@ -54,8 +54,8 @@ resource "apstra_datacenter_ip_link_addressing" "x" {
 
 ### Read-Only
 
-- `generic_interface_id` (String) Apstra graph node ID of the node with which IP addresses will be associated.
-- `switch_interface_id` (String) Apstra graph node ID of the node with which IP addresses will be associated.
+- `generic_interface_id` (String) Apstra graph node ID of the node to which `generic` IP information will be associated.
+- `switch_interface_id` (String) Apstra graph node ID of the node to which `switch` IP information will be associated.
 
 
 

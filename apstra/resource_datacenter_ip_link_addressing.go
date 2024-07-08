@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"math"
 	"net"
@@ -198,8 +199,8 @@ func (o *resourceDatacenterIpLinkAddressing) Create(ctx context.Context, req res
 		return
 	}
 
-	// LoadSubinterfaceIds only needs to be done once, and only in the Create() method.
-	plan.LoadSubinterfaceIds(ctx, link, &resp.Diagnostics)
+	// LoadImmutableData only needs to be done once, and only in the Create() method.
+	plan.LoadImmutableData(ctx, link, resp)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -330,16 +331,59 @@ func (o *resourceDatacenterIpLinkAddressing) Delete(ctx context.Context, req res
 		return
 	}
 
+	// collect the switch/server v4/v6 addressing types saved to private state during create
+	pBytes, d := req.Private.GetKey(ctx, "ep_addr_types")
+	resp.Diagnostics.Append(d...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	var private struct {
+		SwitchIpv4AddressType  string `json:"switch_ipv4_address_type"`
+		SwitchIpv6AddressType  string `json:"switch_ipv6_address_type"`
+		GenericIpv4AddressType string `json:"generic_ipv4_address_type"`
+		GenericIpv6AddressType string `json:"generic_ipv6_address_type"`
+	}
+	err = json.Unmarshal(pBytes, &private)
+	if err != nil {
+		resp.Diagnostics.AddError("failed unmarshaling private data", err.Error())
+		return
+	}
+
+	// unpack the private state into apstra objects
+	var switchIpv4AddressType, genericIpv4AddressType apstra.InterfaceNumberingIpv4Type
+	var switchIpv6AddressType, genericIpv6AddressType apstra.InterfaceNumberingIpv6Type
+	err = utils.ApiStringerFromFriendlyString(&switchIpv4AddressType, private.SwitchIpv4AddressType)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to parse private data switch_ipv4_address_type", err.Error())
+		return
+	}
+	err = utils.ApiStringerFromFriendlyString(&switchIpv6AddressType, private.SwitchIpv6AddressType)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to parse private data switch_ipv6_address_type", err.Error())
+		return
+	}
+	err = utils.ApiStringerFromFriendlyString(&genericIpv4AddressType, private.GenericIpv4AddressType)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to parse private data generic_ipv4_address_type", err.Error())
+		return
+	}
+	err = utils.ApiStringerFromFriendlyString(&genericIpv6AddressType, private.GenericIpv6AddressType)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to parse private data generic_ipv6_address_type", err.Error())
+		return
+	}
+
 	// create a subinterface addressing request which kills off IPv4 and IPv6
 	// addressing for each subinterface associated with the link.
 	request := map[apstra.ObjectId]apstra.TwoStageL3ClosSubinterface{
 		apstra.ObjectId(state.SwitchIntfId.ValueString()): {
-			Ipv4AddrType: apstra.InterfaceNumberingIpv4TypeNone,
-			Ipv6AddrType: apstra.InterfaceNumberingIpv6TypeNone,
+			Ipv4AddrType: switchIpv4AddressType,
+			Ipv6AddrType: switchIpv6AddressType,
 		},
 		apstra.ObjectId(state.GenericIntfId.ValueString()): {
-			Ipv4AddrType: apstra.InterfaceNumberingIpv4TypeNone,
-			Ipv6AddrType: apstra.InterfaceNumberingIpv6TypeNone,
+			Ipv4AddrType: genericIpv4AddressType,
+			Ipv6AddrType: genericIpv6AddressType,
 		},
 	}
 

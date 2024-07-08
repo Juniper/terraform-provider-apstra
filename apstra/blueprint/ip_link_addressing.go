@@ -2,9 +2,12 @@ package blueprint
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 
@@ -56,7 +59,12 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"switch_interface_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra graph node ID of the node with which IP addresses will be associated.",
+			MarkdownDescription: "Apstra graph node ID of the node to which `switch` IP information will be associated.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"generic_interface_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra graph node ID of the node to which `generic` IP information will be associated.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -94,11 +102,6 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeLinkLocal))),
 				stringvalidator.AlsoRequires(path.MatchRoot("switch_ipv6_address_type")),
 			},
-		},
-		"generic_interface_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra graph node ID of the node with which IP addresses will be associated.",
-			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"generic_ipv4_address_type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
@@ -325,20 +328,39 @@ func (o *IpLinkAddressing) LoadApiData(_ context.Context, in *apstra.TwoStageL3C
 	}
 }
 
-// LoadSubinterfaceIds sets the switch and generic subinterface ID elements within o. The user supplies
-// the link ID, so we only need to do this once: at the beginning of Create(). The subinterface nodes
-// associated with a given link node should never change.
-func (o *IpLinkAddressing) LoadSubinterfaceIds(_ context.Context, in *apstra.TwoStageL3ClosSubinterfaceLink, diags *diag.Diagnostics) {
-	switchEp := epBySystemType(apstra.SystemTypeSwitch, in.Endpoints, diags)
-	if diags.HasError() {
+// LoadImmutableData sets the switch and generic subinterface ID elements within o and saves the
+// initial switch/generic v4/v6 address types (probably those indicated in the connectivity template).
+// The user supplies the link ID, so we only need to do this once: at the beginning of Create(). The
+// subinterface nodes associated with a given link node should never change.
+func (o *IpLinkAddressing) LoadImmutableData(ctx context.Context, in *apstra.TwoStageL3ClosSubinterfaceLink, resp *resource.CreateResponse) {
+	switchEp := epBySystemType(apstra.SystemTypeSwitch, in.Endpoints, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	genericEp := epBySystemType(apstra.SystemTypeServer, in.Endpoints, diags)
-	if diags.HasError() {
+	genericEp := epBySystemType(apstra.SystemTypeServer, in.Endpoints, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	o.SwitchIntfId = types.StringValue(switchEp.SubinterfaceId.String())
 	o.GenericIntfId = types.StringValue(genericEp.SubinterfaceId.String())
+
+	private, err := json.Marshal(struct {
+		SwitchIpv4AddressType  string `json:"switch_ipv4_address_type"`
+		SwitchIpv6AddressType  string `json:"switch_ipv6_address_type"`
+		GenericIpv4AddressType string `json:"generic_ipv4_address_type"`
+		GenericIpv6AddressType string `json:"generic_ipv6_address_type"`
+	}{
+		SwitchIpv4AddressType:  utils.StringersToFriendlyString(switchEp.Subinterface.Ipv4AddrType),
+		SwitchIpv6AddressType:  utils.StringersToFriendlyString(switchEp.Subinterface.Ipv6AddrType),
+		GenericIpv4AddressType: utils.StringersToFriendlyString(genericEp.Subinterface.Ipv4AddrType),
+		GenericIpv6AddressType: utils.StringersToFriendlyString(genericEp.Subinterface.Ipv6AddrType),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError("failed marshaling private data", err.Error())
+		return
+	}
+
+	resp.Private.SetKey(ctx, "ep_addr_types", private)
 }
