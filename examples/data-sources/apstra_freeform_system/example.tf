@@ -2,7 +2,7 @@
 
 
 resource "apstra_freeform_system" "test" {
-  blueprint_id = "freeform_blueprint-5ba09d07"
+  blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
   name         = "test_system"
   tags = ["a", "b", "c"]
   type         = "internal"
@@ -14,7 +14,7 @@ resource "apstra_freeform_system" "test" {
 # here we retrieve the freeform system
 
 data "apstra_freeform_system" "test" {
-  blueprint_id = "freeform_blueprint-5ba09d07"
+  blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
   id = apstra_freeform_system.test.id
 }
 
@@ -24,7 +24,7 @@ output "test_System_out" {value = data.apstra_freeform_system.test}
 
 #Output looks like this
 #test_System_out = {
-#  "blueprint_id" = "freeform_blueprint-5ba09d07"
+#  "blueprint_id" = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
 #  "deploy_mode" = tostring(null)
 #  "device_profile_id" = "PtrWb4-VSwKiYRbCodk"
 #  "hostname" = "systemfoo"
