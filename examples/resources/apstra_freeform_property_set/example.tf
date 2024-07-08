@@ -21,10 +21,10 @@ data "apstra_freeform_property_set" "foods" {
 output "foo" {value = data.apstra_freeform_property_set.foods}
 
 # Output should look like:
-#foo = {
-#  "blueprint_id" = "freeform_blueprint-5ba09d07"
-#  "id" = tostring(null)
-#  "name" = "prop_set_foo"
-#  "system_id" = tostring(null)
-#  "values" = "{\"clown\": 2, \"foo\": \"bar\"}"
-#}
+#   foo = {
+#     "blueprint_id" = "freeform_blueprint-5ba09d07"
+#     "id" = tostring(null)
+#     "name" = "prop_set_foo"
+#     "system_id" = tostring(null)
+#     "values" = "{\"clown\": 2, \"foo\": \"bar\"}"
+#   }
