@@ -3,6 +3,8 @@ package customtypes
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"net/netip"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -13,10 +15,53 @@ import (
 var (
 	_ basetypes.StringValuable                   = (*IPv46Address)(nil)
 	_ basetypes.StringValuableWithSemanticEquals = (*IPv46Address)(nil)
+	_ xattr.ValidateableAttribute                = (*IPv46Address)(nil)
 )
 
 type IPv46Address struct {
 	basetypes.StringValue
+}
+
+func (v IPv46Address) ValidateAttribute(ctx context.Context, req xattr.ValidateAttributeRequest, resp *xattr.ValidateAttributeResponse) {
+	if !v.Type(ctx).TerraformType(ctx).Is(tftypes.String) {
+		err := fmt.Errorf("expected String value, received %T with value: %v", v, v)
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"IPv46 Address Type Validation Error",
+			"An unexpected error was encountered trying to validate an attribute value. This is always an error in the provider. "+
+				"Please report the following to the provider developer:\n\n"+err.Error(),
+		)
+	}
+
+	if v.IsNull() || v.IsUnknown() {
+		return
+	}
+
+	valueString := v.ValueString()
+
+	ipAddr, err := netip.ParseAddr(valueString)
+	if err != nil {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid IPv46 Address String Value",
+			"A string value was provided that is not valid IPv4 or IPv6 string format.\n\n"+
+				"Given Value: "+valueString+"\n"+
+				"Error: "+err.Error(),
+		)
+
+		return
+	}
+
+	if !ipAddr.IsValid() && (!ipAddr.Is4() && !ipAddr.Is6()) {
+		resp.Diagnostics.AddAttributeError(
+			req.Path,
+			"Invalid IPv46 Address String Value",
+			"A string value was provided that is not valid IPv4 or IPv6 string format.\n\n"+
+				"Given Value: "+valueString+"\n",
+		)
+
+		return
+	}
 }
 
 func (v IPv46Address) Type(_ context.Context) attr.Type {

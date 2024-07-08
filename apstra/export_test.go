@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	ResourceAgentProfile            = resourceAgentProfile{}
-	ResourceDatacenterGenericSystem = resourceDatacenterGenericSystem{}
-	ResourceDatacenterRoutingZone   = resourceDatacenterRoutingZone{}
-	ResourceIpv4Pool                = resourceIpv4Pool{}
-	ResourceTemplatePodBased        = resourceTemplatePodBased{}
-	ResourceTemplateCollapsed       = resourceTemplateCollapsed{}
+	ResourceAgentProfile               = resourceAgentProfile{}
+	ResourceDatacenterGenericSystem    = resourceDatacenterGenericSystem{}
+	ResourceDatacenterIpLinkAddressing = resourceDatacenterIpLinkAddressing{}
+	ResourceDatacenterRoutingZone      = resourceDatacenterRoutingZone{}
+	ResourceIpv4Pool                   = resourceIpv4Pool{}
+	ResourceTemplatePodBased           = resourceTemplatePodBased{}
+	ResourceTemplateCollapsed          = resourceTemplateCollapsed{}
 )
 
 func ResourceName(ctx context.Context, r resource.Resource) string {

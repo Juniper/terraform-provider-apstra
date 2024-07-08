@@ -3,6 +3,9 @@ package customtypes_test
 import (
 	"context"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
+	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,56 +19,53 @@ func TestIPv46AddressTypeValidate(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		in            tftypes.Value
+		in            basetypes.StringValue
 		expectedDiags diag.Diagnostics
 	}{
-		"empty-struct": {
-			in: tftypes.Value{},
-		},
 		"null": {
-			in: tftypes.NewValue(tftypes.String, nil),
+			in: types.StringNull(),
 		},
 		"unknown": {
-			in: tftypes.NewValue(tftypes.String, tftypes.UnknownValue),
+			in: types.StringUnknown(),
 		},
 		"valid IPv4 address - broadcast": {
-			in: tftypes.NewValue(tftypes.String, "255.255.255.255"),
+			in: types.StringValue("255.255.255.255"),
 		},
 		"valid IPv4 address - loopback": {
-			in: tftypes.NewValue(tftypes.String, "127.0.0.1"),
+			in: types.StringValue("127.0.0.1"),
 		},
 		"valid IPv4 address - multicast": {
-			in: tftypes.NewValue(tftypes.String, "224.1.2.3"),
+			in: types.StringValue("224.1.2.3"),
 		},
 		"valid IPv4 address - zeros": {
-			in: tftypes.NewValue(tftypes.String, "0.0.0.0"),
+			in: types.StringValue("0.0.0.0"),
 		},
 		"valid IPv6 address - unspecified": {
-			in: tftypes.NewValue(tftypes.String, "::"),
+			in: types.StringValue("::"),
 		},
 		"valid IPv6 address - full": {
-			in: tftypes.NewValue(tftypes.String, "1:2:3:4:5:6:7:8"),
+			in: types.StringValue("1:2:3:4:5:6:7:8"),
 		},
 		"valid IPv6 address - trailing double colon": {
-			in: tftypes.NewValue(tftypes.String, "FF01::"),
+			in: types.StringValue("FF01::"),
 		},
 		"valid IPv6 address - leading double colon": {
-			in: tftypes.NewValue(tftypes.String, "::8:800:200C:417A"),
+			in: types.StringValue("::8:800:200C:417A"),
 		},
 		"valid IPv6 address - middle double colon": {
-			in: tftypes.NewValue(tftypes.String, "2001:DB8::8:800:200C:417A"),
+			in: types.StringValue("2001:DB8::8:800:200C:417A"),
 		},
 		"valid IPv6 address - lowercase": {
-			in: tftypes.NewValue(tftypes.String, "2001:db8::8:800:200c:417a"),
+			in: types.StringValue("2001:db8::8:800:200c:417a"),
 		},
 		"valid IPv6 address - IPv4-Mapped": {
-			in: tftypes.NewValue(tftypes.String, "::FFFF:192.168.255.255"),
+			in: types.StringValue("::FFFF:192.168.255.255"),
 		},
 		"valid IPv6 address - IPv4-Compatible": {
-			in: tftypes.NewValue(tftypes.String, "::127.0.0.1"),
+			in: types.StringValue("::127.0.0.1"),
 		},
 		"invalid IPv6 address - invalid colon end": {
-			in: tftypes.NewValue(tftypes.String, "0:0:0:0:0:0:0:"),
+			in: types.StringValue("0:0:0:0:0:0:0:"),
 			expectedDiags: diag.Diagnostics{
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
@@ -77,7 +77,7 @@ func TestIPv46AddressTypeValidate(t *testing.T) {
 			},
 		},
 		"invalid IPv6 address - too many colons": {
-			in: tftypes.NewValue(tftypes.String, "0:0::1::"),
+			in: types.StringValue("0:0::1::"),
 			expectedDiags: diag.Diagnostics{
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
@@ -89,7 +89,7 @@ func TestIPv46AddressTypeValidate(t *testing.T) {
 			},
 		},
 		"invalid IPv6 address - trailing numbers": {
-			in: tftypes.NewValue(tftypes.String, "0:0:0:0:0:0:0:1:99"),
+			in: types.StringValue("0:0:0:0:0:0:0:1:99"),
 			expectedDiags: diag.Diagnostics{
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
@@ -100,17 +100,6 @@ func TestIPv46AddressTypeValidate(t *testing.T) {
 				),
 			},
 		},
-		"wrong-value-type": {
-			in: tftypes.NewValue(tftypes.Number, 123),
-			expectedDiags: diag.Diagnostics{
-				diag.NewAttributeErrorDiagnostic(
-					path.Root("test"),
-					"IPv46 Address Type Validation Error",
-					"An unexpected error was encountered trying to validate an attribute value. This is always an error in the provider. Please report the following to the provider developer:\n\n"+
-						"expected String value, received tftypes.Value with value: tftypes.Number<\"123\">",
-				),
-			},
-		},
 	}
 
 	for name, testCase := range testCases {
@@ -118,9 +107,10 @@ func TestIPv46AddressTypeValidate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			diags := customtypes.IPv46AddressType{}.Validate(context.Background(), testCase.in, path.Root("test"))
-
-			if diff := cmp.Diff(diags, testCase.expectedDiags); diff != "" {
+			request := xattr.ValidateAttributeRequest{Path: path.Root("test")}
+			var response xattr.ValidateAttributeResponse
+			customtypes.IPv46Address{StringValue: testCase.in}.ValidateAttribute(context.Background(), request, &response)
+			if diff := cmp.Diff(response.Diagnostics, testCase.expectedDiags); diff != "" {
 				t.Errorf("Unexpected diagnostics (-got, +expected): %s", diff)
 			}
 		})

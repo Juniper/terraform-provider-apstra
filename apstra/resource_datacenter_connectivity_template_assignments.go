@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -13,9 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateAssignments{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterConnectivityTemplateAssignments{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplateAssignments{}
+var (
+	_ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateAssignments{}
+	_ resourceWithSetBpClientFunc    = &resourceDatacenterConnectivityTemplateAssignments{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterConnectivityTemplateAssignments{}
+)
 
 type resourceDatacenterConnectivityTemplateAssignments struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
