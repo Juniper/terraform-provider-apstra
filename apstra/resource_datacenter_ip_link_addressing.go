@@ -41,7 +41,7 @@ func (o *resourceDatacenterIpLinkAddressing) Configure(ctx context.Context, req 
 func (o *resourceDatacenterIpLinkAddressing) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates IPv4 and IPv6 addressing on L3 " +
-			"subinterfaces within a Datacenter Blueprint fabric. It is intended for use with subinterfaces created " +
+			"links within a Datacenter Blueprint fabric. It is intended for use with links created " +
 			"as a side-effect of assigning Connectivity Templates containing IP Link primitives.",
 		Attributes: blueprint.IpLinkAddressing{}.ResourceAttributes(),
 	}

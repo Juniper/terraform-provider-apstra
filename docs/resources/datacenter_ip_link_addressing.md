@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_ip_link_addressing Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource creates IPv4 and IPv6 addressing on L3 subinterfaces within a Datacenter Blueprint fabric. It is intended for use with subinterfaces created as a side-effect of assigning Connectivity Templates containing IP Link primitives.
+  This resource creates IPv4 and IPv6 addressing on L3 links within a Datacenter Blueprint fabric. It is intended for use with links created as a side-effect of assigning Connectivity Templates containing IP Link primitives.
 ---
 
 # apstra_datacenter_ip_link_addressing (Resource)
 
-This resource creates IPv4 and IPv6 addressing on L3 subinterfaces within a Datacenter Blueprint fabric. It is intended for use with subinterfaces created as a side-effect of assigning Connectivity Templates containing IP Link primitives.
+This resource creates IPv4 and IPv6 addressing on L3 links within a Datacenter Blueprint fabric. It is intended for use with links created as a side-effect of assigning Connectivity Templates containing IP Link primitives.
 
 
 ## Example Usage
