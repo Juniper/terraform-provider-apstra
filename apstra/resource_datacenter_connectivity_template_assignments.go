@@ -82,7 +82,13 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Create(ctx context.C
 			err.Error())
 	}
 
-	// set state
+	// Fetch IP link IDs
+	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -123,8 +129,16 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Read(ctx context.Con
 		}
 	}
 
-	// Set state
+	// Load application point IDs
 	state.ApplicationPointIds = types.SetValueMust(types.StringType, apIds)
+
+	// Fetch IP link IDs
+	state.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -171,6 +185,13 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Update(ctx context.C
 			err.Error())
 	}
 
+	// Fetch IP link IDs
+	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
