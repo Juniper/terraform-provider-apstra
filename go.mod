@@ -25,7 +25,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
-	honnef.co/go/tools v0.4.3
+	honnef.co/go/tools v0.4.7
 	mvdan.cc/gofumpt v0.6.0
 )
 
