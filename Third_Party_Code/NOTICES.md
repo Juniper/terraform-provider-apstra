@@ -214,8 +214,8 @@
 ## github.com/ProtonMail/go-crypto
 
 * Name: github.com/ProtonMail/go-crypto
-* Version: v1.1.0-alpha.2
-* License: [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.1.0-alpha.2/LICENSE)
+* Version: v1.1.0-alpha.3-proton
+* License: [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.1.0-alpha.3-proton/LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -672,8 +672,8 @@ written authorization of the copyright holder.
 ## github.com/cloudflare/circl
 
 * Name: github.com/cloudflare/circl
-* Version: v1.3.7
-* License: [BSD-3-Clause](https://github.com/cloudflare/circl/blob/v1.3.7/LICENSE)
+* Version: v1.3.9
+* License: [BSD-3-Clause](https://github.com/cloudflare/circl/blob/v1.3.9/LICENSE)
 
 ```
 Copyright (c) 2019 Cloudflare. All rights reserved.
@@ -3170,10 +3170,12 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/go-version
 
 * Name: github.com/hashicorp/go-version
-* Version: v1.6.0
-* License: [MPL-2.0](https://github.com/hashicorp/go-version/blob/v1.6.0/LICENSE)
+* Version: v1.7.0
+* License: [MPL-2.0](https://github.com/hashicorp/go-version/blob/v1.7.0/LICENSE)
 
 ```
+Copyright (c) 2014 HashiCorp, Inc.
+
 Mozilla Public License, version 2.0
 
 1. Definitions
@@ -10187,8 +10189,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.23.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.23.0:LICENSE)
+* Version: v0.25.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.25.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10224,8 +10226,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/exp/constraints
 
 * Name: golang.org/x/exp/constraints
-* Version: v0.0.0-20240213143201-ec583247a57a
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/ec583247:LICENSE)
+* Version: v0.0.0-20240707233637-46b078467d37
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/46b07846:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10261,8 +10263,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/mod
 
 * Name: golang.org/x/mod
-* Version: v0.16.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.16.0:LICENSE)
+* Version: v0.19.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.19.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10298,8 +10300,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.23.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.23.0:LICENSE)
+* Version: v0.27.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.27.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10335,8 +10337,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.15.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.15.0:LICENSE)
+* Version: v0.16.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.16.0:LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -10372,8 +10374,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20240227224415-6ceb2ff114de
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/6ceb2ff114de/googleapis/rpc/LICENSE)
+* Version: v0.0.0-20240708141625-4ad9e859172b
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/4ad9e859172b/googleapis/rpc/LICENSE)
 
 ```
 
@@ -10584,8 +10586,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.63.2
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.63.2/LICENSE)
+* Version: v1.65.0
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.65.0/LICENSE)
 
 ```
 
@@ -10796,8 +10798,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.34.0
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.34.0/LICENSE)
+* Version: v1.34.2
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.34.2/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.
