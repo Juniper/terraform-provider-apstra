@@ -1,10 +1,8 @@
 module github.com/Juniper/terraform-provider-apstra
 
-go 1.22.0
+go 1.22.5
 
 //replace github.com/Juniper/apstra-go-sdk => ../apstra-go-sdk
-
-toolchain go1.22.1
 
 require (
 	github.com/IBM/netaddr v1.5.0
