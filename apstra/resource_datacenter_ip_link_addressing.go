@@ -233,7 +233,7 @@ func (o *resourceDatacenterIpLinkAddressing) Read(ctx context.Context, req resou
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("Blueprint %s not found", state.BlueprintId), err.Error())
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("Failed to create Blueprint client", err.Error())
@@ -272,7 +272,7 @@ func (o *resourceDatacenterIpLinkAddressing) Update(ctx context.Context, req res
 	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.State.RemoveResource(ctx)
+			resp.Diagnostics.AddError(fmt.Sprintf("Blueprint %s not found", plan.BlueprintId), err.Error())
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
