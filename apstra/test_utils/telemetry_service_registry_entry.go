@@ -67,7 +67,6 @@ func TelemetryServiceRegistryEntryA(t testing.TB, ctx context.Context) *apstra.T
 	}
 	ts, err := client.GetTelemetryServiceRegistryEntry(ctx, "TestTelemetryServiceA")
 	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, client.DeleteTelemetryServiceRegistryEntry(ctx, sn)) })
 	if ts != nil {
 		return ts
 	}
