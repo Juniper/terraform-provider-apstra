@@ -25,17 +25,17 @@ data "apstra_telemetry_service_registry_entries" "not_builtin" {
 }
 
 data "apstra_telemetry_service_registry_entry" "all_not_built_in" {
-  for_each =  data.apstra_telemetry_service_registry_entries.not_builtin.service_names
+  for_each     = data.apstra_telemetry_service_registry_entries.not_builtin.service_names
   service_name = each.value
 }
 
-output "not_built_in_emtry" {
+output "not_built_in_entry" {
   value = data.apstra_telemetry_service_registry_entry.all_not_built_in
 }
 
 #Output looks something like this.
 #Outputs
-#not_built_in_emtry = {
+#not_built_in_entry = {
 #  "TestTelemetryServiceA" = {
 #    "application_schema" = "{\"properties\": {\"key\": {\"properties\": {\"authenticated_vlan\": {\"type\": \"string\"}, \"authorization_status\": {\"type\": \"string\"}, \"fallback_vlan_active\": {\"enum\": [\"True\", \"False\"], \"type\": \"string\"}, \"port_status\": {\"enum\": [\"authorized\", \"blocked\"], \"type\": \"string\"}, \"supplicant_mac\": {\"pattern\": \"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$\", \"type\": \"string\"}}, \"required\": [\"supplicant_mac\", \"authenticated_vlan\", \"authorization_status\", \"port_status\", \"fallback_vlan_active\"], \"type\": \"object\"}, \"value\": {\"description\": \"0 in case of blocked, 1 in case of authorized\", \"type\": \"integer\"}}, \"required\": [\"key\", \"value\"], \"type\": \"object\"}"
 #    "built_in" = false

@@ -17,9 +17,8 @@ This data source returns the Service Names of all Telemetry Service Registry Ent
 # Apstra Telemetry Service Registy Entries
 
 # Get all Entries
-data "apstra_telemetry_service_registry_entries" "all" {
-}
-output "all_entries"{
+data "apstra_telemetry_service_registry_entries" "all" {}
+output "all_entries" {
   value = data.apstra_telemetry_service_registry_entries.all
 }
 
@@ -27,7 +26,7 @@ output "all_entries"{
 data "apstra_telemetry_service_registry_entries" "builtin" {
   built_in = true
 }
-output "builtin_entries"{
+output "builtin_entries" {
   value = data.apstra_telemetry_service_registry_entries.builtin
 }
 
@@ -35,101 +34,102 @@ output "builtin_entries"{
 data "apstra_telemetry_service_registry_entries" "not_builtin" {
   built_in = false
 }
-output "not_builtin_entries"{
+output "not_builtin_entries" {
   value = data.apstra_telemetry_service_registry_entries.not_builtin
 }
 
 #Output will look something like this
-#Outputs:
-#
+
 #all_entries = {
-#"built_in" = tobool(null)
-#"service_names" = toset([
-#"TestTelemetryServiceA",
-#"TestTelemetryServiceC",
-#"arp",
-#"bgp",
-#"bgp_communities",
-#"bgp_route",
-#"blueprint_collector",
-#"disk_util",
-#"dot1x",
-#"dot1x_hosts",
-#"environment",
-#"evpn_host_flap",
-#"evpn_host_flap_count",
-#"evpn_vxlan_type1",
-#"evpn_vxlan_type3",
-#"evpn_vxlan_type4",
-#"evpn_vxlan_type5",
-#"hostname",
-#"interface",
-#"interface_counters",
-#"lag",
-#"lldp",
-#"mac",
-#"mlag",
-#"multiagent_detector",
-#"nsxt",
-#"optical_xcvr",
-#"ospf_state",
-#"poe_controller",
-#"poe_interfaces",
-#"resource_util",
-#"route",
-#"route_lookup",
-#"shared_tunnel_mode",
-#"virtual_infra",
-#"vxlan_floodlist",
-#"xcvr",
-#])
+#  "built_in"      = tobool(null)
+#  "service_names" = toset([
+#    "TestTelemetryServiceA",
+#    "TestTelemetryServiceC",
+#    "TestTelemetryServiceD",
+#    "arp",
+#    "bgp",
+#    "bgp_communities",
+#    "bgp_route",
+#    "blueprint_collector",
+#    "disk_util",
+#    "dot1x",
+#    "dot1x_hosts",
+#    "environment",
+#    "evpn_host_flap",
+#    "evpn_host_flap_count",
+#    "evpn_vxlan_type1",
+#    "evpn_vxlan_type3",
+#    "evpn_vxlan_type4",
+#    "evpn_vxlan_type5",
+#    "hostname",
+#    "interface",
+#    "interface_counters",
+#    "lag",
+#    "lldp",
+#    "mac",
+#    "mlag",
+#    "multiagent_detector",
+#    "nsxt",
+#    "optical_xcvr",
+#    "ospf_state",
+#    "poe_controller",
+#    "poe_interfaces",
+#    "resource_util",
+#    "route",
+#    "route_lookup",
+#    "shared_tunnel_mode",
+#    "virtual_infra",
+#    "vxlan_floodlist",
+#    "xcvr",
+#  ])
 #}
 #builtin_entries = {
-#"built_in" = true
-#"service_names" = toset([
-#"arp",
-#"bgp",
-#"bgp_communities",
-#"bgp_route",
-#"blueprint_collector",
-#"disk_util",
-#"dot1x",
-#"dot1x_hosts",
-#"environment",
-#"evpn_host_flap",
-#"evpn_host_flap_count",
-#"evpn_vxlan_type1",
-#"evpn_vxlan_type3",
-#"evpn_vxlan_type4",
-#"evpn_vxlan_type5",
-#"hostname",
-#"interface",
-#"interface_counters",
-#"lag",
-#"lldp",
-#"mac",
-#"mlag",
-#"multiagent_detector",
-#"nsxt",
-#"optical_xcvr",
-#"ospf_state",
-#"poe_controller",
-#"poe_interfaces",
-#"resource_util",
-#"route",
-#"route_lookup",
-#"shared_tunnel_mode",
-#"virtual_infra",
-#"vxlan_floodlist",
-#"xcvr",
-#])
+#  "built_in"      = true
+#  "service_names" = toset([
+#    "arp",
+#    "bgp",
+#    "bgp_communities",
+#    "bgp_route",
+#    "blueprint_collector",
+#    "disk_util",
+#    "dot1x",
+#    "dot1x_hosts",
+#    "environment",
+#    "evpn_host_flap",
+#    "evpn_host_flap_count",
+#    "evpn_vxlan_type1",
+#    "evpn_vxlan_type3",
+#    "evpn_vxlan_type4",
+#    "evpn_vxlan_type5",
+#    "hostname",
+#    "interface",
+#    "interface_counters",
+#    "lag",
+#    "lldp",
+#    "mac",
+#    "mlag",
+#    "multiagent_detector",
+#    "nsxt",
+#    "optical_xcvr",
+#    "ospf_state",
+#    "poe_controller",
+#    "poe_interfaces",
+#    "resource_util",
+#    "route",
+#    "route_lookup",
+#    "shared_tunnel_mode",
+#    "virtual_infra",
+#    "vxlan_floodlist",
+#    "xcvr",
+#  ])
 #}
 #not_builtin_entries = {
-#"built_in" = false
-#"service_names" = toset([
-#"TestTelemetryServiceA",
-#"TestTelemetryServiceC",
-#])
+#  "built_in"      = false
+#  "service_names" = toset([
+#    "TestTelemetryServiceA",
+#    "TestTelemetryServiceC",
+#    "TestTelemetryServiceD",
+#  ])
 #}
 ```
 
@@ -142,4 +142,4 @@ output "not_builtin_entries"{
 
 ### Read-Only
 
-- `service_names` (Set of String) A set of Apstra object ID numbers.
+- `service_names` (Set of String) A set of Service Names
