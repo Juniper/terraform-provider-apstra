@@ -72,7 +72,7 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			},
 			"interfaces": schema.SetNestedAttribute{
-				MarkdownDescription: "Ordered list of interface mapping info.",
+				MarkdownDescription: "Set of interface mapping info.",
 				Required:            true,
 				Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
@@ -80,7 +80,7 @@ func (o *resourceInterfaceMap) Schema(_ context.Context, _ resource.SchemaReques
 				},
 			},
 			"unused_interfaces": schema.SetNestedAttribute{
-				MarkdownDescription: "Ordered list of interface mapping info for unused interfaces.",
+				MarkdownDescription: "Set of of interface mapping info detailing unused interfaces.",
 				Computed:            true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: rInterfaceMapInterface{}.unusedAttributes(),
