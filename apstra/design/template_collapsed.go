@@ -41,8 +41,9 @@ func (o TemplateCollapsed) AttrTypes() map[string]attr.Type {
 func (o TemplateCollapsed) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Template ID. Required when `id` is omitted.",
-			Required:            true,
+			MarkdownDescription: "Apstra Template ID. Required when `name` is omitted.",
+			Optional:            true,
+			Computed:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				stringvalidator.ExactlyOneOf(path.Expressions{
