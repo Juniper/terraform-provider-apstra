@@ -10223,9 +10223,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ```
 
-## golang.org/x/exp/constraints
+## golang.org/x/exp
 
-* Name: golang.org/x/exp/constraints
+* Name: golang.org/x/exp
 * Version: v0.0.0-20240707233637-46b078467d37
 * License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/46b07846:LICENSE)
 
