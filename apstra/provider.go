@@ -120,7 +120,9 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 			"fabrics.\n\nIt covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 "+
 			"capabilities within *Datacenter* Apstra reference design Blueprints.\n\nUse the navigation tree to the "+
 			"left to read about the available resources and data sources.\n\nThis release has been tested with "+
-			"Apstra versions %s.", compatibility.SupportedApiVersionsPretty()),
+			"Apstra versions %s.\n\nSome example projects which make use of this provider can be found "+
+			"[here](https://github.com/Juniper/terraform-apstra-examples).",
+			compatibility.SupportedApiVersionsPretty()),
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n It is possible " +
