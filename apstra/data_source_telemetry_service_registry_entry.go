@@ -28,9 +28,8 @@ func (o *dataSourceTelemetryServiceRegistryEntry) Configure(ctx context.Context,
 
 func (o *dataSourceTelemetryServiceRegistryEntry) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific TelemetryServiceRegistryEntry.\n\n" +
-			"At least one optional attribute is required.",
-		Attributes: analytics.TelemetryServiceRegistryEntry{}.DataSourceAttributes(),
+		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Telemetry Service Registry Entry.",
+		Attributes:          analytics.TelemetryServiceRegistryEntry{}.DataSourceAttributes(),
 	}
 }
 
@@ -41,9 +40,7 @@ func (o *dataSourceTelemetryServiceRegistryEntry) Read(ctx context.Context, req 
 		return
 	}
 
-	var err error
-	var api *apstra.TelemetryServiceRegistryEntry
-	api, err = o.client.GetTelemetryServiceRegistryEntry(ctx, config.ServiceName.ValueString())
+	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, config.ServiceName.ValueString())
 	if utils.IsApstra404(err) {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("name"),

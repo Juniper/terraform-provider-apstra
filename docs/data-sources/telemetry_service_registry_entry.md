@@ -2,15 +2,12 @@
 page_title: "apstra_telemetry_service_registry_entry Data Source - terraform-provider-apstra"
 subcategory: "Design"
 description: |-
-  This data source provides details of a specific TelemetryServiceRegistryEntry.
-  At least one optional attribute is required.
+  This data source provides details of a specific Telemetry Service Registry Entry.
 ---
 
 # apstra_telemetry_service_registry_entry (Data Source)
 
-This data source provides details of a specific TelemetryServiceRegistryEntry.
-
-At least one optional attribute is required.
+This data source provides details of a specific Telemetry Service Registry Entry.
 
 
 ## Example Usage

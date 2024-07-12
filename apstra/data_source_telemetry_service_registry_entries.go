@@ -52,10 +52,9 @@ func (o *dataSourceTelemetryServiceRegistryEntries) Read(ctx context.Context, re
 		return
 	}
 
-	var err error
 	tses, err := o.client.GetAllTelemetryServiceRegistryEntries(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("error retrieving Property Set IDs", err.Error())
+		resp.Diagnostics.AddError("error retrieving Telemetry Service Registry Entries", err.Error())
 		return
 	}
 	var snames []string
