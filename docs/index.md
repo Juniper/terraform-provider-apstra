@@ -14,6 +14,8 @@ Use the navigation tree to the left to read about the available resources and da
 
 This release has been tested with Apstra versions 4.2.0, 4.2.1, 4.2.1.1, and 4.2.2.
 
+Some example projects which make use of this provider can be found [here](https://github.com/Juniper/terraform-apstra-examples).
+
 ## Configuration
 
 ### Provider configuration stanza
