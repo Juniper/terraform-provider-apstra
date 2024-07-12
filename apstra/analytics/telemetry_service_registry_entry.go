@@ -71,7 +71,7 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 			Required:            true,
 		},
 		"storage_schema_path": resourceSchema.StringAttribute{
-			MarkdownDescription: "Storage Schema Path.  Must be one of:\\n\\n  - " + strings.Join(allsspaths, "\\n  - ") + "\n",
+			MarkdownDescription: "Storage Schema Path.  Must be one of: \n \n  - " + strings.Join(allsspaths, "\n  - ") + "\n",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
