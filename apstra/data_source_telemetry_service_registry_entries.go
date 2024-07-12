@@ -28,7 +28,7 @@ func (o *dataSourceTelemetryServiceRegistryEntries) Schema(_ context.Context, _ 
 		MarkdownDescription: docCategoryDesign + "This data source returns the Service Names of all Telemetry Service Registry Entries.",
 		Attributes: map[string]schema.Attribute{
 			"service_names": schema.SetAttribute{
-				MarkdownDescription: "A set of Apstra object ID numbers.",
+				MarkdownDescription: "A set of Service Names",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},

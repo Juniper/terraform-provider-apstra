@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -15,57 +16,12 @@ import (
 )
 
 type TelemetryServiceRegistryEntry struct {
-	ServiceName       types.String `tfsdk:"service_name"`
-	ApplicationSchema types.String `tfsdk:"application_schema"`
-	StorageSchemaPath types.String `tfsdk:"storage_schema_path"`
-	Builtin           types.Bool   `tfsdk:"built_in"`
-	Description       types.String `tfsdk:"description"`
-	Version           types.String `tfsdk:"version"`
-}
-
-func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceSchema.Attribute {
-	return map[string]resourceSchema.Attribute{
-		"service_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Service Name. Used to identify the Service.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-		},
-		"application_schema": resourceSchema.StringAttribute{
-			MarkdownDescription: "Application Schema expressed in Json schema",
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-		},
-		"storage_schema_path": resourceSchema.StringAttribute{
-			MarkdownDescription: "Storage Schema Path",
-			Required:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
-		},
-		"description": resourceSchema.StringAttribute{
-			MarkdownDescription: "Description",
-			Optional:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
-		},
-		"version": resourceSchema.StringAttribute{
-			MarkdownDescription: "Version",
-			Optional:            true,
-			Computed:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.UseStateForUnknown(),
-			},
-		},
-		"built_in": resourceSchema.BoolAttribute{
-			MarkdownDescription: "True If built in.",
-			Computed:            true,
-		},
-	}
+	ServiceName       types.String         `tfsdk:"service_name"`
+	ApplicationSchema jsontypes.Normalized `tfsdk:"application_schema"`
+	StorageSchemaPath types.String         `tfsdk:"storage_schema_path"`
+	Builtin           types.Bool           `tfsdk:"built_in"`
+	Description       types.String         `tfsdk:"description"`
+	Version           types.String         `tfsdk:"version"`
 }
 
 func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -77,6 +33,7 @@ func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSou
 		},
 		"application_schema": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Application Schema expressed in Json schema",
+			CustomType:          jsontypes.NormalizedType{},
 			Computed:            true,
 		},
 		"storage_schema_path": dataSourceSchema.StringAttribute{
@@ -98,16 +55,54 @@ func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSou
 	}
 }
 
+func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"service_name": resourceSchema.StringAttribute{
+			MarkdownDescription: "Service Name. Used to identify the Service.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+		},
+		"application_schema": resourceSchema.StringAttribute{
+			MarkdownDescription: "Application Schema expressed in JSON",
+			CustomType:          jsontypes.NormalizedType{},
+			Required:            true,
+		},
+		"storage_schema_path": resourceSchema.StringAttribute{
+			MarkdownDescription: "Storage Schema Path",
+			Required:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Description",
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+			},
+		},
+		"version": resourceSchema.StringAttribute{
+			MarkdownDescription: "Version",
+			Computed:            true,
+		},
+		"built_in": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Indicates if provided by Apstra",
+			Computed:            true,
+		},
+	}
+}
+
 func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *apstra.TelemetryServiceRegistryEntry, diag *diag.Diagnostics) {
 	o.ServiceName = types.StringValue(in.ServiceName)
 	o.Version = types.StringValue(in.Version)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diag)
 	o.Builtin = types.BoolValue(in.Builtin)
-	o.ApplicationSchema = types.StringValue(string(in.ApplicationSchema))
+	o.ApplicationSchema = jsontypes.NewNormalizedValue(string(in.ApplicationSchema))
 	o.StorageSchemaPath = types.StringValue(in.StorageSchemaPath.String())
 }
 
-func (o *TelemetryServiceRegistryEntry) Request(ctx context.Context, d *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
+func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, d *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
 	var s apstra.StorageSchemaPath
 	e := s.FromString(o.StorageSchemaPath.ValueString())
 	if e != nil {
