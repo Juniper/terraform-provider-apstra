@@ -93,7 +93,7 @@ output "r" {
 
 - `application_schema` (String) Application Schema expressed in JSON
 - `service_name` (String) Service Name. Used to identify the Service.
-- `storage_schema_path` (String) Storage Schema Path
+- `storage_schema_path` (String) Storage Schema Path.  Must be one of:\n\n  - arp\n  - bgp\n  - cpp_graph\n  - environment\n  - generic\n  - graph\n  - hostname\n  - iba_integer_data\n  - iba_string_data\n  - interface\n  - interface_counters\n  - lag\n  - lldp\n  - mac\n  - mlag\n  - nsxt\n  - optical_xcvr\n  - route\n  - route_lookup\n  - xcvr
 
 ### Optional
 

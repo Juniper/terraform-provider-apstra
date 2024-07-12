@@ -207,8 +207,8 @@ resource "apstra_telemetry_service_registry_entry" "test" {
 		   ],
 		   "type":"object"
 		}`
-	ss1 = "aos.sdk.telemetry.schemas.iba_integer_data"
-	ss2 = "aos.sdk.telemetry.schemas.iba_string_data"
+	ss1 = "iba_integer_data"
+	ss2 = "iba_string_data"
 )
 
 func TestAccResourceTelemetryServiceRegistryEntry(t *testing.T) {

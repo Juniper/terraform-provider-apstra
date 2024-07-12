@@ -72,8 +72,9 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
+	case apstra.StorageSchemaPath:
+		return storageSchemaPathToFriendlyString(in0)
 	}
-
 	return in[0].String()
 }
 
@@ -108,8 +109,9 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
+	case *apstra.StorageSchemaPath:
+		return target.FromString("aos.sdk.telemetry.schemas." + in[0])
 	}
-
 	return target.FromString(in[0])
 }
 
@@ -198,6 +200,11 @@ func refDesignToFriendlyString(in apstra.RefDesign) string {
 	}
 
 	return in.String()
+}
+
+func storageSchemaPathToFriendlyString(in apstra.StorageSchemaPath) string {
+	s := strings.Split(in.String(), ".")
+	return s[len(s)-1]
 }
 
 func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {

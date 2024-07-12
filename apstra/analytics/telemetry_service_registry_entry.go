@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 type TelemetryServiceRegistryEntry struct {
@@ -56,6 +57,7 @@ func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSou
 }
 
 func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceSchema.Attribute {
+	allsspaths := utils.AllStorageSchemaPaths()
 	return map[string]resourceSchema.Attribute{
 		"service_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Service Name. Used to identify the Service.",
@@ -69,10 +71,11 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 			Required:            true,
 		},
 		"storage_schema_path": resourceSchema.StringAttribute{
-			MarkdownDescription: "Storage Schema Path",
+			MarkdownDescription: "Storage Schema Path.  Must be one of:\\n\\n  - " + strings.Join(allsspaths, "\\n  - ") + "\n",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
+				stringvalidator.OneOf(allsspaths...),
 			},
 		},
 		"description": resourceSchema.StringAttribute{
@@ -99,12 +102,12 @@ func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *aps
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diag)
 	o.Builtin = types.BoolValue(in.Builtin)
 	o.ApplicationSchema = jsontypes.NewNormalizedValue(string(in.ApplicationSchema))
-	o.StorageSchemaPath = types.StringValue(in.StorageSchemaPath.String())
+	o.StorageSchemaPath = types.StringValue(utils.StringersToFriendlyString(in.StorageSchemaPath))
 }
 
 func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, d *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
 	var s apstra.StorageSchemaPath
-	e := s.FromString(o.StorageSchemaPath.ValueString())
+	e := utils.ApiStringerFromFriendlyString(&s, o.StorageSchemaPath.ValueString())
 	if e != nil {
 		d.AddError("Failed to Parse Storage Schema Path", e.Error())
 		return nil
