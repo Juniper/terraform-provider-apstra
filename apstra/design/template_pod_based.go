@@ -238,6 +238,10 @@ func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *Templ
 func (o TemplatePodBased) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
+	if o.FabricAddressing.IsUnknown() {
+		return apiversions.Constraints{} // cannot validate
+	}
+
 	if !o.FabricAddressing.IsNull() {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{

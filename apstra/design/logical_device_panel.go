@@ -173,6 +173,10 @@ func (o *LogicalDevicePanel) Validate(ctx context.Context, i int, diags *diag.Di
 	// count up the ports in each port group
 	var panelPortsByPortGroup int64
 	for _, portGroup := range portGroups {
+		if portGroup.PortCount.IsUnknown() {
+			return // cannot validate with any unknown port count
+		}
+
 		panelPortsByPortGroup = panelPortsByPortGroup + portGroup.PortCount.ValueInt64()
 	}
 
