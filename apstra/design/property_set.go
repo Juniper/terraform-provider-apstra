@@ -64,14 +64,14 @@ func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribut
 func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Property Set by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Apstra ID number of the Property Set.",
 			Computed:            true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.UseStateForUnknown(),
 			},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up a Property Set by name. Required when `id` is omitted.",
+			MarkdownDescription: "Name of the Property Set.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
