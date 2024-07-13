@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"testing"
+
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"strings"
-	"testing"
 )
 
 const (
@@ -43,7 +44,7 @@ func TestAccDataSourceTelemetryServiceRegistryEntry(t *testing.T) {
 	}
 
 	resource.Test(t, resource.TestCase{
-		//PreCheck:                 setup,
+		// PreCheck:                 setup,
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read by ID

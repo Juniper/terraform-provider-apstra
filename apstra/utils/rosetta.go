@@ -75,6 +75,7 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 	case apstra.StorageSchemaPath:
 		return storageSchemaPathToFriendlyString(in0)
 	}
+
 	return in[0].String()
 }
 
@@ -112,6 +113,7 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 	case *apstra.StorageSchemaPath:
 		return target.FromString("aos.sdk.telemetry.schemas." + in[0])
 	}
+
 	return target.FromString(in[0])
 }
 

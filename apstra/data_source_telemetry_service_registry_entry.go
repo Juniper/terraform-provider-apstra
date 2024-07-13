@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/analytics"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,8 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceTelemetryServiceRegistryEntry{}
-var _ datasourceWithSetClient = &dataSourceTelemetryServiceRegistryEntry{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceTelemetryServiceRegistryEntry{}
+	_ datasourceWithSetClient            = &dataSourceTelemetryServiceRegistryEntry{}
+)
 
 type dataSourceTelemetryServiceRegistryEntry struct {
 	client *apstra.Client

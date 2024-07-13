@@ -2,9 +2,10 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TelemetryServiceRegistryEntryA(t testing.TB, ctx context.Context) *apstra.TelemetryServiceRegistryEntry {

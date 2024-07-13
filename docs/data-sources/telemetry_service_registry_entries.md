@@ -2,12 +2,12 @@
 page_title: "apstra_telemetry_service_registry_entries Data Source - terraform-provider-apstra"
 subcategory: "Design"
 description: |-
-  This data source returns the Service Names of all Telemetry Service Registry Entries.
+  This data source returns the Service Names of Telemetry Service Registry Entries.
 ---
 
 # apstra_telemetry_service_registry_entries (Data Source)
 
-This data source returns the Service Names of all Telemetry Service Registry Entries.
+This data source returns the Service Names of Telemetry Service Registry Entries.
 
 
 ## Example Usage

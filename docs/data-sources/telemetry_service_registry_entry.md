@@ -61,7 +61,7 @@ output "not_built_in_entry" {
 
 ### Read-Only
 
-- `application_schema` (String) Application Schema expressed in Json schema
+- `application_schema` (String) Application Schema expressed in JSON
 - `built_in` (Boolean) True If built in.
 - `description` (String) Description
 - `storage_schema_path` (String) Storage Schema Path

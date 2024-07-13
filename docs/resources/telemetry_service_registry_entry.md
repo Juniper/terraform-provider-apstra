@@ -93,8 +93,7 @@ output "r" {
 
 - `application_schema` (String) Application Schema expressed in JSON
 - `service_name` (String) Service Name. Used to identify the Service.
-- `storage_schema_path` (String) Storage Schema Path.  Must be one of: 
- 
+- `storage_schema_path` (String) Storage Schema Path. Must be one of:
   - arp
   - bgp
   - cpp_graph
