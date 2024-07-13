@@ -22,7 +22,7 @@ This resource assigns one or more Connectivity Templates to an Application Point
 # - apstra_datacenter_interfaces_by_link_tag
 # - apstra_datacenter_interfaces_by_system
 
-resource "apstra_datacenter_connectivity_template_assignment" "a" {
+resource "apstra_datacenter_connectivity_templates_assignment" "a" {
   blueprint_id              = "b726704d-f80e-4733-9103-abd6ccd8752c"
   application_point_id      = "FkYtMBdeoJ5urBaIEi8"
   connectivity_template_ids = [
@@ -47,7 +47,7 @@ resource "apstra_datacenter_connectivity_template_assignment" "a" {
 
 ### Read-Only
 
-- `ip_links_ids` (Map of Map of String) New Logical Links are created when Connectivity Templates containing *IP Link* primitives are attached to a switch interface. These logical links may or may not be VLAN-tagged. This attribute is a two-dimensional map. The outer map is keyed by Connectivity Template ID. The inner map is keyed by VLAN number. Untagged Logical Links are represented in the inner map by key `0`.
+- `ip_link_ids` (Map of Map of String) New Logical Links are created when Connectivity Templates containing *IP Link* primitives are attached to a switch interface. These logical links may or may not be VLAN-tagged. This attribute is a two-dimensional map. The outer map is keyed by Connectivity Template ID. The inner map is keyed by VLAN number. Untagged Logical Links are represented in the inner map by key `0`.
 **Note:** requires `fetch_iplink_ids = true`
 
 

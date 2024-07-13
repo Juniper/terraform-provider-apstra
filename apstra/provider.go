@@ -4,6 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"runtime"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -16,13 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net/http"
-	"os"
-	"runtime"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -120,7 +122,9 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 			"fabrics.\n\nIt covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 "+
 			"capabilities within *Datacenter* Apstra reference design Blueprints.\n\nUse the navigation tree to the "+
 			"left to read about the available resources and data sources.\n\nThis release has been tested with "+
-			"Apstra versions %s.", compatibility.SupportedApiVersionsPretty()),
+			"Apstra versions %s.\n\nSome example projects which make use of this provider can be found "+
+			"[here](https://github.com/Juniper/terraform-apstra-examples).",
+			compatibility.SupportedApiVersionsPretty()),
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				MarkdownDescription: "URL of the apstra server, e.g. `https://apstra.example.com`\n It is possible " +
@@ -309,9 +313,10 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	if err != nil {
 		var ace apstra.ClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrCompatibility {
-			resp.Diagnostics.AddError("Incompatible Apstra API Version specified.", "Possible explanation: "+
-				"you may be trying to use an unsupported version of the API. Setting `experimental = true` will "+
-				"bypass compatibility checks.")
+			resp.Diagnostics.AddError( // SDK incompatibility detected
+				err.Error(),
+				"You may be trying to use an unsupported version of Apstra. Setting `experimental = true` "+
+					"in the provider configuration block will bypass compatibility checks.")
 			return
 		}
 
@@ -335,6 +340,14 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		}
 
 		resp.Diagnostics.AddError("unable to create client", msg)
+		return
+	}
+
+	if !slices.Contains(compatibility.SupportedApiVersions(), client.ApiVersion()) {
+		resp.Diagnostics.AddError( // provider incompatibility detected
+			fmt.Sprintf("Incompatible Apstra API Version %s", client.ApiVersion()),
+			"You may be trying to use an unsupported version of Apstra. Setting `experimental = true` "+
+				"in the provider configuration block will bypass compatibility checks.")
 		return
 	}
 
@@ -573,7 +586,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 	}
 }
 
-func terraformVersionWarnings(ctx context.Context, version string, diags *diag.Diagnostics) {
+func terraformVersionWarnings(_ context.Context, version string, diags *diag.Diagnostics) {
 	const tf150warning = "" +
 		"You're using Terraform %s. Terraform 1.5.0 has a known issue calculating " +
 		"plans in certain situations. More info at: https://github.com/hashicorp/terraform/issues/33371"

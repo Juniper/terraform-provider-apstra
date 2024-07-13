@@ -115,14 +115,14 @@ resource "apstra_interface_map" "with_loops" {
 ### Required
 
 - `device_profile_id` (String) ID of Device Profile to be mapped.
-- `interfaces` (Attributes Set) Ordered list of interface mapping info. (see [below for nested schema](#nestedatt--interfaces))
+- `interfaces` (Attributes Set) Set of interface mapping info. (see [below for nested schema](#nestedatt--interfaces))
 - `logical_device_id` (String) ID of Logical Device to be mapped.
 - `name` (String) Interface Map name as displayed in the web UI
 
 ### Read-Only
 
 - `id` (String) Apstra ID number of the Interface Map
-- `unused_interfaces` (Attributes Set) Ordered list of interface mapping info for unused interfaces. (see [below for nested schema](#nestedatt--unused_interfaces))
+- `unused_interfaces` (Attributes Set) Set of of interface mapping info detailing unused interfaces. (see [below for nested schema](#nestedatt--unused_interfaces))
 
 <a id="nestedatt--interfaces"></a>
 ### Nested Schema for `interfaces`

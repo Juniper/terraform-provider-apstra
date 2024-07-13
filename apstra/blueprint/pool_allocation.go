@@ -3,6 +3,8 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -15,8 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"sort"
-	"strings"
 )
 
 type PoolAllocation struct {
@@ -24,13 +24,10 @@ type PoolAllocation struct {
 	Role          types.String `tfsdk:"role"`
 	PoolIds       types.Set    `tfsdk:"pool_ids"`
 	RoutingZoneId types.String `tfsdk:"routing_zone_id"`
-	//PoolAllocationId types.String `tfsdk:"pool_allocation_id"` // placeholder for freeform
+	// PoolAllocationId types.String `tfsdk:"pool_allocation_id"` // placeholder for freeform
 }
 
 func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute {
-	sortedRoles := utils.AllResourceGroupNameStrings()
-	sort.Strings(sortedRoles)
-
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID of the Blueprint to which the Resource Pool should be allocated.",
@@ -49,7 +46,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 		},
 		"role": resourceSchema.StringAttribute{
 			MarkdownDescription: "Fabric Role (Apstra Resource Group Name) must be one of:\n  - " +
-				strings.Join(sortedRoles, "\n  - ") + "\n",
+				strings.Join(utils.AllResourceGroupNameStrings(), "\n  - ") + "\n",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{
@@ -72,7 +69,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 					path.Expressions{
 						path.MatchRelative(),
 						// other blueprint objects to which pools can be assigned must be listed here
-						//path.MatchRoot("pool_allocation_id"), //placeholder for freeform
+						// path.MatchRoot("pool_allocation_id"), //placeholder for freeform
 					}...,
 				),
 			},

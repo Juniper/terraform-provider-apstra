@@ -1,6 +1,10 @@
 package utils
 
-import "github.com/Juniper/apstra-go-sdk/apstra"
+import (
+	"sort"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+)
 
 func AllResourceGroupNameStrings() []string {
 	argn := apstra.AllResourceGroupNames()
@@ -11,5 +15,7 @@ func AllResourceGroupNameStrings() []string {
 		}
 		result = append(result, StringersToFriendlyString(rgn))
 	}
+
+	sort.Strings(result)
 	return result
 }
