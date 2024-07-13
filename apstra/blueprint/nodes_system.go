@@ -90,9 +90,9 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 	// we're always going to perform at least one query, but we keep 'em as a slice
 	var queries []apstra.MatchQuery
 	switch {
-	case utils.Known(o.Filter): // one query, because the user specified 'filter' (deprecated)
+	case utils.HasValue(o.Filter): // one query, because the user specified 'filter' (deprecated)
 		var filter NodeTypeSystemAttributes
-		if utils.Known(o.Filter) {
+		if utils.HasValue(o.Filter) {
 			diags.Append(o.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 			if diags.HasError() {
 				return
@@ -103,9 +103,9 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 		if diags.HasError() {
 			return
 		}
-	case utils.Known(o.Filters): // many queries, because the user specified 'filters'
+	case utils.HasValue(o.Filters): // many queries, because the user specified 'filters'
 		var filters []NodeTypeSystemAttributes
-		if utils.Known(o.Filters) {
+		if utils.HasValue(o.Filters) {
 			diags.Append(o.Filters.ElementsAs(ctx, &filters, false)...)
 			if diags.HasError() {
 				return

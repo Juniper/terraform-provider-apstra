@@ -350,15 +350,15 @@ func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Dia
 }
 
 func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.SecurityZoneData, diags *diag.Diagnostics) {
-	if !utils.Known(o.Name) { // required attribute
+	if !utils.HasValue(o.Name) { // required attribute
 		o.Name = types.StringValue(data.Label)
 	}
 
-	if !utils.Known(o.VrfName) { // computed attribute
+	if !utils.HasValue(o.VrfName) { // computed attribute
 		o.VrfName = types.StringValue(data.VrfName)
 	}
 
-	if !utils.Known(o.VlanId) { // optional + computed attribute
+	if !utils.HasValue(o.VlanId) { // optional + computed attribute
 		if data.VlanId == nil {
 			o.VlanId = types.Int64Null()
 		} else {
@@ -366,7 +366,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		}
 	}
 
-	if !utils.Known(o.RoutingPolicyId) { // optional + computed attribute
+	if !utils.HasValue(o.RoutingPolicyId) { // optional + computed attribute
 		if data.RoutingPolicyId == "" {
 			o.RoutingPolicyId = types.StringNull()
 		} else {
@@ -374,7 +374,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		}
 	}
 
-	if !utils.Known(o.Vni) {
+	if !utils.HasValue(o.Vni) {
 		if data.VniId == nil {
 			o.Vni = types.Int64Null()
 		} else {
@@ -382,7 +382,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		}
 	}
 
-	if !utils.Known(o.ImportRouteTargets) {
+	if !utils.HasValue(o.ImportRouteTargets) {
 		if data.RtPolicy == nil || data.RtPolicy.ImportRTs == nil {
 			o.ImportRouteTargets = types.SetNull(types.StringType)
 		} else {
@@ -390,7 +390,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		}
 	}
 
-	if !utils.Known(o.ExportRouteTargets) {
+	if !utils.HasValue(o.ExportRouteTargets) {
 		if data.RtPolicy == nil || data.RtPolicy.ExportRTs == nil {
 			o.ExportRouteTargets = types.SetNull(types.StringType)
 		} else {
@@ -398,7 +398,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		}
 	}
 
-	if !utils.Known(o.JunosEvpnIrbMode) {
+	if !utils.HasValue(o.JunosEvpnIrbMode) {
 		if data.JunosEvpnIrbMode == nil {
 			o.JunosEvpnIrbMode = types.StringNull()
 		} else {
@@ -420,7 +420,7 @@ func (o *DatacenterRoutingZone) Query(szResultName string) *apstra.MatchQuery {
 	nodeQuery := new(apstra.PathQuery).Node(o.szNodeQueryAttributes(szResultName))
 	matchQuery.Match(nodeQuery)
 
-	if utils.Known(o.RoutingPolicyId) {
+	if utils.HasValue(o.RoutingPolicyId) {
 		q := new(apstra.PathQuery)
 		q.Node([]apstra.QEEAttribute{
 			{Key: "name", Value: apstra.QEStringVal(szResultName)},
@@ -435,7 +435,7 @@ func (o *DatacenterRoutingZone) Query(szResultName string) *apstra.MatchQuery {
 		matchQuery.Match(q)
 	}
 
-	if utils.Known(o.DhcpServers) {
+	if utils.HasValue(o.DhcpServers) {
 		q := new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
 				{Key: "name", Value: apstra.QEStringVal(szResultName)},
@@ -462,20 +462,20 @@ func (o *DatacenterRoutingZone) Query(szResultName string) *apstra.MatchQuery {
 		matchQuery.Match(q)
 	}
 
-	if utils.Known(o.ImportRouteTargets) || utils.Known(o.ExportRouteTargets) {
+	if utils.HasValue(o.ImportRouteTargets) || utils.HasValue(o.ExportRouteTargets) {
 		rtPolicyNodeAttrs := []apstra.QEEAttribute{
 			{Key: "type", Value: apstra.QEStringVal(apstra.NodeTypeRouteTargetPolicy.String())},
 			{Key: "name", Value: apstra.QEStringVal("rt_policy")},
 		}
 
-		if utils.Known(o.ImportRouteTargets) {
+		if utils.HasValue(o.ImportRouteTargets) {
 			rtPolicyNodeAttrs = append(rtPolicyNodeAttrs, apstra.QEEAttribute{
 				Key:   "import_RTs",
 				Value: apstra.QENone(false),
 			})
 		}
 
-		if utils.Known(o.ExportRouteTargets) {
+		if utils.HasValue(o.ExportRouteTargets) {
 			rtPolicyNodeAttrs = append(rtPolicyNodeAttrs, apstra.QEEAttribute{
 				Key:   "export_RTs",
 				Value: apstra.QENone(false),
@@ -524,23 +524,23 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 		result = append(result, apstra.QEEAttribute{Key: "name", Value: apstra.QEStringVal(name)})
 	}
 
-	if utils.Known(o.Name) {
+	if utils.HasValue(o.Name) {
 		result = append(result, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Name.ValueString())})
 	}
 
-	if utils.Known(o.VrfName) {
+	if utils.HasValue(o.VrfName) {
 		result = append(result, apstra.QEEAttribute{Key: "vrf_name", Value: apstra.QEStringVal(o.VrfName.ValueString())})
 	}
 
-	if utils.Known(o.Vni) {
+	if utils.HasValue(o.Vni) {
 		result = append(result, apstra.QEEAttribute{Key: "vni_id", Value: apstra.QEIntVal(int(o.Vni.ValueInt64()))})
 	}
 
-	if utils.Known(o.VlanId) {
+	if utils.HasValue(o.VlanId) {
 		result = append(result, apstra.QEEAttribute{Key: "vlan_id", Value: apstra.QEIntVal(int(o.VlanId.ValueInt64()))})
 	}
 
-	if utils.Known(o.JunosEvpnIrbMode) {
+	if utils.HasValue(o.JunosEvpnIrbMode) {
 		result = append(result, apstra.QEEAttribute{Key: "junos_evpn_irb_mode", Value: apstra.QEStringVal(o.JunosEvpnIrbMode.ValueString())})
 	}
 
@@ -548,13 +548,13 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 }
 
 func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
-	if utils.Known(o.VlanId) &&
-		utils.Known(o.Vni) &&
-		utils.Known(o.DhcpServers) &&
-		utils.Known(o.RoutingPolicyId) &&
-		utils.Known(o.ImportRouteTargets) &&
-		utils.Known(o.ExportRouteTargets) &&
-		utils.Known(o.JunosEvpnIrbMode) {
+	if utils.HasValue(o.VlanId) &&
+		utils.HasValue(o.Vni) &&
+		utils.HasValue(o.DhcpServers) &&
+		utils.HasValue(o.RoutingPolicyId) &&
+		utils.HasValue(o.ImportRouteTargets) &&
+		utils.HasValue(o.ExportRouteTargets) &&
+		utils.HasValue(o.JunosEvpnIrbMode) {
 		return nil // we are in Create() or Update() and have no need for an API call
 	}
 
@@ -576,7 +576,7 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 
 	o.LoadApiData(ctx, *sz.Data, diags)
 
-	if !utils.Known(o.DhcpServers) {
+	if !utils.HasValue(o.DhcpServers) {
 		dhcpServerIPs, err := bp.GetSecurityZoneDhcpServers(ctx, apstra.ObjectId(o.Id.ValueString()))
 		if err != nil {
 			diags.AddError("failed retrieving security zone DCHP servers", err.Error())
