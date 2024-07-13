@@ -45,7 +45,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 			},
 		},
 		"role": resourceSchema.StringAttribute{
-			MarkdownDescription: "Fabric Role (Apstra Resource Group Name) must be one of:\n\n  - " +
+			MarkdownDescription: "Fabric Role (Apstra Resource Group Name) must be one of:\n  - " +
 				strings.Join(utils.AllResourceGroupNameStrings(), "\n  - ") + "\n",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
