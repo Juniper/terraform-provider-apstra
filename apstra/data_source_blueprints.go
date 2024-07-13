@@ -49,7 +49,10 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 }
 
 func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config blueprints
+	var config struct {
+		Ids       types.Set    `tfsdk:"ids"`
+		RefDesign types.String `tfsdk:"reference_design"`
+	}
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -92,9 +95,4 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 
 func (o *dataSourceBlueprints) setClient(client *apstra.Client) {
 	o.client = client
-}
-
-type blueprints struct {
-	Ids       types.Set    `tfsdk:"ids"`
-	RefDesign types.String `tfsdk:"reference_design"`
 }
