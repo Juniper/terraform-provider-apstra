@@ -648,56 +648,56 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 func (o Blueprint) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
-	if utils.Known(o.FabricAddressing) {
+	if utils.HasValue(o.FabricAddressing) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("fabric_addressing"),
 			Constraints: apiversions.Ge411,
 		})
 	}
 
-	if utils.Known(o.DefaultSviL3Mtu) {
+	if utils.HasValue(o.DefaultSviL3Mtu) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("default_svi_l3_mtu"),
 			Constraints: apiversions.Ge420,
 		})
 	}
 
-	if utils.Known(o.FabricMtu) {
+	if utils.HasValue(o.FabricMtu) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("fabric_mtu"),
 			Constraints: apiversions.Ge420,
 		})
 	}
 
-	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
+	if utils.HasValue(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("junos_evpn_max_nexthop_and_interface_number"),
 			Constraints: apiversions.Ge420,
 		})
 	}
 
-	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
+	if utils.HasValue(o.JunosEvpnRoutingInstanceModeMacVrf) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
 			Constraints: apiversions.Ge420,
 		})
 	}
 
-	if utils.Known(o.JunosExOverlayEcmp) {
+	if utils.HasValue(o.JunosExOverlayEcmp) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("junos_ex_overlay_ecmp"),
 			Constraints: apiversions.Ge420,
 		})
 	}
 
-	if utils.Known(o.JunosGracefulRestart) {
+	if utils.HasValue(o.JunosGracefulRestart) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("junos_graceful_restart"),
 			Constraints: apiversions.Ge420,
 		})
 	}
 
-	if utils.Known(o.OptimizeRoutingZoneFootprint) {
+	if utils.HasValue(o.OptimizeRoutingZoneFootprint) {
 		response.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.Root("optimize_routing_zone_footprint"),
 			Constraints: apiversions.Ge420,
@@ -781,7 +781,7 @@ func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 		FabricSettings: fabricSettings,
 	}
 
-	if utils.Known(o.FabricAddressing) {
+	if utils.HasValue(o.FabricAddressing) {
 		result.FabricSettings.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
 			utils.ToPtr(path.Root("fabric_addressing")), diags)
 		if diags.HasError() {
@@ -813,7 +813,7 @@ func (o *Blueprint) LoadAntiAffninityPolicy(ctx context.Context, antiAffinitypol
 func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics) *apstra.FabricSettings {
 	var result apstra.FabricSettings
 
-	if utils.Known(o.AntiAffinityMode) && utils.Known(o.AntiAffinityPolicy) {
+	if utils.HasValue(o.AntiAffinityMode) && utils.HasValue(o.AntiAffinityPolicy) {
 		var aap AntiAffinityPolicy
 		diags.Append(o.AntiAffinityPolicy.As(ctx, &aap, basetypes.ObjectAsOptions{})...)
 		if diags.HasError() {
@@ -836,78 +836,78 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 		}
 	}
 
-	if utils.Known(o.DefaultSviL3Mtu) {
+	if utils.HasValue(o.DefaultSviL3Mtu) {
 		result.DefaultSviL3Mtu = utils.ToPtr(uint16(o.DefaultSviL3Mtu.ValueInt64()))
 	}
 
-	if utils.Known(o.EsiMacMsb) {
+	if utils.HasValue(o.EsiMacMsb) {
 		result.EsiMacMsb = utils.ToPtr(uint8(o.EsiMacMsb.ValueInt64()))
 	}
 
-	if utils.Known(o.EvpnType5Routes) {
+	if utils.HasValue(o.EvpnType5Routes) {
 		result.EvpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumDisabled
 		if o.EvpnType5Routes.ValueBool() {
 			result.EvpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumEnabled
 		}
 	}
 
-	if utils.Known(o.DefaultIpLinksToGenericMtu) {
+	if utils.HasValue(o.DefaultIpLinksToGenericMtu) {
 		result.ExternalRouterMtu = utils.ToPtr(uint16(o.DefaultIpLinksToGenericMtu.ValueInt64()))
 	}
 
-	if utils.Known(o.FabricMtu) {
+	if utils.HasValue(o.FabricMtu) {
 		result.FabricL3Mtu = utils.ToPtr(uint16(o.FabricMtu.ValueInt64()))
 	}
 
-	if utils.Known(o.Ipv6Applications) {
+	if utils.HasValue(o.Ipv6Applications) {
 		result.Ipv6Enabled = utils.ToPtr(o.Ipv6Applications.ValueBool())
 	}
 
-	if utils.Known(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
+	if utils.HasValue(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
 		result.JunosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumDisabled
 		if o.JunosEvpnMaxNexthopAndInterfaceNumber.ValueBool() {
 			result.JunosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumEnabled
 		}
 	}
 
-	if utils.Known(o.JunosEvpnRoutingInstanceModeMacVrf) {
+	if utils.HasValue(o.JunosEvpnRoutingInstanceModeMacVrf) {
 		result.JunosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumDisabled
 		if o.JunosEvpnRoutingInstanceModeMacVrf.ValueBool() {
 			result.JunosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumEnabled
 		}
 	}
 
-	if utils.Known(o.JunosExOverlayEcmp) {
+	if utils.HasValue(o.JunosExOverlayEcmp) {
 		result.JunosExOverlayEcmp = &apstra.FeatureSwitchEnumDisabled
 		if o.JunosExOverlayEcmp.ValueBool() {
 			result.JunosExOverlayEcmp = &apstra.FeatureSwitchEnumEnabled
 		}
 	}
 
-	if utils.Known(o.JunosGracefulRestart) {
+	if utils.HasValue(o.JunosGracefulRestart) {
 		result.JunosGracefulRestart = &apstra.FeatureSwitchEnumDisabled
 		if o.JunosGracefulRestart.ValueBool() {
 			result.JunosGracefulRestart = &apstra.FeatureSwitchEnumEnabled
 		}
 	}
 
-	if utils.Known(o.MaxEvpnRoutesCount) {
+	if utils.HasValue(o.MaxEvpnRoutesCount) {
 		result.MaxEvpnRoutes = utils.ToPtr(uint32(o.MaxEvpnRoutesCount.ValueInt64()))
 	}
 
-	if utils.Known(o.MaxExternalRoutesCount) {
+	if utils.HasValue(o.MaxExternalRoutesCount) {
 		result.MaxExternalRoutes = utils.ToPtr(uint32(o.MaxExternalRoutesCount.ValueInt64()))
 	}
 
-	if utils.Known(o.MaxFabricRoutesCount) {
+	if utils.HasValue(o.MaxFabricRoutesCount) {
 		result.MaxFabricRoutes = utils.ToPtr(uint32(o.MaxFabricRoutesCount.ValueInt64()))
 	}
 
-	if utils.Known(o.MaxMlagRoutesCount) {
+	if utils.HasValue(o.MaxMlagRoutesCount) {
 		result.MaxMlagRoutes = utils.ToPtr(uint32(o.MaxMlagRoutesCount.ValueInt64()))
 	}
 
-	if utils.Known(o.OptimizeRoutingZoneFootprint) {
+	if utils.HasValue(o.OptimizeRoutingZoneFootprint) {
 		result.OptimiseSzFootprint = &apstra.FeatureSwitchEnumDisabled
 		if o.OptimizeRoutingZoneFootprint.ValueBool() {
 			result.OptimiseSzFootprint = &apstra.FeatureSwitchEnumEnabled

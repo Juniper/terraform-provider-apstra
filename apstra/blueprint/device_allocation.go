@@ -296,13 +296,13 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 	}
 
 	switch {
-	case utils.Known(o.InitialInterfaceMapId) && o.DeviceKey.IsNull():
+	case utils.HasValue(o.InitialInterfaceMapId) && o.DeviceKey.IsNull():
 		// initial_interface_map_id known, device_key not supplied
 		o.deviceProfileNodeIdFromInterfaceMapCatalogId(ctx, client, diags) // this will clear BlueprintId on 404
 	case !o.DeviceKey.IsNull() && o.InitialInterfaceMapId.IsUnknown():
 		// device_key known, initial_interface_map_id unknown.
 		o.deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
-	case !o.DeviceKey.IsNull() && utils.Known(o.InitialInterfaceMapId):
+	case !o.DeviceKey.IsNull() && utils.HasValue(o.InitialInterfaceMapId):
 		// device_key known, initial_interface_map_id known.
 		o.deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
 		if o.BlueprintId.IsNull() {
@@ -655,7 +655,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx conte
 }
 
 func (o DeviceAllocation) ValidateConfig(ctx context.Context, experimental types.Bool, diags *diag.Diagnostics) {
-	if !utils.Known(o.SystemAttributes) {
+	if !utils.HasValue(o.SystemAttributes) {
 		return // nothing to validate without system_attributes
 	}
 
@@ -681,7 +681,7 @@ func (o DeviceAllocation) EnsureSystemIsSwitch(ctx context.Context, bp *apstra.T
 		SetBlueprintId(bp.Id()).
 		SetClient(bp.Client())
 
-	if utils.Known(o.NodeId) {
+	if utils.HasValue(o.NodeId) {
 		query.Node([]apstra.QEEAttribute{
 			apstra.NodeTypeSystem.QEEAttribute(),
 			{Key: "id", Value: apstra.QEStringVal(o.NodeId.ValueString())},
@@ -761,7 +761,7 @@ func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *Devic
 	}
 
 	// did the user configure `system_attributes`?
-	if !utils.Known(o.SystemAttributes) {
+	if !utils.HasValue(o.SystemAttributes) {
 		// `system_attributes` not configured - we may need to clear existing tags
 		if stateSA != nil && len(stateSA.Tags.Elements()) > 0 {
 			// tags exist. clear them.

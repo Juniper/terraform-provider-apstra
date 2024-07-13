@@ -37,7 +37,7 @@ func (o *dataSourceDatacenterCtCustomStaticRoute) ValidateConfig(ctx context.Con
 	}
 
 	// We're checking if these attributes are incompatible. If either are null/unknown, there's nothing to do.
-	if !utils.Known(config.Network) || !utils.Known(config.NextHop) {
+	if !utils.HasValue(config.Network) || !utils.HasValue(config.NextHop) {
 		return
 	}
 

@@ -242,25 +242,25 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 	}
 
 	var ttl *uint8
-	if utils.Known(o.Ttl) {
+	if utils.HasValue(o.Ttl) {
 		t := uint8(o.Ttl.ValueInt64())
 		ttl = &t
 	}
 
 	var keepaliveTimer *uint16
-	if utils.Known(o.KeepaliveTime) {
+	if utils.HasValue(o.KeepaliveTime) {
 		t := uint16(o.KeepaliveTime.ValueInt64())
 		keepaliveTimer = &t
 	}
 
 	var holdtimeTimer *uint16
-	if utils.Known(o.HoldTime) {
+	if utils.HasValue(o.HoldTime) {
 		t := uint16(o.HoldTime.ValueInt64())
 		holdtimeTimer = &t
 	}
 
 	var password *string
-	if utils.Known(o.Password) {
+	if utils.HasValue(o.Password) {
 		t := o.Password.ValueString()
 		password = &t
 	}

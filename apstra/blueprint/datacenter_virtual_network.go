@@ -565,7 +565,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	}
 
 	var vnId *apstra.VNI
-	if utils.Known(o.Vni) {
+	if utils.HasValue(o.Vni) {
 		v := apstra.VNI(o.Vni.ValueInt64())
 		vnId = &v
 	}
@@ -585,13 +585,13 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	}
 
 	var ipv4Subnet, ipv6Subnet *net.IPNet
-	if utils.Known(o.IPv4Subnet) {
+	if utils.HasValue(o.IPv4Subnet) {
 		_, ipv4Subnet, err = net.ParseCIDR(o.IPv4Subnet.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error parsing attribute ipv4_subnet value %q", o.IPv4Subnet.ValueString()), err.Error())
 		}
 	}
-	if utils.Known(o.IPv6Subnet) {
+	if utils.HasValue(o.IPv6Subnet) {
 		_, ipv6Subnet, err = net.ParseCIDR(o.IPv6Subnet.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error parsing attribute ipv6_subnet value %q", o.IPv6Subnet.ValueString()), err.Error())
@@ -599,15 +599,15 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	}
 
 	var ipv4Gateway, ipv6Gateway net.IP
-	if utils.Known(o.IPv4Gateway) {
+	if utils.HasValue(o.IPv4Gateway) {
 		ipv4Gateway = net.ParseIP(o.IPv4Gateway.ValueString())
 	}
-	if utils.Known(o.IPv6Gateway) {
+	if utils.HasValue(o.IPv6Gateway) {
 		ipv6Gateway = net.ParseIP(o.IPv6Gateway.ValueString())
 	}
 
 	var l3Mtu *int
-	if utils.Known(o.L3Mtu) {
+	if utils.HasValue(o.L3Mtu) {
 		i := int(o.L3Mtu.ValueInt64())
 		l3Mtu = &i
 	}
@@ -920,7 +920,7 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 func (o DatacenterVirtualNetwork) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
-	if utils.Known(o.L3Mtu) {
+	if utils.HasValue(o.L3Mtu) {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{
 				Path:        path.Root("l3_mtu"),

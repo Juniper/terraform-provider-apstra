@@ -149,7 +149,7 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 		return
 	}
 
-	if !utils.Known(o.Tags) {
+	if !utils.HasValue(o.Tags) {
 		tags, err := bp.GetNodeTags(ctx, nId)
 		if err != nil {
 			diags.AddError(fmt.Sprintf("failed to readtags from node %s", nodeId), err.Error())
@@ -160,7 +160,7 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 }
 
 func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if utils.Known(o.Asn) {
+	if utils.HasValue(o.Asn) {
 		return
 	}
 
@@ -199,7 +199,7 @@ func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstr
 }
 
 func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if utils.Known(o.LoopbackIpv4) && utils.Known(o.LoopbackIpv6) {
+	if utils.HasValue(o.LoopbackIpv4) && utils.HasValue(o.LoopbackIpv6) {
 		return
 	}
 
@@ -235,7 +235,7 @@ func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Con
 		return // no loopback IP addresses found in domain node
 	}
 
-	if !utils.Known(o.LoopbackIpv4) {
+	if !utils.HasValue(o.LoopbackIpv4) {
 		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
 		if loopbackNode.IPv4Addr != nil && len(*loopbackNode.IPv4Addr) != 0 {
 			_, _, err := net.ParseCIDR(*loopbackNode.IPv4Addr)
@@ -249,7 +249,7 @@ func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Con
 		}
 	}
 
-	if !utils.Known(o.LoopbackIpv6) {
+	if !utils.HasValue(o.LoopbackIpv6) {
 		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
 		if loopbackNode.IPv6Addr != nil && len(*loopbackNode.IPv6Addr) != 0 {
 			_, _, err := net.ParseCIDR(*loopbackNode.IPv6Addr)
@@ -265,7 +265,7 @@ func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Con
 }
 
 func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if utils.Known(o.DeployMode) && utils.Known(o.Hostname) && utils.Known(o.Name) {
+	if utils.HasValue(o.DeployMode) && utils.HasValue(o.Hostname) && utils.HasValue(o.Name) {
 		return
 	}
 
@@ -288,13 +288,13 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 		return
 	}
 
-	if !utils.Known(o.DeployMode) {
+	if !utils.HasValue(o.DeployMode) {
 		o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
 	}
-	if !utils.Known(o.Hostname) {
+	if !utils.HasValue(o.Hostname) {
 		o.Hostname = types.StringValue(node.Hostname)
 	}
-	if !utils.Known(o.Name) {
+	if !utils.HasValue(o.Name) {
 		o.Name = types.StringValue(node.Label)
 	}
 }
@@ -318,7 +318,7 @@ func (o *DeviceAllocationSystemAttributes) Set(ctx context.Context, state *Devic
 }
 
 func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if !utils.Known(o.Asn) {
+	if !utils.HasValue(o.Asn) {
 		return
 	}
 
@@ -365,7 +365,7 @@ func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstr
 }
 
 func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if !utils.Known(o.LoopbackIpv4) && !utils.Known(o.LoopbackIpv6) {
+	if !utils.HasValue(o.LoopbackIpv4) && !utils.HasValue(o.LoopbackIpv6) {
 		return
 	}
 
@@ -375,13 +375,13 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		return
 	}
 
-	if len(rawJson) == 0 && utils.Known(o.LoopbackIpv4) {
+	if len(rawJson) == 0 && utils.HasValue(o.LoopbackIpv4) {
 		diags.AddAttributeError(
 			path.Root("system_attributes").AtName("loopback_ipv4"),
 			"Cannot set loopback address",
 			fmt.Sprintf("system %q has no associated loopback %d node -- is it a spine or leaf switch?", nodeId, idx))
 	}
-	if len(rawJson) == 0 && utils.Known(o.LoopbackIpv6) {
+	if len(rawJson) == 0 && utils.HasValue(o.LoopbackIpv6) {
 		diags.AddAttributeError(
 			path.Root("system_attributes").AtName("loopback_ipv6"),
 			"Cannot set loopback address",
@@ -424,11 +424,11 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 }
 
 func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if !utils.Known(o.Name) && !utils.Known(o.Hostname) && !utils.Known(o.DeployMode) {
+	if !utils.HasValue(o.Name) && !utils.HasValue(o.Hostname) && !utils.HasValue(o.DeployMode) {
 		return
 	}
 
-	if utils.Known(o.DeployMode) {
+	if utils.HasValue(o.DeployMode) {
 		var deployMode apstra.DeployMode
 		err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
 		if err != nil {

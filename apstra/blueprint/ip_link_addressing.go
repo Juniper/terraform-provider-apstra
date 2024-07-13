@@ -182,7 +182,7 @@ func requestEndpoint(v4type, v6type types.String, v4addr cidrtypes.IPv4Prefix, v
 }
 
 func (o IpLinkAddressing) Request(_ context.Context, diags *diag.Diagnostics) map[apstra.ObjectId]apstra.TwoStageL3ClosSubinterface {
-	if !utils.Known(o.SwitchIntfId) || !utils.Known(o.GenericIntfId) {
+	if !utils.HasValue(o.SwitchIntfId) || !utils.HasValue(o.GenericIntfId) {
 		diags.AddError(
 			constants.ErrProviderBug,
 			fmt.Sprintf("attempt to generate ip link addressing with unknown interface ID\n"+
