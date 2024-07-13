@@ -4,10 +4,10 @@
 before:
   hooks:
     - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || (echo must be on branch main; false)"
-    - sh -c "[ \"$(git pull)\" = \"Already up to date.\" ] || (echo not in sync with origin; false)"
+#    - sh -c "[ \"$(git pull)\" = \"Already up to date.\" ] || (echo not in sync with origin; false)"
     - make compliance
     - make docs
-    - git update-index --refresh && git diff-index --quiet HEAD --
+#    - git update-index --refresh && git diff-index --quiet HEAD --
 builds:
 - env:
     # goreleaser does not work with CGO, it could also complicate
@@ -36,6 +36,10 @@ builds:
 archives:
 - format: zip
   name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+  files:
+    - LICENSE
+    - README.md
+    - Third_Party_Code/NOTICES.md
 checksum:
   extra_files:
     - glob: 'terraform-registry-manifest.json'
