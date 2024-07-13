@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/analytics"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -10,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceTelemetryServiceRegistryEntry{}
-var _ resourceWithSetClient = &resourceTelemetryServiceRegistryEntry{}
+var (
+	_ resource.ResourceWithConfigure = &resourceTelemetryServiceRegistryEntry{}
+	_ resourceWithSetClient          = &resourceTelemetryServiceRegistryEntry{}
+)
 
 type resourceTelemetryServiceRegistryEntry struct {
 	client *apstra.Client
@@ -62,7 +65,7 @@ func (o *resourceTelemetryServiceRegistryEntry) Create(ctx context.Context, req 
 	}
 
 	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, plan.ServiceName.ValueString())
-	if err != nil { // catch errors other than 404 from above
+	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving TelemetryServiceRegistryEntry", err.Error())
 		return
 	}
@@ -121,7 +124,7 @@ func (o *resourceTelemetryServiceRegistryEntry) Update(ctx context.Context, req 
 	}
 
 	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, plan.ServiceName.ValueString())
-	if err != nil { // catch errors other than 404 from above
+	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving TelemetryServiceRegistryEntry", err.Error())
 		return
 	}

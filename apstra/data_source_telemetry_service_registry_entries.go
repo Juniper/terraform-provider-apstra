@@ -2,14 +2,17 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceTelemetryServiceRegistryEntries{}
-var _ datasourceWithSetClient = &dataSourceTelemetryServiceRegistryEntries{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceTelemetryServiceRegistryEntries{}
+	_ datasourceWithSetClient            = &dataSourceTelemetryServiceRegistryEntries{}
+)
 
 type dataSourceTelemetryServiceRegistryEntries struct {
 	client *apstra.Client
@@ -25,7 +28,7 @@ func (o *dataSourceTelemetryServiceRegistryEntries) Configure(ctx context.Contex
 
 func (o *dataSourceTelemetryServiceRegistryEntries) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDesign + "This data source returns the Service Names of all Telemetry Service Registry Entries.",
+		MarkdownDescription: docCategoryDesign + "This data source returns the Service Names of Telemetry Service Registry Entries.",
 		Attributes: map[string]schema.Attribute{
 			"service_names": schema.SetAttribute{
 				MarkdownDescription: "A set of Service Names",

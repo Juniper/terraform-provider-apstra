@@ -2,6 +2,8 @@ package analytics
 
 import (
 	"context"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
@@ -13,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 type TelemetryServiceRegistryEntry struct {
@@ -33,7 +34,7 @@ func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSou
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"application_schema": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Application Schema expressed in Json schema",
+			MarkdownDescription: "Application Schema expressed in JSON",
 			CustomType:          jsontypes.NormalizedType{},
 			Computed:            true,
 		},
@@ -57,7 +58,6 @@ func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSou
 }
 
 func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceSchema.Attribute {
-	allsspaths := utils.AllStorageSchemaPaths()
 	return map[string]resourceSchema.Attribute{
 		"service_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Service Name. Used to identify the Service.",
@@ -71,19 +71,17 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 			Required:            true,
 		},
 		"storage_schema_path": resourceSchema.StringAttribute{
-			MarkdownDescription: "Storage Schema Path.  Must be one of: \n \n  - " + strings.Join(allsspaths, "\n  - ") + "\n",
+			MarkdownDescription: "Storage Schema Path. Must be one of:\n  - " + strings.Join(utils.AllStorageSchemaPaths(), "\n  - ") + "\n",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.OneOf(allsspaths...),
+				stringvalidator.OneOf(utils.AllStorageSchemaPaths()...),
 			},
 		},
 		"description": resourceSchema.StringAttribute{
 			MarkdownDescription: "Description",
 			Optional:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"version": resourceSchema.StringAttribute{
 			MarkdownDescription: "Version",
@@ -105,17 +103,18 @@ func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *aps
 	o.StorageSchemaPath = types.StringValue(utils.StringersToFriendlyString(in.StorageSchemaPath))
 }
 
-func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, d *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
-	var s apstra.StorageSchemaPath
-	e := utils.ApiStringerFromFriendlyString(&s, o.StorageSchemaPath.ValueString())
-	if e != nil {
-		d.AddError("Failed to Parse Storage Schema Path", e.Error())
+func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, diags *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
+	var storageSchemaPath apstra.StorageSchemaPath
+	err := utils.ApiStringerFromFriendlyString(&storageSchemaPath, o.StorageSchemaPath.ValueString())
+	if err != nil {
+		diags.AddError("Failed to Parse Storage Schema Path", err.Error())
 		return nil
 	}
+
 	return &apstra.TelemetryServiceRegistryEntry{
 		ServiceName:       o.ServiceName.ValueString(),
 		ApplicationSchema: []byte(o.ApplicationSchema.ValueString()),
-		StorageSchemaPath: s,
+		StorageSchemaPath: storageSchemaPath,
 		Builtin:           o.Builtin.ValueBool(),
 		Description:       o.Description.ValueString(),
 		Version:           o.Version.ValueString(),
