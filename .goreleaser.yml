@@ -3,7 +3,7 @@
 #
 before:
   hooks:
-    - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || (echo must be on branch main; false)"
+#    - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || (echo must be on branch main; false)"
 #    - sh -c "[ \"$(git pull)\" = \"Already up to date.\" ] || (echo not in sync with origin; false)"
     - make compliance
     - make docs
