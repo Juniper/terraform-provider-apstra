@@ -365,6 +365,10 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
 
+	if o.FabricAddressing.IsUnknown() {
+		return apiversions.Constraints{} // cannot validate
+	}
+
 	if !o.FabricAddressing.IsNull() {
 		response.AddAttributeConstraints(
 			apiversions.AttributeConstraint{

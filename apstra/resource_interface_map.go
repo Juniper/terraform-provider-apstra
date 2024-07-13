@@ -112,6 +112,10 @@ func (o *resourceInterfaceMap) ValidateConfig(ctx context.Context, req resource.
 	logicalDevicePorts := make(map[string]struct{})
 
 	for _, configInterface := range configInterfaces {
+		if configInterface.PhysicalInterfaceName.IsUnknown() || configInterface.LogicalDevicePort.IsUnknown() {
+			continue // cannot validate
+		}
+
 		physicalInterfaceName := configInterface.PhysicalInterfaceName.ValueString()
 		logicalDevicePortName := configInterface.LogicalDevicePort.ValueString()
 
