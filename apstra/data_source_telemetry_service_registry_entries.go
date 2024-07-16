@@ -30,7 +30,7 @@ func (o *dataSourceTelemetryServiceRegistryEntries) Schema(_ context.Context, _ 
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDesign + "This data source returns the Service Names of Telemetry Service Registry Entries.",
 		Attributes: map[string]schema.Attribute{
-			"service_names": schema.SetAttribute{
+			"names": schema.SetAttribute{
 				MarkdownDescription: "A set of Service Names",
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -45,8 +45,8 @@ func (o *dataSourceTelemetryServiceRegistryEntries) Schema(_ context.Context, _ 
 
 func (o *dataSourceTelemetryServiceRegistryEntries) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
-		ServiceNames types.Set  `tfsdk:"service_names"`
-		BuiltIn      types.Bool `tfsdk:"built_in"`
+		Names   types.Set  `tfsdk:"names"`
+		BuiltIn types.Bool `tfsdk:"built_in"`
 	}
 
 	// get the configuration
@@ -75,10 +75,10 @@ func (o *dataSourceTelemetryServiceRegistryEntries) Read(ctx context.Context, re
 
 	// create new state object
 	var state struct {
-		ServiceNames types.Set  `tfsdk:"service_names"`
-		BuiltIn      types.Bool `tfsdk:"built_in"`
+		Names   types.Set  `tfsdk:"names"`
+		BuiltIn types.Bool `tfsdk:"built_in"`
 	}
-	state.ServiceNames = snameSet
+	state.Names = snameSet
 	state.BuiltIn = config.BuiltIn
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

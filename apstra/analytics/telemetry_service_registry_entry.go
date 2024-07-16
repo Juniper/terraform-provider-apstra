@@ -18,7 +18,7 @@ import (
 )
 
 type TelemetryServiceRegistryEntry struct {
-	ServiceName       types.String         `tfsdk:"service_name"`
+	Name              types.String         `tfsdk:"name"`
 	ApplicationSchema jsontypes.Normalized `tfsdk:"application_schema"`
 	StorageSchemaPath types.String         `tfsdk:"storage_schema_path"`
 	Builtin           types.Bool           `tfsdk:"built_in"`
@@ -28,7 +28,7 @@ type TelemetryServiceRegistryEntry struct {
 
 func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"service_name": dataSourceSchema.StringAttribute{
+		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Service Name. Used to identify the Service.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -59,7 +59,7 @@ func (o TelemetryServiceRegistryEntry) DataSourceAttributes() map[string]dataSou
 
 func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"service_name": resourceSchema.StringAttribute{
+		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Service Name. Used to identify the Service.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -95,7 +95,7 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 }
 
 func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *apstra.TelemetryServiceRegistryEntry, diag *diag.Diagnostics) {
-	o.ServiceName = types.StringValue(in.ServiceName)
+	o.Name = types.StringValue(in.ServiceName)
 	o.Version = types.StringValue(in.Version)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diag)
 	o.Builtin = types.BoolValue(in.Builtin)
@@ -112,7 +112,7 @@ func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, diags *diag.D
 	}
 
 	return &apstra.TelemetryServiceRegistryEntry{
-		ServiceName:       o.ServiceName.ValueString(),
+		ServiceName:       o.Name.ValueString(),
 		ApplicationSchema: []byte(o.ApplicationSchema.ValueString()),
 		StorageSchemaPath: storageSchemaPath,
 		Builtin:           o.Builtin.ValueBool(),

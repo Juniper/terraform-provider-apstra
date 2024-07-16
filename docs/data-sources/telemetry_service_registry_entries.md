@@ -42,7 +42,7 @@ output "not_builtin_entries" {
 
 #all_entries = {
 #  "built_in"      = tobool(null)
-#  "service_names" = toset([
+#  "names" = toset([
 #    "TestTelemetryServiceA",
 #    "TestTelemetryServiceC",
 #    "TestTelemetryServiceD",
@@ -85,7 +85,7 @@ output "not_builtin_entries" {
 #}
 #builtin_entries = {
 #  "built_in"      = true
-#  "service_names" = toset([
+#  "names" = toset([
 #    "arp",
 #    "bgp",
 #    "bgp_communities",
@@ -125,7 +125,7 @@ output "not_builtin_entries" {
 #}
 #not_builtin_entries = {
 #  "built_in"      = false
-#  "service_names" = toset([
+#  "names" = toset([
 #    "TestTelemetryServiceA",
 #    "TestTelemetryServiceC",
 #    "TestTelemetryServiceD",
@@ -142,4 +142,4 @@ output "not_builtin_entries" {
 
 ### Read-Only
 
-- `service_names` (Set of String) A set of Service Names
+- `names` (Set of String) A set of Service Names

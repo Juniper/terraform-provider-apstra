@@ -16,7 +16,7 @@ const (
 // resource config
 resource "apstra_telemetry_service_registry_entry" "test" {
    description         = "Test Registry Entry"
-   service_name        = "%s"
+   name        = "%s"
  	application_schema  = jsonencode(%s)
    storage_schema_path = "%s"
   
@@ -242,7 +242,7 @@ func TestAccResourceTelemetryServiceRegistryEntry(t *testing.T) {
 				Config: insecureProviderConfigHCL + testAccResourceServiceRegistryCfg1,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify name and data
-					resource.TestCheckResourceAttr("apstra_telemetry_service_registry_entry.test", "service_name", testAccResourceServiceName),
+					resource.TestCheckResourceAttr("apstra_telemetry_service_registry_entry.test", "name", testAccResourceServiceName),
 					resource.TestCheckResourceAttr("apstra_telemetry_service_registry_entry.test", "storage_schema_path", ss1),
 					resource.TestCheckResourceAttrWith("apstra_telemetry_service_registry_entry.test", "application_schema", TestSR1),
 				),
@@ -252,7 +252,7 @@ func TestAccResourceTelemetryServiceRegistryEntry(t *testing.T) {
 				Config: insecureProviderConfigHCL + testAccResourceServiceRegistryCfg2,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify name and data
-					resource.TestCheckResourceAttr("apstra_telemetry_service_registry_entry.test", "service_name", testAccResourceServiceName),
+					resource.TestCheckResourceAttr("apstra_telemetry_service_registry_entry.test", "name", testAccResourceServiceName),
 					resource.TestCheckResourceAttr("apstra_telemetry_service_registry_entry.test", "storage_schema_path", ss2),
 					resource.TestCheckResourceAttrWith("apstra_telemetry_service_registry_entry.test", "application_schema", TestSR2),
 				),

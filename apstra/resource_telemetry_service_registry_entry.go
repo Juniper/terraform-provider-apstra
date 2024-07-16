@@ -64,7 +64,7 @@ func (o *resourceTelemetryServiceRegistryEntry) Create(ctx context.Context, req 
 		return
 	}
 
-	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, plan.ServiceName.ValueString())
+	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving TelemetryServiceRegistryEntry", err.Error())
 		return
@@ -85,7 +85,7 @@ func (o *resourceTelemetryServiceRegistryEntry) Read(ctx context.Context, req re
 		return
 	}
 
-	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, state.ServiceName.ValueString())
+	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, state.Name.ValueString())
 	if utils.IsApstra404(err) {
 		resp.State.RemoveResource(ctx)
 		return
@@ -117,13 +117,13 @@ func (o *resourceTelemetryServiceRegistryEntry) Update(ctx context.Context, req 
 		return
 	}
 
-	err := o.client.UpdateTelemetryServiceRegistryEntry(ctx, plan.ServiceName.ValueString(), tsReq)
+	err := o.client.UpdateTelemetryServiceRegistryEntry(ctx, plan.Name.ValueString(), tsReq)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Telemetry Service Registry Entry", err.Error())
 		return
 	}
 
-	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, plan.ServiceName.ValueString())
+	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, plan.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error retrieving TelemetryServiceRegistryEntry", err.Error())
 		return
@@ -145,7 +145,7 @@ func (o *resourceTelemetryServiceRegistryEntry) Delete(ctx context.Context, req 
 		return
 	}
 
-	err := o.client.DeleteTelemetryServiceRegistryEntry(ctx, state.ServiceName.ValueString())
+	err := o.client.DeleteTelemetryServiceRegistryEntry(ctx, state.Name.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
