@@ -43,12 +43,12 @@ func (o *dataSourceTelemetryServiceRegistryEntry) Read(ctx context.Context, req 
 		return
 	}
 
-	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, config.ServiceName.ValueString())
+	api, err := o.client.GetTelemetryServiceRegistryEntry(ctx, config.Name.ValueString())
 	if utils.IsApstra404(err) {
 		resp.Diagnostics.AddAttributeError(
 			path.Root("name"),
 			"TelemetryServiceRegistryEntry not found",
-			fmt.Sprintf("TelemetryServiceRegistryEntry with Name %q not found", config.ServiceName.ValueString()))
+			fmt.Sprintf("TelemetryServiceRegistryEntry with Name %q not found", config.Name.ValueString()))
 		return
 	}
 	if err != nil { // catch errors other than 404 from above

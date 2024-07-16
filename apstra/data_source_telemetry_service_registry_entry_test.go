@@ -17,7 +17,7 @@ import (
 const (
 	dataSourceTelemetryServiceRegistryByServiceNameHCL = `
 data "apstra_telemetry_service_registry_entry" "test" {
-  service_name = "%s"
+  name = "%s"
 }
 `
 )
@@ -52,7 +52,7 @@ func TestAccDataSourceTelemetryServiceRegistryEntry(t *testing.T) {
 				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceTelemetryServiceRegistryByServiceNameHCL, ts.ServiceName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
-					resource.TestCheckResourceAttr("data.apstra_telemetry_service_registry_entry.test", "service_name", ts.ServiceName),
+					resource.TestCheckResourceAttr("data.apstra_telemetry_service_registry_entry.test", "name", ts.ServiceName),
 					resource.TestCheckResourceAttr("data.apstra_telemetry_service_registry_entry.test", "storage_schema_path", utils.StringersToFriendlyString(ts.StorageSchemaPath)),
 					resource.TestCheckResourceAttrWith("data.apstra_telemetry_service_registry_entry.test", "application_schema", TestAppSchema),
 				),
