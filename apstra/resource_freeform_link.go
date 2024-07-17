@@ -77,8 +77,15 @@ func (o *resourceFreeformLink) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
+	// read the link to learn the speed, type & interface Ids
+	api, err := bp.GetLink(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("error reading just created Link", err.Error())
+		return
+	}
+
 	plan.Id = types.StringValue(id.String())
-	plan.GetInterfaceIds(ctx, bp, &resp.Diagnostics)
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

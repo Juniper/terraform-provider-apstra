@@ -2,8 +2,9 @@ package blueprint
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -27,8 +28,7 @@ type FreeformLink struct {
 	Type            types.String `tfsdk:"type"`
 	Name            types.String `tfsdk:"name"`
 	AggregateLinkId types.String `tfsdk:"aggregate_link_id"`
-	Endpoints       types.Set    `tfsdk:"endpoints"`
-	InterfaceIds    types.Set    `tfsdk:"interface_ids"`
+	Endpoints       types.Map    `tfsdk:"endpoints"`
 	Tags            types.Set    `tfsdk:"tags"`
 }
 
@@ -59,27 +59,34 @@ func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"speed": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Speed of the Link",
-			Computed:            true,
+			MarkdownDescription: "Speed of the Link " +
+				"200G | 5G | 1G | 100G | 150g | 40g | 2500M | 25G | 25g | 10G | 50G | 800G " +
+				"| 10M | 100m | 2500m | 50g | 400g | 400G | 200g | 5g | 800g | 100M | 10g " +
+				"| 150G | 10m | 100g | 1g | 40G",
+			Computed: true,
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Link type",
-			Computed:            true,
+			MarkdownDescription: "aggregate_link | ethernet\n" +
+				"Link Type. An 'ethernet' link is a normal front-panel interface. " +
+				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs. " +
+				"Note that the lag_mode parameter is a property of the interface and not the link, " +
+				"since interfaces may have different lag modes on opposite sides of the link - " +
+				"eg lacp_passive <-> lacp_active",
+			Computed: true,
 		},
 		"aggregate_link_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "aggregate link  ID",
+			MarkdownDescription: "ID of aggregate link node that the current link belongs to",
 			Computed:            true,
 		},
-		"endpoints": dataSourceSchema.StringAttribute{
+		"endpoints": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Endpoints assigned to the Link",
 			Computed:            true,
-		},
-		"interface_ids": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "Interface IDs associated with the link",
-			Computed:            true,
+			NestedObject: dataSourceSchema.NestedAttributeObject{
+				Attributes: freeformEndpoint{}.DatasourceAttributes(),
+			},
 		},
 		"tags": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "Set of Tag labels",
+			MarkdownDescription: "Set of unique case-insensitive tag labels",
 			ElementType:         types.StringType,
 			Computed:            true,
 		},
@@ -107,33 +114,25 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of the Freeform Link.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Computed:            true,
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: "Deploy mode of the Link",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Computed:            true,
 		},
 		"aggregate_link_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Aggregate ID of the Link",
+			MarkdownDescription: "ID of aggregate link node that the current link belongs to",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"endpoints": resourceSchema.SetNestedAttribute{
+		"endpoints": resourceSchema.MapNestedAttribute{
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: freeformEndpoint{}.ResourceAttributes(),
 			},
-			PlanModifiers:       []planmodifier.Set{setplanmodifier.RequiresReplace()},
+			PlanModifiers:       []planmodifier.Map{mapplanmodifier.RequiresReplace()},
 			MarkdownDescription: "Endpoints of the  Link",
 			Required:            true,
-			Validators:          []validator.Set{setvalidator.SizeBetween(2, 2)},
-		},
-		"interface_ids": resourceSchema.SetAttribute{
-			MarkdownDescription: "Interface IDs associated with the link",
-			Computed:            true,
-			ElementType:         types.StringType,
-			Validators:          []validator.Set{setvalidator.SizeBetween(2, 2)},
+			Validators:          []validator.Map{mapvalidator.SizeBetween(2, 2)},
 		},
 		"tags": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Tag labels",
@@ -151,15 +150,17 @@ func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *ap
 		return nil
 	}
 
-	var endpoints []freeformEndpoint
+	var endpoints map[string]freeformEndpoint
 	diags.Append(o.Endpoints.ElementsAs(ctx, &endpoints, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	var epArray [2]apstra.FreeformEndpoint
-	for i, endpoint := range endpoints {
-		epArray[i] = *endpoint.request()
+	var i int
+	for systemId, endpoint := range endpoints {
+		epArray[i] = *endpoint.request(systemId)
+		i++
 	}
 
 	return &apstra.FreeformLinkRequest{
@@ -169,85 +170,23 @@ func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *ap
 	}
 }
 
-func (o *FreeformLink) GetInterfaceIds(ctx context.Context, bp *apstra.FreeformClient, diags *diag.Diagnostics) {
-	var endpoints []freeformEndpoint
-	diags.Append(o.Endpoints.ElementsAs(ctx, &endpoints, false)...)
-	if diags.HasError() {
-		return
-	}
-
-	query := new(apstra.PathQuery).
-		SetClient(bp.Client()).
-		SetBlueprintId(bp.Id()).
-		//node('system', id='v7A_2gUtP9vHq2DYhug')
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeSystem.QEEAttribute(),
-			{Key: "id", Value: apstra.QEStringVal(endpoints[0].SystemId.ValueString())},
-		}).
-		//.out('hosted_interfaces')
-		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-		//.node('interface', name='n_interface_0')
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeInterface.QEEAttribute(),
-			{Key: "name", Value: apstra.QEStringVal("n_interface_0")},
-		}).
-		//.out('link')
-		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
-		//.node('link', id='P6oXpH9ho-_m41LLcSY')
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeLink.QEEAttribute(),
-			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
-		}).
-		//.in_('link')
-		In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
-		//.node('interface', name='n_interface_1')
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeInterface.QEEAttribute(),
-			{Key: "name", Value: apstra.QEStringVal("n_interface_1")},
-			//.in_('hosted_interfaces')
-		}).
-		In([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-		//.node('system', id='uPeP0h4d-q8OAIomCpY')
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeSystem.QEEAttribute(),
-			{Key: "id", Value: apstra.QEStringVal(endpoints[1].SystemId.ValueString())},
-		})
-
-	var response struct {
-		Items []struct {
-			Interface0 struct {
-				Id string `json:"id"`
-			} `json:"n_interface_0"`
-			Interface1 struct {
-				Id string `json:"id"`
-			} `json:"n_interface_1"`
-		} `json:"items"`
-	}
-
-	err := query.Do(ctx, &response)
-	if err != nil {
-		diags.AddError("unable to perform query.do()", "query.do()")
-		return
-	}
-	if len(response.Items) != 1 {
-		diags.AddError("the Query response is incorrect", "the query is not 1 response ")
-		return
-	}
-
-	interfaceIds := make([]attr.Value, 2)
-	interfaceIds[0] = types.StringValue(response.Items[0].Interface0.Id)
-	interfaceIds[1] = types.StringValue(response.Items[0].Interface1.Id)
-
-	var d diag.Diagnostics
-	o.InterfaceIds, d = types.SetValue(types.StringType, interfaceIds)
-	diags.Append(d...)
-}
-
 func (o *FreeformLink) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, diags *diag.Diagnostics) {
+	interfaceIds := make([]string, len(in.Endpoints))
+	for i, endpoint := range in.Endpoints {
+		if endpoint.Interface.Id == nil {
+			diags.AddError(
+				fmt.Sprintf("api returned null interface id for system %s", endpoint.SystemId),
+				"link endpoints should always have an interface id.",
+			)
+			return
+		}
+		interfaceIds[i] = endpoint.Interface.Id.String()
+	}
+
 	o.Speed = types.StringValue(string(in.Speed))
 	o.Type = types.StringValue(in.Type.String())
 	o.Name = types.StringValue(in.Label)
-	o.Endpoints = newFreeformEndpointSet(ctx, in.Endpoints, diags) // safe to ignore diagnostic here
-	o.AggregateLinkId = types.StringValue(in.AggregateLinkId.String())
+	o.Endpoints = newFreeformEndpointMap(ctx, in.Endpoints, diags) // safe to ignore diagnostic here
+	o.AggregateLinkId = types.StringPointerValue((*string)(in.AggregateLinkId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }
