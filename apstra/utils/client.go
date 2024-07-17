@@ -34,10 +34,10 @@ substitutions:
 %s`
 )
 
-func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
+func NewClientConfig(apstraUrl, envVarPrefix string) (*apstra.ClientCfg, error) {
 	// Populate raw URL string from config or environment.
 	if apstraUrl == "" {
-		apstraUrl = os.Getenv(EnvApstraUrl)
+		apstraUrl = os.Getenv(envVarPrefix + EnvApstraUrl)
 	}
 
 	if apstraUrl == "" {
@@ -66,7 +66,7 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 	// Determine the Apstra username.
 	user := parsedUrl.User.Username()
 	if user == "" {
-		if val, ok := os.LookupEnv(EnvApstraUsername); ok {
+		if val, ok := os.LookupEnv(envVarPrefix + EnvApstraUsername); ok {
 			user = val
 		} else {
 			return nil, errors.New("unable to determine apstra username - " + fmt.Sprintf(urlEncodeMsg, UrlEscapeTable()))
@@ -76,7 +76,7 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 	// Determine  the Apstra password.
 	pass, found := parsedUrl.User.Password()
 	if !found {
-		if val, ok := os.LookupEnv(EnvApstraPassword); ok {
+		if val, ok := os.LookupEnv(envVarPrefix + EnvApstraPassword); ok {
 			pass = val
 		} else {
 			return nil, errors.New("unable to determine apstra password")
@@ -88,7 +88,7 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 
 	// Set up a logger.
 	var logger *log.Logger
-	if logFileName, ok := os.LookupEnv(EnvApstraLogfile); ok {
+	if logFileName, ok := os.LookupEnv(envVarPrefix + EnvApstraLogfile); ok {
 		logFile, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		if err != nil {
 			return nil, err
@@ -114,7 +114,7 @@ func NewClientConfig(apstraUrl string) (*apstra.ClientCfg, error) {
 		},
 	}
 
-	_, experimental := os.LookupEnv(EnvApstraExperimental)
+	_, experimental := os.LookupEnv(envVarPrefix + EnvApstraExperimental)
 
 	// Create the clientCfg
 	return &apstra.ClientCfg{

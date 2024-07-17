@@ -41,7 +41,7 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 			t.Fatal(err)
 		}
 
-		clientCfg, err := utils.NewClientConfig("")
+		clientCfg, err := utils.NewClientConfig("", "")
 		if err != nil {
 			t.Fatal(err)
 		}

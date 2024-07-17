@@ -168,6 +168,16 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 				Optional:   true,
 				Validators: []validator.Int64{int64validator.AtLeast(0)},
 			},
+			"env_var_prefix": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("This attribute defines a prefix which redefines all of the " +
+					"`APSTRA_*` environment variables. For example, setting `env_var_prefix = \"FOO_\"` will cause " +
+					"the provider to learn the Apstra service URL from the \"FOO_APSTRA_URL\" environment variable " +
+					"rather than the \"APSTRA_URL\" environment variable. This capability is intended to be used " +
+					"when configuring multiple instances of the Apstra provider (which talk to multiple Apstra " +
+					"servers) in a single Terraform project."),
+				Optional:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
 		},
 	}
 }
@@ -180,48 +190,49 @@ type providerConfig struct {
 	MutexMessage types.String `tfsdk:"blueprint_mutex_message"`
 	Experimental types.Bool   `tfsdk:"experimental"`
 	ApiTimeout   types.Int64  `tfsdk:"api_timeout"`
+	EnvVarPrefix types.String `tfsdk:"env_var_prefix"`
 }
 
 func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
-	if s, ok := os.LookupEnv(utils.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvTlsNoVerify), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvTlsNoVerify), err.Error())
 		}
 		o.TlsNoVerify = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(utils.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvBlueprintMutexEnabled), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvBlueprintMutexEnabled), err.Error())
 		}
 		o.MutexEnable = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(utils.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
 		if len(s) < 1 {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvBlueprintMutexMessage),
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvBlueprintMutexMessage),
 				fmt.Sprintf("minimum string length 1; got %q", s))
 		}
 		o.MutexMessage = types.StringValue(s)
 	}
 
-	if s, ok := os.LookupEnv(utils.EnvApstraExperimental); ok && o.Experimental.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvApstraExperimental); ok && o.Experimental.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvApstraExperimental), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvApstraExperimental), err.Error())
 		}
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(utils.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + o.EnvVarPrefix.String() + utils.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvApiTimeout), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvApiTimeout), err.Error())
 		}
 		if v < 0 {
-			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", utils.EnvApiTimeout),
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", o.EnvVarPrefix.String()+utils.EnvApiTimeout),
 				fmt.Sprintf("minimum permitted value is 0, got %d", v))
 		}
 		o.ApiTimeout = types.Int64Value(v)
@@ -268,7 +279,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// Create the Apstra client configuration from the URL and the environment.
-	clientCfg, err := utils.NewClientConfig(config.Url.ValueString())
+	clientCfg, err := utils.NewClientConfig(config.Url.ValueString(), config.EnvVarPrefix.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Apstra client configuration", err.Error())
 		return

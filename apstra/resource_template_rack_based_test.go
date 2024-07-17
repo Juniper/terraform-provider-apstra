@@ -43,7 +43,7 @@ func TestResourceTemplateRackBased(t *testing.T) {
 		t.Fatalf("apstra url environment variable (%s) must be set and non-empty", utils.EnvApstraUrl)
 	}
 
-	clientCfg, err := utils.NewClientConfig(apstraUrl)
+	clientCfg, err := utils.NewClientConfig(apstraUrl, "")
 	if err != nil {
 		t.Fatal(err)
 	}
