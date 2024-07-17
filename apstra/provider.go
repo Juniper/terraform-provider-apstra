@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -126,8 +128,8 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 					"[standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be " +
 					"taken to ensure that these credentials aren't accidentally committed to version control, etc... " +
 					"The preferred approach is to pass the credentials as environment variables `" +
-					utils.EnvApstraUsername + "`  and `" + utils.EnvApstraPassword + "`.\n If `url` is omitted, " +
-					"environment variable `" + utils.EnvApstraUrl + "` can be used to in its place.\n When the " +
+					constants.EnvUsername + "`  and `" + constants.EnvPassword + "`.\n If `url` is omitted, " +
+					"environment variable `" + constants.EnvUrl + "` can be used to in its place.\n When the " +
 					"username or password are embedded in the URL string, any special characters must be " +
 					"URL-encoded. For example, `pass^word` would become `pass%5eword`.",
 				Optional:   true,
@@ -194,45 +196,45 @@ type providerConfig struct {
 }
 
 func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvTlsNoVerify), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvTlsNoVerify), err.Error())
 		}
 		o.TlsNoVerify = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvBlueprintMutexEnabled), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexEnabled), err.Error())
 		}
 		o.MutexEnable = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
 		if len(s) < 1 {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvBlueprintMutexMessage),
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexMessage),
 				fmt.Sprintf("minimum string length 1; got %q", s))
 		}
 		o.MutexMessage = types.StringValue(s)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + utils.EnvApstraExperimental); ok && o.Experimental.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvExperimental); ok && o.Experimental.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvApstraExperimental), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvExperimental), err.Error())
 		}
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + o.EnvVarPrefix.String() + utils.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + o.EnvVarPrefix.String() + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+utils.EnvApiTimeout), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout), err.Error())
 		}
 		if v < 0 {
-			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", o.EnvVarPrefix.String()+utils.EnvApiTimeout),
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout),
 				fmt.Sprintf("minimum permitted value is 0, got %d", v))
 		}
 		o.ApiTimeout = types.Int64Value(v)
