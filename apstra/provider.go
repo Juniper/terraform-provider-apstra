@@ -171,8 +171,8 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 			"env_var_prefix": schema.StringAttribute{
 				MarkdownDescription: fmt.Sprintf("This attribute defines a prefix which redefines all of the " +
 					"`APSTRA_*` environment variables. For example, setting `env_var_prefix = \"FOO_\"` will cause " +
-					"the provider to learn the Apstra service URL from the \"FOO_APSTRA_URL\" environment variable " +
-					"rather than the \"APSTRA_URL\" environment variable. This capability is intended to be used " +
+					"the provider to learn the Apstra service URL from the `FOO_APSTRA_URL` environment variable " +
+					"rather than the `APSTRA_URL` environment variable. This capability is intended to be used " +
 					"when configuring multiple instances of the Apstra provider (which talk to multiple Apstra " +
 					"servers) in a single Terraform project."),
 				Optional:   true,
