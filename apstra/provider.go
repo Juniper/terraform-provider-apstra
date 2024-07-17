@@ -14,6 +14,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -30,12 +31,6 @@ import (
 const (
 	defaultTag    = "v0.0.0"
 	defaultCommit = "devel"
-
-	envApiTimeout            = "APSTRA_API_TIMEOUT"
-	envBlueprintMutexEnabled = "APSTRA_BLUEPRINT_MUTEX_ENABLED"
-	envBlueprintMutexMessage = "APSTRA_BLUEPRINT_MUTEX_MESSAGE"
-	envExperimental          = "APSTRA_EXPERIMENTAL"
-	envTlsNoVerify           = "APSTRA_TLS_VALIDATION_DISABLED"
 
 	blueprintMutexMessage = "locked by terraform at $DATE"
 
@@ -132,8 +127,8 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 					"[standard syntax](https://datatracker.ietf.org/doc/html/rfc1738#section-3.1). Care should be " +
 					"taken to ensure that these credentials aren't accidentally committed to version control, etc... " +
 					"The preferred approach is to pass the credentials as environment variables `" +
-					utils.EnvApstraUsername + "`  and `" + utils.EnvApstraPassword + "`.\n If `url` is omitted, " +
-					"environment variable `" + utils.EnvApstraUrl + "` can be used to in its place.\n When the " +
+					constants.EnvUsername + "`  and `" + constants.EnvPassword + "`.\n If `url` is omitted, " +
+					"environment variable `" + constants.EnvUrl + "` can be used to in its place.\n When the " +
 					"username or password are embedded in the URL string, any special characters must be " +
 					"URL-encoded. For example, `pass^word` would become `pass%5eword`.",
 				Optional:   true,
@@ -174,6 +169,16 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 				Optional:   true,
 				Validators: []validator.Int64{int64validator.AtLeast(0)},
 			},
+			"env_var_prefix": schema.StringAttribute{
+				MarkdownDescription: fmt.Sprintf("This attribute defines a prefix which redefines all of the " +
+					"`APSTRA_*` environment variables. For example, setting `env_var_prefix = \"FOO_\"` will cause " +
+					"the provider to learn the Apstra service URL from the `FOO_APSTRA_URL` environment variable " +
+					"rather than the `APSTRA_URL` environment variable. This capability is intended to be used " +
+					"when configuring multiple instances of the Apstra provider (which talk to multiple Apstra " +
+					"servers) in a single Terraform project."),
+				Optional:   true,
+				Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+			},
 		},
 	}
 }
@@ -186,48 +191,49 @@ type providerConfig struct {
 	MutexMessage types.String `tfsdk:"blueprint_mutex_message"`
 	Experimental types.Bool   `tfsdk:"experimental"`
 	ApiTimeout   types.Int64  `tfsdk:"api_timeout"`
+	EnvVarPrefix types.String `tfsdk:"env_var_prefix"`
 }
 
 func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
-	if s, ok := os.LookupEnv(envTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envTlsNoVerify), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvTlsNoVerify), err.Error())
 		}
 		o.TlsNoVerify = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(envBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envBlueprintMutexEnabled), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexEnabled), err.Error())
 		}
 		o.MutexEnable = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(envBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
 		if len(s) < 1 {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envBlueprintMutexMessage),
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexMessage),
 				fmt.Sprintf("minimum string length 1; got %q", s))
 		}
 		o.MutexMessage = types.StringValue(s)
 	}
 
-	if s, ok := os.LookupEnv(envExperimental); ok && o.Experimental.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvExperimental); ok && o.Experimental.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envExperimental), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvExperimental), err.Error())
 		}
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(envApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + o.EnvVarPrefix.String() + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envApiTimeout), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout), err.Error())
 		}
 		if v < 0 {
-			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", envApiTimeout),
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout),
 				fmt.Sprintf("minimum permitted value is 0, got %d", v))
 		}
 		o.ApiTimeout = types.Int64Value(v)
@@ -274,7 +280,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	// Create the Apstra client configuration from the URL and the environment.
-	clientCfg, err := utils.NewClientConfig(config.Url.ValueString())
+	clientCfg, err := utils.NewClientConfig(config.Url.ValueString(), config.EnvVarPrefix.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating Apstra client configuration", err.Error())
 		return
