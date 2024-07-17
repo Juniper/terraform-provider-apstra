@@ -31,12 +31,6 @@ const (
 	defaultTag    = "v0.0.0"
 	defaultCommit = "devel"
 
-	envApiTimeout            = "APSTRA_API_TIMEOUT"
-	envBlueprintMutexEnabled = "APSTRA_BLUEPRINT_MUTEX_ENABLED"
-	envBlueprintMutexMessage = "APSTRA_BLUEPRINT_MUTEX_MESSAGE"
-	envExperimental          = "APSTRA_EXPERIMENTAL"
-	envTlsNoVerify           = "APSTRA_TLS_VALIDATION_DISABLED"
-
 	blueprintMutexMessage = "locked by terraform at $DATE"
 
 	osxCertErrStringMatch = "certificate is not trusted"
@@ -189,45 +183,45 @@ type providerConfig struct {
 }
 
 func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
-	if s, ok := os.LookupEnv(envTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+	if s, ok := os.LookupEnv(utils.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envTlsNoVerify), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvTlsNoVerify), err.Error())
 		}
 		o.TlsNoVerify = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(envBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+	if s, ok := os.LookupEnv(utils.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envBlueprintMutexEnabled), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvBlueprintMutexEnabled), err.Error())
 		}
 		o.MutexEnable = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(envBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+	if s, ok := os.LookupEnv(utils.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
 		if len(s) < 1 {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envBlueprintMutexMessage),
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvBlueprintMutexMessage),
 				fmt.Sprintf("minimum string length 1; got %q", s))
 		}
 		o.MutexMessage = types.StringValue(s)
 	}
 
-	if s, ok := os.LookupEnv(envExperimental); ok && o.Experimental.IsNull() {
+	if s, ok := os.LookupEnv(utils.EnvApstraExperimental); ok && o.Experimental.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envExperimental), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvApstraExperimental), err.Error())
 		}
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(envApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(utils.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envApiTimeout), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", utils.EnvApiTimeout), err.Error())
 		}
 		if v < 0 {
-			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", envApiTimeout),
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", utils.EnvApiTimeout),
 				fmt.Sprintf("minimum permitted value is 0, got %d", v))
 		}
 		o.ApiTimeout = types.Int64Value(v)

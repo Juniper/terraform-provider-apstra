@@ -14,12 +14,16 @@ import (
 )
 
 const (
-	EnvApstraUrl          = "APSTRA_URL"
-	EnvApstraUsername     = "APSTRA_USER"
-	EnvApstraPassword     = "APSTRA_PASS"
-	EnvApstraLogfile      = "APSTRA_LOG"
-	EnvApstraExperimental = "APSTRA_EXPERIMENTAL"
-	EnvTlsKeyLogFile      = "SSLKEYLOGFILE"
+	EnvApiTimeout            = "APSTRA_API_TIMEOUT"
+	EnvApstraUrl             = "APSTRA_URL"
+	EnvBlueprintMutexEnabled = "APSTRA_BLUEPRINT_MUTEX_ENABLED"
+	EnvBlueprintMutexMessage = "APSTRA_BLUEPRINT_MUTEX_MESSAGE"
+	EnvTlsNoVerify           = "APSTRA_TLS_VALIDATION_DISABLED"
+	EnvApstraUsername        = "APSTRA_USER"
+	EnvApstraPassword        = "APSTRA_PASS"
+	EnvApstraLogfile         = "APSTRA_LOG"
+	EnvApstraExperimental    = "APSTRA_EXPERIMENTAL"
+	EnvTlsKeyLogFile         = "SSLKEYLOGFILE"
 
 	urlEncodeMsg = `
 Note that when the Username or Password fields contain special characters and are
