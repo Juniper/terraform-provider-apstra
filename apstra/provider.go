@@ -12,10 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
