@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -59,23 +60,18 @@ func TelemetryServiceRegistryEntryA(t testing.TB, ctx context.Context) *apstra.T
 		}
 	}`)
 	request := apstra.TelemetryServiceRegistryEntry{
-		ServiceName:       "TestTelemetryServiceA",
+		ServiceName:       acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum),
 		ApplicationSchema: schema,
 		StorageSchemaPath: apstra.StorageSchemaPathIBA_INTEGER_DATA,
 		Builtin:           false,
 		Description:       "Test Telemetry Service A",
 		Version:           "",
 	}
-	ts, err := client.GetTelemetryServiceRegistryEntry(ctx, "TestTelemetryServiceA")
-	require.NoError(t, err)
-	if ts != nil {
-		return ts
-	}
 	sn, err := client.CreateTelemetryServiceRegistryEntry(ctx, &request)
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, client.DeleteTelemetryServiceRegistryEntry(ctx, sn)) })
 
-	ts, err = client.GetTelemetryServiceRegistryEntry(ctx, sn)
+	ts, err := client.GetTelemetryServiceRegistryEntry(ctx, sn)
 	require.NoError(t, err)
 
 	return ts
