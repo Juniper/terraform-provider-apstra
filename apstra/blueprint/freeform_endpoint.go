@@ -22,7 +22,6 @@ import (
 )
 
 type freeformEndpoint struct {
-	// SystemId         types.String         `tfsdk:"system_id"`
 	InterfaceName    types.String         `tfsdk:"interface_name"`
 	InterfaceId      types.String         `tfsdk:"interface_id"`
 	TransformationId types.Int64          `tfsdk:"transformation_id"`
@@ -32,7 +31,6 @@ type freeformEndpoint struct {
 
 func (o freeformEndpoint) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		// "system_id":         types.StringType,
 		"interface_name":    types.StringType,
 		"interface_id":      types.StringType,
 		"transformation_id": types.Int64Type,
