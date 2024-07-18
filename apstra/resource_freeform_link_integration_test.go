@@ -160,6 +160,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
 						endpoints: []apstra.FreeformEndpoint{
 							{
 								SystemId: sysIds[0],
@@ -180,7 +181,7 @@ func TestResourceFreeformLink(t *testing.T) {
 										IfName:           "ge-0/0/0",
 										TransformationId: 1,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("192.168.10.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
+										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
 										Tags:             randomStrings(rand.Intn(10)+2, 6),
 									},
 								},
@@ -188,9 +189,40 @@ func TestResourceFreeformLink(t *testing.T) {
 						},
 					},
 				},
-			},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEndpoint{
+							{
+								SystemId: sysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           "ge-0/0/0",
+										TransformationId: 1,
+										Ipv4Address:      nil,
+										Ipv6Address:      nil,
+										Tags:             nil,
+									},
+								},
+							},
+							{
+								SystemId: sysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           "ge-0/0/0",
+										TransformationId: 1,
+										Ipv4Address:      nil,
+										Ipv6Address:      nil,
+										Tags:             nil,
+									},
+								},
+							},
+						},
+					},
+				}},
 		},
-		"start_with_tags": {
+		"start_maximal": {
 			steps: []testStep{
 				{
 					config: resourceFreeformLink{
@@ -236,8 +268,41 @@ func TestResourceFreeformLink(t *testing.T) {
 									Data: &apstra.FreeformInterfaceData{
 										IfName:           "ge-0/0/5",
 										TransformationId: 1,
-										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.1.1.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
+										Ipv4Address:      nil,
+										Ipv6Address:      nil,
+										Tags:             nil,
+									},
+								},
+							},
+							{
+								SystemId: sysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           "ge-0/0/5",
+										TransformationId: 1,
+										Ipv4Address:      nil,
+										Ipv6Address:      nil,
+										Tags:             nil,
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEndpoint{
+							{
+								SystemId: sysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           "ge-0/0/5",
+										TransformationId: 1,
+										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.2.1.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
 										Tags:             randomStrings(rand.Intn(10)+2, 6),
 									},
 								},
@@ -248,8 +313,8 @@ func TestResourceFreeformLink(t *testing.T) {
 									Data: &apstra.FreeformInterfaceData{
 										IfName:           "ge-0/0/5",
 										TransformationId: 1,
-										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.1.1.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::2"), Mask: net.CIDRMask(64, 128)},
+										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.2.1.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
 										Tags:             randomStrings(rand.Intn(10)+2, 6),
 									},
 								},
