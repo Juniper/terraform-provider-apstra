@@ -14,7 +14,7 @@ import (
 
 var (
 	_ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplatesAssignment{}
-	_ resourceWithSetBpClientFunc    = &resourceDatacenterConnectivityTemplatesAssignment{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterConnectivityTemplatesAssignment{}
 	_ resourceWithSetBpLockFunc      = &resourceDatacenterConnectivityTemplatesAssignment{}
 )
 
