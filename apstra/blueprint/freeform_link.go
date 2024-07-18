@@ -3,18 +3,18 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -110,7 +110,8 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Freeform Link name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_")},
+				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
+			},
 		},
 		"speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of the Freeform Link.",
@@ -159,7 +160,7 @@ func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *ap
 	var epArray [2]apstra.FreeformEndpoint
 	var i int
 	for systemId, endpoint := range endpoints {
-		epArray[i] = *endpoint.request(systemId)
+		epArray[i] = *endpoint.request(ctx, systemId, diags)
 		i++
 	}
 
