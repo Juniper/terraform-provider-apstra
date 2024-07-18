@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	connectivitytemplate "github.com/Juniper/terraform-provider-apstra/apstra/connectivity_template"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"

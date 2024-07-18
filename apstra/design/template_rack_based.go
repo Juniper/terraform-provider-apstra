@@ -273,7 +273,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
-	if utils.Known(o.FabricAddressing) {
+	if utils.HasValue(o.FabricAddressing) {
 		var addressingScheme apstra.AddressingScheme
 		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
 		if err != nil {
@@ -364,6 +364,10 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 
 func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
 	var response apiversions.Constraints
+
+	if o.FabricAddressing.IsUnknown() {
+		return apiversions.Constraints{} // cannot validate
+	}
 
 	if !o.FabricAddressing.IsNull() {
 		response.AddAttributeConstraints(

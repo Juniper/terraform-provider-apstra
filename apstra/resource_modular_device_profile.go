@@ -29,6 +29,10 @@ func (o *resourceModularDeviceProfile) ValidateConfig(ctx context.Context, req r
 		return
 	}
 
+	if config.LineCardProfileIds.IsUnknown() {
+		return //cannot validate
+	}
+
 	for key := range config.LineCardProfileIds.Elements() {
 		_, err := strconv.ParseUint(key, 10, 64)
 		if err != nil {

@@ -32,6 +32,10 @@ func (o *dataSourceDatacenterCtDynamicBgpPeering) ValidateConfig(ctx context.Con
 		return
 	}
 
+	if config.Ipv4Enabled.IsUnknown() || config.Ipv6Enabled.IsUnknown() {
+		return // cannot validate while either value is unknown
+	}
+
 	if !config.Ipv4Enabled.ValueBool() && !config.Ipv6Enabled.ValueBool() {
 		resp.Diagnostics.AddError("Invalid Attribute Combination", "At least one attribute "+
 			"out of 'ipv4_enabled' and 'ipv6_enabled' must be `true`")

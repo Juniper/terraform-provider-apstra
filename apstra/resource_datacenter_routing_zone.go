@@ -266,8 +266,8 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	}
 
 	// set new "prior" markers
-	plan.HadPriorVlanIdConfig = types.BoolValue(utils.Known(plan.VlanId))
-	plan.HadPriorVniConfig = types.BoolValue(utils.Known(plan.Vni))
+	plan.HadPriorVlanIdConfig = types.BoolValue(utils.HasValue(plan.VlanId))
+	plan.HadPriorVniConfig = types.BoolValue(utils.HasValue(plan.Vni))
 
 	// send the update
 	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)

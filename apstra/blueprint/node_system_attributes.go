@@ -116,27 +116,27 @@ func (o NodeTypeSystemAttributes) DataSourceAttributesAsFilter() map[string]data
 func (o NodeTypeSystemAttributes) QEEAttributes() []apstra.QEEAttribute {
 	var result []apstra.QEEAttribute
 
-	if utils.Known(o.Hostname) {
+	if utils.HasValue(o.Hostname) {
 		result = append(result, apstra.QEEAttribute{Key: "hostname", Value: apstra.QEStringVal(o.Hostname.ValueString())})
 	}
 
-	if utils.Known(o.Id) {
+	if utils.HasValue(o.Id) {
 		result = append(result, apstra.QEEAttribute{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())})
 	}
 
-	if utils.Known(o.Label) {
+	if utils.HasValue(o.Label) {
 		result = append(result, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Label.ValueString())})
 	}
 
-	if utils.Known(o.Role) {
+	if utils.HasValue(o.Role) {
 		result = append(result, apstra.QEEAttribute{Key: "role", Value: apstra.QEStringVal(o.Role.ValueString())})
 	}
 
-	if utils.Known(o.SystemId) {
+	if utils.HasValue(o.SystemId) {
 		result = append(result, apstra.QEEAttribute{Key: "system_id", Value: apstra.QEStringVal(o.SystemId.ValueString())})
 	}
 
-	if utils.Known(o.SystemType) {
+	if utils.HasValue(o.SystemType) {
 		result = append(result, apstra.QEEAttribute{Key: "system_type", Value: apstra.QEStringVal(o.SystemType.ValueString())})
 	}
 
@@ -145,7 +145,7 @@ func (o NodeTypeSystemAttributes) QEEAttributes() []apstra.QEEAttribute {
 
 func (o NodeTypeSystemAttributes) query(ctx context.Context, diags *diag.Diagnostics) *apstra.MatchQuery {
 	var tagIds []string
-	if utils.Known(o.TagIds) {
+	if utils.HasValue(o.TagIds) {
 		diags.Append(o.TagIds.ElementsAs(ctx, &tagIds, false)...)
 		if diags.HasError() {
 			return nil

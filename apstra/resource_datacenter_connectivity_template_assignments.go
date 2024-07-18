@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -13,9 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateAssignments{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterConnectivityTemplateAssignments{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplateAssignments{}
+var (
+	_ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateAssignments{}
+	_ resourceWithSetBpClientFunc    = &resourceDatacenterConnectivityTemplateAssignments{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterConnectivityTemplateAssignments{}
+)
 
 type resourceDatacenterConnectivityTemplateAssignments struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -79,7 +82,13 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Create(ctx context.C
 			err.Error())
 	}
 
-	// set state
+	// Fetch IP link IDs
+	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -120,8 +129,16 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Read(ctx context.Con
 		}
 	}
 
-	// Set state
+	// Load application point IDs
 	state.ApplicationPointIds = types.SetValueMust(types.StringType, apIds)
+
+	// Fetch IP link IDs
+	state.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -168,6 +185,13 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Update(ctx context.C
 			err.Error())
 	}
 
+	// Fetch IP link IDs
+	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

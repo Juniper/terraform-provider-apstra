@@ -125,14 +125,14 @@ func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstr
 }
 
 func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	if !utils.Known(o.TargetSwitchId) {
+	if !utils.HasValue(o.TargetSwitchId) {
 		diags.AddError(
 			"provider bug",
 			"attempt to get interface transform ID without TargetSwitchId - please report this issue to the maintainers")
 		return
 	}
 
-	if !utils.Known(o.TargetSwitchIfName) {
+	if !utils.HasValue(o.TargetSwitchIfName) {
 		diags.AddError(
 			"provider bug",
 			"attempt to get interface transform ID without TargetSwitchIfName - please report this issue to the maintainers")
@@ -199,7 +199,7 @@ func (o *DatacenterGenericSystemLink) versionConstraintsAsGenericSystemLink(_ co
 	var result apiversions.Constraints
 
 	// can't use tags in 4.1.1 or earlier because the API endpoint we use in Read() doesn't return them
-	if utils.Known(o.Tags) {
+	if utils.HasValue(o.Tags) {
 		result.AddAttributeConstraints(apiversions.AttributeConstraint{
 			Path:        path.AtName("tags"),
 			Constraints: version.MustConstraints(version.NewConstraint("> " + apiversions.Apstra411)),

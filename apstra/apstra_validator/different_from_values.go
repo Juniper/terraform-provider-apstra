@@ -51,7 +51,7 @@ func (o DifferentFromValuesValidator) MarkdownDescription(_ context.Context) str
 
 func (o DifferentFromValuesValidator) Validate(ctx context.Context, req DifferentFromValuesValidatorRequest, resp *DifferentFromValuesValidatorResponse) {
 	// If attribute configuration isn't known, there is nothing else to validate
-	if !utils.Known(req.ConfigValue) {
+	if !utils.HasValue(req.ConfigValue) {
 		return
 	}
 

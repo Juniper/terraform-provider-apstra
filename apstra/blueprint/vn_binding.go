@@ -81,7 +81,7 @@ func (o VnBinding) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o VnBinding) Request(ctx context.Context, leafId string, diags *diag.Diagnostics) *apstra.VnBinding {
 	var vlanId *apstra.Vlan
-	if utils.Known(o.VlanId) {
+	if utils.HasValue(o.VlanId) {
 		v := apstra.Vlan(o.VlanId.ValueInt64())
 		vlanId = &v
 	}

@@ -1,7 +1,6 @@
-# The following example grabs the ID numbers of all agent profiles,
-# uses those IDs to grab the details of each agent profile, and then
-# outputs the names of all Agent Profiles which lack a complete
-# set of credentials.
+# The following example grabs the ID numbers of all agent profiles, uses
+# those IDs to grab the details of each agent profile, and then outputs
+# the names of all Agent Profiles which lack a complete set of credentials.
 
 data "apstra_agent_profiles" "all" {}
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"net/http"
@@ -41,7 +42,7 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 			t.Fatal(err)
 		}
 
-		clientCfg, err := utils.NewClientConfig("")
+		clientCfg, err := utils.NewClientConfig("", "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -76,23 +77,23 @@ func TestCfgFileToEnv() error {
 	}
 
 	if testCfg.Url != "" {
-		err = os.Setenv(utils.EnvApstraUrl, testCfg.Url)
+		err = os.Setenv(constants.EnvUrl, testCfg.Url)
 		if err != nil {
-			return fmt.Errorf("failed setting environment variable %q - %w", utils.EnvApstraUrl, err)
+			return fmt.Errorf("failed setting environment variable %q - %w", constants.EnvUrl, err)
 		}
 	}
 
 	if testCfg.Username != "" {
-		err = os.Setenv(utils.EnvApstraUsername, testCfg.Username)
+		err = os.Setenv(constants.EnvUsername, testCfg.Username)
 		if err != nil {
-			return fmt.Errorf("failed setting environment variable %q - %w", utils.EnvApstraUsername, err)
+			return fmt.Errorf("failed setting environment variable %q - %w", constants.EnvUsername, err)
 		}
 	}
 
 	if testCfg.Password != "" {
-		err = os.Setenv(utils.EnvApstraPassword, testCfg.Password)
+		err = os.Setenv(constants.EnvPassword, testCfg.Password)
 		if err != nil {
-			return fmt.Errorf("failed setting environment variable %q - %w", utils.EnvApstraPassword, err)
+			return fmt.Errorf("failed setting environment variable %q - %w", constants.EnvPassword, err)
 		}
 	}
 

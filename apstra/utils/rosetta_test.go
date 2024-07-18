@@ -45,6 +45,9 @@ func TestRosetta(t *testing.T) {
 		//{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSpineLeafIp6}},             // todo: enable_rosetta_for_pools_with_leading_ipv6
 		//{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}}, // todo: enable_rosetta_for_pools_with_leading_ipv6
 		//{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},        // todo: enable_rosetta_for_pools_with_leading_ipv6
+
+		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv4TypeNone}},
+		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv6TypeNone}},
 	}
 
 	for i, tc := range testCases {

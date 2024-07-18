@@ -10,7 +10,7 @@ import (
 )
 
 func FabricAddressing(_ context.Context, s types.String, path *path.Path, diags *diag.Diagnostics) *apstra.AddressingScheme {
-	if !Known(s) {
+	if !HasValue(s) {
 		return nil
 	}
 

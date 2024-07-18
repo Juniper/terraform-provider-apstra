@@ -137,21 +137,21 @@ func stringSetOrNull(in []string) string {
 	return "[ " + sb.String() + " ]"
 }
 
-func randIpv4NetMust(t testing.TB, cidrBlock string) *net.IPNet {
+func randIpNetMust(t testing.TB, cidrBlock string) *net.IPNet {
 	t.Helper()
 
-	ip := randIpv4AddressMust(t, cidrBlock)
+	ip := randIpvAddressMust(t, cidrBlock)
 
 	_, ipNet, _ := net.ParseCIDR(cidrBlock)
-	cidrBlockPrefixLen, _ := ipNet.Mask.Size()
-	targetPrefixLen := rand.Intn(31-cidrBlockPrefixLen) + cidrBlockPrefixLen
+	cidrBlockPrefixLen, totalBits := ipNet.Mask.Size()
+	targetPrefixLen := rand.Intn((totalBits-1)-cidrBlockPrefixLen) + cidrBlockPrefixLen
 
 	_, result, _ := net.ParseCIDR(fmt.Sprintf("%s/%d", ip.String(), targetPrefixLen))
 
 	return result
 }
 
-func randIpv4AddressMust(t testing.TB, cidrBlock string) net.IP {
+func randIpvAddressMust(t testing.TB, cidrBlock string) net.IP {
 	t.Helper()
 
 	s, err := acctest.RandIpAddress(cidrBlock)
@@ -161,7 +161,7 @@ func randIpv4AddressMust(t testing.TB, cidrBlock string) net.IP {
 
 	ip := net.ParseIP(s)
 	if ip == nil {
-		t.Fatalf("randIpv4AddressMust failed to parse IP address %q", s)
+		t.Fatalf("randIpvAddressMust failed to parse IP address %q", s)
 	}
 
 	return ip
@@ -178,7 +178,7 @@ func randomRT(t testing.TB) string {
 	case 1: // 32-bits:16-bits
 		return fmt.Sprintf("%d:%d", rand.Uint32(), uint16(rand.Uint32()))
 	case 2: // IPv4:16-bits
-		return fmt.Sprintf("%s:%d", randIpv4AddressMust(t, "192.0.2.0/24").String(), uint16(rand.Uint32()))
+		return fmt.Sprintf("%s:%d", randIpvAddressMust(t, "192.0.2.0/24").String(), uint16(rand.Uint32()))
 	}
 
 	panic(nil)
@@ -244,6 +244,24 @@ func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage
 	require.NoError(t, err)
 
 	return result
+}
+
+func randomSlash31(t testing.TB, cidrBlock string) net.IPNet {
+	t.Helper()
+
+	ip := randIpvAddressMust(t, cidrBlock)
+	_, ipNet, err := net.ParseCIDR(ip.String() + "/31")
+	require.NoError(t, err)
+	return *ipNet
+}
+
+func randomSlash127(t testing.TB, cidrBlock string) net.IPNet {
+	t.Helper()
+
+	ip := randIpvAddressMust(t, cidrBlock)
+	_, ipNet, err := net.ParseCIDR(ip.String() + "/127")
+	require.NoError(t, err)
+	return *ipNet
 }
 
 type lineNumberer struct {

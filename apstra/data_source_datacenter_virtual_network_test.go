@@ -57,7 +57,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 		{
 			Data: &apstra.VirtualNetworkData{
 				Ipv4Enabled:    true,
-				Ipv4Subnet:     randIpv4NetMust(t, "10.0.0.0/16"),
+				Ipv4Subnet:     randIpNetMust(t, "10.0.0.0/16"),
 				Label:          acctest.RandString(5),
 				SecurityZoneId: zoneId,
 				VnType:         apstra.VnTypeVxlan,
@@ -67,7 +67,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 		{
 			Data: &apstra.VirtualNetworkData{
 				Ipv4Enabled:    true,
-				Ipv4Subnet:     randIpv4NetMust(t, "10.1.0.0/16"),
+				Ipv4Subnet:     randIpNetMust(t, "10.1.0.0/16"),
 				Label:          acctest.RandString(5),
 				SecurityZoneId: zoneId,
 				VnType:         apstra.VnTypeVlan,

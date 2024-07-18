@@ -7,7 +7,7 @@
 # - apstra_datacenter_interfaces_by_link_tag
 # - apstra_datacenter_interfaces_by_system
 
-resource "apstra_datacenter_connectivity_template_assignment" "a" {
+resource "apstra_datacenter_connectivity_templates_assignment" "a" {
   blueprint_id              = "b726704d-f80e-4733-9103-abd6ccd8752c"
   application_point_id      = "FkYtMBdeoJ5urBaIEi8"
   connectivity_template_ids = [

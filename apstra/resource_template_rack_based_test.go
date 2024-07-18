@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -38,12 +39,12 @@ resource "apstra_template_rack_based" "test" {
 func TestResourceTemplateRackBased(t *testing.T) {
 	ctx := context.Background()
 
-	apstraUrl, ok := os.LookupEnv(utils.EnvApstraUrl)
+	apstraUrl, ok := os.LookupEnv(constants.EnvUrl)
 	if !ok || apstraUrl == "" {
-		t.Fatalf("apstra url environment variable (%s) must be set and non-empty", utils.EnvApstraUrl)
+		t.Fatalf("apstra url environment variable (%s) must be set and non-empty", constants.EnvUrl)
 	}
 
-	clientCfg, err := utils.NewClientConfig(apstraUrl)
+	clientCfg, err := utils.NewClientConfig(apstraUrl, "")
 	if err != nil {
 		t.Fatal(err)
 	}

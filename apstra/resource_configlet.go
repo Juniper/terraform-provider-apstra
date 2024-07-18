@@ -93,6 +93,10 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 
 	// validate each generator
 	for i, generator := range generators {
+		if generator.ConfigStyle.IsUnknown() || generator.Section.IsUnknown() {
+			continue // cannot validate with unknown value
+		}
+
 		// extract the platform/config_style from the generator object as an SDK iota type
 		var platform apstra.PlatformOS
 		err := platform.FromString(generator.ConfigStyle.ValueString())

@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplatesAssignment{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplatesAssignment{}
+var (
+	_ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplatesAssignment{}
+	_ resourceWithSetBpClientFunc    = &resourceDatacenterConnectivityTemplatesAssignment{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterConnectivityTemplatesAssignment{}
+)
 
 type resourceDatacenterConnectivityTemplatesAssignment struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -72,6 +75,12 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Create(ctx context.C
 		return
 	}
 
+	// Fetch IP link IDs
+	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -115,6 +124,12 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Read(ctx context.Con
 	// remainingCtIds are the previously assigned IDs (state) which are still assigned (current)
 	remainingCtIds := utils.SliceIntersectionOfAB(currentCtIds, stateCtIds)
 	state.ConnectivityTemplateIds = utils.SetValueOrNull(ctx, types.StringType, remainingCtIds, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Fetch IP link IDs
+	state.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -171,6 +186,12 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 	err = bp.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), delIds)
 	if err != nil {
 		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())
+		return
+	}
+
+	// Fetch IP link IDs
+	plan.GetIpLinkIds(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 

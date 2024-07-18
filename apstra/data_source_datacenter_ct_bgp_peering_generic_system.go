@@ -33,6 +33,10 @@ func (o *dataSourceDatacenterCtBgpPeeringGenericSystem) ValidateConfig(ctx conte
 		return
 	}
 
+	if config.Ipv4AddressingType.IsUnknown() || config.Ipv6AddressingType.IsUnknown() {
+		return //cannot validate until both values are known
+	}
+
 	v4NoneString := apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone.String() // "none"
 	v6NoneString := apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone.String() // "none"
 

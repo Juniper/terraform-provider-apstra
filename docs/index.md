@@ -14,6 +14,8 @@ Use the navigation tree to the left to read about the available resources and da
 
 This release has been tested with Apstra versions 4.2.0, 4.2.1, 4.2.1.1, and 4.2.2.
 
+Some example projects which make use of this provider can be found [here](https://github.com/Juniper/terraform-apstra-examples).
+
 ## Configuration
 
 ### Provider configuration stanza
@@ -61,6 +63,7 @@ may be set via environment variables: `APSTRA_API_TIMEOUT`,
 - `api_timeout` (Number) Timeout in seconds for completing API transactions with the Apstra server. Omit for default value of 10 seconds. Value of 0 results in infinite timeout.
 - `blueprint_mutex_enabled` (Boolean) Blueprint mutexes are indicators that changes are being made in a staging Blueprint and other automation processes (including other instances of Terraform) should wait before beginning to make changes of their own. Setting this attribute 'true' causes the provider to lock a blueprint-specific mutex before making any changes. [More info here](https://github.com/Juniper/terraform-provider-apstra/blob/main/kb/blueprint_mutex.md).
 - `blueprint_mutex_message` (String) Blueprint mutexes are signals that changes are being made in a staging Blueprint and other automation processes (including other instances of Terraform) should wait before beginning to make changes of their own. The mutexes embed a human-readable field to reduce confusion in the event a mutex needs to be cleared manually. This attribute overrides the default message in that field: "locked by terraform at $DATE".
+- `env_var_prefix` (String) This attribute defines a prefix which redefines all of the `APSTRA_*` environment variables. For example, setting `env_var_prefix = "FOO_"` will cause the provider to learn the Apstra service URL from the `FOO_APSTRA_URL` environment variable rather than the `APSTRA_URL` environment variable. This capability is intended to be used when configuring multiple instances of the Apstra provider (which talk to multiple Apstra servers) in a single Terraform project.
 - `experimental` (Boolean) Enable *experimental* features. In this release that means:
   - Set the `experimental` flag in the underlying Apstra SDK client object. Doing so permits connections to Apstra instances not supported by the SDK.
 - `tls_validation_disabled` (Boolean) Set 'true' to disable TLS certificate validation.

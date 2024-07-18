@@ -32,6 +32,9 @@ const (
 	// resourceGroupNameSpineLeafLinkIpv6       = "spine_leaf_link_ips_ipv6"       // todo: enable_rosetta_for_pools_with_leading_ipv6
 	// resourceGroupNameSpineSuperspineLinkIpv6 = "spine_superspine_link_ips_ipv6" // todo: enable_rosetta_for_pools_with_leading_ipv6
 	// resourceGroupNameToGenericLinkIpv6       = "to_generic_link_ips_ipv6"       // todo: enable_rosetta_for_pools_with_leading_ipv6
+
+	interfaceNumberingIpv4TypeNone = "none"
+	interfaceNumberingIpv6TypeNone = "none"
 )
 
 type StringerWithFromString interface {
@@ -57,6 +60,10 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return configletSectionToFriendlyString(in0, in[1:]...)
 	case apstra.DeployMode:
 		return deployModeToFriendlyString(in0)
+	case apstra.InterfaceNumberingIpv4Type:
+		return interfaceNumberingIpv4TypeToFriendlyString(in0)
+	case apstra.InterfaceNumberingIpv6Type:
+		return interfaceNumberingIpv6TypeToFriendlyString(in0)
 	case apstra.OverlayControlProtocol:
 		return overlayControlProtocolToFriendlyString(in0)
 	case apstra.PolicyRuleProtocol:
@@ -65,6 +72,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
+	case apstra.StorageSchemaPath:
+		return storageSchemaPathToFriendlyString(in0)
 	}
 
 	return in[0].String()
@@ -89,6 +98,10 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return configletSectionFromFriendlyString(target, in...)
 	case *apstra.DeployMode:
 		return nodeDeployModeFromFriendlyString(target, in...)
+	case *apstra.InterfaceNumberingIpv4Type:
+		return interfaceNumberingIpv4TypeFromFriendlyString(target, in...)
+	case *apstra.InterfaceNumberingIpv6Type:
+		return interfaceNumberingIpv6TypeFromFriendlyString(target, in...)
 	case *apstra.OverlayControlProtocol:
 		return overlayControlProtocolFromFriendlyString(target, in...)
 	case *apstra.PolicyRuleProtocol:
@@ -97,6 +110,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
+	case *apstra.StorageSchemaPath:
+		return target.FromString("aos.sdk.telemetry.schemas." + in[0])
 	}
 
 	return target.FromString(in[0])
@@ -149,6 +164,24 @@ func deployModeToFriendlyString(in apstra.DeployMode) string {
 	return in.String()
 }
 
+func interfaceNumberingIpv4TypeToFriendlyString(in apstra.InterfaceNumberingIpv4Type) string {
+	switch in {
+	case apstra.InterfaceNumberingIpv4TypeNone:
+		return interfaceNumberingIpv4TypeNone
+	}
+
+	return in.String()
+}
+
+func interfaceNumberingIpv6TypeToFriendlyString(in apstra.InterfaceNumberingIpv6Type) string {
+	switch in {
+	case apstra.InterfaceNumberingIpv6TypeNone:
+		return interfaceNumberingIpv6TypeNone
+	}
+
+	return in.String()
+}
+
 func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) string {
 	switch in {
 	case apstra.OverlayControlProtocolNone:
@@ -169,6 +202,11 @@ func refDesignToFriendlyString(in apstra.RefDesign) string {
 	}
 
 	return in.String()
+}
+
+func storageSchemaPathToFriendlyString(in apstra.StorageSchemaPath) string {
+	s := strings.Split(in.String(), ".")
+	return s[len(s)-1]
 }
 
 func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
@@ -246,6 +284,36 @@ func nodeDeployModeFromFriendlyString(target *apstra.DeployMode, in ...string) e
 	switch in[0] {
 	case nodeDeployModeNotSet:
 		*target = apstra.DeployModeNone
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func interfaceNumberingIpv4TypeFromFriendlyString(target *apstra.InterfaceNumberingIpv4Type, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case interfaceNumberingIpv4TypeNone:
+		*target = apstra.InterfaceNumberingIpv4TypeNone
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func interfaceNumberingIpv6TypeFromFriendlyString(target *apstra.InterfaceNumberingIpv6Type, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case interfaceNumberingIpv6TypeNone:
+		*target = apstra.InterfaceNumberingIpv6TypeNone
 	default:
 		return target.FromString(in[0])
 	}
