@@ -16,34 +16,14 @@ At least one optional attribute is required.
 ## Example Usage
 
 ```terraform
-# here we build a link block
-
-resource "apstra_freeform_link" "test" {
-  blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
-  name         = "link_a_b"
-  speed = "1g"
-  tags         = ["a", "b"]
-  endpoints = [
-    {
-      system_id = "-CEYpa9xZ5chndvu0OY"
-      interface_name = "ge-0/0/3"
-      transformation_id = 1
-    },
-    {
-      system_id = "ySBRdHvl2KZmWKLhkIk"
-      interface_name = "ge-0/0/3"
-      transformation_id = 1
-    }
-  ]
-}
+# This example pulls details from a link in a Freeform blueprint
 
 data "apstra_freeform_link" "test" {
   blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
-  id           = apstra_freeform_link.test.id
+  id           = "SkY0hved7LajZY7WNzU"
 }
 
 output "test_Link_out" { value = data.apstra_freeform_link.test }
-
 
 //output
 #test_Link_out = {
@@ -102,8 +82,9 @@ Link Type. An 'ethernet' link is a normal front-panel interface. An 'aggregate_l
 
 Read-Only:
 
-- `interface_id` (String) Graph node ID of the attached interface for this side of the link endpoint
-- `interface_name` (String) the interface name
-- `ipv4_address` (String) Ipv4 address of the interface
-- `ipv6_address` (String) Ipv6 address of the interface
-- `transformation_id` (Number) ID of the transformation in the device profile
+- `interface_id` (String) Graph node ID of the associated interface
+- `interface_name` (String) The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`
+- `ipv4_address` (String) Ipv4 address of the interface in CIDR notation
+- `ipv6_address` (String) Ipv6 address of the interface in CIDR notation
+- `tags` (Set of String) Set of Tags applied to the interface
+- `transformation_id` (Number) ID # of the transformation in the Device Profile

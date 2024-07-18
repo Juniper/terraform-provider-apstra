@@ -1,31 +1,11 @@
-# here we build a link block
-
-resource "apstra_freeform_link" "test" {
-  blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
-  name         = "link_a_b"
-  speed = "1g"
-  tags         = ["a", "b"]
-  endpoints = [
-    {
-      system_id = "-CEYpa9xZ5chndvu0OY"
-      interface_name = "ge-0/0/3"
-      transformation_id = 1
-    },
-    {
-      system_id = "ySBRdHvl2KZmWKLhkIk"
-      interface_name = "ge-0/0/3"
-      transformation_id = 1
-    }
-  ]
-}
+# This example pulls details from a link in a Freeform blueprint
 
 data "apstra_freeform_link" "test" {
   blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
-  id           = apstra_freeform_link.test.id
+  id           = "SkY0hved7LajZY7WNzU"
 }
 
 output "test_Link_out" { value = data.apstra_freeform_link.test }
-
 
 //output
 #test_Link_out = {
