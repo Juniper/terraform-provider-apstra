@@ -5,12 +5,12 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"math/rand"
 	"net"
 	"strconv"
 	"testing"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
@@ -22,20 +22,20 @@ const (
 	resourceFreeformLinkHcl = `
 resource %q %q {
  blueprint_id = %q
-  name         = %q
-  tags         = %s
-  endpoints = {
+  name        = %q
+  tags        = %s
+  endpoints   = {
     %q = {
       interface_name    = %q
       transformation_id = %d
-      ipv4_address = %s
-      ipv6_address = %s
+      ipv4_address      = %s
+      ipv6_address      = %s
     },
     %q = {
       interface_name    = %q
       transformation_id = %d
-      ipv4_address = %s
-      ipv6_address = %s
+      ipv4_address      = %s
+      ipv6_address      = %s
     }
   }
 }
@@ -91,11 +91,13 @@ func (o resourceFreeformLink) testChecks(t testing.TB, rType, rName string) test
 		result.append(t, "TestCheckResourceAttr", "endpoints."+endpoint.SystemId.String()+".interface_name", endpoint.Interface.Data.IfName)
 		result.append(t, "TestCheckResourceAttr", "endpoints."+endpoint.SystemId.String()+".transformation_id", strconv.Itoa(endpoint.Interface.Data.TransformationId))
 		result.append(t, "TestCheckResourceAttrSet", "endpoints."+endpoint.SystemId.String()+".interface_id")
+
 		if endpoint.Interface.Data.Ipv4Address != nil {
 			result.append(t, "TestCheckResourceAttr", "endpoints."+endpoint.SystemId.String()+".ipv4_address", endpoint.Interface.Data.Ipv4Address.String())
 		} else {
 			result.append(t, "TestCheckNoResourceAttr", "endpoints."+endpoint.SystemId.String()+".ipv4_address")
 		}
+
 		if endpoint.Interface.Data.Ipv6Address != nil {
 			result.append(t, "TestCheckResourceAttr", "endpoints."+endpoint.SystemId.String()+".ipv6_address", endpoint.Interface.Data.Ipv6Address.String())
 		} else {
@@ -110,12 +112,14 @@ func TestResourceFreeformLink(t *testing.T) {
 	ctx := context.Background()
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
+
 	// create a blueprint
 	bp, sysIds := testutils.FfBlueprintB(t, ctx, 2)
 
 	type testStep struct {
 		config resourceFreeformLink
 	}
+
 	type testCase struct {
 		apiVersionConstraints version.Constraints
 		steps                 []testStep
@@ -166,8 +170,8 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[0],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/0",
-										TransformationId: 1,
+										IfName:           "ge-0/0/1",
+										TransformationId: 2,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("192.168.10.1"), Mask: net.CIDRMask(30, 32)},
 										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
 										Tags:             randomStrings(rand.Intn(10)+2, 6),
@@ -178,8 +182,8 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[1],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/0",
-										TransformationId: 1,
+										IfName:           "ge-0/0/1",
+										TransformationId: 2,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("192.168.10.2"), Mask: net.CIDRMask(30, 32)},
 										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
 										Tags:             randomStrings(rand.Intn(10)+2, 6),
@@ -198,7 +202,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[0],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/0",
+										IfName:           "ge-0/0/3",
 										TransformationId: 1,
 										Ipv4Address:      nil,
 										Ipv6Address:      nil,
@@ -210,7 +214,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[1],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/0",
+										IfName:           "ge-0/0/3",
 										TransformationId: 1,
 										Ipv4Address:      nil,
 										Ipv6Address:      nil,
@@ -220,7 +224,8 @@ func TestResourceFreeformLink(t *testing.T) {
 							},
 						},
 					},
-				}},
+				},
+			},
 		},
 		"start_maximal": {
 			steps: []testStep{
@@ -234,7 +239,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[0],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/5",
+										IfName:           "ge-0/0/4",
 										TransformationId: 1,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.1.1.1"), Mask: net.CIDRMask(30, 32)},
 										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
@@ -246,7 +251,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[1],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/5",
+										IfName:           "ge-0/0/4",
 										TransformationId: 1,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.1.1.2"), Mask: net.CIDRMask(30, 32)},
 										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::2"), Mask: net.CIDRMask(64, 128)},
@@ -267,7 +272,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
 										IfName:           "ge-0/0/5",
-										TransformationId: 1,
+										TransformationId: 2,
 										Ipv4Address:      nil,
 										Ipv6Address:      nil,
 										Tags:             nil,
@@ -279,7 +284,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
 										IfName:           "ge-0/0/5",
-										TransformationId: 1,
+										TransformationId: 2,
 										Ipv4Address:      nil,
 										Ipv6Address:      nil,
 										Tags:             nil,
@@ -299,7 +304,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[0],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/5",
+										IfName:           "ge-0/0/6",
 										TransformationId: 1,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.2.1.1"), Mask: net.CIDRMask(30, 32)},
 										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
@@ -311,7 +316,7 @@ func TestResourceFreeformLink(t *testing.T) {
 								SystemId: sysIds[1],
 								Interface: apstra.FreeformInterface{
 									Data: &apstra.FreeformInterfaceData{
-										IfName:           "ge-0/0/5",
+										IfName:           "ge-0/0/6",
 										TransformationId: 1,
 										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.2.1.2"), Mask: net.CIDRMask(30, 32)},
 										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
