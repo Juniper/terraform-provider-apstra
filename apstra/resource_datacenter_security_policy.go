@@ -14,7 +14,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterSecurityPolicy{}
 var _ resource.ResourceWithImportState = &resourceDatacenterSecurityPolicy{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterSecurityPolicy{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterSecurityPolicy{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterSecurityPolicy{}
 
 type resourceDatacenterSecurityPolicy struct {

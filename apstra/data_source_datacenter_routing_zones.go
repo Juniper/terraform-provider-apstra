@@ -21,7 +21,7 @@ import (
 
 var (
 	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZones{}
-	_ datasourceWithSetBpClientFunc      = &dataSourceDatacenterRoutingZones{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterRoutingZones{}
 )
 
 type dataSourceDatacenterRoutingZones struct {

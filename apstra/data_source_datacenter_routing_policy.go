@@ -13,7 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicy{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterRoutingPolicy{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterRoutingPolicy{}
 
 type dataSourceDatacenterRoutingPolicy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

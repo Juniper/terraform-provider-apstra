@@ -21,7 +21,7 @@ import (
 
 var (
 	_ resource.ResourceWithValidateConfig = &resourceDatacenterIpLinkAddressing{}
-	_ resourceWithSetBpClientFunc         = &resourceDatacenterIpLinkAddressing{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterIpLinkAddressing{}
 	_ resourceWithSetBpLockFunc           = &resourceDatacenterIpLinkAddressing{}
 )
 

@@ -17,7 +17,7 @@ import (
 var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
 var _ resource.ResourceWithModifyPlan = &resourceDatacenterVirtualNetwork{}
 var _ resource.ResourceWithValidateConfig = &resourceDatacenterVirtualNetwork{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterVirtualNetwork{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterVirtualNetwork{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterVirtualNetwork{}
 
 type resourceDatacenterVirtualNetwork struct {

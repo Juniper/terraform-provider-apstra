@@ -18,7 +18,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSecurityPolicies{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterSecurityPolicies{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterSecurityPolicies{}
 
 type dataSourceDatacenterSecurityPolicies struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

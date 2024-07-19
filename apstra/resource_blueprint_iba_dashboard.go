@@ -11,7 +11,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceBlueprintIbaDashboard{}
-var _ resourceWithSetBpClientFunc = &resourceBlueprintIbaDashboard{}
+var _ resourceWithSetDcBpClientFunc = &resourceBlueprintIbaDashboard{}
 
 type resourceBlueprintIbaDashboard struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

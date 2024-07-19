@@ -21,7 +21,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetworks{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterVirtualNetworks{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterVirtualNetworks{}
 
 type dataSourceDatacenterVirtualNetworks struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

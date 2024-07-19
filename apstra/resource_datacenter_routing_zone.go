@@ -13,7 +13,7 @@ import (
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
 var _ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterRoutingZone{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRoutingZone{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingZone{}
 
 type resourceDatacenterRoutingZone struct {

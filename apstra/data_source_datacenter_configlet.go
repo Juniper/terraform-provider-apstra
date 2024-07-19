@@ -13,7 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglet{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterConfiglet{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterConfiglet{}
 
 type dataSourceDatacenterConfiglet struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

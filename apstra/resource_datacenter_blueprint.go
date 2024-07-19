@@ -18,7 +18,7 @@ var (
 	_ resource.ResourceWithConfigure      = &resourceDatacenterBlueprint{}
 	_ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
 	_ resourceWithSetClient               = &resourceDatacenterBlueprint{}
-	_ resourceWithSetBpClientFunc         = &resourceDatacenterBlueprint{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterBlueprint{}
 	_ resourceWithSetBpLockFunc           = &resourceDatacenterBlueprint{}
 	_ resourceWithSetBpUnlockFunc         = &resourceDatacenterBlueprint{}
 )

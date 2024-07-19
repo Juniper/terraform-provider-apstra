@@ -17,7 +17,7 @@ import (
 var (
 	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterBlueprint{}
 	_ datasourceWithSetClient            = &dataSourceDatacenterBlueprint{}
-	_ datasourceWithSetBpClientFunc      = &dataSourceDatacenterBlueprint{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterBlueprint{}
 )
 
 type dataSourceDatacenterBlueprint struct {

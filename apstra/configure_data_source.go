@@ -12,9 +12,14 @@ type datasourceWithSetClient interface {
 	setClient(*apstra.Client)
 }
 
-type datasourceWithSetBpClientFunc interface {
+type datasourceWithSetDcBpClientFunc interface {
 	datasource.DataSourceWithConfigure
 	setBpClientFunc(func(context.Context, string) (*apstra.TwoStageL3ClosClient, error))
+}
+
+type datasourceWithSetFfBpClientFunc interface {
+	datasource.DataSourceWithConfigure
+	setBpClientFunc(func(context.Context, string) (*apstra.FreeformClient, error))
 }
 
 func configureDataSource(_ context.Context, ds datasource.DataSourceWithConfigure, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -36,7 +41,12 @@ func configureDataSource(_ context.Context, ds datasource.DataSourceWithConfigur
 		ds.setClient(pd.client)
 	}
 
-	if ds, ok := ds.(datasourceWithSetBpClientFunc); ok {
+	if ds, ok := ds.(datasourceWithSetDcBpClientFunc); ok {
 		ds.setBpClientFunc(pd.getTwoStageL3ClosClient)
 	}
+
+	if ds, ok := ds.(datasourceWithSetFfBpClientFunc); ok {
+		ds.setBpClientFunc(pd.getFreeformClient)
+	}
+
 }

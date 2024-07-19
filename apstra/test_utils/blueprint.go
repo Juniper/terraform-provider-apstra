@@ -228,3 +228,46 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 
 	return bpClient
 }
+
+func FfBlueprintA(t testing.TB, ctx context.Context) *apstra.FreeformClient {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	id, err := client.CreateFreeformBlueprint(ctx, acctest.RandString(6))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+
+	bpClient, err := client.NewFreeformClient(ctx, id)
+	require.NoError(t, err)
+
+	return bpClient
+}
+
+func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.FreeformClient, []apstra.ObjectId) {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	id, err := client.CreateFreeformBlueprint(ctx, acctest.RandString(6))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+
+	c, err := client.NewFreeformClient(ctx, id)
+	require.NoError(t, err)
+
+	dpId, err := c.ImportDeviceProfile(ctx, "Juniper_vEX")
+	require.NoError(t, err)
+
+	systemIds := make([]apstra.ObjectId, systemCount)
+	for i := range systemIds {
+		systemIds[i], err = c.CreateSystem(ctx, &apstra.FreeformSystemData{
+			Type:            apstra.SystemTypeInternal,
+			Label:           acctest.RandString(6),
+			DeviceProfileId: dpId,
+		})
+		require.NoError(t, err)
+	}
+
+	return c, systemIds
+}

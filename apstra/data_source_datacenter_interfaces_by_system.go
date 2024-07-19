@@ -12,7 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceInterfacesBySystem{}
-var _ datasourceWithSetBpClientFunc = &dataSourceInterfacesBySystem{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceInterfacesBySystem{}
 
 type dataSourceInterfacesBySystem struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

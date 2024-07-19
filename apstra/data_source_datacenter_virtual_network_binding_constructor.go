@@ -12,7 +12,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceVirtualNetworkBindingConstructor{}
-var _ datasourceWithSetBpClientFunc = &dataSourceVirtualNetworkBindingConstructor{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceVirtualNetworkBindingConstructor{}
 
 type dataSourceVirtualNetworkBindingConstructor struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

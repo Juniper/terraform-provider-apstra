@@ -15,7 +15,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterPropertySet{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterPropertySet{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterPropertySet{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterPropertySet{}
 
 type resourceDatacenterPropertySet struct {

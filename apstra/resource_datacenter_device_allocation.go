@@ -18,7 +18,7 @@ import (
 var (
 	_ resource.ResourceWithConfigure      = &resourceDeviceAllocation{}
 	_ resource.ResourceWithValidateConfig = &resourceDeviceAllocation{}
-	_ resourceWithSetBpClientFunc         = &resourceDeviceAllocation{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDeviceAllocation{}
 	_ resourceWithSetBpLockFunc           = &resourceDeviceAllocation{}
 	_ resourceWithSetExperimental         = &resourceDeviceAllocation{}
 )

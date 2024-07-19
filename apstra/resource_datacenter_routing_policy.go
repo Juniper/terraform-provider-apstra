@@ -12,7 +12,7 @@ import (
 )
 
 var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingPolicy{}
-var _ resourceWithSetBpClientFunc = &resourceDatacenterRoutingPolicy{}
+var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRoutingPolicy{}
 var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingPolicy{}
 
 type resourceDatacenterRoutingPolicy struct {

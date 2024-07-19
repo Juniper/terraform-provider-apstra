@@ -13,7 +13,7 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSvis{}
-var _ datasourceWithSetBpClientFunc = &dataSourceDatacenterSvis{}
+var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterSvis{}
 
 type dataSourceDatacenterSvis struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

@@ -4,6 +4,7 @@ package tfapstra_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -219,6 +220,32 @@ func randomIPs(t testing.TB, n int, ipv4Cidr, ipv6Cidr string) []string {
 	return result
 }
 
+func randomStrings(strCount int, strLen int) []string {
+	result := make([]string, strCount)
+	for i := 0; i < strCount; i++ {
+		result[i] = acctest.RandString(strLen)
+	}
+	return result
+}
+
+func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage {
+	t.Helper()
+
+	preResult := make(map[string]any, count)
+	for i := 0; i < count; i++ {
+		if rand.Int()%2 == 0 {
+			preResult["a"+acctest.RandString(strLen-1)] = rand.Intn(maxInt)
+		} else {
+			preResult["a"+acctest.RandString(strLen-1)] = acctest.RandString(strLen)
+		}
+	}
+
+	result, err := json.Marshal(&preResult)
+	require.NoError(t, err)
+
+	return result
+}
+
 func randomSlash31(t testing.TB, cidrBlock string) net.IPNet {
 	t.Helper()
 
@@ -410,6 +437,12 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 		}
 		o.checks = append(o.checks, resource.TestCheckResourceAttrSet(o.path, testCheckFuncArgs[0]))
 		o.logLines.appendf("TestCheckResourceAttrSet(%s, %q)", o.path, testCheckFuncArgs[0])
+	case "TestCheckNoResourceAttr":
+		if len(testCheckFuncArgs) != 1 {
+			t.Fatalf("%s requires 1 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
+		}
+		o.checks = append(o.checks, resource.TestCheckNoResourceAttr(o.path, testCheckFuncArgs[0]))
+		o.logLines.appendf("TestCheckNoResourceAttr(%s, %q)", o.path, testCheckFuncArgs[0])
 	case "TestCheckResourceAttr":
 		if len(testCheckFuncArgs) != 2 {
 			t.Fatalf("%s requires 2 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
