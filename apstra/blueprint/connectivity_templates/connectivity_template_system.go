@@ -157,7 +157,7 @@ func (o *ConnectivityTemplateSystem) LoadApiData(ctx context.Context, in *apstra
 	}
 
 	o.Name = types.StringValue(in.Label)
-	o.Description = types.StringValue(in.Description)
+	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
 	o.CustomStaticRoutes = primitives.NewSetCustomStaticRoutes(ctx, customStaticRoutes, diags)
 }
