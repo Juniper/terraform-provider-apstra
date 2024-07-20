@@ -11,27 +11,27 @@ import (
 )
 
 var (
-	_ basetypes.StringTypable = (*IPv46AddressType)(nil)
-	_ attr.Type               = (*IPv46AddressType)(nil)
+	_ basetypes.StringTypable = (*IPv46PrefixType)(nil)
+	_ attr.Type               = (*IPv46PrefixType)(nil)
 )
 
-type IPv46AddressType struct {
+type IPv46PrefixType struct {
 	basetypes.StringType
 }
 
 // String returns a human readable string of the type name.
-func (t IPv46AddressType) String() string {
-	return "customtypes.IPv46AddressType"
+func (t IPv46PrefixType) String() string {
+	return "customtypes.IPv46PrefixType"
 }
 
 // ValueType returns the Value type.
-func (t IPv46AddressType) ValueType(_ context.Context) attr.Value {
-	return IPv46Address{}
+func (t IPv46PrefixType) ValueType(_ context.Context) attr.Value {
+	return IPv46Prefix{}
 }
 
 // Equal returns true if the given type is equivalent.
-func (t IPv46AddressType) Equal(o attr.Type) bool {
-	other, ok := o.(IPv46AddressType)
+func (t IPv46PrefixType) Equal(o attr.Type) bool {
+	other, ok := o.(IPv46PrefixType)
 
 	if !ok {
 		return false
@@ -41,15 +41,15 @@ func (t IPv46AddressType) Equal(o attr.Type) bool {
 }
 
 // ValueFromString returns a StringValuable type given a StringValue.
-func (t IPv46AddressType) ValueFromString(_ context.Context, in basetypes.StringValue) (basetypes.StringValuable, diag.Diagnostics) {
-	return IPv46Address{
+func (t IPv46PrefixType) ValueFromString(_ context.Context, in basetypes.StringValue) (basetypes.StringValuable, diag.Diagnostics) {
+	return IPv46Prefix{
 		StringValue: in,
 	}, nil
 }
 
 // ValueFromTerraform returns a Value given a tftypes.Value.  This is meant to convert the tftypes.Value into a more convenient Go type
 // for the provider to consume the data with.
-func (t IPv46AddressType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+func (t IPv46PrefixType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.StringType.ValueFromTerraform(ctx, in)
 	if err != nil {
 		return nil, err
