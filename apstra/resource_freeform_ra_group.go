@@ -73,7 +73,7 @@ func (o *resourceFreeformRaGroup) Create(ctx context.Context, req resource.Creat
 
 	id, err := bp.CreateRaGroup(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating new Resource Allocation Group", err.Error())
+		resp.Diagnostics.AddError("error creating new Freeform Resource Allocation Group", err.Error())
 		return
 	}
 
@@ -160,7 +160,9 @@ func (o *resourceFreeformRaGroup) Update(ctx context.Context, req resource.Updat
 		resp.Diagnostics.AddError("error updating Freeform Resource Allocation Group", err.Error())
 		return
 	}
+
 	plan.GeneratorId = types.StringNull()
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

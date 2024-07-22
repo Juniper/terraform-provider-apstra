@@ -18,7 +18,6 @@ This resource creates a Resource Allocation Group in a Freeform Blueprint.
 resource "apstra_freeform_ra_group" "test" {
   blueprint_id      = "freeform_blueprint-d8c1fabf"
   name              = "test_ra_group_fizz"
-  tags              = ["a", "b", "c"]
   data              =  jsonencode({
     foo   = "bar"
     clown = 2
@@ -43,11 +42,6 @@ output "test_ra_out" {value = data.apstra_freeform_ra_group.test}
 //  "id" = "98ubU5cuRj7WsT159L4"
 //  "name" = "test_ra_group_fizz"
 //  "parent_id" = tostring(null)
-//  "tags" = toset([
-//    "a",
-//    "b",
-//    "c",
-//  ])
 //}
 ```
 
@@ -61,13 +55,12 @@ output "test_ra_out" {value = data.apstra_freeform_ra_group.test}
 
 ### Optional
 
-- `data` (String) Arbitrary key-value mapping that is useful in a context of this group. For example, you can store some VRF-related data there or add properties that are useful only in context of resource allocation, but not systems or interfaces.
-- `parent_id` (String) Type of the System. Must be one of `internal` or `external`
-- `tags` (Set of String) Set of Tag labels
+- `data` (String) Arbitrary JSON-encoded key-value mapping that is useful in a context of this group. For example, you can store some VRF-related data there or add properties that are useful only in context of resource allocation, but not systems or interfaces.
+- `parent_id` (String) ID of the parent Freeform Resource Allocation Group, if this group is to be nested.
 
 ### Read-Only
 
-- `generator_id` (String) ID of the Generator that created Resource Allocation Group, always `null` because groups created with this resource were not generated.
+- `generator_id` (String) ID of the Generator that created Resource Allocation Group. Always `null` because groups created via resource declaration were not generated.
 - `id` (String) ID of the Freeform Resource Allocation Group.
 
 
