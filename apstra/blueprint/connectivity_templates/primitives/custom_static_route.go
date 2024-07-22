@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -93,35 +94,51 @@ func (o CustomStaticRoute) Request() *apstra.ConnectivityTemplatePrimitive {
 	}
 }
 
-func (o *CustomStaticRoute) loadApiData(ctx context.Context, in apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) {
-	customStaticRoute := (in.Attributes).(*apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute)
+func newCustomStaticRoute(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute, _ *diag.Diagnostics) CustomStaticRoute {
+	result := CustomStaticRoute{
+		// Name:          utils.StringValueOrNull(ctx, in.Label, diags),
+		RoutingZoneId: types.StringPointerValue((*string)(in.SecurityZone)),
+		Network:       customtypes.NewIPv46PrefixNull(),
+		NextHop:       customtypes.NewIPv46AddressNull(),
+	}
 
-	o.Name = utils.StringValueOrNull(ctx, in.Label, diags)
-	o.RoutingZoneId = types.StringPointerValue((*string)(customStaticRoute.SecurityZone))
-	if customStaticRoute.Network != nil {
-		o.Network = customtypes.NewIPv46PrefixValue(customStaticRoute.Network.String())
-	} else {
-		o.Network = customtypes.NewIPv46PrefixNull()
+	if in.Network != nil {
+		result.Network = customtypes.NewIPv46PrefixValue(in.Network.String())
 	}
-	if customStaticRoute.NextHop != nil {
-		o.NextHop = customtypes.NewIPv46AddressValue(customStaticRoute.NextHop.String())
-	} else {
-		o.NextHop = customtypes.NewIPv46AddressNull()
+
+	if in.NextHop != nil {
+		result.NextHop = customtypes.NewIPv46AddressValue(in.NextHop.String())
 	}
+
+	return result
 }
 
-func NewSetCustomStaticRoutes(ctx context.Context, in []apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	customStaticRoutes := make([]CustomStaticRoute, len(in))
-	for i, primitive := range in {
-		_, ok := (primitive.Attributes).(*apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute)
-		if !ok {
-			diags.AddError(
-				constants.ErrProviderBug,
-				fmt.Sprintf("primitive %d should have type %T, got %T", i, apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute{}, primitive.Attributes))
+func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
+	var result []CustomStaticRoute
+
+	for i, subpolicy := range subpolicies {
+		if subpolicy == nil {
+			diags.AddError(constants.ErrProviderBug, fmt.Sprintf("subpolicy %d in API response is nil", i))
 			continue
 		}
-		customStaticRoutes[i].loadApiData(ctx, primitive, diags)
+
+		if p, ok := (subpolicy.Attributes).(*apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute); ok {
+			if p == nil {
+				diags.AddError(
+					"API response contains nil subpolicy",
+					"While extracting RoutingPolicy primitives, encountered nil subpolicy at index "+strconv.Itoa(i),
+				)
+				continue
+			}
+
+			newPrimitive := newCustomStaticRoute(ctx, p, diags)
+			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
+			result = append(result, newPrimitive)
+		}
+	}
+	if diags.HasError() {
+		return types.SetNull(types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()}, customStaticRoutes, diags)
+	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()}, result, diags)
 }

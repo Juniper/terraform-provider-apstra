@@ -13,47 +13,35 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure      = &resourceDatacenterConnectivityTemplateSystem{}
-	_ resource.ResourceWithValidateConfig = &resourceDatacenterConnectivityTemplateSystem{}
-	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterConnectivityTemplateSystem{}
-	_ resourceWithSetBpLockFunc           = &resourceDatacenterConnectivityTemplateSystem{}
+	_ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplateLoopback{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterConnectivityTemplateLoopback{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterConnectivityTemplateLoopback{}
 )
 
-type resourceDatacenterConnectivityTemplateSystem struct {
+type resourceDatacenterConnectivityTemplateLoopback struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_connectivity_template_system"
+func (o *resourceDatacenterConnectivityTemplateLoopback) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_connectivity_template_loopback"
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template suitable for use " +
-			"with Application Points of type *System* within a Datacenter Blueprint.",
-		Attributes: connectivitytemplates.ConnectivityTemplateSystem{}.ResourceAttributes(),
+			"with Application Points of type *Loopback* within a Datacenter Blueprint.",
+		Attributes: connectivitytemplates.ConnectivityTemplateLoopback{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	// Retrieve values from config.
-	var config connectivitytemplates.ConnectivityTemplateSystem
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	config.ValidateConfig(ctx, &resp.Diagnostics)
-}
-
-func (o *resourceDatacenterConnectivityTemplateSystem) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
-	var plan connectivitytemplates.ConnectivityTemplateSystem
+	var plan connectivitytemplates.ConnectivityTemplateLoopback
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -97,9 +85,9 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Create(ctx context.Contex
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
-	var state connectivitytemplates.ConnectivityTemplateSystem
+	var state connectivitytemplates.ConnectivityTemplateLoopback
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -136,9 +124,9 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Read(ctx context.Context,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
-	var plan connectivitytemplates.ConnectivityTemplateSystem
+	var plan connectivitytemplates.ConnectivityTemplateLoopback
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -176,9 +164,9 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Update(ctx context.Contex
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
-	var state connectivitytemplates.ConnectivityTemplateSystem
+	var state connectivitytemplates.ConnectivityTemplateLoopback
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -213,10 +201,10 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Delete(ctx context.Contex
 	}
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
 }
 
-func (o *resourceDatacenterConnectivityTemplateSystem) setBpLockFunc(f func(context.Context, string) error) {
+func (o *resourceDatacenterConnectivityTemplateLoopback) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
 }
