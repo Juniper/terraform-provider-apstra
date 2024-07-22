@@ -21,7 +21,6 @@ At least one optional attribute is required.
 resource "apstra_freeform_ra_group" "test" {
   blueprint_id      = "freeform_blueprint-d8c1fabf"
   name              = "test_ra_group_fizz"
-  tags              = ["a", "b", "c"]
   data              =  jsonencode({
     foo   = "bar"
     clown = 2
@@ -46,11 +45,6 @@ output "test_ra_group_out" {value = data.apstra_freeform_ra_group.test}
 //  "id" = "98ubU5cuRj7WsT159L4"
 //  "name" = "test_ra_group_fizz"
 //  "parent_id" = tostring(null)
-//  "tags" = toset([
-//    "a",
-//    "b",
-//    "c",
-//  ])
 //}
 ```
 
@@ -64,11 +58,10 @@ output "test_ra_group_out" {value = data.apstra_freeform_ra_group.test}
 ### Optional
 
 - `id` (String) Populate this field to look up the Freeform Allocation Group by ID. Required when `name` is omitted.
-- `name` (String) Populate this field to look up the Allocation Group by Name. Required when `id` is omitted.
+- `name` (String) Populate this field to look up the Freeform Allocation Group by Name. Required when `id` is omitted.
 
 ### Read-Only
 
 - `data` (String) Arbitrary key-value mapping that is useful in a context of this group. For example, you can store some VRF-related data there or add properties that are useful only in context of resource allocation, but not systems or interfaces.
-- `generator_id` (String) ID of the group generator that created the group.
-- `parent_id` (String) ID of the group node that is present as a parent of the current one in parent/children relationship. If group is a top-level one, then 'parent_id' is equal to None/null.
-- `tags` (Set of String) Set of Tag labels
+- `generator_id` (String) ID of the group generator that created the group, if any.
+- `parent_id` (String) ID of the group node that is present as a parent of the current one in a parent/child relationship. If this is a top-level (root) node, then `parent_id` will be `null`.

@@ -3,7 +3,6 @@
 resource "apstra_freeform_ra_group" "test" {
   blueprint_id      = "freeform_blueprint-d8c1fabf"
   name              = "test_ra_group_fizz"
-  tags              = ["a", "b", "c"]
   data              =  jsonencode({
     foo   = "bar"
     clown = 2
@@ -28,9 +27,4 @@ output "test_ra_out" {value = data.apstra_freeform_ra_group.test}
 //  "id" = "98ubU5cuRj7WsT159L4"
 //  "name" = "test_ra_group_fizz"
 //  "parent_id" = tostring(null)
-//  "tags" = toset([
-//    "a",
-//    "b",
-//    "c",
-//  ])
 //}
