@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,9 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceIntegerPool{}
-var _ resource.ResourceWithValidateConfig = &resourceIntegerPool{}
-var _ resourceWithSetClient = &resourceIntegerPool{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceIntegerPool{}
+	_ resource.ResourceWithValidateConfig = &resourceIntegerPool{}
+	_ resourceWithSetClient               = &resourceIntegerPool{}
+)
 
 type resourceIntegerPool struct {
 	client *apstra.Client
@@ -114,35 +117,14 @@ func (o *resourceIntegerPool) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 
-	// read pool back from Apstra to get usage statistics
-	var pool *apstra.IntPool
-	for {
-		pool, err = o.client.GetIntegerPool(ctx, id)
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"Integer Pool not found",
-					fmt.Sprintf("Just-created Integer Pool with ID %q not found", id))
-				return
-			}
-			resp.Diagnostics.AddError("Error retrieving Integer Pool", err.Error())
-			return
-		}
-		if pool.Status != apstra.PoolStatusCreating {
-			break
-		}
-	}
-
-	// create state object
-	var state resources.IntegerPool
-	state.LoadApiData(ctx, pool, &resp.Diagnostics)
+	plan.Id = types.StringValue(id.String())
+	plan.SetMutablesToNull(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceIntegerPool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -195,29 +177,13 @@ func (o *resourceIntegerPool) Update(ctx context.Context, req resource.UpdateReq
 		return
 	}
 
-	// read pool back from Apstra to get usage statistics
-	p, err := o.client.GetIntegerPool(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"Integer Pool not found",
-				fmt.Sprintf("Recently updated Integer Pool with ID %q not found", plan.Id.ValueString()))
-			return
-		}
-		resp.Diagnostics.AddError("Error retrieving Integer Pool", err.Error())
-		return
-	}
-
-	// create new state object
-	var state resources.IntegerPool
-	state.LoadApiData(ctx, p, &resp.Diagnostics)
+	plan.SetMutablesToNull(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceIntegerPool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

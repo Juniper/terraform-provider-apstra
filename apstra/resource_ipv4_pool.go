@@ -3,18 +3,22 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"net"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceIpv4Pool{}
-var _ resource.ResourceWithValidateConfig = &resourceIpv4Pool{}
-var _ resourceWithSetClient = &resourceIpv4Pool{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceIpv4Pool{}
+	_ resource.ResourceWithValidateConfig = &resourceIpv4Pool{}
+	_ resourceWithSetClient               = &resourceIpv4Pool{}
+)
 
 type resourceIpv4Pool struct {
 	client *apstra.Client
@@ -108,34 +112,14 @@ func (o *resourceIpv4Pool) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// read pool back from Apstra to get usage statistics
-	var pool *apstra.IpPool
-	for { // loop until creation complete
-		pool, err = o.client.GetIp4Pool(ctx, id)
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddError(
-					"IPv4 Pool not found",
-					fmt.Sprintf("Just-created IPv4 Pool with ID %q not found", id))
-				return
-			}
-			resp.Diagnostics.AddError("Error retrieving IPv4 Pool", err.Error())
-			return
-		}
-		if pool.Status != apstra.PoolStatusCreating {
-			break
-		}
-	}
-
-	// create state object
-	var state resources.Ipv4Pool
-	state.LoadApiData(ctx, pool, &resp.Diagnostics)
+	plan.Id = types.StringValue(id.String())
+	plan.SetMutablesToNull(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -169,7 +153,6 @@ func (o *resourceIpv4Pool) Read(ctx context.Context, req resource.ReadRequest, r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-// Update resource
 func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan resources.Ipv4Pool
@@ -189,32 +172,15 @@ func (o *resourceIpv4Pool) Update(ctx context.Context, req resource.UpdateReques
 		return
 	}
 
-	// read pool back from Apstra to get usage statistics
-	p, err := o.client.GetIp4Pool(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"IPv4 Pool not found",
-				fmt.Sprintf("Recently updated IPv4 Pool with ID %q not found", plan.Id.ValueString()))
-			return
-		}
-		resp.Diagnostics.AddError("Error retrieving IPv4 Pool", err.Error())
-		return
-	}
-
-	// create new state object
-	var state resources.Ipv4Pool
-	state.LoadApiData(ctx, p, &resp.Diagnostics)
+	plan.SetMutablesToNull(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-// Delete resource
 func (o *resourceIpv4Pool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state resources.Ipv4Pool
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)

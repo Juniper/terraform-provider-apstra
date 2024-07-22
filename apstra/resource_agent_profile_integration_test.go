@@ -5,14 +5,15 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"strconv"
-	"testing"
 )
 
 const (
@@ -170,7 +171,6 @@ func TestResourceAgentProfile(t *testing.T) {
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
-
 			steps := make([]resource.TestStep, len(tCase.steps))
 			for i, step := range tCase.steps {
 				config := step.config.render(resourceType, tName)
@@ -183,7 +183,7 @@ func TestResourceAgentProfile(t *testing.T) {
 
 				// add extractions
 				for _, ex := range step.extractions {
-					checks.extractFromState(t, ex.attribute, tNameToApId)
+					checks.extractFromState(t, resourceType+"."+tName, ex.attribute, tNameToApId)
 				}
 
 				chkLog := checks.string()
