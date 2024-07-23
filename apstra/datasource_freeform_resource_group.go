@@ -14,32 +14,32 @@ import (
 )
 
 var (
-	_ datasource.DataSourceWithConfigure = &dataSourceFreeformRaGroup{}
-	_ datasourceWithSetFfBpClientFunc    = &dataSourceFreeformRaGroup{}
+	_ datasource.DataSourceWithConfigure = &dataSourceFreeformResourceGroup{}
+	_ datasourceWithSetFfBpClientFunc    = &dataSourceFreeformResourceGroup{}
 )
 
-type dataSourceFreeformRaGroup struct {
+type dataSourceFreeformResourceGroup struct {
 	getBpClientFunc func(context.Context, string) (*apstra.FreeformClient, error)
 }
 
-func (o *dataSourceFreeformRaGroup) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceFreeformResourceGroup) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_freeform_ra_group"
 }
 
-func (o *dataSourceFreeformRaGroup) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceFreeformResourceGroup) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	configureDataSource(ctx, o, req, resp)
 }
 
-func (o *dataSourceFreeformRaGroup) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceFreeformResourceGroup) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource Allocation Group.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.FreeformRaGroup{}.DataSourceAttributes(),
+		Attributes: blueprint.FreeformResourceGroup{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceFreeformRaGroup) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config blueprint.FreeformRaGroup
+func (o *dataSourceFreeformResourceGroup) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config blueprint.FreeformResourceGroup
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -96,6 +96,6 @@ func (o *dataSourceFreeformRaGroup) Read(ctx context.Context, req datasource.Rea
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-func (o *dataSourceFreeformRaGroup) setBpClientFunc(f func(context.Context, string) (*apstra.FreeformClient, error)) {
+func (o *dataSourceFreeformResourceGroup) setBpClientFunc(f func(context.Context, string) (*apstra.FreeformClient, error)) {
 	o.getBpClientFunc = f
 }
