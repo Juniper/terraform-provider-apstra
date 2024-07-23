@@ -14,7 +14,7 @@ var (
 	ResourceFreeformLink               = resourceFreeformLink{}
 	ResourceFreeformSystem             = resourceFreeformSystem{}
 	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
-	ResourceFreeformRaGroup            = resourceFreeformRaGroup{}
+	ResourceFreeformRaGroup            = resourceFreeformResourceGroup{}
 	ResourceIpv4Pool                   = resourceIpv4Pool{}
 	ResourceTemplatePodBased           = resourceTemplatePodBased{}
 	ResourceTemplateCollapsed          = resourceTemplateCollapsed{}
