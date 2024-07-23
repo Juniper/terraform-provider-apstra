@@ -12,34 +12,34 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceFreeformRaGroup{}
-	_ resourceWithSetFfBpClientFunc  = &resourceFreeformRaGroup{}
-	_ resourceWithSetBpLockFunc      = &resourceFreeformRaGroup{}
+	_ resource.ResourceWithConfigure = &resourceFreeformResourceGroup{}
+	_ resourceWithSetFfBpClientFunc  = &resourceFreeformResourceGroup{}
+	_ resourceWithSetBpLockFunc      = &resourceFreeformResourceGroup{}
 )
 
-type resourceFreeformRaGroup struct {
+type resourceFreeformResourceGroup struct {
 	getBpClientFunc func(context.Context, string) (*apstra.FreeformClient, error)
 	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourceFreeformRaGroup) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_ra_group"
+func (o *resourceFreeformResourceGroup) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_freeform_resource_group"
 }
 
-func (o *resourceFreeformRaGroup) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceFreeformResourceGroup) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceFreeformRaGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceFreeformResourceGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource Allocation Group in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformRaGroup{}.ResourceAttributes(),
+		Attributes:          blueprint.FreeformResourceGroup{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceFreeformRaGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceFreeformResourceGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformRaGroup
+	var plan blueprint.FreeformResourceGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -84,8 +84,8 @@ func (o *resourceFreeformRaGroup) Create(ctx context.Context, req resource.Creat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceFreeformRaGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformRaGroup
+func (o *resourceFreeformResourceGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state blueprint.FreeformResourceGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -121,9 +121,9 @@ func (o *resourceFreeformRaGroup) Read(ctx context.Context, req resource.ReadReq
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceFreeformRaGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceFreeformResourceGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformRaGroup
+	var plan blueprint.FreeformResourceGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -167,8 +167,8 @@ func (o *resourceFreeformRaGroup) Update(ctx context.Context, req resource.Updat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceFreeformRaGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformRaGroup
+func (o *resourceFreeformResourceGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state blueprint.FreeformResourceGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -204,10 +204,10 @@ func (o *resourceFreeformRaGroup) Delete(ctx context.Context, req resource.Delet
 	}
 }
 
-func (o *resourceFreeformRaGroup) setBpClientFunc(f func(context.Context, string) (*apstra.FreeformClient, error)) {
+func (o *resourceFreeformResourceGroup) setBpClientFunc(f func(context.Context, string) (*apstra.FreeformClient, error)) {
 	o.getBpClientFunc = f
 }
 
-func (o *resourceFreeformRaGroup) setBpLockFunc(f func(context.Context, string) error) {
+func (o *resourceFreeformResourceGroup) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
 }
