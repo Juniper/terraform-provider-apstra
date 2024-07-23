@@ -23,7 +23,7 @@ type dataSourceFreeformResourceGroup struct {
 }
 
 func (o *dataSourceFreeformResourceGroup) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_ra_group"
+	resp.TypeName = req.ProviderTypeName + "_freeform_resource_group"
 }
 
 func (o *dataSourceFreeformResourceGroup) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
