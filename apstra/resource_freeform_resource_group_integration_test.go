@@ -6,9 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
-	"strconv"
 	"testing"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/stretchr/testify/require"
 
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -18,57 +19,70 @@ import (
 )
 
 const (
-	resourceFreeformRaGroupHcl = `
+	resourceFreeformResourceGroupHcl = `
 resource %q %q {
-  blueprint_id      = %q
-  name              = %q
-  tags              = %s
-  data				= %s
+  blueprint_id = %q
+  name         = %q
+  parent_id    = %s
+  data         = %s
 }
 `
 )
 
-type resourceFreeformRaGroup struct {
+type resourceFreeformResourceGroup struct {
 	blueprintId string
 	name        string
-	tags        []string
+	parentId    string
 	data        json.RawMessage
+	// tags        []string
 }
 
-func (o resourceFreeformRaGroup) render(rType, rName string) string {
+func (o resourceFreeformResourceGroup) render(rType, rName string) string {
 	data := "null"
 	if o.data != nil {
 		data = fmt.Sprintf("%q", string(o.data))
 	}
-	return fmt.Sprintf(resourceFreeformRaGroupHcl,
+
+	return fmt.Sprintf(resourceFreeformResourceGroupHcl,
 		rType, rName,
 		o.blueprintId,
 		o.name,
-		stringSetOrNull(o.tags),
+		stringOrNull(o.parentId),
 		data,
 	)
 }
 
-func (o resourceFreeformRaGroup) testChecks(t testing.TB, rType, rName string) testChecks {
+func (o resourceFreeformResourceGroup) testChecks(t testing.TB, rType, rName string) testChecks {
 	result := newTestChecks(rType + "." + rName)
 
 	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId)
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
-	if len(o.tags) > 0 {
-		result.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
-		for _, tag := range o.tags {
-			result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
-		}
-	}
+
+	//if len(o.tags) > 0 {
+	//	result.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	//	for _, tag := range o.tags {
+	//		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
+	//	}
+	//}
+
 	if len(o.data) > 0 {
 		result.append(t, "TestCheckResourceAttr", "data", string(o.data))
+	} else {
+		result.append(t, "TestCheckResourceAttr", "data", "{}")
 	}
+
+	if len(o.parentId) > 0 {
+		result.append(t, "TestCheckResourceAttr", "parent_id", o.parentId)
+	} else {
+		result.append(t, "TestCheckNoResourceAttr", "parent_id")
+	}
+
 	return result
 }
 
-func TestResourceFreeformRaGroup(t *testing.T) {
+func TestResourceFreeformResourceGroup(t *testing.T) {
 	ctx := context.Background()
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
@@ -76,8 +90,14 @@ func TestResourceFreeformRaGroup(t *testing.T) {
 	// create a blueprint
 	bp := testutils.FfBlueprintA(t, ctx)
 
+	makeParentResourceGroup := func(t testing.TB, ctx context.Context) apstra.ObjectId {
+		id, err := bp.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{Label: acctest.RandString(6)})
+		require.NoError(t, err)
+		return id
+	}
+
 	type testStep struct {
-		config resourceFreeformRaGroup
+		config resourceFreeformResourceGroup
 	}
 	type testCase struct {
 		apiVersionConstraints version.Constraints
@@ -85,52 +105,70 @@ func TestResourceFreeformRaGroup(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"start_with_no_tags": {
+		"start_minimal": {
 			steps: []testStep{
 				{
-					config: resourceFreeformRaGroup{
+					config: resourceFreeformResourceGroup{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 					},
 				},
 				{
-					config: resourceFreeformRaGroup{
+					config: resourceFreeformResourceGroup{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
+						parentId:    makeParentResourceGroup(t, ctx).String(),
+						data:        randomJson(t, 6, 12, 4),
 					},
 				},
 				{
-					config: resourceFreeformRaGroup{
+					config: resourceFreeformResourceGroup{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
+					},
+				},
+			},
+		},
+		"start_maximal": {
+			steps: []testStep{
+				{
+					config: resourceFreeformResourceGroup{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						parentId:    makeParentResourceGroup(t, ctx).String(),
+						data:        randomJson(t, 6, 12, 4),
+					},
+				},
+				{
+					config: resourceFreeformResourceGroup{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceFreeformResourceGroup{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						parentId:    makeParentResourceGroup(t, ctx).String(),
 						data:        randomJson(t, 6, 12, 4),
 					},
 				},
 			},
 		},
-		"start_with_tags": {
+		"swap_parents": {
 			steps: []testStep{
 				{
-					config: resourceFreeformRaGroup{
+					config: resourceFreeformResourceGroup{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						data:        randomJson(t, 6, 12, 4),
+						parentId:    makeParentResourceGroup(t, ctx).String(),
 					},
 				},
 				{
-					config: resourceFreeformRaGroup{
+					config: resourceFreeformResourceGroup{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						data:        randomJson(t, 6, 12, 5),
-					},
-				},
-				{
-					config: resourceFreeformRaGroup{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
+						parentId:    makeParentResourceGroup(t, ctx).String(),
 					},
 				},
 			},
