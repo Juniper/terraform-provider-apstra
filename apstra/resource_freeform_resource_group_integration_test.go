@@ -175,7 +175,7 @@ func TestResourceFreeformResourceGroup(t *testing.T) {
 		},
 	}
 
-	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceFreeformRaGroup)
+	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceFreeformResourceGroup)
 
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
