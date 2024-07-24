@@ -78,6 +78,7 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	plan.Id = types.StringValue(id.String())
+	plan.GeneratorId = types.StringNull()
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -159,6 +160,8 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 		resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
 		return
 	}
+
+	plan.GeneratorId = types.StringNull()
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

@@ -271,3 +271,21 @@ func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.F
 
 	return c, systemIds
 }
+
+func FfBlueprintC(t testing.TB, ctx context.Context) (*apstra.FreeformClient, apstra.ObjectId) {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	id, err := client.CreateFreeformBlueprint(ctx, acctest.RandString(6))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+
+	c, err := client.NewFreeformClient(ctx, id)
+	require.NoError(t, err)
+
+	group, err := c.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{Label: acctest.RandString(6)})
+	require.NoError(t, err)
+
+	return c, group
+}
