@@ -12,6 +12,12 @@ const (
 	BgpKeepaliveMin = 1
 	BgpKeepaliveMax = math.MaxUint16
 
+	HoldTimeMin = 3
+	HoldTimeMax = math.MaxUint16
+
+	KeepaliveTimeMin = 1
+	KeepaliveTimeMax = HoldTimeMax / 3
+
 	L3MtuMin = 1280
 	L3MtuMax = 9216
 

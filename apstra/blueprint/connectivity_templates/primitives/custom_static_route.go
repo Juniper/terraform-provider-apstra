@@ -87,7 +87,7 @@ func (o CustomStaticRoute) attributes() *apstra.ConnectivityTemplatePrimitiveAtt
 	}
 }
 
-func (o CustomStaticRoute) Request() *apstra.ConnectivityTemplatePrimitive {
+func (o CustomStaticRoute) Request(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
 		Attributes: o.attributes(),

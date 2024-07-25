@@ -49,7 +49,7 @@ func (o RoutingPolicy) attributes() *apstra.ConnectivityTemplatePrimitiveAttribu
 	}
 }
 
-func (o RoutingPolicy) Request() *apstra.ConnectivityTemplatePrimitive {
+func (o RoutingPolicy) Request(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
 		Attributes: o.attributes(),

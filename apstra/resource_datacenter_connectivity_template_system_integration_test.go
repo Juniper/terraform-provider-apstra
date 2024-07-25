@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/stretchr/testify/require"
 	"math/rand/v2"
 	"strconv"
 	"strings"
@@ -90,22 +89,6 @@ func TestResourceDatacenteConnectivityTemplateSystem(t *testing.T) {
 	// create a blueprint
 	bp := testutils.BlueprintA(t, ctx)
 
-	// create some routing zones
-	szCount := 3
-	szIds := make([]apstra.ObjectId, szCount)
-	szNames := make([]string, szCount)
-	for i := range szCount {
-		szNames[i] = acctest.RandString(6)
-
-		var err error
-		szIds[i], err = bp.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
-			Label:   szNames[i],
-			SzType:  apstra.SecurityZoneTypeEVPN,
-			VrfName: szNames[i],
-		})
-		require.NoError(t, err)
-	}
-
 	type testStep struct {
 		config resourceDataCenterConnectivityTemplateSystem
 	}
@@ -130,7 +113,7 @@ func TestResourceDatacenteConnectivityTemplateSystem(t *testing.T) {
 						name:               acctest.RandString(6),
 						description:        acctest.RandString(6),
 						tags:               randomStrings(rand.IntN(5)+2, 6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 2, 2, true, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, true, bp),
 					},
 				},
 				{
@@ -149,7 +132,7 @@ func TestResourceDatacenteConnectivityTemplateSystem(t *testing.T) {
 						name:               acctest.RandString(6),
 						description:        acctest.RandString(6),
 						tags:               randomStrings(rand.IntN(5)+2, 6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 2, 2, true, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, true, bp),
 					},
 				},
 				{
@@ -164,7 +147,7 @@ func TestResourceDatacenteConnectivityTemplateSystem(t *testing.T) {
 						name:               acctest.RandString(6),
 						description:        acctest.RandString(6),
 						tags:               randomStrings(rand.IntN(5)+2, 6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 3, 3, true, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 3, 3, true, bp),
 					},
 				},
 			},
@@ -175,28 +158,28 @@ func TestResourceDatacenteConnectivityTemplateSystem(t *testing.T) {
 					config: resourceDataCenterConnectivityTemplateSystem{
 						blueprintId:        bp.Id().String(),
 						name:               acctest.RandString(6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 2, 2, true, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, true, bp),
 					},
 				},
 				{
 					config: resourceDataCenterConnectivityTemplateSystem{
 						blueprintId:        bp.Id().String(),
 						name:               acctest.RandString(6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 2, 2, false, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, false, bp),
 					},
 				},
 				{
 					config: resourceDataCenterConnectivityTemplateSystem{
 						blueprintId:        bp.Id().String(),
 						name:               acctest.RandString(6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 2, 2, true, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, true, bp),
 					},
 				},
 				{
 					config: resourceDataCenterConnectivityTemplateSystem{
 						blueprintId:        bp.Id().String(),
 						name:               acctest.RandString(6),
-						customStaticRoutes: randomCustomStaticRoutes(t, 2, 2, false, szIds),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, false, bp),
 					},
 				},
 			},

@@ -77,7 +77,7 @@ func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.D
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(bgpPeeringIpEndpoints))
 	for i, bgpPeeringIpEndpoint := range bgpPeeringIpEndpoints {
-		subpolicies[i] = bgpPeeringIpEndpoint.Request()
+		subpolicies[i] = bgpPeeringIpEndpoint.Request(ctx, diags)
 	}
 
 	result := apstra.ConnectivityTemplate{

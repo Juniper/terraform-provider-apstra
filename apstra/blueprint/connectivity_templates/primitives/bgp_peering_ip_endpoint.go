@@ -87,7 +87,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.BgpKeepaliveMin, constants.BgpKeepaliveMax),
-				int64validator.AlsoRequires(path.MatchRoot("hold_time")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("hold_time")),
 			},
 		},
 		"hold_time": resourceSchema.Int64Attribute{
@@ -95,8 +95,8 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.BgpHoldMin, constants.BgpHoldMax),
-				int64validator.AlsoRequires(path.MatchRoot("keepalive_time")),
-				apstravalidator.AtLeastProductOf(3, path.MatchRoot("keepalive_time")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("keepalive_time")),
+				apstravalidator.AtLeastProductOf(3, path.MatchRelative().AtParent().AtName("keepalive_time")),
 			},
 		},
 		"local_asn": resourceSchema.Int64Attribute{
@@ -114,7 +114,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 			Validators: []validator.String{
 				stringvalidator.AtLeastOneOf(path.Expressions{
 					path.MatchRelative(),
-					path.MatchRoot("ipv6_address"),
+					path.MatchRelative().AtParent().AtName("ipv6_address"),
 				}...),
 			},
 		},
@@ -136,7 +136,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 
 func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt {
 	var neighborAsn *uint32
-	if !o.LocalAsn.IsNull() {
+	if !o.NeighborAsn.IsNull() {
 		neighborAsn = utils.ToPtr(uint32(o.NeighborAsn.ValueInt64()))
 	}
 
@@ -162,7 +162,7 @@ func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitive
 
 	var localAsn *uint32
 	if !o.LocalAsn.IsNull() {
-		neighborAsn = utils.ToPtr(uint32(o.LocalAsn.ValueInt64()))
+		localAsn = utils.ToPtr(uint32(o.LocalAsn.ValueInt64()))
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt{
@@ -182,10 +182,25 @@ func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitive
 	}
 }
 
-func (o BgpPeeringIpEndpoint) Request() *apstra.ConnectivityTemplatePrimitive {
+func (o BgpPeeringIpEndpoint) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	var routingPolicies []RoutingPolicy
+	diags.Append(o.RoutingPolicies.ElementsAs(ctx, &routingPolicies, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(routingPolicies))
+	for i, routingPolicy := range routingPolicies {
+		subpolicies[i] = routingPolicy.Request(ctx, diags)
+	}
+	if diags.HasError() {
+		return nil
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
-		Attributes: o.attributes(),
+		Label:       o.Name.ValueString(),
+		Attributes:  o.attributes(),
+		Subpolicies: subpolicies,
 	}
 }
 

@@ -98,7 +98,7 @@ func (o ConnectivityTemplateSystem) Request(ctx context.Context, diags *diag.Dia
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(customStaticRoutes))
 	for i, customStaticRoute := range customStaticRoutes {
-		subpolicies[i] = customStaticRoute.Request()
+		subpolicies[i] = customStaticRoute.Request(ctx, diags)
 	}
 
 	result := apstra.ConnectivityTemplate{
