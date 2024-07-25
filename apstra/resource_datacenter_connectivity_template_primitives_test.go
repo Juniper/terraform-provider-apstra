@@ -47,11 +47,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) render
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"routing_zone_id": o.routingZoneId,
-		"network":         o.network.String(),
-		"next_hop":        o.nextHop.String(),
-	}
+	result := make(map[string]string)
 	if o.name != "" {
 		result["name"] = o.name
 	}
@@ -124,9 +120,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) render(ind
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"routing_policy_id": o.routingPolicyId,
-	}
+	result := make(map[string]string)
 	if o.name != "" {
 		result["name"] = o.name
 	}
@@ -219,15 +213,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) re
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"password":         "",
-		"keepalive_time":   "",
-		"hold_time":        "",
-		"local_asn":        "",
-		"ipv4_address":     "",
-		"ipv6_address":     "",
-		"routing_policies": "",
-	}
+	result := make(map[string]string)
 	if o.name != "" {
 		result["name"] = o.name
 	}
