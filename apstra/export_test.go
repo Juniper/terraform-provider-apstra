@@ -13,17 +13,16 @@ var (
 	ResourceDatacenterGenericSystem    = resourceDatacenterGenericSystem{}
 	ResourceDatacenterIpLinkAddressing = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRoutingZone      = resourceDatacenterRoutingZone{}
+	ResourceFreeformConfigTemplate     = resourceFreeformConfigTemplate{}
+	ResourceFreeformLink               = resourceFreeformLink{}
+	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
+	ResourceFreeformRaGroup            = resourceFreeformResourceGroup{}
+	ResourceFreeformSystem             = resourceFreeformSystem{}
 	ResourceIntegerPool                = resourceIntegerPool{}
 	ResourceIpv4Pool                   = resourceIpv4Pool{}
 	ResourceIpv6Pool                   = resourceIpv6Pool{}
-	ResourceFreeformConfigTemplate     = resourceFreeformConfigTemplate{}
-	ResourceFreeformLink               = resourceFreeformLink{}
-	ResourceFreeformSystem             = resourceFreeformSystem{}
-	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
-	ResourceFreeformRaGroup            = resourceFreeformResourceGroup{}
-	ResourceIpv4Pool                   = resourceIpv4Pool{}
-	ResourceTemplatePodBased           = resourceTemplatePodBased{}
 	ResourceTemplateCollapsed          = resourceTemplateCollapsed{}
+	ResourceTemplatePodBased           = resourceTemplatePodBased{}
 	ResourceVniPool                    = resourceVniPool{}
 )
 
