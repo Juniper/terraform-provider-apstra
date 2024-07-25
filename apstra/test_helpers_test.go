@@ -167,6 +167,25 @@ func randIpvAddressMust(t testing.TB, cidrBlock string) net.IP {
 	return ip
 }
 
+func randIntSet(t testing.TB, min, max, count int) []int {
+	t.Helper()
+	require.Greater(t, max, min)
+
+	resultMap := make(map[int]struct{}, count)
+	for len(resultMap) < count {
+		resultMap[rand.Intn(1+max-min)+min] = struct{}{}
+	}
+
+	result := make([]int, count)
+	var i int
+	for k := range resultMap {
+		result[i] = k
+		i++
+	}
+
+	return result
+}
+
 func randomRT(t testing.TB) string {
 	t.Helper()
 
@@ -429,7 +448,13 @@ type testChecks struct {
 	checks   []resource.TestCheckFunc
 }
 
+func (o *testChecks) setPath(path string) {
+	o.path = path
+}
+
 func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFuncArgs ...string) {
+	t.Helper()
+
 	switch testCheckFuncName {
 	case "TestCheckResourceAttrSet":
 		if len(testCheckFuncArgs) != 1 {
@@ -480,14 +505,14 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 	}
 }
 
-func (o *testChecks) appendSetNestedCheck(t testing.TB, attrName string, m map[string]string) {
+func (o *testChecks) appendSetNestedCheck(_ testing.TB, attrName string, m map[string]string) {
 	o.checks = append(o.checks, resource.TestCheckTypeSetElemNestedAttrs(o.path, attrName, m))
-	o.logLines.appendf("TestCheckTypeSetElemNestedAttrs(%s, %s)", attrName, m)
+	o.logLines.appendf("TestCheckTypeSetElemNestedAttrs(%s, %s, %s)", o.path, attrName, m)
 }
 
-func (o *testChecks) extractFromState(t testing.TB, id string, targetMap map[string]string) {
-	o.checks = append(o.checks, extractValueFromTerraformState(t, o.path, id, targetMap))
-	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", o.path, id)
+func (o *testChecks) extractFromState(t testing.TB, path, id string, targetMap map[string]string) {
+	o.checks = append(o.checks, extractValueFromTerraformState(t, path, id, targetMap))
+	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", path, id)
 }
 
 func (o *testChecks) string() string {

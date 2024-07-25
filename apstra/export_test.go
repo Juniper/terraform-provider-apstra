@@ -2,23 +2,29 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 var (
 	ResourceAgentProfile               = resourceAgentProfile{}
+	ResourceAsnPool                    = resourceAsnPool{}
 	ResourceDatacenterGenericSystem    = resourceDatacenterGenericSystem{}
+	ResourceDatacenterIpLinkAddressing = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRoutingZone      = resourceDatacenterRoutingZone{}
 	ResourceFreeformConfigTemplate     = resourceFreeformConfigTemplate{}
 	ResourceFreeformLink               = resourceFreeformLink{}
-	ResourceFreeformSystem             = resourceFreeformSystem{}
 	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
+	ResourceFreeformRaGroup            = resourceFreeformResourceGroup{}
 	ResourceFreeformResourceGroup      = resourceFreeformResourceGroup{}
+	ResourceFreeformSystem             = resourceFreeformSystem{}
+	ResourceIntegerPool                = resourceIntegerPool{}
 	ResourceIpv4Pool                   = resourceIpv4Pool{}
-	ResourceTemplatePodBased           = resourceTemplatePodBased{}
+	ResourceIpv6Pool                   = resourceIpv6Pool{}
 	ResourceTemplateCollapsed          = resourceTemplateCollapsed{}
-	ResourceDatacenterIpLinkAddressing = resourceDatacenterIpLinkAddressing{}
+	ResourceTemplatePodBased           = resourceTemplatePodBased{}
+	ResourceVniPool                    = resourceVniPool{}
 )
 
 func ResourceName(ctx context.Context, r resource.Resource) string {

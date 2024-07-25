@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -17,13 +18,13 @@ import (
 )
 
 type Ipv4Pool struct {
-	Id          types.String  `tfsdk:"id"`
-	Name        types.String  `tfsdk:"name"`
-	Subnets     types.Set     `tfsdk:"subnets"`
-	Total       types.Number  `tfsdk:"total"`
-	Status      types.String  `tfsdk:"status"`
-	Used        types.Number  `tfsdk:"used"`
-	UsedPercent types.Float64 `tfsdk:"used_percentage"`
+	Id             types.String  `tfsdk:"id"`
+	Name           types.String  `tfsdk:"name"`
+	Subnets        types.Set     `tfsdk:"subnets"`
+	Total          types.Number  `tfsdk:"total"`
+	Status         types.String  `tfsdk:"status"`
+	Used           types.Number  `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
 
 func (o Ipv4Pool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -127,7 +128,7 @@ func (o *Ipv4Pool) LoadApiData(ctx context.Context, in *apstra.IpPool, diags *di
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.DisplayName)
 	o.Status = types.StringValue(in.Status.String())
-	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
+	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 	o.Used = types.NumberValue(utils.BigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))
 	o.Subnets = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: Ipv4PoolSubnet{}.AttrTypes()}, subnets, diags)
@@ -151,4 +152,23 @@ func (o *Ipv4Pool) Request(ctx context.Context, diags *diag.Diagnostics) *apstra
 	}
 
 	return &response
+}
+
+func (o *Ipv4Pool) SetMutablesToNull(ctx context.Context, diags *diag.Diagnostics) {
+	o.Status = types.StringNull()
+	o.Total = types.NumberNull()
+	o.Used = types.NumberNull()
+	o.UsedPercentage = types.Float64Null()
+
+	var subnets []Ipv4PoolSubnet
+	diags.Append(o.Subnets.ElementsAs(ctx, &subnets, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	for i := range subnets {
+		subnets[i].setMutablesToNull()
+	}
+
+	o.Subnets = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: Ipv4PoolSubnet{}.AttrTypes()}, subnets, diags)
 }

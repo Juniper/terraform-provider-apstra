@@ -87,10 +87,10 @@ Required:
 
 Read-Only:
 
-- `status` (String) Status of the IPv4 resource pool.
-- `total` (Number) Total number of addresses in this IPv4 range.
-- `used` (Number) Count of used addresses in this IPv4 range.
-- `used_percentage` (Number) Percent of used addresses in this IPv4 range.
+- `status` (String) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `total` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used_percentage` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
 
 
 

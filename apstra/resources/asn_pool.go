@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -17,13 +18,13 @@ import (
 )
 
 type AsnPool struct {
-	Id          types.String  `tfsdk:"id"`
-	Name        types.String  `tfsdk:"name"`
-	Ranges      types.Set     `tfsdk:"ranges"`
-	Total       types.Int64   `tfsdk:"total"`
-	Status      types.String  `tfsdk:"status"`
-	Used        types.Int64   `tfsdk:"used"`
-	UsedPercent types.Float64 `tfsdk:"used_percentage"`
+	Id             types.String  `tfsdk:"id"`
+	Name           types.String  `tfsdk:"name"`
+	Ranges         types.Set     `tfsdk:"ranges"`
+	Total          types.Int64   `tfsdk:"total"`
+	Status         types.String  `tfsdk:"status"`
+	Used           types.Int64   `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
 
 func (o AsnPool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -94,23 +95,20 @@ func (o AsnPool) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"total": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Total number of ASNs in the ASN Pool.",
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the ASN Pool. " +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
 		},
 		"used": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Count of used ASNs in the ASN Pool. " +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used ASNs in the ASN Pool. " +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
 		},
 	}
 }
@@ -128,7 +126,7 @@ func (o *AsnPool) LoadApiData(ctx context.Context, in *apstra.AsnPool, diags *di
 	o.Name = types.StringValue(in.DisplayName)
 	o.Status = types.StringValue(in.Status.String())
 	o.Used = types.Int64Value(int64(in.Used))
-	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
+	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 	o.Total = types.Int64Value(int64(in.Total))
 	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: AsnPoolRange{}.AttrTypes()}, ranges, diags)
 }
@@ -151,4 +149,23 @@ func (o *AsnPool) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.
 	}
 
 	return &response
+}
+
+func (o *AsnPool) SetMutablesToNull(ctx context.Context, diags *diag.Diagnostics) {
+	o.Status = types.StringNull()
+	o.Total = types.Int64Null()
+	o.Used = types.Int64Null()
+	o.UsedPercentage = types.Float64Null()
+
+	var ranges []AsnPoolRange
+	diags.Append(o.Ranges.ElementsAs(ctx, &ranges, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	for i := range ranges {
+		ranges[i].setMutablesToNull()
+	}
+
+	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: AsnPoolRange{}.AttrTypes()}, ranges, diags)
 }
