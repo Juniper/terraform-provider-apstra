@@ -5,16 +5,17 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"math/rand/v2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const resourceDataCenterConnectivityTemplateLoopbackHCL = `resource %q %q {
@@ -37,13 +38,13 @@ type resourceDataCenterConnectivityTemplateLoopback struct {
 func (o resourceDataCenterConnectivityTemplateLoopback) render(rType, rName string) string {
 	bgpPeeringIpEndoints := "null"
 
-	var sb strings.Builder
-	for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndoints {
-		sb.WriteString(bgpPeeringIpEndpoint.render())
-	}
-
 	if len(o.bgpPeeringIpEndoints) > 0 {
-		bgpPeeringIpEndoints = "[" + sb.String() + "\n]"
+		sb := new(strings.Builder)
+		for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndoints {
+			sb.WriteString(bgpPeeringIpEndpoint.render(2))
+		}
+
+		bgpPeeringIpEndoints = "[\n" + sb.String() + "  ]"
 	}
 
 	return fmt.Sprintf(resourceDataCenterConnectivityTemplateLoopbackHCL,

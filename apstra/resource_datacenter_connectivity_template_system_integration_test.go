@@ -5,16 +5,17 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"math/rand/v2"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const resourceDataCenterConnectivityTemplateSystemHCL = `resource %q %q {
@@ -37,13 +38,13 @@ type resourceDataCenterConnectivityTemplateSystem struct {
 func (o resourceDataCenterConnectivityTemplateSystem) render(rType, rName string) string {
 	customStaticRoutes := "null"
 
-	var sb strings.Builder
-	for _, customStaticRoute := range o.customStaticRoutes {
-		sb.WriteString(customStaticRoute.render())
-	}
-
 	if len(o.customStaticRoutes) > 0 {
-		customStaticRoutes = "[" + sb.String() + "\n]"
+		sb := new(strings.Builder)
+		for _, customStaticRoute := range o.customStaticRoutes {
+			sb.WriteString(customStaticRoute.render(2))
+		}
+
+		customStaticRoutes = "[\n" + sb.String() + "  ]"
 	}
 
 	return fmt.Sprintf(resourceDataCenterConnectivityTemplateSystemHCL,

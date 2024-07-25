@@ -5,25 +5,27 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"github.com/stretchr/testify/require"
 	"math/rand/v2"
 	"net"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/stretchr/testify/require"
 )
 
-const resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL = `
-    {
-      name            = %s
-      routing_zone_id = %q
-      network         = %q
-      next_hop        = %q
-    },`
+const resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL = `{
+  name            = %s
+  routing_zone_id = %q
+  network         = %q
+  next_hop        = %q
+},
+`
 
 type resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute struct {
 	name          string
@@ -32,12 +34,15 @@ type resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute struct {
 	nextHop       net.IP
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) render() string {
-	return fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL,
-		stringOrNull(o.name),
-		o.routingZoneId,
-		o.network.String(),
-		o.nextHop.String(),
+func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) render(indent int) string {
+	return tfapstra.Indent(
+		indent,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL,
+			stringOrNull(o.name),
+			o.routingZoneId,
+			o.network.String(),
+			o.nextHop.String(),
+		),
 	)
 }
 
@@ -97,21 +102,24 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 	return result
 }
 
-const resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicyHCL = `
-    {
-      name              = %s
-      routing_policy_id = %q
-    },`
+const resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicyHCL = `{
+  name              = %s
+  routing_policy_id = %q
+},
+`
 
 type resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy struct {
 	name            string
 	routingPolicyId string
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) render() string {
-	return fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicyHCL,
-		stringOrNull(o.name),
-		o.routingPolicyId,
+func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) render(indent int) string {
+	return tfapstra.Indent(
+		indent,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicyHCL,
+			stringOrNull(o.name),
+			o.routingPolicyId,
+		),
 	)
 }
 
@@ -151,20 +159,20 @@ func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, withLab
 	return result
 }
 
-const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL = `
-    {
-		name             = %s
-		neighbor_asn     = %s
-		ttl              = %s
-		bfd_enabled      = %s
-		password         = %s
-		keepalive_time   = %s
-		hold_time        = %s
-		local_asn        = %s
-		ipv4_address     = %s
-		ipv6_address     = %s
-		routing_policies = %s
-    },`
+const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL = `{
+  name             = %s
+  neighbor_asn     = %s
+  ttl              = %s
+  bfd_enabled      = %s
+  password         = %s
+  keepalive_time   = %s
+  hold_time        = %s
+  local_asn        = %s
+  ipv4_address     = %s
+  ipv6_address     = %s
+  routing_policies = %s
+},
+`
 
 type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive struct {
 	name            string
@@ -180,29 +188,33 @@ type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive struct
 	routingPolicies []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) render() string {
-	sb := new(strings.Builder)
-	for _, routingPolicy := range o.routingPolicies {
-		sb.WriteString(routingPolicy.render())
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) render(indent int) string {
+	routingPolicies := "null"
+
+	if len(o.routingPolicies) > 0 {
+		sb := new(strings.Builder)
+		for _, routingPolicy := range o.routingPolicies {
+			sb.WriteString(routingPolicy.render(indent))
+		}
+
+		routingPolicies = "[\n" + sb.String() + "  ]"
 	}
 
-	routingPolicies := "[" + sb.String() + "\n]"
-	if len(o.routingPolicies) == 0 {
-		routingPolicies = "null"
-	}
-
-	return fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL,
-		stringOrNull(o.name),
-		intPtrOrNull(o.neighborAsn),
-		intPtrOrNull(o.ttl),
-		boolPtrOrNull(o.bfdEnabled),
-		stringOrNull(o.password),
-		intPtrOrNull(o.keepaliveTime),
-		intPtrOrNull(o.holdTime),
-		intPtrOrNull(o.localAsn),
-		ipOrNull(o.ipv4Address),
-		ipOrNull(o.ipv6Address),
-		routingPolicies,
+	return tfapstra.Indent(
+		indent,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL,
+			stringOrNull(o.name),
+			intPtrOrNull(o.neighborAsn),
+			intPtrOrNull(o.ttl),
+			boolPtrOrNull(o.bfdEnabled),
+			stringOrNull(o.password),
+			intPtrOrNull(o.keepaliveTime),
+			intPtrOrNull(o.holdTime),
+			intPtrOrNull(o.localAsn),
+			ipOrNull(o.ipv4Address),
+			ipOrNull(o.ipv6Address),
+			routingPolicies,
+		),
 	)
 }
 
