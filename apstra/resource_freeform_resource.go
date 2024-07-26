@@ -3,9 +3,11 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -44,6 +46,90 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	var resourceType apstra.FFResourceType
+	err := utils.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddAttributeError(path.Root("type"), "failed to parse 'type' attribute", err.Error())
+		return
+	}
+
+	switch resourceType {
+	case apstra.FFResourceTypeAsn,
+		apstra.FFResourceTypeVni,
+		apstra.FFResourceTypeVlan,
+		apstra.FFResourceTypeInt:
+		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.IntValue) {
+			resp.Diagnostics.AddError(
+				"Missing required attribute",
+				"Either `allocated_from` or `integer_value` must also be set when `type` is set to "+config.Type.String(),
+			)
+		}
+	case apstra.FFResourceTypeHostIpv4:
+		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv4Value) {
+			resp.Diagnostics.AddError(
+				"Missing required attribute",
+				"Either `allocated_from` or `ipv4_value` must also be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if utils.HasValue(config.IntValue) {
+			resp.Diagnostics.AddError(
+				"Conflicting Attributes",
+				"`integer_value` must not be set when `type` is set to "+config.Type.String(),
+			)
+		}
+	case apstra.FFResourceTypeHostIpv6:
+		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv6Value) {
+			resp.Diagnostics.AddError(
+				"Missing required attribute",
+				"Either `allocated_from` or `ipv6_value` must also be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if utils.HasValue(config.IntValue) {
+			resp.Diagnostics.AddError(
+				"Conflicting Attributes",
+				"`integer_value` must not be set when `type` is set to "+config.Type.String(),
+			)
+		}
+	case apstra.FFResourceTypeIpv4:
+		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv4Value) {
+			resp.Diagnostics.AddError(
+				"Missing required attribute",
+				"Either `allocated_from` or `ipv4_value` must also be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv4Value) {
+			resp.Diagnostics.AddError(
+				"Conflicting Attributes",
+				"`integer_value` must not be set when `ipv4_value` is set and `type` is set to "+config.Type.String(),
+			)
+		}
+		if utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.IntValue) {
+			resp.Diagnostics.AddError(
+				"Conflicting Attributes",
+				"`integer_value` is used to indicate the Subnet Prefix Length. It must be set when `allocated_from` is set and `type` is set to "+config.Type.String(),
+			)
+		}
+	case apstra.FFResourceTypeIpv6:
+		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv6Value) {
+			resp.Diagnostics.AddError(
+				"Missing required attribute",
+				"Either `allocated_from` or `ipv6_value` must also be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv6Value) {
+			resp.Diagnostics.AddError(
+				"Conflicting Attributes",
+				"`integer_value` must not be set when `ipv6_value` is set and `type` is set to "+config.Type.String(),
+			)
+		}
+		if utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.IntValue) {
+			resp.Diagnostics.AddError(
+				"Conflicting Attributes",
+				"`integer_value` is used to indicate the Subnet Prefix Length. It must be set when `allocated_from` is set and `type` is set to "+config.Type.String(),
+			)
+		}
 	}
 }
 
