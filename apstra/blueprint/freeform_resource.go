@@ -123,13 +123,14 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 		"integer_value": resourceSchema.Int64Attribute{
 			MarkdownDescription: "integer value of the Resource",
 			Optional:            true,
+			Computed:            true,
 			Validators: []validator.Int64{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeAsn))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeInt))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVlan))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVni))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeAsn))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeInt))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVlan))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVni))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6))),
 			},
@@ -137,19 +138,21 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 		"ipv4_value": resourceSchema.StringAttribute{
 			MarkdownDescription: "ipv4 value of the Resource in CIDR notation.",
 			Optional:            true,
+			Computed:            true,
 			CustomType:          cidrtypes.IPv4PrefixType{},
-			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4))),
+			Validators:          []validator.String{
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4))),
 			},
 		},
 		"ipv6_value": resourceSchema.StringAttribute{
 			MarkdownDescription: "ipv6 value of the Resource in CIDR notation.",
 			Optional:            true,
+			Computed:            true,
 			CustomType:          cidrtypes.IPv6PrefixType{},
-			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6))),
+			Validators:          []validator.String{
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6))),
+				//apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6))),
 			},
 		},
 		"allocated_from": resourceSchema.StringAttribute{
@@ -159,11 +162,11 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.ConflictsWith(
-					path.MatchRoot("integer_value"),
-					path.MatchRoot("ipv4_value"),
-					path.MatchRoot("ipv6_value"),
-				),
+				//stringvalidator.ConflictsWith(
+				//	path.MatchRoot("integer_value"),
+				//	path.MatchRoot("ipv4_value"),
+				//	path.MatchRoot("ipv6_value"),
+				//),
 			},
 		},
 		"generator_id": resourceSchema.StringAttribute{
@@ -181,19 +184,21 @@ func (o *FreeformResource) Request(ctx context.Context, diags *diag.Diagnostics)
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
 	}
 
+	typeIpv4 := o.Type.ValueString() == utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4)
+	typeIpv6 := o.Type.ValueString() == utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6)
+
 	var subnetPrefixLen *int
-	if o.Type.ValueString() == utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4) ||
-		o.Type.ValueString() == utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6) {
+	if typeIpv4 || typeIpv6 {
 		subnetPrefixLen = utils.ToPtr(int(o.IntValue.ValueInt64()))
 	}
 
 	var value *string
 	switch {
-	case !o.Ipv4Value.IsNull():
+	case utils.HasValue(o.Ipv4Value):
 		value = o.Ipv4Value.ValueStringPointer()
-	case !o.Ipv6Value.IsNull():
+	case utils.HasValue(o.Ipv6Value):
 		value = o.Ipv6Value.ValueStringPointer()
-	case !o.IntValue.IsNull():
+	case utils.HasValue(o.IntValue) && !typeIpv4 && !typeIpv6:
 		value = utils.ToPtr(strconv.FormatInt(o.IntValue.ValueInt64(), 10))
 	}
 

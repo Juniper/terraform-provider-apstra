@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceFreeformResource{}
-	_ resourceWithSetFfBpClientFunc  = &resourceFreeformResource{}
-	_ resourceWithSetBpLockFunc      = &resourceFreeformResource{}
+	_ resource.ResourceWithConfigure      = &resourceFreeformResource{}
+	_ resource.ResourceWithValidateConfig = &resourceFreeformResource{}
+	_ resourceWithSetFfBpClientFunc       = &resourceFreeformResource{}
+	_ resourceWithSetBpLockFunc           = &resourceFreeformResource{}
 )
 
 type resourceFreeformResource struct {
@@ -34,6 +35,15 @@ func (o *resourceFreeformResource) Schema(_ context.Context, _ resource.SchemaRe
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource in a Freeform Blueprint.",
 		Attributes:          blueprint.FreeformResource{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config
+	var config blueprint.FreeformResource
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 }
 
@@ -77,8 +87,14 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	api, err := bp.GetRaResource(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("error reading just created Resource", err.Error())
+		return
+	}
+
 	plan.Id = types.StringValue(id.String())
-	plan.GeneratorId = types.StringNull()
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -161,7 +177,13 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	plan.GeneratorId = types.StringNull()
+	api, err := bp.GetRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	if err != nil {
+		resp.Diagnostics.AddError("error reading just updated Resource", err.Error())
+		return
+	}
+
+	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
