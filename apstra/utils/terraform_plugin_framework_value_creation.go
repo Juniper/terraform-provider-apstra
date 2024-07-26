@@ -3,11 +3,16 @@ package utils
 import (
 	"context"
 	"fmt"
+	"net"
+	"reflect"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"reflect"
+	"golang.org/x/exp/constraints"
 )
 
 // StringValueOrNull returns a types.String based on the supplied string. If the
@@ -145,4 +150,46 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 	}
 
 	return types.Int64Null()
+}
+
+// Int64PointerValue returns a types.Int64 based on a pointer to any signed or
+// unsigned integer.
+func Int64PointerValue[T constraints.Integer](v *T) types.Int64 {
+	if v == nil {
+		return types.Int64Null()
+	}
+
+	return types.Int64Value(int64(*v))
+}
+
+func Ipv4AddrValue(v net.IP) iptypes.IPv4Address {
+	if v == nil || v.String() == "<nil>" {
+		return iptypes.NewIPv4AddressNull()
+	}
+
+	return iptypes.NewIPv4AddressValue(v.String())
+}
+
+func Ipv6AddrValue(v net.IP) iptypes.IPv6Address {
+	if v == nil || v.String() == "<nil>" {
+		return iptypes.NewIPv6AddressNull()
+	}
+
+	return iptypes.NewIPv6AddressValue(v.String())
+}
+
+func Ipv4PrefixPointerValue(v *net.IPNet) cidrtypes.IPv4Prefix {
+	if v == nil || v.String() == "<nil>" {
+		return cidrtypes.NewIPv4PrefixNull()
+	}
+
+	return cidrtypes.NewIPv4PrefixValue(v.String())
+}
+
+func Ipv6PrefixPointerValue(v *net.IPNet) cidrtypes.IPv6Prefix {
+	if v == nil || v.String() == "<nil>" {
+		return cidrtypes.NewIPv6PrefixNull()
+	}
+
+	return cidrtypes.NewIPv6PrefixValue(v.String())
 }

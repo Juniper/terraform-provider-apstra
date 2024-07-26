@@ -3,14 +3,14 @@ package customtypes
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/netip"
 
-	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
-
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 var (
@@ -163,4 +163,12 @@ func NewIPv46AddressPointerValue(value *string) IPv46Address {
 	return IPv46Address{
 		StringValue: basetypes.NewStringPointerValue(value),
 	}
+}
+
+func NewIPv46PrefixIpValue(value net.IP) IPv46Address {
+	if value == nil {
+		return NewIPv46AddressNull()
+	}
+
+	return NewIPv46AddressValue(value.String())
 }

@@ -7,14 +7,14 @@ description: |-
 
 # apstra_datacenter_connectivity_template_system (Resource)
 
-This resource creates a Connectivity Template suitable for use with Application Points of type System within a Datacenter Blueprint.
+This resource creates a Connectivity Template suitable for use with Application Points of type *System* within a Datacenter Blueprint.
 
 
 ## Example Usage
 
 ```terraform
-# The following example creates a 'system' type (can be applied to 'system'
-# graph nodes) Connectivity Template with two Custom Static Route primitives.
+# The following example creates a Connectivity Template compatible with
+# "system" application points. It has two two Custom Static Route primitives.
 resource "apstra_datacenter_connectivity_template_system" "DC_1" {
   blueprint_id = "275769da-7b45-47d6-8f1c-49323d346bb3"
   name         = "DC 1"
@@ -41,18 +41,18 @@ resource "apstra_datacenter_connectivity_template_system" "DC_1" {
 
 ### Required
 
-- `blueprint_id` (String) Apstra graph node ID
-- `name` (String) Connectivity Template Name displayed in the web UI
+- `blueprint_id` (String) Blueprint ID.
+- `name` (String) Connectivity Template Name displayed in the web UI.
 
 ### Optional
 
-- `custom_static_routes` (Attributes Set) Set of Custom Static Route Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--custom_static_routes))
-- `description` (String) Connectivity Template Description displayed in the web UI
-- `tags` (Set of String) Set of Tags associated with this Connectivity Template
+- `custom_static_routes` (Attributes Set) Set of *Custom Static Route* Primitives in this Connectivity Template. (see [below for nested schema](#nestedatt--custom_static_routes))
+- `description` (String) Connectivity Template Description displayed in the web UI.
+- `tags` (Set of String) Set of Tags associated with this Connectivity Template.
 
 ### Read-Only
 
-- `id` (String) Apstra graph node ID
+- `id` (String) Apstra graph node ID.
 
 <a id="nestedatt--custom_static_routes"></a>
 ### Nested Schema for `custom_static_routes`

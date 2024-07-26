@@ -49,16 +49,31 @@ func (o RoutingPolicy) attributes() *apstra.ConnectivityTemplatePrimitiveAttribu
 	}
 }
 
-func (o RoutingPolicy) Request(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o RoutingPolicy) primitive(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
 		Attributes: o.attributes(),
 	}
 }
 
+func RoutingPolicySubpolicies(ctx context.Context, routingPolicySet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var routingPolicies []RoutingPolicy
+	diags.Append(routingPolicySet.ElementsAs(ctx, &routingPolicies, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(routingPolicies))
+	for i, routingPolicy := range routingPolicies {
+		subpolicies[i] = routingPolicy.primitive(ctx, diags)
+	}
+
+	return subpolicies
+}
+
 func newRoutingPolicy(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy, _ *diag.Diagnostics) RoutingPolicy {
 	return RoutingPolicy{
-		// Name:            utils.StringValueOrNull(ctx, in.Label, diags),
+		// Name:         // handled by caller
 		RoutingPolicyId: types.StringPointerValue((*string)(in.RpToAttach)),
 	}
 }

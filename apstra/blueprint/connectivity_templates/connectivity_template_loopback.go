@@ -69,28 +69,19 @@ func (o ConnectivityTemplateLoopback) ResourceAttributes() map[string]resourceSc
 }
 
 func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplate {
-	var tags []string
-	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
-
-	var bgpPeeringIpEndpoints []primitives.BgpPeeringIpEndpoint
-	diags.Append(o.BgpPeeringIpEndpoints.ElementsAs(ctx, &bgpPeeringIpEndpoints, false)...)
-
-	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(bgpPeeringIpEndpoints))
-	for i, bgpPeeringIpEndpoint := range bgpPeeringIpEndpoints {
-		subpolicies[i] = bgpPeeringIpEndpoint.Request(ctx, diags)
-	}
-
 	result := apstra.ConnectivityTemplate{
 		Label:       o.Name.ValueString(),
 		Description: o.Description.ValueString(),
-		Tags:        tags,
-		Subpolicies: subpolicies,
+		// Tags:        // set below
+		// Subpolicies: // set below
 	}
+
+	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
+	result.Subpolicies = append(result.Subpolicies, primitives.BgpPeeringIpEndpointSubpolicies(ctx, o.BgpPeeringIpEndpoints, diags)...)
 
 	// try to set the root batch policy ID from o.Id
 	if !o.Id.IsUnknown() {
-		id := apstra.ObjectId(o.Id.ValueString())
-		result.Id = &id
+		result.Id = utils.ToPtr(apstra.ObjectId(o.Id.ValueString()))
 	}
 
 	// set remaining policy IDs
@@ -100,6 +91,7 @@ func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.D
 		return nil
 	}
 
+	// set user data
 	err = result.SetUserData()
 	if err != nil {
 		diags.AddError("Failed while generating Connectivity Template User Data", err.Error())

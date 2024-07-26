@@ -7,20 +7,19 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
-
-	"github.com/hashicorp/terraform-plugin-framework/path"
-
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -75,7 +74,8 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 		"bfd_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enable BFD.",
 			Optional:            true,
-			Validators:          []validator.Bool{apstravalidator.MustBeOneOf([]attr.Value{types.BoolValue(true), types.BoolNull()})},
+			Computed:            true,
+			Default:             booldefault.StaticBool(false),
 		},
 		"password": resourceSchema.StringAttribute{
 			MarkdownDescription: "Password used to secure the BGP session.",
@@ -182,77 +182,50 @@ func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitive
 	}
 }
 
-func (o BgpPeeringIpEndpoint) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
-	var routingPolicies []RoutingPolicy
-	diags.Append(o.RoutingPolicies.ElementsAs(ctx, &routingPolicies, false)...)
+func (o BgpPeeringIpEndpoint) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	result := apstra.ConnectivityTemplatePrimitive{
+		Label:      o.Name.ValueString(),
+		Attributes: o.attributes(),
+		// Subpolicies: // set below
+	}
+
+	result.Subpolicies = append(result.Subpolicies, RoutingPolicySubpolicies(ctx, o.RoutingPolicies, diags)...)
+
+	return &result
+}
+
+func BgpPeeringIpEndpointSubpolicies(ctx context.Context, bgpPeeringIpEndpointSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var bgpPeeringIpEndpoints []BgpPeeringIpEndpoint
+	diags.Append(bgpPeeringIpEndpointSet.ElementsAs(ctx, &bgpPeeringIpEndpoints, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
-	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(routingPolicies))
-	for i, routingPolicy := range routingPolicies {
-		subpolicies[i] = routingPolicy.Request(ctx, diags)
-	}
-	if diags.HasError() {
-		return nil
+	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(bgpPeeringIpEndpoints))
+	for i, bgpPeeringIpEndpoint := range bgpPeeringIpEndpoints {
+		subpolicies[i] = bgpPeeringIpEndpoint.primitive(ctx, diags)
 	}
 
-	return &apstra.ConnectivityTemplatePrimitive{
-		Label:       o.Name.ValueString(),
-		Attributes:  o.attributes(),
-		Subpolicies: subpolicies,
-	}
+	return subpolicies
 }
 
 func newBgpPeeringIpEndpoint(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt, _ *diag.Diagnostics) BgpPeeringIpEndpoint {
 	result := BgpPeeringIpEndpoint{
-		// Name:          utils.StringValueOrNull(ctx, in.Label, diags),
-		NeighborAsn:   types.Int64Null(),
-		Ttl:           types.Int64Null(),
-		BfdEnabled:    types.BoolNull(),
-		Password:      types.StringNull(),
-		KeepaliveTime: types.Int64Null(),
-		HoldTime:      types.Int64Null(),
-		LocalAsn:      types.Int64Null(),
-		Ipv4Address:   iptypes.NewIPv4AddressNull(),
-		Ipv6Address:   iptypes.NewIPv6AddressNull(),
-		// RoutingPolicies: types.Set{}, // set after this function is invoked
-	}
-
-	if in.Asn != nil {
-		result.NeighborAsn = types.Int64Value(int64(*in.Asn))
+		// Name:     handled by caller
+		NeighborAsn: utils.Int64PointerValue(in.Asn),
+		// Ttl:        // handled below due to 0 = null logic
+		BfdEnabled:    types.BoolValue(in.Bfd),
+		Password:      types.StringPointerValue(in.Password),
+		KeepaliveTime: utils.Int64PointerValue(in.Keepalive),
+		HoldTime:      utils.Int64PointerValue(in.Holdtime),
+		LocalAsn:      utils.Int64PointerValue(in.LocalAsn),
+		Ipv4Address:   utils.Ipv4AddrValue(in.Ipv4Addr),
+		Ipv6Address:   utils.Ipv6AddrValue(in.Ipv6Addr),
+		// RoutingPolicies: handled by caller
 	}
 
 	if in.Ttl > 0 {
 		result.Ttl = types.Int64Value(int64(in.Ttl))
-	}
-
-	if in.Bfd {
-		result.BfdEnabled = types.BoolValue(in.Bfd)
-	}
-
-	if in.Password != nil {
-		result.Password = types.StringValue(*in.Password)
-	}
-
-	if in.Keepalive != nil {
-		result.KeepaliveTime = types.Int64Value(int64(*in.Keepalive))
-	}
-
-	if in.Holdtime != nil {
-		result.HoldTime = types.Int64Value(int64(*in.Holdtime))
-	}
-
-	if in.LocalAsn != nil {
-		result.LocalAsn = types.Int64Value(int64(*in.LocalAsn))
-	}
-
-	if in.Ipv4Addr != nil {
-		result.Ipv4Address = iptypes.NewIPv4AddressValue(in.Ipv4Addr.String())
-	}
-
-	if in.Ipv6Addr != nil {
-		result.Ipv6Address = iptypes.NewIPv6AddressValue(in.Ipv6Addr.String())
 	}
 
 	return result

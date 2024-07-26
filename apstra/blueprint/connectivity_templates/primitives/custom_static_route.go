@@ -6,16 +6,15 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -87,30 +86,35 @@ func (o CustomStaticRoute) attributes() *apstra.ConnectivityTemplatePrimitiveAtt
 	}
 }
 
-func (o CustomStaticRoute) Request(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o CustomStaticRoute) primitive(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
 		Attributes: o.attributes(),
 	}
 }
 
+func CustomStaticRouteSubpolicies(ctx context.Context, customStaticRouteSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var customStaticRoutes []CustomStaticRoute
+	diags.Append(customStaticRouteSet.ElementsAs(ctx, &customStaticRoutes, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(customStaticRoutes))
+	for i, customStaticRoute := range customStaticRoutes {
+		subpolicies[i] = customStaticRoute.primitive(ctx, diags)
+	}
+
+	return subpolicies
+}
+
 func newCustomStaticRoute(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute, _ *diag.Diagnostics) CustomStaticRoute {
-	result := CustomStaticRoute{
-		// Name:          utils.StringValueOrNull(ctx, in.Label, diags),
+	return CustomStaticRoute{
+		// Name:       // handled by caller
 		RoutingZoneId: types.StringPointerValue((*string)(in.SecurityZone)),
-		Network:       customtypes.NewIPv46PrefixNull(),
-		NextHop:       customtypes.NewIPv46AddressNull(),
+		Network:       customtypes.NewIPv46PrefixNetPointerValue(in.Network),
+		NextHop:       customtypes.NewIPv46PrefixIpValue(in.NextHop),
 	}
-
-	if in.Network != nil {
-		result.Network = customtypes.NewIPv46PrefixValue(in.Network.String())
-	}
-
-	if in.NextHop != nil {
-		result.NextHop = customtypes.NewIPv46AddressValue(in.NextHop.String())
-	}
-
-	return result
 }
 
 func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {

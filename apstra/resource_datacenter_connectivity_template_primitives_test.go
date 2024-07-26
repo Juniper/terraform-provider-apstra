@@ -47,10 +47,15 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) render
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) valueAsMapForChecks() map[string]string {
-	result := make(map[string]string)
+	result := map[string]string{
+		"routing_zone_id": o.routingZoneId,
+		"network":         o.network.String(),
+		"next_hop":        o.nextHop.String(),
+	}
 	if o.name != "" {
 		result["name"] = o.name
 	}
+
 	return result
 }
 
@@ -245,7 +250,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) va
 		result["ipv6_address"] = o.ipv6Address.String()
 	}
 
-	// todo: --------------- add routing policy to map ... somehow?
+	// todo: --------------- add routing policies to map ... somehow?
 
 	return result
 }
@@ -284,6 +289,162 @@ func randomBgpPeeringIpPrimitives(t testing.TB, ctx context.Context, count int, 
 			localAsn:        oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ipv4Address:     ipv4Address,
 			ipv6Address:     ipv6Address,
+			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), withLabel, client),
+		}
+	}
+
+	return result
+}
+
+const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveHCL = `{
+  name             = %s
+  ttl              = %s
+  bfd_enabled      = %s
+  password         = %s
+  keepalive_time   = %s
+  hold_time        = %s
+  ipv4_enabled     = %s
+  ipv6_enabled     = %s
+  local_asn        = %s
+  ipv4_peer_prefix = %s
+  ipv6_peer_prefix = %s
+  routing_policies = %s
+},
+`
+
+type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive struct {
+	name            string
+	ttl             *int
+	bfdEnabled      *bool
+	password        string
+	keepaliveTime   *int
+	holdTime        *int
+	ipv4Enabled     *bool
+	ipv6Enabled     *bool
+	localAsn        *int
+	ipv4PeerPrefix  net.IPNet
+	ipv6PeerPrefix  net.IPNet
+	routingPolicies []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
+}
+
+func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive) render(indent int) string {
+	routingPolicies := "null"
+
+	if len(o.routingPolicies) > 0 {
+		sb := new(strings.Builder)
+		for _, routingPolicy := range o.routingPolicies {
+			sb.WriteString(routingPolicy.render(indent))
+		}
+
+		routingPolicies = "[\n" + sb.String() + "  ]"
+	}
+
+	return tfapstra.Indent(indent,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveHCL,
+			stringOrNull(o.name),
+			intPtrOrNull(o.ttl),
+			boolPtrOrNull(o.bfdEnabled),
+			stringOrNull(o.password),
+			intPtrOrNull(o.keepaliveTime),
+			intPtrOrNull(o.holdTime),
+			boolPtrOrNull(o.ipv4Enabled),
+			boolPtrOrNull(o.ipv6Enabled),
+			intPtrOrNull(o.localAsn),
+			ipNetOrNull(o.ipv4PeerPrefix),
+			ipNetOrNull(o.ipv6PeerPrefix),
+			routingPolicies,
+		),
+	)
+}
+
+func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive) valueAsMapForChecks() map[string]string {
+	result := make(map[string]string)
+	if o.name != "" {
+		result["name"] = o.name
+	}
+	if o.ttl != nil {
+		result["ttl"] = strconv.Itoa(*o.ttl)
+	}
+	if o.bfdEnabled != nil {
+		result["bfd_enabled"] = strconv.FormatBool(*o.bfdEnabled)
+	}
+	if o.password != "" {
+		result["password"] = o.password
+	}
+	if o.keepaliveTime != nil {
+		result["keepalive_time"] = strconv.Itoa(*o.keepaliveTime)
+	}
+	if o.holdTime != nil {
+		result["hold_time"] = strconv.Itoa(*o.holdTime)
+	}
+	if o.ipv4Enabled != nil {
+		result["ipv4_enabled"] = strconv.FormatBool(*o.ipv4Enabled)
+	}
+	if o.ipv6Enabled != nil {
+		result["ipv6_enabled"] = strconv.FormatBool(*o.ipv6Enabled)
+	}
+	if o.localAsn != nil {
+		result["local_asn"] = strconv.Itoa(*o.localAsn)
+	}
+	if o.ipv4PeerPrefix.String() != "<nil>" {
+		result["ipv4_address"] = o.ipv4PeerPrefix.String()
+	}
+	if o.ipv6PeerPrefix.String() != "<nil>" {
+		result["ipv6_address"] = o.ipv6PeerPrefix.String()
+	}
+
+	// todo: --------------- add routing policies to map ... somehow?
+
+	return result
+}
+
+func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count int, withLabel bool, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive {
+	t.Helper()
+
+	result := make([]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive, count)
+	for i := range result {
+		var name string
+		if withLabel {
+			name = acctest.RandString(6)
+		}
+		var holdTime, keepaliveTime *int
+		if rand.Int()%2 == 0 {
+			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
+			holdMin := *keepaliveTime * 3
+			holdTime = utils.ToPtr(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
+		}
+
+		var ipv4Enabled, ipv6Enabled *bool
+		switch rand.IntN(3) {
+		case 0:
+			ipv4Enabled = utils.ToPtr(true)
+		case 1:
+			ipv6Enabled = utils.ToPtr(true)
+		case 2:
+			ipv4Enabled = utils.ToPtr(true)
+			ipv6Enabled = utils.ToPtr(true)
+		}
+
+		var ipv4PeerPrefix, ipv6PeerPrefix net.IPNet
+		if ipv4Enabled != nil && (rand.Int()%2) == 0 {
+			ipv4PeerPrefix = randomSlash31(t, "192.0.2.0/24")
+		}
+		if ipv6Enabled != nil && (rand.Int()%2) == 0 {
+			ipv6PeerPrefix = randomSlash127(t, "3fff::/20")
+		}
+
+		result[i] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive{
+			name:            name,
+			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax) + constants.TtlMin), // always send TTL so whole object isn't null
+			bfdEnabled:      oneOf(utils.ToPtr(true), (*bool)(nil)),
+			password:        oneOf(acctest.RandString(6), ""),
+			keepaliveTime:   keepaliveTime,
+			holdTime:        holdTime,
+			ipv4Enabled:     ipv4Enabled,
+			ipv6Enabled:     ipv6Enabled,
+			localAsn:        oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
+			ipv4PeerPrefix:  ipv4PeerPrefix,
+			ipv6PeerPrefix:  ipv6PeerPrefix,
 			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), withLabel, client),
 		}
 	}

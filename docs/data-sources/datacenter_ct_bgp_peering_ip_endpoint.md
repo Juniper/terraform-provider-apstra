@@ -109,7 +109,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `name` (String) Primitive name displayed in the web UI
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
-- `password` (String)
+- `password` (String) Password used to secure the BGP session.
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
 ### Read-Only

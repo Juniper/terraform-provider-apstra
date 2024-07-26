@@ -78,6 +78,14 @@ func ipOrNull(in net.IP) string {
 	return `"` + s + `"`
 }
 
+func ipNetOrNull(in net.IPNet) string {
+	s := in.String()
+	if s == (net.IP{}.String()) {
+		return "null"
+	}
+	return `"` + s + `"`
+}
+
 func stringMapOrNull(in map[string]string, depth int) string {
 	if in == nil {
 		return "null"
