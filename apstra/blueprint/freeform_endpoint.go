@@ -102,7 +102,10 @@ func (o freeformEndpoint) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: "Set of Tags applied to the interface",
 			Optional:            true,
 			ElementType:         types.StringType,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 	}
 }

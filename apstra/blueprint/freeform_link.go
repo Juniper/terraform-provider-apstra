@@ -139,7 +139,10 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Set of Tag labels",
 			ElementType:         types.StringType,
 			Optional:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 	}
 }
