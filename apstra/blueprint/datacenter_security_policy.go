@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -130,6 +131,10 @@ func (o DatacenterSecurityPolicy) DataSourceFilterAttributes() map[string]dataSo
 				"but a matching Security Policy may have additional tags not enumerated in this set.",
 			Optional:    true,
 			ElementType: types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 	}
 }
@@ -181,11 +186,13 @@ func (o DatacenterSecurityPolicy) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 		},
 		"tags": resourceSchema.SetAttribute{
-			MarkdownDescription: "Set of Tags. All tags supplied here are used to match the Security Policy, " +
-				"but a matching Security Policy may have additional tags not enumerated in this set.",
-			Optional:    true,
-			ElementType: types.StringType,
-			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
+			MarkdownDescription: "Set of Tags applied to the Security Policy.",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 	}
 }

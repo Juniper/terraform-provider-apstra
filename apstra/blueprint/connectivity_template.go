@@ -53,7 +53,10 @@ func (o ConnectivityTemplate) ResourceAttributes() map[string]resourceSchema.Att
 			MarkdownDescription: "Set of Tag labels",
 			ElementType:         types.StringType,
 			Optional:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 		"primitives": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Connectivity Template Primitives expressed as JSON strings.",

@@ -88,7 +88,10 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"in the Blueprint it will be created automatically.",
 			ElementType: types.StringType,
 			Optional:    true,
-			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
 		},
 		"links": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Generic System link details. Note that tagging Links requires "+
