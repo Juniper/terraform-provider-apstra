@@ -35,10 +35,7 @@ func (o InterfacesByLinkTag) DataSourceAttributes() map[string]dataSourceSchema.
 			MarkdownDescription: "Set of required Tags",
 			Required:            true,
 			ElementType:         types.StringType,
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
-			},
+			Validators:          []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 		"system_type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Used to specify which interface/end of the link we're "+

@@ -131,10 +131,7 @@ func (o DatacenterSecurityPolicy) DataSourceFilterAttributes() map[string]dataSo
 				"but a matching Security Policy may have additional tags not enumerated in this set.",
 			Optional:    true,
 			ElementType: types.StringType,
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
-			},
+			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 	}
 }
