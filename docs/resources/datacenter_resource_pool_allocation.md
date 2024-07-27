@@ -73,9 +73,6 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   - generic_asns
   - generic_loopback_ips
   - generic_loopback_ips_ipv6
-  - ipv6_spine_leaf_link_ips
-  - ipv6_spine_superspine_link_ips
-  - ipv6_to_generic_link_ips
   - leaf_asns
   - leaf_l3_peer_links
   - leaf_l3_peer_links_ipv6
@@ -86,13 +83,16 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   - mlag_domain_svi_subnets_ipv6
   - spine_asns
   - spine_leaf_link_ips
+  - spine_leaf_link_ips_ipv6
   - spine_loopback_ips
   - spine_loopback_ips_ipv6
   - spine_superspine_link_ips
+  - spine_superspine_link_ips_ipv6
   - superspine_asns
   - superspine_loopback_ips
   - superspine_loopback_ips_ipv6
   - to_generic_link_ips
+  - to_generic_link_ips_ipv6
   - virtual_network_svi_subnets
   - virtual_network_svi_subnets_ipv6
   - vni_virtual_network_ids
