@@ -4,8 +4,10 @@ package tfapstra_test
 
 import (
 	"context"
+	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"net"
@@ -263,6 +265,59 @@ func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage
 	require.NoError(t, err)
 
 	return result
+}
+
+func TestRandomPrefix(t *testing.T) {
+	for _ = range 10 {
+		//rp := randomPrefix(t, "10.0.0.0/23", 29)
+		rp := randomPrefix(t, "2001:db8::/32", 127)
+		log.Println(rp.String())
+	}
+}
+
+func randomPrefix(t testing.TB, cidrBlock string, bits int) net.IPNet {
+	t.Helper()
+
+	ip, block, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		t.Fatalf("randomPrefix cannot parse cidrBlock - %s", err)
+	}
+	if block.IP.String() != ip.String() {
+		t.Fatal("invocation of randomPrefix doesn't use a base block address")
+	}
+
+	mOnes, mBits := block.Mask.Size()
+	if mOnes >= bits {
+		t.Fatalf("cannot select a random /%d from within %s", bits, cidrBlock)
+	}
+
+	// generate a completely random address
+	randomIP := make(net.IP, mBits/8)
+	_, err = crand.Read(randomIP)
+	if err != nil {
+		t.Fatalf("rand read failed")
+	}
+
+	// mask off the "network" bits
+	for i, b := range randomIP {
+		mBitsThisByte := min(mOnes, 8)
+		mOnes -= mBitsThisByte
+
+		byteMask := byte(math.MaxUint8 >> mBitsThisByte)
+
+		randomIP[i] = b & byteMask
+
+		block.IP[i] = block.IP[i] | (b & byteMask)
+	}
+
+	block.Mask = net.CIDRMask(bits, mBits)
+
+	_, result, err := net.ParseCIDR(block.String())
+	if err != nil {
+		t.Fatal("failed to parse own CIDR block")
+	}
+
+	return *result
 }
 
 func randomSlash31(t testing.TB, cidrBlock string) net.IPNet {

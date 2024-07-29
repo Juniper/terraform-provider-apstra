@@ -80,7 +80,7 @@ func (o Ipv6PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute
 func (o Ipv6PoolSubnet) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"status":          types.StringType,
-		"network":         types.StringType,
+		"network":         cidrtypes.IPv6PrefixType{},
 		"total":           types.NumberType,
 		"used":            types.NumberType,
 		"used_percentage": types.Float64Type,
