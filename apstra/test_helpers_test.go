@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"math"
 	"math/rand"
 	"net"
@@ -69,12 +70,13 @@ func stringOrNull(in string) string {
 	return `"` + in + `"`
 }
 
-func ipOrNull(in net.IP) string {
+func ipOrNull(in net.IPNet) string {
 	s := in.String()
-	if s == "<nil>" {
+	ipNet := utils.ToPtr(net.IPNet{})
+	if s == (ipNet.String()) {
 		return "null"
 	}
-	return s
+	return `"` + s + `"`
 }
 
 func stringMapOrNull(in map[string]string, depth int) string {

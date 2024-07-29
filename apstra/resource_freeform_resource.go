@@ -73,23 +73,11 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				"Either `allocated_from` or `ipv4_value` must also be set when `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.IntValue) {
-			resp.Diagnostics.AddError(
-				"Conflicting Attributes",
-				"`integer_value` must not be set when `type` is set to "+config.Type.String(),
-			)
-		}
 	case apstra.FFResourceTypeHostIpv6:
 		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv6Value) {
 			resp.Diagnostics.AddError(
 				"Missing required attribute",
 				"Either `allocated_from` or `ipv6_value` must also be set when `type` is set to "+config.Type.String(),
-			)
-		}
-		if utils.HasValue(config.IntValue) {
-			resp.Diagnostics.AddError(
-				"Conflicting Attributes",
-				"`integer_value` must not be set when `type` is set to "+config.Type.String(),
 			)
 		}
 	case apstra.FFResourceTypeIpv4:
