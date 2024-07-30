@@ -62,11 +62,11 @@ func (o FreeformResource) DataSourceAttributes() map[string]dataSourceSchema.Att
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"group_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Group the Resource belongs to",
+			MarkdownDescription: "Resource Group the Resource belongs to",
 			Computed:            true,
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "type of the Resource, either asn | ipv6 | host_ip | host_ipv6 | vni | integer | ip | vlan",
+			MarkdownDescription: "\"type of the Resource, must be one of :\\n  - \" +\n\t\t\t\tstrings.Join(utils.AllResourceTypes(), \"\\n  - \") + \"\\n\"",
 			Computed:            true,
 		},
 		"integer_value": dataSourceSchema.Int64Attribute{
