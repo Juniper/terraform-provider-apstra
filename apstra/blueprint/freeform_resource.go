@@ -3,14 +3,14 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
-	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -128,7 +128,8 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: "Freeform Resource name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_")},
+				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
+			},
 		},
 		"group_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Group the Resource belongs to.",

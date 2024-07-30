@@ -42,9 +42,9 @@ func TestRosetta(t *testing.T) {
 		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4}},
 		{string: "leaf_l3_peer_links_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6}},
 
-		//{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSpineLeafIp6}},             // todo: enable_rosetta_for_pools_with_leading_ipv6
-		//{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}}, // todo: enable_rosetta_for_pools_with_leading_ipv6
-		//{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},        // todo: enable_rosetta_for_pools_with_leading_ipv6
+		{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSpineLeafIp6}},
+		{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}},
+		{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},
 
 		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv4TypeNone}},
 		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv6TypeNone}},
@@ -65,6 +65,12 @@ func TestRosetta(t *testing.T) {
 			target = &x
 		case apstra.AsnAllocationScheme:
 			x := apstra.AsnAllocationScheme(-1)
+			target = &x
+		case apstra.InterfaceNumberingIpv4Type:
+			x := apstra.InterfaceNumberingIpv4Type{}
+			target = &x
+		case apstra.InterfaceNumberingIpv6Type:
+			x := apstra.InterfaceNumberingIpv6Type{}
 			target = &x
 		case apstra.OverlayControlProtocol:
 			x := apstra.OverlayControlProtocol(-1)

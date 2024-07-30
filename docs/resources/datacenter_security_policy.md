@@ -102,7 +102,7 @@ resource "apstra_datacenter_security_policy" "server_traffic" {
 - `enabled` (Boolean) Indicates whether the Security Policy is enabled. Default value: `true`
 - `rules` (Attributes List) Ordered list of policy rules. (see [below for nested schema](#nestedatt--rules))
 - `source_application_point_id` (String) Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)
-- `tags` (Set of String) Set of Tags. All tags supplied here are used to match the Security Policy, but a matching Security Policy may have additional tags not enumerated in this set.
+- `tags` (Set of String) Set of Tags applied to the Security Policy.
 
 ### Read-Only
 

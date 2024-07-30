@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -81,23 +82,20 @@ func (o VniPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"total": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Total number of IDs in the VNI Pool Range.",
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the VNI Pool Range, as reported by Apstra." +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
 		},
 		"used": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Count of used IDs in the VNI Pool Range." +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used IDs in the VNI Pool Range." +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
 		},
 	}
 }
@@ -116,4 +114,11 @@ func (o *VniPoolRange) Request(_ context.Context, _ *diag.Diagnostics) apstra.In
 		First: uint32(o.First.ValueInt64()),
 		Last:  uint32(o.Last.ValueInt64()),
 	}
+}
+
+func (o *VniPoolRange) setMutablesToNull() {
+	o.Status = types.StringNull()
+	o.Total = types.Int64Null()
+	o.Used = types.Int64Null()
+	o.UsedPercentage = types.Float64Null()
 }

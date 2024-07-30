@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -34,7 +35,7 @@ func (o InterfacesByLinkTag) DataSourceAttributes() map[string]dataSourceSchema.
 			MarkdownDescription: "Set of required Tags",
 			Required:            true,
 			ElementType:         types.StringType,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 		"system_type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Used to specify which interface/end of the link we're "+
@@ -80,12 +81,15 @@ func (o InterfacesByLinkTag) RunQuery(ctx context.Context, client *apstra.TwoSta
 		tq.Match(new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeTag.QEEAttribute(),
-				{Key: "label", Value: apstra.QEStringVal(tag)}}).
+				{Key: "label", Value: apstra.QEStringVal(tag)},
+			}).
 			Out([]apstra.QEEAttribute{
-				apstra.RelationshipTypeTag.QEEAttribute()}).
+				apstra.RelationshipTypeTag.QEEAttribute(),
+			}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeLink.QEEAttribute(),
-				{Key: "name", Value: apstra.QEStringVal("n_link")}}))
+				{Key: "name", Value: apstra.QEStringVal("n_link")},
+			}))
 	}
 
 	// create a query which follows discovered interfaces to the intended systems

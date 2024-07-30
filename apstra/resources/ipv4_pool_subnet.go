@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -51,7 +52,7 @@ func (o Ipv4PoolSubnet) DataSourceAttributes() map[string]dataSourceSchema.Attri
 func (o Ipv4PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the IPv4 resource pool.",
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
 		},
 		"network": resourceSchema.StringAttribute{
@@ -62,15 +63,15 @@ func (o Ipv4PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute
 			// ParseCidr is still required because the IPv4PrefixType doesn't enforce the zero address.
 		},
 		"total": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Total number of addresses in this IPv4 range.",
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
 		},
 		"used": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Count of used addresses in this IPv4 range.",
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used addresses in this IPv4 range.",
+			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
 		},
 	}
@@ -79,7 +80,7 @@ func (o Ipv4PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute
 func (o Ipv4PoolSubnet) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"status":          types.StringType,
-		"network":         types.StringType,
+		"network":         cidrtypes.IPv4PrefixType{},
 		"total":           types.NumberType,
 		"used":            types.NumberType,
 		"used_percentage": types.Float64Type,
@@ -98,4 +99,11 @@ func (o *Ipv4PoolSubnet) Request(_ context.Context, _ *diag.Diagnostics) *apstra
 	return &apstra.NewIpSubnet{
 		Network: o.Network.ValueString(),
 	}
+}
+
+func (o *Ipv4PoolSubnet) setMutablesToNull() {
+	o.Status = types.StringNull()
+	o.Total = types.NumberNull()
+	o.Used = types.NumberNull()
+	o.UsedPercentage = types.Float64Null()
 }

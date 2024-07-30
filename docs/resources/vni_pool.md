@@ -77,10 +77,10 @@ Required:
 
 Read-Only:
 
-- `status` (String) Status of the VNI Pool Range, as reported by Apstra.Note that this element is probably better read from a `data` source because it will be more up-to-date.
-- `total` (Number) Total number of IDs in the VNI Pool Range.
-- `used` (Number) Count of used IDs in the VNI Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
-- `used_percentage` (Number) Percent of used IDs in the VNI Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
+- `status` (String) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `total` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used_percentage` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
 
 
 

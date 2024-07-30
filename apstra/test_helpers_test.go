@@ -4,9 +4,9 @@ package tfapstra_test
 
 import (
 	"context"
+	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"math"
 	"math/rand"
 	"net"
@@ -16,6 +16,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testcheck "github.com/Juniper/terraform-provider-apstra/apstra/test_check_funcs"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -177,6 +178,25 @@ func randIpvAddressMust(t testing.TB, cidrBlock string) net.IP {
 	return ip
 }
 
+func randIntSet(t testing.TB, min, max, count int) []int {
+	t.Helper()
+	require.Greater(t, max, min)
+
+	resultMap := make(map[int]struct{}, count)
+	for len(resultMap) < count {
+		resultMap[rand.Intn(1+max-min)+min] = struct{}{}
+	}
+
+	result := make([]int, count)
+	var i int
+	for k := range resultMap {
+		result[i] = k
+		i++
+	}
+
+	return result
+}
+
 func randomRT(t testing.TB) string {
 	t.Helper()
 
@@ -254,6 +274,46 @@ func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage
 	require.NoError(t, err)
 
 	return result
+}
+
+func randomPrefix(t testing.TB, cidrBlock string, bits int) net.IPNet {
+	t.Helper()
+
+	ip, block, err := net.ParseCIDR(cidrBlock)
+	if err != nil {
+		t.Fatalf("randomPrefix cannot parse cidrBlock - %s", err)
+	}
+	if block.IP.String() != ip.String() {
+		t.Fatal("invocation of randomPrefix doesn't use a base block address")
+	}
+
+	mOnes, mBits := block.Mask.Size()
+	if mOnes >= bits {
+		t.Fatalf("cannot select a random /%d from within %s", bits, cidrBlock)
+	}
+
+	// generate a completely random address
+	randomIP := make(net.IP, mBits/8)
+	_, err = crand.Read(randomIP)
+	if err != nil {
+		t.Fatalf("rand read failed")
+	}
+
+	// mask off the "network" bits
+	for i, b := range randomIP {
+		mBitsThisByte := min(mOnes, 8)
+		mOnes -= mBitsThisByte
+		block.IP[i] = block.IP[i] | (b & byte(math.MaxUint8>>mBitsThisByte))
+	}
+
+	block.Mask = net.CIDRMask(bits, mBits)
+
+	_, result, err := net.ParseCIDR(block.String())
+	if err != nil {
+		t.Fatal("failed to parse own CIDR block")
+	}
+
+	return *result
 }
 
 func randomSlash31(t testing.TB, cidrBlock string) net.IPNet {
@@ -439,7 +499,13 @@ type testChecks struct {
 	checks   []resource.TestCheckFunc
 }
 
+func (o *testChecks) setPath(path string) {
+	o.path = path
+}
+
 func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFuncArgs ...string) {
+	t.Helper()
+
 	switch testCheckFuncName {
 	case "TestCheckResourceAttrSet":
 		if len(testCheckFuncArgs) != 1 {
@@ -490,14 +556,14 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 	}
 }
 
-func (o *testChecks) appendSetNestedCheck(t testing.TB, attrName string, m map[string]string) {
+func (o *testChecks) appendSetNestedCheck(_ testing.TB, attrName string, m map[string]string) {
 	o.checks = append(o.checks, resource.TestCheckTypeSetElemNestedAttrs(o.path, attrName, m))
-	o.logLines.appendf("TestCheckTypeSetElemNestedAttrs(%s, %s)", attrName, m)
+	o.logLines.appendf("TestCheckTypeSetElemNestedAttrs(%s, %s, %s)", o.path, attrName, m)
 }
 
-func (o *testChecks) extractFromState(t testing.TB, id string, targetMap map[string]string) {
-	o.checks = append(o.checks, extractValueFromTerraformState(t, o.path, id, targetMap))
-	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", o.path, id)
+func (o *testChecks) extractFromState(t testing.TB, path, id string, targetMap map[string]string) {
+	o.checks = append(o.checks, extractValueFromTerraformState(t, path, id, targetMap))
+	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", path, id)
 }
 
 func (o *testChecks) string() string {

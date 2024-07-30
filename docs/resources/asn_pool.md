@@ -40,10 +40,10 @@ resource "apstra_asn_pool" "rfc5398" {
 ### Read-Only
 
 - `id` (String) Apstra ID number of the pool
-- `status` (String) Status of the ASN Pool. Note that this element is probably better read from a `data` source because it will be more up-to-date.
-- `total` (Number) Total number of ASNs in the ASN Pool.
-- `used` (Number) Count of used ASNs in the ASN Pool. Note that this element is probably better read from a `data` source because it will be more up-to-date.
-- `used_percentage` (Number) Percent of used ASNs in the ASN Pool. Note that this element is probably better read from a `data` source because it will be more up-to-date.
+- `status` (String) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `total` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used_percentage` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
 
 <a id="nestedatt--ranges"></a>
 ### Nested Schema for `ranges`
@@ -55,10 +55,10 @@ Required:
 
 Read-Only:
 
-- `status` (String) Status of the ASN Pool Range, as reported by Apstra.Note that this element is probably better read from a `data` source because it will be more up-to-date.
-- `total` (Number) Total number of ASNs in the ASN Pool Range.
-- `used` (Number) Count of used ASNs in the ASN Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
-- `used_percentage` (Number) Percent of used ASNs in the ASN Pool Range.Note that this element is probably better read from a `data` source because it will be more up-to-date.
+- `status` (String) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `total` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `used_percentage` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
 
 
 

@@ -2,11 +2,12 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type bFunc func(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient
