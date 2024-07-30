@@ -16,6 +16,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testcheck "github.com/Juniper/terraform-provider-apstra/apstra/test_check_funcs"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -68,6 +69,15 @@ func stringOrNull(in string) string {
 		return "null"
 	}
 	return `"` + in + `"`
+}
+
+func ipOrNull(in net.IPNet) string {
+	s := in.String()
+	ipNet := utils.ToPtr(net.IPNet{})
+	if s == (ipNet.String()) {
+		return "null"
+	}
+	return `"` + s + `"`
 }
 
 func stringMapOrNull(in map[string]string, depth int) string {

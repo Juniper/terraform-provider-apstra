@@ -82,8 +82,10 @@ var blueprintMutexes map[string]apstra.Mutex
 var blueprintMutexesMutex sync.Mutex
 
 // maps of blueprint clients keyed by blueprint ID
-var twoStageL3ClosClients map[string]apstra.TwoStageL3ClosClient
-var freeformClients map[string]apstra.FreeformClient
+var (
+	twoStageL3ClosClients map[string]apstra.TwoStageL3ClosClient
+	freeformClients       map[string]apstra.FreeformClient
+)
 
 // mutex which we use to control access to twoStageL3ClosClients
 var blueprintClientsMutex sync.Mutex
@@ -552,6 +554,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceFreeformLink{} },
 		func() datasource.DataSource { return &dataSourceFreeformPropertySet{} },
 		func() datasource.DataSource { return &dataSourceFreeformResourceGroup{} },
+		func() datasource.DataSource { return &dataSourceFreeformResource{} },
 		func() datasource.DataSource { return &dataSourceFreeformSystem{} },
 		func() datasource.DataSource { return &dataSourceIntegerPool{} },
 		func() datasource.DataSource { return &dataSourceInterfacesByLinkTag{} },
@@ -611,6 +614,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceFreeformLink{} },
 		func() resource.Resource { return &resourceFreeformPropertySet{} },
 		func() resource.Resource { return &resourceFreeformResourceGroup{} },
+		func() resource.Resource { return &resourceFreeformResource{} },
 		func() resource.Resource { return &resourceFreeformSystem{} },
 		func() resource.Resource { return &resourceIntegerPool{} },
 		func() resource.Resource { return &resourceInterfaceMap{} },

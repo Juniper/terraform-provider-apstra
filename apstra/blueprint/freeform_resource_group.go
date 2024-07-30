@@ -34,12 +34,12 @@ func (o FreeformResourceGroup) DataSourceAttributes() map[string]dataSourceSchem
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
-				"the Blueprint where the Resource Allocation Group lives.",
+				"the Blueprint where the Resource Group lives.",
 			Required:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Freeform Allocation Group by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Freeform Group by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -51,7 +51,7 @@ func (o FreeformResourceGroup) DataSourceAttributes() map[string]dataSourceSchem
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Freeform Allocation Group by Name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Freeform Group by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -89,12 +89,12 @@ func (o FreeformResourceGroup) ResourceAttributes() map[string]resourceSchema.At
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Freeform Resource Allocation Group.",
+			MarkdownDescription: "ID of the Freeform Resource Group.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Freeform Resource Allocation Group name as shown in the Web UI.",
+			MarkdownDescription: "Freeform Resource Group name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(
@@ -103,7 +103,7 @@ func (o FreeformResourceGroup) ResourceAttributes() map[string]resourceSchema.At
 			},
 		},
 		"parent_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the parent Freeform Resource Allocation Group, if this group is to be nested.",
+			MarkdownDescription: "ID of the parent Freeform Resource Group, if this group is to be nested.",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
@@ -123,7 +123,7 @@ func (o FreeformResourceGroup) ResourceAttributes() map[string]resourceSchema.At
 			CustomType: jsontypes.NormalizedType{},
 		},
 		"generator_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Generator that created Resource Allocation Group. " +
+			MarkdownDescription: "ID of the Generator that created Resource Group. " +
 				"Always `null` because groups created via resource declaration were not generated.",
 			Computed: true,
 		},

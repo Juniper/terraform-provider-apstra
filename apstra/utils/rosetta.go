@@ -35,6 +35,9 @@ const (
 
 	interfaceNumberingIpv4TypeNone = "none"
 	interfaceNumberingIpv6TypeNone = "none"
+
+	freeformResourceTypeIpv4     = "ipv4"
+	freeformResourceTypeHostIpv4 = "host_ipv4"
 )
 
 type StringerWithFromString interface {
@@ -60,6 +63,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return configletSectionToFriendlyString(in0, in[1:]...)
 	case apstra.DeployMode:
 		return deployModeToFriendlyString(in0)
+	case apstra.FFResourceType:
+		return ffResourceTypeToFriendlyString(in0)
 	case apstra.InterfaceNumberingIpv4Type:
 		return interfaceNumberingIpv4TypeToFriendlyString(in0)
 	case apstra.InterfaceNumberingIpv6Type:
@@ -98,6 +103,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return configletSectionFromFriendlyString(target, in...)
 	case *apstra.DeployMode:
 		return nodeDeployModeFromFriendlyString(target, in...)
+	case *apstra.FFResourceType:
+		return freeformResourceTypeFromFriendlyString(target, in...)
 	case *apstra.InterfaceNumberingIpv4Type:
 		return interfaceNumberingIpv4TypeFromFriendlyString(target, in...)
 	case *apstra.InterfaceNumberingIpv6Type:
@@ -159,6 +166,17 @@ func deployModeToFriendlyString(in apstra.DeployMode) string {
 	switch in {
 	case apstra.DeployModeNone:
 		return nodeDeployModeNotSet
+	}
+
+	return in.String()
+}
+
+func ffResourceTypeToFriendlyString(in apstra.FFResourceType) string {
+	switch in {
+	case apstra.FFResourceTypeHostIpv4:
+		return freeformResourceTypeHostIpv4
+	case apstra.FFResourceTypeIpv4:
+		return freeformResourceTypeIpv4
 	}
 
 	return in.String()
@@ -284,6 +302,23 @@ func nodeDeployModeFromFriendlyString(target *apstra.DeployMode, in ...string) e
 	switch in[0] {
 	case nodeDeployModeNotSet:
 		*target = apstra.DeployModeNone
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func freeformResourceTypeFromFriendlyString(target *apstra.FFResourceType, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case freeformResourceTypeHostIpv4:
+		*target = apstra.FFResourceTypeHostIpv4
+	case freeformResourceTypeIpv4:
+		*target = apstra.FFResourceTypeIpv4
 	default:
 		return target.FromString(in[0])
 	}

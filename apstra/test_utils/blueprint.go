@@ -2,11 +2,12 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type bFunc func(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient
@@ -270,4 +271,24 @@ func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.F
 	}
 
 	return c, systemIds
+}
+
+// FfBlueprintC creates a freeform blueprint with a single resource group inside.
+// Returned values are the blueprint client and the resource group ID.
+func FfBlueprintC(t testing.TB, ctx context.Context) (*apstra.FreeformClient, apstra.ObjectId) {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	id, err := client.CreateFreeformBlueprint(ctx, acctest.RandString(6))
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+
+	c, err := client.NewFreeformClient(ctx, id)
+	require.NoError(t, err)
+
+	group, err := c.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{Label: acctest.RandString(6)})
+	require.NoError(t, err)
+
+	return c, group
 }
