@@ -154,6 +154,11 @@ func (o *resourceIntegerPool) Read(ctx context.Context, req resource.ReadRequest
 		return
 	}
 
+	newState.SetMutablesToNull(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
