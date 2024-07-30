@@ -32,7 +32,7 @@ func (o *dataSourceFreeformResourceGroup) Configure(ctx context.Context, req dat
 
 func (o *dataSourceFreeformResourceGroup) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource Allocation Group.\n\n" +
+		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource Group.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.FreeformResourceGroup{}.DataSourceAttributes(),
 	}
@@ -63,8 +63,8 @@ func (o *dataSourceFreeformResourceGroup) Read(ctx context.Context, req datasour
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
-				"Freeform Resource Allocation Group not found",
-				fmt.Sprintf("Freeform Resource Allocation Group with ID %s not found", config.Id))
+				"Freeform Resource Group not found",
+				fmt.Sprintf("Freeform Resource Group with ID %s not found", config.Id))
 			return
 		}
 	case !config.Name.IsNull():
@@ -72,17 +72,17 @@ func (o *dataSourceFreeformResourceGroup) Read(ctx context.Context, req datasour
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
-				"Freeform Resource Allocation Group not found",
-				fmt.Sprintf("Freeform resource allocation group with Name %s not found", config.Name))
+				"Freeform Resource Group not found",
+				fmt.Sprintf("Freeform resource allocation group with name %s not found", config.Name))
 			return
 		}
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("failed reading Freeform Resource Allocation Group", err.Error())
+		resp.Diagnostics.AddError("failed reading Freeform Resource Group", err.Error())
 		return
 	}
 	if api.Data == nil {
-		resp.Diagnostics.AddError("failed reading Freeform Resource Allocation Group", "api response has no payload")
+		resp.Diagnostics.AddError("failed reading Freeform Resource Group", "api response has no payload")
 		return
 	}
 

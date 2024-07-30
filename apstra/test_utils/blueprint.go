@@ -273,6 +273,8 @@ func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.F
 	return c, systemIds
 }
 
+// FfBlueprintC creates a freeform blueprint with a single resource group inside.
+// Returned values are the blueprint client and the resource group ID.
 func FfBlueprintC(t testing.TB, ctx context.Context) (*apstra.FreeformClient, apstra.ObjectId) {
 	t.Helper()
 

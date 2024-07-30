@@ -33,7 +33,7 @@ func (o *resourceFreeformResourceGroup) Configure(ctx context.Context, req resou
 
 func (o *resourceFreeformResourceGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource Allocation Group in a Freeform Blueprint.",
+		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource Group in a Freeform Blueprint.",
 		Attributes:          blueprint.FreeformResourceGroup{}.ResourceAttributes(),
 	}
 }
@@ -72,12 +72,14 @@ func (o *resourceFreeformResourceGroup) Create(ctx context.Context, req resource
 		return
 	}
 
+	// Create the Resource Group
 	id, err := bp.CreateRaGroup(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating new Freeform Resource Allocation Group", err.Error())
+		resp.Diagnostics.AddError("error creating new Freeform Resource Group", err.Error())
 		return
 	}
 
+	// Set the Computed values
 	plan.Id = types.StringValue(id.String())
 	plan.GeneratorId = types.StringNull()
 
@@ -103,16 +105,18 @@ func (o *resourceFreeformResourceGroup) Read(ctx context.Context, req resource.R
 		return
 	}
 
+	// Get the Resource Group
 	api, err := bp.GetRaGroup(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving Freeform Resource Allocation Group", err.Error())
+		resp.Diagnostics.AddError("Error retrieving Freeform Resource Group", err.Error())
 		return
 	}
 
+	// Load the API response
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -150,18 +154,20 @@ func (o *resourceFreeformResourceGroup) Update(ctx context.Context, req resource
 		return
 	}
 
+	// Convert the plan into an API Request
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update Config Template
+	// Update the Resource Group
 	err = bp.UpdateRaGroup(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating Freeform Resource Allocation Group", err.Error())
+		resp.Diagnostics.AddError("error updating Freeform Resource Group", err.Error())
 		return
 	}
 
+	// Generator ID is always null in resource context
 	plan.GeneratorId = types.StringNull()
 
 	// set state
@@ -200,7 +206,7 @@ func (o *resourceFreeformResourceGroup) Delete(ctx context.Context, req resource
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting Freeform Resource Allocation Group", err.Error())
+		resp.Diagnostics.AddError("error deleting Freeform Resource Group", err.Error())
 		return
 	}
 }

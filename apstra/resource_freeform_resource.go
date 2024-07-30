@@ -155,20 +155,26 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	// Create the resource
 	id, err := bp.CreateRaResource(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating new Resource", err.Error())
 		return
 	}
 
+	// Read the resource back from Apstra to get computed values
 	api, err := bp.GetRaResource(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("error reading just created Resource", err.Error())
 		return
 	}
 
+	// load state objects
 	plan.Id = types.StringValue(id.String())
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -239,18 +245,20 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
+	// Convert the plan into an API Request
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update Config Template
+	// Update the Resource
 	err = bp.UpdateRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
 		return
 	}
 
+	// Read the resource back from Apstra to get computed values
 	api, err := bp.GetRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()))
 	if err != nil {
 		resp.Diagnostics.AddError("error reading just updated Resource", err.Error())

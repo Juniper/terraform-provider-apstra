@@ -66,28 +66,43 @@ func (o FreeformResource) DataSourceAttributes() map[string]dataSourceSchema.Att
 			Computed:            true,
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "\"type of the Resource, must be one of :\\n  - \" +\n\t\t\t\tstrings.Join(utils.AllResourceTypes(), \"\\n  - \") + \"\\n\"",
+			MarkdownDescription: "Type of the Resource",
 			Computed:            true,
 		},
 		"integer_value": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "integer value of the Resource",
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("Value used by integer type resources (`%s`, `%s`, `%s`, `%s`). "+
+				"Also used by IP prefix resources (`%s` and `%s`) to indicate the required prefix size for automatic "+
+				"allocations from another object or a resource pool.",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeAsn),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeInt),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeVlan),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeVni),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6),
+			),
+			Computed: true,
 		},
 		"allocated_from": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the node that works as a source for this resource. This could be an ID " +
-				"of resource allocation group or another resource (in case of IP/Host IP allocation). " +
+			MarkdownDescription: "ID of the node from which this resource has been sourced. This could be an ID " +
+				"of resource allocation group or another resource (in case of IP or Host IP allocations). " +
 				"This also can be empty. In that case it is required that value for this resource is provided by thex user.",
 			Computed: true,
 		},
 		"ipv4_value": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ipv4 value of the Resource in CIDR notation.",
-			Computed:            true,
-			CustomType:          cidrtypes.IPv4PrefixType{},
+			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`.",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4),
+			),
+			Computed:   true,
+			CustomType: cidrtypes.IPv4PrefixType{},
 		},
 		"ipv6_value": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ipv6 value of the Resource in CIDR notation.",
-			Computed:            true,
-			CustomType:          cidrtypes.IPv6PrefixType{},
+			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`.",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6),
+			),
+			Computed:   true,
+			CustomType: cidrtypes.IPv6PrefixType{},
 		},
 		"generator_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the group generator that created the group, if any.",
@@ -105,7 +120,7 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Freeform Resource.",
+			MarkdownDescription: "ID of the Resource within the Freeform Blueprint.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -122,25 +137,37 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: "type of the Resource, must be one of :\n  - " +
-				strings.Join(utils.AllResourceTypes(), "\n  - ") + "\n",
+			MarkdownDescription: "type of the Resource, must be one of :\n  - `" +
+				strings.Join(utils.AllResourceTypes(), "`\n  - `") + "`\n",
 			Optional:   true,
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllResourceTypes()...)},
 		},
 		"integer_value": resourceSchema.Int64Attribute{
-			MarkdownDescription: "integer value of the Resource",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("Value used by integer type resources (`%s`, `%s`, `%s`, `%s`). "+
+				"Also used by IP prefix resources (`%s` and `%s`) to indicate the required prefix size for automatic "+
+				"allocations from another object or a resource pool.",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeAsn),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeInt),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeVlan),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeVni),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6),
+			),
+			Optional: true,
+			Computed: true,
 			Validators: []validator.Int64{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6))),
 			},
 		},
 		"ipv4_value": resourceSchema.StringAttribute{
-			MarkdownDescription: "ipv4 value of the Resource in CIDR notation.",
-			Optional:            true,
-			Computed:            true,
-			CustomType:          cidrtypes.IPv4PrefixType{},
+			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`. Must be CIDR notation.",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4),
+			),
+			Optional:   true,
+			Computed:   true,
+			CustomType: cidrtypes.IPv4PrefixType{},
 			Validators: []validator.String{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeAsn))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeInt))),
@@ -149,10 +176,13 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"ipv6_value": resourceSchema.StringAttribute{
-			MarkdownDescription: "ipv6 value of the Resource in CIDR notation.",
-			Optional:            true,
-			Computed:            true,
-			CustomType:          cidrtypes.IPv6PrefixType{},
+			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`. Must be CIDR notation.",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6),
+			),
+			Optional:   true,
+			Computed:   true,
+			CustomType: cidrtypes.IPv6PrefixType{},
 			Validators: []validator.String{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeAsn))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeInt))),
@@ -161,8 +191,8 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"allocated_from": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the node that works as a source for this resource. This could be an ID " +
-				"of resource allocation group or another resource (in case of IP/Host IP allocation). " +
+			MarkdownDescription: "ID of the node to be used as a source for this resource. This could be an ID " +
+				"of resource allocation group or another resource (in case of IP or Host IP allocations). " +
 				"This also can be empty. In that case it is required that value for this resource is provided by the user.",
 			Optional:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -175,15 +205,15 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 	}
 }
 
-func (o *FreeformResource) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformRaResourceData {
+func (o *FreeformResource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformRaResourceData {
 	var resourceType apstra.FFResourceType
 	err := utils.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
 	}
 
-	typeIpv4 := o.Type.ValueString() == utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4)
-	typeIpv6 := o.Type.ValueString() == utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6)
+	typeIpv4 := resourceType == apstra.FFResourceTypeIpv4
+	typeIpv6 := resourceType == apstra.FFResourceTypeIpv6
 
 	var subnetPrefixLen *int
 	if (typeIpv4 || typeIpv6) && utils.HasValue(o.IntValue) {
@@ -210,11 +240,11 @@ func (o *FreeformResource) Request(ctx context.Context, diags *diag.Diagnostics)
 	}
 }
 
-func (o *FreeformResource) LoadApiData(ctx context.Context, in *apstra.FreeformRaResourceData, diags *diag.Diagnostics) {
-	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
+func (o *FreeformResource) LoadApiData(_ context.Context, in *apstra.FreeformRaResourceData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
-	o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	o.GroupId = types.StringValue(string(in.GroupId))
+	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
+	o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	o.IntValue = types.Int64Null()
 	o.Ipv4Value = cidrtypes.NewIPv4PrefixNull()
 	o.Ipv6Value = cidrtypes.NewIPv6PrefixNull()
