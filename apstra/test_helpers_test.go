@@ -7,7 +7,6 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 	"net"
@@ -267,14 +266,6 @@ func randomJson(t testing.TB, maxInt int, strLen int, count int) json.RawMessage
 	return result
 }
 
-func TestRandomPrefix(t *testing.T) {
-	for _ = range 10 {
-		//rp := randomPrefix(t, "10.0.0.0/23", 29)
-		rp := randomPrefix(t, "2001:db8::/32", 127)
-		log.Println(rp.String())
-	}
-}
-
 func randomPrefix(t testing.TB, cidrBlock string, bits int) net.IPNet {
 	t.Helper()
 
@@ -302,12 +293,7 @@ func randomPrefix(t testing.TB, cidrBlock string, bits int) net.IPNet {
 	for i, b := range randomIP {
 		mBitsThisByte := min(mOnes, 8)
 		mOnes -= mBitsThisByte
-
-		byteMask := byte(math.MaxUint8 >> mBitsThisByte)
-
-		randomIP[i] = b & byteMask
-
-		block.IP[i] = block.IP[i] | (b & byteMask)
+		block.IP[i] = block.IP[i] | (b & byte(math.MaxUint8>>mBitsThisByte))
 	}
 
 	block.Mask = net.CIDRMask(bits, mBits)
