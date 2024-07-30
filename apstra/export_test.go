@@ -15,13 +15,13 @@ var (
 	ResourceDatacenterRoutingZone      = resourceDatacenterRoutingZone{}
 	ResourceFreeformConfigTemplate     = resourceFreeformConfigTemplate{}
 	ResourceFreeformLink               = resourceFreeformLink{}
-  ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
+	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
 	ResourceFreeformRaGroup            = resourceFreeformResourceGroup{}
 	ResourceFreeformResourceGroup      = resourceFreeformResourceGroup{}
-  ResourceFreeformResource           = resourceFreeformResource{}
+	ResourceFreeformResource           = resourceFreeformResource{}
 	ResourceFreeformSystem             = resourceFreeformSystem{}
 	ResourceIntegerPool                = resourceIntegerPool{}
-  ResourceIpv4Pool                   = resourceIpv4Pool{}
+	ResourceIpv4Pool                   = resourceIpv4Pool{}
 	ResourceIpv6Pool                   = resourceIpv6Pool{}
 	ResourceTemplateCollapsed          = resourceTemplateCollapsed{}
 	ResourceTemplatePodBased           = resourceTemplatePodBased{}

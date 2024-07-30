@@ -7,7 +7,6 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"math"
 	"math/rand"
 	"net"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testcheck "github.com/Juniper/terraform-provider-apstra/apstra/test_check_funcs"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"

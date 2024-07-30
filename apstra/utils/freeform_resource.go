@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"sort"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func AllResourceTypes() []string {

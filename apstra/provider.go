@@ -82,8 +82,10 @@ var blueprintMutexes map[string]apstra.Mutex
 var blueprintMutexesMutex sync.Mutex
 
 // maps of blueprint clients keyed by blueprint ID
-var twoStageL3ClosClients map[string]apstra.TwoStageL3ClosClient
-var freeformClients map[string]apstra.FreeformClient
+var (
+	twoStageL3ClosClients map[string]apstra.TwoStageL3ClosClient
+	freeformClients       map[string]apstra.FreeformClient
+)
 
 // mutex which we use to control access to twoStageL3ClosClients
 var blueprintClientsMutex sync.Mutex
