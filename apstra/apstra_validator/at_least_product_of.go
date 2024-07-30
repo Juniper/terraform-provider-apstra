@@ -65,42 +65,45 @@ func (o AtLeastProductOfValidator) Validate(ctx context.Context, req AtLeastProd
 
 	multiplier := big.NewFloat(o.Multiplier)
 
-	matchedPaths, diags := req.Config.PathMatches(ctx, o.PathExpression)
-	resp.Diagnostics.Append(diags...)
-	if diags.HasError() {
-		return
-	}
-
-	for _, mp := range matchedPaths {
-		var mpVal attr.Value
-		diags = req.Config.GetAttribute(ctx, mp, &mpVal)
+	expressions := req.PathExpression.MergeExpressions(o.PathExpression)
+	for _, expression := range expressions {
+		matchedPaths, diags := req.Config.PathMatches(ctx, expression)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
-		// Unknown and Null attributes can't be multiplied
-		if mpVal.IsNull() || mpVal.IsUnknown() {
-			continue
-		}
+		for _, mp := range matchedPaths {
+			var mpVal attr.Value
+			diags = req.Config.GetAttribute(ctx, mp, &mpVal)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
 
-		// convert the value we're comparing to *big.Float
-		var mpBF *big.Float
-		switch t := mpVal.(type) {
-		case basetypes.Float64Value:
-			mpBF = big.NewFloat(t.ValueFloat64())
-		case basetypes.Int64Value:
-			mpBF = big.NewFloat(float64(t.ValueInt64()))
-		case basetypes.NumberValue:
-			mpBF = t.ValueBigFloat()
-		}
+			// Unknown and Null attributes can't be multiplied
+			if mpVal.IsNull() || mpVal.IsUnknown() {
+				continue
+			}
 
-		if thisBF.Cmp(mpBF.Mul(mpBF, multiplier)) == -1 {
-			resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
-				req.Path,
-				fmt.Sprintf("value must be at least %f times the value at %s (%s), got %s",
-					multiplier, mp, mpVal, req.ConfigValue),
-			))
+			// convert the value we're comparing to *big.Float
+			var mpBF *big.Float
+			switch t := mpVal.(type) {
+			case basetypes.Float64Value:
+				mpBF = big.NewFloat(t.ValueFloat64())
+			case basetypes.Int64Value:
+				mpBF = big.NewFloat(float64(t.ValueInt64()))
+			case basetypes.NumberValue:
+				mpBF = t.ValueBigFloat()
+			}
+
+			if thisBF.Cmp(mpBF.Mul(mpBF, multiplier)) == -1 {
+				resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+					req.Path,
+					fmt.Sprintf("value must be at least %f times the value at %s (%s), got %s",
+						multiplier, mp, mpVal, req.ConfigValue),
+				))
+			}
 		}
 	}
 }

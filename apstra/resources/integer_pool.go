@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -17,13 +18,13 @@ import (
 )
 
 type IntegerPool struct {
-	Id          types.String  `tfsdk:"id"`
-	Name        types.String  `tfsdk:"name"`
-	Ranges      types.Set     `tfsdk:"ranges"`
-	Total       types.Int64   `tfsdk:"total"`
-	Status      types.String  `tfsdk:"status"`
-	Used        types.Int64   `tfsdk:"used"`
-	UsedPercent types.Float64 `tfsdk:"used_percentage"`
+	Id             types.String  `tfsdk:"id"`
+	Name           types.String  `tfsdk:"name"`
+	Ranges         types.Set     `tfsdk:"ranges"`
+	Total          types.Int64   `tfsdk:"total"`
+	Status         types.String  `tfsdk:"status"`
+	Used           types.Int64   `tfsdk:"used"`
+	UsedPercentage types.Float64 `tfsdk:"used_percentage"`
 }
 
 func (o IntegerPool) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -128,7 +129,7 @@ func (o *IntegerPool) LoadApiData(ctx context.Context, in *apstra.IntPool, diags
 	o.Name = types.StringValue(in.DisplayName)
 	o.Status = types.StringValue(in.Status.String())
 	o.Used = types.Int64Value(int64(in.Used))
-	o.UsedPercent = types.Float64Value(float64(in.UsedPercentage))
+	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 	o.Total = types.Int64Value(int64(in.Total))
 	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: IntegerPoolRange{}.AttrTypes()}, ranges, diags)
 }
@@ -151,4 +152,23 @@ func (o *IntegerPool) Request(ctx context.Context, diags *diag.Diagnostics) *aps
 	}
 
 	return &response
+}
+
+func (o *IntegerPool) SetMutablesToNull(ctx context.Context, diags *diag.Diagnostics) {
+	o.Status = types.StringNull()
+	o.Total = types.Int64Null()
+	o.Used = types.Int64Null()
+	o.UsedPercentage = types.Float64Null()
+
+	var ranges []IntegerPoolRange
+	diags.Append(o.Ranges.ElementsAs(ctx, &ranges, false)...)
+	if diags.HasError() {
+		return
+	}
+
+	for i := range ranges {
+		ranges[i].setMutablesToNull()
+	}
+
+	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: IntegerPoolRange{}.AttrTypes()}, ranges, diags)
 }

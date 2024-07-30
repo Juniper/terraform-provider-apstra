@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,9 +13,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceAsnPool{}
-var _ resource.ResourceWithValidateConfig = &resourceAsnPool{}
-var _ resourceWithSetClient = &resourceAsnPool{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceAsnPool{}
+	_ resource.ResourceWithValidateConfig = &resourceAsnPool{}
+	_ resourceWithSetClient               = &resourceAsnPool{}
+)
 
 type resourceAsnPool struct {
 	client *apstra.Client
@@ -114,35 +117,14 @@ func (o *resourceAsnPool) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	// read pool back from Apstra to get usage statistics
-	var pool *apstra.AsnPool
-	for {
-		pool, err = o.client.GetAsnPool(ctx, id)
-		if err != nil {
-			if utils.IsApstra404(err) {
-				resp.Diagnostics.AddAttributeError(
-					path.Root("id"),
-					"ASN Pool not found",
-					fmt.Sprintf("Just-created ASN Pool with ID %q not found", id))
-				return
-			}
-			resp.Diagnostics.AddError("Error retrieving ASN Pool", err.Error())
-			return
-		}
-		if pool.Status != apstra.PoolStatusCreating {
-			break
-		}
-	}
-
-	// create state object
-	var state resources.AsnPool
-	state.LoadApiData(ctx, pool, &resp.Diagnostics)
+	plan.Id = types.StringValue(id.String())
+	plan.SetMutablesToNull(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -172,6 +154,11 @@ func (o *resourceAsnPool) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
+	newState.SetMutablesToNull(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
@@ -195,29 +182,13 @@ func (o *resourceAsnPool) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// read pool back from Apstra to get usage statistics
-	p, err := o.client.GetAsnPool(ctx, apstra.ObjectId(plan.Id.ValueString()))
-	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"ASN Pool not found",
-				fmt.Sprintf("Recently updated ASN Pool with ID %q not found", plan.Id.ValueString()))
-			return
-		}
-		resp.Diagnostics.AddError("Error retrieving ASN Pool", err.Error())
-		return
-	}
-
-	// create new state object
-	var state resources.AsnPool
-	state.LoadApiData(ctx, p, &resp.Diagnostics)
+	plan.SetMutablesToNull(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceAsnPool) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
