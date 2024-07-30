@@ -79,10 +79,14 @@ func (o resourceIpv6Pool) testChecks(t testing.TB, rType, rName string) testChec
 		})
 	}
 
+	// -----------------------------
+	// DATA SOURCE "by_id" checks below here
+	// -----------------------------
 	checks.setPath("data." + rType + "." + rName + "_by_id")
 	var total int
 	for _, subnet := range o.subnets {
 		ones, _ := subnet.Mask.Size()
+		// todo: calculation of thisSubnetTotal cannot handle large values. convert to big.Int
 		thisSubnetTotal := 1 << (128 - ones)
 
 		checks.appendSetNestedCheck(t, "subnets.*", map[string]string{
@@ -103,6 +107,9 @@ func (o resourceIpv6Pool) testChecks(t testing.TB, rType, rName string) testChec
 	checks.append(t, "TestCheckResourceAttr", "used", "0")
 	checks.append(t, "TestCheckResourceAttr", "used_percentage", "0")
 
+	// -----------------------------
+	// DATA SOURCE "by_name" checks below here
+	// -----------------------------
 	checks.setPath("data." + rType + "." + rName + "_by_name")
 	for _, subnet := range o.subnets {
 		ones, _ := subnet.Mask.Size()
@@ -148,9 +155,9 @@ func TestAccResourceIpv6Pool(t *testing.T) {
 					config: resourceIpv6Pool{
 						name: acctest.RandString(6),
 						subnets: []net.IPNet{
-							randomSlash127(t, "2001:db8:0::/64"),
-							randomSlash127(t, "2001:db8:0::/64"),
-							randomSlash127(t, "2001:db8:0::/64"),
+							randomPrefix(t, "2001:db8:0::/48", 112),
+							randomPrefix(t, "2001:db8:1::/48", 112),
+							randomPrefix(t, "2001:db8:2::/48", 112),
 						},
 					},
 				},
@@ -158,9 +165,8 @@ func TestAccResourceIpv6Pool(t *testing.T) {
 					config: resourceIpv6Pool{
 						name: acctest.RandString(6),
 						subnets: []net.IPNet{
-							randomSlash127(t, "2001:db8:1::/64"),
-							randomSlash127(t, "2001:db8:1::/64"),
-							randomSlash127(t, "2001:db8:1::/64"),
+							randomPrefix(t, "2001:db8:3::/48", 127),
+							randomPrefix(t, "2001:db8:4::/48", 127),
 						},
 					},
 				},
@@ -168,9 +174,10 @@ func TestAccResourceIpv6Pool(t *testing.T) {
 					config: resourceIpv6Pool{
 						name: acctest.RandString(6),
 						subnets: []net.IPNet{
-							randomSlash127(t, "2001:db8:2::/64"),
-							randomSlash127(t, "2001:db8:2::/64"),
-							randomSlash127(t, "2001:db8:2::/64"),
+							randomPrefix(t, "2001:db8:5::/48", 112),
+							randomPrefix(t, "2001:db8:6::/48", 112),
+							randomPrefix(t, "2001:db8:7::/48", 112),
+							randomPrefix(t, "2001:db8:8::/48", 112),
 						},
 					},
 				},
@@ -196,7 +203,7 @@ func TestAccResourceIpv6Pool(t *testing.T) {
 				chkLog := checks.string()
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
 
-				t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
+				t.Logf("\n// ------ begin config for %s ------%s// -------- end config for %s ------\n\n", stepName, config, stepName)
 				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
 
 				steps[i] = resource.TestStep{

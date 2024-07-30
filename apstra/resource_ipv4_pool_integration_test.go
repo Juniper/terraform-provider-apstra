@@ -79,6 +79,9 @@ func (o resourceIpv4Pool) testChecks(t testing.TB, rType, rName string) testChec
 		})
 	}
 
+	// -----------------------------
+	// DATA SOURCE "by_id" checks below here
+	// -----------------------------
 	checks.setPath("data." + rType + "." + rName + "_by_id")
 	var total int
 	for _, subnet := range o.subnets {
@@ -103,6 +106,9 @@ func (o resourceIpv4Pool) testChecks(t testing.TB, rType, rName string) testChec
 	checks.append(t, "TestCheckResourceAttr", "used", "0")
 	checks.append(t, "TestCheckResourceAttr", "used_percentage", "0")
 
+	// -----------------------------
+	// DATA SOURCE "by_name" checks below here
+	// -----------------------------
 	checks.setPath("data." + rType + "." + rName + "_by_name")
 	for _, subnet := range o.subnets {
 		ones, _ := subnet.Mask.Size()
@@ -148,9 +154,10 @@ func TestAccResourceIpv4Pool(t *testing.T) {
 					config: resourceIpv4Pool{
 						name: acctest.RandString(6),
 						subnets: []net.IPNet{
-							randomSlash31(t, "10.0.0.0/24"),
-							randomSlash31(t, "10.0.1.0/24"),
-							randomSlash31(t, "10.0.2.0/24"),
+							randomPrefix(t, "10.0.0.0/16", 24),
+							randomPrefix(t, "10.1.0.0/16", 25),
+							randomPrefix(t, "10.2.0.0/16", 26),
+							randomPrefix(t, "10.3.0.0/16", 27),
 						},
 					},
 				},
@@ -158,9 +165,8 @@ func TestAccResourceIpv4Pool(t *testing.T) {
 					config: resourceIpv4Pool{
 						name: acctest.RandString(6),
 						subnets: []net.IPNet{
-							randomSlash31(t, "10.1.0.0/24"),
-							randomSlash31(t, "10.1.1.0/24"),
-							randomSlash31(t, "10.1.2.0/24"),
+							randomPrefix(t, "10.4.0.0/16", 24),
+							randomPrefix(t, "10.5.0.0/16", 25),
 						},
 					},
 				},
@@ -168,9 +174,9 @@ func TestAccResourceIpv4Pool(t *testing.T) {
 					config: resourceIpv4Pool{
 						name: acctest.RandString(6),
 						subnets: []net.IPNet{
-							randomSlash31(t, "10.2.0.0/24"),
-							randomSlash31(t, "10.2.1.0/24"),
-							randomSlash31(t, "10.2.2.0/24"),
+							randomPrefix(t, "10.6.0.0/16", 24),
+							randomPrefix(t, "10.7.0.0/16", 25),
+							randomPrefix(t, "10.8.0.0/16", 26),
 						},
 					},
 				},
@@ -196,7 +202,7 @@ func TestAccResourceIpv4Pool(t *testing.T) {
 				chkLog := checks.string()
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
 
-				t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
+				t.Logf("\n// ------ begin config for %s ------%s// -------- end config for %s ------\n\n", stepName, config, stepName)
 				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
 
 				steps[i] = resource.TestStep{

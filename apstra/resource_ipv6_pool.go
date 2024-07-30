@@ -149,6 +149,11 @@ func (o *resourceIpv6Pool) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
+	newState.SetMutablesToNull(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
