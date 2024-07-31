@@ -231,7 +231,7 @@ func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + o.EnvVarPrefix.String() + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout), err.Error())
