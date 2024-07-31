@@ -74,22 +74,22 @@ func (o *CustomStaticRoute) ValidateConfig(_ context.Context, path path.Path, di
 	}
 }
 
-func (o CustomStaticRoute) attributes() *apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute {
+func (o CustomStaticRoute) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute {
 	_, network, _ := net.ParseCIDR(o.Network.ValueString())
 	nextHop := net.ParseIP(o.NextHop.ValueString())
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute{
-		Label:        o.NextHop.ValueString(),
+		Label:        o.NextHop.ValueString(), // todo is this necessary?
 		Network:      network,
 		NextHop:      nextHop,
 		SecurityZone: (*apstra.ObjectId)(o.RoutingZoneId.ValueStringPointer()),
 	}
 }
 
-func (o CustomStaticRoute) primitive(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o CustomStaticRoute) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
-		Attributes: o.attributes(),
+		Attributes: o.attributes(ctx, diags),
 	}
 }
 
@@ -130,7 +130,7 @@ func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies
 			if p == nil {
 				diags.AddError(
 					"API response contains nil subpolicy",
-					"While extracting RoutingPolicy primitives, encountered nil subpolicy at index "+strconv.Itoa(i),
+					"While extracting CustomStaticRoute primitives, encountered nil subpolicy at index "+strconv.Itoa(i),
 				)
 				continue
 			}

@@ -43,7 +43,7 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Schema(_ context.Context, _ 
 }
 
 func (o *resourceDatacenterConnectivityTemplateSvi) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	// Retrieve values from plan.
+	// Retrieve values from config.
 	var config connectivitytemplates.ConnectivityTemplateSvi
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

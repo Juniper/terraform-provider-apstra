@@ -103,7 +103,8 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 			MarkdownDescription: "Freeform System name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_")},
+				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
+			},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "Hostname of the Freeform System.",
@@ -115,7 +116,7 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "Deploy mode of the System",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.NodeDeployModes()...)},
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`", apstra.SystemTypeInternal, apstra.SystemTypeExternal),

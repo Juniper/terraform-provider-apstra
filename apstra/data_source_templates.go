@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -12,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceTemplates{}
-var _ datasourceWithSetClient = &dataSourceTemplates{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceTemplates{}
+	_ datasourceWithSetClient            = &dataSourceTemplates{}
+)
 
 type dataSourceTemplates struct {
 	client *apstra.Client
@@ -39,12 +42,12 @@ func (o *dataSourceTemplates) Schema(_ context.Context, _ datasource.SchemaReque
 			"type": schema.StringAttribute{
 				MarkdownDescription: "Optional filter to select only Templates of the specified type.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf(utils.AllTemplateTypes()...)},
+				Validators:          []validator.String{stringvalidator.OneOf(utils.TemplateTypes()...)},
 			},
 			"overlay_control_protocol": schema.StringAttribute{
 				MarkdownDescription: "Optional filter to select only Templates with the specified Overlay Control Protocol.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf(utils.AllOverlayControlProtocols()...)},
+				Validators:          []validator.String{stringvalidator.OneOf(utils.OverlayControlProtocols()...)},
 			},
 		},
 	}
@@ -59,7 +62,7 @@ func (o *dataSourceTemplates) Read(ctx context.Context, req datasource.ReadReque
 
 	var ids []apstra.ObjectId
 	var err error
-	//if config.Type.IsNull() && config.OverlayControlProtocol.IsNull() { // see todo in Schema(), then restore this
+	// if config.Type.IsNull() && config.OverlayControlProtocol.IsNull() { // see todo in Schema(), then restore this
 	if config.Type.IsNull() {
 		ids, err = o.client.ListAllTemplateIds(ctx)
 		if err != nil {

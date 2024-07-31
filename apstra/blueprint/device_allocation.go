@@ -104,7 +104,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
-				stringvalidator.OneOf(utils.AllNodeDeployModes()...),
+				stringvalidator.OneOf(utils.NodeDeployModes()...),
 				stringvalidator.ConflictsWith(path.MatchRoot("system_attributes")),
 			},
 		},

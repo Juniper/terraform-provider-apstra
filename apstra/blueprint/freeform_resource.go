@@ -138,9 +138,9 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: "type of the Resource, must be one of :\n  - `" +
-				strings.Join(utils.AllResourceTypes(), "`\n  - `") + "`\n",
+				strings.Join(utils.ResourceTypes(), "`\n  - `") + "`\n",
 			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllResourceTypes()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.ResourceTypes()...)},
 		},
 		"integer_value": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("Value used by integer type resources (`%s`, `%s`, `%s`, `%s`). "+

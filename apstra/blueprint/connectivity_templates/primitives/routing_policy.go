@@ -43,16 +43,16 @@ func (o RoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute 
 	}
 }
 
-func (o RoutingPolicy) attributes() *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy {
+func (o RoutingPolicy) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy {
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachExistingRoutingPolicy{
 		RpToAttach: (*apstra.ObjectId)(o.RoutingPolicyId.ValueStringPointer()),
 	}
 }
 
-func (o RoutingPolicy) primitive(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+func (o RoutingPolicy) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
-		Attributes: o.attributes(),
+		Attributes: o.attributes(ctx, diags),
 	}
 }
 

@@ -19,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -73,9 +72,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 		},
 		"bfd_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enable BFD.",
-			Optional:            true,
-			Computed:            true,
-			Default:             booldefault.StaticBool(false),
+			Required:            true,
 		},
 		"password": resourceSchema.StringAttribute{
 			MarkdownDescription: "Password used to secure the BGP session.",
@@ -134,7 +131,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 	}
 }
 
-func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt {
+func (o BgpPeeringIpEndpoint) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt {
 	var neighborAsn *uint32
 	if !o.NeighborAsn.IsNull() {
 		neighborAsn = utils.ToPtr(uint32(o.NeighborAsn.ValueInt64()))
@@ -166,7 +163,7 @@ func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitive
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt{
-		Label:              o.Name.ValueString(),
+		Label:              o.Name.ValueString(), // todo is this necessary?
 		Asn:                neighborAsn,
 		Bfd:                o.BfdEnabled.ValueBool(),
 		Holdtime:           holdTime,
@@ -185,7 +182,7 @@ func (o BgpPeeringIpEndpoint) attributes() *apstra.ConnectivityTemplatePrimitive
 func (o BgpPeeringIpEndpoint) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	result := apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
-		Attributes: o.attributes(),
+		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
 	}
 

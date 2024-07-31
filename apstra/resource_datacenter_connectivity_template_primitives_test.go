@@ -162,7 +162,7 @@ const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL = 
   name             = %s
   neighbor_asn     = %s
   ttl              = %s
-  bfd_enabled      = %s
+  bfd_enabled      = %q
   password         = %s
   keepalive_time   = %s
   hold_time        = %s
@@ -177,7 +177,7 @@ type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive struct
 	name            string
 	neighborAsn     *int
 	ttl             *int
-	bfdEnabled      *bool
+	bfdEnabled      bool
 	password        string
 	keepaliveTime   *int
 	holdTime        *int
@@ -205,7 +205,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) re
 			stringOrNull(o.name),
 			intPtrOrNull(o.neighborAsn),
 			intPtrOrNull(o.ttl),
-			boolPtrOrNull(o.bfdEnabled),
+			strconv.FormatBool(o.bfdEnabled),
 			stringOrNull(o.password),
 			intPtrOrNull(o.keepaliveTime),
 			intPtrOrNull(o.holdTime),
@@ -228,9 +228,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) va
 	if o.ttl != nil {
 		result["ttl"] = strconv.Itoa(*o.ttl)
 	}
-	if o.bfdEnabled != nil {
-		result["bfd_enabled"] = strconv.FormatBool(*o.bfdEnabled)
-	}
+	result["bfd_enabled"] = strconv.FormatBool(o.bfdEnabled)
 	if o.password != "" {
 		result["password"] = o.password
 	}
@@ -282,7 +280,7 @@ func randomBgpPeeringIpPrimitives(t testing.TB, ctx context.Context, count int, 
 			name:            name,
 			neighborAsn:     oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax) + constants.TtlMin), // always send TTL so whole object isn't null
-			bfdEnabled:      oneOf(utils.ToPtr(true), (*bool)(nil)),
+			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
 			keepaliveTime:   keepaliveTime,
 			holdTime:        holdTime,
@@ -299,12 +297,12 @@ func randomBgpPeeringIpPrimitives(t testing.TB, ctx context.Context, count int, 
 const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveHCL = `{
   name             = %s
   ttl              = %s
-  bfd_enabled      = %s
+  bfd_enabled      = %q
   password         = %s
   keepalive_time   = %s
   hold_time        = %s
-  ipv4_enabled     = %s
-  ipv6_enabled     = %s
+  ipv4_enabled     = %q
+  ipv6_enabled     = %q
   local_asn        = %s
   ipv4_peer_prefix = %s
   ipv6_peer_prefix = %s
@@ -315,12 +313,12 @@ const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveH
 type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive struct {
 	name            string
 	ttl             *int
-	bfdEnabled      *bool
+	bfdEnabled      bool
 	password        string
 	keepaliveTime   *int
 	holdTime        *int
-	ipv4Enabled     *bool
-	ipv6Enabled     *bool
+	ipv4Enabled     bool
+	ipv6Enabled     bool
 	localAsn        *int
 	ipv4PeerPrefix  net.IPNet
 	ipv6PeerPrefix  net.IPNet
@@ -343,12 +341,12 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiv
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveHCL,
 			stringOrNull(o.name),
 			intPtrOrNull(o.ttl),
-			boolPtrOrNull(o.bfdEnabled),
+			strconv.FormatBool(o.bfdEnabled),
 			stringOrNull(o.password),
 			intPtrOrNull(o.keepaliveTime),
 			intPtrOrNull(o.holdTime),
-			boolPtrOrNull(o.ipv4Enabled),
-			boolPtrOrNull(o.ipv6Enabled),
+			strconv.FormatBool(o.ipv4Enabled),
+			strconv.FormatBool(o.ipv6Enabled),
 			intPtrOrNull(o.localAsn),
 			ipNetOrNull(o.ipv4PeerPrefix),
 			ipNetOrNull(o.ipv6PeerPrefix),
@@ -365,9 +363,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiv
 	if o.ttl != nil {
 		result["ttl"] = strconv.Itoa(*o.ttl)
 	}
-	if o.bfdEnabled != nil {
-		result["bfd_enabled"] = strconv.FormatBool(*o.bfdEnabled)
-	}
+	result["bfd_enabled"] = strconv.FormatBool(o.bfdEnabled)
 	if o.password != "" {
 		result["password"] = o.password
 	}
@@ -377,20 +373,16 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiv
 	if o.holdTime != nil {
 		result["hold_time"] = strconv.Itoa(*o.holdTime)
 	}
-	if o.ipv4Enabled != nil {
-		result["ipv4_enabled"] = strconv.FormatBool(*o.ipv4Enabled)
-	}
-	if o.ipv6Enabled != nil {
-		result["ipv6_enabled"] = strconv.FormatBool(*o.ipv6Enabled)
-	}
+	result["ipv4_enabled"] = strconv.FormatBool(o.ipv4Enabled)
+	result["ipv6_enabled"] = strconv.FormatBool(o.ipv6Enabled)
 	if o.localAsn != nil {
 		result["local_asn"] = strconv.Itoa(*o.localAsn)
 	}
 	if o.ipv4PeerPrefix.String() != "<nil>" {
-		result["ipv4_address"] = o.ipv4PeerPrefix.String()
+		result["ipv4_peer_prefix"] = o.ipv4PeerPrefix.String()
 	}
 	if o.ipv6PeerPrefix.String() != "<nil>" {
-		result["ipv6_address"] = o.ipv6PeerPrefix.String()
+		result["ipv6_peer_prefix"] = o.ipv6PeerPrefix.String()
 	}
 
 	// todo: --------------- add routing policies to map ... somehow?
@@ -414,29 +406,29 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 			holdTime = utils.ToPtr(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
 		}
 
-		var ipv4Enabled, ipv6Enabled *bool
+		var ipv4Enabled, ipv6Enabled bool
 		switch rand.IntN(3) {
 		case 0:
-			ipv4Enabled = utils.ToPtr(true)
+			ipv4Enabled = true
 		case 1:
-			ipv6Enabled = utils.ToPtr(true)
+			ipv6Enabled = true
 		case 2:
-			ipv4Enabled = utils.ToPtr(true)
-			ipv6Enabled = utils.ToPtr(true)
+			ipv4Enabled = true
+			ipv6Enabled = true
 		}
 
 		var ipv4PeerPrefix, ipv6PeerPrefix net.IPNet
-		if ipv4Enabled != nil && (rand.Int()%2) == 0 {
-			ipv4PeerPrefix = randomSlash31(t, "192.0.2.0/24")
+		if ipv4Enabled && (rand.Int()%2) == 0 {
+			ipv4PeerPrefix = randomPrefix(t, "192.0.2.0/24", 27)
 		}
-		if ipv6Enabled != nil && (rand.Int()%2) == 0 {
-			ipv6PeerPrefix = randomSlash127(t, "3fff::/20")
+		if ipv6Enabled && ipv4PeerPrefix.IP != nil {
+			ipv6PeerPrefix = randomPrefix(t, "3fff::/20", 64)
 		}
 
 		result[i] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive{
 			name:            name,
 			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax) + constants.TtlMin), // always send TTL so whole object isn't null
-			bfdEnabled:      oneOf(utils.ToPtr(true), (*bool)(nil)),
+			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
 			keepaliveTime:   keepaliveTime,
 			holdTime:        holdTime,

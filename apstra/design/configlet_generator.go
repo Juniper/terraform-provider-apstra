@@ -3,6 +3,8 @@ package design
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -12,7 +14,6 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 type ConfigletGenerator struct {
@@ -52,9 +53,9 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 	return map[string]resourceSchema.Attribute{
 		"config_style": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Specifies the switch platform, must be one of '%s'.",
-				strings.Join(utils.AllPlatformOSNames(), "', '")),
+				strings.Join(utils.PlatformOSNames(), "', '")),
 			Required:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.PlatformOSNames()...)},
 		},
 		"section": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be "+

@@ -3,6 +3,8 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -15,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
 )
 
 type prefixFilter struct {
@@ -58,7 +59,7 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:   true,
 			Optional:   true,
 			Default:    stringdefault.StaticString(apstra.PrefixFilterActionPermit.String()),
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllValidPrefixFilterActions()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.ValidPrefixFilterActions()...)},
 		},
 	}
 }

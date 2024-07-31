@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -13,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
-var _ datasourceWithSetClient = &dataSourceConfiglets{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
+	_ datasourceWithSetClient            = &dataSourceConfiglets{}
+)
 
 type dataSourceConfiglets struct {
 	client *apstra.Client
@@ -43,7 +46,7 @@ func (o *dataSourceConfiglets) Schema(_ context.Context, _ datasource.SchemaRequ
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{setvalidator.ValueStringsAre(
-					stringvalidator.OneOf(utils.AllPlatformOSNames()...),
+					stringvalidator.OneOf(utils.PlatformOSNames()...),
 				)},
 			},
 		},

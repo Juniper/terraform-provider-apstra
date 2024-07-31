@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -13,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglets{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterConfiglets{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglets{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterConfiglets{}
+)
 
 type dataSourceDatacenterConfiglets struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -48,7 +51,7 @@ func (o *dataSourceDatacenterConfiglets) Schema(_ context.Context, _ datasource.
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{setvalidator.ValueStringsAre(
-					stringvalidator.OneOf(utils.AllPlatformOSNames()...),
+					stringvalidator.OneOf(utils.PlatformOSNames()...),
 				)},
 			},
 		},

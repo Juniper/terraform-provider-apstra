@@ -162,7 +162,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:   true,
 			Computed:   true,
 			Default:    stringdefault.StaticString(apstra.DeployModeDeploy.String()),
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.NodeDeployModes()...)},
 		},
 		"clear_cts_on_destroy": resourceSchema.BoolAttribute{
 			MarkdownDescription: "When `true`, Connectivity Templates associated with this Generic System will be " +

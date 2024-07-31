@@ -6,16 +6,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
-func AllNodeDeployModes() []string {
-	members := apstra.DeployModes.Members()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-
-	return result
-}
-
 func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string) (string, error) {
 	var node struct {
 		Id         string `json:"id"`

@@ -73,7 +73,7 @@ func (o ConnectivityTemplateSvi) ResourceAttributes() map[string]resourceSchema.
 	}
 }
 
-func (o ConnectivityTemplateSvi) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplate {
+func (o *ConnectivityTemplateSvi) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplate {
 	result := apstra.ConnectivityTemplate{
 		Label:       o.Name.ValueString(),
 		Description: o.Description.ValueString(),

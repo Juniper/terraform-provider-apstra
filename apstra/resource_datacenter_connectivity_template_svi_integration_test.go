@@ -106,8 +106,8 @@ func (o resourceDataCenterConnectivityTemplateSvi) testChecks(t testing.TB, bpId
 func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 	ctx := context.Background()
 
-	// create a blueprint
-	bp := testutils.BlueprintA(t, ctx)
+	// Create a blueprint
+	bp := testutils.BlueprintE(t, ctx)
 
 	type testStep struct {
 		config resourceDataCenterConnectivityTemplateSvi
@@ -134,7 +134,7 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 						description:          acctest.RandString(6),
 						tags:                 randomStrings(rand.IntN(5)+2, 6),
 						bgpPeeringIpEndoints: randomBgpPeeringIpPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
-						// dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
 					},
 				},
 				{
@@ -154,6 +154,7 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 						description:          acctest.RandString(6),
 						tags:                 randomStrings(rand.IntN(5)+2, 6),
 						bgpPeeringIpEndoints: randomBgpPeeringIpPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
 					},
 				},
 				{
@@ -169,6 +170,7 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 						description:          acctest.RandString(6),
 						tags:                 randomStrings(rand.IntN(5)+2, 6),
 						bgpPeeringIpEndoints: randomBgpPeeringIpPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
 					},
 				},
 			},

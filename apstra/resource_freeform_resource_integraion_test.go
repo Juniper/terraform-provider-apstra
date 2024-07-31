@@ -53,8 +53,8 @@ func (o resourceFreeformResource) render(rType, rName string) string {
 		o.groupId,
 		utils.StringersToFriendlyString(o.resourceType),
 		intPtrOrNull(o.integerValue),
-		ipOrNull(o.ipv4Value),
-		ipOrNull(o.ipv6Value),
+		ipNetOrNull(o.ipv4Value),
+		ipNetOrNull(o.ipv6Value),
 		stringOrNull(o.allocatedFrom),
 	)
 }

@@ -103,7 +103,7 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 				"of the associated fabric node.",
 			Optional:   true,
 			Computed:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.NodeDeployModes()...)},
 		},
 	}
 }
@@ -128,7 +128,6 @@ func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, exp
 			"Object may be omitted, but must not be empty")
 		return
 	}
-
 }
 
 func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {

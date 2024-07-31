@@ -20,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -71,9 +70,7 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 		},
 		"bfd_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enable BFD.",
-			Optional:            true,
-			Computed:            true,
-			Default:             booldefault.StaticBool(false),
+			Required:            true,
 		},
 		"password": resourceSchema.StringAttribute{
 			MarkdownDescription: "Password used to secure the BGP session.",
@@ -99,15 +96,11 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 		},
 		"ipv4_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables peering with IPv4 neighbors.",
-			Optional:            true,
-			Computed:            true,
-			Default:             booldefault.StaticBool(false),
+			Required:            true,
 		},
 		"ipv6_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables peering with IPv6 neighbors.",
-			Optional:            true,
-			Computed:            true,
-			Default:             booldefault.StaticBool(false),
+			Required:            true,
 		},
 		"local_asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "This feature is configured on a per-peer basis. It allows a router " +
@@ -154,7 +147,7 @@ func (o DynamicBgpPeering) ValidateConfig(_ context.Context, path path.Path, dia
 	}
 }
 
-func (o DynamicBgpPeering) attributes() *apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface {
+func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface {
 	var holdTime *uint16
 	if !o.HoldTime.IsNull() {
 		holdTime = utils.ToPtr(uint16(o.HoldTime.ValueInt64()))
@@ -181,7 +174,7 @@ func (o DynamicBgpPeering) attributes() *apstra.ConnectivityTemplatePrimitiveAtt
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface{
-		Label:                 o.Name.ValueString(),
+		Label:                 o.Name.ValueString(), // todo is this necessary?
 		Bfd:                   o.BfdEnabled.ValueBool(),
 		Holdtime:              holdTime,
 		Ipv4Safi:              o.Ipv4Enabled.ValueBool(),
@@ -200,7 +193,7 @@ func (o DynamicBgpPeering) attributes() *apstra.ConnectivityTemplatePrimitiveAtt
 func (o DynamicBgpPeering) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	result := apstra.ConnectivityTemplatePrimitive{
 		Label:      o.Name.ValueString(),
-		Attributes: o.attributes(),
+		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
 	}
 

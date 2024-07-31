@@ -3,6 +3,10 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"net"
+	"regexp"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -21,9 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"net"
-	"regexp"
-	"strings"
 )
 
 type DatacenterRoutingPolicy struct {
@@ -69,10 +70,10 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 		},
 		"import_policy": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
+				strings.Join(utils.DcRoutingPolicyImportPolicy(), "', '")),
 			Computed:   true,
 			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllDcRoutingPolicyImportPolicy()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.DcRoutingPolicyImportPolicy()...)},
 			Default:    stringdefault.StaticString(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String()),
 		},
 		"export_policy": resourceSchema.SingleNestedAttribute{
@@ -171,7 +172,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
+				strings.Join(utils.DcRoutingPolicyImportPolicy(), "', '")),
 			Computed: true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
@@ -243,7 +244,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataS
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
+				strings.Join(utils.DcRoutingPolicyImportPolicy(), "', '")),
 			Optional: true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
