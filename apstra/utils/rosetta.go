@@ -38,6 +38,8 @@ const (
 
 	freeformResourceTypeIpv4     = "ipv4"
 	freeformResourceTypeHostIpv4 = "host_ipv4"
+
+	resourcePoolTypeIpv4 = "ipv4"
 )
 
 type StringerWithFromString interface {
@@ -77,6 +79,8 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
+	case apstra.ResourcePoolType:
+		return resourcePoolTypeToFriendlyString(in0)
 	case apstra.StorageSchemaPath:
 		return storageSchemaPathToFriendlyString(in0)
 	}
@@ -117,6 +121,8 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
+	case *apstra.ResourcePoolType:
+		return resourcePoolTypeFromFriendlyString(target, in...)
 	case *apstra.StorageSchemaPath:
 		return target.FromString("aos.sdk.telemetry.schemas." + in[0])
 	}
@@ -241,6 +247,15 @@ func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 		return resourceGroupNameSpineSuperspineLinkIpv6
 	case apstra.ResourceGroupNameToGenericLinkIpv6:
 		return resourceGroupNameToGenericLinkIpv6
+	}
+
+	return in.String()
+}
+
+func resourcePoolTypeToFriendlyString(in apstra.ResourcePoolType) string {
+	switch in {
+	case apstra.ResourcePoolTypeIpv4:
+		return resourcePoolTypeIpv4
 	}
 
 	return in.String()
@@ -413,6 +428,21 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 		*target = apstra.ResourceGroupNameSuperspineSpineIp6
 	case resourceGroupNameToGenericLinkIpv6:
 		*target = apstra.ResourceGroupNameToGenericLinkIpv6
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func resourcePoolTypeFromFriendlyString(target *apstra.ResourcePoolType, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case resourcePoolTypeIpv4:
+		*target = apstra.ResourcePoolTypeIpv4
 	default:
 		return target.FromString(in[0])
 	}
