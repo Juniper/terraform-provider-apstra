@@ -62,7 +62,7 @@ func TestResourceAllocGroup(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
-	// create a blueprint and a group...
+	// create a blueprint
 	bp := testutils.FfBlueprintA(t, ctx)
 
 	newAsnPool := func(t testing.TB) string {
@@ -243,7 +243,7 @@ func TestResourceAllocGroup(t *testing.T) {
 				{
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
-						name:        nameByKey("test_vni"),
+						name:        nameByKey("test_ipv4"),
 						groupType:   apstra.ResourcePoolTypeIpv4,
 						poolIds:     []string{newIpv4Pool(t)},
 					},
@@ -251,7 +251,7 @@ func TestResourceAllocGroup(t *testing.T) {
 				{
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
-						name:        nameByKey("test_vni"),
+						name:        nameByKey("test_ipv4"),
 						groupType:   apstra.ResourcePoolTypeIpv4,
 						poolIds:     []string{newIpv4Pool(t)},
 					},

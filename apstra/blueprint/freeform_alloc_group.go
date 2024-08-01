@@ -60,7 +60,7 @@ func (o FreeformAllocGroup) DataSourceAttributes() map[string]dataSourceSchema.A
 			Computed: true,
 		},
 		"pool_ids": dataSourceSchema.SetAttribute{
-			MarkdownDescription: "Pool ID assigned to the allocation group",
+			MarkdownDescription: "IDs of Resource Pools assigned to the allocation group",
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
@@ -97,7 +97,7 @@ func (o FreeformAllocGroup) ResourceAttributes() map[string]resourceSchema.Attri
 			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
 		},
 		"pool_ids": resourceSchema.SetAttribute{
-			MarkdownDescription: "ID of the Pool to associate with this Allocation Group",
+			MarkdownDescription: "IDs of Resource Pools assigned to the allocation group",
 			ElementType:         types.StringType,
 			Required:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},

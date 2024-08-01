@@ -153,7 +153,7 @@ func (o *resourceFreeformAllocGroup) Update(ctx context.Context, req resource.Up
 		return
 	}
 
-	// Update Config Template
+	// Update the Allocation Group
 	err = bp.UpdateAllocGroup(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Freeform Allocation Group", err.Error())
