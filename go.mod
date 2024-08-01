@@ -2,11 +2,11 @@ module github.com/Juniper/terraform-provider-apstra
 
 go 1.22.5
 
-replace github.com/Juniper/apstra-go-sdk => ../apstra-go-sdk
+//replace github.com/Juniper/apstra-go-sdk => ../apstra-go-sdk
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20240730135749-72db5614fa0e
+	github.com/Juniper/apstra-go-sdk v0.0.0-20240801202534-f251446c2750
 	github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-version v1.7.0

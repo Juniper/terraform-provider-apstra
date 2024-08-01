@@ -23,7 +23,7 @@ type resourceFreeformAllocGroup struct {
 }
 
 func (o *resourceFreeformAllocGroup) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_system"
+	resp.TypeName = req.ProviderTypeName + "_freeform_alloc_group"
 }
 
 func (o *resourceFreeformAllocGroup) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -32,7 +32,7 @@ func (o *resourceFreeformAllocGroup) Configure(ctx context.Context, req resource
 
 func (o *resourceFreeformAllocGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This resource creates a System in a Freeform Blueprint.",
+		MarkdownDescription: docCategoryFreeform + "This resource creates an Allocation Group in a Freeform Blueprint.",
 		Attributes:          blueprint.FreeformAllocGroup{}.ResourceAttributes(),
 	}
 }
@@ -71,9 +71,9 @@ func (o *resourceFreeformAllocGroup) Create(ctx context.Context, req resource.Cr
 		return
 	}
 
-	id, err := bp.CreateSystem(ctx, request)
+	id, err := bp.CreateAllocGroup(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating new System", err.Error())
+		resp.Diagnostics.AddError("error creating new Allocation Group", err.Error())
 		return
 	}
 
@@ -101,13 +101,13 @@ func (o *resourceFreeformAllocGroup) Read(ctx context.Context, req resource.Read
 		return
 	}
 
-	api, err := bp.GetSystem(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bp.GetAllocGroup(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving Freeform System", err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Error retrieving Freeform Allocation Group %s", state.Id), err.Error())
 		return
 	}
 
@@ -154,9 +154,9 @@ func (o *resourceFreeformAllocGroup) Update(ctx context.Context, req resource.Up
 	}
 
 	// Update Config Template
-	err = bp.UpdateSystem(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdateAllocGroup(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating Freeform System", err.Error())
+		resp.Diagnostics.AddError("error updating Freeform Allocation Group", err.Error())
 		return
 	}
 
@@ -191,12 +191,12 @@ func (o *resourceFreeformAllocGroup) Delete(ctx context.Context, req resource.De
 	}
 
 	// Delete Config Template by calling API
-	err = bp.DeleteSystem(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteAllocGroup(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting Freeform System", err.Error())
+		resp.Diagnostics.AddError("error deleting Freeform Allocation Group", err.Error())
 		return
 	}
 }

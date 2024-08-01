@@ -18,6 +18,7 @@ var (
 	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
 	ResourceFreeformResourceGroup      = resourceFreeformResourceGroup{}
 	ResourceFreeformResource           = resourceFreeformResource{}
+	ResourceFreeformAllocGroup         = resourceFreeformAllocGroup{}
 	ResourceFreeformSystem             = resourceFreeformSystem{}
 	ResourceIntegerPool                = resourceIntegerPool{}
 	ResourceIpv4Pool                   = resourceIpv4Pool{}

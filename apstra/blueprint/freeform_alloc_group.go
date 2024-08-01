@@ -3,7 +3,10 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"regexp"
+	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -22,19 +25,19 @@ type FreeformAllocGroup struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Type        types.String `tfsdk:"type"`
-	PoolId      types.String `tfsdk:"pool_id"`
+	PoolIds     types.Set    `tfsdk:"pool_ids"`
 }
 
 func (o FreeformAllocGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
-				"the Blueprint where the System lives.",
+				"the Blueprint where the Allocation Group lives.",
 			Required:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Freeform System by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Allocation Group by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -46,18 +49,20 @@ func (o FreeformAllocGroup) DataSourceAttributes() map[string]dataSourceSchema.A
 			},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up System by Name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Allocation Group by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "type of the Resource Pool, either Internal or External",
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("type of the Allocation Group, must be one of :\n  - `" +
+				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n"),
+			Computed: true,
 		},
-		"pool_id": dataSourceSchema.StringAttribute{
+		"pool_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Pool ID assigned to the allocation group",
 			Computed:            true,
+			ElementType:         types.StringType,
 		},
 	}
 }
@@ -71,40 +76,59 @@ func (o FreeformAllocGroup) ResourceAttributes() map[string]resourceSchema.Attri
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the Freeform System.",
+			MarkdownDescription: "ID of the Freeform Allocation Group.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Freeform System name as shown in the Web UI.",
-			Required:            true,
-			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_")},
-		},
-		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`", apstra.SystemTypeInternal, apstra.SystemTypeExternal),
+			MarkdownDescription: "Freeform Allocation Group name as shown in the Web UI.",
 			Required:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.OneOf(apstra.SystemTypeInternal.String(), apstra.SystemTypeExternal.String())},
+			Validators: []validator.String{
+				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"),
+					"name may consist only of the following characters : a-zA-Z0-9.-_"),
+			},
 		},
-		"pool_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID (usually serial number) of the Managed Device to associate with this System",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		"type": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("type of the Allocation Group, must be one of :\n  - `" +
+				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n"),
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
+		},
+		"pool_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "ID of the Pool to associate with this Allocation Group",
+			ElementType:         types.StringType,
+			Required:            true,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
 }
 
 func (o *FreeformAllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformAllocGroupData {
+	// unpack
+	var allocGroupType apstra.ResourcePoolType
+	err := utils.ApiStringerFromFriendlyString(&allocGroupType, o.Type.ValueString())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
+	}
+
+	var poolIds []apstra.ObjectId
+	diags.Append(o.PoolIds.ElementsAs(ctx, &poolIds, false)...)
+	if diags.HasError() {
+		return nil
+	}
 
 	return &apstra.FreeformAllocGroupData{
-		Name:    "",
-		Type:    apstra.ResourcePoolType{},
-		PoolIds: nil,
+		Name:    o.Name.ValueString(),
+		Type:    allocGroupType,
+		PoolIds: poolIds,
 	}
 }
 
 func (o *FreeformAllocGroup) LoadApiData(ctx context.Context, in *apstra.FreeformAllocGroupData, diags *diag.Diagnostics) {
+	// pack
 	o.Name = types.StringValue(in.Name)
-	o.Type = types.StringValue(in.Type.String())
+	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))
+	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
 }

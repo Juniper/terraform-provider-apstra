@@ -46,6 +46,8 @@ func TestRosetta(t *testing.T) {
 		{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}},
 		{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},
 
+		{string: "ipv4", stringers: []fmt.Stringer{apstra.ResourcePoolTypeIpv4}},
+
 		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv4TypeNone}},
 		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv6TypeNone}},
 	}
@@ -83,6 +85,9 @@ func TestRosetta(t *testing.T) {
 			target = &x
 		case apstra.ResourceGroupName:
 			x := apstra.ResourceGroupName(-1)
+			target = &x
+		case apstra.ResourcePoolType:
+			x := apstra.ResourcePoolType{}
 			target = &x
 		}
 

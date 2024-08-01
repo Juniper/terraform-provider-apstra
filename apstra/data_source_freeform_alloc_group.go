@@ -23,7 +23,7 @@ type dataSourceFreeformAllocGroup struct {
 }
 
 func (o *dataSourceFreeformAllocGroup) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_system"
+	resp.TypeName = req.ProviderTypeName + "_freeform_alloc_group"
 }
 
 func (o *dataSourceFreeformAllocGroup) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -32,7 +32,7 @@ func (o *dataSourceFreeformAllocGroup) Configure(ctx context.Context, req dataso
 
 func (o *dataSourceFreeformAllocGroup) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform System.\n\n" +
+		MarkdownDescription: docCategoryFreeform + "This data source provides details of a Freeform Allocation Group.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.FreeformAllocGroup{}.DataSourceAttributes(),
 	}
