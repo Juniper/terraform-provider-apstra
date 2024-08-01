@@ -75,7 +75,7 @@ output "test_resource_out" { value = data.apstra_freeform_alloc_group.test }
 
 ### Read-Only
 
-- `pool_ids` (Set of String) Pool ID assigned to the allocation group
+- `pool_ids` (Set of String) IDs of Resource Pools assigned to the allocation group
 - `type` (String) type of the Allocation Group, must be one of :
   - `asn`
   - `integer`

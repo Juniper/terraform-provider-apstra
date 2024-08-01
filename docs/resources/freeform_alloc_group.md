@@ -65,7 +65,7 @@ output "test_resource_out" { value = data.apstra_freeform_alloc_group.test }
 
 - `blueprint_id` (String) Apstra Blueprint ID.
 - `name` (String) Freeform Allocation Group name as shown in the Web UI.
-- `pool_ids` (Set of String) ID of the Pool to associate with this Allocation Group
+- `pool_ids` (Set of String) IDs of Resource Pools assigned to the allocation group
 - `type` (String) type of the Allocation Group, must be one of :
   - `asn`
   - `integer`
