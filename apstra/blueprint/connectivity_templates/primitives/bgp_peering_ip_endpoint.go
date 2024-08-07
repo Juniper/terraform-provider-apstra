@@ -57,7 +57,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 	return map[string]resourceSchema.Attribute{
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Label used by the web UI on the Primitive \"block\" in the Connectivity Template.",
-			Optional:            true,
+			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"neighbor_asn": resourceSchema.Int64Attribute{

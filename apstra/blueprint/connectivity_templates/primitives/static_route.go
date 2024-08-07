@@ -36,7 +36,7 @@ func (o StaticRoute) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Optional:            true,
+			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"network": resourceSchema.StringAttribute{
@@ -68,9 +68,9 @@ func (o StaticRoute) primitive(ctx context.Context, diags *diag.Diagnostics) *ap
 	}
 }
 
-func StaticRouteSubpolicies(ctx context.Context, customStaticRouteSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+func StaticRouteSubpolicies(ctx context.Context, StaticRouteSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
 	var StaticRoutes []StaticRoute
-	diags.Append(customStaticRouteSet.ElementsAs(ctx, &StaticRoutes, false)...)
+	diags.Append(StaticRouteSet.ElementsAs(ctx, &StaticRoutes, false)...)
 	if diags.HasError() {
 		return nil
 	}

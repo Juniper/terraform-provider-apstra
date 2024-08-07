@@ -32,7 +32,7 @@ func (o RoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute 
 	return map[string]resourceSchema.Attribute{
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Optional:            true,
+			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{

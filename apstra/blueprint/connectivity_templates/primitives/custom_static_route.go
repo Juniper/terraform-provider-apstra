@@ -40,7 +40,7 @@ func (o CustomStaticRoute) ResourceAttributes() map[string]resourceSchema.Attrib
 	return map[string]resourceSchema.Attribute{
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Optional:            true,
+			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
