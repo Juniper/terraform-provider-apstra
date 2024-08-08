@@ -24,7 +24,7 @@ type resourceFreeformAllocGroup struct {
 }
 
 func (o *resourceFreeformAllocGroup) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_alloc_group"
+	resp.TypeName = req.ProviderTypeName + "_freeform_allocation_group"
 }
 
 func (o *resourceFreeformAllocGroup) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
