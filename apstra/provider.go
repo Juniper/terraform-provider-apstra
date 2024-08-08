@@ -199,45 +199,47 @@ type providerConfig struct {
 }
 
 func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+	envVarPrefix := o.EnvVarPrefix.ValueString()
+
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvTlsNoVerify), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvTlsNoVerify), err.Error())
 		}
 		o.TlsNoVerify = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexEnabled), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvBlueprintMutexEnabled), err.Error())
 		}
 		o.MutexEnable = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
 		if len(s) < 1 {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexMessage),
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvBlueprintMutexMessage),
 				fmt.Sprintf("minimum string length 1; got %q", s))
 		}
 		o.MutexMessage = types.StringValue(s)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvExperimental); ok && o.Experimental.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvExperimental); ok && o.Experimental.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvExperimental), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvExperimental), err.Error())
 		}
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvApiTimeout), err.Error())
 		}
 		if v < 0 {
-			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout),
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", envVarPrefix+constants.EnvApiTimeout),
 				fmt.Sprintf("minimum permitted value is 0, got %d", v))
 		}
 		o.ApiTimeout = types.Int64Value(v)
