@@ -116,6 +116,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Read(ctx context.Con
 		var ace apstra.ClientErr
 		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
 			resp.State.RemoveResource(ctx)
+			return
 		}
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("failed while reading Application Point assignments for Connectivity Template %s", state.ConnectivityTemplateId),
