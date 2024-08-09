@@ -35,7 +35,7 @@ func (o *resourceFreeformResourceGenerator) Configure(ctx context.Context, req r
 
 func (o *resourceFreeformResourceGenerator) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource in a Freeform Blueprint.",
+		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource Generator in a Freeform Blueprint.",
 		Attributes:          blueprint.FreeformResourceGenerator{}.ResourceAttributes(),
 	}
 }
@@ -47,17 +47,23 @@ func (o *resourceFreeformResourceGenerator) ValidateConfig(ctx context.Context, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	if config.ResourceType.IsUnknown() || config.SubnetPrefixLen.IsUnknown() {
+
+	// We only compare two values. Validation requires that both be known.
+	if config.Type.IsUnknown() || config.SubnetPrefixLen.IsUnknown() {
 		return
 	}
+
+	// Extract the type
 	var resourceType apstra.FFResourceType
-	err := utils.ApiStringerFromFriendlyString(&resourceType, config.ResourceType.ValueString())
+	err := utils.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(path.Root("type"), "failed to parse 'type' attribute", err.Error())
 		return
 	}
+
+	// Catch v6-sized prefix specified when requesting a v4 subnet.
 	if resourceType == apstra.FFResourceTypeIpv4 && config.SubnetPrefixLen.ValueInt64() > 32 {
-		resp.Diagnostics.AddAttributeError(path.Root("subnet_prefix_len"), " 'subnet_prefix_len' cannot be greater than 32 when 'type' is %s", config.ResourceType.String())
+		resp.Diagnostics.AddAttributeError(path.Root("subnet_prefix_len"), " 'subnet_prefix_len' cannot be greater than 32 when 'type' is %s", config.Type.String())
 		return
 	}
 }
@@ -99,7 +105,7 @@ func (o *resourceFreeformResourceGenerator) Create(ctx context.Context, req reso
 	// Create the resource
 	id, err := bp.CreateResourceGenerator(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating new Resource", err.Error())
+		resp.Diagnostics.AddError("error creating new Resource Generator", err.Error())
 		return
 	}
 
@@ -120,7 +126,7 @@ func (o *resourceFreeformResourceGenerator) Read(ctx context.Context, req resour
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -133,7 +139,7 @@ func (o *resourceFreeformResourceGenerator) Read(ctx context.Context, req resour
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddError("Error retrieving Freeform Resource", err.Error())
+		resp.Diagnostics.AddError("Error retrieving Freeform Resource Generator", err.Error())
 		return
 	}
 
@@ -183,7 +189,7 @@ func (o *resourceFreeformResourceGenerator) Update(ctx context.Context, req reso
 	// Update the Resource
 	err = bp.UpdateResourceGenerator(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
+		resp.Diagnostics.AddError("error updating Freeform Resource Generator", err.Error())
 		return
 	}
 

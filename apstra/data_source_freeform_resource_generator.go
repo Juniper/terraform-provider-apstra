@@ -32,7 +32,7 @@ func (o *dataSourceFreeformResourceGenerator) Configure(ctx context.Context, req
 
 func (o *dataSourceFreeformResourceGenerator) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource.\n\n" +
+		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource Generator.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.FreeformResourceGenerator{}.DataSourceAttributes(),
 	}
@@ -63,8 +63,8 @@ func (o *dataSourceFreeformResourceGenerator) Read(ctx context.Context, req data
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
-				"Freeform Resource not found",
-				fmt.Sprintf("Freeform Resource with ID %s not found", config.Id))
+				"Freeform Resource Generator not found",
+				fmt.Sprintf("Freeform Resource Generator with ID %s not found", config.Id))
 			return
 		}
 	case !config.Name.IsNull():
@@ -72,17 +72,17 @@ func (o *dataSourceFreeformResourceGenerator) Read(ctx context.Context, req data
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
-				"Freeform Resource not found",
-				fmt.Sprintf("Freeform Resource with Name %s not found", config.Name))
+				"Freeform Resource Generator not found",
+				fmt.Sprintf("Freeform Resource Generator with Name %s not found", config.Name))
 			return
 		}
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("failed reading Freeform Resource", err.Error())
+		resp.Diagnostics.AddError("failed reading Freeform Resource Generator", err.Error())
 		return
 	}
 	if api.Data == nil {
-		resp.Diagnostics.AddError("failed reading Freeform Resource", "api response has no payload")
+		resp.Diagnostics.AddError("failed reading Freeform Resource Generator", "api response has no payload")
 		return
 	}
 

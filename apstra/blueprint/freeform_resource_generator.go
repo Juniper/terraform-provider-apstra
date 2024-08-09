@@ -24,7 +24,7 @@ import (
 type FreeformResourceGenerator struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
-	ResourceType    types.String `tfsdk:"type"`
+	Type            types.String `tfsdk:"type"`
 	Name            types.String `tfsdk:"name"`
 	Scope           types.String `tfsdk:"scope"`
 	AllocatedFrom   types.String `tfsdk:"allocated_from"`
@@ -63,13 +63,14 @@ func (o FreeformResourceGenerator) DataSourceAttributes() map[string]dataSourceS
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"scope": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Scope the Resource Generator uses for resource generation",
-			Computed:            true,
+			MarkdownDescription: "Scope is a graph query which selects target nodes for which Resources should be generated.\n" +
+				"Example: `node('system', name='target', label=aeq('*prod*'))`",
+			Computed: true,
 		},
 		"allocated_from": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the node from which this resource generator has been sourced. This could be an ID " +
-				"of resource generator or another resource (in case of IP or Host IP allocations). " +
-				"This also can be empty. In that case it is required that value for this resource is provided by the user.",
+			MarkdownDescription: "Selects the Allocation Group, parent Resource, or Local Resource Pool from which to " +
+				"source generated Resources. In the case of a Local Resource Pool, this value must be the name (label) " +
+				"of the pool. Allocation Groups and parent Resources are specified by ID.",
 			Computed: true,
 		},
 		"container_id": dataSourceSchema.StringAttribute{
@@ -107,40 +108,48 @@ func (o FreeformResourceGenerator) ResourceAttributes() map[string]resourceSchem
 			MarkdownDescription: "Freeform Resource Generator name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
+				stringvalidator.RegexMatches(
+					regexp.MustCompile("^[a-zA-Z0-9.-_]+$"),
+					"name may consist only of the following characters : a-zA-Z0-9.-_",
+				),
 			},
 		},
 		"scope": resourceSchema.StringAttribute{
-			MarkdownDescription: "Scope the Resource Generator uses for resource generation.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Scope is a graph query which selects target nodes for which Resources should be generated.\n" +
+				"Example: `node('system', name='target', label=aeq('*prod*'))`",
+			Required:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"allocated_from": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the node to be used as a source for this resource. This could be an ID " +
-				"of resource group or another resource (in case of IP or Host IP allocations). " +
-				"This also can be empty. In that case it is required that value for this resource is provided by the user.",
+			MarkdownDescription: "Selects the Allocation Group, parent Resource, or Local Resource Pool from which to " +
+				"source generated Resources. In the case of a Local Resource Pool, this value must be the name (label) " +
+				"of the pool. Allocation Groups and parent Resources are specified by ID.",
 			Required:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"container_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the group where resources are generated. ",
+			MarkdownDescription: "ID of the group where Resources are generated. ",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"subnet_prefix_len": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Length of the subnet for the generated resources, if any.",
-			Optional:            true,
+			MarkdownDescription: fmt.Sprintf("Length of the subnet for the generated Resources. "+
+				"Only applicable when `type` is `%s` or `%s`",
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4),
+				utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6),
+			),
+			Optional: true,
 			Validators: []validator.Int64{
 				int64validator.Between(1, 127),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeAsn))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeInt))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVlan))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVni))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("allocated_from"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeAsn))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv4))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeHostIpv6))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeInt))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVlan))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeVni))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv4))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.FFResourceTypeIpv6))),
 			},
 		},
 	}
@@ -148,14 +157,13 @@ func (o FreeformResourceGenerator) ResourceAttributes() map[string]resourceSchem
 
 func (o *FreeformResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformResourceGeneratorData {
 	var resourceType apstra.FFResourceType
-	err := utils.ApiStringerFromFriendlyString(&resourceType, o.ResourceType.ValueString())
+	err := utils.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
 	if err != nil {
-		diags.AddError(fmt.Sprintf("error parsing type %q", o.ResourceType.ValueString()), err.Error())
+		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
 	}
 
 	var scopeNodePoolLabel *string
 	var allocatedFrom *apstra.ObjectId
-
 	if resourceType == apstra.FFResourceTypeVlan {
 		scopeNodePoolLabel = o.AllocatedFrom.ValueStringPointer()
 	} else {
@@ -182,7 +190,7 @@ func (o *FreeformResourceGenerator) Request(_ context.Context, diags *diag.Diagn
 func (o *FreeformResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Scope = types.StringValue(in.Scope)
-	o.ResourceType = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
+	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
 	if in.ResourceType == apstra.FFResourceTypeVlan {
 		o.AllocatedFrom = types.StringPointerValue(in.ScopeNodePoolLabel)
 	} else {
