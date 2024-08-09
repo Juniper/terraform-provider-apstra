@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -21,23 +22,25 @@ import (
 const (
 	resourceFreeformResourceGeneratorHcl = `
 resource %q %q {
-  blueprint_id        = %q
-  name                = %q
-  type                = %q
-  scope               = %q
-  allocated_from      = %s
-  container_id        = %q
+  blueprint_id      = %q
+  name              = %q
+  type              = %q
+  scope             = %q
+  allocated_from    = %s
+  container_id      = %q
+  subnet_prefix_len = %s
  }
 `
 )
 
 type resourceFreeformResourceGenerator struct {
-	blueprintId   string
-	name          string
-	resourceType  apstra.FFResourceType
-	scope         string
-	allocatedFrom string
-	containerId   string
+	blueprintId     string
+	name            string
+	resourceType    apstra.FFResourceType
+	scope           string
+	allocatedFrom   string
+	containerId     string
+	subnetPrefixLen *int
 }
 
 func (o resourceFreeformResourceGenerator) render(rType, rName string) string {
@@ -49,6 +52,7 @@ func (o resourceFreeformResourceGenerator) render(rType, rName string) string {
 		o.scope,
 		stringOrNull(o.allocatedFrom),
 		o.containerId,
+		intPtrOrNull(o.subnetPrefixLen),
 	)
 }
 
@@ -66,6 +70,11 @@ func (o resourceFreeformResourceGenerator) testChecks(t testing.TB, rType, rName
 		result.append(t, "TestCheckNoResourceAttr", "allocated_from")
 	} else {
 		result.append(t, "TestCheckResourceAttr", "allocated_from", o.allocatedFrom)
+	}
+	if o.subnetPrefixLen == nil {
+		result.append(t, "TestCheckNoResourceAttr", "subnet_prefix_len")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "subnet_prefix_len", strconv.Itoa(*o.subnetPrefixLen))
 	}
 
 	return result
@@ -180,6 +189,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		require.NoError(t, err)
 		return allocGroup
 	}
+
 	newIntAllocationGroup := func(t testing.TB) apstra.ObjectId {
 		t.Helper()
 
@@ -208,6 +218,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 	type testStep struct {
 		config resourceFreeformResourceGenerator
 	}
+
 	type testCase struct {
 		apiVersionConstraints version.Constraints
 		steps                 []testStep
@@ -278,22 +289,24 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			steps: []testStep{
 				{
 					config: resourceFreeformResourceGenerator{
-						blueprintId:   bp.Id().String(),
-						name:          acctest.RandString(6),
-						scope:         "node('system', name='target')",
-						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeIpv4,
-						allocatedFrom: string(newIpv4AllocationGroup(t)),
+						blueprintId:     bp.Id().String(),
+						name:            acctest.RandString(6),
+						scope:           "node('system', name='target')",
+						containerId:     string(groupId),
+						resourceType:    apstra.FFResourceTypeIpv4,
+						allocatedFrom:   string(newIpv4AllocationGroup(t)),
+						subnetPrefixLen: utils.ToPtr(27),
 					},
 				},
 				{
 					config: resourceFreeformResourceGenerator{
-						blueprintId:   bp.Id().String(),
-						name:          acctest.RandString(6),
-						scope:         "node('system', deploy_mode='deploy', name='target')",
-						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeIpv4,
-						allocatedFrom: string(newIpv4AllocationGroup(t)),
+						blueprintId:     bp.Id().String(),
+						name:            acctest.RandString(6),
+						scope:           "node('system', deploy_mode='deploy', name='target')",
+						containerId:     string(groupId),
+						resourceType:    apstra.FFResourceTypeIpv4,
+						allocatedFrom:   string(newIpv4AllocationGroup(t)),
+						subnetPrefixLen: utils.ToPtr(28),
 					},
 				},
 			},
@@ -302,22 +315,24 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			steps: []testStep{
 				{
 					config: resourceFreeformResourceGenerator{
-						blueprintId:   bp.Id().String(),
-						name:          acctest.RandString(6),
-						scope:         "node('system', name='target')",
-						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeIpv6,
-						allocatedFrom: string(newIpv6AllocationGroup(t)),
+						blueprintId:     bp.Id().String(),
+						name:            acctest.RandString(6),
+						scope:           "node('system', name='target')",
+						containerId:     string(groupId),
+						resourceType:    apstra.FFResourceTypeIpv6,
+						allocatedFrom:   string(newIpv6AllocationGroup(t)),
+						subnetPrefixLen: utils.ToPtr(127),
 					},
 				},
 				{
 					config: resourceFreeformResourceGenerator{
-						blueprintId:   bp.Id().String(),
-						name:          acctest.RandString(6),
-						scope:         "node('system', deploy_mode='deploy', name='target')",
-						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeIpv6,
-						allocatedFrom: string(newIpv6AllocationGroup(t)),
+						blueprintId:     bp.Id().String(),
+						name:            acctest.RandString(6),
+						scope:           "node('system', deploy_mode='deploy', name='target')",
+						containerId:     string(groupId),
+						resourceType:    apstra.FFResourceTypeIpv6,
+						allocatedFrom:   string(newIpv6AllocationGroup(t)),
+						subnetPrefixLen: utils.ToPtr(126),
 					},
 				},
 			},
