@@ -41,7 +41,7 @@ func (o FreeformResourceGenerator) DataSourceAttributes() map[string]dataSourceS
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Freeform Resource by ID. Required when `name` is omitted.",
+			MarkdownDescription: "Populate this field to look up the Freeform Resource Generator by ID. Required when `name` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
@@ -53,11 +53,11 @@ func (o FreeformResourceGenerator) DataSourceAttributes() map[string]dataSourceS
 			},
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Type of the Resource",
+			MarkdownDescription: "Type of the Resource Generator",
 			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up Resource by Name. Required when `id` is omitted.",
+			MarkdownDescription: "Populate this field to look up Resource Generator by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
@@ -73,7 +73,7 @@ func (o FreeformResourceGenerator) DataSourceAttributes() map[string]dataSourceS
 			Computed: true,
 		},
 		"container_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of the group generator that created the group, if any.",
+			MarkdownDescription: "ID of the group used to organize the generated resources",
 			Computed:            true,
 		},
 		"subnet_prefix_len": dataSourceSchema.Int64Attribute{
@@ -104,7 +104,7 @@ func (o FreeformResourceGenerator) ResourceAttributes() map[string]resourceSchem
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Freeform Resource name as shown in the Web UI.",
+			MarkdownDescription: "Freeform Resource Generator name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
