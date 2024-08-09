@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"golang.org/x/exp/constraints"
 	"reflect"
 )
 
@@ -145,4 +146,12 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 	}
 
 	return types.Int64Null()
+}
+
+func Int64AttrValueFromPtr[A constraints.Integer](a *A) types.Int64 {
+	if a == nil {
+		return types.Int64Null()
+	}
+
+	return types.Int64Value(int64(*a))
 }

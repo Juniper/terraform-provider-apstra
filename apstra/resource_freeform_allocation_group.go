@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -34,13 +34,13 @@ func (o *resourceFreeformAllocGroup) Configure(ctx context.Context, req resource
 func (o *resourceFreeformAllocGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates an Allocation Group in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformAllocGroup{}.ResourceAttributes(),
+		Attributes:          freeform.FreeformAllocGroup{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformAllocGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformAllocGroup
+	var plan freeform.FreeformAllocGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -85,7 +85,7 @@ func (o *resourceFreeformAllocGroup) Create(ctx context.Context, req resource.Cr
 }
 
 func (o *resourceFreeformAllocGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformAllocGroup
+	var state freeform.FreeformAllocGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -123,7 +123,7 @@ func (o *resourceFreeformAllocGroup) Read(ctx context.Context, req resource.Read
 
 func (o *resourceFreeformAllocGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformAllocGroup
+	var plan freeform.FreeformAllocGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -166,7 +166,7 @@ func (o *resourceFreeformAllocGroup) Update(ctx context.Context, req resource.Up
 }
 
 func (o *resourceFreeformAllocGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformAllocGroup
+	var state freeform.FreeformAllocGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

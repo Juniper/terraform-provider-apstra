@@ -1,4 +1,4 @@
-package blueprint
+package freeform
 
 import (
 	"context"
@@ -82,7 +82,7 @@ func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			MarkdownDescription: "Endpoints assigned to the Link",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: freeformEndpoint{}.DatasourceAttributes(),
+				Attributes: FreeformEndpoint{}.DatasourceAttributes(),
 			},
 		},
 		"tags": dataSourceSchema.SetAttribute{
@@ -128,7 +128,7 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"endpoints": resourceSchema.MapNestedAttribute{
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: freeformEndpoint{}.ResourceAttributes(),
+				Attributes: FreeformEndpoint{}.ResourceAttributes(),
 			},
 			PlanModifiers:       []planmodifier.Map{mapplanmodifier.RequiresReplace()},
 			MarkdownDescription: "Endpoints of the  Link",
@@ -154,7 +154,7 @@ func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *ap
 		return nil
 	}
 
-	var endpoints map[string]freeformEndpoint
+	var endpoints map[string]FreeformEndpoint
 	diags.Append(o.Endpoints.ElementsAs(ctx, &endpoints, false)...)
 	if diags.HasError() {
 		return nil

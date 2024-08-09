@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,13 +36,13 @@ func (o *resourceFreeformResource) Configure(ctx context.Context, req resource.C
 func (o *resourceFreeformResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformResource{}.ResourceAttributes(),
+		Attributes:          freeform.FreeformResource{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// Retrieve values from config
-	var config blueprint.FreeformResource
+	var config freeform.FreeformResource
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -123,7 +123,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 
 func (o *resourceFreeformResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformResource
+	var plan freeform.FreeformResource
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -181,7 +181,7 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 }
 
 func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformResource
+	var state freeform.FreeformResource
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -219,7 +219,7 @@ func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRe
 
 func (o *resourceFreeformResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformResource
+	var plan freeform.FreeformResource
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -272,7 +272,7 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 }
 
 func (o *resourceFreeformResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformResource
+	var state freeform.FreeformResource
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
