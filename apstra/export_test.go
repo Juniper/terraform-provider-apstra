@@ -18,6 +18,7 @@ var (
 	ResourceFreeformLink               = resourceFreeformLink{}
 	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
 	ResourceFreeformResourceGroup      = resourceFreeformResourceGroup{}
+	ResourceFreeformResourceGenerator  = resourceFreeformResourceGenerator{}
 	ResourceFreeformResource           = resourceFreeformResource{}
 	ResourceFreeformAllocGroup         = resourceFreeformAllocGroup{}
 	ResourceFreeformSystem             = resourceFreeformSystem{}
