@@ -23,7 +23,7 @@ type dataSourceFreeformAllocGroup struct {
 }
 
 func (o *dataSourceFreeformAllocGroup) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_alloc_group"
+	resp.TypeName = req.ProviderTypeName + "_freeform_allocation_group"
 }
 
 func (o *dataSourceFreeformAllocGroup) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
