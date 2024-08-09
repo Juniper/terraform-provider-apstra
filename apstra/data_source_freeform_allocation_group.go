@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -34,12 +34,12 @@ func (o *dataSourceFreeformAllocGroup) Schema(_ context.Context, _ datasource.Sc
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This data source provides details of a Freeform Allocation Group.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.FreeformAllocGroup{}.DataSourceAttributes(),
+		Attributes: freeform.FreeformAllocGroup{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceFreeformAllocGroup) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config blueprint.FreeformAllocGroup
+	var config freeform.FreeformAllocGroup
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return

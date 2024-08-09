@@ -1,4 +1,4 @@
-package blueprint
+package freeform
 
 import (
 	"context"
@@ -197,5 +197,5 @@ func (o *FreeformResourceGenerator) LoadApiData(_ context.Context, in *apstra.Fr
 		o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	}
 	o.ContainerId = types.StringValue(string(in.ContainerId))
-	o.SubnetPrefixLen = int64AttrValueFromPtr(in.SubnetPrefixLen)
+	o.SubnetPrefixLen = utils.Int64AttrValueFromPtr(in.SubnetPrefixLen)
 }

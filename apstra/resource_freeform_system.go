@@ -3,8 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -33,13 +34,13 @@ func (o *resourceFreeformSystem) Configure(ctx context.Context, req resource.Con
 func (o *resourceFreeformSystem) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a System in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformSystem{}.ResourceAttributes(),
+		Attributes:          freeform.FreeformSystem{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformSystem) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformSystem
+	var plan freeform.FreeformSystem
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -84,7 +85,7 @@ func (o *resourceFreeformSystem) Create(ctx context.Context, req resource.Create
 }
 
 func (o *resourceFreeformSystem) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformSystem
+	var state freeform.FreeformSystem
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -122,7 +123,7 @@ func (o *resourceFreeformSystem) Read(ctx context.Context, req resource.ReadRequ
 
 func (o *resourceFreeformSystem) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformSystem
+	var plan freeform.FreeformSystem
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -165,7 +166,7 @@ func (o *resourceFreeformSystem) Update(ctx context.Context, req resource.Update
 }
 
 func (o *resourceFreeformSystem) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformSystem
+	var state freeform.FreeformSystem
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
