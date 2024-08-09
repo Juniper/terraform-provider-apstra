@@ -95,7 +95,7 @@ func (o *resourceFreeformAllocGroup) Read(ctx context.Context, req resource.Read
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
