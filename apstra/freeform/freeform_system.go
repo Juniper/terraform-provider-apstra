@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -103,7 +104,8 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 			MarkdownDescription: "Freeform System name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_")},
+				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
+			},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "Hostname of the Freeform System.",
@@ -118,15 +120,25 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`", apstra.SystemTypeInternal, apstra.SystemTypeExternal),
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.OneOf(apstra.SystemTypeInternal.String(), apstra.SystemTypeExternal.String())},
+			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`",
+				utils.StringersToFriendlyString(apstra.SystemTypeInternal),
+				utils.StringersToFriendlyString(apstra.SystemTypeExternal),
+			),
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{stringvalidator.OneOf(
+				utils.StringersToFriendlyString(apstra.SystemTypeInternal),
+				utils.StringersToFriendlyString(apstra.SystemTypeExternal),
+			)},
 		},
 		"device_profile_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Device profile ID of the System",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Computed:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeExternal))),
+			},
 		},
 		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID (usually serial number) of the Managed Device to associate with this System",
@@ -151,9 +163,9 @@ func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *
 
 	var systemType apstra.SystemType
 	switch o.Type.ValueString() {
-	case apstra.SystemTypeExternal.String():
+	case utils.StringersToFriendlyString(apstra.SystemTypeExternal):
 		systemType = apstra.SystemTypeExternal
-	case apstra.SystemTypeInternal.String():
+	case utils.StringersToFriendlyString(apstra.SystemTypeInternal):
 		systemType = apstra.SystemTypeInternal
 	default:
 		diags.AddError("unexpected system type", "got: "+o.Type.ValueString())
@@ -172,8 +184,9 @@ func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *
 func (o *FreeformSystem) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Hostname = types.StringValue(in.Hostname)
-	o.Type = types.StringValue(in.Type.String())
+	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))
 	o.DeviceProfileId = types.StringValue(string(in.DeviceProfileId))
+	o.DeviceProfileId = utils.StringValueOrNull(ctx, in.DeviceProfileId.String(), diags)
 	o.SystemId = types.StringPointerValue((*string)(in.SystemId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }

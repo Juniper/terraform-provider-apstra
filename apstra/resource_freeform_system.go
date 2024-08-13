@@ -79,6 +79,9 @@ func (o *resourceFreeformSystem) Create(ctx context.Context, req resource.Create
 	}
 
 	plan.Id = types.StringValue(id.String())
+	if plan.DeviceProfileId.IsUnknown() {
+		plan.DeviceProfileId = types.StringNull()
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -159,6 +162,10 @@ func (o *resourceFreeformSystem) Update(ctx context.Context, req resource.Update
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Freeform System", err.Error())
 		return
+	}
+
+	if plan.DeviceProfileId.IsUnknown() {
+		plan.DeviceProfileId = types.StringNull()
 	}
 
 	// set state
