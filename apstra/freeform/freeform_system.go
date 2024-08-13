@@ -132,12 +132,13 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 			)},
 		},
 		"device_profile_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Device profile ID of the System",
-			Optional:            true,
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("Device profile ID of the System. Required when `type` is %q.",
+				utils.StringersToFriendlyString(apstra.SystemTypeInternal)),
+			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeExternal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeInternal))),
 			},
 		},
 		"system_id": resourceSchema.StringAttribute{
