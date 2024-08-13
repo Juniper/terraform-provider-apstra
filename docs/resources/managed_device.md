@@ -2,12 +2,12 @@
 page_title: "apstra_managed_device Resource - terraform-provider-apstra"
 subcategory: "Devices"
 description: |-
-  This resource creates/installs an Agent for an Apstra Managed Device.Optionally, it will 'Acknowledge' the discovered system if the device key (serial number)reported by the agent matches the optional device_key field.
+  This resource creates/installs an Agent for an Apstra Managed Device. Optionally, it will 'Acknowledge' the discovered system if the device key (serial number)reported by the agent matches the optional device_key field.
 ---
 
 # apstra_managed_device (Resource)
 
-This resource creates/installs an Agent for an Apstra Managed Device.Optionally, it will 'Acknowledge' the discovered system if the `device key` (serial number)reported by the agent matches the optional `device_key` field.
+This resource creates/installs an Agent for an Apstra Managed Device. Optionally, it will 'Acknowledge' the discovered system if the `device key` (serial number)reported by the agent matches the optional `device_key` field.
 
 
 ## Example Usage
