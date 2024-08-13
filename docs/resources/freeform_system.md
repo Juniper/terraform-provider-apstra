@@ -68,7 +68,7 @@ output "test_System_out" { value = data.apstra_freeform_system.test }
 ### Optional
 
 - `deploy_mode` (String) Deploy mode of the System
-- `device_profile_id` (String) Device profile ID of the System
+- `device_profile_id` (String) Device profile ID of the System. Required when `type` is "internal".
 - `system_id` (String) ID (usually serial number) of the Managed Device to associate with this System
 - `tags` (Set of String) Set of Tag labels
 
