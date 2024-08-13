@@ -355,7 +355,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	if !slices.Contains(compatibility.SupportedApiVersions(), client.ApiVersion()) {
+	if !slices.Contains(compatibility.SupportedApiVersions(), client.ApiVersion()) && !config.Experimental.ValueBool() {
 		resp.Diagnostics.AddError( // provider incompatibility detected
 			fmt.Sprintf("Incompatible Apstra API Version %s", client.ApiVersion()),
 			"You may be trying to use an unsupported version of Apstra. Setting `experimental = true` "+
