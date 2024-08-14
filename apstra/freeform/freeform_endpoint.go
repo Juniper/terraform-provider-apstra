@@ -90,11 +90,13 @@ func (o FreeformEndpoint) ResourceAttributes() map[string]resourceSchema.Attribu
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
 			Optional:            true,
+			Computed:            true,
 			MarkdownDescription: "Ipv4 address of the interface in CIDR notation",
 			CustomType:          cidrtypes.IPv4PrefixType{},
 		},
 		"ipv6_address": resourceSchema.StringAttribute{
 			Optional:            true,
+			Computed:            true,
 			MarkdownDescription: "Ipv6 address of the interface in CIDR notation",
 			CustomType:          cidrtypes.IPv6PrefixType{},
 		},
