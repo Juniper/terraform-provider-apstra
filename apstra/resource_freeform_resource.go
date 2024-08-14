@@ -81,13 +81,14 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 			)
 		}
 	case apstra.FFResourceTypeIpv4:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv4Value) {
+		if config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull() {
 			resp.Diagnostics.AddError(
 				"Missing required attribute",
-				"Either `allocated_from` or `ipv4_value` must also be set when `type` is set to "+config.Type.String(),
+				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv4Value) {
+		if (utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv4Value)) ||
+			(config.AllocatedFrom.IsUnknown() && config.Ipv4Value.IsUnknown()) { // the unknown state in this function means a value was passed by reference
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
 				"`integer_value` must not be set when `ipv4_value` is set and `type` is set to "+config.Type.String(),
@@ -100,13 +101,14 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 			)
 		}
 	case apstra.FFResourceTypeIpv6:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv6Value) {
+		if config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull() {
 			resp.Diagnostics.AddError(
 				"Missing required attribute",
-				"Either `allocated_from` or `ipv6_value` must also be set when `type` is set to "+config.Type.String(),
+				"Exactly one of `allocated_from` or `ipv6_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv6Value) {
+		if (utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv6Value)) ||
+			(config.AllocatedFrom.IsUnknown() && config.Ipv6Value.IsUnknown()) {
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
 				"`integer_value` must not be set when `ipv6_value` is set and `type` is set to "+config.Type.String(),
