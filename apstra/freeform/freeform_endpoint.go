@@ -3,6 +3,7 @@ package freeform
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"net"
 	"strings"
 
@@ -75,18 +76,24 @@ func (o FreeformEndpoint) DatasourceAttributes() map[string]dataSourceSchema.Att
 func (o FreeformEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"interface_name": resourceSchema.StringAttribute{
-			Required:            true,
+			Optional:            true,
 			MarkdownDescription: "The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`",
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("transformation_id")),
+			},
 		},
 		"interface_id": resourceSchema.StringAttribute{
 			Computed:            true,
 			MarkdownDescription: "Graph node ID of the associated interface",
 		},
 		"transformation_id": resourceSchema.Int64Attribute{
-			Required:            true,
+			Optional:            true,
 			MarkdownDescription: "ID # of the transformation in the Device Profile",
-			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+			Validators: []validator.Int64{
+				int64validator.AtLeast(1),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("interface_name")),
+			},
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
 			Optional:            true,
@@ -126,12 +133,17 @@ func (o *FreeformEndpoint) request(ctx context.Context, systemId string, diags *
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 
+	var transformationId *int
+	if !o.TransformationId.IsNull() {
+		transformationId = utils.ToPtr(int(o.TransformationId.ValueInt64()))
+	}
+
 	return &apstra.FreeformEndpoint{
 		SystemId: apstra.ObjectId(systemId),
 		Interface: apstra.FreeformInterface{
 			Data: &apstra.FreeformInterfaceData{
-				IfName:           o.InterfaceName.ValueString(),
-				TransformationId: int(o.TransformationId.ValueInt64()),
+				IfName:           o.InterfaceName.ValueStringPointer(),
+				TransformationId: transformationId,
 				Ipv4Address:      ipNet4,
 				Ipv6Address:      ipNet6,
 				Tags:             tags,
@@ -149,9 +161,14 @@ func (o *FreeformEndpoint) loadApiData(ctx context.Context, in apstra.FreeformEn
 		return
 	}
 
-	o.InterfaceName = types.StringValue(in.Interface.Data.IfName)
+	var transformationId *int64
+	if in.Interface.Data.TransformationId != nil {
+		transformationId = utils.ToPtr(int64(*in.Interface.Data.TransformationId))
+	}
+
+	o.InterfaceName = types.StringPointerValue(in.Interface.Data.IfName)
 	o.InterfaceId = types.StringValue(in.Interface.Id.String())
-	o.TransformationId = types.Int64Value(int64(in.Interface.Data.TransformationId))
+	o.TransformationId = types.Int64PointerValue(transformationId)
 	o.Ipv4Address = cidrtypes.NewIPv4PrefixValue(in.Interface.Data.Ipv4Address.String())
 	if strings.Contains(o.Ipv4Address.ValueString(), "nil") {
 		o.Ipv4Address = cidrtypes.NewIPv4PrefixNull()
