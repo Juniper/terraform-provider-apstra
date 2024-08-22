@@ -618,6 +618,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceFreeformAllocGroup{} },
 		func() resource.Resource { return &resourceFreeformBlueprint{} },
 		func() resource.Resource { return &resourceFreeformConfigTemplate{} },
+		func() resource.Resource { return &resourceFreeformDeviceProfile{} },
 		func() resource.Resource { return &resourceFreeformLink{} },
 		func() resource.Resource { return &resourceFreeformPropertySet{} },
 		func() resource.Resource { return &resourceFreeformResourceGenerator{} },
