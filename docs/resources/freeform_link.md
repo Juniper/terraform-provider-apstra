@@ -58,16 +58,13 @@ resource "apstra_freeform_link" "test" {
 <a id="nestedatt--endpoints"></a>
 ### Nested Schema for `endpoints`
 
-Required:
-
-- `interface_name` (String) The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`
-- `transformation_id` (Number) ID # of the transformation in the Device Profile
-
 Optional:
 
+- `interface_name` (String) The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`
 - `ipv4_address` (String) Ipv4 address of the interface in CIDR notation
 - `ipv6_address` (String) Ipv6 address of the interface in CIDR notation
 - `tags` (Set of String) Set of Tags applied to the interface
+- `transformation_id` (Number) ID # of the transformation in the Device Profile
 
 Read-Only:
 

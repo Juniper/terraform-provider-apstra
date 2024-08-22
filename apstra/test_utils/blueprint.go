@@ -245,7 +245,7 @@ func FfBlueprintA(t testing.TB, ctx context.Context) *apstra.FreeformClient {
 	return bpClient
 }
 
-func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.FreeformClient, []apstra.ObjectId) {
+func FfBlueprintB(t testing.TB, ctx context.Context, intSystemCount, extSystemCount int) (*apstra.FreeformClient, []apstra.ObjectId, []apstra.ObjectId) {
 	t.Helper()
 
 	client := GetTestClient(t, ctx)
@@ -260,9 +260,9 @@ func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.F
 	dpId, err := c.ImportDeviceProfile(ctx, "Juniper_vEX")
 	require.NoError(t, err)
 
-	systemIds := make([]apstra.ObjectId, systemCount)
-	for i := range systemIds {
-		systemIds[i], err = c.CreateSystem(ctx, &apstra.FreeformSystemData{
+	intSystemIds := make([]apstra.ObjectId, intSystemCount)
+	for i := range intSystemIds {
+		intSystemIds[i], err = c.CreateSystem(ctx, &apstra.FreeformSystemData{
 			Type:            apstra.SystemTypeInternal,
 			Label:           acctest.RandString(6),
 			DeviceProfileId: dpId,
@@ -270,7 +270,16 @@ func FfBlueprintB(t testing.TB, ctx context.Context, systemCount int) (*apstra.F
 		require.NoError(t, err)
 	}
 
-	return c, systemIds
+	extSystemIds := make([]apstra.ObjectId, extSystemCount)
+	for i := range extSystemIds {
+		extSystemIds[i], err = c.CreateSystem(ctx, &apstra.FreeformSystemData{
+			Type:  apstra.SystemTypeExternal,
+			Label: acctest.RandString(6),
+		})
+		require.NoError(t, err)
+	}
+
+	return c, intSystemIds, extSystemIds
 }
 
 // FfBlueprintC creates a freeform blueprint with a single resource group inside.
