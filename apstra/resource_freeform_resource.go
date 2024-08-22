@@ -64,7 +64,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
+				errInvalidConfig,
 				"Exactly one of `allocated_from` and `integer_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
@@ -72,7 +72,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		if (config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv4Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
+				errInvalidConfig,
 				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
@@ -80,7 +80,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
+				errInvalidConfig,
 				"Exactly one of `allocated_from` or `ipv6_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
@@ -88,7 +88,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		if (config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv4Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
+				errInvalidConfig,
 				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
@@ -108,14 +108,14 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
-				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `ipv6_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
 		if !config.IntValue.IsNull() && !config.Ipv6Value.IsNull() {
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
-				"`integer_value` is used to indicate the Subnet Prefix Length. It must not be set when `ipv4_value` is set and `type` is set to "+config.Type.String(),
+				"`integer_value` is used to indicate the Subnet Prefix Length. It must not be set when `ipv6_value` is set and `type` is set to "+config.Type.String(),
 			)
 		}
 		if !config.AllocatedFrom.IsNull() && config.IntValue.IsNull() {

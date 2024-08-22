@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"net"
 	"strconv"
 	"testing"
@@ -37,12 +38,12 @@ resource %q %q {
 type resourceFreeformResource struct {
 	blueprintId   string
 	name          string
-	groupId       string
+	groupId       apstra.ObjectId
 	resourceType  apstra.FFResourceType
 	integerValue  *int
 	ipv4Value     net.IPNet
 	ipv6Value     net.IPNet
-	allocatedFrom string
+	allocatedFrom apstra.ObjectId
 }
 
 func (o resourceFreeformResource) render(rType, rName string) string {
@@ -55,7 +56,7 @@ func (o resourceFreeformResource) render(rType, rName string) string {
 		intPtrOrNull(o.integerValue),
 		ipOrNull(o.ipv4Value),
 		ipOrNull(o.ipv6Value),
-		stringOrNull(o.allocatedFrom),
+		stringOrNull(o.allocatedFrom.String()),
 	)
 }
 
@@ -66,7 +67,7 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId)
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
-	result.append(t, "TestCheckResourceAttr", "group_id", o.groupId)
+	result.append(t, "TestCheckResourceAttr", "group_id", o.groupId.String())
 	result.append(t, "TestCheckResourceAttr", "type", utils.StringersToFriendlyString(o.resourceType))
 	if o.integerValue != nil {
 		result.append(t, "TestCheckResourceAttr", "integer_value", strconv.Itoa(*o.integerValue))
@@ -96,7 +97,7 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 	if o.allocatedFrom == "" {
 		result.append(t, "TestCheckNoResourceAttr", "allocated_from")
 	} else {
-		result.append(t, "TestCheckResourceAttr", "allocated_from", o.allocatedFrom)
+		result.append(t, "TestCheckResourceAttr", "allocated_from", o.allocatedFrom.String())
 	}
 
 	return result
@@ -239,6 +240,7 @@ func TestResourceFreeformResource(t *testing.T) {
 	type testStep struct {
 		config resourceFreeformResource
 	}
+
 	type testCase struct {
 		apiVersionConstraints version.Constraints
 		steps                 []testStep
@@ -251,7 +253,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65535),
 					},
@@ -260,7 +262,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65536),
 					},
@@ -269,19 +271,27 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeAsn,
-						allocatedFrom: string(newAsnAllocationGroup(t)),
+						allocatedFrom: newAsnAllocationGroup(t),
 					},
 				},
 				{
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeAsn,
-						integerValue:  utils.ToPtr(65536),
-						allocatedFrom: string(newAsnAllocationGroup(t)),
+						allocatedFrom: newAsnAllocationGroup(t),
+					},
+				},
+				{
+					config: resourceFreeformResource{
+						blueprintId:  bp.Id().String(),
+						name:         acctest.RandString(6),
+						groupId:      groupId,
+						resourceType: apstra.FFResourceTypeAsn,
+						integerValue: utils.ToPtr(65536),
 					},
 				},
 			},
@@ -292,7 +302,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeVni,
 						integerValue: utils.ToPtr(4498),
 					},
@@ -305,7 +315,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeInt,
 						integerValue: utils.ToPtr(4498),
 					},
@@ -314,16 +324,16 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeInt,
-						allocatedFrom: string(newIntAllocationGroup(t)),
+						allocatedFrom: newIntAllocationGroup(t),
 					},
 				},
 				{
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeInt,
 						integerValue: utils.ToPtr(459),
 					},
@@ -336,7 +346,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeIpv4,
 						ipv4Value:    randomSlash31(t, "192.168.2.0/24"),
 					},
@@ -345,17 +355,17 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeIpv4,
 						integerValue:  utils.ToPtr(30),
-						allocatedFrom: string(newIpv4AllocationGroup(t)),
+						allocatedFrom: newIpv4AllocationGroup(t),
 					},
 				},
 				{
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeIpv4,
 						ipv4Value:    randomSlash31(t, "10.168.2.0/24"),
 					},
@@ -368,7 +378,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
 					},
@@ -377,50 +387,59 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeIpv6,
 						integerValue:  utils.ToPtr(64),
-						allocatedFrom: string(newIpv6AllocationGroup(t)),
+						allocatedFrom: newIpv6AllocationGroup(t),
 					},
 				},
 				{
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
 					},
 				},
 			},
 		},
-		"start_Vni_with_alloc_group": {
+		"start_vni_with_alloc_group": {
 			steps: []testStep{
 				{
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeVni,
-						allocatedFrom: string(newVniAllocationGroup(t)),
+						allocatedFrom: newVniAllocationGroup(t),
 					},
 				},
 				{
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      string(groupId),
+						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeVni,
-						integerValue: utils.ToPtr(4498),
+						integerValue: utils.ToPtr(rand.IntN(10000) + 4096),
+					},
+				},
+				{
+					config: resourceFreeformResource{
+						blueprintId:  bp.Id().String(),
+						name:         acctest.RandString(6),
+						groupId:      groupId,
+						resourceType: apstra.FFResourceTypeVni,
+						integerValue: utils.ToPtr(rand.IntN(10000) + 4096),
 					},
 				},
 				{
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       string(groupId),
+						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeVni,
-						allocatedFrom: string(newVniAllocationGroup(t)),
+						allocatedFrom: newVniAllocationGroup(t),
 					},
 				},
 			},
