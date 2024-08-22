@@ -34,12 +34,12 @@ func (o *dataSourceFreeformLink) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Link.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: freeform.FreeformLink{}.DataSourceAttributes(),
+		Attributes: freeform.Link{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceFreeformLink) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config freeform.FreeformLink
+	var config freeform.Link
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return

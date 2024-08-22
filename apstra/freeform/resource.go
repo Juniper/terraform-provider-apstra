@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformResource struct {
+type Resource struct {
 	BlueprintId   types.String         `tfsdk:"blueprint_id"`
 	Id            types.String         `tfsdk:"id"`
 	Name          types.String         `tfsdk:"name"`
@@ -35,7 +35,7 @@ type FreeformResource struct {
 	GeneratorId   types.String         `tfsdk:"generator_id"`
 }
 
-func (o FreeformResource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -111,7 +111,7 @@ func (o FreeformResource) DataSourceAttributes() map[string]dataSourceSchema.Att
 	}
 }
 
-func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o Resource) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -205,7 +205,7 @@ func (o FreeformResource) ResourceAttributes() map[string]resourceSchema.Attribu
 	}
 }
 
-func (o *FreeformResource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformRaResourceData {
+func (o *Resource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformRaResourceData {
 	var resourceType apstra.FFResourceType
 	err := utils.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
 	if err != nil {
@@ -240,7 +240,7 @@ func (o *FreeformResource) Request(_ context.Context, diags *diag.Diagnostics) *
 	}
 }
 
-func (o *FreeformResource) LoadApiData(_ context.Context, in *apstra.FreeformRaResourceData, diags *diag.Diagnostics) {
+func (o *Resource) LoadApiData(_ context.Context, in *apstra.FreeformRaResourceData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.GroupId = types.StringValue(string(in.GroupId))
 	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))

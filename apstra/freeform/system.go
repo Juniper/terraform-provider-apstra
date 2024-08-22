@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformSystem struct {
+type System struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
 	Name            types.String `tfsdk:"name"`
@@ -32,7 +32,7 @@ type FreeformSystem struct {
 	Tags            types.Set    `tfsdk:"tags"`
 }
 
-func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o System) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -86,7 +86,7 @@ func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 	}
 }
 
-func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o System) ResourceAttributes() map[string]resourceSchema.Attribute {
 	hostnameRegexp := "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$"
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
@@ -155,7 +155,7 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 	}
 }
 
-func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformSystemData {
+func (o *System) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformSystemData {
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	if diags.HasError() {
@@ -182,7 +182,7 @@ func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *
 	}
 }
 
-func (o *FreeformSystem) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
+func (o *System) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Hostname = types.StringValue(in.Hostname)
 	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))

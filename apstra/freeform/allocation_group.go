@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformAllocGroup struct {
+type AllocGroup struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
@@ -28,7 +28,7 @@ type FreeformAllocGroup struct {
 	PoolIds     types.Set    `tfsdk:"pool_ids"`
 }
 
-func (o FreeformAllocGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o AllocGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -67,7 +67,7 @@ func (o FreeformAllocGroup) DataSourceAttributes() map[string]dataSourceSchema.A
 	}
 }
 
-func (o FreeformAllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -105,7 +105,7 @@ func (o FreeformAllocGroup) ResourceAttributes() map[string]resourceSchema.Attri
 	}
 }
 
-func (o *FreeformAllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformAllocGroupData {
+func (o *AllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformAllocGroupData {
 	// unpack
 	var allocGroupType apstra.ResourcePoolType
 	err := utils.ApiStringerFromFriendlyString(&allocGroupType, o.Type.ValueString())
@@ -126,7 +126,7 @@ func (o *FreeformAllocGroup) Request(ctx context.Context, diags *diag.Diagnostic
 	}
 }
 
-func (o *FreeformAllocGroup) LoadApiData(ctx context.Context, in *apstra.FreeformAllocGroupData, diags *diag.Diagnostics) {
+func (o *AllocGroup) LoadApiData(ctx context.Context, in *apstra.FreeformAllocGroupData, diags *diag.Diagnostics) {
 	// pack
 	o.Name = types.StringValue(in.Name)
 	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))

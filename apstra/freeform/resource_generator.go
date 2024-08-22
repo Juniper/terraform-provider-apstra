@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformResourceGenerator struct {
+type ResourceGenerator struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
 	Type            types.String `tfsdk:"type"`
@@ -32,7 +32,7 @@ type FreeformResourceGenerator struct {
 	SubnetPrefixLen types.Int64  `tfsdk:"subnet_prefix_len"`
 }
 
-func (o FreeformResourceGenerator) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ResourceGenerator) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -84,7 +84,7 @@ func (o FreeformResourceGenerator) DataSourceAttributes() map[string]dataSourceS
 	}
 }
 
-func (o FreeformResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -155,7 +155,7 @@ func (o FreeformResourceGenerator) ResourceAttributes() map[string]resourceSchem
 	}
 }
 
-func (o *FreeformResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformResourceGeneratorData {
+func (o *ResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformResourceGeneratorData {
 	var resourceType apstra.FFResourceType
 	err := utils.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
 	if err != nil {
@@ -187,7 +187,7 @@ func (o *FreeformResourceGenerator) Request(_ context.Context, diags *diag.Diagn
 	}
 }
 
-func (o *FreeformResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
+func (o *ResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Scope = types.StringValue(in.Scope)
 	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
