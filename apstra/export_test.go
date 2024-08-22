@@ -15,6 +15,7 @@ var (
 	ResourceDatacenterRoutingZone      = resourceDatacenterRoutingZone{}
 	ResourceFreeformBlueprint          = resourceFreeformBlueprint{}
 	ResourceFreeformConfigTemplate     = resourceFreeformConfigTemplate{}
+	ResourceFreeformDeviceProfile      = resourceFreeformDeviceProfile{}
 	ResourceFreeformLink               = resourceFreeformLink{}
 	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
 	ResourceFreeformResourceGroup      = resourceFreeformResourceGroup{}

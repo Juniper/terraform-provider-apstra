@@ -79,7 +79,7 @@ func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			Computed:            true,
 		},
 		"endpoints": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Endpoints assigned to the Link",
+			MarkdownDescription: "Endpoints of the  Link, a Map keyed by System ID.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
 				Attributes: FreeformEndpoint{}.DatasourceAttributes(),
@@ -131,7 +131,7 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 				Attributes: FreeformEndpoint{}.ResourceAttributes(),
 			},
 			PlanModifiers:       []planmodifier.Map{mapplanmodifier.RequiresReplace()},
-			MarkdownDescription: "Endpoints of the  Link",
+			MarkdownDescription: "Endpoints of the  Link, a Map keyed by System ID.",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeBetween(2, 2)},
 		},
