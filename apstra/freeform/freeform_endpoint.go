@@ -114,12 +114,12 @@ func (o FreeformEndpoint) ResourceAttributes() map[string]resourceSchema.Attribu
 
 func (o *FreeformEndpoint) request(ctx context.Context, systemId string, diags *diag.Diagnostics) *apstra.FreeformEndpoint {
 	var ipNet4, ipNet6 *net.IPNet
-	if !o.Ipv4Address.IsNull() {
+	if utils.HasValue(o.Ipv4Address) {
 		var ip4 net.IP
 		ip4, ipNet4, _ = net.ParseCIDR(o.Ipv4Address.ValueString())
 		ipNet4.IP = ip4
 	}
-	if !o.Ipv6Address.IsNull() {
+	if utils.HasValue(o.Ipv6Address) {
 		var ip6 net.IP
 		ip6, ipNet6, _ = net.ParseCIDR(o.Ipv6Address.ValueString())
 		ipNet6.IP = ip6
