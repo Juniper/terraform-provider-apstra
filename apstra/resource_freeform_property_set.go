@@ -34,13 +34,13 @@ func (o *resourceFreeformPropertySet) Configure(ctx context.Context, req resourc
 func (o *resourceFreeformPropertySet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Property Set in a Freeform Blueprint.",
-		Attributes:          freeform.FreeformPropertySet{}.ResourceAttributes(),
+		Attributes:          freeform.PropertySet{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformPropertySet) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan freeform.FreeformPropertySet
+	var plan freeform.PropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -85,7 +85,7 @@ func (o *resourceFreeformPropertySet) Create(ctx context.Context, req resource.C
 }
 
 func (o *resourceFreeformPropertySet) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state freeform.FreeformPropertySet
+	var state freeform.PropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -123,7 +123,7 @@ func (o *resourceFreeformPropertySet) Read(ctx context.Context, req resource.Rea
 
 func (o *resourceFreeformPropertySet) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan freeform.FreeformPropertySet
+	var plan freeform.PropertySet
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -166,7 +166,7 @@ func (o *resourceFreeformPropertySet) Update(ctx context.Context, req resource.U
 }
 
 func (o *resourceFreeformPropertySet) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state freeform.FreeformPropertySet
+	var state freeform.PropertySet
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

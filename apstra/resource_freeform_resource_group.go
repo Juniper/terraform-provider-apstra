@@ -34,13 +34,13 @@ func (o *resourceFreeformResourceGroup) Configure(ctx context.Context, req resou
 func (o *resourceFreeformResourceGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource Group in a Freeform Blueprint.",
-		Attributes:          freeform.FreeformResourceGroup{}.ResourceAttributes(),
+		Attributes:          freeform.ResourceGroup{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformResourceGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan freeform.FreeformResourceGroup
+	var plan freeform.ResourceGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -88,7 +88,7 @@ func (o *resourceFreeformResourceGroup) Create(ctx context.Context, req resource
 }
 
 func (o *resourceFreeformResourceGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state freeform.FreeformResourceGroup
+	var state freeform.ResourceGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -128,7 +128,7 @@ func (o *resourceFreeformResourceGroup) Read(ctx context.Context, req resource.R
 
 func (o *resourceFreeformResourceGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan freeform.FreeformResourceGroup
+	var plan freeform.ResourceGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -175,7 +175,7 @@ func (o *resourceFreeformResourceGroup) Update(ctx context.Context, req resource
 }
 
 func (o *resourceFreeformResourceGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state freeform.FreeformResourceGroup
+	var state freeform.ResourceGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

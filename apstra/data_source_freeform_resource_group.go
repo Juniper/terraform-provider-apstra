@@ -34,12 +34,12 @@ func (o *dataSourceFreeformResourceGroup) Schema(_ context.Context, _ datasource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource Group.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: freeform.FreeformResourceGroup{}.DataSourceAttributes(),
+		Attributes: freeform.ResourceGroup{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceFreeformResourceGroup) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config freeform.FreeformResourceGroup
+	var config freeform.ResourceGroup
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return

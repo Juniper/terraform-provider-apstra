@@ -36,13 +36,13 @@ func (o *resourceFreeformResourceGenerator) Configure(ctx context.Context, req r
 func (o *resourceFreeformResourceGenerator) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource Generator in a Freeform Blueprint.",
-		Attributes:          freeform.FreeformResourceGenerator{}.ResourceAttributes(),
+		Attributes:          freeform.ResourceGenerator{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformResourceGenerator) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// Retrieve values from config
-	var config freeform.FreeformResourceGenerator
+	var config freeform.ResourceGenerator
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -70,7 +70,7 @@ func (o *resourceFreeformResourceGenerator) ValidateConfig(ctx context.Context, 
 
 func (o *resourceFreeformResourceGenerator) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan freeform.FreeformResourceGenerator
+	var plan freeform.ResourceGenerator
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -116,7 +116,7 @@ func (o *resourceFreeformResourceGenerator) Create(ctx context.Context, req reso
 }
 
 func (o *resourceFreeformResourceGenerator) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state freeform.FreeformResourceGenerator
+	var state freeform.ResourceGenerator
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -154,7 +154,7 @@ func (o *resourceFreeformResourceGenerator) Read(ctx context.Context, req resour
 
 func (o *resourceFreeformResourceGenerator) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan freeform.FreeformResourceGenerator
+	var plan freeform.ResourceGenerator
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -198,7 +198,7 @@ func (o *resourceFreeformResourceGenerator) Update(ctx context.Context, req reso
 }
 
 func (o *resourceFreeformResourceGenerator) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state freeform.FreeformResourceGenerator
+	var state freeform.ResourceGenerator
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

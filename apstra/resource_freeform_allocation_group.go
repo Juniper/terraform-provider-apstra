@@ -34,13 +34,13 @@ func (o *resourceFreeformAllocGroup) Configure(ctx context.Context, req resource
 func (o *resourceFreeformAllocGroup) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates an Allocation Group in a Freeform Blueprint.",
-		Attributes:          freeform.FreeformAllocGroup{}.ResourceAttributes(),
+		Attributes:          freeform.AllocGroup{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformAllocGroup) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan freeform.FreeformAllocGroup
+	var plan freeform.AllocGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -85,7 +85,7 @@ func (o *resourceFreeformAllocGroup) Create(ctx context.Context, req resource.Cr
 }
 
 func (o *resourceFreeformAllocGroup) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state freeform.FreeformAllocGroup
+	var state freeform.AllocGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -123,7 +123,7 @@ func (o *resourceFreeformAllocGroup) Read(ctx context.Context, req resource.Read
 
 func (o *resourceFreeformAllocGroup) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan freeform.FreeformAllocGroup
+	var plan freeform.AllocGroup
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -166,7 +166,7 @@ func (o *resourceFreeformAllocGroup) Update(ctx context.Context, req resource.Up
 }
 
 func (o *resourceFreeformAllocGroup) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state freeform.FreeformAllocGroup
+	var state freeform.AllocGroup
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

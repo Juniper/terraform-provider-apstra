@@ -20,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformResourceGroup struct {
+type ResourceGroup struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
@@ -30,7 +30,7 @@ type FreeformResourceGroup struct {
 	GeneratorId types.String         `tfsdk:"generator_id"`
 }
 
-func (o FreeformResourceGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ResourceGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -80,7 +80,7 @@ func (o FreeformResourceGroup) DataSourceAttributes() map[string]dataSourceSchem
 	}
 }
 
-func (o FreeformResourceGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ResourceGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -130,7 +130,7 @@ func (o FreeformResourceGroup) ResourceAttributes() map[string]resourceSchema.At
 	}
 }
 
-func (o *FreeformResourceGroup) Request(_ context.Context, _ *diag.Diagnostics) *apstra.FreeformRaGroupData {
+func (o *ResourceGroup) Request(_ context.Context, _ *diag.Diagnostics) *apstra.FreeformRaGroupData {
 	//var tags []string
 	//diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	//if diags.HasError() {
@@ -146,7 +146,7 @@ func (o *FreeformResourceGroup) Request(_ context.Context, _ *diag.Diagnostics) 
 	}
 }
 
-func (o *FreeformResourceGroup) LoadApiData(_ context.Context, in *apstra.FreeformRaGroupData, _ *diag.Diagnostics) {
+func (o *ResourceGroup) LoadApiData(_ context.Context, in *apstra.FreeformRaGroupData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	if in.ParentId != nil {
 		o.ParentId = types.StringValue(string(*in.ParentId))
