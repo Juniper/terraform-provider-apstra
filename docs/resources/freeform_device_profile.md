@@ -2,23 +2,22 @@
 page_title: "apstra_freeform_device_profile Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Freeform"
 description: |-
-  This resource imports a Device Profile in a Freeform Blueprint from the Global Catalog.
+  This resource imports a Device Profile from the Global Catalog into a Freeform Blueprint.
 ---
 
 # apstra_freeform_device_profile (Resource)
 
-This resource imports a Device Profile in a Freeform Blueprint from the Global Catalog.
+This resource imports a Device Profile from the Global Catalog into a Freeform Blueprint.
 
 
 ## Example Usage
 
 ```terraform
-# This example imports a device profile into a freeform blueprint
-# from the global catalog
-
+# This example imports a device profile from the Global Catalog
+# into a preexisting Freeform Blueprint.
 
 resource "apstra_freeform_device_profile" "test" {
-  blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
+  blueprint_id      = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
   device_profile_id = "vJunosEvolved"
 }
 ```

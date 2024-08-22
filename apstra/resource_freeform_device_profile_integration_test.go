@@ -57,13 +57,14 @@ func TestResourceFreeformDeviceProfile(t *testing.T) {
 	type testStep struct {
 		config resourceFreeformDeviceProfile
 	}
+
 	type testCase struct {
 		apiVersionConstraints version.Constraints
 		steps                 []testStep
 	}
 
 	testCases := map[string]testCase{
-		"simple_a": {
+		"simple": {
 			steps: []testStep{
 				{
 					config: resourceFreeformDeviceProfile{
@@ -81,6 +82,7 @@ func TestResourceFreeformDeviceProfile(t *testing.T) {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
+
 			if !tCase.apiVersionConstraints.Check(apiVersion) {
 				t.Skipf("test case %s requires Apstra %s", tName, tCase.apiVersionConstraints.String())
 			}

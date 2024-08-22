@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformDeviceProfile struct {
+type DeviceProfile struct {
 	Id              types.String `tfsdk:"id"`
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	DeviceProfileId types.String `tfsdk:"device_profile_id"`
 }
 
-func (o FreeformDeviceProfile) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o DeviceProfile) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",

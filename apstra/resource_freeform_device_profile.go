@@ -33,14 +33,14 @@ func (o *resourceFreeformDeviceProfile) Configure(ctx context.Context, req resou
 
 func (o *resourceFreeformDeviceProfile) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryFreeform + "This resource imports a Device Profile in a Freeform Blueprint from the Global Catalog.",
-		Attributes:          freeform.FreeformDeviceProfile{}.ResourceAttributes(),
+		MarkdownDescription: docCategoryFreeform + "This resource imports a Device Profile from the Global Catalog into a Freeform Blueprint.",
+		Attributes:          freeform.DeviceProfile{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformDeviceProfile) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan freeform.FreeformDeviceProfile
+	var plan freeform.DeviceProfile
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -79,7 +79,7 @@ func (o *resourceFreeformDeviceProfile) Create(ctx context.Context, req resource
 }
 
 func (o *resourceFreeformDeviceProfile) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state freeform.FreeformDeviceProfile
+	var state freeform.DeviceProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -92,6 +92,7 @@ func (o *resourceFreeformDeviceProfile) Read(ctx context.Context, req resource.R
 			resp.State.RemoveResource(ctx)
 			return
 		}
+
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
 		return
 	}
@@ -102,16 +103,18 @@ func (o *resourceFreeformDeviceProfile) Read(ctx context.Context, req resource.R
 			resp.State.RemoveResource(ctx)
 			return
 		}
+
 		resp.Diagnostics.AddError("Error retrieving DeviceProfile", err.Error())
 		return
 	}
 }
 
+// Update will never run because all configurable attributes have RequiresReplace()
 func (o *resourceFreeformDeviceProfile) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
 }
 
 func (o *resourceFreeformDeviceProfile) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state freeform.FreeformDeviceProfile
+	var state freeform.DeviceProfile
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
