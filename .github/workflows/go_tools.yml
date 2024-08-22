@@ -18,7 +18,7 @@ jobs:
         run: make gofmt
 
       - name: gofumpt
-        run: scripts/gofumptcheck.sh
+        run: make gofumpt
 
       - name: go vet
         run: make govet
