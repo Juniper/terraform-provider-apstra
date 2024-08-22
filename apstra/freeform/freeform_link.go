@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Link struct {
+type FreeformLink struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
 	Speed           types.String `tfsdk:"speed"`
@@ -32,7 +32,7 @@ type Link struct {
 	Tags            types.Set    `tfsdk:"tags"`
 }
 
-func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -93,7 +93,7 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -147,7 +147,7 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Link) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformLinkRequest {
+func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformLinkRequest {
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	if diags.HasError() {
@@ -174,7 +174,7 @@ func (o *Link) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.Fre
 	}
 }
 
-func (o *Link) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, diags *diag.Diagnostics) {
+func (o *FreeformLink) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, diags *diag.Diagnostics) {
 	interfaceIds := make([]string, len(in.Endpoints))
 	for i, endpoint := range in.Endpoints {
 		if endpoint.Interface.Id == nil {
