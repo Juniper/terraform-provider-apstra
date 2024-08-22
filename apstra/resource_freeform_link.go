@@ -34,13 +34,13 @@ func (o *resourceFreeformLink) Configure(ctx context.Context, req resource.Confi
 func (o *resourceFreeformLink) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Link in a Freeform Blueprint.",
-		Attributes:          freeform.FreeformLink{}.ResourceAttributes(),
+		Attributes:          freeform.Link{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformLink) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan freeform.FreeformLink
+	var plan freeform.Link
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -93,7 +93,7 @@ func (o *resourceFreeformLink) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (o *resourceFreeformLink) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state freeform.FreeformLink
+	var state freeform.Link
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -131,7 +131,7 @@ func (o *resourceFreeformLink) Read(ctx context.Context, req resource.ReadReques
 
 func (o *resourceFreeformLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan freeform.FreeformLink
+	var plan freeform.Link
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -174,7 +174,7 @@ func (o *resourceFreeformLink) Update(ctx context.Context, req resource.UpdateRe
 }
 
 func (o *resourceFreeformLink) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state freeform.FreeformLink
+	var state freeform.Link
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
