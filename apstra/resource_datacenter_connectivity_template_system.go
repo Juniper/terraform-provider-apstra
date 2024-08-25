@@ -35,7 +35,9 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Configure(ctx context.Con
 func (o *resourceDatacenterConnectivityTemplateSystem) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template suitable for use " +
-			"with Application Points of type *System* within a Datacenter Blueprint.",
+			"with Application Points of type *system* within a Datacenter Blueprint. *system* Application Points " +
+			"use the following Connectivity Template Primitive hierarchy:\n" +
+			" - Custom Static Route\n",
 		Attributes: connectivitytemplates.ConnectivityTemplateSystem{}.ResourceAttributes(),
 	}
 }

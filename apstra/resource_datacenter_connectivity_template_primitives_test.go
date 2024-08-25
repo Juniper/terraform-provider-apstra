@@ -736,7 +736,7 @@ func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int,
 			name: acctest.RandString(6),
 		}
 		if rand.Int()%2 == 0 {
-			for _ = range rand.IntN(3) {
+			for range rand.IntN(3) {
 				result[i].taggedVnIds = append(result[i].taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String())
 			}
 		}

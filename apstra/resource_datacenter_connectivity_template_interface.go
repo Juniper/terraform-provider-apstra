@@ -35,7 +35,22 @@ func (o *resourceDatacenterConnectivityTemplateInterface) Configure(ctx context.
 func (o *resourceDatacenterConnectivityTemplateInterface) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template suitable for use " +
-			"with Application Points of type *Interface* within a Datacenter Blueprint.",
+			"with Application Points of type *interface* within a Datacenter Blueprint. *interface* Application Points " +
+			"use the following Connectivity Template Primitive hierarchy:\n" +
+			" - Virtual Network (Single)\n" +
+			"   - Static Route\n" +
+			"   - BGP Peering (Generic System)\n" +
+			"     - Routing Policy\n" +
+			" - Virtual Network (Multiple)\n" +
+			" - IP Link\n" +
+			"   - BGP Peering (Generic System)\n" +
+			"     - Routing Policy\n" +
+			"   - BGP Peering (IP Endpoint)\n" +
+			"     - Routing Policy\n" +
+			"   - Dynamic BGP Peering\n" +
+			"     - Routing Policy\n" +
+			"   - Static Route\n" +
+			" - Routing Zone Constraint\n",
 		Attributes: connectivitytemplates.ConnectivityTemplateInterface{}.ResourceAttributes(),
 	}
 }

@@ -37,7 +37,12 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Configure(ctx context.Contex
 func (o *resourceDatacenterConnectivityTemplateSvi) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template suitable for use " +
-			"with Application Points of type *SVI* within a Datacenter Blueprint.",
+			"with Application Points of type *svi* within a Datacenter Blueprint. *svi* Application Points " +
+			"use the following Connectivity Template Primitive hierarchy:\n" +
+			" - BGP Peering (IP Endpoint)\n" +
+			"   - Routing Policy\n" +
+			" - Dynamic BGP Peering\n" +
+			"   - Routing Policy\n",
 		Attributes: connectivitytemplates.ConnectivityTemplateSvi{}.ResourceAttributes(),
 	}
 }

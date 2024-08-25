@@ -55,7 +55,7 @@ resource "apstra_configlet" "example" {
 
 Required:
 
-- `config_style` (String) Specifies the switch platform, must be one of 'cumulus', 'nxos', 'eos', 'junos', 'sonic'.
+- `config_style` (String) Specifies the switch platform, must be one of 'cumulus', 'eos', 'junos', 'nxos', 'sonic'.
 - `section` (String) Specifies where in the target device the configlet should be  applied. Varies by network OS:
 
   | **Config Style**  | **Valid Sections** |

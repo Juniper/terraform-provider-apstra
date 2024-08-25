@@ -2,12 +2,14 @@
 page_title: "apstra_datacenter_connectivity_template_system Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource creates a Connectivity Template suitable for use with Application Points of type System within a Datacenter Blueprint.
+  This resource creates a Connectivity Template suitable for use with Application Points of type system within a Datacenter Blueprint. system Application Points use the following Connectivity Template Primitive hierarchy:
+   - Custom Static Route
 ---
 
 # apstra_datacenter_connectivity_template_system (Resource)
 
-This resource creates a Connectivity Template suitable for use with Application Points of type *System* within a Datacenter Blueprint.
+This resource creates a Connectivity Template suitable for use with Application Points of type *system* within a Datacenter Blueprint. *system* Application Points use the following Connectivity Template Primitive hierarchy:
+ - Custom Static Route
 
 
 ## Example Usage
@@ -59,13 +61,10 @@ resource "apstra_datacenter_connectivity_template_system" "DC_1" {
 
 Required:
 
+- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `network` (String) Destination network in CIDR notation
 - `next_hop` (String) Next-hop router address
 - `routing_zone_id` (String) Routing Zone ID where this route should be installed
-
-Optional:
-
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 
 
 

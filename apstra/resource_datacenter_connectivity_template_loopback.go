@@ -34,7 +34,10 @@ func (o *resourceDatacenterConnectivityTemplateLoopback) Configure(ctx context.C
 func (o *resourceDatacenterConnectivityTemplateLoopback) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template suitable for use " +
-			"with Application Points of type *Loopback* within a Datacenter Blueprint.",
+			"with Application Points of type *loopback* within a Datacenter Blueprint. *loopback* Application Points " +
+			"use the following Connectivity Template Primitive hierarchy:\n" +
+			" - BGP Peering (IP Endpoint)\n" +
+			"   - Routing Policy\n",
 		Attributes: connectivitytemplates.ConnectivityTemplateLoopback{}.ResourceAttributes(),
 	}
 }

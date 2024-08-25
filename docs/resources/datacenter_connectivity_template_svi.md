@@ -2,12 +2,20 @@
 page_title: "apstra_datacenter_connectivity_template_svi Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource creates a Connectivity Template suitable for use with Application Points of type SVI within a Datacenter Blueprint.
+  This resource creates a Connectivity Template suitable for use with Application Points of type svi within a Datacenter Blueprint. svi Application Points use the following Connectivity Template Primitive hierarchy:
+   - BGP Peering (IP Endpoint)
+     - Routing Policy
+   - Dynamic BGP Peering
+     - Routing Policy
 ---
 
 # apstra_datacenter_connectivity_template_svi (Resource)
 
-This resource creates a Connectivity Template suitable for use with Application Points of type *SVI* within a Datacenter Blueprint.
+This resource creates a Connectivity Template suitable for use with Application Points of type *svi* within a Datacenter Blueprint. *svi* Application Points use the following Connectivity Template Primitive hierarchy:
+ - BGP Peering (IP Endpoint)
+   - Routing Policy
+ - Dynamic BGP Peering
+   - Routing Policy
 
 
 ## Example Usage
@@ -105,15 +113,18 @@ resource "apstra_datacenter_routing_policy" "allow_10_3_0_0-16_in" {
 <a id="nestedatt--bgp_peering_ip_endpoints"></a>
 ### Nested Schema for `bgp_peering_ip_endpoints`
 
-Optional:
+Required:
 
 - `bfd_enabled` (Boolean) Enable BFD.
+- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
+
+Optional:
+
 - `hold_time` (Number) BGP hold time (seconds).
 - `ipv4_address` (String) IPv4 address of peer.
 - `ipv6_address` (String) IPv6 address of peer.
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
 - `password` (String) Password used to secure the BGP session.
 - `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
@@ -124,28 +135,28 @@ Optional:
 
 Required:
 
-- `routing_policy_id` (String) Routing Policy ID to be applied
-
-Optional:
-
 - `name` (String) Label used on the Primitive "block" in the Connectivity Template
+- `routing_policy_id` (String) Routing Policy ID to be applied
 
 
 
 <a id="nestedatt--dynamic_bgp_peerings"></a>
 ### Nested Schema for `dynamic_bgp_peerings`
 
-Optional:
+Required:
 
 - `bfd_enabled` (Boolean) Enable BFD.
-- `hold_time` (Number) BGP hold time (seconds).
 - `ipv4_enabled` (Boolean) Enables peering with IPv4 neighbors.
-- `ipv4_peer_prefix` (String) IPv4 Subnet for BGP Prefix Dynamic Neighbors. Leave blank to derive subnet from application point.
 - `ipv6_enabled` (Boolean) Enables peering with IPv6 neighbors.
+- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
+
+Optional:
+
+- `hold_time` (Number) BGP hold time (seconds).
+- `ipv4_peer_prefix` (String) IPv4 Subnet for BGP Prefix Dynamic Neighbors. Leave blank to derive subnet from application point.
 - `ipv6_peer_prefix` (String) IPv6 Subnet for BGP Prefix Dynamic Neighbors. Leave blank to derive subnet from application point.
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 - `password` (String) Password used to secure the BGP session.
 - `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
@@ -155,11 +166,8 @@ Optional:
 
 Required:
 
-- `routing_policy_id` (String) Routing Policy ID to be applied
-
-Optional:
-
 - `name` (String) Label used on the Primitive "block" in the Connectivity Template
+- `routing_policy_id` (String) Routing Policy ID to be applied
 
 
 
