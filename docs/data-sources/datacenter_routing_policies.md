@@ -80,7 +80,7 @@ Optional:
 - `extra_exports` (Attributes List) All `extra_exports` specified here are required for the filter to match, using the same logic as `aggregate_prefixes`. (see [below for nested schema](#nestedatt--filters--extra_exports))
 - `extra_imports` (Attributes List) All `extra_imports` specified here are required for the filter to match, using the same logic as `aggregate_prefixes`. (see [below for nested schema](#nestedatt--filters--extra_imports))
 - `id` (String) Apstra graph node ID.
-- `import_policy` (String) One of '', 'all', 'default_only', 'extra_only'
+- `import_policy` (String) One of '', 'default_only', 'all', 'extra_only'
 - `name` (String) Web UI `name` field.
 
 Read-Only:
