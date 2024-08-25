@@ -42,12 +42,12 @@ func (o *dataSourceTemplates) Schema(_ context.Context, _ datasource.SchemaReque
 			"type": schema.StringAttribute{
 				MarkdownDescription: "Optional filter to select only Templates of the specified type.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf(utils.TemplateTypes()...)},
+				Validators:          []validator.String{stringvalidator.OneOf(utils.AllTemplateTypes()...)},
 			},
 			"overlay_control_protocol": schema.StringAttribute{
 				MarkdownDescription: "Optional filter to select only Templates with the specified Overlay Control Protocol.",
 				Optional:            true,
-				Validators:          []validator.String{stringvalidator.OneOf(utils.OverlayControlProtocols()...)},
+				Validators:          []validator.String{stringvalidator.OneOf(utils.AllOverlayControlProtocols()...)},
 			},
 		},
 	}
