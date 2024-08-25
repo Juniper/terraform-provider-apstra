@@ -117,7 +117,7 @@ func (o System) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "Deploy mode of the System",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(utils.NodeDeployModes()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`",

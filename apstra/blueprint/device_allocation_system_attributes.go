@@ -103,7 +103,7 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 				"of the associated fabric node.",
 			Optional:   true,
 			Computed:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.NodeDeployModes()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 	}
 }

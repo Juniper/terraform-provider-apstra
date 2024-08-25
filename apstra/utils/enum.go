@@ -62,15 +62,6 @@ func NeighborAsnTypes() []string {
 	}
 }
 
-func NodeDeployModes() []string {
-	members := apstra.DeployModes.Members()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-	return result
-}
-
 func OverlayControlProtocols() []string {
 	members := apstra.AllOverlayControlProtocols()
 	result := make([]string, len(members))
