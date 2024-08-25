@@ -6,15 +6,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
-func FcdModes() []string {
-	result := []string{
-		StringersToFriendlyString(apstra.FabricConnectivityDesignL3Clos),
-		StringersToFriendlyString(apstra.FabricConnectivityDesignL3Collapsed),
-	}
-	sort.Strings(result)
-	return result
-}
-
 func NeighborAsnTypes() []string {
 	return []string{
 		"static",
