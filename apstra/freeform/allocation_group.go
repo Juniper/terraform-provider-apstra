@@ -94,7 +94,7 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n"),
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:    []validator.String{stringvalidator.OneOf(utils.FFResourceTypes()...)},
+			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
 		},
 		"pool_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "IDs of Resource Pools assigned to the allocation group",

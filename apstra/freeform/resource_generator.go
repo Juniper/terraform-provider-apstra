@@ -99,9 +99,9 @@ func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attrib
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: "type of the Resource Generator, must be one of :\n  - `" +
-				strings.Join(utils.FFResourceTypes(), "`\n  - `") + "`\n",
+				strings.Join(utils.AllFFResourceTypes(), "`\n  - `") + "`\n",
 			Required:      true,
-			Validators:    []validator.String{stringvalidator.OneOf(utils.FFResourceTypes()...)},
+			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"name": resourceSchema.StringAttribute{

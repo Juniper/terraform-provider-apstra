@@ -6,7 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
-func FFResourceTypes() []string {
+func AllFFResourceTypes() []string {
 	members := apstra.FFResourceTypes.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
