@@ -59,7 +59,7 @@ func (o *dataSourceTemplates) Read(ctx context.Context, req datasource.ReadReque
 
 	var ids []apstra.ObjectId
 	var err error
-	// if config.Type.IsNull() && config.OverlayControlProtocol.IsNull() { // see todo in Schema(), then restore this
+	//if config.Type.IsNull() && config.OverlayControlProtocol.IsNull() { // see todo in Schema(), then restore this
 	if config.Type.IsNull() {
 		ids, err = o.client.ListAllTemplateIds(ctx)
 		if err != nil {
