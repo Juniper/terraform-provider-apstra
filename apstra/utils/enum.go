@@ -6,16 +6,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
-func AgentProfilePlatforms() []string {
-	result := []string{
-		StringersToFriendlyString(apstra.AgentPlatformNXOS),
-		StringersToFriendlyString(apstra.AgentPlatformJunos),
-		StringersToFriendlyString(apstra.AgentPlatformEOS),
-	}
-	sort.Strings(result)
-	return result
-}
-
 func FcdModes() []string {
 	result := []string{
 		StringersToFriendlyString(apstra.FabricConnectivityDesignL3Clos),
