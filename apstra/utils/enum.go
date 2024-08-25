@@ -33,16 +33,6 @@ func PeerToTypes() []string {
 	return result
 }
 
-func StorageSchemaPaths() []string {
-	members := apstra.StorageSchemaPaths.Members()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-	sort.Strings(result)
-	return result
-}
-
 func TemplateTypes() []string {
 	members := apstra.AllTemplateTypes()
 	result := make([]string, len(members))
