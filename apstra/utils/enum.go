@@ -62,19 +62,6 @@ func PlatformOSNames() []string {
 	return result
 }
 
-func ResourceGroupNameStrings() []string {
-	members := apstra.AllResourceGroupNames()
-	var result []string
-	for _, member := range members {
-		if member == apstra.ResourceGroupNameNone {
-			continue
-		}
-		result = append(result, StringersToFriendlyString(member))
-	}
-	sort.Strings(result)
-	return result
-}
-
 func StorageSchemaPaths() []string {
 	members := apstra.StorageSchemaPaths.Members()
 	result := make([]string, len(members))

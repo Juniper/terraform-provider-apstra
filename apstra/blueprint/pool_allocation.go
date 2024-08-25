@@ -88,7 +88,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 		},
 		"role": resourceSchema.StringAttribute{
 			MarkdownDescription: "Fabric Role (Apstra Resource Group Name) must be one of:\n  - " +
-				strings.Join(utils.ResourceGroupNameStrings(), "\n  - ") + "\n",
+				strings.Join(utils.AllResourceGroupNameStrings(), "\n  - ") + "\n",
 			Required: true,
 			PlanModifiers: []planmodifier.String{
 				//stringplanmodifier.RequiresReplace(),
@@ -107,7 +107,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 					"permit nondisruptive migration from old API strings to new terraform strings",
 				),
 			},
-			Validators: []validator.String{stringvalidator.OneOf(utils.ResourceGroupNameStrings()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllResourceGroupNameStrings()...)},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Used to allocate a Resource Pool to a "+
