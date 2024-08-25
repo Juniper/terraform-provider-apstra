@@ -209,10 +209,13 @@ func (o *ManagedDevice) Acknowledge(ctx context.Context, si *apstra.ManagedSyste
 }
 
 func (o *ManagedDevice) GetDeviceKey(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
+	o.DeviceKey = types.StringNull()
+
 	// Get SystemInfo from API
 	systemInfo, err := client.GetSystemInfo(ctx, apstra.SystemId(o.SystemId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
+			return // o.DeviceKey has been set to null -- better ideas?
 		} else {
 			diags.AddError(
 				"error reading managed device system info",
@@ -223,9 +226,7 @@ func (o *ManagedDevice) GetDeviceKey(ctx context.Context, client *apstra.Client,
 	}
 
 	// record device key and location if possible
-	if systemInfo == nil {
-		o.DeviceKey = types.StringNull()
-	} else {
+	if systemInfo != nil {
 		o.DeviceKey = types.StringValue(systemInfo.DeviceKey)
 	}
 }

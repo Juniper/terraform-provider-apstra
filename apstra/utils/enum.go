@@ -114,16 +114,6 @@ func ResourceGroupNameStrings() []string {
 	return result
 }
 
-func ResourceTypes() []string {
-	members := apstra.FFResourceTypes.Members()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-	sort.Strings(result)
-	return result
-}
-
 func StorageSchemaPaths() []string {
 	members := apstra.StorageSchemaPaths.Members()
 	result := make([]string, len(members))

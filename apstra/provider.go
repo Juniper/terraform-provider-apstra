@@ -199,45 +199,47 @@ type providerConfig struct {
 }
 
 func (o *providerConfig) fromEnv(_ context.Context, diags *diag.Diagnostics) {
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
+	envVarPrefix := o.EnvVarPrefix.ValueString()
+
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvTlsNoVerify); ok && o.TlsNoVerify.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvTlsNoVerify), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvTlsNoVerify), err.Error())
 		}
 		o.TlsNoVerify = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvBlueprintMutexEnabled); ok && o.MutexEnable.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexEnabled), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvBlueprintMutexEnabled), err.Error())
 		}
 		o.MutexEnable = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvBlueprintMutexMessage); ok && o.MutexMessage.IsNull() {
 		if len(s) < 1 {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvBlueprintMutexMessage),
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvBlueprintMutexMessage),
 				fmt.Sprintf("minimum string length 1; got %q", s))
 		}
 		o.MutexMessage = types.StringValue(s)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + constants.EnvExperimental); ok && o.Experimental.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvExperimental); ok && o.Experimental.IsNull() {
 		v, err := strconv.ParseBool(s)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvExperimental), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvExperimental), err.Error())
 		}
 		o.Experimental = types.BoolValue(v)
 	}
 
-	if s, ok := os.LookupEnv(o.EnvVarPrefix.String() + o.EnvVarPrefix.String() + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
+	if s, ok := os.LookupEnv(envVarPrefix + constants.EnvApiTimeout); ok && o.ApiTimeout.IsNull() {
 		v, err := strconv.ParseInt(s, 0, 64)
 		if err != nil {
-			diags.AddError(fmt.Sprintf("error parsing environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout), err.Error())
+			diags.AddError(fmt.Sprintf("error parsing environment variable %q", envVarPrefix+constants.EnvApiTimeout), err.Error())
 		}
 		if v < 0 {
-			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", o.EnvVarPrefix.String()+constants.EnvApiTimeout),
+			diags.AddError(fmt.Sprintf("invalid value in environment variable %q", envVarPrefix+constants.EnvApiTimeout),
 				fmt.Sprintf("minimum permitted value is 0, got %d", v))
 		}
 		o.ApiTimeout = types.Int64Value(v)
@@ -353,7 +355,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return
 	}
 
-	if !slices.Contains(compatibility.SupportedApiVersions(), client.ApiVersion()) {
+	if !slices.Contains(compatibility.SupportedApiVersions(), client.ApiVersion()) && !config.Experimental.ValueBool() {
 		resp.Diagnostics.AddError( // provider incompatibility detected
 			fmt.Sprintf("Incompatible Apstra API Version %s", client.ApiVersion()),
 			"You may be trying to use an unsupported version of Apstra. Setting `experimental = true` "+
@@ -550,9 +552,12 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetwork{} },
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetworks{} },
 		func() datasource.DataSource { return &dataSourceDeviceConfig{} },
+		func() datasource.DataSource { return &dataSourceFreeformAllocGroup{} },
+		func() datasource.DataSource { return &dataSourceFreeformBlueprint{} },
 		func() datasource.DataSource { return &dataSourceFreeformConfigTemplate{} },
 		func() datasource.DataSource { return &dataSourceFreeformLink{} },
 		func() datasource.DataSource { return &dataSourceFreeformPropertySet{} },
+		func() datasource.DataSource { return &dataSourceFreeformResourceGenerator{} },
 		func() datasource.DataSource { return &dataSourceFreeformResourceGroup{} },
 		func() datasource.DataSource { return &dataSourceFreeformResource{} },
 		func() datasource.DataSource { return &dataSourceFreeformSystem{} },
@@ -614,9 +619,13 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterIpLinkAddressing{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
+		func() resource.Resource { return &resourceFreeformAllocGroup{} },
+		func() resource.Resource { return &resourceFreeformBlueprint{} },
 		func() resource.Resource { return &resourceFreeformConfigTemplate{} },
+		func() resource.Resource { return &resourceFreeformDeviceProfile{} },
 		func() resource.Resource { return &resourceFreeformLink{} },
 		func() resource.Resource { return &resourceFreeformPropertySet{} },
+		func() resource.Resource { return &resourceFreeformResourceGenerator{} },
 		func() resource.Resource { return &resourceFreeformResourceGroup{} },
 		func() resource.Resource { return &resourceFreeformResource{} },
 		func() resource.Resource { return &resourceFreeformSystem{} },

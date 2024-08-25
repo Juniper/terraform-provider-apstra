@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -34,12 +34,12 @@ func (o *dataSourceFreeformResource) Schema(_ context.Context, _ datasource.Sche
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This data source provides details of a specific Freeform Resource.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.FreeformResource{}.DataSourceAttributes(),
+		Attributes: freeform.Resource{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceFreeformResource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config blueprint.FreeformResource
+	var config freeform.Resource
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return

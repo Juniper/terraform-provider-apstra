@@ -1,4 +1,4 @@
-package blueprint
+package freeform
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformConfigTemplate struct {
+type ConfigTemplate struct {
 	Id          types.String `tfsdk:"id"`
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	Name        types.String `tfsdk:"name"`
@@ -26,7 +26,7 @@ type FreeformConfigTemplate struct {
 	Tags        types.Set    `tfsdk:"tags"`
 }
 
-func (o FreeformConfigTemplate) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ConfigTemplate) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -64,7 +64,7 @@ func (o FreeformConfigTemplate) DataSourceAttributes() map[string]dataSourceSche
 	}
 }
 
-func (o FreeformConfigTemplate) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ConfigTemplate) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -102,7 +102,7 @@ func (o FreeformConfigTemplate) ResourceAttributes() map[string]resourceSchema.A
 	}
 }
 
-func (o *FreeformConfigTemplate) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigTemplateData {
+func (o *ConfigTemplate) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigTemplateData {
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	if diags.HasError() {
@@ -116,7 +116,7 @@ func (o *FreeformConfigTemplate) Request(ctx context.Context, diags *diag.Diagno
 	}
 }
 
-func (o *FreeformConfigTemplate) LoadApiData(ctx context.Context, in *apstra.ConfigTemplateData, diags *diag.Diagnostics) {
+func (o *ConfigTemplate) LoadApiData(ctx context.Context, in *apstra.ConfigTemplateData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Text = types.StringValue(in.Text)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here

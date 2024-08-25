@@ -3,8 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -33,13 +34,13 @@ func (o *resourceFreeformLink) Configure(ctx context.Context, req resource.Confi
 func (o *resourceFreeformLink) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Link in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformLink{}.ResourceAttributes(),
+		Attributes:          freeform.Link{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformLink) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformLink
+	var plan freeform.Link
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -92,7 +93,7 @@ func (o *resourceFreeformLink) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (o *resourceFreeformLink) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformLink
+	var state freeform.Link
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -102,7 +103,7 @@ func (o *resourceFreeformLink) Read(ctx context.Context, req resource.ReadReques
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -130,7 +131,7 @@ func (o *resourceFreeformLink) Read(ctx context.Context, req resource.ReadReques
 
 func (o *resourceFreeformLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformLink
+	var plan freeform.Link
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -173,7 +174,7 @@ func (o *resourceFreeformLink) Update(ctx context.Context, req resource.UpdateRe
 }
 
 func (o *resourceFreeformLink) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformLink
+	var state freeform.Link
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

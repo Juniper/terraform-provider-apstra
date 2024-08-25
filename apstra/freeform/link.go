@@ -1,4 +1,4 @@
-package blueprint
+package freeform
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformLink struct {
+type Link struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
 	Speed           types.String `tfsdk:"speed"`
@@ -32,7 +32,7 @@ type FreeformLink struct {
 	Tags            types.Set    `tfsdk:"tags"`
 }
 
-func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -79,10 +79,10 @@ func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 			Computed:            true,
 		},
 		"endpoints": dataSourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Endpoints assigned to the Link",
+			MarkdownDescription: "Endpoints of the  Link, a Map keyed by System ID.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: freeformEndpoint{}.DatasourceAttributes(),
+				Attributes: Endpoint{}.DatasourceAttributes(),
 			},
 		},
 		"tags": dataSourceSchema.SetAttribute{
@@ -93,7 +93,7 @@ func (o FreeformLink) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 	}
 }
 
-func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -128,10 +128,10 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"endpoints": resourceSchema.MapNestedAttribute{
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: freeformEndpoint{}.ResourceAttributes(),
+				Attributes: Endpoint{}.ResourceAttributes(),
 			},
 			PlanModifiers:       []planmodifier.Map{mapplanmodifier.RequiresReplace()},
-			MarkdownDescription: "Endpoints of the  Link",
+			MarkdownDescription: "Endpoints of the  Link, a Map keyed by System ID.",
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeBetween(2, 2)},
 		},
@@ -147,14 +147,14 @@ func (o FreeformLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformLinkRequest {
+func (o *Link) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformLinkRequest {
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
-	var endpoints map[string]freeformEndpoint
+	var endpoints map[string]Endpoint
 	diags.Append(o.Endpoints.ElementsAs(ctx, &endpoints, false)...)
 	if diags.HasError() {
 		return nil
@@ -174,7 +174,7 @@ func (o *FreeformLink) Request(ctx context.Context, diags *diag.Diagnostics) *ap
 	}
 }
 
-func (o *FreeformLink) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, diags *diag.Diagnostics) {
+func (o *Link) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, diags *diag.Diagnostics) {
 	interfaceIds := make([]string, len(in.Endpoints))
 	for i, endpoint := range in.Endpoints {
 		if endpoint.Interface.Id == nil {

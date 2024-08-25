@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -34,13 +34,13 @@ func (o *resourceFreeformConfigTemplate) Configure(ctx context.Context, req reso
 func (o *resourceFreeformConfigTemplate) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Config Template in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformConfigTemplate{}.ResourceAttributes(),
+		Attributes:          freeform.ConfigTemplate{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformConfigTemplate) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformConfigTemplate
+	var plan freeform.ConfigTemplate
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -85,7 +85,7 @@ func (o *resourceFreeformConfigTemplate) Create(ctx context.Context, req resourc
 }
 
 func (o *resourceFreeformConfigTemplate) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformConfigTemplate
+	var state freeform.ConfigTemplate
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -95,7 +95,7 @@ func (o *resourceFreeformConfigTemplate) Read(ctx context.Context, req resource.
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -123,7 +123,7 @@ func (o *resourceFreeformConfigTemplate) Read(ctx context.Context, req resource.
 
 func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformConfigTemplate
+	var plan freeform.ConfigTemplate
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -165,7 +165,7 @@ func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resourc
 }
 
 func (o *resourceFreeformConfigTemplate) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformConfigTemplate
+	var state freeform.ConfigTemplate
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

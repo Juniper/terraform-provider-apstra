@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,13 +36,13 @@ func (o *resourceFreeformResource) Configure(ctx context.Context, req resource.C
 func (o *resourceFreeformResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates a Resource in a Freeform Blueprint.",
-		Attributes:          blueprint.FreeformResource{}.ResourceAttributes(),
+		Attributes:          freeform.Resource{}.ResourceAttributes(),
 	}
 }
 
 func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// Retrieve values from config
-	var config blueprint.FreeformResource
+	var config freeform.Resource
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -55,64 +55,70 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		return
 	}
 
+	// Reminder Logic: the unknown state in this function means a value was passed by reference
 	switch resourceType {
 	case apstra.FFResourceTypeAsn,
 		apstra.FFResourceTypeVni,
 		apstra.FFResourceTypeVlan,
 		apstra.FFResourceTypeInt:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.IntValue) {
+		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
-				"Either `allocated_from` or `integer_value` must also be set when `type` is set to "+config.Type.String(),
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `integer_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
 	case apstra.FFResourceTypeHostIpv4:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv4Value) {
+		if (config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.Ipv4Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
-				"Either `allocated_from` or `ipv4_value` must also be set when `type` is set to "+config.Type.String(),
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
 	case apstra.FFResourceTypeHostIpv6:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv6Value) {
+		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
-				"Either `allocated_from` or `ipv6_value` must also be set when `type` is set to "+config.Type.String(),
+				errInvalidConfig,
+				"Exactly one of `allocated_from` or `ipv6_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
 	case apstra.FFResourceTypeIpv4:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv4Value) {
+		if (config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.Ipv4Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
-				"Either `allocated_from` or `ipv4_value` must also be set when `type` is set to "+config.Type.String(),
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv4Value) {
+		if !config.IntValue.IsNull() && !config.Ipv4Value.IsNull() {
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
-				"`integer_value` must not be set when `ipv4_value` is set and `type` is set to "+config.Type.String(),
+				"`integer_value` is used to indicate the Subnet Prefix Length. It must not be set when `ipv4_value` is set and `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.IntValue) {
+		if !config.AllocatedFrom.IsNull() && config.IntValue.IsNull() {
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
 				"`integer_value` is used to indicate the Subnet Prefix Length. It must be set when `allocated_from` is set and `type` is set to "+config.Type.String(),
 			)
 		}
 	case apstra.FFResourceTypeIpv6:
-		if !utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.Ipv6Value) {
+		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
 			resp.Diagnostics.AddError(
-				"Missing required attribute",
-				"Either `allocated_from` or `ipv6_value` must also be set when `type` is set to "+config.Type.String(),
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `ipv6_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.IntValue) && utils.HasValue(config.Ipv6Value) {
+		if !config.IntValue.IsNull() && !config.Ipv6Value.IsNull() {
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
-				"`integer_value` must not be set when `ipv6_value` is set and `type` is set to "+config.Type.String(),
+				"`integer_value` is used to indicate the Subnet Prefix Length. It must not be set when `ipv6_value` is set and `type` is set to "+config.Type.String(),
 			)
 		}
-		if utils.HasValue(config.AllocatedFrom) && !utils.HasValue(config.IntValue) {
+		if !config.AllocatedFrom.IsNull() && config.IntValue.IsNull() {
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
 				"`integer_value` is used to indicate the Subnet Prefix Length. It must be set when `allocated_from` is set and `type` is set to "+config.Type.String(),
@@ -123,7 +129,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 
 func (o *resourceFreeformResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan blueprint.FreeformResource
+	var plan freeform.Resource
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -181,7 +187,7 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 }
 
 func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state blueprint.FreeformResource
+	var state freeform.Resource
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -191,7 +197,7 @@ func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRe
 	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", state.BlueprintId), err.Error())
+			resp.State.RemoveResource(ctx)
 			return
 		}
 		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
@@ -219,7 +225,7 @@ func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRe
 
 func (o *resourceFreeformResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan blueprint.FreeformResource
+	var plan freeform.Resource
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -272,7 +278,7 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 }
 
 func (o *resourceFreeformResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state blueprint.FreeformResource
+	var state freeform.Resource
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

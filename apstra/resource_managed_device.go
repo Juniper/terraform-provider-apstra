@@ -29,7 +29,7 @@ func (o *resourceManagedDevice) Configure(ctx context.Context, req resource.Conf
 
 func (o *resourceManagedDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDevices + "This resource creates/installs an Agent for an Apstra Managed Device." +
+		MarkdownDescription: docCategoryDevices + "This resource creates/installs an Agent for an Apstra Managed Device. " +
 			"Optionally, it will 'Acknowledge' the discovered system if the `device key` (serial number)" +
 			"reported by the agent matches the optional `device_key` field.",
 		Attributes: systemAgents.ManagedDevice{}.ResourceAttributes(),

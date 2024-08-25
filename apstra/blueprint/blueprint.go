@@ -25,7 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"golang.org/x/exp/constraints"
 )
 
 type Blueprint struct {
@@ -748,11 +747,11 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 		}
 	}
 
-	o.DefaultIpLinksToGenericMtu = int64AttrValueFromPtr(settings.ExternalRouterMtu)
-	o.DefaultSviL3Mtu = int64AttrValueFromPtr(settings.DefaultSviL3Mtu)
-	o.EsiMacMsb = int64AttrValueFromPtr(settings.EsiMacMsb)
+	o.DefaultIpLinksToGenericMtu = utils.Int64AttrValueFromPtr(settings.ExternalRouterMtu)
+	o.DefaultSviL3Mtu = utils.Int64AttrValueFromPtr(settings.DefaultSviL3Mtu)
+	o.EsiMacMsb = utils.Int64AttrValueFromPtr(settings.EsiMacMsb)
 	o.EvpnType5Routes = boolAttrValueFromFeatureswitchEnumPtr(settings.EvpnGenerateType5HostRoutes)
-	o.FabricMtu = int64AttrValueFromPtr(settings.FabricL3Mtu)
+	o.FabricMtu = utils.Int64AttrValueFromPtr(settings.FabricL3Mtu)
 	o.Ipv6Applications = boolAttrValueFromBoolPtr(settings.Ipv6Enabled)
 	o.JunosEvpnMaxNexthopAndInterfaceNumber = boolAttrValueFromFeatureswitchEnumPtr(settings.JunosEvpnMaxNexthopAndInterfaceNumber)
 	o.JunosEvpnRoutingInstanceModeMacVrf = boolAttrValueFromFeatureswitchEnumPtr(settings.JunosEvpnRoutingInstanceVlanAware)
@@ -967,12 +966,4 @@ func boolAttrValueFromFeatureswitchEnumPtr(fs *apstra.FeatureSwitchEnum) types.B
 	}
 
 	return types.BoolValue(fs.Value == apstra.FeatureSwitchEnumEnabled.Value)
-}
-
-func int64AttrValueFromPtr[A constraints.Integer](a *A) types.Int64 {
-	if a == nil {
-		return types.Int64Null()
-	}
-
-	return types.Int64Value(int64(*a))
 }

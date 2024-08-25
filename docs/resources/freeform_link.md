@@ -13,27 +13,25 @@ This resource creates a Link in a Freeform Blueprint.
 ## Example Usage
 
 ```terraform
-# This example creates a link between systems "-CEYpa9xZ5chndvu0OY" and
-# "ySBRdHvl2KZmWKLhkIk" in a Freeform Blueprint
+# This example creates a link between systems with IDs "CEYpa9xZ5chndvu0OYa"
+# and "ySBRdHvl2KZmWKLhkIk" in a Freeform Blueprint
 
 resource "apstra_freeform_link" "test" {
   blueprint_id = "043c5787-66e8-41c7-8925-c7e52fbe6e32"
   name         = "link_a_b"
   tags         = ["a", "b"]
-  endpoints = [
-    {
-      system_id         = "-CEYpa9xZ5chndvu0OY"
+  endpoints = {
+    CEYpa9xZ5chndvu0OYa = {
       interface_name    = "ge-0/0/3"
       transformation_id = 1
       tags              = ["prod", "native_1000BASE-T"]
     },
-    {
-      system_id         = "ySBRdHvl2KZmWKLhkIk"
+    ySBRdHvl2KZmWKLhkIk = {
       interface_name    = "ge-0/0/3"
       transformation_id = 1
       tags              = ["prod", "requires_transceiver"]
     }
-  ]
+  }
 }
 ```
 
@@ -43,7 +41,7 @@ resource "apstra_freeform_link" "test" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `endpoints` (Attributes Map) Endpoints of the  Link (see [below for nested schema](#nestedatt--endpoints))
+- `endpoints` (Attributes Map) Endpoints of the  Link, a Map keyed by System ID. (see [below for nested schema](#nestedatt--endpoints))
 - `name` (String) Freeform Link name as shown in the Web UI.
 
 ### Optional
@@ -60,16 +58,13 @@ resource "apstra_freeform_link" "test" {
 <a id="nestedatt--endpoints"></a>
 ### Nested Schema for `endpoints`
 
-Required:
-
-- `interface_name` (String) The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`
-- `transformation_id` (Number) ID # of the transformation in the Device Profile
-
 Optional:
 
+- `interface_name` (String) The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`
 - `ipv4_address` (String) Ipv4 address of the interface in CIDR notation
 - `ipv6_address` (String) Ipv6 address of the interface in CIDR notation
 - `tags` (Set of String) Set of Tags applied to the interface
+- `transformation_id` (Number) ID # of the transformation in the Device Profile
 
 Read-Only:
 

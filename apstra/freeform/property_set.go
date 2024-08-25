@@ -1,4 +1,4 @@
-package blueprint
+package freeform
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformPropertySet struct {
+type PropertySet struct {
 	Id          types.String         `tfsdk:"id"`
 	BlueprintId types.String         `tfsdk:"blueprint_id"`
 	Name        types.String         `tfsdk:"name"`
@@ -25,7 +25,7 @@ type FreeformPropertySet struct {
 	Values      jsontypes.Normalized `tfsdk:"values"`
 }
 
-func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o PropertySet) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -64,7 +64,7 @@ func (o FreeformPropertySet) DataSourceAttributes() map[string]dataSourceSchema.
 	}
 }
 
-func (o FreeformPropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o PropertySet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -96,7 +96,7 @@ func (o FreeformPropertySet) ResourceAttributes() map[string]resourceSchema.Attr
 	}
 }
 
-func (o *FreeformPropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.FreeformPropertySetData {
+func (o *PropertySet) Request(_ context.Context, _ *diag.Diagnostics) *apstra.FreeformPropertySetData {
 	return &apstra.FreeformPropertySetData{
 		SystemId: (*apstra.ObjectId)(o.SystemId.ValueStringPointer()),
 		Label:    o.Name.ValueString(),
@@ -104,7 +104,7 @@ func (o *FreeformPropertySet) Request(_ context.Context, _ *diag.Diagnostics) *a
 	}
 }
 
-func (o *FreeformPropertySet) LoadApiData(_ context.Context, in *apstra.FreeformPropertySetData, _ *diag.Diagnostics) {
+func (o *PropertySet) LoadApiData(_ context.Context, in *apstra.FreeformPropertySetData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Values = jsontypes.NewNormalizedValue(string(in.Values))
 	if in.SystemId != nil {

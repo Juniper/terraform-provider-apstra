@@ -77,6 +77,6 @@ release:
 	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go run github.com/goreleaser/goreleaser@v1.26.2 release --clean
 
 gofumpt:
-	go run mvdan.cc/gofumpt -w main.go
+	@sh -c "$(CURDIR)/scripts/gofumptcheck.sh"
 
 .PHONY: all compliance compliance-check docs docs-check gofmt govet unit-tests integration-tests device-integration-tests staticcheck

@@ -1,4 +1,4 @@
-package blueprint
+package freeform
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -19,7 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type FreeformSystem struct {
+type System struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
 	Name            types.String `tfsdk:"name"`
@@ -31,7 +32,7 @@ type FreeformSystem struct {
 	Tags            types.Set    `tfsdk:"tags"`
 }
 
-func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o System) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"blueprint_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID. Used to identify " +
@@ -85,7 +86,7 @@ func (o FreeformSystem) DataSourceAttributes() map[string]dataSourceSchema.Attri
 	}
 }
 
-func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o System) ResourceAttributes() map[string]resourceSchema.Attribute {
 	hostnameRegexp := "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$"
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
@@ -119,15 +120,26 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 			Validators:          []validator.String{stringvalidator.OneOf(utils.NodeDeployModes()...)},
 		},
 		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`", apstra.SystemTypeInternal, apstra.SystemTypeExternal),
-			Required:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-			Validators:          []validator.String{stringvalidator.OneOf(apstra.SystemTypeInternal.String(), apstra.SystemTypeExternal.String())},
+			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`",
+				utils.StringersToFriendlyString(apstra.SystemTypeInternal),
+				utils.StringersToFriendlyString(apstra.SystemTypeExternal),
+			),
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators: []validator.String{stringvalidator.OneOf(
+				utils.StringersToFriendlyString(apstra.SystemTypeInternal),
+				utils.StringersToFriendlyString(apstra.SystemTypeExternal),
+			)},
 		},
 		"device_profile_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Device profile ID of the System",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: fmt.Sprintf("Device profile ID of the System. Required when `type` is %q.",
+				utils.StringersToFriendlyString(apstra.SystemTypeInternal)),
+			Optional: true,
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeExternal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeInternal))),
+			},
 		},
 		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID (usually serial number) of the Managed Device to associate with this System",
@@ -143,7 +155,7 @@ func (o FreeformSystem) ResourceAttributes() map[string]resourceSchema.Attribute
 	}
 }
 
-func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformSystemData {
+func (o *System) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformSystemData {
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	if diags.HasError() {
@@ -152,9 +164,9 @@ func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *
 
 	var systemType apstra.SystemType
 	switch o.Type.ValueString() {
-	case apstra.SystemTypeExternal.String():
+	case utils.StringersToFriendlyString(apstra.SystemTypeExternal):
 		systemType = apstra.SystemTypeExternal
-	case apstra.SystemTypeInternal.String():
+	case utils.StringersToFriendlyString(apstra.SystemTypeInternal):
 		systemType = apstra.SystemTypeInternal
 	default:
 		diags.AddError("unexpected system type", "got: "+o.Type.ValueString())
@@ -170,11 +182,12 @@ func (o *FreeformSystem) Request(ctx context.Context, diags *diag.Diagnostics) *
 	}
 }
 
-func (o *FreeformSystem) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
+func (o *System) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Hostname = types.StringValue(in.Hostname)
-	o.Type = types.StringValue(in.Type.String())
+	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))
 	o.DeviceProfileId = types.StringValue(string(in.DeviceProfileId))
+	o.DeviceProfileId = utils.StringValueOrNull(ctx, in.DeviceProfileId.String(), diags)
 	o.SystemId = types.StringPointerValue((*string)(in.SystemId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }
