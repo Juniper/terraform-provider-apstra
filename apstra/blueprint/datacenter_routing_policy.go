@@ -3,10 +3,6 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	"net"
-	"regexp"
-	"strings"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -25,6 +21,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"net"
+	"regexp"
+	"strings"
 )
 
 type DatacenterRoutingPolicy struct {
