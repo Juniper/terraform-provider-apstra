@@ -128,6 +128,7 @@ func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, exp
 			"Object may be omitted, but must not be empty")
 		return
 	}
+
 }
 
 func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
