@@ -59,7 +59,7 @@ func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:   true,
 			Optional:   true,
 			Default:    stringdefault.StaticString(apstra.PrefixFilterActionPermit.String()),
-			Validators: []validator.String{stringvalidator.OneOf(utils.ValidPrefixFilterActions()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllValidPrefixFilterActions()...)},
 		},
 	}
 }

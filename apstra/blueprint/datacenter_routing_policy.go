@@ -70,10 +70,10 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 		},
 		"import_policy": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.DcRoutingPolicyImportPolicy(), "', '")),
+				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
 			Computed:   true,
 			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.DcRoutingPolicyImportPolicy()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllDcRoutingPolicyImportPolicy()...)},
 			Default:    stringdefault.StaticString(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String()),
 		},
 		"export_policy": resourceSchema.SingleNestedAttribute{
@@ -172,7 +172,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.DcRoutingPolicyImportPolicy(), "', '")),
+				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
 			Computed: true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
@@ -244,7 +244,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataS
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.DcRoutingPolicyImportPolicy(), "', '")),
+				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
 			Optional: true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{

@@ -16,16 +16,6 @@ func AgentProfilePlatforms() []string {
 	return result
 }
 
-func DcRoutingPolicyImportPolicy() []string {
-	members := apstra.AllDcRoutingPolicyImportPolicies()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-	sort.Strings(result)
-	return result
-}
-
 func FcdModes() []string {
 	result := []string{
 		StringersToFriendlyString(apstra.FabricConnectivityDesignL3Clos),
@@ -121,21 +111,6 @@ func TemplateTypes() []string {
 	for i, member := range members {
 		result[i] = StringersToFriendlyString(member)
 	}
-	sort.Strings(result)
-	return result
-}
-
-func ValidPrefixFilterActions() []string {
-	members := apstra.AllPrefixFilterActions()
-	result := make([]string, len(members))
-	var i int
-	for _, member := range members {
-		if member != apstra.PrefixFilterActionNone {
-			result[i] = StringersToFriendlyString(member)
-			i++
-		}
-	}
-	result = result[:i]
 	sort.Strings(result)
 	return result
 }
