@@ -1,10 +1,11 @@
 package tfapstra
 
 import (
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"golang.org/x/exp/constraints"
 	"strings"
 	"testing"
+
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"golang.org/x/exp/constraints"
 )
 
 func TestSliceWithoutElement(t *testing.T) {

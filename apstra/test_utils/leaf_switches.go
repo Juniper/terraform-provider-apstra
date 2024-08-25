@@ -2,9 +2,10 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func leafSwitches(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient) []apstra.ObjectId {

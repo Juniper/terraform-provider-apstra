@@ -3,16 +3,17 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"math/rand"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const (

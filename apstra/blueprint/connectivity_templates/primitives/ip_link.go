@@ -3,7 +3,6 @@ package primitives
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"strconv"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -211,14 +211,14 @@ func newIpLink(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttrib
 	result := IpLink{
 		// Name:       // handled by caller
 		RoutingZoneId: types.StringPointerValue((*string)(in.SecurityZone)),
-		//VlanId:      // handled below
-		//L3Mtu:       // handled below
+		// VlanId:      // handled below
+		// L3Mtu:       // handled below
 		Ipv4AddressingType: types.StringValue(utils.StringersToFriendlyString(in.IPv4AddressingType)),
 		Ipv6AddressingType: types.StringValue(utils.StringersToFriendlyString(in.IPv6AddressingType)),
-		//StaticRoutes:             handled by caller
-		//BgpPeeringGenericSystems: handled by caller
-		//BgpPeeringIpEndpoints:    handled by caller
-		//DynamicBgpPeerings:       handled by caller
+		// StaticRoutes:             handled by caller
+		// BgpPeeringGenericSystems: handled by caller
+		// BgpPeeringIpEndpoints:    handled by caller
+		// DynamicBgpPeerings:       handled by caller
 	}
 
 	if in.Vlan != nil {
