@@ -6,10 +6,6 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"math"
-	"net"
-	"sort"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -21,6 +17,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
+	"net"
+	"sort"
 )
 
 var _ Primitive = &BgpPeeringIpEndpoint{}
@@ -61,7 +60,7 @@ func (o BgpPeeringIpEndpoint) DataSourceAttributes() map[string]dataSourceSchema
 			Optional:            true,
 		},
 		"password": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Password used to secure the BGP session.",
+			MarkdownDescription: "",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
