@@ -6,13 +6,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
-func NeighborAsnTypes() []string {
-	return []string{
-		"static",
-		"dynamic",
-	}
-}
-
 func PeerToTypes() []string {
 	result := []string{
 		StringersToFriendlyString(apstra.CtPrimitiveBgpPeerToLoopback),
