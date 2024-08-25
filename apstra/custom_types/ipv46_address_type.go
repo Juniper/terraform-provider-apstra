@@ -3,7 +3,6 @@ package customtypes
 import (
 	"context"
 	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -51,6 +50,7 @@ func (t IPv46AddressType) ValueFromString(_ context.Context, in basetypes.String
 // for the provider to consume the data with.
 func (t IPv46AddressType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.StringType.ValueFromTerraform(ctx, in)
+
 	if err != nil {
 		return nil, err
 	}
