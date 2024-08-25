@@ -1,8 +1,6 @@
 package utils
 
-import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
-)
+import "github.com/Juniper/apstra-go-sdk/apstra"
 
 func AllValidPrefixFilterActions() []string {
 	actions := apstra.AllPrefixFilterActions()
