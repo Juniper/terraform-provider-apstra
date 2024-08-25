@@ -26,7 +26,8 @@ func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoSt
 	require.NoError(t, err)
 	if cleanup {
 		t.Cleanup(func() {
-			ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
 			require.NoError(t, client.DeleteVirtualNetwork(ctx, id))
 		})
 	}
