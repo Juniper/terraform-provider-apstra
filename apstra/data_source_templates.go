@@ -2,7 +2,6 @@ package tfapstra
 
 import (
 	"context"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -13,10 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var (
-	_ datasource.DataSourceWithConfigure = &dataSourceTemplates{}
-	_ datasourceWithSetClient            = &dataSourceTemplates{}
-)
+var _ datasource.DataSourceWithConfigure = &dataSourceTemplates{}
+var _ datasourceWithSetClient = &dataSourceTemplates{}
 
 type dataSourceTemplates struct {
 	client *apstra.Client
