@@ -25,26 +25,6 @@ func FcdModes() []string {
 	return result
 }
 
-func InterfaceNumberingIpv4Types() []string {
-	members := apstra.InterfaceNumberingIpv4Types.Members()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-	sort.Strings(result)
-	return result
-}
-
-func InterfaceNumberingIpv6Types() []string {
-	members := apstra.InterfaceNumberingIpv6Types.Members()
-	result := make([]string, len(members))
-	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
-	}
-	sort.Strings(result)
-	return result
-}
-
 func NeighborAsnTypes() []string {
 	return []string{
 		"static",

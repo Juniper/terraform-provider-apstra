@@ -69,11 +69,11 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"switch_ipv4_address_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.InterfaceNumberingIpv4Types(), "`,`")),
+			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
 			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone)),
-			Validators:          []validator.String{stringvalidator.OneOf(utils.InterfaceNumberingIpv4Types()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv4Types()...)},
 		},
 		"switch_ipv4_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address in CIDR notation.",
@@ -86,11 +86,11 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"switch_ipv6_address_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.InterfaceNumberingIpv6Types(), "`,`")),
+			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv6Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
 			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone)),
-			Validators:          []validator.String{stringvalidator.OneOf(utils.InterfaceNumberingIpv6Types()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv6Types()...)},
 		},
 		"switch_ipv6_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address in CIDR notation.",
@@ -104,11 +104,11 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"generic_ipv4_address_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.InterfaceNumberingIpv4Types(), "`,`")),
+			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
 			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone)),
-			Validators:          []validator.String{stringvalidator.OneOf(utils.InterfaceNumberingIpv4Types()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv4Types()...)},
 		},
 		"generic_ipv4_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address in CIDR notation.",
@@ -121,11 +121,11 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			},
 		},
 		"generic_ipv6_address_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.InterfaceNumberingIpv6Types(), "`,`")),
+			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv6Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
 			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone)),
-			Validators:          []validator.String{stringvalidator.OneOf(utils.InterfaceNumberingIpv6Types()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv6Types()...)},
 		},
 		"generic_ipv6_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address in CIDR notation.",
