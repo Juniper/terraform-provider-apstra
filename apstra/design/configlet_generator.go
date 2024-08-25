@@ -53,9 +53,9 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 	return map[string]resourceSchema.Attribute{
 		"config_style": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Specifies the switch platform, must be one of '%s'.",
-				strings.Join(utils.PlatformOSNames(), "', '")),
+				strings.Join(utils.AllPlatformOSNames(), "', '")),
 			Required:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.PlatformOSNames()...)},
+			Validators: []validator.String{stringvalidator.OneOf(utils.AllPlatformOSNames()...)},
 		},
 		"section": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Specifies where in the target device the configlet should be "+

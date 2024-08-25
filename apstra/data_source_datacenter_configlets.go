@@ -51,7 +51,7 @@ func (o *dataSourceDatacenterConfiglets) Schema(_ context.Context, _ datasource.
 				Optional:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{setvalidator.ValueStringsAre(
-					stringvalidator.OneOf(utils.PlatformOSNames()...),
+					stringvalidator.OneOf(utils.AllPlatformOSNames()...),
 				)},
 			},
 		},

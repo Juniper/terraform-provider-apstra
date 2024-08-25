@@ -52,16 +52,6 @@ func PeerToTypes() []string {
 	return result
 }
 
-func PlatformOSNames() []string {
-	platforms := apstra.AllPlatformOSes()
-	result := make([]string, len(platforms))
-	for i := range platforms {
-		result[i] = StringersToFriendlyString(platforms[i])
-	}
-	sort.Strings(result)
-	return result
-}
-
 func StorageSchemaPaths() []string {
 	members := apstra.StorageSchemaPaths.Members()
 	result := make([]string, len(members))

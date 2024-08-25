@@ -12,6 +12,7 @@ func AllNodeDeployModes() []string {
 	for i, member := range members {
 		result[i] = StringersToFriendlyString(member)
 	}
+
 	return result
 }
 

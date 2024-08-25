@@ -2,10 +2,9 @@ package utils
 
 import (
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"sort"
 	"strings"
-
-	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []apstra.PlatformOS) bool {
@@ -52,7 +51,7 @@ func ConfigletSectionNamesByOS(os apstra.PlatformOS) []string {
 }
 
 func ConfigletValidSectionsMap() map[string][]string {
-	m := make(map[string][]string)
+	var m = make(map[string][]string)
 	for _, i := range apstra.AllPlatformOSes() {
 		m[i.String()] = ConfigletSectionNamesByOS(i)
 	}
@@ -80,4 +79,13 @@ func ValidSectionsAsTable() string {
 	}
 
 	return sb.String()
+}
+
+func AllPlatformOSNames() []string {
+	platforms := apstra.AllPlatformOSes()
+	result := make([]string, len(platforms))
+	for i := range platforms {
+		result[i] = platforms[i].String()
+	}
+	return result
 }
