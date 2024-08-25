@@ -42,8 +42,8 @@ func TestIPv46AddressStringSemanticEquals(t *testing.T) {
 			expectedMatch: true,
 		},
 		"semantically equal - case insensitive": {
-			currentIpAddr: customtypes.NewIPv46AddressValue("2001:0DB8:0000:0000:0008:0800:200C:417A"),
-			givenIpAddr:   customtypes.NewIPv46AddressValue("2001:0db8:0000:0000:0008:0800:200c:417a"),
+			currentIpAddr: customtypes.NewIPv46AddressValue("2001:0DB8:0000:0000:0008:0800:0200C:417A"),
+			givenIpAddr:   customtypes.NewIPv46AddressValue("2001:0db8:0000:0000:0008:0800:0200c:417a"),
 			expectedMatch: true,
 		},
 		"semantically equal - IPv4-Mapped byte-for-byte match": {
@@ -57,7 +57,7 @@ func TestIPv46AddressStringSemanticEquals(t *testing.T) {
 			expectedMatch: true,
 		},
 		"semantically equal - compressed all leading zeroes match": {
-			currentIpAddr: customtypes.NewIPv46AddressValue("2001:0DB8:0000:0000:0008:0800:200C:417A"),
+			currentIpAddr: customtypes.NewIPv46AddressValue("2001:0DB8:0000:0000:0008:0800:0200C:417A"),
 			givenIpAddr:   customtypes.NewIPv46AddressValue("2001:DB8::8:800:200C:417A"),
 			expectedMatch: true,
 		},
