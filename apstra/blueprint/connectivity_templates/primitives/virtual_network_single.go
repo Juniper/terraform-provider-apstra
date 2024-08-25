@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -44,11 +43,10 @@ func (o VirtualNetworkSingle) ResourceAttributes() map[string]resourceSchema.Att
 		},
 		"virtual_network_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the desired Virtual Network",
-			CustomType:          customtypes.IPv46PrefixType{},
 			Required:            true,
 		},
 		"tagged": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Indicates whether the selected Virtual Network should be presented with (or without) an 802.1Q tag",
+			MarkdownDescription: "Indicates whether the selected Virtual Network should be presented with an 802.1Q tag",
 			Required:            true,
 		},
 		"bgp_peering_generic_systems": resourceSchema.SetNestedAttribute{
@@ -92,8 +90,8 @@ func VirtualNetworkSingleSubpolicies(ctx context.Context, virtualNetworkSingleSe
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(VirtualNetworkSingles))
-	for i, VirtualNetworkSingle := range VirtualNetworkSingles {
-		subpolicies[i] = VirtualNetworkSingle.primitive(ctx, diags)
+	for i, virtualNetworkSingle := range VirtualNetworkSingles {
+		subpolicies[i] = virtualNetworkSingle.primitive(ctx, diags)
 	}
 
 	return subpolicies
@@ -101,7 +99,7 @@ func VirtualNetworkSingleSubpolicies(ctx context.Context, virtualNetworkSingleSe
 
 func newVirtualNetworkSingle(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan, _ *diag.Diagnostics) VirtualNetworkSingle {
 	return VirtualNetworkSingle{
-		// Name: // handled by caller
+		// Name:          // handled by caller
 		VirtualNetworkId: types.StringPointerValue((*string)(in.VnNodeId)),
 		Tagged:           types.BoolValue(in.Tagged),
 	}
@@ -127,7 +125,7 @@ func VirtualNetworkSinglePrimitivesFromSubpolicies(ctx context.Context, subpolic
 
 			newPrimitive := newVirtualNetworkSingle(ctx, p, diags)
 			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
-			newPrimitive.BgpPeeringGenericSystems = BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
+			newPrimitive.BgpPeeringGenericSystems = BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.StaticRoutes = StaticRoutePrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			result = append(result, newPrimitive)
 		}

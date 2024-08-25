@@ -23,4 +23,7 @@ const (
 
 	TtlMin = 1
 	TtlMax = math.MaxUint8
+
+	VlanMinUsable = 2
+	VlanMaxUsable = 4094
 )

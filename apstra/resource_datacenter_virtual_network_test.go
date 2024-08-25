@@ -39,7 +39,7 @@ func TestAccDatacenterVirtualNetwork_A(t *testing.T) {
 	ctx := context.Background()
 
 	bp := testutils.BlueprintC(t, ctx)
-	szId := testutils.SecurityZoneA(t, ctx, bp)
+	szId := testutils.SecurityZoneA(t, ctx, bp, true)
 
 	type node struct {
 		Label string `json:"label"`

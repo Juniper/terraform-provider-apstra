@@ -244,6 +244,31 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	return bpClient
 }
 
+func BlueprintG(t testing.TB, ctx context.Context, cleanup bool) *apstra.TwoStageL3ClosClient {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		Label:      acctest.RandString(8),
+		TemplateId: "L2_Virtual_EVPN",
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+		},
+	})
+	require.NoError(t, err)
+	if cleanup {
+		t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+	}
+
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
+	require.NoError(t, err)
+
+	return bpClient
+}
+
 func FfBlueprintA(t testing.TB, ctx context.Context) *apstra.FreeformClient {
 	t.Helper()
 

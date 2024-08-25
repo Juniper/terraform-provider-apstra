@@ -96,14 +96,28 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			},
 		},
 		"ipv4_addressing_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Must be one of: \n  - %s\n", strings.Join(utils.InterfaceNumberingIpv4Types(), "\n  - ")),
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(utils.InterfaceNumberingIpv4Types()...)},
+			MarkdownDescription: fmt.Sprintf("Must be one of: \n  - %s\n", strings.Join([]string{
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone),
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed),
+			}, "\n  - ")),
+			Required: true,
+			Validators: []validator.String{stringvalidator.OneOf(
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone),
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed),
+			)},
 		},
 		"ipv6_addressing_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Must be one of: \n  - %s\n", strings.Join(utils.InterfaceNumberingIpv6Types(), "\n  - ")),
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(utils.InterfaceNumberingIpv6Types()...)},
+			MarkdownDescription: fmt.Sprintf("Must be one of: \n  - %s\n", strings.Join([]string{
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone),
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed),
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal),
+			}, "\n  - ")),
+			Required: true,
+			Validators: []validator.String{stringvalidator.OneOf(
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone),
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed),
+				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal),
+			)},
 		},
 		"local_asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "This feature is configured on a per-peer basis. It allows a router " +
@@ -223,7 +237,7 @@ func BgpPeeringGenericSystemSubpolicies(ctx context.Context, bgpPeeringGenericSy
 
 func newBgpPeeringGenericSystem(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi, _ *diag.Diagnostics) BgpPeeringGenericSystem {
 	result := BgpPeeringGenericSystem{
-		// Name:            handled by caller
+		// Name:            // handled by caller
 		// Ttl:             // handled below due to 0 = null logic
 		BfdEnabled:         types.BoolValue(in.Bfd),
 		Password:           types.StringPointerValue(in.Password),

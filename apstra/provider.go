@@ -598,6 +598,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterConfiglet{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplateAssignments{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplateAssignment{} },
+		func() resource.Resource { return &resourceDatacenterConnectivityTemplateInterface{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplateLoopback{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplateSvi{} },
 		func() resource.Resource { return &resourceDatacenterConnectivityTemplateSystem{} },

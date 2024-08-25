@@ -27,7 +27,7 @@ func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 	// BlueprintB returns a bpClient and the template from which the blueprint was created
 	bpClient := testutils.BlueprintA(t, ctx)
 
-	szId := testutils.SecurityZoneA(t, ctx, bpClient)
+	szId := testutils.SecurityZoneA(t, ctx, bpClient, true)
 
 	sz, err := bpClient.GetSecurityZone(ctx, szId)
 	require.NoError(t, err)

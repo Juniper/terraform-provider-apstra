@@ -208,9 +208,9 @@ func BgpPeeringIpEndpointSubpolicies(ctx context.Context, bgpPeeringIpEndpointSe
 
 func newBgpPeeringIpEndpoint(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt, _ *diag.Diagnostics) BgpPeeringIpEndpoint {
 	result := BgpPeeringIpEndpoint{
-		// Name:     handled by caller
-		NeighborAsn: utils.Int64PointerValue(in.Asn),
+		// Name:       // handled by caller
 		// Ttl:        // handled below due to 0 = null logic
+		NeighborAsn:   utils.Int64PointerValue(in.Asn),
 		BfdEnabled:    types.BoolValue(in.Bfd),
 		Password:      types.StringPointerValue(in.Password),
 		KeepaliveTime: utils.Int64PointerValue(in.Keepalive),

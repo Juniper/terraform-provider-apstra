@@ -58,7 +58,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) valueA
 	return result
 }
 
-func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6Count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute {
+func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6Count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute {
 	t.Helper()
 
 	result := make([]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute, ipv4Count+ipv6Count)
@@ -123,7 +123,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) valueAsMap
 	return result
 }
 
-func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy {
+func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy {
 	t.Helper()
 
 	result := make([]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy, count)
@@ -131,7 +131,7 @@ func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client 
 		policyId, err := client.CreateRoutingPolicy(ctx, &apstra.DcRoutingPolicyData{
 			Label:        acctest.RandString(6),
 			PolicyType:   apstra.DcRoutingPolicyTypeUser,
-			ImportPolicy: apstra.DcRoutingPolicyImportPolicyAll,
+			ImportPolicy: oneOf(apstra.DcRoutingPolicyImportPolicyAll, apstra.DcRoutingPolicyImportPolicyDefaultOnly, apstra.DcRoutingPolicyImportPolicyExtraOnly),
 		})
 		require.NoError(t, err)
 
@@ -144,7 +144,7 @@ func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client 
 	return result
 }
 
-const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL = `{
+const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpointHCL = `{
   name             = %q
   neighbor_asn     = %s
   ttl              = %s
@@ -159,7 +159,7 @@ const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL = 
 },
 `
 
-type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive struct {
+type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint struct {
 	name            string
 	neighborAsn     *int
 	ttl             *int
@@ -173,9 +173,8 @@ type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive struct
 	routingPolicies []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) render(indent int) string {
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint) render(indent int) string {
 	routingPolicies := "null"
-
 	if len(o.routingPolicies) > 0 {
 		sb := new(strings.Builder)
 		for _, routingPolicy := range o.routingPolicies {
@@ -187,7 +186,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) re
 
 	return tfapstra.Indent(
 		indent,
-		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitiveHCL,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpointHCL,
 			o.name,
 			intPtrOrNull(o.neighborAsn),
 			intPtrOrNull(o.ttl),
@@ -203,7 +202,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) re
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) valueAsMapForChecks() map[string]string {
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint) valueAsMapForChecks() map[string]string {
 	result := map[string]string{
 		"name": o.name,
 	}
@@ -238,10 +237,10 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive) va
 	return result
 }
 
-func randomBgpPeeringIpPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive {
+func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive, count)
+	result := make([]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint, count)
 	for i := range result {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
@@ -257,10 +256,10 @@ func randomBgpPeeringIpPrimitives(t testing.TB, ctx context.Context, count int, 
 			ipv6Address = randIpvAddressMust(t, "2001:db8::/32")
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive{
+		result[i] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint{
 			name:            acctest.RandString(6),
 			neighborAsn:     oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
-			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax) + constants.TtlMin), // always send TTL so whole object isn't null
+			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
 			keepaliveTime:   keepaliveTime,
@@ -268,14 +267,14 @@ func randomBgpPeeringIpPrimitives(t testing.TB, ctx context.Context, count int, 
 			localAsn:        oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ipv4Address:     ipv4Address,
 			ipv6Address:     ipv6Address,
-			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), client),
+			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), client, cleanup),
 		}
 	}
 
 	return result
 }
 
-const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveHCL = `{
+const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringHCL = `{
   name             = %q
   ttl              = %s
   bfd_enabled      = %q
@@ -291,7 +290,7 @@ const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveH
 },
 `
 
-type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive struct {
+type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering struct {
 	name            string
 	ttl             *int
 	bfdEnabled      bool
@@ -306,9 +305,8 @@ type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive s
 	routingPolicies []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive) render(indent int) string {
+func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering) render(indent int) string {
 	routingPolicies := "null"
-
 	if len(o.routingPolicies) > 0 {
 		sb := new(strings.Builder)
 		for _, routingPolicy := range o.routingPolicies {
@@ -319,7 +317,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiv
 	}
 
 	return tfapstra.Indent(indent,
-		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiveHCL,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringHCL,
 			o.name,
 			intPtrOrNull(o.ttl),
 			strconv.FormatBool(o.bfdEnabled),
@@ -336,7 +334,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiv
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive) valueAsMapForChecks() map[string]string {
+func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering) valueAsMapForChecks() map[string]string {
 	result := map[string]string{
 		"name":         o.name,
 		"bfd_enabled":  strconv.FormatBool(o.bfdEnabled),
@@ -370,10 +368,10 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitiv
 	return result
 }
 
-func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive {
+func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive, count)
+	result := make([]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering, count)
 	for i := range result {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
@@ -401,9 +399,9 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 			ipv6PeerPrefix = randomPrefix(t, "3fff::/20", 64)
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive{
+		result[i] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering{
 			name:            acctest.RandString(6),
-			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax) + constants.TtlMin), // always send TTL so whole object isn't null
+			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
 			keepaliveTime:   keepaliveTime,
@@ -413,39 +411,39 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 			localAsn:        oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ipv4PeerPrefix:  ipv4PeerPrefix,
 			ipv6PeerPrefix:  ipv6PeerPrefix,
-			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), client),
+			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), client, cleanup),
 		}
 	}
 
 	return result
 }
 
-const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitiveHCL = `{
+const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemHCL = `{
   name                 = %q
   ttl                  = %s
   bfd_enabled          = %q
   password             = %s
   keepalive_time       = %s
   hold_time            = %s
-  ipv4_addressing      = %s
-  ipv6_addressing      = %s
+  ipv4_addressing_type = %s
+  ipv6_addressing_type = %s
   local_asn            = %s
   neighbor_asn_dynamic = %s
   peer_from_loopback   = %s
-  peer_to              = %s
+  peer_to              = %q
   routing_policies     = %s
 },
 `
 
-type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitive struct {
+type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem struct {
 	name               string
 	ttl                *int
 	bfdEnabled         bool
 	password           string
 	keepaliveTime      *int
 	holdTime           *int
-	ipv4Addressing     apstra.InterfaceNumberingIpv4Type
-	ipv6Addressing     apstra.InterfaceNumberingIpv6Type
+	ipv4Addressing     apstra.CtPrimitiveIPv4ProtocolSessionAddressing
+	ipv6Addressing     apstra.CtPrimitiveIPv6ProtocolSessionAddressing
 	localAsn           *int
 	neighborAsnDynamic bool
 	peerFromLoopback   bool
@@ -453,9 +451,8 @@ type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimi
 	routingPolicies    []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitive) render(indent int) string {
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) render(indent int) string {
 	routingPolicies := "null"
-
 	if len(o.routingPolicies) > 0 {
 		sb := new(strings.Builder)
 		for _, routingPolicy := range o.routingPolicies {
@@ -466,7 +463,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPr
 	}
 
 	return tfapstra.Indent(indent,
-		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitiveHCL,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemHCL,
 			o.name,
 			intPtrOrNull(o.ttl),
 			strconv.FormatBool(o.bfdEnabled),
@@ -484,13 +481,13 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPr
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitive) valueAsMapForChecks() map[string]string {
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) valueAsMapForChecks() map[string]string {
 	result := map[string]string{
 		"name":                 o.name,
 		"bfd_enabled":          strconv.FormatBool(o.bfdEnabled),
 		"neighbor_asn_dynamic": strconv.FormatBool(o.neighborAsnDynamic),
 		"peer_from_loopback":   strconv.FormatBool(o.peerFromLoopback),
-		"peer_to":              o.peerTo.String(),
+		"peer_to":              utils.StringersToFriendlyString(o.peerTo),
 	}
 	if o.ttl != nil {
 		result["ttl"] = strconv.Itoa(*o.ttl)
@@ -519,10 +516,10 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPr
 	return result
 }
 
-func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitive {
+func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitive, count)
+	result := make([]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem, count)
 	for i := range result {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
@@ -531,23 +528,39 @@ func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, 
 			holdTime = utils.ToPtr(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
 		}
 
-		var ipv4Addressing apstra.InterfaceNumberingIpv4Type
-		var ipv6Addressing apstra.InterfaceNumberingIpv6Type
+		var ipv4Addressing apstra.CtPrimitiveIPv4ProtocolSessionAddressing
+		var ipv6Addressing apstra.CtPrimitiveIPv6ProtocolSessionAddressing
 		switch rand.IntN(3) {
 		case 0:
-			ipv4Addressing = apstra.InterfaceNumberingIpv4TypeNumbered
-			ipv6Addressing = apstra.InterfaceNumberingIpv6TypeNone
+			ipv4Addressing = apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed
+			ipv6Addressing = apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone
 		case 1:
-			ipv4Addressing = apstra.InterfaceNumberingIpv4TypeNone
-			ipv6Addressing = oneOf(apstra.InterfaceNumberingIpv6TypeNumbered, apstra.InterfaceNumberingIpv6TypeLinkLocal)
+			ipv4Addressing = apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone
+			ipv6Addressing = oneOf(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed, apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal)
 		case 2:
-			ipv4Addressing = apstra.InterfaceNumberingIpv4TypeNumbered
-			ipv6Addressing = oneOf(apstra.InterfaceNumberingIpv6TypeNumbered, apstra.InterfaceNumberingIpv6TypeLinkLocal)
+			ipv4Addressing = apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed
+			ipv6Addressing = oneOf(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed, apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal)
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemPrimitive{
+		var peerFromLoopback bool
+		var peerTo apstra.CtPrimitiveBgpPeerTo
+		if ipv6Addressing == apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal {
+			peerFromLoopback = false
+			peerTo = oneOf(
+				apstra.CtPrimitiveBgpPeerToInterfaceOrIpEndpoint,
+				apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint,
+			)
+		} else {
+			peerFromLoopback = oneOf(true, false)
+			peerTo = oneOf(apstra.CtPrimitiveBgpPeerToInterfaceOrIpEndpoint,
+				apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint,
+				apstra.CtPrimitiveBgpPeerToLoopback,
+			)
+		}
+
+		result[i] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem{
 			name:               acctest.RandString(6),
-			ttl:                utils.ToPtr(rand.IntN(constants.TtlMax) + constants.TtlMin), // always send TTL so whole object isn't null
+			ttl:                utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:         oneOf(true, false),
 			password:           oneOf(acctest.RandString(6), ""),
 			keepaliveTime:      keepaliveTime,
@@ -556,9 +569,9 @@ func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, 
 			ipv6Addressing:     ipv6Addressing,
 			localAsn:           oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			neighborAsnDynamic: oneOf(true, false),
-			peerFromLoopback:   oneOf(true, false),
-			peerTo:             oneOf(apstra.CtPrimitiveBgpPeerToInterfaceOrIpEndpoint, apstra.CtPrimitiveBgpPeerToInterfaceOrSharedIpEndpoint, apstra.CtPrimitiveBgpPeerToLoopback),
-			routingPolicies:    randomRoutingPolicies(t, ctx, rand.IntN(count), client),
+			peerFromLoopback:   peerFromLoopback,
+			peerTo:             peerTo,
+			routingPolicies:    randomRoutingPolicies(t, ctx, rand.IntN(count), client, cleanup),
 		}
 	}
 
@@ -599,7 +612,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveStaticRoute) valueAsMapFo
 	return result
 }
 
-func randomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6Count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveStaticRoute {
+func randomStaticRoutePrimitives(t testing.TB, _ context.Context, ipv4Count, ipv6Count int, _ *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveStaticRoute {
 	t.Helper()
 
 	result := make([]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute, ipv4Count+ipv6Count)
@@ -662,14 +675,14 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) val
 	return result
 }
 
-func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle {
+func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle {
 	t.Helper()
 
 	result := make([]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
 	for i := range result {
 		result[i] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
 			name:             acctest.RandString(6),
-			virtualNetworkId: testutils.VirtualNetworkVxlan(t, ctx, client).String(),
+			virtualNetworkId: testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String(),
 			tagged:           oneOf(true, false),
 		}
 	}
@@ -679,7 +692,7 @@ func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, c
 
 const resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultipleHCL = `{
   name           = %q
-  untagged_vn_id = %q
+  untagged_vn_id = %s
   tagged_vn_ids  = %s
 },
 `
@@ -714,7 +727,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple) v
 	return result
 }
 
-func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple {
+func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple {
 	t.Helper()
 
 	result := make([]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple, count)
@@ -724,11 +737,11 @@ func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int,
 		}
 		if rand.Int()%2 == 0 {
 			for _ = range rand.IntN(3) {
-				result[i].taggedVnIds = append(result[i].taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client).String())
+				result[i].taggedVnIds = append(result[i].taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String())
 			}
 		}
 		if rand.Int()%2 == 0 || len(result[i].taggedVnIds) == 0 {
-			result[i].untaggedVnId = testutils.VirtualNetworkVxlan(t, ctx, client).String()
+			result[i].untaggedVnId = testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String()
 		}
 
 	}
@@ -759,13 +772,14 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint) re
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint) valueAsMapForChecks() map[string]string {
 	result := map[string]string{
-		"name": o.name,
+		"name":                       o.name,
+		"routing_zone_constraint_id": o.routingZoneConstraintId,
 	}
 
 	return result
 }
 
-func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient) []resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint {
+func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint {
 	t.Helper()
 
 	var routingZoneIds []apstra.ObjectId
@@ -776,7 +790,7 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 		case 1: // second loop changes routingZoneIds nil -> {}
 			routingZoneIds = []apstra.ObjectId{}
 		default: // third and subsequent loops add routing zones
-			routingZoneIds = append(routingZoneIds, testutils.SecurityZoneA(t, ctx, client))
+			routingZoneIds = append(routingZoneIds, testutils.SecurityZoneA(t, ctx, client, cleanup))
 		}
 	}
 
@@ -793,6 +807,144 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 		result[i] = resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint{
 			name:                    acctest.RandString(6),
 			routingZoneConstraintId: policyId.String(),
+		}
+	}
+
+	return result
+}
+
+const resourceDataCenterConnectivityTemplatePrimitiveIpLinkHCL = `{
+  name                        = %q
+  routing_zone_id             = %q
+  vlan_id                     = %s
+  l3_mtu                      = %s
+  ipv4_addressing_type        = %q
+  ipv6_addressing_type        = %q
+  bgp_peering_generic_systems = %s
+  bgp_peering_ip_endpoints    = %s
+  dynamic_bgp_peerings        = %s
+  static_routes               = %s
+},
+`
+
+type resourceDataCenterConnectivityTemplatePrimitiveIpLink struct {
+	name                     string
+	routingZoneId            string
+	vlanId                   *int
+	l3Mtu                    *int
+	ipv4AddressingType       apstra.CtPrimitiveIPv4AddressingType
+	ipv6AddressingType       apstra.CtPrimitiveIPv6AddressingType
+	bgpPeeringGenericSystems []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem
+	bgpPeeringIpEndpoints    []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
+	dynamicBgpPeerings       []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering
+	staticRoutes             []resourceDataCenterConnectivityTemplatePrimitiveStaticRoute
+}
+
+func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) render(indent int) string {
+	bgpPeeringGenericSystems := "null"
+	if len(o.bgpPeeringGenericSystems) > 0 {
+		sb := new(strings.Builder)
+		for _, bgpPeeringGenericSystem := range o.bgpPeeringGenericSystems {
+			sb.WriteString(bgpPeeringGenericSystem.render(indent))
+		}
+
+		bgpPeeringGenericSystems = "[\n" + sb.String() + "  ]"
+	}
+
+	bgpPeeringIpEndpoints := "null"
+	if len(o.bgpPeeringIpEndpoints) > 0 {
+		sb := new(strings.Builder)
+		for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndpoints {
+			sb.WriteString(bgpPeeringIpEndpoint.render(indent))
+		}
+
+		bgpPeeringIpEndpoints = "[\n" + sb.String() + "  ]"
+	}
+
+	dynamicBgpPeerings := "null"
+	if len(o.dynamicBgpPeerings) > 0 {
+		sb := new(strings.Builder)
+		for _, dynamicBgpPeering := range o.dynamicBgpPeerings {
+			sb.WriteString(dynamicBgpPeering.render(indent))
+		}
+
+		dynamicBgpPeerings = "[\n" + sb.String() + "  ]"
+	}
+
+	staticRoutes := "null"
+	if len(o.staticRoutes) > 0 {
+		sb := new(strings.Builder)
+		for _, staticRoute := range o.staticRoutes {
+			sb.WriteString(staticRoute.render(indent))
+		}
+
+		staticRoutes = "[\n" + sb.String() + "  ]"
+	}
+
+	return tfapstra.Indent(
+		indent,
+		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveIpLinkHCL,
+			o.name,
+			o.routingZoneId,
+			intPtrOrNull(o.vlanId),
+			intPtrOrNull(o.l3Mtu),
+			utils.StringersToFriendlyString(o.ipv4AddressingType),
+			utils.StringersToFriendlyString(o.ipv6AddressingType),
+			bgpPeeringGenericSystems,
+			bgpPeeringIpEndpoints,
+			dynamicBgpPeerings,
+			staticRoutes,
+		),
+	)
+}
+
+func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) valueAsMapForChecks() map[string]string {
+	result := map[string]string{
+		"name":                 o.name,
+		"routing_zone_id":      o.routingZoneId,
+		"ipv4_addressing_type": utils.StringersToFriendlyString(o.ipv4AddressingType),
+		"ipv6_addressing_type": utils.StringersToFriendlyString(o.ipv6AddressingType),
+	}
+	if o.vlanId != nil {
+		result["vlan_id"] = strconv.Itoa(*o.vlanId)
+	}
+	if o.l3Mtu != nil {
+		result["l3_mtu"] = strconv.Itoa(*o.l3Mtu)
+	}
+
+	return result
+}
+
+func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveIpLink {
+	t.Helper()
+
+	result := make([]resourceDataCenterConnectivityTemplatePrimitiveIpLink, count)
+	for i := range result {
+		var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
+		var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
+		switch rand.IntN(3) {
+		case 0:
+			ipv4AddressingType = apstra.CtPrimitiveIPv4AddressingTypeNumbered
+			ipv6AddressingType = apstra.CtPrimitiveIPv6AddressingTypeNone
+		case 1:
+			ipv4AddressingType = apstra.CtPrimitiveIPv4AddressingTypeNone
+			ipv6AddressingType = oneOf(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal, apstra.CtPrimitiveIPv6AddressingTypeNumbered)
+		case 2:
+			ipv4AddressingType = apstra.CtPrimitiveIPv4AddressingTypeNumbered
+			ipv6AddressingType = oneOf(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal, apstra.CtPrimitiveIPv6AddressingTypeNumbered)
+		}
+
+		result[i] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
+			name:                     acctest.RandString(6),
+			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup).String(),
+			vlanId:                   oneOf(nil, utils.ToPtr(rand.IntN(4000)+100)),
+			l3Mtu:                    oneOf(nil, utils.ToPtr((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),
+			ipv4AddressingType:       ipv4AddressingType,
+			ipv6AddressingType:       ipv6AddressingType,
+			bgpPeeringGenericSystems: randomBgpPeeringGenericSystemPrimitives(t, ctx, rand.IntN(3), client, cleanup),
+			bgpPeeringIpEndpoints:    randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3), client, cleanup),
+			dynamicBgpPeerings:       randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3), client, cleanup),
+			staticRoutes:             randomStaticRoutePrimitives(t, ctx, rand.IntN(3), rand.IntN(3), client, cleanup),
 		}
 	}
 

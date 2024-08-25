@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -39,13 +39,13 @@ func (o VirtualNetworkMultiple) ResourceAttributes() map[string]resourceSchema.A
 		},
 		"untagged_vn_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Virtual Network which should be untagged on the link",
-			CustomType:          customtypes.IPv46PrefixType{},
-			Required:            true,
+			Optional:            true,
 		},
 		"tagged_vn_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "IDs of the Virtual Networks which should be tagged on the link",
-			Required:            true,
+			Optional:            true,
 			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -55,6 +55,11 @@ func (o VirtualNetworkMultiple) attributes(ctx context.Context, diags *diag.Diag
 	diags.Append(o.TaggedVnIds.ElementsAs(ctx, &taggedVnNodeIds, false)...)
 	if diags.HasError() {
 		return nil
+	}
+
+	// Don't send `null` to the API. Send `[]` instead.
+	if taggedVnNodeIds == nil {
+		taggedVnNodeIds = []apstra.ObjectId{}
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachMultipleVlan{
@@ -78,8 +83,8 @@ func VirtualNetworkMultipleSubpolicies(ctx context.Context, virtualNetworkMultip
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(VirtualNetworkMultiples))
-	for i, VirtualNetworkMultiple := range VirtualNetworkMultiples {
-		subpolicies[i] = VirtualNetworkMultiple.primitive(ctx, diags)
+	for i, virtualNetworkMultiple := range VirtualNetworkMultiples {
+		subpolicies[i] = virtualNetworkMultiple.primitive(ctx, diags)
 	}
 
 	return subpolicies
@@ -88,7 +93,7 @@ func VirtualNetworkMultipleSubpolicies(ctx context.Context, virtualNetworkMultip
 func newVirtualNetworkMultiple(ctx context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachMultipleVlan, diags *diag.Diagnostics) VirtualNetworkMultiple {
 	return VirtualNetworkMultiple{
 		// Name: // handled by caller
-		UntaggedVnId: types.StringValue(in.UntaggedVnNodeId.String()),
+		UntaggedVnId: types.StringPointerValue((*string)(in.UntaggedVnNodeId)),
 		TaggedVnIds:  utils.SetValueOrNull(ctx, types.StringType, in.TaggedVnNodeIds, diags),
 	}
 }

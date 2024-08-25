@@ -16,16 +16,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type ConnectivityTemplateLoopback struct {
-	Id                    types.String `tfsdk:"id"`
-	BlueprintId           types.String `tfsdk:"blueprint_id"`
-	Name                  types.String `tfsdk:"name"`
-	Description           types.String `tfsdk:"description"`
-	Tags                  types.Set    `tfsdk:"tags"`
-	BgpPeeringIpEndpoints types.Set    `tfsdk:"bgp_peering_ip_endpoints"`
+type ConnectivityTemplateInterface struct {
+	Id                      types.String `tfsdk:"id"`
+	BlueprintId             types.String `tfsdk:"blueprint_id"`
+	Name                    types.String `tfsdk:"name"`
+	Description             types.String `tfsdk:"description"`
+	Tags                    types.Set    `tfsdk:"tags"`
+	IpLinks                 types.Set    `tfsdk:"ip_links"`
+	RoutingZoneConstraints  types.Set    `tfsdk:"routing_zone_constraints"`
+	VirtualNetworkMultiples types.Set    `tfsdk:"virtual_network_multiples"`
+	VirtualNetworkSingles   types.Set    `tfsdk:"virtual_network_singles"`
 }
 
-func (o ConnectivityTemplateLoopback) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ConnectivityTemplateInterface) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
@@ -57,10 +60,34 @@ func (o ConnectivityTemplateLoopback) ResourceAttributes() map[string]resourceSc
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
-		"bgp_peering_ip_endpoints": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template",
+		"ip_links": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of *IP Link* Primitives in this Connectivity Template",
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: primitives.BgpPeeringIpEndpoint{}.ResourceAttributes(),
+				Attributes: primitives.IpLink{}.ResourceAttributes(),
+			},
+			Optional:   true,
+			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"routing_zone_constraints": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of *Routing Zone Constraint* Primitives in this Connectivity Template",
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: primitives.RoutingZoneConstraint{}.ResourceAttributes(),
+			},
+			Optional:   true,
+			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"virtual_network_multiples": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of *Virtual Network (Multiple)* Primitives in this Connectivity Template",
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: primitives.VirtualNetworkMultiple{}.ResourceAttributes(),
+			},
+			Optional:   true,
+			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"virtual_network_singles": resourceSchema.SetNestedAttribute{
+			MarkdownDescription: "Set of *Virtual Network (Single)* Primitives in this Connectivity Template",
+			NestedObject: resourceSchema.NestedAttributeObject{
+				Attributes: primitives.VirtualNetworkSingle{}.ResourceAttributes(),
 			},
 			Optional:   true,
 			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
@@ -68,7 +95,7 @@ func (o ConnectivityTemplateLoopback) ResourceAttributes() map[string]resourceSc
 	}
 }
 
-func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplate {
+func (o ConnectivityTemplateInterface) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplate {
 	result := apstra.ConnectivityTemplate{
 		Label:       o.Name.ValueString(),
 		Description: o.Description.ValueString(),
@@ -80,7 +107,10 @@ func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.D
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
 
 	// Set subpolicies
-	result.Subpolicies = append(result.Subpolicies, primitives.BgpPeeringIpEndpointSubpolicies(ctx, o.BgpPeeringIpEndpoints, diags)...)
+	result.Subpolicies = append(result.Subpolicies, primitives.IpLinkSubpolicies(ctx, o.IpLinks, diags)...)
+	result.Subpolicies = append(result.Subpolicies, primitives.RoutingZoneConstraintSubpolicies(ctx, o.RoutingZoneConstraints, diags)...)
+	result.Subpolicies = append(result.Subpolicies, primitives.VirtualNetworkMultipleSubpolicies(ctx, o.VirtualNetworkMultiples, diags)...)
+	result.Subpolicies = append(result.Subpolicies, primitives.VirtualNetworkSingleSubpolicies(ctx, o.VirtualNetworkSingles, diags)...)
 
 	// try to set the root batch policy ID from o.Id
 	if !o.Id.IsUnknown() {
@@ -104,9 +134,12 @@ func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.D
 	return &result
 }
 
-func (o *ConnectivityTemplateLoopback) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+func (o *ConnectivityTemplateInterface) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
-	o.BgpPeeringIpEndpoints = primitives.BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
+	o.IpLinks = primitives.IpLinkPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
+	o.RoutingZoneConstraints = primitives.RoutingZoneConstraintPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
+	o.VirtualNetworkMultiples = primitives.VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
+	o.VirtualNetworkSingles = primitives.VirtualNetworkSinglePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 }

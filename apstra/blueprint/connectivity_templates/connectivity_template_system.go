@@ -97,7 +97,10 @@ func (o ConnectivityTemplateSystem) Request(ctx context.Context, diags *diag.Dia
 		// Subpolicies: // set below
 	}
 
+	// Set tags
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
+
+	// Set subpolicies
 	result.Subpolicies = append(result.Subpolicies, primitives.CustomStaticRouteSubpolicies(ctx, o.CustomStaticRoutes, diags)...)
 
 	// try to set the root batch policy ID from o.Id

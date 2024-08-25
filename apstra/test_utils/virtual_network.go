@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient) apstra.ObjectId {
+func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cleanup bool) apstra.ObjectId {
 	leafIds := leafSwitches(t, ctx, client)
 	vnBindings := make([]apstra.VnBinding, len(leafIds))
 	for i, leafId := range leafIds {
@@ -19,15 +19,17 @@ func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoSt
 	id, err := client.CreateVirtualNetwork(ctx, &apstra.VirtualNetworkData{
 		Ipv4Enabled:    true,
 		Label:          acctest.RandString(6),
-		SecurityZoneId: SecurityZoneA(t, ctx, client),
+		SecurityZoneId: SecurityZoneA(t, ctx, client, cleanup),
 		VnBindings:     vnBindings,
 		VnType:         apstra.VnTypeVxlan,
 	})
 	require.NoError(t, err)
-	t.Cleanup(func() {
-		ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-		require.NoError(t, client.DeleteVirtualNetwork(ctx, id))
-	})
+	if cleanup {
+		t.Cleanup(func() {
+			ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+			require.NoError(t, client.DeleteVirtualNetwork(ctx, id))
+		})
+	}
 
 	return id
 }

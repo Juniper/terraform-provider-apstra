@@ -81,7 +81,10 @@ func (o *ConnectivityTemplateSvi) Request(ctx context.Context, diags *diag.Diagn
 		// Subpolicies // set below
 	}
 
+	// Set tags
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
+
+	// Set subpolicies
 	result.Subpolicies = append(result.Subpolicies, primitives.BgpPeeringIpEndpointSubpolicies(ctx, o.BgpPeeringIpEndpoints, diags)...)
 	result.Subpolicies = append(result.Subpolicies, primitives.DynamicBgpPeeringSubpolicies(ctx, o.DynamicBgpPeerings, diags)...)
 

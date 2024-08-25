@@ -76,8 +76,8 @@ func StaticRouteSubpolicies(ctx context.Context, StaticRouteSet types.Set, diags
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(StaticRoutes))
-	for i, StaticRoute := range StaticRoutes {
-		subpolicies[i] = StaticRoute.primitive(ctx, diags)
+	for i, staticRoute := range StaticRoutes {
+		subpolicies[i] = staticRoute.primitive(ctx, diags)
 	}
 
 	return subpolicies

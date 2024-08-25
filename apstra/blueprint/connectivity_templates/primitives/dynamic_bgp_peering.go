@@ -219,8 +219,8 @@ func DynamicBgpPeeringSubpolicies(ctx context.Context, dynamicBgpPeeringSet type
 
 func newDynamicBgpPeering(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface, _ *diag.Diagnostics) DynamicBgpPeering {
 	result := DynamicBgpPeering{
-		// Name:          // handled by caller
-		// Ttl:            // handled below due to 0 = null logic
+		// Name:        // handled by caller
+		// Ttl:         // handled below due to 0 = null logic
 		BfdEnabled:     types.BoolValue(in.Bfd),
 		Password:       types.StringPointerValue(in.Password),
 		KeepaliveTime:  utils.Int64PointerValue(in.Keepalive),

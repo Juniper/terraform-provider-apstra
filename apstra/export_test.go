@@ -8,26 +8,27 @@ import (
 )
 
 var (
-	ResourceAgentProfile                           = resourceAgentProfile{}
-	ResourceAsnPool                                = resourceAsnPool{}
-	ResourceDatacenterConnectivityTemplateLoopback = resourceDatacenterConnectivityTemplateLoopback{}
-	ResourceDatacenterConnectivityTemplateSvi      = resourceDatacenterConnectivityTemplateSvi{}
-	ResourceDatacenterConnectivityTemplateSystem   = resourceDatacenterConnectivityTemplateSystem{}
-	ResourceDatacenterGenericSystem                = resourceDatacenterGenericSystem{}
-	ResourceDatacenterIpLinkAddressing             = resourceDatacenterIpLinkAddressing{}
-	ResourceDatacenterRoutingZone                  = resourceDatacenterRoutingZone{}
-	ResourceFreeformConfigTemplate                 = resourceFreeformConfigTemplate{}
-	ResourceFreeformLink                           = resourceFreeformLink{}
-	ResourceFreeformPropertySet                    = resourceFreeformPropertySet{}
-	ResourceFreeformResourceGroup                  = resourceFreeformResourceGroup{}
-	ResourceFreeformResource                       = resourceFreeformResource{}
-	ResourceFreeformSystem                         = resourceFreeformSystem{}
-	ResourceIntegerPool                            = resourceIntegerPool{}
-	ResourceIpv4Pool                               = resourceIpv4Pool{}
-	ResourceIpv6Pool                               = resourceIpv6Pool{}
-	ResourceTemplateCollapsed                      = resourceTemplateCollapsed{}
-	ResourceTemplatePodBased                       = resourceTemplatePodBased{}
-	ResourceVniPool                                = resourceVniPool{}
+	ResourceAgentProfile                            = resourceAgentProfile{}
+	ResourceAsnPool                                 = resourceAsnPool{}
+	ResourceDatacenterConnectivityTemplateInterface = resourceDatacenterConnectivityTemplateInterface{}
+	ResourceDatacenterConnectivityTemplateLoopback  = resourceDatacenterConnectivityTemplateLoopback{}
+	ResourceDatacenterConnectivityTemplateSvi       = resourceDatacenterConnectivityTemplateSvi{}
+	ResourceDatacenterConnectivityTemplateSystem    = resourceDatacenterConnectivityTemplateSystem{}
+	ResourceDatacenterGenericSystem                 = resourceDatacenterGenericSystem{}
+	ResourceDatacenterIpLinkAddressing              = resourceDatacenterIpLinkAddressing{}
+	ResourceDatacenterRoutingZone                   = resourceDatacenterRoutingZone{}
+	ResourceFreeformConfigTemplate                  = resourceFreeformConfigTemplate{}
+	ResourceFreeformLink                            = resourceFreeformLink{}
+	ResourceFreeformPropertySet                     = resourceFreeformPropertySet{}
+	ResourceFreeformResourceGroup                   = resourceFreeformResourceGroup{}
+	ResourceFreeformResource                        = resourceFreeformResource{}
+	ResourceFreeformSystem                          = resourceFreeformSystem{}
+	ResourceIntegerPool                             = resourceIntegerPool{}
+	ResourceIpv4Pool                                = resourceIpv4Pool{}
+	ResourceIpv6Pool                                = resourceIpv6Pool{}
+	ResourceTemplateCollapsed                       = resourceTemplateCollapsed{}
+	ResourceTemplatePodBased                        = resourceTemplatePodBased{}
+	ResourceVniPool                                 = resourceVniPool{}
 )
 
 func ResourceName(ctx context.Context, r resource.Resource) string {

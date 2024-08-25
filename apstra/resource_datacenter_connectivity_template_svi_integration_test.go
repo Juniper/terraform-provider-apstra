@@ -33,13 +33,12 @@ type resourceDataCenterConnectivityTemplateSvi struct {
 	name                 string
 	description          string
 	tags                 []string
-	bgpPeeringIpEndoints []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpPrimitive
-	dynamicBgpPeerings   []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringPrimitive
+	bgpPeeringIpEndoints []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
+	dynamicBgpPeerings   []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering
 }
 
 func (o resourceDataCenterConnectivityTemplateSvi) render(rType, rName string) string {
 	bgpPeeringIpEndoints := "null"
-
 	if len(o.bgpPeeringIpEndoints) > 0 {
 		sb := new(strings.Builder)
 		for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndoints {
@@ -105,9 +104,10 @@ func (o resourceDataCenterConnectivityTemplateSvi) testChecks(t testing.TB, bpId
 
 func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 	ctx := context.Background()
+	cleanup := true
 
 	// Create a blueprint
-	bp := testutils.BlueprintE(t, ctx)
+	bp := testutils.BlueprintG(t, ctx, cleanup)
 
 	type testStep struct {
 		config resourceDataCenterConnectivityTemplateSvi
@@ -133,8 +133,8 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 						name:                 acctest.RandString(6),
 						description:          acctest.RandString(6),
 						tags:                 randomStrings(rand.IntN(5)+2, 6),
-						bgpPeeringIpEndoints: randomBgpPeeringIpPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
-						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
+						bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
 					},
 				},
 				{
@@ -153,8 +153,8 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 						name:                 acctest.RandString(6),
 						description:          acctest.RandString(6),
 						tags:                 randomStrings(rand.IntN(5)+2, 6),
-						bgpPeeringIpEndoints: randomBgpPeeringIpPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
-						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
+						bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
 					},
 				},
 				{
@@ -169,8 +169,8 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 						name:                 acctest.RandString(6),
 						description:          acctest.RandString(6),
 						tags:                 randomStrings(rand.IntN(5)+2, 6),
-						bgpPeeringIpEndoints: randomBgpPeeringIpPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
-						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, true, bp),
+						bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
 					},
 				},
 			},
