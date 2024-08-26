@@ -27,8 +27,6 @@ const (
 	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
 	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
 
-	// search for todos with 'enable_rosetta_for_pools_with_leading_ipv6' to enable rosetta for these items.
-	// total 18 occurences between this file and the test file
 	resourceGroupNameSpineLeafLinkIpv6       = "spine_leaf_link_ips_ipv6"
 	resourceGroupNameSpineSuperspineLinkIpv6 = "spine_superspine_link_ips_ipv6"
 	resourceGroupNameToGenericLinkIpv6       = "to_generic_link_ips_ipv6"
