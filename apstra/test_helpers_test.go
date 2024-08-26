@@ -16,7 +16,6 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testcheck "github.com/Juniper/terraform-provider-apstra/apstra/test_check_funcs"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -71,10 +70,17 @@ func stringOrNull(in string) string {
 	return `"` + in + `"`
 }
 
-func ipOrNull(in net.IPNet) string {
+func ipOrNull(in net.IP) string {
 	s := in.String()
-	ipNet := utils.ToPtr(net.IPNet{})
-	if s == (ipNet.String()) {
+	if s == (net.IP{}.String()) {
+		return "null"
+	}
+	return `"` + s + `"`
+}
+
+func ipNetOrNull(in net.IPNet) string {
+	s := in.String()
+	if s == (net.IP{}.String()) {
 		return "null"
 	}
 	return `"` + s + `"`
@@ -581,4 +587,8 @@ func extractValueFromTerraformState(t testing.TB, name string, id string, target
 
 		return nil
 	}
+}
+
+func oneOf[A interface{}](in ...A) A {
+	return in[rand.Intn(len(in))]
 }

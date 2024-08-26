@@ -2,12 +2,13 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"testing"
 )
 
-func SecurityZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient) apstra.ObjectId {
+func SecurityZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cleanup bool) apstra.ObjectId {
 	t.Helper()
 
 	name := acctest.RandString(10)
@@ -25,12 +26,14 @@ func SecurityZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3C
 		t.Fatal(err)
 	}
 
-	t.Cleanup(func() {
-		err := client.DeleteSecurityZone(ctx, id)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	if cleanup {
+		t.Cleanup(func() {
+			err := client.DeleteSecurityZone(ctx, id)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
 
 	return id
 }

@@ -5,11 +5,12 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"net"
+	"testing"
+
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"net"
-	"testing"
 )
 
 const (
@@ -27,7 +28,7 @@ func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 	// BlueprintB returns a bpClient and the template from which the blueprint was created
 	bpClient := testutils.BlueprintA(t, ctx)
 
-	szId := testutils.SecurityZoneA(t, ctx, bpClient)
+	szId := testutils.SecurityZoneA(t, ctx, bpClient, true)
 
 	sz, err := bpClient.GetSecurityZone(ctx, szId)
 	require.NoError(t, err)

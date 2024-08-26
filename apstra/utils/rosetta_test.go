@@ -50,6 +50,9 @@ func TestRosetta(t *testing.T) {
 
 		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv4TypeNone}},
 		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv6TypeNone}},
+
+		{string: "none", stringers: []fmt.Stringer{apstra.CtPrimitiveIPv4AddressingTypeNone}},
+		{string: "none", stringers: []fmt.Stringer{apstra.CtPrimitiveIPv6AddressingTypeNone}},
 	}
 
 	for i, tc := range testCases {
@@ -64,6 +67,12 @@ func TestRosetta(t *testing.T) {
 		switch tc.stringers[0].(type) {
 		case apstra.ConfigletSection:
 			x := apstra.ConfigletSection(-1)
+			target = &x
+		case apstra.CtPrimitiveIPv4AddressingType:
+			x := apstra.CtPrimitiveIPv4AddressingType(-1)
+			target = &x
+		case apstra.CtPrimitiveIPv6AddressingType:
+			x := apstra.CtPrimitiveIPv6AddressingType(-1)
 			target = &x
 		case apstra.AsnAllocationScheme:
 			x := apstra.AsnAllocationScheme(-1)

@@ -1,9 +1,11 @@
 package tfapstra
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"golang.org/x/exp/constraints"
-	"testing"
 )
 
 func TestSliceWithoutElement(t *testing.T) {
@@ -165,5 +167,104 @@ func TestRandomIntegers(t *testing.T) {
 	}
 	if allZeros(dataUFoo) {
 		t.Fail()
+	}
+}
+
+const indentPrefix = "  "
+
+func Indent(level int, s string) string {
+	if s == "" || level == 0 {
+		return s
+	}
+
+	prefix := strings.Repeat(indentPrefix, level)
+
+	lines := strings.SplitAfter(s, "\n")
+	if len(lines[len(lines)-1]) == 0 {
+		lines = lines[:len(lines)-1]
+	}
+
+	return strings.Join(append([]string{""}, lines...), prefix)
+}
+
+func Test_indent(t *testing.T) {
+	type testCase struct {
+		in       string
+		level    int
+		expected string
+	}
+
+	testCases := map[string]testCase{
+		"1_line_with_final_newline_0_indent": {
+			in:       "foo\n",
+			level:    0,
+			expected: "foo\n",
+		},
+		"1_line_without_final_newline_0_indent": {
+			in:       "foo",
+			level:    0,
+			expected: "foo",
+		},
+		"1_line_with_final_newline_1_indent": {
+			in:       "foo\n",
+			level:    1,
+			expected: "  foo\n",
+		},
+		"1_line_without_final_newline_1_indent": {
+			in:       "foo",
+			level:    1,
+			expected: "  foo",
+		},
+		"1_line_with_final_newline_2_indent": {
+			in:       "foo\n",
+			level:    2,
+			expected: "    foo\n",
+		},
+		"1_line_without_final_newline_2_indent": {
+			in:       "foo",
+			level:    2,
+			expected: "    foo",
+		},
+		"2_line_with_final_newline_0_indent": {
+			in:       "foo\nbar\n",
+			level:    0,
+			expected: "foo\nbar\n",
+		},
+		"2_line_without_final_newline_0_indent": {
+			in:       "foo\nbar",
+			level:    0,
+			expected: "foo\nbar",
+		},
+		"2_line_with_final_newline_1_indent": {
+			in:       "foo\nbar\n",
+			level:    1,
+			expected: "  foo\n  bar\n",
+		},
+		"2_line_without_final_newline_1_indent": {
+			in:       "foo\nbar",
+			level:    1,
+			expected: "  foo\n  bar",
+		},
+		"2_line_with_final_newline_2_indent": {
+			in:       "foo\nbar\n",
+			level:    2,
+			expected: "    foo\n    bar\n",
+		},
+		"2_line_without_final_newline_2_indent": {
+			in:       "foo\nbar",
+			level:    2,
+			expected: "    foo\n    bar",
+		},
+	}
+
+	for tName, tCase := range testCases {
+		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+
+			result := Indent(tCase.level, tCase.in)
+			if tCase.expected != result {
+				t.Fatalf("expected %q, got %q", tCase.expected, result)
+			}
+		})
 	}
 }

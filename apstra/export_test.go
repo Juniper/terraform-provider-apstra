@@ -8,27 +8,31 @@ import (
 )
 
 var (
-	ResourceAgentProfile               = resourceAgentProfile{}
-	ResourceAsnPool                    = resourceAsnPool{}
-	ResourceDatacenterGenericSystem    = resourceDatacenterGenericSystem{}
-	ResourceDatacenterIpLinkAddressing = resourceDatacenterIpLinkAddressing{}
-	ResourceDatacenterRoutingZone      = resourceDatacenterRoutingZone{}
-	ResourceFreeformBlueprint          = resourceFreeformBlueprint{}
-	ResourceFreeformConfigTemplate     = resourceFreeformConfigTemplate{}
-	ResourceFreeformDeviceProfile      = resourceFreeformDeviceProfile{}
-	ResourceFreeformLink               = resourceFreeformLink{}
-	ResourceFreeformPropertySet        = resourceFreeformPropertySet{}
-	ResourceFreeformResourceGroup      = resourceFreeformResourceGroup{}
-	ResourceFreeformResourceGenerator  = resourceFreeformResourceGenerator{}
-	ResourceFreeformResource           = resourceFreeformResource{}
-	ResourceFreeformAllocGroup         = resourceFreeformAllocGroup{}
-	ResourceFreeformSystem             = resourceFreeformSystem{}
-	ResourceIntegerPool                = resourceIntegerPool{}
-	ResourceIpv4Pool                   = resourceIpv4Pool{}
-	ResourceIpv6Pool                   = resourceIpv6Pool{}
-	ResourceTemplateCollapsed          = resourceTemplateCollapsed{}
-	ResourceTemplatePodBased           = resourceTemplatePodBased{}
-	ResourceVniPool                    = resourceVniPool{}
+	ResourceAgentProfile                            = resourceAgentProfile{}
+	ResourceAsnPool                                 = resourceAsnPool{}
+	ResourceDatacenterConnectivityTemplateInterface = resourceDatacenterConnectivityTemplateInterface{}
+	ResourceDatacenterConnectivityTemplateLoopback  = resourceDatacenterConnectivityTemplateLoopback{}
+	ResourceDatacenterConnectivityTemplateSvi       = resourceDatacenterConnectivityTemplateSvi{}
+	ResourceDatacenterConnectivityTemplateSystem    = resourceDatacenterConnectivityTemplateSystem{}
+	ResourceDatacenterGenericSystem                 = resourceDatacenterGenericSystem{}
+	ResourceDatacenterIpLinkAddressing              = resourceDatacenterIpLinkAddressing{}
+	ResourceDatacenterRoutingZone                   = resourceDatacenterRoutingZone{}
+	ResourceFreeformAllocGroup                      = resourceFreeformAllocGroup{}
+	ResourceFreeformBlueprint                       = resourceFreeformBlueprint{}
+	ResourceFreeformConfigTemplate                  = resourceFreeformConfigTemplate{}
+	ResourceFreeformDeviceProfile                   = resourceFreeformDeviceProfile{}
+	ResourceFreeformLink                            = resourceFreeformLink{}
+	ResourceFreeformPropertySet                     = resourceFreeformPropertySet{}
+	ResourceFreeformResourceGenerator               = resourceFreeformResourceGenerator{}
+	ResourceFreeformResourceGroup                   = resourceFreeformResourceGroup{}
+	ResourceFreeformResource                        = resourceFreeformResource{}
+	ResourceFreeformSystem                          = resourceFreeformSystem{}
+	ResourceIntegerPool                             = resourceIntegerPool{}
+	ResourceIpv4Pool                                = resourceIpv4Pool{}
+	ResourceIpv6Pool                                = resourceIpv6Pool{}
+	ResourceTemplateCollapsed                       = resourceTemplateCollapsed{}
+	ResourceTemplatePodBased                        = resourceTemplatePodBased{}
+	ResourceVniPool                                 = resourceVniPool{}
 )
 
 func ResourceName(ctx context.Context, r resource.Resource) string {

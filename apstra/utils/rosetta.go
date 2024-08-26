@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	ctPrimitiveIPv4AddressingTypeNone = "none"
+	ctPrimitiveIPv6AddressingTypeNone = "none"
+
 	junOSTopLevelHierarchical       = "top_level_hierarchical"
 	junOSTopLevelSetDelete          = "top_level_set_delete"
 	junOSInterfaceLevelHierarchical = "interface_level_hierarchical"
@@ -40,6 +43,14 @@ const (
 	resourcePoolTypeIpv4 = "ipv4"
 )
 
+func StringersToFriendlyStrings(in []fmt.Stringer) []string {
+	result := make([]string, len(in))
+	for i, s := range in {
+		result[i] = s.String()
+	}
+	return result
+}
+
 type StringerWithFromString interface {
 	String() string
 	FromString(string) error
@@ -61,6 +72,10 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return asnAllocationSchemeToFriendlyString(in0)
 	case apstra.ConfigletSection:
 		return configletSectionToFriendlyString(in0, in[1:]...)
+	case apstra.CtPrimitiveIPv4AddressingType:
+		return ctPrimitiveIPv4AddressingTypeToFriendlyString(in0)
+	case apstra.CtPrimitiveIPv6AddressingType:
+		return ctPrimitiveIPv6AddressingTypeToFriendlyString(in0)
 	case apstra.DeployMode:
 		return deployModeToFriendlyString(in0)
 	case apstra.FFResourceType:
@@ -103,6 +118,10 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return asnAllocationSchemeFromFriendlyString(target, in...)
 	case *apstra.ConfigletSection:
 		return configletSectionFromFriendlyString(target, in...)
+	case *apstra.CtPrimitiveIPv4AddressingType:
+		return ctPrimitiveIPv4AddressingTypeFromFriendlyString(target, in...)
+	case *apstra.CtPrimitiveIPv6AddressingType:
+		return ctPrimitiveIPv6AddressingTypeFromFriendlyString(target, in...)
 	case *apstra.DeployMode:
 		return nodeDeployModeFromFriendlyString(target, in...)
 	case *apstra.FFResourceType:
@@ -161,6 +180,24 @@ func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo
 		case apstra.ConfigletSectionInterface:
 			return junOSInterfaceLevelHierarchical
 		}
+	}
+
+	return in.String()
+}
+
+func ctPrimitiveIPv4AddressingTypeToFriendlyString(in apstra.CtPrimitiveIPv4AddressingType) string {
+	switch in {
+	case apstra.CtPrimitiveIPv4AddressingTypeNone:
+		return ctPrimitiveIPv4AddressingTypeNone
+	}
+
+	return in.String()
+}
+
+func ctPrimitiveIPv6AddressingTypeToFriendlyString(in apstra.CtPrimitiveIPv6AddressingType) string {
+	switch in {
+	case apstra.CtPrimitiveIPv6AddressingTypeNone:
+		return ctPrimitiveIPv6AddressingTypeNone
 	}
 
 	return in.String()
@@ -302,6 +339,36 @@ func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...s
 		*target = apstra.ConfigletSectionSetBasedInterface
 	default:
 		return target.FromString(section)
+	}
+
+	return nil
+}
+
+func ctPrimitiveIPv4AddressingTypeFromFriendlyString(target *apstra.CtPrimitiveIPv4AddressingType, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case ctPrimitiveIPv4AddressingTypeNone:
+		*target = apstra.CtPrimitiveIPv4AddressingTypeNone
+	default:
+		return target.FromString(in[0])
+	}
+
+	return nil
+}
+
+func ctPrimitiveIPv6AddressingTypeFromFriendlyString(target *apstra.CtPrimitiveIPv6AddressingType, in ...string) error {
+	if len(in) == 0 {
+		return target.FromString("")
+	}
+
+	switch in[0] {
+	case ctPrimitiveIPv6AddressingTypeNone:
+		*target = apstra.CtPrimitiveIPv6AddressingTypeNone
+	default:
+		return target.FromString(in[0])
 	}
 
 	return nil

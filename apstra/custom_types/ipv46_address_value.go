@@ -3,13 +3,14 @@ package customtypes
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
+	"net"
 	"net/netip"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
 var (
@@ -122,6 +123,24 @@ func (v IPv46Address) ValueIPv46Address() (netip.Addr, diag.Diagnostics) {
 	return ipv46Addr, nil
 }
 
+func (v IPv46Address) Is4() bool {
+	if v.IsUnknown() || v.IsNull() {
+		return false
+	}
+
+	address, _ := netip.ParseAddr(v.ValueString())
+	return address.IsValid() && address.Is4()
+}
+
+func (v IPv46Address) Is6() bool {
+	if v.IsUnknown() || v.IsNull() {
+		return false
+	}
+
+	address, _ := netip.ParseAddr(v.ValueString())
+	return address.IsValid() && address.Is6()
+}
+
 func NewIPv46AddressNull() IPv46Address {
 	return IPv46Address{
 		StringValue: basetypes.NewStringNull(),
@@ -144,4 +163,12 @@ func NewIPv46AddressPointerValue(value *string) IPv46Address {
 	return IPv46Address{
 		StringValue: basetypes.NewStringPointerValue(value),
 	}
+}
+
+func NewIPv46PrefixIpValue(value net.IP) IPv46Address {
+	if value == nil {
+		return NewIPv46AddressNull()
+	}
+
+	return NewIPv46AddressValue(value.String())
 }
