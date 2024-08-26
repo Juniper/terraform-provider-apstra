@@ -183,40 +183,26 @@ func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	return bpClient
 }
 
-func BlueprintE(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient {
+func BlueprintE(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
 	t.Helper()
 
 	client := GetTestClient(t, ctx)
-
-	var bpname string
-	if name == nil {
-		bpname = acctest.RandString(10)
-	} else {
-		bpname = name[0]
-	}
-
-	// Create the blueprint
+	template := TemplateD(t, ctx)
+	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  apstra.RefDesignTwoStageL3Clos,
-		Label:      bpname,
-		TemplateId: "L2_Virtual_EVPN",
+		Label:      name,
+		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp46),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp46),
+			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
-	// Create a client for that blueprint
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
 	require.NoError(t, err)
-
-	// Enable IPv6 applications
-	fs, err := bpClient.GetFabricSettings(ctx)
-	require.NoError(t, err)
-	fs.Ipv6Enabled = utils.ToPtr(true)
-	require.NoError(t, bpClient.SetFabricSettings(ctx, fs))
 
 	return bpClient
 }
