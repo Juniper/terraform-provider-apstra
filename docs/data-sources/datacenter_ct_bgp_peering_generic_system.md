@@ -110,7 +110,7 @@ resource "apstra_datacenter_connectivity_template" "t" {
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `name` (String) Primitive name displayed in the web UI
 - `neighbor_asn_dynamic` (Boolean) Default behavior is `static`
-- `password` (String)
+- `password` (String) BGP TCP authentication password.
 - `peer_from_loopback` (Boolean) Enable to peer from loopback interface. Default behavior peers from physical interface.
 - `peer_to` (String) One of `loopback`, `interface_or_ip_endpoint`, `interface_or_shared_ip_endpoint` (or omit)
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
