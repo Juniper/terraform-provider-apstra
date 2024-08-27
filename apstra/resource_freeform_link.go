@@ -87,6 +87,7 @@ func (o *resourceFreeformLink) Create(ctx context.Context, req resource.CreateRe
 
 	plan.Id = types.StringValue(id.String())
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	plan.AggregateLinkId = types.StringNull()
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
