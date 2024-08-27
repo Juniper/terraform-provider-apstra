@@ -171,6 +171,7 @@ func (o *resourceFreeformLink) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// set state
+	plan.AggregateLinkId = types.StringNull()
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
