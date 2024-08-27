@@ -70,12 +70,12 @@ output "test_Link_out" { value = data.apstra_freeform_link.test }
 
 ### Read-Only
 
-- `aggregate_link_id` (String) ID of aggregate link node that the current link belongs to
+- `aggregate_link_id` (String) ID of Aggregate Link node to which this Link belongs, if any.
 - `endpoints` (Attributes Map) Endpoints of the  Link, a Map keyed by System ID. (see [below for nested schema](#nestedatt--endpoints))
 - `speed` (String) Speed of the Link 200G | 5G | 1G | 100G | 150g | 40g | 2500M | 25G | 25g | 10G | 50G | 800G | 10M | 100m | 2500m | 50g | 400g | 400G | 200g | 5g | 800g | 100M | 10g | 150G | 10m | 100g | 1g | 40G
 - `tags` (Set of String) Set of unique case-insensitive tag labels
-- `type` (String) aggregate_link | ethernet
-Link Type. An 'ethernet' link is a normal front-panel interface. An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs. Note that the lag_mode parameter is a property of the interface and not the link, since interfaces may have different lag modes on opposite sides of the link - eg lacp_passive <-> lacp_active
+- `type` (String) `aggregate_link` | `ethernet`
+Link Type. An 'ethernet' link is a normal front-panel interface. An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs. Note that the lag_mode parameter is a property of the interface and not the link, since interfaces may have different lag modes on opposite sides of the link - e.g. lacp_passive <-> lacp_active
 
 <a id="nestedatt--endpoints"></a>
 ### Nested Schema for `endpoints`
