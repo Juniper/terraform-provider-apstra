@@ -67,7 +67,7 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		},
 		"type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "`aggregate_link` | `ethernet`\n" +
-				"Link Type. An 'ethernet' link is a normal front-panel interface. " +
+				"An 'ethernet' link is a normal front-panel interface. " +
 				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.",
 			Computed: true,
 		},
@@ -116,7 +116,7 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: "`aggregate_link` | `ethernet`\n" +
-				"Link Type. An 'ethernet' link is a normal front-panel interface. " +
+				"An 'ethernet' link is a normal front-panel interface. " +
 				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.",
 			Computed: true,
 		},
