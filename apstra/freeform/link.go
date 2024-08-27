@@ -66,16 +66,13 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Computed: true,
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "aggregate_link | ethernet\n" +
-				"Link Type. An 'ethernet' link is a normal front-panel interface. " +
-				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs. " +
-				"Note that the lag_mode parameter is a property of the interface and not the link, " +
-				"since interfaces may have different lag modes on opposite sides of the link - " +
-				"eg lacp_passive <-> lacp_active",
+			MarkdownDescription: "`aggregate_link` | `ethernet`\n" +
+				"An 'ethernet' link is a normal front-panel interface. " +
+				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.",
 			Computed: true,
 		},
 		"aggregate_link_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "ID of aggregate link node that the current link belongs to",
+			MarkdownDescription: "ID of Aggregate Link node to which this Link belongs, if any.",
 			Computed:            true,
 		},
 		"endpoints": dataSourceSchema.MapNestedAttribute{
@@ -118,13 +115,16 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 		},
 		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: "Deploy mode of the Link",
-			Computed:            true,
+			MarkdownDescription: "`aggregate_link` | `ethernet`\n" +
+				"An 'ethernet' link is a normal front-panel interface. " +
+				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.",
+			Computed: true,
 		},
 		"aggregate_link_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "ID of aggregate link node that the current link belongs to",
-			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "This field always `null` in resource context. Ignore. " +
+				"This information can be learned by invoking the complimentary data source.",
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"endpoints": resourceSchema.MapNestedAttribute{
 			NestedObject: resourceSchema.NestedAttributeObject{
