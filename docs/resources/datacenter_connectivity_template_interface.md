@@ -70,8 +70,8 @@ data "apstra_datacenter_routing_zone" "selected" {
   id           = each.value
 }
 
-# Loop over the Routing Zones. For each one,and discover the IDs of all
-# associaated Virtual Networks.
+# Loop over the Routing Zones. For each RZ, discover the IDs of all
+# associated Virtual Networks.
 data "apstra_datacenter_virtual_networks" "selected" {
   for_each     = data.apstra_datacenter_routing_zone.selected
   blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
@@ -82,9 +82,9 @@ data "apstra_datacenter_virtual_networks" "selected" {
   ]
 }
 
-# Finally, create an 'interface' type Connectivity Template. Multiple
-# "Virtual Network (Multiple)" primitives are included in this CT, one for
-# each Routing Zone. Each primitive lists all of the Virtual Networks in
+# Finally, create an 'interface' type Connectivity Template with a
+# "Virtual Network (Multiple)" primitive for each Routing Zone. Each
+# of these primitives lists all of the Virtual Networks in
 # that Routing Zone.
 resource "apstra_datacenter_connectivity_template_interface" "example" {
   blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
