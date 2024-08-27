@@ -31,6 +31,7 @@ resource %q %q {
   ipv4_value          = %s
   ipv6_value          = %s
   allocated_from      = %s
+  assigned_to		  = %s
  }
 `
 )
@@ -44,6 +45,7 @@ type resourceFreeformResource struct {
 	ipv4Value     net.IPNet
 	ipv6Value     net.IPNet
 	allocatedFrom apstra.ObjectId
+	assignedTo    []string
 }
 
 func (o resourceFreeformResource) render(rType, rName string) string {
@@ -57,6 +59,7 @@ func (o resourceFreeformResource) render(rType, rName string) string {
 		ipOrNull(o.ipv4Value),
 		ipOrNull(o.ipv6Value),
 		stringOrNull(o.allocatedFrom.String()),
+		stringSetOrNull(o.assignedTo),
 	)
 }
 
@@ -99,6 +102,12 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 	} else {
 		result.append(t, "TestCheckResourceAttr", "allocated_from", o.allocatedFrom.String())
 	}
+	if len(o.assignedTo) > 0 {
+		result.append(t, "TestCheckResourceAttr", "assigned_to.#", strconv.Itoa(len(o.assignedTo)))
+		for _, assignedTo := range o.assignedTo {
+			result.append(t, "TestCheckTypeSetElemAttr", "assigned_to.*", assignedTo)
+		}
+	}
 
 	return result
 }
@@ -109,7 +118,15 @@ func TestResourceFreeformResource(t *testing.T) {
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
 	// create a blueprint and a group...
-	bp, groupId := testutils.FfBlueprintC(t, ctx)
+	intSysCount := 5
+	extSysCount := 5
+	sysCount := intSysCount + extSysCount
+	bp, intSysIds, extSysIds := testutils.FfBlueprintB(t, ctx, intSysCount, extSysCount)
+	require.Equal(t, intSysCount, len(intSysIds))
+	require.Equal(t, extSysCount, len(extSysIds))
+
+	groupId, err := bp.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{Label: acctest.RandString(6)})
+	require.NoError(t, err)
 
 	newIpv4AllocationGroup := func(t testing.TB) apstra.ObjectId {
 		t.Helper()
@@ -237,6 +254,37 @@ func TestResourceFreeformResource(t *testing.T) {
 		return allocGroup
 	}
 
+	var allSysIDs []string
+	randomSysIds := func(t testing.TB, count int) []string {
+		if count > intSysCount+extSysCount {
+			t.Fatalf("caller requested %d systemIDs blueprint only  has %d internal and %d external", count, intSysCount, extSysCount)
+		}
+
+		if allSysIDs == nil {
+			allSysIDs = make([]string, intSysCount+extSysCount)
+			for i, id := range intSysIds {
+				allSysIDs[i] = id.String()
+			}
+			for i, id := range extSysIds {
+				allSysIDs[i+intSysCount] = id.String()
+			}
+		}
+
+		resultMap := make(map[string]struct{}, count)
+		for len(resultMap) < count {
+			resultMap[allSysIDs[rand.IntN(len(allSysIDs))]] = struct{}{}
+		}
+
+		result := make([]string, len(resultMap))
+		var i int
+		for k := range resultMap {
+			result[i] = k
+			i++
+		}
+
+		return result
+	}
+
 	type testStep struct {
 		config resourceFreeformResource
 	}
@@ -283,6 +331,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeAsn,
 						allocatedFrom: newAsnAllocationGroup(t),
+						assignedTo:    randomSysIds(t, sysCount/3),
 					},
 				},
 				{
@@ -305,6 +354,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeVni,
 						integerValue: utils.ToPtr(4498),
+						assignedTo:   randomSysIds(t, sysCount/3),
 					},
 				},
 			},
@@ -318,6 +368,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeInt,
 						integerValue: utils.ToPtr(4498),
+						assignedTo:   randomSysIds(t, sysCount/3),
 					},
 				},
 				{
@@ -327,6 +378,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeInt,
 						allocatedFrom: newIntAllocationGroup(t),
+						assignedTo:    randomSysIds(t, sysCount/3),
 					},
 				},
 				{
@@ -381,6 +433,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						groupId:      groupId,
 						resourceType: apstra.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
+						assignedTo:   randomSysIds(t, sysCount/3),
 					},
 				},
 				{
@@ -440,6 +493,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						groupId:       groupId,
 						resourceType:  apstra.FFResourceTypeVni,
 						allocatedFrom: newVniAllocationGroup(t),
+						assignedTo:    randomSysIds(t, sysCount/3),
 					},
 				},
 			},

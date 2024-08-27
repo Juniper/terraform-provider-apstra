@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"testing"
 )
 
@@ -410,5 +411,56 @@ func TestSliceIntersectionOfAB(t *testing.T) {
 				t.Fatalf("test case %d: did not find expected value %d among results", i, v)
 			}
 		}
+	}
+}
+
+func TestSlicesAreEqualSets(t *testing.T) {
+	type testCase[T comparable] struct {
+		a []T
+		b []T
+		e bool
+	}
+
+	testCases := []testCase[int]{
+		{
+			a: []int{},
+			b: []int{},
+			e: true,
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{1, 2, 3, 4},
+			e: true,
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{1, 2, 3, 4, 5},
+			e: false,
+		},
+		{
+			a: []int{1, 2, 3, 4, 5},
+			b: []int{1, 2, 3, 4},
+			e: false,
+		},
+		{
+			a: []int{1, 2, 3, 4},
+			b: []int{1, 2, 3, 5},
+			e: false,
+		},
+		{
+			a: []int{2, 4, 6, 8},
+			b: []int{1, 3, 5, 7},
+			e: false,
+		},
+	}
+
+	for i, tc := range testCases {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			t.Parallel()
+			r := SlicesAreEqualSets(tc.a, tc.b)
+			if r != tc.e {
+				t.Fatalf("test case %d: expected %t, got %t", i, tc.e, r)
+			}
+		})
 	}
 }

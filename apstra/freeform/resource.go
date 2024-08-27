@@ -3,6 +3,7 @@ package freeform
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,6 +34,7 @@ type Resource struct {
 	Ipv4Value     cidrtypes.IPv4Prefix `tfsdk:"ipv4_value"`
 	Ipv6Value     cidrtypes.IPv6Prefix `tfsdk:"ipv6_value"`
 	GeneratorId   types.String         `tfsdk:"generator_id"`
+	AssignedTo    types.Set            `tfsdk:"assigned_to"`
 }
 
 func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -107,6 +109,11 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"generator_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the group generator that created the group, if any.",
 			Computed:            true,
+		},
+		"assigned_to": dataSourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Computed:            true,
+			MarkdownDescription: "Set of node IDs to which the resource is assigned",
 		},
 	}
 }
@@ -201,6 +208,12 @@ func (o Resource) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "ID of the Generator that created Resource Allocation Group. " +
 				"Always `null` because groups created via resource declaration were not generated.",
 			Computed: true,
+		},
+		"assigned_to": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of node IDs to which the resource is assigned",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
 }

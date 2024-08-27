@@ -92,6 +92,18 @@ func (o *dataSourceFreeformResource) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
+	// Read the resource assignments
+	assignedTo, err := bp.ListResourceAssignments(ctx, api.Id)
+	if err != nil {
+		resp.Diagnostics.AddError("error reading Resource Assignments", err.Error())
+		return
+	}
+
+	config.AssignedTo = utils.SetValueOrNull(ctx, types.StringType, assignedTo, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
