@@ -21,6 +21,7 @@ var (
 	ResourceFreeformBlueprint                       = resourceFreeformBlueprint{}
 	ResourceFreeformConfigTemplate                  = resourceFreeformConfigTemplate{}
 	ResourceFreeformDeviceProfile                   = resourceFreeformDeviceProfile{}
+	ResourceFreeformGroupGenerator                  = resourceFreeformGroupGenerator{}
 	ResourceFreeformLink                            = resourceFreeformLink{}
 	ResourceFreeformPropertySet                     = resourceFreeformPropertySet{}
 	ResourceFreeformResourceGenerator               = resourceFreeformResourceGenerator{}
