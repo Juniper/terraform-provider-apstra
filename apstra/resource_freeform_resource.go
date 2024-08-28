@@ -168,6 +168,28 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	// record the id and provisionally set the state
+	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set the resource assignments, if any
+	if !plan.AssignedTo.IsNull() {
+		var assignments []apstra.ObjectId
+		resp.Diagnostics.Append(plan.AssignedTo.ElementsAs(ctx, &assignments, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err = bp.UpdateResourceAssignments(ctx, id, assignments)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating Resource Assignments", err.Error())
+			return
+		}
+	}
+
 	// Read the resource back from Apstra to get computed values
 	api, err := bp.GetRaResource(ctx, id)
 	if err != nil {
@@ -176,7 +198,6 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	// load state objects
-	plan.Id = types.StringValue(id.String())
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -219,6 +240,18 @@ func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
+	// Read the resource assignments
+	assignedTo, err := bp.ListResourceAssignments(ctx, api.Id)
+	if err != nil {
+		resp.Diagnostics.AddError("error reading Resource Assignments", err.Error())
+		return
+	}
+
+	state.AssignedTo = utils.SetValueOrNull(ctx, types.StringType, assignedTo, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -227,6 +260,13 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 	// Get plan values
 	var plan freeform.Resource
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get state values
+	var state freeform.Resource
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -251,17 +291,36 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// Convert the plan into an API Request
-	request := plan.Request(ctx, &resp.Diagnostics)
+	// Update the resource if necessary
+	if plan.NeedsUpdate(state) {
+		// Convert the plan into an API Request
+		request := plan.Request(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// Update the Resource
+		err = bp.UpdateRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
+			return
+		}
+	}
+
+	var planAssignments, stateAssignments []apstra.ObjectId
+	resp.Diagnostics.Append(plan.AssignedTo.ElementsAs(ctx, &planAssignments, false)...)
+	resp.Diagnostics.Append(state.AssignedTo.ElementsAs(ctx, &stateAssignments, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update the Resource
-	err = bp.UpdateRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
-		return
+	// update the assignments if necessary
+	if !utils.SlicesAreEqualSets(planAssignments, stateAssignments) {
+		err = bp.UpdateResourceAssignments(ctx, apstra.ObjectId(plan.Id.ValueString()), planAssignments)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating Resource Assignments", err.Error())
+			return
+		}
 	}
 
 	// Read the resource back from Apstra to get computed values

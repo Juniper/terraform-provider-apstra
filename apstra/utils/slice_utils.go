@@ -153,3 +153,25 @@ func Sort[A constraints.Ordered](in []A) {
 		return in[i] < in[j]
 	})
 }
+
+func SlicesAreEqualSets[A comparable](a, b []A) bool {
+	// first check to see if they are the same length
+	if len(a) != len(b) {
+		return false
+	}
+
+	// make a map of booleans and fill it with true(s)
+	ma := make(map[A]bool, len(a))
+	for _, v := range a {
+		ma[v] = true
+	}
+
+	for _, v := range b {
+		if !ma[v] {
+			// element from []b not found return false
+			return false
+		}
+	}
+
+	return true
+}
