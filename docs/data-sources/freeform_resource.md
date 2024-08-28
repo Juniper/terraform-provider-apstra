@@ -66,9 +66,9 @@ output "test_resource_out" { value = data.apstra_freeform_resource.test }
 ### Read-Only
 
 - `allocated_from` (String) ID of the node from which this resource has been sourced. This could be an ID of resource allocation group or another resource (in case of IP or Host IP allocations). This also can be empty. In that case it is required that value for this resource is provided by thex user.
-- `assigned_to` (Set of String) Set of node IDs to which the resource is assigned
+- `assigned_to` (Set of String) Set of node IDs to which the resource is assigned.
 - `generator_id` (String) ID of the group generator that created the group, if any.
-- `group_id` (String) Resource Group the Resource belongs to
+- `group_id` (String) Resource Group the Resource belongs to.
 - `integer_value` (Number) Value used by integer type resources (`asn`, `integer`, `vlan`, `vni`). Also used by IP prefix resources (`ipv4` and `ipv6`) to indicate the required prefix size for automatic allocations from another object or a resource pool.
 - `ipv4_value` (String) Value used by resources with type `ipv4` or `host_ipv4`.
 - `ipv6_value` (String) Value used by resources with type `ipv6` or `host_ipv6`.
