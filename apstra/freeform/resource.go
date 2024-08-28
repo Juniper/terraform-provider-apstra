@@ -3,7 +3,6 @@ package freeform
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -64,7 +64,7 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"group_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Resource Group the Resource belongs to",
+			MarkdownDescription: "Resource Group the Resource belongs to.",
 			Computed:            true,
 		},
 		"type": dataSourceSchema.StringAttribute{
@@ -113,7 +113,7 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"assigned_to": dataSourceSchema.SetAttribute{
 			ElementType:         types.StringType,
 			Computed:            true,
-			MarkdownDescription: "Set of node IDs to which the resource is assigned",
+			MarkdownDescription: "Set of node IDs to which the resource is assigned.",
 		},
 	}
 }
@@ -292,4 +292,25 @@ func (o *Resource) LoadApiData(_ context.Context, in *apstra.FreeformRaResourceD
 			diags.AddError("failed parsing integer value from API", err.Error())
 		}
 	}
+}
+
+func (o Resource) NeedsUpdate(state Resource) bool {
+	switch {
+	case !o.Type.Equal(state.Type):
+		return true
+	case !o.Name.Equal(state.Name):
+		return true
+	case !o.AllocatedFrom.Equal(state.AllocatedFrom):
+		return true
+	case !o.GroupId.Equal(state.GroupId):
+		return true
+	case !o.IntValue.Equal(state.IntValue):
+		return true
+	case !o.Ipv4Value.Equal(state.Ipv4Value):
+		return true
+	case !o.Ipv6Value.Equal(state.Ipv6Value):
+		return true
+	}
+
+	return false
 }
