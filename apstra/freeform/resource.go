@@ -11,6 +11,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -33,6 +34,7 @@ type Resource struct {
 	Ipv4Value     cidrtypes.IPv4Prefix `tfsdk:"ipv4_value"`
 	Ipv6Value     cidrtypes.IPv6Prefix `tfsdk:"ipv6_value"`
 	GeneratorId   types.String         `tfsdk:"generator_id"`
+	AssignedTo    types.Set            `tfsdk:"assigned_to"`
 }
 
 func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -62,7 +64,7 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"group_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Resource Group the Resource belongs to",
+			MarkdownDescription: "Resource Group the Resource belongs to.",
 			Computed:            true,
 		},
 		"type": dataSourceSchema.StringAttribute{
@@ -107,6 +109,11 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"generator_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the group generator that created the group, if any.",
 			Computed:            true,
+		},
+		"assigned_to": dataSourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Computed:            true,
+			MarkdownDescription: "Set of node IDs to which the resource is assigned.",
 		},
 	}
 }
@@ -202,6 +209,12 @@ func (o Resource) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"Always `null` because groups created via resource declaration were not generated.",
 			Computed: true,
 		},
+		"assigned_to": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Optional:            true,
+			MarkdownDescription: "Set of node IDs to which the resource is assigned",
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
 	}
 }
 
@@ -279,4 +292,25 @@ func (o *Resource) LoadApiData(_ context.Context, in *apstra.FreeformRaResourceD
 			diags.AddError("failed parsing integer value from API", err.Error())
 		}
 	}
+}
+
+func (o Resource) NeedsUpdate(state Resource) bool {
+	switch {
+	case !o.Type.Equal(state.Type):
+		return true
+	case !o.Name.Equal(state.Name):
+		return true
+	case !o.AllocatedFrom.Equal(state.AllocatedFrom):
+		return true
+	case !o.GroupId.Equal(state.GroupId):
+		return true
+	case !o.IntValue.Equal(state.IntValue):
+		return true
+	case !o.Ipv4Value.Equal(state.Ipv4Value):
+		return true
+	case !o.Ipv6Value.Equal(state.Ipv6Value):
+		return true
+	}
+
+	return false
 }
