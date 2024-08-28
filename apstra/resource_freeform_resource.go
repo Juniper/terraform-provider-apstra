@@ -168,6 +168,13 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 		return
 	}
 
+	// record the id and provisionally set the state
+	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// set the resource assignments, if any
 	if !plan.AssignedTo.IsNull() {
 		var assignments []apstra.ObjectId
@@ -176,7 +183,7 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 			return
 		}
 
-		err = bp.UpdateResourceAssignments(ctx, apstra.ObjectId(plan.Id.ValueString()), assignments)
+		err = bp.UpdateResourceAssignments(ctx, id, assignments)
 		if err != nil {
 			resp.Diagnostics.AddError("error updating Resource Assignments", err.Error())
 			return
@@ -191,7 +198,6 @@ func (o *resourceFreeformResource) Create(ctx context.Context, req resource.Crea
 	}
 
 	// load state objects
-	plan.Id = types.StringValue(id.String())
 	plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -285,17 +291,20 @@ func (o *resourceFreeformResource) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// Convert the plan into an API Request
-	request := plan.Request(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// Update the resource if necessary
+	if plan.NeedsUpdate(state) {
+		// Convert the plan into an API Request
+		request := plan.Request(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 
-	// Update the Resource
-	err = bp.UpdateRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
-		return
+		// Update the Resource
+		err = bp.UpdateRaResource(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating Freeform Resource", err.Error())
+			return
+		}
 	}
 
 	var planAssignments, stateAssignments []apstra.ObjectId

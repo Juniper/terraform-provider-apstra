@@ -31,7 +31,7 @@ resource %q %q {
   ipv4_value          = %s
   ipv6_value          = %s
   allocated_from      = %s
-  assigned_to		  = %s
+  assigned_to         = %s
  }
 `
 )
@@ -107,6 +107,8 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 		for _, assignedTo := range o.assignedTo {
 			result.append(t, "TestCheckTypeSetElemAttr", "assigned_to.*", assignedTo)
 		}
+	} else {
+		result.append(t, "TestCheckNoResourceAttr", "assigned_to")
 	}
 
 	return result
@@ -117,6 +119,8 @@ func TestResourceFreeformResource(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
+	var err error
+
 	// create a blueprint and a group...
 	intSysCount := 5
 	extSysCount := 5
@@ -125,8 +129,13 @@ func TestResourceFreeformResource(t *testing.T) {
 	require.Equal(t, intSysCount, len(intSysIds))
 	require.Equal(t, extSysCount, len(extSysIds))
 
-	groupId, err := bp.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{Label: acctest.RandString(6)})
-	require.NoError(t, err)
+	// create resource groups
+	groupCount := 2
+	groupIds := make([]apstra.ObjectId, groupCount)
+	for i := range groupCount {
+		groupIds[i], err = bp.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{Label: acctest.RandString(6)})
+		require.NoError(t, err)
+	}
 
 	newIpv4AllocationGroup := func(t testing.TB) apstra.ObjectId {
 		t.Helper()
@@ -301,7 +310,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65535),
 					},
@@ -310,7 +319,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[1],
 						resourceType: apstra.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65536),
 					},
@@ -319,7 +328,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[0],
 						resourceType:  apstra.FFResourceTypeAsn,
 						allocatedFrom: newAsnAllocationGroup(t),
 					},
@@ -328,7 +337,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[1],
 						resourceType:  apstra.FFResourceTypeAsn,
 						allocatedFrom: newAsnAllocationGroup(t),
 						assignedTo:    randomSysIds(t, sysCount/3),
@@ -338,7 +347,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65536),
 					},
@@ -351,7 +360,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeVni,
 						integerValue: utils.ToPtr(4498),
 						assignedTo:   randomSysIds(t, sysCount/3),
@@ -365,7 +374,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeInt,
 						integerValue: utils.ToPtr(4498),
 						assignedTo:   randomSysIds(t, sysCount/3),
@@ -375,7 +384,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[1],
 						resourceType:  apstra.FFResourceTypeInt,
 						allocatedFrom: newIntAllocationGroup(t),
 						assignedTo:    randomSysIds(t, sysCount/3),
@@ -385,7 +394,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeInt,
 						integerValue: utils.ToPtr(459),
 					},
@@ -398,7 +407,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeIpv4,
 						ipv4Value:    randomSlash31(t, "192.168.2.0/24"),
 					},
@@ -407,7 +416,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[1],
 						resourceType:  apstra.FFResourceTypeIpv4,
 						integerValue:  utils.ToPtr(30),
 						allocatedFrom: newIpv4AllocationGroup(t),
@@ -417,7 +426,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeIpv4,
 						ipv4Value:    randomSlash31(t, "10.168.2.0/24"),
 					},
@@ -430,7 +439,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
 						assignedTo:   randomSysIds(t, sysCount/3),
@@ -440,7 +449,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[1],
 						resourceType:  apstra.FFResourceTypeIpv6,
 						integerValue:  utils.ToPtr(64),
 						allocatedFrom: newIpv6AllocationGroup(t),
@@ -450,7 +459,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
 					},
@@ -463,7 +472,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[0],
 						resourceType:  apstra.FFResourceTypeVni,
 						allocatedFrom: newVniAllocationGroup(t),
 					},
@@ -472,7 +481,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[1],
 						resourceType: apstra.FFResourceTypeVni,
 						integerValue: utils.ToPtr(rand.IntN(10000) + 4096),
 					},
@@ -481,7 +490,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
-						groupId:      groupId,
+						groupId:      groupIds[0],
 						resourceType: apstra.FFResourceTypeVni,
 						integerValue: utils.ToPtr(rand.IntN(10000) + 4096),
 					},
@@ -490,7 +499,7 @@ func TestResourceFreeformResource(t *testing.T) {
 					config: resourceFreeformResource{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						groupId:       groupId,
+						groupId:       groupIds[1],
 						resourceType:  apstra.FFResourceTypeVni,
 						allocatedFrom: newVniAllocationGroup(t),
 						assignedTo:    randomSysIds(t, sysCount/3),
