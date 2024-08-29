@@ -188,7 +188,6 @@ func (o *Link) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, dia
 	}
 
 	o.Speed = types.StringValue(string(in.Speed))
-	o.Type = types.StringValue(in.Type.String())
 	o.Name = types.StringValue(in.Label)
 	o.Endpoints = newFreeformEndpointMap(ctx, in.Endpoints, diags) // safe to ignore diagnostic here
 	o.AggregateLinkId = types.StringPointerValue((*string)(in.AggregateLinkId))
