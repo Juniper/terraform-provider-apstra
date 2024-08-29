@@ -88,7 +88,7 @@ func (o resourceDataCenterConnectivityTemplateInterface) render(rType, rName str
 		o.blueprintId,
 		o.name,
 		stringOrNull(o.description),
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 		ipLinks,
 		routingZoneConstraints,
 		virtualNetworkMultiples,

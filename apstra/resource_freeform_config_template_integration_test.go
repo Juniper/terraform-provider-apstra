@@ -40,7 +40,7 @@ func (o resourceFreeformConfigTemplate) render(rType, rName string) string {
 		o.blueprintId,
 		o.name,
 		o.text,
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 	)
 }
 

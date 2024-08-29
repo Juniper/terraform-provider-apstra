@@ -64,7 +64,7 @@ func (o resourceDataCenterConnectivityTemplateSvi) render(rType, rName string) s
 		o.blueprintId,
 		o.name,
 		stringOrNull(o.description),
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 		bgpPeeringIpEndoints,
 		dynamicBgpPeerings,
 	)
