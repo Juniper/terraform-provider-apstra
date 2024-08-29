@@ -24,6 +24,7 @@ type ConfigTemplate struct {
 	Name        types.String `tfsdk:"name"`
 	Text        types.String `tfsdk:"text"`
 	Tags        types.Set    `tfsdk:"tags"`
+	AssignedTo  types.Set    `tfsdk:"assigned_to"`
 }
 
 func (o ConfigTemplate) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -61,6 +62,11 @@ func (o ConfigTemplate) DataSourceAttributes() map[string]dataSourceSchema.Attri
 			ElementType:         types.StringType,
 			Computed:            true,
 		},
+		"assigned_to": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of System IDs to which the ConfigTemplate is assigned",
+			ElementType:         types.StringType,
+			Computed:            true,
+		},
 	}
 }
 
@@ -92,6 +98,15 @@ func (o ConfigTemplate) ResourceAttributes() map[string]resourceSchema.Attribute
 		},
 		"tags": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Tag labels",
+			ElementType:         types.StringType,
+			Optional:            true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
+		},
+		"assigned_to": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of System IDs to which the ConfigTemplate is assigned",
 			ElementType:         types.StringType,
 			Optional:            true,
 			Validators: []validator.Set{

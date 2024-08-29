@@ -92,6 +92,19 @@ func (o *dataSourceFreeformConfigTemplate) Read(ctx context.Context, req datasou
 		return
 	}
 
+	// Read the system assignments
+
+	assignments, err := bp.GetConfigTemplateAssignments(ctx, api.Id)
+	if err != nil {
+		resp.Diagnostics.AddError("error reading ConfigTemplate System Assignments", err.Error())
+		return
+	}
+
+	config.AssignedTo = utils.SetValueOrNull(ctx, types.StringType, assignments, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

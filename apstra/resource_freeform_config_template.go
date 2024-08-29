@@ -78,7 +78,27 @@ func (o *resourceFreeformConfigTemplate) Create(ctx context.Context, req resourc
 		return
 	}
 
+	// record the id and provisionally set the state
 	plan.Id = types.StringValue(id.String())
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set the CT system assignments, if any
+	if !plan.AssignedTo.IsNull() {
+		var assignments []apstra.ObjectId
+		resp.Diagnostics.Append(plan.AssignedTo.ElementsAs(ctx, &assignments, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err = bp.UpdateConfigTemplateAssignments(ctx, id, assignments)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating ConfigTemplate system Assignments", err.Error())
+			return
+		}
+	}
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)

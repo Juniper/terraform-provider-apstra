@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -23,6 +24,7 @@ resource %q %q {
   name         = %q
   text         = %q
   tags         = %s
+  assigned_to  = %s
 }
 `
 )
@@ -32,6 +34,7 @@ type resourceFreeformConfigTemplate struct {
 	name        string
 	text        string
 	tags        []string
+	assignedTo  []apstra.ObjectId
 }
 
 func (o resourceFreeformConfigTemplate) render(rType, rName string) string {
@@ -41,6 +44,7 @@ func (o resourceFreeformConfigTemplate) render(rType, rName string) string {
 		o.name,
 		o.text,
 		stringSliceOrNull(o.tags),
+		stringSliceOrNull(o.assignedTo),
 	)
 }
 
@@ -60,6 +64,13 @@ func (o resourceFreeformConfigTemplate) testChecks(t testing.TB, rType, rName st
 		}
 	}
 
+	if len(o.assignedTo) > 0 {
+		result.append(t, "TestCheckResourceAttr", "assigned_to.#", strconv.Itoa(len(o.assignedTo)))
+		for _, assignment := range o.assignedTo {
+			result.append(t, "TestCheckTypeSetElemAttr", "assigned_to.*", string(assignment))
+		}
+	}
+
 	return result
 }
 
@@ -69,7 +80,7 @@ func TestResourceFreeformConfigTemplate(t *testing.T) {
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
 	// create a blueprint
-	bp := testutils.FfBlueprintA(t, ctx)
+	bp, intSysIds, _ := testutils.FfBlueprintB(t, ctx, 3, 0)
 
 	type testStep struct {
 		config resourceFreeformConfigTemplate
@@ -95,6 +106,7 @@ func TestResourceFreeformConfigTemplate(t *testing.T) {
 						name:        acctest.RandString(6) + ".jinja",
 						text:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
+						assignedTo:  intSysIds,
 					},
 				},
 				{
@@ -114,6 +126,7 @@ func TestResourceFreeformConfigTemplate(t *testing.T) {
 						name:        acctest.RandString(6) + ".jinja",
 						text:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
+						assignedTo:  intSysIds,
 					},
 				},
 				{
@@ -129,6 +142,7 @@ func TestResourceFreeformConfigTemplate(t *testing.T) {
 						name:        acctest.RandString(6) + ".jinja",
 						text:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
+						assignedTo:  intSysIds,
 					},
 				},
 			},
