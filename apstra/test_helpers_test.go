@@ -138,7 +138,7 @@ func intPtrOrNull[A constraints.Integer](in *A) string {
 	return fmt.Sprintf("%d", *in)
 }
 
-func stringSetOrNull(in []string) string {
+func stringSliceOrNull[S ~string](in []S) string {
 	if len(in) == 0 {
 		return "null"
 	}
@@ -405,6 +405,68 @@ func padFormatStr(n, base int) (string, error) {
 
 	c := int(math.Floor(math.Log(float64(n))/math.Log(float64(base)))) + 1
 	return fmt.Sprintf("%%%d%s", c, baseChar), nil
+}
+
+func TestStringSliceOrNull(t *testing.T) {
+	type stringTestCase struct {
+		s []string
+		e string
+	}
+
+	stringTestCases := map[string]stringTestCase{
+		"with_strings": {
+			s: []string{"a", "b", "c"},
+			e: `[ "a", "b", "c" ]`,
+		},
+		"empty": {
+			s: []string{},
+			e: "null",
+		},
+		"nil": {
+			s: nil,
+			e: "null",
+		},
+	}
+
+	for tName, tCase := range stringTestCases {
+		t.Run("string_"+tName, func(t *testing.T) {
+			t.Parallel()
+			r := stringSliceOrNull(tCase.s)
+			if tCase.e != r {
+				t.Fatalf("expected %q, got %q", tCase.e, r)
+			}
+		})
+	}
+
+	type idTestCase struct {
+		s []apstra.ObjectId
+		e string
+	}
+
+	idTestCases := map[string]idTestCase{
+		"with_strings": {
+			s: []apstra.ObjectId{"a", "b", "c"},
+			e: `[ "a", "b", "c" ]`,
+		},
+		"empty": {
+			s: []apstra.ObjectId{},
+			e: "null",
+		},
+		"nil": {
+			s: nil,
+			e: "null",
+		},
+	}
+
+	for tName, tCase := range idTestCases {
+		t.Run("ObjectId_"+tName, func(t *testing.T) {
+			t.Parallel()
+			r := stringSliceOrNull(tCase.s)
+			if tCase.e != r {
+				t.Fatalf("expected %q, got %q", tCase.e, r)
+			}
+		})
+	}
 }
 
 func TestPadFormatStr(t *testing.T) {

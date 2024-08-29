@@ -42,7 +42,7 @@ func (o resourceAllocGroup) render(rType, rName string) string {
 		o.blueprintId,
 		o.name,
 		utils.StringersToFriendlyString(o.groupType),
-		stringSetOrNull(o.poolIds),
+		stringSliceOrNull(o.poolIds),
 	)
 }
 

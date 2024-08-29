@@ -51,7 +51,7 @@ func (o resourceDataCenterConnectivityTemplateSystem) render(rType, rName string
 		o.blueprintId,
 		o.name,
 		stringOrNull(o.description),
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 		customStaticRoutes,
 	)
 }
