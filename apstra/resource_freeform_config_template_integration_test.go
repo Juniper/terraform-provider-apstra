@@ -69,6 +69,8 @@ func (o resourceFreeformConfigTemplate) testChecks(t testing.TB, rType, rName st
 		for _, assignment := range o.assignedTo {
 			result.append(t, "TestCheckTypeSetElemAttr", "assigned_to.*", string(assignment))
 		}
+	} else {
+		result.append(t, "TestCheckNoResourceAttr", "assigned_to")
 	}
 
 	return result
@@ -91,7 +93,7 @@ func TestResourceFreeformConfigTemplate(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"start_with_no_tags": {
+		"start_minimal": {
 			steps: []testStep{
 				{
 					config: resourceFreeformConfigTemplate{
@@ -118,7 +120,7 @@ func TestResourceFreeformConfigTemplate(t *testing.T) {
 				},
 			},
 		},
-		"start_with_tags": {
+		"start_maximal": {
 			steps: []testStep{
 				{
 					config: resourceFreeformConfigTemplate{

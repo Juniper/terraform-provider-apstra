@@ -137,6 +137,18 @@ func (o *resourceFreeformConfigTemplate) Read(ctx context.Context, req resource.
 		return
 	}
 
+	// Read the system assignments
+	assignments, err := bp.GetConfigTemplateAssignments(ctx, api.Id)
+	if err != nil {
+		resp.Diagnostics.AddError("error reading ConfigTemplate System Assignments", err.Error())
+		return
+	}
+
+	state.AssignedTo = utils.SetValueOrNull(ctx, types.StringType, assignments, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -145,6 +157,13 @@ func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resourc
 	// Get plan values
 	var plan freeform.ConfigTemplate
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get state values
+	var state freeform.ConfigTemplate
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -169,17 +188,35 @@ func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resourc
 		return
 	}
 
-	request := plan.Request(ctx, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	if plan.NeedsUpdate(state) {
+		request := plan.Request(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		// Update Config Template
+		err = bp.UpdateConfigTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating Config Template", err.Error())
+			return
+		}
 	}
 
-	// Update Config Template
-	err = bp.UpdateConfigTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating Config Template", err.Error())
-		return
+	// update the assignments if necessary
+	if !plan.AssignedTo.Equal(state.AssignedTo) {
+		var planAssignments []apstra.ObjectId
+		resp.Diagnostics.Append(plan.AssignedTo.ElementsAs(ctx, &planAssignments, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err = bp.UpdateConfigTemplateAssignments(ctx, apstra.ObjectId(plan.Id.ValueString()), planAssignments)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating Resource Assignments", err.Error())
+			return
+		}
 	}
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
