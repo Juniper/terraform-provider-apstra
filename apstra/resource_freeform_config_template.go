@@ -93,7 +93,12 @@ func (o *resourceFreeformConfigTemplate) Create(ctx context.Context, req resourc
 			return
 		}
 
-		err = bp.UpdateConfigTemplateAssignments(ctx, id, assignments)
+		updateRequest := make(map[apstra.ObjectId]*apstra.ObjectId, len(assignments))
+		for _, assignment := range assignments {
+			updateRequest[assignment] = &id
+		}
+
+		err = bp.UpdateConfigTemplateAssignments(ctx, updateRequest)
 		if err != nil {
 			resp.Diagnostics.AddError("error updating ConfigTemplate system Assignments", err.Error())
 			return
@@ -210,7 +215,7 @@ func (o *resourceFreeformConfigTemplate) Update(ctx context.Context, req resourc
 			return
 		}
 
-		err = bp.UpdateConfigTemplateAssignments(ctx, apstra.ObjectId(plan.Id.ValueString()), planAssignments)
+		err = bp.UpdateConfigTemplateAssignmentsByTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), planAssignments)
 		if err != nil {
 			resp.Diagnostics.AddError("error updating Resource Assignments", err.Error())
 			return
