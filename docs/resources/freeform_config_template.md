@@ -63,6 +63,7 @@ interfaces {
 
 ### Optional
 
+- `assigned_to` (Set of String) Set of System IDs to which the ConfigTemplate is assigned
 - `tags` (Set of String) Set of Tag labels
 
 ### Read-Only

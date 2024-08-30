@@ -88,7 +88,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 			cidrOrNull(in.loopbackIpv4),
 			cidrOrNull(in.loopbackIpv6),
 			stringOrNull(in.deployMode),
-			stringSetOrNull(in.tags),
+			stringSliceOrNull(in.tags),
 		)
 	}
 

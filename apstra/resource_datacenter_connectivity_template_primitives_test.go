@@ -709,7 +709,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple) r
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultipleHCL,
 			o.name,
 			stringOrNull(o.untaggedVnId),
-			stringSetOrNull(o.taggedVnIds),
+			stringSliceOrNull(o.taggedVnIds),
 		),
 	)
 }

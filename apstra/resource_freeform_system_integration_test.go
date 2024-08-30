@@ -50,7 +50,7 @@ func (o resourceFreeformSystem) render(rType, rName string) string {
 		o.hostname,
 		o.systemType,
 		stringOrNull(o.deployMode),
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 	)
 }
 

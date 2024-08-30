@@ -57,7 +57,7 @@ func (o resourceFreeformLink) render(rType, rName string) string {
 		rType, rName,
 		o.blueprintId,
 		o.name,
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 		o.endpoints[0].SystemId,
 		stringPtrOrNull(o.endpoints[0].Interface.Data.IfName),
 		intPtrOrNull(o.endpoints[0].Interface.Data.TransformationId),

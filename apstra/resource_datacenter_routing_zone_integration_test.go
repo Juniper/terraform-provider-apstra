@@ -53,10 +53,10 @@ func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) strin
 
 		intPtrOrNull(o.vlan),
 		intPtrOrNull(o.vni),
-		stringSetOrNull(o.dhcpServers),
+		stringSliceOrNull(o.dhcpServers),
 		stringOrNull(o.routingPolicy),
-		stringSetOrNull(o.importRTs),
-		stringSetOrNull(o.exportRTs),
+		stringSliceOrNull(o.importRTs),
+		stringSliceOrNull(o.exportRTs),
 		stringOrNull(o.irbMode),
 	)
 }

@@ -51,7 +51,7 @@ func (o resourceDataCenterConnectivityTemplateLoopback) render(rType, rName stri
 		o.blueprintId,
 		o.name,
 		stringOrNull(o.description),
-		stringSetOrNull(o.tags),
+		stringSliceOrNull(o.tags),
 		bgpPeeringIpEndoints,
 	)
 }

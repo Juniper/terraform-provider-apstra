@@ -59,7 +59,7 @@ func (o resourceFreeformResource) render(rType, rName string) string {
 		ipNetOrNull(o.ipv4Value),
 		ipNetOrNull(o.ipv6Value),
 		stringOrNull(o.allocatedFrom.String()),
-		stringSetOrNull(o.assignedTo),
+		stringSliceOrNull(o.assignedTo),
 	)
 }
 
