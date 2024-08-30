@@ -56,11 +56,11 @@ func systemIds(ctx context.Context, t *testing.T, bp *apstra.TwoStageL3ClosClien
 	return ids
 }
 
-func stringPtrOrNull(in *string) string {
+func stringPtrOrNull[S ~string](in *S) string {
 	if in == nil {
 		return "null"
 	}
-	return `"` + *in + `"`
+	return fmt.Sprintf(`%q`, *in)
 }
 
 func stringOrNull(in string) string {

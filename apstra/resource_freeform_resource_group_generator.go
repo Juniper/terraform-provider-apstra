@@ -24,7 +24,7 @@ type resourceFreeformGroupGenerator struct {
 }
 
 func (o *resourceFreeformGroupGenerator) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_group_generator"
+	resp.TypeName = req.ProviderTypeName + "_freeform_resource_group_generator"
 }
 
 func (o *resourceFreeformGroupGenerator) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -67,7 +67,7 @@ func (o *resourceFreeformGroupGenerator) Create(ctx context.Context, req resourc
 	}
 
 	// Convert the plan into an API Request
-	request := plan.Request(ctx)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -79,9 +79,8 @@ func (o *resourceFreeformGroupGenerator) Create(ctx context.Context, req resourc
 		return
 	}
 
-	plan.Id = types.StringValue(id.String())
-
 	// set state
+	plan.Id = types.StringValue(id.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -113,7 +112,7 @@ func (o *resourceFreeformGroupGenerator) Read(ctx context.Context, req resource.
 		return
 	}
 
-	state.LoadApiData(ctx, api.Data)
+	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -151,7 +150,7 @@ func (o *resourceFreeformGroupGenerator) Update(ctx context.Context, req resourc
 	}
 
 	// Convert the plan into an API Request
-	request := plan.Request(ctx)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -193,7 +192,7 @@ func (o *resourceFreeformGroupGenerator) Delete(ctx context.Context, req resourc
 		return
 	}
 
-	// Delete Config Template by calling API
+	// Delete Resource Generator by calling API
 	err = bp.DeleteGroupGenerator(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
