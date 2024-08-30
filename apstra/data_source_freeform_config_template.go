@@ -93,7 +93,6 @@ func (o *dataSourceFreeformConfigTemplate) Read(ctx context.Context, req datasou
 	}
 
 	// Read the system assignments
-
 	assignments, err := bp.GetConfigTemplateAssignments(ctx, api.Id)
 	if err != nil {
 		resp.Diagnostics.AddError("error reading ConfigTemplate System Assignments", err.Error())

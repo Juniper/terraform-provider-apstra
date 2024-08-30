@@ -136,3 +136,16 @@ func (o *ConfigTemplate) LoadApiData(ctx context.Context, in *apstra.ConfigTempl
 	o.Text = types.StringValue(in.Text)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }
+
+func (o ConfigTemplate) NeedsUpdate(state ConfigTemplate) bool {
+	switch {
+	case !o.Name.Equal(state.Name):
+		return true
+	case !o.Text.Equal(state.Text):
+		return true
+	case !o.Tags.Equal(state.Tags):
+		return true
+	}
+
+	return false
+}
