@@ -24,6 +24,7 @@ type ConfigTemplate struct {
 	Name        types.String `tfsdk:"name"`
 	Text        types.String `tfsdk:"text"`
 	Tags        types.Set    `tfsdk:"tags"`
+	AssignedTo  types.Set    `tfsdk:"assigned_to"`
 }
 
 func (o ConfigTemplate) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -58,6 +59,11 @@ func (o ConfigTemplate) DataSourceAttributes() map[string]dataSourceSchema.Attri
 		},
 		"tags": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Tag labels",
+			ElementType:         types.StringType,
+			Computed:            true,
+		},
+		"assigned_to": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of System IDs to which the ConfigTemplate is assigned",
 			ElementType:         types.StringType,
 			Computed:            true,
 		},
@@ -99,6 +105,15 @@ func (o ConfigTemplate) ResourceAttributes() map[string]resourceSchema.Attribute
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
+		"assigned_to": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of System IDs to which the ConfigTemplate is assigned",
+			ElementType:         types.StringType,
+			Optional:            true,
+			Validators: []validator.Set{
+				setvalidator.SizeAtLeast(1),
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
+			},
+		},
 	}
 }
 
@@ -120,4 +135,17 @@ func (o *ConfigTemplate) LoadApiData(ctx context.Context, in *apstra.ConfigTempl
 	o.Name = types.StringValue(in.Label)
 	o.Text = types.StringValue(in.Text)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
+}
+
+func (o ConfigTemplate) NeedsUpdate(state ConfigTemplate) bool {
+	switch {
+	case !o.Name.Equal(state.Name):
+		return true
+	case !o.Text.Equal(state.Text):
+		return true
+	case !o.Tags.Equal(state.Tags):
+		return true
+	}
+
+	return false
 }

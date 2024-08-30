@@ -37,5 +37,6 @@ data "apstra_freeform_config_template" "interfaces" {
 
 ### Read-Only
 
+- `assigned_to` (Set of String) Set of System IDs to which the ConfigTemplate is assigned
 - `tags` (Set of String) Set of Tag labels
 - `text` (String) Configuration Jinja2 template text

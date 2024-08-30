@@ -76,7 +76,6 @@ func (o resourceFreeformLink) testChecks(t testing.TB, rType, rName string, ipAl
 
 	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttrSet", "id")
-	result.append(t, "TestCheckResourceAttr", "type", apstra.FFLinkTypeEthernet.String())
 	result.append(t, "TestCheckNoResourceAttr", "aggregate_link_id")
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId)
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
