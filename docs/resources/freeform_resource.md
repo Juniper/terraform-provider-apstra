@@ -56,14 +56,6 @@ output "test_resource_out" { value = data.apstra_freeform_resource.test }
 - `blueprint_id` (String) Apstra Blueprint ID.
 - `group_id` (String) Group the Resource belongs to.
 - `name` (String) Freeform Resource name as shown in the Web UI.
-
-### Optional
-
-- `allocated_from` (String) ID of the node to be used as a source for this resource. This could be an ID of resource allocation group or another resource (in case of IP or Host IP allocations). This also can be empty. In that case it is required that value for this resource is provided by the user.
-- `assigned_to` (Set of String) Set of node IDs to which the resource is assigned
-- `integer_value` (Number) Value used by integer type resources (`asn`, `integer`, `vlan`, `vni`). Also used by IP prefix resources (`ipv4` and `ipv6`) to indicate the required prefix size for automatic allocations from another object or a resource pool.
-- `ipv4_value` (String) Value used by resources with type `ipv4` or `host_ipv4`. Must be CIDR notation.
-- `ipv6_value` (String) Value used by resources with type `ipv6` or `host_ipv6`. Must be CIDR notation.
 - `type` (String) type of the Resource, must be one of :
   - `asn`
   - `host_ipv4`
@@ -73,6 +65,14 @@ output "test_resource_out" { value = data.apstra_freeform_resource.test }
   - `ipv6`
   - `vlan`
   - `vni`
+
+### Optional
+
+- `allocated_from` (String) ID of the node to be used as a source for this resource. This could be an ID of resource allocation group or another resource (in case of IP or Host IP allocations). This also can be empty. In that case it is required that value for this resource is provided by the user.
+- `assigned_to` (Set of String) Set of node IDs to which the resource is assigned
+- `integer_value` (Number) Value used by integer type resources (`asn`, `integer`, `vlan`, `vni`). Also used by IP prefix resources (`ipv4` and `ipv6`) to indicate the required prefix size for automatic allocations from another object or a resource pool.
+- `ipv4_value` (String) Value used by resources with type `ipv4` or `host_ipv4`. Must be CIDR notation.
+- `ipv6_value` (String) Value used by resources with type `ipv6` or `host_ipv6`. Must be CIDR notation.
 
 ### Read-Only
 

@@ -146,8 +146,9 @@ func (o Resource) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: "type of the Resource, must be one of :\n  - `" +
 				strings.Join(utils.AllFFResourceTypes(), "`\n  - `") + "`\n",
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
+			Required:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
+			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
 		},
 		"integer_value": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("Value used by integer type resources (`%s`, `%s`, `%s`, `%s`). "+
