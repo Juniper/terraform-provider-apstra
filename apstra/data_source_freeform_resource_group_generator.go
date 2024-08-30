@@ -23,7 +23,7 @@ type dataSourceFreeformGroupGenerator struct {
 }
 
 func (o *dataSourceFreeformGroupGenerator) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_freeform_group_generator"
+	resp.TypeName = req.ProviderTypeName + "_freeform_resource_group_generator"
 }
 
 func (o *dataSourceFreeformGroupGenerator) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
@@ -87,7 +87,7 @@ func (o *dataSourceFreeformGroupGenerator) Read(ctx context.Context, req datasou
 	}
 
 	config.Id = types.StringValue(api.Id.String())
-	config.LoadApiData(ctx, api.Data)
+	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

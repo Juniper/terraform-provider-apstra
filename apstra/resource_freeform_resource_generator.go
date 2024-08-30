@@ -223,7 +223,7 @@ func (o *resourceFreeformResourceGenerator) Delete(ctx context.Context, req reso
 		return
 	}
 
-	// Delete Config Template by calling API
+	// Delete Resource Generator by calling API
 	err = bp.DeleteResourceGenerator(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
