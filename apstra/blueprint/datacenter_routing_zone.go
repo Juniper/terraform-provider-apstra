@@ -3,11 +3,13 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"net"
+	"regexp"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
-	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -20,8 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
-	"regexp"
 )
 
 var junosEvpnIrbModeDefault = apstra.JunosEvpnIrbModeAsymmetric.Value
@@ -236,7 +236,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
 			Optional:   true,
 			Computed:   true,
-			Validators: []validator.Int64{int64validator.Between(resources.VniMin, resources.VniMax)},
+			Validators: []validator.Int64{int64validator.Between(constants.VniMin, constants.VniMax)},
 		},
 		"had_prior_vni_config": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Used to trigger plan modification when `vni` has been removed from the " +

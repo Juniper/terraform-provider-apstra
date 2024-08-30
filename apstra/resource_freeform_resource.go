@@ -3,8 +3,10 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -57,15 +59,64 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 
 	// Reminder Logic: the unknown state in this function means a value was passed by reference
 	switch resourceType {
-	case apstra.FFResourceTypeAsn,
-		apstra.FFResourceTypeVni,
-		apstra.FFResourceTypeVlan,
-		apstra.FFResourceTypeInt:
+	case apstra.FFResourceTypeAsn:
 		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
 				errInvalidConfig,
 				"Exactly one of `allocated_from` and `integer_value` must be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if !config.IntValue.IsNull() && (config.IntValue.ValueInt64() < constants.AsnMin || config.IntValue.ValueInt64() > constants.AsnMax) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("integer_value"),
+				errInvalidConfig,
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.AsnMin, constants.AsnMax, config.IntValue.String()),
+			)
+		}
+	case apstra.FFResourceTypeVni:
+		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
+			resp.Diagnostics.AddError(
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `integer_value` must be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if !config.IntValue.IsNull() && (config.IntValue.ValueInt64() < constants.VniMin || config.IntValue.ValueInt64() > constants.VniMax) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("integer_value"),
+				errInvalidConfig,
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.VniMin, constants.VniMax, config.IntValue.String()),
+			)
+		}
+	case apstra.FFResourceTypeVlan:
+		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
+			resp.Diagnostics.AddError(
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `integer_value` must be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if !config.IntValue.IsNull() && (config.IntValue.ValueInt64() < constants.VlanMinUsable || config.IntValue.ValueInt64() > constants.VlanMaxUsable) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("integer_value"),
+				errInvalidConfig,
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.VlanMinUsable, constants.VlanMaxUsable, config.IntValue.String()),
+			)
+		}
+	case apstra.FFResourceTypeInt:
+		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
+			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
+			resp.Diagnostics.AddError(
+				errInvalidConfig,
+				"Exactly one of `allocated_from` and `integer_value` must be set when `type` is set to "+config.Type.String(),
+			)
+		}
+		if !config.IntValue.IsNull() && (config.IntValue.ValueInt64() < 1 || config.IntValue.ValueInt64() > math.MaxUint32) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("integer_value"),
+				errInvalidConfig,
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, math.MaxUint32, config.IntValue.String()),
 			)
 		}
 	case apstra.FFResourceTypeHostIpv4:
@@ -104,6 +155,13 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				"`integer_value` is used to indicate the Subnet Prefix Length. It must be set when `allocated_from` is set and `type` is set to "+config.Type.String(),
 			)
 		}
+		if !config.IntValue.IsNull() && (config.IntValue.ValueInt64() < 1 || config.IntValue.ValueInt64() > 32) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("integer_value"),
+				errInvalidConfig,
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, 32, config.IntValue.String()),
+			)
+		}
 	case apstra.FFResourceTypeIpv6:
 		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
@@ -122,6 +180,13 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 			resp.Diagnostics.AddError(
 				"Conflicting Attributes",
 				"`integer_value` is used to indicate the Subnet Prefix Length. It must be set when `allocated_from` is set and `type` is set to "+config.Type.String(),
+			)
+		}
+		if !config.IntValue.IsNull() && (config.IntValue.ValueInt64() < 1 || config.IntValue.ValueInt64() > 128) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("integer_value"),
+				errInvalidConfig,
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, 128, config.IntValue.String()),
 			)
 		}
 	}

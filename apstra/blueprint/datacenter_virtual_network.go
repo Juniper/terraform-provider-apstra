@@ -3,12 +3,15 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"net"
+	"regexp"
+	"strconv"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
-	"github.com/Juniper/terraform-provider-apstra/apstra/resources"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -26,9 +29,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
-	"regexp"
-	"strconv"
 )
 
 type DatacenterVirtualNetwork struct {
@@ -340,7 +340,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
-				int64validator.Between(resources.VniMin, resources.VniMax),
+				int64validator.Between(constants.VniMin, constants.VniMax),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("type"),
 					types.StringValue(apstra.VnTypeVlan.String()),
@@ -746,7 +746,7 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 	}
 
 	// not handling ipv6 subnet as a string match because of '::' expansion weirdness
-	//if !o.IPv6Subnet.IsNull() { nope! }
+	// if !o.IPv6Subnet.IsNull() { nope! }
 
 	if !o.IPv4GatewayEnabled.IsNull() {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
@@ -777,7 +777,7 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 	}
 
 	// not handling ipv6 gateway as a string match because of '::' expansion weirdness
-	//if !o.IPv6Gateway.IsNull() { nope! }
+	// if !o.IPv6Gateway.IsNull() { nope! }
 
 	// Begin the query with the VN node
 	vnQuery := new(apstra.MatchQuery).Match(new(apstra.PathQuery).Node(nodeAttributes))

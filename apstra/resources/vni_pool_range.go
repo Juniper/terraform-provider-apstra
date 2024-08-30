@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -12,11 +13,6 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-)
-
-const (
-	VniMin = 4096
-	VniMax = 16777214
 )
 
 type VniPoolRange struct {
@@ -72,12 +68,12 @@ func (o VniPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"first": resourceSchema.Int64Attribute{
 			Required:   true,
-			Validators: []validator.Int64{int64validator.Between(VniMin, VniMax)},
+			Validators: []validator.Int64{int64validator.Between(constants.VniMin, constants.VniMax)},
 		},
 		"last": resourceSchema.Int64Attribute{
 			Required: true,
 			Validators: []validator.Int64{
-				int64validator.Between(VniMin, VniMax),
+				int64validator.Between(constants.VniMin, constants.VniMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
 			},
 		},

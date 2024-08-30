@@ -26,4 +26,7 @@ const (
 
 	VlanMinUsable = 2
 	VlanMaxUsable = 4094
+
+	VniMin = 4096
+	VniMax = 16777214
 )
