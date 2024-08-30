@@ -71,7 +71,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 			resp.Diagnostics.AddAttributeError(
 				path.Root("integer_value"),
 				errInvalidConfig,
-				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.AsnMin, constants.AsnMax, config.IntValue.String()),
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.AsnMin, uint32(constants.AsnMax), config.IntValue.String()),
 			)
 		}
 	case apstra.FFResourceTypeVni:
@@ -116,7 +116,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 			resp.Diagnostics.AddAttributeError(
 				path.Root("integer_value"),
 				errInvalidConfig,
-				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, math.MaxUint32, config.IntValue.String()),
+				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, uint32(math.MaxUint32), config.IntValue.String()),
 			)
 		}
 	case apstra.FFResourceTypeHostIpv4:
