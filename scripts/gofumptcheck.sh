@@ -9,8 +9,11 @@ for file in $(git diff --name-only origin/main)
 do
   OUT="" # init variable because of `set -u`
 
+  # skip over files which don't exist in this branch
+  [ ! -f "$file" ] && continue
+
   # skip over non-Go files
-  [[ $file = *.go ]] && OUT=$(go run mvdan.cc/gofumpt -l "$file")
+  [[ "$file" = *.go ]] && OUT=$(go run mvdan.cc/gofumpt -l "$file")
 
   if [ -n "$OUT" ]
   then
