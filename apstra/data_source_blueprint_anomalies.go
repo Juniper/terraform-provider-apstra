@@ -12,29 +12,27 @@ import (
 var _ datasource.DataSourceWithConfigure = &dataSourceAnomalies{}
 var _ datasourceWithSetClient = &dataSourceAnomalies{}
 
-type dataSourceAnomalies struct {
+type dataSourceBlueprintAnomalies struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceAnomalies) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_anomalies"
+func (o *dataSourceBlueprintAnomalies) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_blueprint_anomalies"
 }
 
-func (o *dataSourceAnomalies) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceBlueprintAnomalies) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	configureDataSource(ctx, o, req, resp)
 }
 
-func (o *dataSourceAnomalies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceBlueprintAnomalies) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		DeprecationMessage: "This resource is deprecated and will be removed in a future version. Please migrate your" +
-			"configurations to use the `apstra_blueprint_anomalies` data source.",
 		MarkdownDescription: docCategoryRefDesignAny + "This data source provides per-node summary, " +
 			"per-service summary and full details of anomalies in the specified Blueprint.",
 		Attributes: blueprint.Anomalies{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceAnomalies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (o *dataSourceBlueprintAnomalies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config blueprint.Anomalies
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
@@ -47,6 +45,6 @@ func (o *dataSourceAnomalies) Read(ctx context.Context, req datasource.ReadReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-func (o *dataSourceAnomalies) setClient(client *apstra.Client) {
+func (o *dataSourceBlueprintAnomalies) setClient(client *apstra.Client) {
 	o.client = client
 }

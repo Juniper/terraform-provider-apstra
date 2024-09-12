@@ -513,6 +513,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceAnomalies{} },
 		func() datasource.DataSource { return &dataSourceAsnPool{} },
 		func() datasource.DataSource { return &dataSourceAsnPools{} },
+		func() datasource.DataSource { return &dataSourceBlueprintAnomalies{} },
 		func() datasource.DataSource { return &dataSourceBlueprintDeploy{} },
 		func() datasource.DataSource { return &dataSourceBlueprintIbaPredefinedProbe{} },
 		func() datasource.DataSource { return &dataSourceBlueprintIbaWidget{} },
