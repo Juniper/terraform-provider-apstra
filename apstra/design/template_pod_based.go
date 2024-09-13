@@ -66,6 +66,7 @@ func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Att
 			Attributes:          SuperSpine{}.DataSourceAttributes(),
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
+			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Superspine links. Applies only to "+
 				"Apstra %s.", apiversions.Apstra410),
 			Computed: true,
@@ -98,25 +99,12 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			Attributes:          SuperSpine{}.ResourceAttributes(),
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
+			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/SuperSpine links. Required for "+
 				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.String{
-				stringvalidator.OneOf(
-					apstra.AddressingSchemeIp4.String(),
-					apstra.AddressingSchemeIp46.String(),
-					apstra.AddressingSchemeIp6.String(),
-				),
-				apstravalidator.WhenValueIsString(
-					types.StringValue(apstra.AddressingSchemeIp6.String()),
-					apstravalidator.ValueAtMustBeString(
-						path.MatchRelative().AtParent().AtName("overlay_control_protocol"),
-						types.StringValue(OverlayControlProtocolStatic),
-						false,
-					),
-				),
-			},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
 		},
 		"pod_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Pod Type info (count + details) keyed by Pod Based Template ID.",
@@ -149,33 +137,15 @@ func (o *TemplatePodBased) Request(ctx context.Context, diags *diag.Diagnostics)
 		}
 	}
 
-	var err error
-
 	antiAffinityPolicy := &apstra.AntiAffinityPolicy{
 		Algorithm: apstra.AlgorithmHeuristic,
 	}
 
-	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
-	if utils.HasValue(o.FabricAddressing) {
-		var addressingScheme apstra.AddressingScheme
-		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
-		if err != nil {
-			diags.AddError(errProviderBug,
-				fmt.Sprintf("error parsing fabric addressing scheme %q - %s",
-					o.FabricAddressing.ValueString(), err.Error()))
-		}
-		fabricAddressingPolicy = &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: addressingScheme,
-			SpineLeafLinks:       addressingScheme,
-		}
-	}
-
 	return &apstra.CreatePodBasedTemplateRequest{
-		DisplayName:            o.Name.ValueString(),
-		Superspine:             ss.Request(ctx, diags),
-		PodInfos:               podInfos,
-		AntiAffinityPolicy:     antiAffinityPolicy,
-		FabricAddressingPolicy: fabricAddressingPolicy,
+		DisplayName:        o.Name.ValueString(),
+		Superspine:         ss.Request(ctx, diags),
+		PodInfos:           podInfos,
+		AntiAffinityPolicy: antiAffinityPolicy,
 	}
 }
 
@@ -185,24 +155,10 @@ func (o *TemplatePodBased) LoadApiData(ctx context.Context, in *apstra.TemplateP
 		return
 	}
 
-	fabricAddressing := types.StringNull()
-	if in.FabricAddressingPolicy != nil {
-		if in.FabricAddressingPolicy.SpineLeafLinks != in.FabricAddressingPolicy.SpineSuperspineLinks {
-			diags.AddError(errProviderBug,
-				fmt.Sprintf("Spine/Leaf and Spine/Luperspine addressing do not match: %q vs. %q\n"+
-					"We cannot handle this situation.",
-					in.FabricAddressingPolicy.SpineLeafLinks.String(),
-					in.FabricAddressingPolicy.SpineSuperspineLinks.String()),
-			)
-			return
-		}
-		fabricAddressing = types.StringValue(in.FabricAddressingPolicy.SpineLeafLinks.String())
-	}
-
 	o.Name = types.StringValue(in.DisplayName)
 	o.SuperSpine = NewDesignTemplateSuperSpineObject(ctx, &in.Superspine, diags)
 	o.PodInfos = NewPodInfoMap(ctx, in, diags)
-	o.FabricAddressing = fabricAddressing
+	o.FabricAddressing = types.StringNull()
 }
 
 func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *TemplatePodBased, diags *diag.Diagnostics) {

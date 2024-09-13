@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"net"
 	"regexp"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var junosEvpnIrbModeDefault = apstra.JunosEvpnIrbModeAsymmetric.Value
+var junosEvpnIrbModeDefault = enum.JunosEvpnIrbModeAsymmetric.Value
 
 type DatacenterRoutingZone struct {
 	Id                   types.String `tfsdk:"id"`
@@ -285,7 +286,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Optional:      true,
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators:    []validator.String{stringvalidator.OneOf(apstra.JunosEvpnIrbModes.Values()...)},
+			Validators:    []validator.String{stringvalidator.OneOf(enum.JunosEvpnIrbModes.Values()...)},
 			// Default: DO NOT USE stringdefault.StaticString(apstra.JunosEvpnIrbModeAsymmetric.Value) here
 			// because that will set the attribute for Apstra < 4.2.0 (which do not support it) leading to
 			// confusion.
@@ -332,7 +333,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		RoutingPolicyId:  apstra.ObjectId(o.RoutingPolicyId.ValueString()),
 		VlanId:           vlan,
 		VniId:            vni,
-		JunosEvpnIrbMode: apstra.JunosEvpnIrbModes.Parse(o.JunosEvpnIrbMode.ValueString()),
+		JunosEvpnIrbMode: enum.JunosEvpnIrbModes.Parse(o.JunosEvpnIrbMode.ValueString()),
 		RtPolicy: &apstra.RtPolicy{
 			ImportRTs: importRTs,
 			ExportRTs: exportRTs,

@@ -29,10 +29,6 @@ func TemplateA(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
 			rackType.Id: {Count: 2},
 		},
-		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
-		},
 		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 			Algorithm:                apstra.AlgorithmHeuristic,
 			MaxLinksPerPort:          1,
@@ -69,10 +65,6 @@ func TemplateB(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 			"access_switch":      {Count: 3}, // single-single
 			"L2_ESI_Access_dual": {Count: 2}, // ESI-ESI
 		},
-		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
-		},
 		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 			Algorithm:                apstra.AlgorithmHeuristic,
 			MaxLinksPerPort:          1,
@@ -107,10 +99,6 @@ func TemplateC(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 		},
 		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
 			"L2_ESI_Access_dual": {Count: 1}, // ESI-ESI
-		},
-		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 			Algorithm:                apstra.AlgorithmHeuristic,
@@ -158,10 +146,6 @@ func TemplateD(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 			rcid: {Count: 1},
 			rdid: {Count: 1},
 		},
-		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
-		},
 		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 			Algorithm:                apstra.AlgorithmHeuristic,
 			MaxLinksPerPort:          1,
@@ -201,10 +185,6 @@ func TemplateE(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {
 		},
 		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{
 			rackTypeF.Id: {Count: 1},
-		},
-		FabricAddressingPolicy: &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: apstra.AddressingSchemeIp4,
-			SpineLeafLinks:       apstra.AddressingSchemeIp4,
 		},
 		AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 			Algorithm:                apstra.AlgorithmHeuristic,

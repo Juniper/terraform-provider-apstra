@@ -118,6 +118,7 @@ func (o TemplateRackBased) DataSourceAttributesNested() map[string]dataSourceSch
 			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
+			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
 				"Apstra %s.", apiversions.Apstra410),
 			Computed: true,
@@ -165,25 +166,12 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			},
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
+			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
 			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Required for "+
 				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
-			Optional: true,
-			Computed: true,
-			Validators: []validator.String{
-				stringvalidator.OneOf(
-					apstra.AddressingSchemeIp4.String(),
-					apstra.AddressingSchemeIp46.String(),
-					apstra.AddressingSchemeIp6.String(),
-				),
-				apstravalidator.WhenValueIsString(
-					types.StringValue(apstra.AddressingSchemeIp6.String()),
-					apstravalidator.ValueAtMustBeString(
-						path.MatchRelative().AtParent().AtName("overlay_control_protocol"),
-						types.StringValue(OverlayControlProtocolStatic),
-						false,
-					),
-				),
-			},
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details) keyed by Rack Type ID.",
@@ -272,21 +260,6 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 		SpineAsnScheme: spineAsnScheme,
 	}
 
-	var fabricAddressingPolicy *apstra.TemplateFabricAddressingPolicy410Only
-	if utils.HasValue(o.FabricAddressing) {
-		var addressingScheme apstra.AddressingScheme
-		err = addressingScheme.FromString(o.FabricAddressing.ValueString())
-		if err != nil {
-			diags.AddError(errProviderBug,
-				fmt.Sprintf("error parsing fabric addressing scheme %q - %s",
-					o.FabricAddressing.ValueString(), err.Error()))
-		}
-		fabricAddressingPolicy = &apstra.TemplateFabricAddressingPolicy410Only{
-			SpineSuperspineLinks: addressingScheme,
-			SpineLeafLinks:       addressingScheme,
-		}
-	}
-
 	var overlayControlProtocol apstra.OverlayControlProtocol
 	err = utils.ApiStringerFromFriendlyString(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
 	if err != nil {
@@ -305,10 +278,9 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 		DhcpServiceIntent: &apstra.DhcpServiceIntent{Active: true},
 		// todo: is this the right AntiAffinityPolicy?
 		//  I'd have sent <nil>, but blocked by sdk issue #2 (crash on nil pointer deref)
-		AntiAffinityPolicy:     antiAffinityPolicy,
-		AsnAllocationPolicy:    asnAllocationPolicy,
-		FabricAddressingPolicy: fabricAddressingPolicy,
-		VirtualNetworkPolicy:   virtualNetworkPolicy,
+		AntiAffinityPolicy:   antiAffinityPolicy,
+		AsnAllocationPolicy:  asnAllocationPolicy,
+		VirtualNetworkPolicy: virtualNetworkPolicy,
 	}
 }
 
@@ -318,26 +290,12 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 		return
 	}
 
-	fabricAddressing := types.StringNull()
-	if in.FabricAddressingPolicy != nil {
-		if in.FabricAddressingPolicy.SpineLeafLinks != in.FabricAddressingPolicy.SpineSuperspineLinks {
-			diags.AddError(errProviderBug,
-				fmt.Sprintf("Spine/Leaf and Spine/Luperspine addressing do not match: %q vs. %q\n"+
-					"We cannot handle this situation.",
-					in.FabricAddressingPolicy.SpineLeafLinks.String(),
-					in.FabricAddressingPolicy.SpineSuperspineLinks.String()),
-			)
-			return
-		}
-		fabricAddressing = types.StringValue(in.FabricAddressingPolicy.SpineLeafLinks.String())
-	}
-
 	o.Name = types.StringValue(in.DisplayName)
 	o.Spine = NewDesignTemplateSpineObject(ctx, &in.Spine, diags)
 	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
 	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
-	o.FabricAddressing = fabricAddressing
+	o.FabricAddressing = types.StringNull()
 }
 
 func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *TemplateRackBased, diags *diag.Diagnostics) {

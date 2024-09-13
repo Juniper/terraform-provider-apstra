@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
@@ -87,12 +88,12 @@ func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchem
 		},
 		"evpn_route_types": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(`EVPN route types. Valid values are: ["%s"]. Default: %q`,
-				strings.Join(apstra.RemoteGatewayRouteTypesEnum.Values(), `", "`),
-				apstra.RemoteGatewayRouteTypesAll.Value),
+				strings.Join(enum.RemoteGatewayRouteTypesEnum.Values(), `", "`),
+				enum.RemoteGatewayRouteTypesAll.Value),
 			Optional:   true,
 			Computed:   true,
-			Default:    stringdefault.StaticString(apstra.RemoteGatewayRouteTypesAll.Value),
-			Validators: []validator.String{stringvalidator.OneOf(apstra.RemoteGatewayRouteTypesEnum.Values()...)},
+			Default:    stringdefault.StaticString(enum.RemoteGatewayRouteTypesAll.Value),
+			Validators: []validator.String{stringvalidator.OneOf(enum.RemoteGatewayRouteTypesEnum.Values()...)},
 		},
 		"local_gateway_nodes": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of IDs of switch nodes which will be configured to peer with the External Gateway",
@@ -158,8 +159,8 @@ func (o DatacenterExternalGateway) DataSourceAttributes() map[string]dataSourceS
 		},
 		"evpn_route_types": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(`EVPN route types. Valid values are: ["%s"]. Default: %q`,
-				strings.Join(apstra.RemoteGatewayRouteTypesEnum.Values(), `", "`),
-				apstra.RemoteGatewayRouteTypesAll.Value),
+				strings.Join(enum.RemoteGatewayRouteTypesEnum.Values(), `", "`),
+				enum.RemoteGatewayRouteTypesAll.Value),
 			Computed: true,
 		},
 		"local_gateway_nodes": dataSourceSchema.SetAttribute{
@@ -214,8 +215,8 @@ func (o DatacenterExternalGateway) DataSourceAttributesAsFilter() map[string]dat
 		},
 		"evpn_route_types": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(`EVPN route types. Valid values are: ["%s"]. Default: %q`,
-				strings.Join(apstra.RemoteGatewayRouteTypesEnum.Values(), `", "`),
-				apstra.RemoteGatewayRouteTypesAll.Value),
+				strings.Join(enum.RemoteGatewayRouteTypesEnum.Values(), `", "`),
+				enum.RemoteGatewayRouteTypesAll.Value),
 			Optional: true,
 		},
 		"local_gateway_nodes": dataSourceSchema.SetAttribute{
@@ -232,7 +233,7 @@ func (o DatacenterExternalGateway) DataSourceAttributesAsFilter() map[string]dat
 }
 
 func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.RemoteGatewayData {
-	routeTypes := apstra.RemoteGatewayRouteTypesEnum.Parse(o.EvpnRouteTypes.ValueString())
+	routeTypes := enum.RemoteGatewayRouteTypesEnum.Parse(o.EvpnRouteTypes.ValueString())
 	// skipping nil check because input validation should make that impossible
 
 	var localGwNodes []apstra.ObjectId

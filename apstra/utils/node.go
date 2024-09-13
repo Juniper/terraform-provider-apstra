@@ -2,12 +2,13 @@ package utils
 
 import (
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func AllNodeDeployModes() []string {
-	members := apstra.DeployModes.Members()
+	members := enum.DeployModes.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
 		result[i] = StringersToFriendlyString(member)
@@ -27,7 +28,7 @@ func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 		return "", err
 	}
 
-	var deployMode apstra.DeployMode
+	var deployMode enum.DeployMode
 	err = deployMode.FromString(node.DeployMode)
 	if err != nil {
 		return "", err
@@ -37,7 +38,7 @@ func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 }
 
 func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string, modeString string) error {
-	var modeIota apstra.DeployMode
+	var modeIota enum.DeployMode
 	err := ApiStringerFromFriendlyString(&modeIota, modeString)
 	if err != nil {
 		return err
@@ -50,7 +51,7 @@ func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 		Id: nodeId,
 	}
 
-	if modeIota != apstra.DeployModeNone {
+	if modeIota != enum.DeployModeNone {
 		s := modeIota.String()
 		patch.DeployMode = &s
 	}

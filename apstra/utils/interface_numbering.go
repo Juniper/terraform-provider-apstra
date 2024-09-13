@@ -1,13 +1,12 @@
 package utils
 
 import (
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"sort"
-
-	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func AllInterfaceNumberingIpv4Types() []string {
-	members := apstra.InterfaceNumberingIpv4Types.Members()
+	members := enum.InterfaceNumberingIpv4Types.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
 		result[i] = StringersToFriendlyString(member)
@@ -18,7 +17,7 @@ func AllInterfaceNumberingIpv4Types() []string {
 }
 
 func AllInterfaceNumberingIpv6Types() []string {
-	members := apstra.InterfaceNumberingIpv6Types.Members()
+	members := enum.InterfaceNumberingIpv6Types.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
 		result[i] = StringersToFriendlyString(member)

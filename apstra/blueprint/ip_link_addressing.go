@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"net"
 	"strings"
 
@@ -72,7 +73,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone)),
+			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv4Types()...)},
 		},
 		"switch_ipv4_address": resourceSchema.StringAttribute{
@@ -80,8 +81,8 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv4PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone))),
 				stringvalidator.AlsoRequires(path.MatchRoot("switch_ipv4_address_type")),
 			},
 		},
@@ -89,7 +90,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv6Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone)),
+			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv6Types()...)},
 		},
 		"switch_ipv6_address": resourceSchema.StringAttribute{
@@ -97,9 +98,9 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeLinkLocal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeLinkLocal))),
 				stringvalidator.AlsoRequires(path.MatchRoot("switch_ipv6_address_type")),
 			},
 		},
@@ -107,7 +108,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone)),
+			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv4Types()...)},
 		},
 		"generic_ipv4_address": resourceSchema.StringAttribute{
@@ -115,8 +116,8 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv4PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone))),
 				stringvalidator.AlsoRequires(path.MatchRoot("generic_ipv4_address_type")),
 			},
 		},
@@ -124,7 +125,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv6Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone)),
+			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv6Types()...)},
 		},
 		"generic_ipv6_address": resourceSchema.StringAttribute{
@@ -132,9 +133,9 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeLinkLocal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeLinkLocal))),
 				stringvalidator.AlsoRequires(path.MatchRoot("generic_ipv6_address_type")),
 			},
 		},

@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"math"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -50,7 +51,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		return
 	}
 
-	var resourceType apstra.FFResourceType
+	var resourceType enum.FFResourceType
 	err := utils.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(path.Root("type"), "failed to parse 'type' attribute", err.Error())
@@ -59,7 +60,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 
 	// Reminder Logic: the unknown state in this function means a value was passed by reference
 	switch resourceType {
-	case apstra.FFResourceTypeAsn:
+	case enum.FFResourceTypeAsn:
 		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -74,7 +75,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.AsnMin, uint32(constants.AsnMax), config.IntValue.String()),
 			)
 		}
-	case apstra.FFResourceTypeVni:
+	case enum.FFResourceTypeVni:
 		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -89,7 +90,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.VniMin, constants.VniMax, config.IntValue.String()),
 			)
 		}
-	case apstra.FFResourceTypeVlan:
+	case enum.FFResourceTypeVlan:
 		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -104,7 +105,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, constants.VlanMinUsable, constants.VlanMaxUsable, config.IntValue.String()),
 			)
 		}
-	case apstra.FFResourceTypeInt:
+	case enum.FFResourceTypeInt:
 		if (config.AllocatedFrom.IsNull() && config.IntValue.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.IntValue.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -119,7 +120,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, uint32(math.MaxUint32), config.IntValue.String()),
 			)
 		}
-	case apstra.FFResourceTypeHostIpv4:
+	case enum.FFResourceTypeHostIpv4:
 		if (config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv4Value.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -127,7 +128,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				"Exactly one of `allocated_from` and `ipv4_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
-	case apstra.FFResourceTypeHostIpv6:
+	case enum.FFResourceTypeHostIpv6:
 		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -135,7 +136,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				"Exactly one of `allocated_from` or `ipv6_value` must be set when `type` is set to "+config.Type.String(),
 			)
 		}
-	case apstra.FFResourceTypeIpv4:
+	case enum.FFResourceTypeIpv4:
 		if (config.AllocatedFrom.IsNull() && config.Ipv4Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv4Value.IsNull()) {
 			resp.Diagnostics.AddError(
@@ -162,7 +163,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 				fmt.Sprintf("When type is %s, value must be between %d and %d, got %s", config.Type, 1, 32, config.IntValue.String()),
 			)
 		}
-	case apstra.FFResourceTypeIpv6:
+	case enum.FFResourceTypeIpv6:
 		if (config.AllocatedFrom.IsNull() && config.Ipv6Value.IsNull()) ||
 			(!config.AllocatedFrom.IsNull() && !config.Ipv6Value.IsNull()) {
 			resp.Diagnostics.AddError(

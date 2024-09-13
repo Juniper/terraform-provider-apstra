@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
@@ -54,7 +55,7 @@ func (o *resourceFreeformResourceGenerator) ValidateConfig(ctx context.Context, 
 	}
 
 	// Extract the type
-	var resourceType apstra.FFResourceType
+	var resourceType enum.FFResourceType
 	err := utils.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(path.Root("type"), "failed to parse 'type' attribute", err.Error())
@@ -62,7 +63,7 @@ func (o *resourceFreeformResourceGenerator) ValidateConfig(ctx context.Context, 
 	}
 
 	// Catch v6-sized prefix specified when requesting a v4 subnet.
-	if resourceType == apstra.FFResourceTypeIpv4 && config.SubnetPrefixLen.ValueInt64() > 32 {
+	if resourceType == enum.FFResourceTypeIpv4 && config.SubnetPrefixLen.ValueInt64() > 32 {
 		resp.Diagnostics.AddAttributeError(path.Root("subnet_prefix_len"), " 'subnet_prefix_len' cannot be greater than 32 when 'type' is %s", config.Type.String())
 		return
 	}

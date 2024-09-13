@@ -1,7 +1,7 @@
 package compatibility
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/compatibility"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -17,7 +17,7 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra422,
 	}
 
-	sdkVersions := apstra.SupportedApiVersions()
+	sdkVersions := compatibility.SupportedApiVersions()
 
 	return utils.SliceIntersectionOfAB(providerVersions, sdkVersions)
 }

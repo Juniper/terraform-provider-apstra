@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"math"
 	"net"
 	"net/netip"
@@ -351,8 +352,8 @@ func (o *resourceDatacenterIpLinkAddressing) Delete(ctx context.Context, req res
 	}
 
 	// unpack the private state into apstra objects
-	var switchIpv4AddressType, genericIpv4AddressType apstra.InterfaceNumberingIpv4Type
-	var switchIpv6AddressType, genericIpv6AddressType apstra.InterfaceNumberingIpv6Type
+	var switchIpv4AddressType, genericIpv4AddressType enum.InterfaceNumberingIpv4Type
+	var switchIpv6AddressType, genericIpv6AddressType enum.InterfaceNumberingIpv6Type
 	err = utils.ApiStringerFromFriendlyString(&switchIpv4AddressType, private.SwitchIpv4AddressType)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to parse private data switch_ipv4_address_type", err.Error())
