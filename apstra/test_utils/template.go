@@ -2,10 +2,11 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TemplateA(t testing.TB, ctx context.Context) *apstra.TemplateRackBased {

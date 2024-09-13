@@ -1,12 +1,13 @@
 package compatibility
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra/compatibility"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
-	"sort"
-	"strings"
 )
 
 func SupportedApiVersions() []string {

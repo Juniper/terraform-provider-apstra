@@ -3,10 +3,10 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 const (

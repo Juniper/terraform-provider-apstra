@@ -5,17 +5,16 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"math"
 	"net"
 	"net/netip"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )

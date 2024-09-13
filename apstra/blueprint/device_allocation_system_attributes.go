@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"math"
 	"net"
 	"regexp"
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
@@ -129,7 +129,6 @@ func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, exp
 			"Object may be omitted, but must not be empty")
 		return
 	}
-
 }
 
 func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {

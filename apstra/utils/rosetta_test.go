@@ -2,11 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"reflect"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 func TestRosetta(t *testing.T) {

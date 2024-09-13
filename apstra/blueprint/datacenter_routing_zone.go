@@ -3,11 +3,11 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"net"
 	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"

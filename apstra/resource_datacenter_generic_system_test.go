@@ -3,13 +3,13 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"net"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"

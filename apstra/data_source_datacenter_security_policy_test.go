@@ -3,12 +3,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -245,7 +246,6 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 	}
 
 	for tName, tCase := range testCases {
-
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 			Steps: []resource.TestStep{

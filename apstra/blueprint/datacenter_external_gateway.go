@@ -3,6 +3,10 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"math"
+	"net"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -21,9 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"math"
-	"net"
-	"strings"
 )
 
 type DatacenterExternalGateway struct {

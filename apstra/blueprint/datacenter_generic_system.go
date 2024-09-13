@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"math"
 	"net"
 	"regexp"
 	"sort"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"

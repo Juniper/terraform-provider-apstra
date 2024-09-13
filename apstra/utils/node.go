@@ -2,9 +2,9 @@ package utils
 
 import (
 	"context"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 func AllNodeDeployModes() []string {

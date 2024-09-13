@@ -1,8 +1,9 @@
 package utils
 
 import (
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"sort"
+
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 func AllFFResourceTypes() []string {

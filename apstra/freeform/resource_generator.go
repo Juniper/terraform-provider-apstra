@@ -3,11 +3,12 @@ package freeform
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"regexp"
-	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
