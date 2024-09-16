@@ -610,6 +610,13 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx conte
 		return
 	}
 
+	var deviceProfileId string
+	if si.UserConfig.AosHclModel != "" {
+		deviceProfileId = si.UserConfig.AosHclModel.String()
+	} else {
+		deviceProfileId = si.Facts.AosHclModel.String()
+	}
+
 	query := new(apstra.PathQuery).
 		SetClient(client).
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
@@ -622,7 +629,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx conte
 		Out([]apstra.QEEAttribute{apstra.RelationshipTypeDeviceProfile.QEEAttribute()}).
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeDeviceProfile.QEEAttribute(),
-			{Key: "device_profile_id", Value: apstra.QEStringVal(si.Facts.AosHclModel.String())},
+			{Key: "device_profile_id", Value: apstra.QEStringVal(deviceProfileId)},
 			{Key: "name", Value: apstra.QEStringVal("n_device_profile")},
 		})
 
