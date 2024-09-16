@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -32,7 +33,7 @@ resource %q %q {
 type resourceAllocGroup struct {
 	blueprintId string
 	name        string
-	groupType   apstra.ResourcePoolType
+	groupType   enum.ResourcePoolType
 	poolIds     []string
 }
 
@@ -184,7 +185,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_asn"),
-						groupType:   apstra.ResourcePoolTypeAsn,
+						groupType:   enum.ResourcePoolTypeAsn,
 						poolIds:     []string{newAsnPool(t)},
 					},
 				},
@@ -192,7 +193,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_asn"),
-						groupType:   apstra.ResourcePoolTypeAsn,
+						groupType:   enum.ResourcePoolTypeAsn,
 						poolIds:     []string{newAsnPool(t), newAsnPool(t)},
 					},
 				},
@@ -204,7 +205,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_int"),
-						groupType:   apstra.ResourcePoolTypeInt,
+						groupType:   enum.ResourcePoolTypeInt,
 						poolIds:     []string{newIntPool(t)},
 					},
 				},
@@ -212,7 +213,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_int"),
-						groupType:   apstra.ResourcePoolTypeInt,
+						groupType:   enum.ResourcePoolTypeInt,
 						poolIds:     []string{newIntPool(t)},
 					},
 				},
@@ -224,7 +225,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_vni"),
-						groupType:   apstra.ResourcePoolTypeVni,
+						groupType:   enum.ResourcePoolTypeVni,
 						poolIds:     []string{newVniPool(t)},
 					},
 				},
@@ -232,7 +233,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_vni"),
-						groupType:   apstra.ResourcePoolTypeVni,
+						groupType:   enum.ResourcePoolTypeVni,
 						poolIds:     []string{newVniPool(t)},
 					},
 				},
@@ -244,7 +245,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv4"),
-						groupType:   apstra.ResourcePoolTypeIpv4,
+						groupType:   enum.ResourcePoolTypeIpv4,
 						poolIds:     []string{newIpv4Pool(t)},
 					},
 				},
@@ -252,7 +253,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv4"),
-						groupType:   apstra.ResourcePoolTypeIpv4,
+						groupType:   enum.ResourcePoolTypeIpv4,
 						poolIds:     []string{newIpv4Pool(t)},
 					},
 				},
@@ -264,7 +265,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv6"),
-						groupType:   apstra.ResourcePoolTypeIpv6,
+						groupType:   enum.ResourcePoolTypeIpv6,
 						poolIds:     []string{newIpv6Pool(t)},
 					},
 				},
@@ -272,7 +273,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv6"),
-						groupType:   apstra.ResourcePoolTypeIpv6,
+						groupType:   enum.ResourcePoolTypeIpv6,
 						poolIds:     []string{newIpv6Pool(t)},
 					},
 				},

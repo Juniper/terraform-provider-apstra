@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -40,7 +41,7 @@ type resourceFreeformResource struct {
 	blueprintId   string
 	name          string
 	groupId       apstra.ObjectId
-	resourceType  apstra.FFResourceType
+	resourceType  enum.FFResourceType
 	integerValue  *int
 	ipv4Value     net.IPNet
 	ipv6Value     net.IPNet
@@ -75,13 +76,13 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 	if o.integerValue != nil {
 		result.append(t, "TestCheckResourceAttr", "integer_value", strconv.Itoa(*o.integerValue))
 	} else {
-		if o.resourceType == apstra.FFResourceTypeHostIpv4 || o.resourceType == apstra.FFResourceTypeHostIpv6 {
+		if o.resourceType == enum.FFResourceTypeHostIpv4 || o.resourceType == enum.FFResourceTypeHostIpv6 {
 			result.append(t, "TestCheckNoResourceAttr", "integer_value")
 		}
-		if o.resourceType == apstra.FFResourceTypeIpv4 && o.allocatedFrom == "" {
+		if o.resourceType == enum.FFResourceTypeIpv4 && o.allocatedFrom == "" {
 			result.append(t, "TestCheckNoResourceAttr", "integer_value")
 		}
-		if o.resourceType == apstra.FFResourceTypeIpv6 && o.allocatedFrom == "" {
+		if o.resourceType == enum.FFResourceTypeIpv6 && o.allocatedFrom == "" {
 			result.append(t, "TestCheckNoResourceAttr", "integer_value")
 		}
 	}
@@ -91,10 +92,10 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 	if o.ipv6Value.String() != "<nil>" {
 		result.append(t, "TestCheckResourceAttr", "ipv6_value", o.ipv6Value.String())
 	}
-	if o.resourceType == apstra.FFResourceTypeIpv4 || o.resourceType == apstra.FFResourceTypeHostIpv4 {
+	if o.resourceType == enum.FFResourceTypeIpv4 || o.resourceType == enum.FFResourceTypeHostIpv4 {
 		result.append(t, "TestCheckResourceAttrSet", "ipv4_value")
 	}
-	if o.resourceType == apstra.FFResourceTypeIpv6 || o.resourceType == apstra.FFResourceTypeHostIpv6 {
+	if o.resourceType == enum.FFResourceTypeIpv6 || o.resourceType == enum.FFResourceTypeHostIpv6 {
 		result.append(t, "TestCheckResourceAttrSet", "ipv6_value")
 	}
 	if o.allocatedFrom == "" {
@@ -155,7 +156,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "ipv4AlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeIpv4,
+			Type:    enum.ResourcePoolTypeIpv4,
 			PoolIds: []apstra.ObjectId{ipv4poolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -181,7 +182,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "ipv6AlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeIpv6,
+			Type:    enum.ResourcePoolTypeIpv6,
 			PoolIds: []apstra.ObjectId{ipv6poolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -206,7 +207,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "vniAlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeVni,
+			Type:    enum.ResourcePoolTypeVni,
 			PoolIds: []apstra.ObjectId{vniPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -231,7 +232,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "asnAlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeAsn,
+			Type:    enum.ResourcePoolTypeAsn,
 			PoolIds: []apstra.ObjectId{asnPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -255,7 +256,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "intAlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeInt,
+			Type:    enum.ResourcePoolTypeInt,
 			PoolIds: []apstra.ObjectId{intPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -311,7 +312,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeAsn,
+						resourceType: enum.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65535),
 					},
 				},
@@ -320,7 +321,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[1],
-						resourceType: apstra.FFResourceTypeAsn,
+						resourceType: enum.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65536),
 					},
 				},
@@ -329,7 +330,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[0],
-						resourceType:  apstra.FFResourceTypeAsn,
+						resourceType:  enum.FFResourceTypeAsn,
 						allocatedFrom: newAsnAllocationGroup(t),
 					},
 				},
@@ -338,7 +339,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[1],
-						resourceType:  apstra.FFResourceTypeAsn,
+						resourceType:  enum.FFResourceTypeAsn,
 						allocatedFrom: newAsnAllocationGroup(t),
 						assignedTo:    randomSysIds(t, sysCount/3),
 					},
@@ -348,7 +349,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeAsn,
+						resourceType: enum.FFResourceTypeAsn,
 						integerValue: utils.ToPtr(65536),
 					},
 				},
@@ -361,7 +362,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeVni,
+						resourceType: enum.FFResourceTypeVni,
 						integerValue: utils.ToPtr(4498),
 						assignedTo:   randomSysIds(t, sysCount/3),
 					},
@@ -375,7 +376,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeInt,
+						resourceType: enum.FFResourceTypeInt,
 						integerValue: utils.ToPtr(4498),
 						assignedTo:   randomSysIds(t, sysCount/3),
 					},
@@ -385,7 +386,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[1],
-						resourceType:  apstra.FFResourceTypeInt,
+						resourceType:  enum.FFResourceTypeInt,
 						allocatedFrom: newIntAllocationGroup(t),
 						assignedTo:    randomSysIds(t, sysCount/3),
 					},
@@ -395,7 +396,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeInt,
+						resourceType: enum.FFResourceTypeInt,
 						integerValue: utils.ToPtr(459),
 					},
 				},
@@ -408,7 +409,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeIpv4,
+						resourceType: enum.FFResourceTypeIpv4,
 						ipv4Value:    randomSlash31(t, "192.168.2.0/24"),
 					},
 				},
@@ -417,7 +418,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[1],
-						resourceType:  apstra.FFResourceTypeIpv4,
+						resourceType:  enum.FFResourceTypeIpv4,
 						integerValue:  utils.ToPtr(30),
 						allocatedFrom: newIpv4AllocationGroup(t),
 					},
@@ -427,7 +428,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeIpv4,
+						resourceType: enum.FFResourceTypeIpv4,
 						ipv4Value:    randomSlash31(t, "10.168.2.0/24"),
 					},
 				},
@@ -440,7 +441,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeIpv6,
+						resourceType: enum.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
 						assignedTo:   randomSysIds(t, sysCount/3),
 					},
@@ -450,7 +451,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[1],
-						resourceType:  apstra.FFResourceTypeIpv6,
+						resourceType:  enum.FFResourceTypeIpv6,
 						integerValue:  utils.ToPtr(64),
 						allocatedFrom: newIpv6AllocationGroup(t),
 					},
@@ -460,7 +461,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeIpv6,
+						resourceType: enum.FFResourceTypeIpv6,
 						ipv6Value:    randomSlash127(t, "2001:db8::/32"),
 					},
 				},
@@ -473,7 +474,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[0],
-						resourceType:  apstra.FFResourceTypeVni,
+						resourceType:  enum.FFResourceTypeVni,
 						allocatedFrom: newVniAllocationGroup(t),
 					},
 				},
@@ -482,7 +483,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[1],
-						resourceType: apstra.FFResourceTypeVni,
+						resourceType: enum.FFResourceTypeVni,
 						integerValue: utils.ToPtr(rand.IntN(10000) + 4096),
 					},
 				},
@@ -491,7 +492,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:  bp.Id().String(),
 						name:         acctest.RandString(6),
 						groupId:      groupIds[0],
-						resourceType: apstra.FFResourceTypeVni,
+						resourceType: enum.FFResourceTypeVni,
 						integerValue: utils.ToPtr(rand.IntN(10000) + 4096),
 					},
 				},
@@ -500,7 +501,7 @@ func TestResourceFreeformResource(t *testing.T) {
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
 						groupId:       groupIds[1],
-						resourceType:  apstra.FFResourceTypeVni,
+						resourceType:  enum.FFResourceTypeVni,
 						allocatedFrom: newVniAllocationGroup(t),
 						assignedTo:    randomSysIds(t, sysCount/3),
 					},

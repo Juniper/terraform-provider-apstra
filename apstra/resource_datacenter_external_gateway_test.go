@@ -5,13 +5,15 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"net"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 const (
@@ -35,7 +37,7 @@ type testCaseResourceExternalGateway struct {
 	name          string
 	ipAddress     net.IP
 	asn           uint32
-	routeTypes    apstra.RemoteGatewayRouteTypes
+	routeTypes    enum.RemoteGatewayRouteTypes
 	nodes         string
 	ttl           *uint8
 	keepaliveTime *uint16
@@ -74,7 +76,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 			name:       "name1",
 			ipAddress:  net.IP{1, 1, 1, 1},
 			asn:        1,
-			routeTypes: apstra.RemoteGatewayRouteTypesAll,
+			routeTypes: enum.RemoteGatewayRouteTypesAll,
 			nodes:      leafIds[0],
 			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 				resource.TestCheckResourceAttrSet("apstra_datacenter_external_gateway.test", "id"),
@@ -82,7 +84,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "name", "name1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ip_address", "1.1.1.1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "asn", "1"),
-				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", apstra.RemoteGatewayRouteTypesAll.Value),
+				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", enum.RemoteGatewayRouteTypesAll.Value),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.#", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.0", leafIds[0]),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ttl", "30"),            // default
@@ -94,7 +96,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 			name:       "name2",
 			ipAddress:  net.IP{1, 1, 1, 2},
 			asn:        2,
-			routeTypes: apstra.RemoteGatewayRouteTypesFiveOnly,
+			routeTypes: enum.RemoteGatewayRouteTypesFiveOnly,
 			nodes:      strings.Join(leafIds[1:], `","`),
 			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 				resource.TestCheckResourceAttrSet("apstra_datacenter_external_gateway.test", "id"),
@@ -102,7 +104,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "name", "name2"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ip_address", "1.1.1.2"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "asn", "2"),
-				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", apstra.RemoteGatewayRouteTypesFiveOnly.Value),
+				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", enum.RemoteGatewayRouteTypesFiveOnly.Value),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.#", strconv.Itoa(len(leafIds)-1)),
 				resource.TestCheckTypeSetElemAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.*", leafIds[1]),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ttl", "30"),            // default
@@ -114,7 +116,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 			name:          "name3",
 			ipAddress:     net.IP{1, 1, 1, 3},
 			asn:           3,
-			routeTypes:    apstra.RemoteGatewayRouteTypesAll,
+			routeTypes:    enum.RemoteGatewayRouteTypesAll,
 			nodes:         leafIds[0],
 			ttl:           &uint8Val3,
 			keepaliveTime: &uint16Val1,
@@ -126,7 +128,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "name", "name3"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ip_address", "1.1.1.3"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "asn", "3"),
-				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", apstra.RemoteGatewayRouteTypesAll.Value),
+				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", enum.RemoteGatewayRouteTypesAll.Value),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.#", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.0", leafIds[0]),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ttl", "3"),
@@ -139,7 +141,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 			name:       "name1",
 			ipAddress:  net.IP{1, 1, 1, 1},
 			asn:        1,
-			routeTypes: apstra.RemoteGatewayRouteTypesAll,
+			routeTypes: enum.RemoteGatewayRouteTypesAll,
 			nodes:      leafIds[0],
 			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
 				resource.TestCheckResourceAttrSet("apstra_datacenter_external_gateway.test", "id"),
@@ -147,7 +149,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "name", "name1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ip_address", "1.1.1.1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "asn", "1"),
-				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", apstra.RemoteGatewayRouteTypesAll.Value),
+				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", enum.RemoteGatewayRouteTypesAll.Value),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.#", "1"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.0", leafIds[0]),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ttl", "30"),            // default
@@ -159,7 +161,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 			name:       "name2",
 			ipAddress:  net.IP{1, 1, 1, 2},
 			asn:        2,
-			routeTypes: apstra.RemoteGatewayRouteTypesFiveOnly,
+			routeTypes: enum.RemoteGatewayRouteTypesFiveOnly,
 			nodes:      strings.Join(leafIds[1:], `","`),
 			password:   "big secret2",
 			testCheckFunc: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
@@ -168,7 +170,7 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "name", "name2"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ip_address", "1.1.1.2"),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "asn", "2"),
-				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", apstra.RemoteGatewayRouteTypesFiveOnly.Value),
+				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "evpn_route_types", enum.RemoteGatewayRouteTypesFiveOnly.Value),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.#", strconv.Itoa(len(leafIds)-1)),
 				resource.TestCheckTypeSetElemAttr("apstra_datacenter_external_gateway.test", "local_gateway_nodes.*", leafIds[1]),
 				resource.TestCheckResourceAttr("apstra_datacenter_external_gateway.test", "ttl", "30"),            // default
