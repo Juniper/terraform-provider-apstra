@@ -41,7 +41,7 @@ resource "apstra_template_pod_based" "example" {
 
 ### Optional
 
-- `fabric_link_addressing` (String) Fabric addressing scheme for Spine/SuperSpine links. Required for Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.
+- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/SuperSpine links. Required for Apstra <= 4.1.0, not supported by Apstra >= 4.1.1.
 
 ### Read-Only
 

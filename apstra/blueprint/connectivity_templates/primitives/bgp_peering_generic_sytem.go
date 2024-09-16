@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -194,8 +195,8 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 		// Label:              o.Name.ValueString(), // todo is this necessary?
 		Bfd:                   o.BfdEnabled.ValueBool(),
 		Holdtime:              holdTime,
-		Ipv4Safi:              o.Ipv4AddressingType.ValueString() != utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv4TypeNone),
-		Ipv6Safi:              o.Ipv6AddressingType.ValueString() != utils.StringersToFriendlyString(apstra.InterfaceNumberingIpv6TypeNone),
+		Ipv4Safi:              o.Ipv4AddressingType.ValueString() != utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone),
+		Ipv6Safi:              o.Ipv6AddressingType.ValueString() != utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone),
 		Keepalive:             keepaliveTime,
 		LocalAsn:              localAsn,
 		NeighborAsnDynamic:    o.NeighborAsnDynamic.ValueBool(),

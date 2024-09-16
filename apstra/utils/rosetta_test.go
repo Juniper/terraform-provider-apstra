@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 func TestRosetta(t *testing.T) {
@@ -30,10 +31,10 @@ func TestRosetta(t *testing.T) {
 		{string: "static", stringers: []fmt.Stringer{apstra.OverlayControlProtocolNone}},
 		{string: "evpn", stringers: []fmt.Stringer{apstra.OverlayControlProtocolEvpn}},
 
-		{string: "icmp", stringers: []fmt.Stringer{apstra.PolicyRuleProtocolIcmp}},
-		{string: "ip", stringers: []fmt.Stringer{apstra.PolicyRuleProtocolIp}},
-		{string: "tcp", stringers: []fmt.Stringer{apstra.PolicyRuleProtocolTcp}},
-		{string: "udp", stringers: []fmt.Stringer{apstra.PolicyRuleProtocolUdp}},
+		{string: "icmp", stringers: []fmt.Stringer{enum.PolicyRuleProtocolIcmp}},
+		{string: "ip", stringers: []fmt.Stringer{enum.PolicyRuleProtocolIp}},
+		{string: "tcp", stringers: []fmt.Stringer{enum.PolicyRuleProtocolTcp}},
+		{string: "udp", stringers: []fmt.Stringer{enum.PolicyRuleProtocolUdp}},
 
 		{string: "datacenter", stringers: []fmt.Stringer{apstra.RefDesignTwoStageL3Clos}},
 		{string: "freeform", stringers: []fmt.Stringer{apstra.RefDesignFreeform}},
@@ -46,10 +47,10 @@ func TestRosetta(t *testing.T) {
 		{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}},
 		{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},
 
-		{string: "ipv4", stringers: []fmt.Stringer{apstra.ResourcePoolTypeIpv4}},
+		{string: "ipv4", stringers: []fmt.Stringer{enum.ResourcePoolTypeIpv4}},
 
-		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv4TypeNone}},
-		{string: "none", stringers: []fmt.Stringer{apstra.InterfaceNumberingIpv6TypeNone}},
+		{string: "none", stringers: []fmt.Stringer{enum.InterfaceNumberingIpv4TypeNone}},
+		{string: "none", stringers: []fmt.Stringer{enum.InterfaceNumberingIpv6TypeNone}},
 
 		{string: "none", stringers: []fmt.Stringer{apstra.CtPrimitiveIPv4AddressingTypeNone}},
 		{string: "none", stringers: []fmt.Stringer{apstra.CtPrimitiveIPv6AddressingTypeNone}},
@@ -77,17 +78,17 @@ func TestRosetta(t *testing.T) {
 		case apstra.AsnAllocationScheme:
 			x := apstra.AsnAllocationScheme(-1)
 			target = &x
-		case apstra.InterfaceNumberingIpv4Type:
-			x := apstra.InterfaceNumberingIpv4Type{}
+		case enum.InterfaceNumberingIpv4Type:
+			x := enum.InterfaceNumberingIpv4Type{}
 			target = &x
-		case apstra.InterfaceNumberingIpv6Type:
-			x := apstra.InterfaceNumberingIpv6Type{}
+		case enum.InterfaceNumberingIpv6Type:
+			x := enum.InterfaceNumberingIpv6Type{}
 			target = &x
 		case apstra.OverlayControlProtocol:
 			x := apstra.OverlayControlProtocol(-1)
 			target = &x
-		case apstra.PolicyRuleProtocol:
-			x := apstra.PolicyRuleProtocol{}
+		case enum.PolicyRuleProtocol:
+			x := enum.PolicyRuleProtocol{}
 			target = &x
 		case apstra.RefDesign:
 			x := apstra.RefDesign(-1)
@@ -95,8 +96,8 @@ func TestRosetta(t *testing.T) {
 		case apstra.ResourceGroupName:
 			x := apstra.ResourceGroupName(-1)
 			target = &x
-		case apstra.ResourcePoolType:
-			x := apstra.ResourcePoolType{}
+		case enum.ResourcePoolType:
+			x := enum.ResourcePoolType{}
 			target = &x
 		}
 

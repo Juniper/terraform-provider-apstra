@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
@@ -158,10 +158,10 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 		},
 		"deploy_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Set the Apstra Deploy Mode for this Generic System. Default: `%s`",
-				apstra.DeployModeDeploy),
+				enum.DeployModeDeploy),
 			Optional:   true,
 			Computed:   true,
-			Default:    stringdefault.StaticString(apstra.DeployModeDeploy.String()),
+			Default:    stringdefault.StaticString(enum.DeployModeDeploy.String()),
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllNodeDeployModes()...)},
 		},
 		"clear_cts_on_destroy": resourceSchema.BoolAttribute{

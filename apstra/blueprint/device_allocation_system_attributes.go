@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
@@ -128,7 +129,6 @@ func (o *DeviceAllocationSystemAttributes) ValidateConfig(_ context.Context, exp
 			"Object may be omitted, but must not be empty")
 		return
 	}
-
 }
 
 func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId types.String, diags *diag.Diagnostics) {
@@ -281,7 +281,7 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 		return
 	}
 
-	var deployMode apstra.DeployMode
+	var deployMode enum.DeployMode
 	err = deployMode.FromString(node.DeployMode)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse node %q deploy mode %q", nodeId, node.DeployMode), err.Error())
@@ -429,7 +429,7 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 	}
 
 	if utils.HasValue(o.DeployMode) {
-		var deployMode apstra.DeployMode
+		var deployMode enum.DeployMode
 		err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error in rosetta function with deploy_mode = %s", o.DeployMode), err.Error())
@@ -437,7 +437,7 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 		}
 
 		var deployModePayload *string
-		if deployMode != apstra.DeployModeNone {
+		if deployMode != enum.DeployModeNone {
 			deployModePayload = utils.ToPtr(deployMode.String())
 		}
 

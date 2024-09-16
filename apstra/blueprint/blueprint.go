@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
@@ -844,9 +845,9 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	if utils.HasValue(o.EvpnType5Routes) {
-		result.EvpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumDisabled
+		result.EvpnGenerateType5HostRoutes = &enum.FeatureSwitchEnumDisabled
 		if o.EvpnType5Routes.ValueBool() {
-			result.EvpnGenerateType5HostRoutes = &apstra.FeatureSwitchEnumEnabled
+			result.EvpnGenerateType5HostRoutes = &enum.FeatureSwitchEnumEnabled
 		}
 	}
 
@@ -863,30 +864,30 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	if utils.HasValue(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
-		result.JunosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumDisabled
+		result.JunosEvpnMaxNexthopAndInterfaceNumber = &enum.FeatureSwitchEnumDisabled
 		if o.JunosEvpnMaxNexthopAndInterfaceNumber.ValueBool() {
-			result.JunosEvpnMaxNexthopAndInterfaceNumber = &apstra.FeatureSwitchEnumEnabled
+			result.JunosEvpnMaxNexthopAndInterfaceNumber = &enum.FeatureSwitchEnumEnabled
 		}
 	}
 
 	if utils.HasValue(o.JunosEvpnRoutingInstanceModeMacVrf) {
-		result.JunosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumDisabled
+		result.JunosEvpnRoutingInstanceVlanAware = &enum.FeatureSwitchEnumDisabled
 		if o.JunosEvpnRoutingInstanceModeMacVrf.ValueBool() {
-			result.JunosEvpnRoutingInstanceVlanAware = &apstra.FeatureSwitchEnumEnabled
+			result.JunosEvpnRoutingInstanceVlanAware = &enum.FeatureSwitchEnumEnabled
 		}
 	}
 
 	if utils.HasValue(o.JunosExOverlayEcmp) {
-		result.JunosExOverlayEcmp = &apstra.FeatureSwitchEnumDisabled
+		result.JunosExOverlayEcmp = &enum.FeatureSwitchEnumDisabled
 		if o.JunosExOverlayEcmp.ValueBool() {
-			result.JunosExOverlayEcmp = &apstra.FeatureSwitchEnumEnabled
+			result.JunosExOverlayEcmp = &enum.FeatureSwitchEnumEnabled
 		}
 	}
 
 	if utils.HasValue(o.JunosGracefulRestart) {
-		result.JunosGracefulRestart = &apstra.FeatureSwitchEnumDisabled
+		result.JunosGracefulRestart = &enum.FeatureSwitchEnumDisabled
 		if o.JunosGracefulRestart.ValueBool() {
-			result.JunosGracefulRestart = &apstra.FeatureSwitchEnumEnabled
+			result.JunosGracefulRestart = &enum.FeatureSwitchEnumEnabled
 		}
 	}
 
@@ -907,9 +908,9 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	if utils.HasValue(o.OptimizeRoutingZoneFootprint) {
-		result.OptimiseSzFootprint = &apstra.FeatureSwitchEnumDisabled
+		result.OptimiseSzFootprint = &enum.FeatureSwitchEnumDisabled
 		if o.OptimizeRoutingZoneFootprint.ValueBool() {
-			result.OptimiseSzFootprint = &apstra.FeatureSwitchEnumEnabled
+			result.OptimiseSzFootprint = &enum.FeatureSwitchEnumEnabled
 		}
 	}
 
@@ -960,10 +961,10 @@ func boolAttrValueFromBoolPtr(b *bool) types.Bool {
 	return types.BoolValue(*b)
 }
 
-func boolAttrValueFromFeatureswitchEnumPtr(fs *apstra.FeatureSwitchEnum) types.Bool {
+func boolAttrValueFromFeatureswitchEnumPtr(fs *enum.FeatureSwitchEnum) types.Bool {
 	if fs == nil {
 		return types.BoolNull()
 	}
 
-	return types.BoolValue(fs.Value == apstra.FeatureSwitchEnumEnabled.Value)
+	return types.BoolValue(fs.Value == enum.FeatureSwitchEnumEnabled.Value)
 }

@@ -3,11 +3,11 @@ package utils
 import (
 	"sort"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 func AllResourcePoolTypes() []string {
-	members := apstra.ResourcePoolTypes.Members()
+	members := enum.ResourcePoolTypes.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
 		result[i] = StringersToFriendlyString(member)

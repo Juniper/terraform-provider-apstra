@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -107,7 +108,7 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o *AllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformAllocGroupData {
 	// unpack
-	var allocGroupType apstra.ResourcePoolType
+	var allocGroupType enum.ResourcePoolType
 	err := utils.ApiStringerFromFriendlyString(&allocGroupType, o.Type.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())

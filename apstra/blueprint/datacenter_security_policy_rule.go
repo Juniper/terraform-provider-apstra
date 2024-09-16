@@ -3,7 +3,10 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -16,7 +19,6 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 type DatacenterSecurityPolicyRule struct {
@@ -62,14 +64,14 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 			Computed:            true,
 		},
 		"action": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Security Policy Rule Action; one of: %s", apstra.PolicyRuleActions),
+			MarkdownDescription: fmt.Sprintf("Security Policy Rule Action; one of: %s", enum.PolicyRuleActions),
 			Computed:            true,
 		},
 		"source_ports": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. A `null` "+
 				"set matches any port. Applies only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
@@ -79,8 +81,8 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 		"destination_ports": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. A `null` "+
 				"set matches any port. Applies only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
@@ -169,15 +171,15 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 			Validators:          []validator.String{stringvalidator.OneOf(friendlyPolicyRuleProtocols()...)},
 		},
 		"action": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Action - One of: %s", apstra.PolicyRuleActions),
+			MarkdownDescription: fmt.Sprintf("Action - One of: %s", enum.PolicyRuleActions),
 			Required:            true,
-			Validators:          []validator.String{stringvalidator.OneOf(apstra.PolicyRuleActions.Values()...)},
+			Validators:          []validator.String{stringvalidator.OneOf(enum.PolicyRuleActions.Values()...)},
 		},
 		"source_ports": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. A `null` "+
 				"set matches any port. Valid only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Optional: true,
 			Validators: []validator.Set{
@@ -191,8 +193,8 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 		"destination_ports": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. A `null` "+
 				"set matches any port. Valid only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(apstra.PolicyRuleProtocolUdp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Optional: true,
 			Validators: []validator.Set{
@@ -211,10 +213,10 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueAtMustBeBool(
 					path.MatchRelative().AtParent().AtName("protocol"),
-					types.StringValue(apstra.PolicyRuleProtocolTcp.Value),
+					types.StringValue(enum.PolicyRuleProtocolTcp.Value),
 					apstravalidator.ValueAtMustBeBool(
 						path.MatchRelative().AtParent().AtName("protocol"),
-						types.StringValue(apstra.PolicyRuleProtocolTcp.Value),
+						types.StringValue(enum.PolicyRuleProtocolTcp.Value),
 						true,
 					),
 				),
@@ -225,11 +227,11 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 
 func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apstra.PolicyRuleData, diags *diag.Diagnostics) {
 	var established types.Bool
-	if in.Protocol == apstra.PolicyRuleProtocolTcp {
+	if in.Protocol == enum.PolicyRuleProtocolTcp {
 		if in.TcpStateQualifier == nil {
 			established = types.BoolValue(false)
 		} else {
-			established = types.BoolValue(in.TcpStateQualifier.Value == apstra.TcpStateQualifierEstablished.Value)
+			established = types.BoolValue(in.TcpStateQualifier.Value == enum.TcpStateQualifierEstablished.Value)
 		}
 	}
 
@@ -243,14 +245,14 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 }
 
 func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.PolicyRuleData {
-	var protocol apstra.PolicyRuleProtocol
+	var protocol enum.PolicyRuleProtocol
 	err := utils.ApiStringerFromFriendlyString(&protocol, o.Protocol.ValueString())
 	if err != nil {
 		diags.AddAttributeError(path, fmt.Sprintf("failed to parse policy rule protocol %s", o.Protocol), err.Error())
 		return nil
 	}
 
-	action := apstra.PolicyRuleActions.Parse(o.Action.ValueString())
+	action := enum.PolicyRuleActions.Parse(o.Action.ValueString())
 	if action == nil {
 		diags.AddAttributeError(
 			path.AtName("action"),
@@ -265,9 +267,9 @@ func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Pa
 		return nil
 	}
 
-	var tcpStateQualifier *apstra.TcpStateQualifier
+	var tcpStateQualifier *enum.TcpStateQualifier
 	if o.Established.ValueBool() {
-		tcpStateQualifier = &apstra.TcpStateQualifierEstablished
+		tcpStateQualifier = &enum.TcpStateQualifierEstablished
 	}
 
 	return &apstra.PolicyRuleData{

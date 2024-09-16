@@ -2,7 +2,9 @@ package iba
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -124,6 +126,6 @@ func (o *Widget) Request(_ context.Context, _ *diag.Diagnostics) *apstra.IbaWidg
 		Description: o.Description.ValueString(),
 		ProbeId:     apstra.ObjectId(o.ProbeId.ValueString()),
 		Label:       o.Name.ValueString(),
-		Type:        apstra.IbaWidgetTypeStage,
+		Type:        enum.IbaWidgetTypeStage,
 	}
 }

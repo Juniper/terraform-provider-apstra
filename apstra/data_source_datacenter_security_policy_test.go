@@ -3,11 +3,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -122,32 +124,32 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 						Data: &apstra.PolicyRuleData{
 							Label:       "name_0",
 							Description: "description_0",
-							Protocol:    apstra.PolicyRuleProtocolIcmp,
-							Action:      apstra.PolicyRuleActionDeny,
+							Protocol:    enum.PolicyRuleProtocolIcmp,
+							Action:      enum.PolicyRuleActionDeny,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:       "name_1",
 							Description: "description_1",
-							Protocol:    apstra.PolicyRuleProtocolIp,
-							Action:      apstra.PolicyRuleActionDenyLog,
+							Protocol:    enum.PolicyRuleProtocolIp,
+							Action:      enum.PolicyRuleActionDenyLog,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:       "name_2",
 							Description: "description_2",
-							Protocol:    apstra.PolicyRuleProtocolTcp,
-							Action:      apstra.PolicyRuleActionPermitLog,
+							Protocol:    enum.PolicyRuleProtocolTcp,
+							Action:      enum.PolicyRuleActionPermitLog,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:       "name_3",
 							Description: "description_3",
-							Protocol:    apstra.PolicyRuleProtocolTcp,
-							Action:      apstra.PolicyRuleActionPermitLog,
+							Protocol:    enum.PolicyRuleProtocolTcp,
+							Action:      enum.PolicyRuleActionPermitLog,
 							SrcPort: []apstra.PortRange{
 								{First: 11, Last: 11},
 								{First: 13, Last: 13},
@@ -208,10 +210,10 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 						Data: &apstra.PolicyRuleData{
 							Label:             "ssh_established",
 							Description:       "ssh established",
-							Protocol:          apstra.PolicyRuleProtocolTcp,
-							Action:            apstra.PolicyRuleActionPermitLog,
+							Protocol:          enum.PolicyRuleProtocolTcp,
+							Action:            enum.PolicyRuleActionPermitLog,
 							SrcPort:           []apstra.PortRange{{First: 22, Last: 22}},
-							TcpStateQualifier: &apstra.TcpStateQualifierEstablished,
+							TcpStateQualifier: &enum.TcpStateQualifierEstablished,
 						},
 					},
 				},
@@ -244,7 +246,6 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 	}
 
 	for tName, tCase := range testCases {
-
 		resource.Test(t, resource.TestCase{
 			ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 			Steps: []resource.TestStep{

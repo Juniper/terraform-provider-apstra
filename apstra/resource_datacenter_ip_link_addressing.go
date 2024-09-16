@@ -9,12 +9,12 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
@@ -351,8 +351,8 @@ func (o *resourceDatacenterIpLinkAddressing) Delete(ctx context.Context, req res
 	}
 
 	// unpack the private state into apstra objects
-	var switchIpv4AddressType, genericIpv4AddressType apstra.InterfaceNumberingIpv4Type
-	var switchIpv6AddressType, genericIpv6AddressType apstra.InterfaceNumberingIpv6Type
+	var switchIpv4AddressType, genericIpv4AddressType enum.InterfaceNumberingIpv4Type
+	var switchIpv6AddressType, genericIpv6AddressType enum.InterfaceNumberingIpv6Type
 	err = utils.ApiStringerFromFriendlyString(&switchIpv4AddressType, private.SwitchIpv4AddressType)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to parse private data switch_ipv4_address_type", err.Error())

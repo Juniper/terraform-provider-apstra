@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 const (
@@ -76,25 +77,25 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return ctPrimitiveIPv4AddressingTypeToFriendlyString(in0)
 	case apstra.CtPrimitiveIPv6AddressingType:
 		return ctPrimitiveIPv6AddressingTypeToFriendlyString(in0)
-	case apstra.DeployMode:
+	case enum.DeployMode:
 		return deployModeToFriendlyString(in0)
-	case apstra.FFResourceType:
+	case enum.FFResourceType:
 		return ffResourceTypeToFriendlyString(in0)
-	case apstra.InterfaceNumberingIpv4Type:
+	case enum.InterfaceNumberingIpv4Type:
 		return interfaceNumberingIpv4TypeToFriendlyString(in0)
-	case apstra.InterfaceNumberingIpv6Type:
+	case enum.InterfaceNumberingIpv6Type:
 		return interfaceNumberingIpv6TypeToFriendlyString(in0)
 	case apstra.OverlayControlProtocol:
 		return overlayControlProtocolToFriendlyString(in0)
-	case apstra.PolicyRuleProtocol:
+	case enum.PolicyRuleProtocol:
 		return policyRuleProtocolToFriendlyString(in0)
 	case apstra.RefDesign:
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
-	case apstra.ResourcePoolType:
+	case enum.ResourcePoolType:
 		return resourcePoolTypeToFriendlyString(in0)
-	case apstra.StorageSchemaPath:
+	case enum.StorageSchemaPath:
 		return storageSchemaPathToFriendlyString(in0)
 	}
 
@@ -122,25 +123,25 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return ctPrimitiveIPv4AddressingTypeFromFriendlyString(target, in...)
 	case *apstra.CtPrimitiveIPv6AddressingType:
 		return ctPrimitiveIPv6AddressingTypeFromFriendlyString(target, in...)
-	case *apstra.DeployMode:
+	case *enum.DeployMode:
 		return nodeDeployModeFromFriendlyString(target, in...)
-	case *apstra.FFResourceType:
+	case *enum.FFResourceType:
 		return freeformResourceTypeFromFriendlyString(target, in...)
-	case *apstra.InterfaceNumberingIpv4Type:
+	case *enum.InterfaceNumberingIpv4Type:
 		return interfaceNumberingIpv4TypeFromFriendlyString(target, in...)
-	case *apstra.InterfaceNumberingIpv6Type:
+	case *enum.InterfaceNumberingIpv6Type:
 		return interfaceNumberingIpv6TypeFromFriendlyString(target, in...)
 	case *apstra.OverlayControlProtocol:
 		return overlayControlProtocolFromFriendlyString(target, in...)
-	case *apstra.PolicyRuleProtocol:
+	case *enum.PolicyRuleProtocol:
 		return policyRuleProtocolFromFriendlyString(target, in[0])
 	case *apstra.RefDesign:
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
-	case *apstra.ResourcePoolType:
+	case *enum.ResourcePoolType:
 		return resourcePoolTypeFromFriendlyString(target, in...)
-	case *apstra.StorageSchemaPath:
+	case *enum.StorageSchemaPath:
 		return target.FromString("aos.sdk.telemetry.schemas." + in[0])
 	}
 
@@ -203,38 +204,38 @@ func ctPrimitiveIPv6AddressingTypeToFriendlyString(in apstra.CtPrimitiveIPv6Addr
 	return in.String()
 }
 
-func deployModeToFriendlyString(in apstra.DeployMode) string {
+func deployModeToFriendlyString(in enum.DeployMode) string {
 	switch in {
-	case apstra.DeployModeNone:
+	case enum.DeployModeNone:
 		return nodeDeployModeNotSet
 	}
 
 	return in.String()
 }
 
-func ffResourceTypeToFriendlyString(in apstra.FFResourceType) string {
+func ffResourceTypeToFriendlyString(in enum.FFResourceType) string {
 	switch in {
-	case apstra.FFResourceTypeHostIpv4:
+	case enum.FFResourceTypeHostIpv4:
 		return freeformResourceTypeHostIpv4
-	case apstra.FFResourceTypeIpv4:
+	case enum.FFResourceTypeIpv4:
 		return freeformResourceTypeIpv4
 	}
 
 	return in.String()
 }
 
-func interfaceNumberingIpv4TypeToFriendlyString(in apstra.InterfaceNumberingIpv4Type) string {
+func interfaceNumberingIpv4TypeToFriendlyString(in enum.InterfaceNumberingIpv4Type) string {
 	switch in {
-	case apstra.InterfaceNumberingIpv4TypeNone:
+	case enum.InterfaceNumberingIpv4TypeNone:
 		return interfaceNumberingIpv4TypeNone
 	}
 
 	return in.String()
 }
 
-func interfaceNumberingIpv6TypeToFriendlyString(in apstra.InterfaceNumberingIpv6Type) string {
+func interfaceNumberingIpv6TypeToFriendlyString(in enum.InterfaceNumberingIpv6Type) string {
 	switch in {
-	case apstra.InterfaceNumberingIpv6TypeNone:
+	case enum.InterfaceNumberingIpv6TypeNone:
 		return interfaceNumberingIpv6TypeNone
 	}
 
@@ -250,7 +251,7 @@ func overlayControlProtocolToFriendlyString(in apstra.OverlayControlProtocol) st
 	return in.String()
 }
 
-func policyRuleProtocolToFriendlyString(in apstra.PolicyRuleProtocol) string {
+func policyRuleProtocolToFriendlyString(in enum.PolicyRuleProtocol) string {
 	return strings.ToLower(in.String())
 }
 
@@ -263,7 +264,7 @@ func refDesignToFriendlyString(in apstra.RefDesign) string {
 	return in.String()
 }
 
-func storageSchemaPathToFriendlyString(in apstra.StorageSchemaPath) string {
+func storageSchemaPathToFriendlyString(in enum.StorageSchemaPath) string {
 	s := strings.Split(in.String(), ".")
 	return s[len(s)-1]
 }
@@ -287,9 +288,9 @@ func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 	return in.String()
 }
 
-func resourcePoolTypeToFriendlyString(in apstra.ResourcePoolType) string {
+func resourcePoolTypeToFriendlyString(in enum.ResourcePoolType) string {
 	switch in {
-	case apstra.ResourcePoolTypeIpv4:
+	case enum.ResourcePoolTypeIpv4:
 		return resourcePoolTypeIpv4
 	}
 
@@ -374,14 +375,14 @@ func ctPrimitiveIPv6AddressingTypeFromFriendlyString(target *apstra.CtPrimitiveI
 	return nil
 }
 
-func nodeDeployModeFromFriendlyString(target *apstra.DeployMode, in ...string) error {
+func nodeDeployModeFromFriendlyString(target *enum.DeployMode, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case nodeDeployModeNotSet:
-		*target = apstra.DeployModeNone
+		*target = enum.DeployModeNone
 	default:
 		return target.FromString(in[0])
 	}
@@ -389,16 +390,16 @@ func nodeDeployModeFromFriendlyString(target *apstra.DeployMode, in ...string) e
 	return nil
 }
 
-func freeformResourceTypeFromFriendlyString(target *apstra.FFResourceType, in ...string) error {
+func freeformResourceTypeFromFriendlyString(target *enum.FFResourceType, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case freeformResourceTypeHostIpv4:
-		*target = apstra.FFResourceTypeHostIpv4
+		*target = enum.FFResourceTypeHostIpv4
 	case freeformResourceTypeIpv4:
-		*target = apstra.FFResourceTypeIpv4
+		*target = enum.FFResourceTypeIpv4
 	default:
 		return target.FromString(in[0])
 	}
@@ -406,14 +407,14 @@ func freeformResourceTypeFromFriendlyString(target *apstra.FFResourceType, in ..
 	return nil
 }
 
-func interfaceNumberingIpv4TypeFromFriendlyString(target *apstra.InterfaceNumberingIpv4Type, in ...string) error {
+func interfaceNumberingIpv4TypeFromFriendlyString(target *enum.InterfaceNumberingIpv4Type, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case interfaceNumberingIpv4TypeNone:
-		*target = apstra.InterfaceNumberingIpv4TypeNone
+		*target = enum.InterfaceNumberingIpv4TypeNone
 	default:
 		return target.FromString(in[0])
 	}
@@ -421,14 +422,14 @@ func interfaceNumberingIpv4TypeFromFriendlyString(target *apstra.InterfaceNumber
 	return nil
 }
 
-func interfaceNumberingIpv6TypeFromFriendlyString(target *apstra.InterfaceNumberingIpv6Type, in ...string) error {
+func interfaceNumberingIpv6TypeFromFriendlyString(target *enum.InterfaceNumberingIpv6Type, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case interfaceNumberingIpv6TypeNone:
-		*target = apstra.InterfaceNumberingIpv6TypeNone
+		*target = enum.InterfaceNumberingIpv6TypeNone
 	default:
 		return target.FromString(in[0])
 	}
@@ -451,8 +452,8 @@ func overlayControlProtocolFromFriendlyString(target *apstra.OverlayControlProto
 	return nil
 }
 
-func policyRuleProtocolFromFriendlyString(target *apstra.PolicyRuleProtocol, s string) error {
-	t := apstra.PolicyRuleProtocols.Parse(strings.ToUpper(s))
+func policyRuleProtocolFromFriendlyString(target *enum.PolicyRuleProtocol, s string) error {
+	t := enum.PolicyRuleProtocols.Parse(strings.ToUpper(s))
 	if t == nil {
 		return fmt.Errorf("cannot parse PolicyRuleProtocol %q", s)
 	}
@@ -500,14 +501,14 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 	return nil
 }
 
-func resourcePoolTypeFromFriendlyString(target *apstra.ResourcePoolType, in ...string) error {
+func resourcePoolTypeFromFriendlyString(target *enum.ResourcePoolType, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case resourcePoolTypeIpv4:
-		*target = apstra.ResourcePoolTypeIpv4
+		*target = enum.ResourcePoolTypeIpv4
 	default:
 		return target.FromString(in[0])
 	}

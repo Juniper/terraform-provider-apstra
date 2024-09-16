@@ -2,10 +2,11 @@ package testutils
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -62,7 +63,7 @@ func TelemetryServiceRegistryEntryA(t testing.TB, ctx context.Context) *apstra.T
 	request := apstra.TelemetryServiceRegistryEntry{
 		ServiceName:       acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum),
 		ApplicationSchema: schema,
-		StorageSchemaPath: apstra.StorageSchemaPathIBA_INTEGER_DATA,
+		StorageSchemaPath: enum.StorageSchemaPathIBA_INTEGER_DATA,
 		Builtin:           false,
 		Description:       "Test Telemetry Service A",
 		Version:           "",

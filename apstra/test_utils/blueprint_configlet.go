@@ -2,10 +2,12 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func CatalogConfigletA(t testing.TB, ctx context.Context, client *apstra.Client) (apstra.ObjectId, *apstra.ConfigletData) {
@@ -73,7 +75,7 @@ func TestWidgetsAB(t testing.TB, ctx context.Context, bpClient *apstra.TwoStageL
 	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeBId)) })
 
 	widgetA := apstra.IbaWidgetData{
-		Type:      apstra.IbaWidgetTypeStage,
+		Type:      enum.IbaWidgetTypeStage,
 		Label:     "BGP Session Flapping",
 		ProbeId:   probeAId,
 		StageName: "BGP Session",
@@ -83,7 +85,7 @@ func TestWidgetsAB(t testing.TB, ctx context.Context, bpClient *apstra.TwoStageL
 	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetAId)) })
 
 	widgetB := apstra.IbaWidgetData{
-		Type:      apstra.IbaWidgetTypeStage,
+		Type:      enum.IbaWidgetTypeStage,
 		Label:     "Drain Traffic Anomaly",
 		ProbeId:   probeBId,
 		StageName: "excess_range",

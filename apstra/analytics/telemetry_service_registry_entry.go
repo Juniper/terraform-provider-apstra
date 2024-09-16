@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
@@ -71,11 +73,11 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 			Required:            true,
 		},
 		"storage_schema_path": resourceSchema.StringAttribute{
-			MarkdownDescription: "Storage Schema Path. Must be one of:\n  - " + strings.Join([]string{utils.StringersToFriendlyString(apstra.StorageSchemaPathIBA_STRING_DATA), utils.StringersToFriendlyString(apstra.StorageSchemaPathIBA_INTEGER_DATA)}, "\n  - ") + "\n",
+			MarkdownDescription: "Storage Schema Path. Must be one of:\n  - " + strings.Join([]string{utils.StringersToFriendlyString(enum.StorageSchemaPathIBA_STRING_DATA), utils.StringersToFriendlyString(enum.StorageSchemaPathIBA_INTEGER_DATA)}, "\n  - ") + "\n",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.OneOf(utils.StringersToFriendlyString(apstra.StorageSchemaPathIBA_STRING_DATA), utils.StringersToFriendlyString(apstra.StorageSchemaPathIBA_INTEGER_DATA)),
+				stringvalidator.OneOf(utils.StringersToFriendlyString(enum.StorageSchemaPathIBA_STRING_DATA), utils.StringersToFriendlyString(enum.StorageSchemaPathIBA_INTEGER_DATA)),
 			},
 		},
 		"description": resourceSchema.StringAttribute{
@@ -104,7 +106,7 @@ func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *aps
 }
 
 func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, diags *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
-	var storageSchemaPath apstra.StorageSchemaPath
+	var storageSchemaPath enum.StorageSchemaPath
 	err := utils.ApiStringerFromFriendlyString(&storageSchemaPath, o.StorageSchemaPath.ValueString())
 	if err != nil {
 		diags.AddError("Failed to Parse Storage Schema Path", err.Error())
