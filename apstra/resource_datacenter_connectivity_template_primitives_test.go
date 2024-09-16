@@ -5,7 +5,6 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"math/rand/v2"
 	"net"
 	"strconv"
@@ -13,8 +12,10 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
@@ -798,7 +799,7 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 	for i := range result {
 		policyId, err := client.CreateRoutingZoneConstraint(ctx, &apstra.RoutingZoneConstraintData{
 			Label:           acctest.RandString(6),
-			Mode:            oneOf(apstra.RoutingZoneConstraintModeAllow, apstra.RoutingZoneConstraintModeDeny, apstra.RoutingZoneConstraintModeNone),
+			Mode:            oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny, enum.RoutingZoneConstraintModeNone),
 			MaxRoutingZones: oneOf(nil, utils.ToPtr(0), utils.ToPtr(1), utils.ToPtr(2)),
 			RoutingZoneIds:  nil,
 		})

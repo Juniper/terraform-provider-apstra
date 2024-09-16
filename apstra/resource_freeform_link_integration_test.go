@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -136,7 +137,7 @@ func TestResourceFreeformLink(t *testing.T) {
 	// create an ipv4 allocation group
 	ipv4AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
 		Name:    acctest.RandString(6),
-		Type:    apstra.ResourcePoolTypeIpv4,
+		Type:    enum.ResourcePoolTypeIpv4,
 		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
 	})
 	require.NoError(t, err)
@@ -144,7 +145,7 @@ func TestResourceFreeformLink(t *testing.T) {
 	// create an ipv6 allocation group
 	ipv6AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
 		Name:    acctest.RandString(6),
-		Type:    apstra.ResourcePoolTypeIpv6,
+		Type:    enum.ResourcePoolTypeIpv6,
 		PoolIds: []apstra.ObjectId{"Private-fc01-a05-fab-48"},
 	})
 	require.NoError(t, err)
@@ -169,7 +170,7 @@ func TestResourceFreeformLink(t *testing.T) {
 		associateIpResourcesToLinksDone = true
 
 		_, err = bp.CreateResourceGenerator(ctx, &apstra.FreeformResourceGeneratorData{
-			ResourceType:    apstra.FFResourceTypeIpv4,
+			ResourceType:    enum.FFResourceTypeIpv4,
 			Label:           acctest.RandString(6),
 			Scope:           "node(type='link', name='target')",
 			AllocatedFrom:   &ipv4AllocGroupId,
@@ -179,7 +180,7 @@ func TestResourceFreeformLink(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = bp.CreateResourceGenerator(ctx, &apstra.FreeformResourceGeneratorData{
-			ResourceType:    apstra.FFResourceTypeIpv6,
+			ResourceType:    enum.FFResourceTypeIpv6,
 			Label:           acctest.RandString(6),
 			Scope:           "node(type='link', name='target')",
 			AllocatedFrom:   &ipv6AllocGroupId,

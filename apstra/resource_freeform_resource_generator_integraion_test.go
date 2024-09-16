@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -36,7 +37,7 @@ resource %q %q {
 type resourceFreeformResourceGenerator struct {
 	blueprintId     string
 	name            string
-	resourceType    apstra.FFResourceType
+	resourceType    enum.FFResourceType
 	scope           string
 	allocatedFrom   string
 	containerId     string
@@ -106,7 +107,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "ipv4AlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeIpv4,
+			Type:    enum.ResourcePoolTypeIpv4,
 			PoolIds: []apstra.ObjectId{ipv4poolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -132,7 +133,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "ipv6AlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeIpv6,
+			Type:    enum.ResourcePoolTypeIpv6,
 			PoolIds: []apstra.ObjectId{ipv6poolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -157,7 +158,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "vniAlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeVni,
+			Type:    enum.ResourcePoolTypeVni,
 			PoolIds: []apstra.ObjectId{vniPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -182,7 +183,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "asnAlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeAsn,
+			Type:    enum.ResourcePoolTypeAsn,
 			PoolIds: []apstra.ObjectId{asnPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -207,7 +208,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "intAlGr-" + acctest.RandString(6),
-			Type:    apstra.ResourcePoolTypeInt,
+			Type:    enum.ResourcePoolTypeInt,
 			PoolIds: []apstra.ObjectId{intPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
@@ -231,7 +232,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 					config: resourceFreeformResourceGenerator{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						resourceType:  apstra.FFResourceTypeAsn,
+						resourceType:  enum.FFResourceTypeAsn,
 						scope:         "node('system', name='target')",
 						allocatedFrom: string(newAsnAllocationGroup(t)),
 						containerId:   string(groupId),
@@ -241,7 +242,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 					config: resourceFreeformResourceGenerator{
 						blueprintId:   bp.Id().String(),
 						name:          acctest.RandString(6),
-						resourceType:  apstra.FFResourceTypeAsn,
+						resourceType:  enum.FFResourceTypeAsn,
 						scope:         "node('system', deploy_mode='deploy', name='target')",
 						allocatedFrom: string(newAsnAllocationGroup(t)),
 						containerId:   string(groupId),
@@ -256,7 +257,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 		//				blueprintId:  bp.Id().String(),
 		//				name:         acctest.RandString(6),
 		//				containerId:  string(groupId),
-		//				resourceType: apstra.FFResourceTypeVni,
+		//				resourceType: enum.FFResourceTypeVni,
 		//			},
 		//		},
 		//	},
@@ -269,7 +270,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:          acctest.RandString(6),
 						scope:         "node('system', name='target')",
 						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeInt,
+						resourceType:  enum.FFResourceTypeInt,
 						allocatedFrom: string(newIntAllocationGroup(t)),
 					},
 				},
@@ -279,7 +280,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:          acctest.RandString(6),
 						scope:         "node('system', deploy_mode='deploy', name='target')",
 						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeInt,
+						resourceType:  enum.FFResourceTypeInt,
 						allocatedFrom: string(newIntAllocationGroup(t)),
 					},
 				},
@@ -293,7 +294,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:            acctest.RandString(6),
 						scope:           "node('system', name='target')",
 						containerId:     string(groupId),
-						resourceType:    apstra.FFResourceTypeIpv4,
+						resourceType:    enum.FFResourceTypeIpv4,
 						allocatedFrom:   string(newIpv4AllocationGroup(t)),
 						subnetPrefixLen: utils.ToPtr(27),
 					},
@@ -304,7 +305,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:            acctest.RandString(6),
 						scope:           "node('system', deploy_mode='deploy', name='target')",
 						containerId:     string(groupId),
-						resourceType:    apstra.FFResourceTypeIpv4,
+						resourceType:    enum.FFResourceTypeIpv4,
 						allocatedFrom:   string(newIpv4AllocationGroup(t)),
 						subnetPrefixLen: utils.ToPtr(28),
 					},
@@ -319,7 +320,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:            acctest.RandString(6),
 						scope:           "node('system', name='target')",
 						containerId:     string(groupId),
-						resourceType:    apstra.FFResourceTypeIpv6,
+						resourceType:    enum.FFResourceTypeIpv6,
 						allocatedFrom:   string(newIpv6AllocationGroup(t)),
 						subnetPrefixLen: utils.ToPtr(127),
 					},
@@ -330,7 +331,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:            acctest.RandString(6),
 						scope:           "node('system', deploy_mode='deploy', name='target')",
 						containerId:     string(groupId),
-						resourceType:    apstra.FFResourceTypeIpv6,
+						resourceType:    enum.FFResourceTypeIpv6,
 						allocatedFrom:   string(newIpv6AllocationGroup(t)),
 						subnetPrefixLen: utils.ToPtr(126),
 					},
@@ -345,7 +346,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:          acctest.RandString(6),
 						scope:         "node('system', name='target')",
 						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeVni,
+						resourceType:  enum.FFResourceTypeVni,
 						allocatedFrom: string(newVniAllocationGroup(t)),
 					},
 				},
@@ -355,7 +356,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						name:          acctest.RandString(6),
 						scope:         "node('system', deploy_mode='deploy', name='target')",
 						containerId:   string(groupId),
-						resourceType:  apstra.FFResourceTypeVni,
+						resourceType:  enum.FFResourceTypeVni,
 						allocatedFrom: string(newVniAllocationGroup(t)),
 					},
 				},

@@ -5,16 +5,18 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const (
@@ -75,12 +77,12 @@ func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) strin
 		return sb.String()
 	}
 
-	renderEstablished := func(tsq *apstra.TcpStateQualifier) string {
+	renderEstablished := func(tsq *enum.TcpStateQualifier) string {
 		if tsq == nil {
 			return "null"
 		}
 
-		return strconv.FormatBool(*tsq == apstra.TcpStateQualifierEstablished)
+		return strconv.FormatBool(*tsq == enum.TcpStateQualifierEstablished)
 	}
 
 	renderRule := func(rule apstra.PolicyRule) string {
@@ -238,8 +240,8 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 						Data: &apstra.PolicyRuleData{
 							Label:       "60",
 							Description: "",
-							Protocol:    apstra.PolicyRuleProtocolIcmp,
-							Action:      apstra.PolicyRuleActionDeny,
+							Protocol:    enum.PolicyRuleProtocolIcmp,
+							Action:      enum.PolicyRuleActionDeny,
 						},
 					},
 				},
@@ -263,8 +265,8 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 						Data: &apstra.PolicyRuleData{
 							Label:       "70",
 							Description: "seventy",
-							Protocol:    apstra.PolicyRuleProtocolIp,
-							Action:      apstra.PolicyRuleActionDenyLog,
+							Protocol:    enum.PolicyRuleProtocolIp,
+							Action:      enum.PolicyRuleActionDenyLog,
 						},
 					},
 				},
@@ -291,25 +293,25 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 						Data: &apstra.PolicyRuleData{
 							Label:       "80",
 							Description: "eighty",
-							Protocol:    apstra.PolicyRuleProtocolUdp,
-							Action:      apstra.PolicyRuleActionPermit,
+							Protocol:    enum.PolicyRuleProtocolUdp,
+							Action:      enum.PolicyRuleActionPermit,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:       "81",
 							Description: "eightyone",
-							Protocol:    apstra.PolicyRuleProtocolTcp,
-							Action:      apstra.PolicyRuleActionPermitLog,
+							Protocol:    enum.PolicyRuleProtocolTcp,
+							Action:      enum.PolicyRuleActionPermitLog,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:             "82",
 							Description:       "eightytwo",
-							Protocol:          apstra.PolicyRuleProtocolTcp,
-							Action:            apstra.PolicyRuleActionPermit,
-							TcpStateQualifier: &apstra.TcpStateQualifierEstablished,
+							Protocol:          enum.PolicyRuleProtocolTcp,
+							Action:            enum.PolicyRuleActionPermit,
+							TcpStateQualifier: &enum.TcpStateQualifierEstablished,
 							SrcPort: apstra.PortRanges{
 								{First: 1, Last: 1},
 								{First: 3, Last: 5},
@@ -360,25 +362,25 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 						Data: &apstra.PolicyRuleData{
 							Label:       "90",
 							Description: "ninety",
-							Protocol:    apstra.PolicyRuleProtocolUdp,
-							Action:      apstra.PolicyRuleActionPermit,
+							Protocol:    enum.PolicyRuleProtocolUdp,
+							Action:      enum.PolicyRuleActionPermit,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:       "91",
 							Description: "ninetyone",
-							Protocol:    apstra.PolicyRuleProtocolTcp,
-							Action:      apstra.PolicyRuleActionPermitLog,
+							Protocol:    enum.PolicyRuleProtocolTcp,
+							Action:      enum.PolicyRuleActionPermitLog,
 						},
 					},
 					{
 						Data: &apstra.PolicyRuleData{
 							Label:             "92",
 							Description:       "ninetytwo",
-							Protocol:          apstra.PolicyRuleProtocolTcp,
-							Action:            apstra.PolicyRuleActionPermit,
-							TcpStateQualifier: &apstra.TcpStateQualifierEstablished,
+							Protocol:          enum.PolicyRuleProtocolTcp,
+							Action:            enum.PolicyRuleActionPermit,
+							TcpStateQualifier: &enum.TcpStateQualifierEstablished,
 							SrcPort: apstra.PortRanges{
 								{First: 1, Last: 1},
 								{First: 7, Last: 9},

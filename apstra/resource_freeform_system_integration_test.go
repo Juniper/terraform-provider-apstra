@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
@@ -116,7 +117,7 @@ func TestResourceFreeformSystem(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						hostname:    acctest.RandString(6),
-						deployMode:  apstra.DeployModeDeploy.String(),
+						deployMode:  enum.DeployModeDeploy.String(),
 						systemType:  apstra.SystemTypeExternal.String(),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
 					},
@@ -138,7 +139,7 @@ func TestResourceFreeformSystem(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						hostname:    acctest.RandString(6),
-						deployMode:  apstra.DeployModeDeploy.String(),
+						deployMode:  enum.DeployModeDeploy.String(),
 						systemType:  apstra.SystemTypeExternal.String(),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
 					},
@@ -156,7 +157,7 @@ func TestResourceFreeformSystem(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						hostname:    acctest.RandString(6),
-						deployMode:  apstra.DeployModeDeploy.String(),
+						deployMode:  enum.DeployModeDeploy.String(),
 						systemType:  apstra.SystemTypeExternal.String(),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
 					},
@@ -180,7 +181,7 @@ func TestResourceFreeformSystem(t *testing.T) {
 						name:            acctest.RandString(6),
 						hostname:        acctest.RandString(6),
 						deviceProfileId: string(dpId),
-						deployMode:      apstra.DeployModeDeploy.String(),
+						deployMode:      enum.DeployModeDeploy.String(),
 						systemType:      apstra.SystemTypeInternal.String(),
 						tags:            randomStrings(rand.Intn(10)+2, 6),
 					},
@@ -204,7 +205,7 @@ func TestResourceFreeformSystem(t *testing.T) {
 						name:            acctest.RandString(6),
 						hostname:        acctest.RandString(6),
 						deviceProfileId: string(dpId),
-						deployMode:      apstra.DeployModeDeploy.String(),
+						deployMode:      enum.DeployModeDeploy.String(),
 						systemType:      apstra.SystemTypeInternal.String(),
 						tags:            randomStrings(rand.Intn(10)+2, 6),
 					},
@@ -224,7 +225,7 @@ func TestResourceFreeformSystem(t *testing.T) {
 						name:            acctest.RandString(6),
 						hostname:        acctest.RandString(6),
 						deviceProfileId: string(dpId),
-						deployMode:      apstra.DeployModeDeploy.String(),
+						deployMode:      enum.DeployModeDeploy.String(),
 						systemType:      apstra.SystemTypeInternal.String(),
 						tags:            randomStrings(rand.Intn(10)+2, 6),
 					},

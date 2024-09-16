@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -51,7 +52,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 				},
 				// DefaultSviL3Mtu:                       nil,
 				EsiMacMsb:                   utils.ToPtr(uint8(4)),
-				EvpnGenerateType5HostRoutes: &apstra.FeatureSwitchEnumEnabled,
+				EvpnGenerateType5HostRoutes: &enum.FeatureSwitchEnumEnabled,
 				ExternalRouterMtu:           utils.ToPtr(uint16(9002)),
 				// FabricL3Mtu:                 nil,
 				Ipv6Enabled: utils.ToPtr(true),
