@@ -52,7 +52,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 				},
 				// DefaultSviL3Mtu:                       nil,
 				EsiMacMsb:                   utils.ToPtr(uint8(4)),
-				EvpnGenerateType5HostRoutes: &enum.FeatureSwitchEnumEnabled,
+				EvpnGenerateType5HostRoutes: &enum.FeatureSwitchEnabled,
 				ExternalRouterMtu:           utils.ToPtr(uint16(9002)),
 				// FabricL3Mtu:                 nil,
 				Ipv6Enabled: utils.ToPtr(true),
