@@ -11,26 +11,26 @@ import (
 
 const (
 	resourceDatacenterConfigletTemplateByIdHCL = `
-  	resource "apstra_datacenter_configlet" "test" {
-  		blueprint_id = "%s"
-  		catalog_configlet_id = "%s"
-  		condition = %q
-  	}
-	`
+resource "apstra_datacenter_configlet" "test" {
+  blueprint_id         = "%s"
+  catalog_configlet_id = "%s"
+  condition            = %q
+}
+`
 	resourceDatacenterConfigletTemplateByDataHCL = `
-	data "apstra_configlet" "cat_cfg" {
-   		name = "CatalogConfigletA"
-  	}
+data "apstra_configlet" "cat_cfg" {
+  name = "CatalogConfigletA"
+}
 
-  	resource "apstra_datacenter_configlet" "test" {
-  		blueprint_id = "%s"
-  		condition = %q
-  		name = data.apstra_configlet.cat_cfg.name
-  		generators = data.apstra_configlet.cat_cfg.generators
-  	}
-	`
+resource "apstra_datacenter_configlet" "test" {
+  blueprint_id = "%s"
+  condition    = %q
+  name         = data.apstra_configlet.cat_cfg.name
+  generators   = data.apstra_configlet.cat_cfg.generators
+}
+`
 
-	condition = "role in [\"spine\"]"
+	condition = `role in ["spine"]`
 )
 
 func TestAccResourceDatacenterConfiglet(t *testing.T) {
