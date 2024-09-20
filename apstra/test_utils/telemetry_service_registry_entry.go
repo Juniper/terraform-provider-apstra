@@ -63,7 +63,7 @@ func TelemetryServiceRegistryEntryA(t testing.TB, ctx context.Context) *apstra.T
 	request := apstra.TelemetryServiceRegistryEntry{
 		ServiceName:       acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum),
 		ApplicationSchema: schema,
-		StorageSchemaPath: enum.StorageSchemaPathIBA_INTEGER_DATA,
+		StorageSchemaPath: enum.StorageSchemaPathIbaIntegerData,
 		Builtin:           false,
 		Description:       "Test Telemetry Service A",
 		Version:           "",
