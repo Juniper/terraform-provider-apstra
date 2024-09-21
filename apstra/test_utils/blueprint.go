@@ -22,16 +22,18 @@ func MakeOrFindBlueprint(t testing.TB, ctx context.Context, name string, f bFunc
 	client := GetTestClient(t, ctx)
 
 	MakeOrFindBlueprintMutex.Lock()
-	defer MakeOrFindBlueprintMutex.Unlock()
 
 	status, err := client.GetBlueprintStatusByName(ctx, name)
 	if err != nil {
+		defer MakeOrFindBlueprintMutex.Unlock()
 		if utils.IsApstra404(err) {
 			return f(t, ctx, name)
 		}
 
-		require.NoError(t, err)
+		t.Fatal(err)
 	}
+
+	MakeOrFindBlueprintMutex.Unlock()
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, status.Id)
 	require.NoError(t, err)
