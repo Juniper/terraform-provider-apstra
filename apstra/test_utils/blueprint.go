@@ -19,10 +19,10 @@ type bFunc func(t testing.TB, ctx context.Context, name ...string) *apstra.TwoSt
 func MakeOrFindBlueprint(t testing.TB, ctx context.Context, name string, f bFunc) *apstra.TwoStageL3ClosClient {
 	t.Helper()
 
+	client := GetTestClient(t, ctx)
+
 	MakeOrFindBlueprintMutex.Lock()
 	defer MakeOrFindBlueprintMutex.Unlock()
-
-	client := GetTestClient(t, ctx)
 
 	status, err := client.GetBlueprintStatusByName(ctx, name)
 	if err != nil {
