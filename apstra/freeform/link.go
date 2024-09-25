@@ -25,7 +25,6 @@ type Link struct {
 	BlueprintId     types.String `tfsdk:"blueprint_id"`
 	Id              types.String `tfsdk:"id"`
 	Speed           types.String `tfsdk:"speed"`
-	Type            types.String `tfsdk:"type"`
 	Name            types.String `tfsdk:"name"`
 	AggregateLinkId types.String `tfsdk:"aggregate_link_id"`
 	Endpoints       types.Map    `tfsdk:"endpoints"`
@@ -63,12 +62,6 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 				"200G | 5G | 1G | 100G | 150g | 40g | 2500M | 25G | 25g | 10G | 50G | 800G " +
 				"| 10M | 100m | 2500m | 50g | 400g | 400G | 200g | 5g | 800g | 100M | 10g " +
 				"| 150G | 10m | 100g | 1g | 40G",
-			Computed: true,
-		},
-		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "`aggregate_link` | `ethernet`\n" +
-				"An 'ethernet' link is a normal front-panel interface. " +
-				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.",
 			Computed: true,
 		},
 		"aggregate_link_id": dataSourceSchema.StringAttribute{
@@ -113,12 +106,6 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"speed": resourceSchema.StringAttribute{
 			MarkdownDescription: "Speed of the Freeform Link.",
 			Computed:            true,
-		},
-		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: "`aggregate_link` | `ethernet`\n" +
-				"An 'ethernet' link is a normal front-panel interface. " +
-				"An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.",
-			Computed: true,
 		},
 		"aggregate_link_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "This field always `null` in resource context. Ignore. " +

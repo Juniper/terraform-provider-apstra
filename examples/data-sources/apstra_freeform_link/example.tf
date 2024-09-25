@@ -34,6 +34,4 @@ output "test_Link_out" { value = data.apstra_freeform_link.test }
 #    "a",
 #    "b",
 #  ])
-#  "type" = "ethernet"
 #}
-
