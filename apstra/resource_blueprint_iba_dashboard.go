@@ -40,7 +40,7 @@ func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.Sch
 	}
 }
 
-func (o *resourceBlueprintIbaDashboard) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+func (o *resourceBlueprintIbaDashboard) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// cannot proceed to api version validation if the provider has not been configured
 	if o.client == nil {
 		return
@@ -52,7 +52,6 @@ func (o *resourceBlueprintIbaDashboard) ValidateConfig(ctx context.Context, req 
 			"Incompatible API version",
 			"This data source is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
 		)
-		return
 	}
 }
 
