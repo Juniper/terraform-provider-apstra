@@ -3,9 +3,12 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"testing"
+
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 const (
@@ -37,8 +40,13 @@ resource "apstra_blueprint_iba_dashboard" "a" {
 )
 
 func TestAccResourceDashboard(t *testing.T) {
-
 	ctx := context.Background()
+
+	client := testutils.GetTestClient(t, ctx)
+	clientVersion := version.Must(version.NewVersion(client.ApiVersion()))
+	if !compatibility.BpIbaDashboardOk.Check(clientVersion) {
+		t.Skipf("skipping due to version constraint %s", compatibility.BpIbaDashboardOk)
+	}
 
 	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
 

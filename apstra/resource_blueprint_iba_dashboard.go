@@ -3,18 +3,26 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
-var _ resource.ResourceWithConfigure = &resourceBlueprintIbaDashboard{}
-var _ resourceWithSetDcBpClientFunc = &resourceBlueprintIbaDashboard{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceBlueprintIbaDashboard{}
+	_ resource.ResourceWithValidateConfig = &resourceBlueprintIbaDashboard{}
+	_ resourceWithSetDcBpClientFunc       = &resourceBlueprintIbaDashboard{}
+	_ resourceWithSetClient               = &resourceBlueprintIbaDashboard{}
+)
 
 type resourceBlueprintIbaDashboard struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	client          *apstra.Client
 }
 
 func (o *resourceBlueprintIbaDashboard) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -29,6 +37,29 @@ func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.Sch
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryRefDesignAny + "This resource creates a IBA Dashboard.",
 		Attributes:          iba.Dashboard{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceBlueprintIbaDashboard) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from plan
+	var config iba.Dashboard
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	// only supported with Apstra 4.x
+	if !compatibility.BpIbaDashboardOk.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+		resp.Diagnostics.AddError(
+			"Incompatible API version",
+			"This data source is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
+		)
+		return
 	}
 }
 
@@ -191,4 +222,9 @@ func (o *resourceBlueprintIbaDashboard) Delete(ctx context.Context, req resource
 
 func (o *resourceBlueprintIbaDashboard) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
+}
+
+// setClient is used for API version compatibility check only
+func (o *resourceBlueprintIbaDashboard) setClient(client *apstra.Client) {
+	o.client = client
 }
