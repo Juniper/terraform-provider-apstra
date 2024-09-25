@@ -20,12 +20,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
-
-var junosEvpnIrbModeDefault = enum.JunosEvpnIrbModeAsymmetric.Value
 
 type DatacenterRoutingZone struct {
 	Id                   types.String `tfsdk:"id"`
@@ -279,17 +278,13 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			},
 		},
 		"junos_evpn_irb_mode": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Symmetric IRB Routing for EVPN on Junos devices makes use of "+
-				"an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better "+
-				"scaling for networks with large amounts of VLANs. Applicable only to Apstra 4.2.0+. When omitted, "+
-				"Routing Zones in Apstra 4.2.0 and later will be configured with mode `%s`.", junosEvpnIrbModeDefault),
-			Optional:      true,
-			Computed:      true,
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators:    []validator.String{stringvalidator.OneOf(enum.JunosEvpnIrbModes.Values()...)},
-			// Default: DO NOT USE stringdefault.StaticString(apstra.JunosEvpnIrbModeAsymmetric.Value) here
-			// because that will set the attribute for Apstra < 4.2.0 (which do not support it) leading to
-			// confusion.
+			MarkdownDescription: "Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for " +
+				"inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for " +
+				"networks with large amounts of VLANs.",
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.OneOf(enum.JunosEvpnIrbModes.Values()...)},
+			Default:    stringdefault.StaticString(enum.JunosEvpnIrbModeAsymmetric.String()),
 		},
 	}
 }
