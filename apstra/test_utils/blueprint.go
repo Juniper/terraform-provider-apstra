@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -10,6 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// MakeOrFindBlueprintMutex is created by TestMain()
+var MakeOrFindBlueprintMutex *sync.Mutex
+
 type bFunc func(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient
 
 func MakeOrFindBlueprint(t testing.TB, ctx context.Context, name string, f bFunc) *apstra.TwoStageL3ClosClient {
@@ -17,14 +21,19 @@ func MakeOrFindBlueprint(t testing.TB, ctx context.Context, name string, f bFunc
 
 	client := GetTestClient(t, ctx)
 
+	MakeOrFindBlueprintMutex.Lock()
+
 	status, err := client.GetBlueprintStatusByName(ctx, name)
 	if err != nil {
+		defer MakeOrFindBlueprintMutex.Unlock()
 		if utils.IsApstra404(err) {
 			return f(t, ctx, name)
 		}
 
-		require.NoError(t, err)
+		t.Fatal(err)
 	}
+
+	MakeOrFindBlueprintMutex.Unlock()
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, status.Id)
 	require.NoError(t, err)
