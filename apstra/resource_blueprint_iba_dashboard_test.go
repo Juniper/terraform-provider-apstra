@@ -1,4 +1,4 @@
-package tfapstra_test
+package tfapstra
 
 import (
 	"context"
