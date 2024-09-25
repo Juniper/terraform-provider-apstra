@@ -63,6 +63,8 @@ github.com/bufbuild/protocompile v0.4.0/go.mod h1:3v93+mbWn/v3xzN+31nwkJfrEpAUwp
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4 h1:nFogSDBo0cmCwO2JX2gl+2onPk4Fw63VreG+HX9U5n0=
 github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4/go.mod h1:RxJksUf3IJIwpKhrrGOUOVD7qQQj1tlJtXYhmsyLVlE=
+github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820 h1:ca2TIBMAj9Czul/4WUN0sLWqn1Wmicm81Ke0m6HR8+s=
+github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820/go.mod h1:lD9yQKzccrnkg2Xx/9kKzrlW9OWP61bRRLjec0l4Wok=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/circl v1.3.9 h1:QFrlgFYf2Qpi8bSpVPK1HBvWpx16v/1TZivyo7pGuBE=
 github.com/cloudflare/circl v1.3.9/go.mod h1:PDRU+oXvdD7KCtgKxW95M5Z8BpSCJXQORiZFnBQS5QU=
