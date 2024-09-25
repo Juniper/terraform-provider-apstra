@@ -43,15 +43,8 @@ func (o *dataSourceBlueprintIbaDashboard) Schema(_ context.Context, _ datasource
 	}
 }
 
-func (o *dataSourceBlueprintIbaDashboard) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	// Retrieve values from config.
-	var config iba.Dashboard
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// cannot proceed to config + api version validation if the provider has not been configured
+func (o *dataSourceBlueprintIbaDashboard) ValidateConfig(_ context.Context, _ datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	// cannot proceed to api version validation if the provider has not been configured
 	if o.client == nil {
 		return
 	}
@@ -62,7 +55,6 @@ func (o *dataSourceBlueprintIbaDashboard) ValidateConfig(ctx context.Context, re
 			"Incompatible API version",
 			"This data source is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
 		)
-		return
 	}
 }
 
@@ -127,11 +119,11 @@ func (o *dataSourceBlueprintIbaDashboard) Read(ctx context.Context, req datasour
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
+func (o *dataSourceBlueprintIbaDashboard) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	o.getBpClientFunc = f
+}
+
 // setClient is used for API version compatibility check only
 func (o *dataSourceBlueprintIbaDashboard) setClient(client *apstra.Client) {
 	o.client = client
-}
-
-func (o *dataSourceBlueprintIbaDashboard) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
-	o.getBpClientFunc = f
 }
