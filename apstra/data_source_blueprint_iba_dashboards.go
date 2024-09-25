@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -15,10 +16,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaDashboards{}
-var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprintIbaDashboards{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceBlueprintIbaDashboards{}
-var _ datasourceWithSetClient = &dataSourceBlueprintIbaDashboards{}
+var (
+	_ datasource.DataSourceWithConfigure      = &dataSourceBlueprintIbaDashboards{}
+	_ datasource.DataSourceWithValidateConfig = &dataSourceBlueprintIbaDashboards{}
+	_ datasourceWithSetDcBpClientFunc         = &dataSourceBlueprintIbaDashboards{}
+	_ datasourceWithSetClient                 = &dataSourceBlueprintIbaDashboards{}
+)
 
 type dataSourceBlueprintIbaDashboards struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
