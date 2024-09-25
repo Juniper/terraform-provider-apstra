@@ -64,7 +64,6 @@ func (o *dataSourceBlueprintIbaDashboards) ValidateConfig(_ context.Context, _ d
 			"Incompatible API version",
 			"This data source is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
 		)
-		return
 	}
 }
 
