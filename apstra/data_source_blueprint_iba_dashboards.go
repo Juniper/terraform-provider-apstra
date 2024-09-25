@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -14,10 +16,13 @@ import (
 )
 
 var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaDashboards{}
+var _ datasource.DataSourceWithValidateConfig = &dataSourceBlueprintIbaDashboards{}
 var _ datasourceWithSetDcBpClientFunc = &dataSourceBlueprintIbaDashboards{}
+var _ datasourceWithSetClient = &dataSourceBlueprintIbaDashboards{}
 
 type dataSourceBlueprintIbaDashboards struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	client          *apstra.Client
 }
 
 func (o *dataSourceBlueprintIbaDashboards) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -44,6 +49,33 @@ func (o *dataSourceBlueprintIbaDashboards) Schema(_ context.Context, _ datasourc
 				ElementType:         types.StringType,
 			},
 		},
+	}
+}
+
+func (o *dataSourceBlueprintIbaDashboards) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	var config struct {
+		BlueprintId types.String `tfsdk:"blueprint_id"`
+		Ids         types.Set    `tfsdk:"ids"`
+	}
+
+	// Retrieve values from config.
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	// only supported with Apstra 4.x
+	if !compatibility.BpIbaDashboardOk.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+		resp.Diagnostics.AddError(
+			"Incompatible API version",
+			"This data source is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
+		)
+		return
 	}
 }
 
@@ -97,4 +129,9 @@ func (o *dataSourceBlueprintIbaDashboards) Read(ctx context.Context, req datasou
 
 func (o *dataSourceBlueprintIbaDashboards) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
+}
+
+// setClient is used for API version compatibility check only
+func (o *dataSourceBlueprintIbaDashboards) setClient(client *apstra.Client) {
+	o.client = client
 }
