@@ -1,4 +1,4 @@
-package tfapstra_test
+package tfapstra
 
 import (
 	"context"
@@ -11,18 +11,18 @@ import (
 
 const (
 	dataSourceDatacenterConfigletTemplateByNameHCL = `
-data "apstra_datacenter_configlet" "test" {
-  blueprint_id = "%s"
-  name = "%s"
-}
-`
+	data "apstra_datacenter_configlet" "test" {
+    	blueprint_id = "%s"
+		name = "%s"
+	}
+	`
 
 	dataSourceDatacenterConfigletTemplateByIdHCL = `
-data "apstra_datacenter_configlet" "test" {
-  blueprint_id = "%s"
-  id = "%s"
-}
-`
+	data "apstra_datacenter_configlet" "test" {
+  		blueprint_id = "%s"
+		id = "%s"
+	}
+	`
 )
 
 func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
