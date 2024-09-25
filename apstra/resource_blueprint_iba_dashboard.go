@@ -41,14 +41,7 @@ func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.Sch
 }
 
 func (o *resourceBlueprintIbaDashboard) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	// Retrieve values from plan
-	var config iba.Dashboard
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// cannot proceed to config + api version validation if the provider has not been configured
+	// cannot proceed to api version validation if the provider has not been configured
 	if o.client == nil {
 		return
 	}
