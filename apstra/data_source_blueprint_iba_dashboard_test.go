@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -29,6 +31,12 @@ const (
 func TestAccDataSourceIbaDashboard(t *testing.T) {
 	ctx := context.Background()
 
+	client := testutils.GetTestClient(t, ctx)
+	clientVersion := version.Must(version.NewVersion(client.ApiVersion()))
+	if !compatibility.BpIbaDashboardOk.Check(clientVersion) {
+		t.Skipf("skipping due to version constraint %s", compatibility.BpIbaDashboardOk)
+	}
+
 	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
 
 	// Set up Widgets
@@ -50,8 +58,7 @@ func TestAccDataSourceIbaDashboard(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Read by ID
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceBlueprintIbaDashboardTemplateByIdHCL,
-					bpClient.Id().String(), id.String()),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceBlueprintIbaDashboardTemplateByIdHCL, bpClient.Id().String(), id.String()),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "id", id.String()),
 					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "name", dashboardData.Label),
@@ -61,8 +68,7 @@ func TestAccDataSourceIbaDashboard(t *testing.T) {
 			},
 			// Read by Name
 			{
-				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceBlueprintIbaDashboardTemplateByNameHCL,
-					bpClient.Id().String(), dashboardData.Label),
+				Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceBlueprintIbaDashboardTemplateByNameHCL, bpClient.Id().String(), dashboardData.Label),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "id", id.String()),
 					resource.TestCheckResourceAttr("data.apstra_blueprint_iba_dashboard.test", "name", dashboardData.Label),
