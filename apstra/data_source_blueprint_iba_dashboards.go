@@ -52,18 +52,7 @@ func (o *dataSourceBlueprintIbaDashboards) Schema(_ context.Context, _ datasourc
 	}
 }
 
-func (o *dataSourceBlueprintIbaDashboards) ValidateConfig(ctx context.Context, req datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
-	var config struct {
-		BlueprintId types.String `tfsdk:"blueprint_id"`
-		Ids         types.Set    `tfsdk:"ids"`
-	}
-
-	// Retrieve values from config.
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+func (o *dataSourceBlueprintIbaDashboards) ValidateConfig(_ context.Context, _ datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
 	// cannot proceed to config + api version validation if the provider has not been configured
 	if o.client == nil {
 		return
