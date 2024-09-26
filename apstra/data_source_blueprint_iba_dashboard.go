@@ -38,7 +38,8 @@ func (o *dataSourceBlueprintIbaDashboard) Schema(_ context.Context, _ datasource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Dashboard in a Blueprint." +
 			"\n\n" +
-			"At least one optional attribute is required.",
+			"At least one optional attribute is required.\n\n" +
+			"*Note: Compatible only with Apstra " + compatibility.BpIbaDashboardOk.String() + "*",
 		Attributes: iba.Dashboard{}.DataSourceAttributes(),
 	}
 }

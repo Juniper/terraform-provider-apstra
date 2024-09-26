@@ -35,8 +35,9 @@ func (o *resourceBlueprintIbaDashboard) Configure(ctx context.Context, req resou
 
 func (o *resourceBlueprintIbaDashboard) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This resource creates a IBA Dashboard.",
-		Attributes:          iba.Dashboard{}.ResourceAttributes(),
+		MarkdownDescription: docCategoryRefDesignAny + "This resource creates a IBA Dashboard.\n\n" +
+			"*Note: Compatible only with Apstra " + compatibility.BpIbaDashboardOk.String() + "*",
+		Attributes: iba.Dashboard{}.ResourceAttributes(),
 	}
 }
 

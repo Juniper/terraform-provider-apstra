@@ -3,11 +3,14 @@ page_title: "apstra_blueprint_iba_dashboards Data Source - terraform-provider-ap
 subcategory: "Reference Design: Shared"
 description: |-
   This data source returns the ID numbers of all IBA Dashboards in a Blueprint.
+  Note: Compatible only with Apstra <5.0.0
 ---
 
 # apstra_blueprint_iba_dashboards (Data Source)
 
 This data source returns the ID numbers of all IBA Dashboards in a Blueprint.
+
+*Note: Compatible only with Apstra <5.0.0*
 
 
 ## Example Usage
