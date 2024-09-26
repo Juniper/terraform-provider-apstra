@@ -53,8 +53,6 @@ resource "apstra_freeform_link" "test" {
 - `aggregate_link_id` (String) This field always `null` in resource context. Ignore. This information can be learned by invoking the complimentary data source.
 - `id` (String) ID of the Freeform Link.
 - `speed` (String) Speed of the Freeform Link.
-- `type` (String) `aggregate_link` | `ethernet`
-An 'ethernet' link is a normal front-panel interface. An 'aggregate_link' is a bonded interface which is typically used for LACP or Static LAGs.
 
 <a id="nestedatt--endpoints"></a>
 ### Nested Schema for `endpoints`
