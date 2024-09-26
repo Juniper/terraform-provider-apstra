@@ -3,19 +3,27 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidget{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceBlueprintIbaWidget{}
+var (
+	_ datasource.DataSourceWithConfigure      = &dataSourceBlueprintIbaWidget{}
+	_ datasource.DataSourceWithValidateConfig = &dataSourceBlueprintIbaWidget{}
+	_ datasourceWithSetDcBpClientFunc         = &dataSourceBlueprintIbaWidget{}
+	_ datasourceWithSetClient                 = &dataSourceBlueprintIbaWidget{}
+)
 
 type dataSourceBlueprintIbaWidget struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	client          *apstra.Client
 }
 
 func (o *dataSourceBlueprintIbaWidget) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -30,8 +38,25 @@ func (o *dataSourceBlueprintIbaWidget) Schema(_ context.Context, _ datasource.Sc
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Widget in a Blueprint." +
 			"\n\n" +
-			"At least one optional attribute is required.",
+			"At least one optional attribute is required.\n\n" +
+			"*Note: Compatible only with Apstra " + compatibility.BpIbaWidgetOk.String() + "*",
+
 		Attributes: iba.Widget{}.DataSourceAttributes(),
+	}
+}
+
+func (o *dataSourceBlueprintIbaWidget) ValidateConfig(_ context.Context, _ datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	// cannot proceed to api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	// only supported with Apstra 4.x
+	if !compatibility.BpIbaWidgetOk.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+		resp.Diagnostics.AddError(
+			"Incompatible API version",
+			"This data source is compatible only with Apstra "+compatibility.BpIbaWidgetOk.String(),
+		)
 	}
 }
 
@@ -98,4 +123,9 @@ func (o *dataSourceBlueprintIbaWidget) Read(ctx context.Context, req datasource.
 
 func (o *dataSourceBlueprintIbaWidget) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
+}
+
+// setClient is used for API version compatibility check only
+func (o *dataSourceBlueprintIbaWidget) setClient(client *apstra.Client) {
+	o.client = client
 }

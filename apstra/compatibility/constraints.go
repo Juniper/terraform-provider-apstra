@@ -8,4 +8,5 @@ import (
 var (
 	BpIbaDashboardOk = versionconstraints.New(apiversions.LtApstra500)
 	BpIbaProbeOk     = versionconstraints.New(apiversions.LtApstra500)
+	BpIbaWidgetOk    = versionconstraints.New(apiversions.LtApstra500)
 )

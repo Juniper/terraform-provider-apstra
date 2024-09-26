@@ -3,11 +3,14 @@ page_title: "apstra_blueprint_iba_widget Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Shared"
 description: |-
   This resource creates an IBA Widget.
+  Note: Compatible only with Apstra <5.0.0
 ---
 
 # apstra_blueprint_iba_widget (Resource)
 
 This resource creates an IBA Widget.
+
+*Note: Compatible only with Apstra <5.0.0*
 
 
 ## Example Usage
