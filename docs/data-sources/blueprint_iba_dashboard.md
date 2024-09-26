@@ -4,6 +4,7 @@ subcategory: "Reference Design: Shared"
 description: |-
   This data source provides details of a specific IBA Dashboard in a Blueprint.
   At least one optional attribute is required.
+  Note: Compatible only with Apstra <5.0.0
 ---
 
 # apstra_blueprint_iba_dashboard (Data Source)
@@ -11,6 +12,8 @@ description: |-
 This data source provides details of a specific IBA Dashboard in a Blueprint.
 
 At least one optional attribute is required.
+
+*Note: Compatible only with Apstra <5.0.0*
 
 
 ## Example Usage

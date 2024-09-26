@@ -3,18 +3,26 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 )
 
-var _ resource.ResourceWithConfigure = &resourceBlueprintIbaProbe{}
-var _ resourceWithSetDcBpClientFunc = &resourceBlueprintIbaProbe{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceBlueprintIbaProbe{}
+	_ resource.ResourceWithValidateConfig = &resourceBlueprintIbaProbe{}
+	_ resourceWithSetDcBpClientFunc       = &resourceBlueprintIbaProbe{}
+	_ resourceWithSetClient               = &resourceBlueprintIbaProbe{}
+)
 
 type resourceBlueprintIbaProbe struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	client          *apstra.Client
 }
 
 func (o *resourceBlueprintIbaProbe) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -29,6 +37,21 @@ func (o *resourceBlueprintIbaProbe) Schema(_ context.Context, _ resource.SchemaR
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryRefDesignAny + "This resource creates an IBA Probe within a Blueprint.",
 		Attributes:          iba.Probe{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceBlueprintIbaProbe) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// cannot proceed to api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	// only supported with Apstra 4.x
+	if !compatibility.BpIbaProbeOk.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+		resp.Diagnostics.AddError(
+			"Incompatible API version",
+			"*Note: Compatible only with Apstra "+compatibility.BpIbaProbeOk.String()+"*",
+		)
 	}
 }
 
@@ -168,4 +191,9 @@ func (o *resourceBlueprintIbaProbe) Delete(ctx context.Context, req resource.Del
 
 func (o *resourceBlueprintIbaProbe) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
+}
+
+// setClient is used for API version compatibility check only
+func (o *resourceBlueprintIbaProbe) setClient(client *apstra.Client) {
+	o.client = client
 }

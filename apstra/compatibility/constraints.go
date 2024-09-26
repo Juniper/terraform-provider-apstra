@@ -5,4 +5,7 @@ import (
 	"github.com/chrismarget-j/version-constraints"
 )
 
-var BpIbaDashboardOk = versionconstraints.New(apiversions.LtApstra500)
+var (
+	BpIbaDashboardOk = versionconstraints.New(apiversions.LtApstra500)
+	BpIbaProbeOk     = versionconstraints.New(apiversions.LtApstra500)
+)

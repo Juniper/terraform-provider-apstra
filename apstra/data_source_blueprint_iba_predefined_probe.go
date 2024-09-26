@@ -3,7 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/iba"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -11,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaPredefinedProbe{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceBlueprintIbaPredefinedProbe{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaPredefinedProbe{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceBlueprintIbaPredefinedProbe{}
+)
 
 type dataSourceBlueprintIbaPredefinedProbe struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -28,8 +32,9 @@ func (o *dataSourceBlueprintIbaPredefinedProbe) Configure(ctx context.Context, r
 
 func (o *dataSourceBlueprintIbaPredefinedProbe) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Predefined Probe in a Blueprint.",
-		Attributes:          iba.PredefinedProbe{}.DataSourceAttributes(),
+		MarkdownDescription: docCategoryRefDesignAny + "This data source provides details of a specific IBA Predefined Probe in a Blueprint.\n\n" +
+			"*Note: Compatible only with Apstra " + compatibility.BpIbaProbeOk.String() + "*",
+		Attributes: iba.PredefinedProbe{}.DataSourceAttributes(),
 	}
 }
 

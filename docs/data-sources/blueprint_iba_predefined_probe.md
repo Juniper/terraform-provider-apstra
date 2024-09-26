@@ -3,11 +3,14 @@ page_title: "apstra_blueprint_iba_predefined_probe Data Source - terraform-provi
 subcategory: "Reference Design: Shared"
 description: |-
   This data source provides details of a specific IBA Predefined Probe in a Blueprint.
+  Note: Compatible only with Apstra <5.0.0
 ---
 
 # apstra_blueprint_iba_predefined_probe (Data Source)
 
 This data source provides details of a specific IBA Predefined Probe in a Blueprint.
+
+*Note: Compatible only with Apstra <5.0.0*
 
 
 ## Example Usage
