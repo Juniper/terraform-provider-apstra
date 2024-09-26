@@ -13,9 +13,11 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 )
 
 const resourceDataCenterConnectivityTemplateSviHCL = `resource %q %q {
@@ -108,6 +110,13 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 
 	// Create a blueprint
 	bp := testutils.BlueprintG(t, ctx, cleanup)
+
+	// Enable IPv6
+	fs, err := bp.GetFabricSettings(ctx)
+	require.NoError(t, err)
+	fs.Ipv6Enabled = utils.ToPtr(true)
+	err = bp.SetFabricSettings(ctx, fs)
+	require.NoError(t, err)
 
 	type testStep struct {
 		config resourceDataCenterConnectivityTemplateSvi
