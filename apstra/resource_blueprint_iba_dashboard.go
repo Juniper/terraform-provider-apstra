@@ -51,7 +51,7 @@ func (o *resourceBlueprintIbaDashboard) ValidateConfig(_ context.Context, _ reso
 	if !compatibility.BpIbaDashboardOk.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
 		resp.Diagnostics.AddError(
 			"Incompatible API version",
-			"This data source is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
+			"This resource is compatible only with Apstra "+compatibility.BpIbaDashboardOk.String(),
 		)
 	}
 }

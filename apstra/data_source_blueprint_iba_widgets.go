@@ -3,8 +3,11 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -13,11 +16,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintIbaWidgets{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceBlueprintIbaWidgets{}
+var (
+	_ datasource.DataSourceWithConfigure      = &dataSourceBlueprintIbaWidgets{}
+	_ datasource.DataSourceWithValidateConfig = &dataSourceBlueprintIbaWidgets{}
+	_ datasourceWithSetDcBpClientFunc         = &dataSourceBlueprintIbaWidgets{}
+	_ datasourceWithSetClient                 = &dataSourceBlueprintIbaWidgets{}
+)
 
 type dataSourceBlueprintIbaWidgets struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	client          *apstra.Client
 }
 
 func (o *dataSourceBlueprintIbaWidgets) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -30,7 +38,9 @@ func (o *dataSourceBlueprintIbaWidgets) Configure(ctx context.Context, req datas
 
 func (o *dataSourceBlueprintIbaWidgets) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryRefDesignAny + "This data source returns the IDs of the IBA Widgets in a Blueprint.",
+		MarkdownDescription: docCategoryRefDesignAny + "This data source returns the IDs of the IBA Widgets in a Blueprint." +
+			"*Note: Compatible only with Apstra " + compatibility.BpIbaWidgetOk.String() + "*",
+
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "Apstra Blueprint ID. " +
@@ -44,6 +54,21 @@ func (o *dataSourceBlueprintIbaWidgets) Schema(_ context.Context, _ datasource.S
 				ElementType:         types.StringType,
 			},
 		},
+	}
+}
+
+func (o *dataSourceBlueprintIbaWidgets) ValidateConfig(_ context.Context, _ datasource.ValidateConfigRequest, resp *datasource.ValidateConfigResponse) {
+	// cannot proceed to api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	// only supported with Apstra 4.x
+	if !compatibility.BpIbaWidgetOk.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+		resp.Diagnostics.AddError(
+			"Incompatible API version",
+			"This data source is compatible only with Apstra "+compatibility.BpIbaWidgetOk.String(),
+		)
 	}
 }
 
@@ -97,4 +122,9 @@ func (o *dataSourceBlueprintIbaWidgets) Read(ctx context.Context, req datasource
 
 func (o *dataSourceBlueprintIbaWidgets) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
+}
+
+// setClient is used for API version compatibility check only
+func (o *dataSourceBlueprintIbaWidgets) setClient(client *apstra.Client) {
+	o.client = client
 }
