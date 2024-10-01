@@ -1,4 +1,4 @@
-package tfapstra
+package tfapstra_test
 
 import (
 	"context"
@@ -11,21 +11,22 @@ import (
 
 const (
 	dataSourceDatacenterConfigletTemplateByNameHCL = `
-	data "apstra_datacenter_configlet" "test" {
-    	blueprint_id = "%s"
-		name = "%s"
-	}
-	`
+data "apstra_datacenter_configlet" "test" {
+  blueprint_id = "%s"
+  name = "%s"
+}
+`
 
 	dataSourceDatacenterConfigletTemplateByIdHCL = `
-	data "apstra_datacenter_configlet" "test" {
-  		blueprint_id = "%s"
-		id = "%s"
-	}
-	`
+data "apstra_datacenter_configlet" "test" {
+  blueprint_id = "%s"
+  id = "%s"
+}
+`
 )
 
 func TestAccDataSourceDatacenterConfiglet(t *testing.T) {
+	condition := "role in [\"spine\"]"
 	ctx := context.Background()
 
 	client := testutils.GetTestClient(t, ctx)
