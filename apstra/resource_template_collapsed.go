@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/Juniper/apstra-go-sdk/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -57,7 +57,7 @@ func (o *resourceTemplateCollapsed) Create(ctx context.Context, req resource.Cre
 	}
 
 	// Apstra <= 4.2.0 requires an anti-affinity policy in the request
-	if version.MustConstraints(version.NewConstraint(apiversions.Le420)).Check(apiVer) {
+	if compatibility.TemplateRequestRequiresAntiAffinityPolicy.Check(apiVer) {
 		request.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
 			Algorithm: apstra.AlgorithmHeuristic,
 			Mode:      apstra.AntiAffinityModeDisabled,
@@ -136,7 +136,7 @@ func (o *resourceTemplateCollapsed) Update(ctx context.Context, req resource.Upd
 	}
 
 	// Apstra <= 4.2.0 requires an anti-affinity policy in the request
-	if version.MustConstraints(version.NewConstraint(apiversions.Le420)).Check(apiVer) {
+	if compatibility.TemplateRequestRequiresAntiAffinityPolicy.Check(apiVer) {
 		request.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
 			Algorithm: apstra.AlgorithmHeuristic,
 			Mode:      apstra.AntiAffinityModeDisabled,
