@@ -635,7 +635,7 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 		nodeId = v.Id
 	}
 
-	err = bpClient.PatchNode(ctx, nodeId, &node{Label: o.Name.ValueString()}, nil)
+	err = bpClient.PatchNodeUnsafe(ctx, nodeId, &node{Label: o.Name.ValueString()}, nil)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf(errApiPatchWithTypeAndId, bpClient.Id(), nodeId),
