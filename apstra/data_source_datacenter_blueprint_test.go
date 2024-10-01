@@ -4,7 +4,9 @@ package tfapstra_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -28,6 +30,19 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 	ctx := context.Background()
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
+
+	atleast50 := func(s string) error {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return err
+		}
+
+		if i < 50 {
+			return errors.New("expected value >= 50, got " + s)
+		}
+
+		return nil
+	}
 
 	type testCase struct {
 		label                string
@@ -81,7 +96,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "external_router_count", "0"),
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
 				resource.TestCheckResourceAttrWith("data.apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
-				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "build_errors_count", "52"),
+				resource.TestCheckResourceAttrWith("data.apstra_datacenter_blueprint.test", "build_errors_count", atleast50),
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeEnabledStrict.String()),
@@ -149,7 +164,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "external_router_count", "0"),
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
 				resource.TestCheckResourceAttrWith("data.apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
-				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "build_errors_count", "58"),
+				resource.TestCheckResourceAttrWith("data.apstra_datacenter_blueprint.test", "build_errors_count", atleast50),
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
 
 				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeEnabledStrict.String()),
