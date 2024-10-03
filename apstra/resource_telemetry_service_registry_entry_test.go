@@ -1,10 +1,13 @@
-package tfapstra
+package tfapstra_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -213,6 +216,11 @@ resource "apstra_telemetry_service_registry_entry" "test" {
 )
 
 func TestAccResourceTelemetryServiceRegistryEntry(t *testing.T) {
+	ctx := context.Background()
+	client := testutils.GetTestClient(t, ctx)
+	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
+	_ = apiVersion
+
 	var (
 		testAccResourceServiceName         = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
 		testAccResourceServiceRegistryCfg1 = fmt.Sprintf(resourceTelemetryServiceRegistryEntryHCL, testAccResourceServiceName, as1, ss1)
