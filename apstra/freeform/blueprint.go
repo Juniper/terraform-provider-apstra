@@ -96,7 +96,7 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.FreeformClient
 		nodeId = v.Id
 	}
 
-	err = bpClient.Client().PatchNode(ctx, bpClient.Id(), nodeId, &node{Label: o.Name.ValueString()}, nil)
+	err = bpClient.Client().PatchNodeUnsafe(ctx, bpClient.Id(), nodeId, &node{Label: o.Name.ValueString()}, nil)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf(constants.ErrApiGetWithTypeAndId, bpClient.Id(), nodeId),
