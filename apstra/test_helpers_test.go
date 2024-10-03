@@ -637,8 +637,8 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 			if d.HasError() {
 				sb := strings.Builder{}
 				for i, de := range d.Errors() {
-					sb.WriteString(fmt.Sprintf("error %d summary: %q", i, de.Summary()))
-					sb.WriteString(fmt.Sprintf("error %d detail: %q", i, de.Detail()))
+					sb.WriteString(fmt.Sprintf("error %d summary: %q\n", i, de.Summary()))
+					sb.WriteString(fmt.Sprintf("error %d detail: %q\n", i, de.Detail()))
 				}
 				return errors.New(sb.String())
 			}
