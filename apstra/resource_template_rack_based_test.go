@@ -5,15 +5,15 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"testing"
+
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"os"
-	"strings"
-	"testing"
 )
 
 const (
@@ -38,23 +38,10 @@ resource "apstra_template_rack_based" "test" {
 
 func TestResourceTemplateRackBased(t *testing.T) {
 	ctx := context.Background()
-
-	apstraUrl, ok := os.LookupEnv(constants.EnvUrl)
-	if !ok || apstraUrl == "" {
-		t.Fatalf("apstra url environment variable (%s) must be set and non-empty", constants.EnvUrl)
-	}
-
-	clientCfg, err := utils.NewClientConfig(apstraUrl, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client, err := clientCfg.NewClient(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
+	log.Printf("Apstra version %s", apiVersion)
+
 	rs := acctest.RandString(6)
 
 	type spine struct {
