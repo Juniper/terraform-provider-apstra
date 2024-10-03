@@ -5,14 +5,15 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+	"testing"
+
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"log"
-	"strings"
-	"testing"
 )
 
 const (
