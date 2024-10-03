@@ -6,6 +6,7 @@ import (
 	"context"
 	crand "crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -16,6 +17,9 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testcheck "github.com/Juniper/terraform-provider-apstra/apstra/test_check_funcs"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -621,6 +625,26 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 
 		o.checks = append(o.checks, testcheck.TestCheckResourceInt64AttrBetween(o.path, testCheckFuncArgs[0], int64min, int64max))
 		o.logLines.appendf("TestCheckResourceInt64AttrBetween(%s, %q, %d, %d)", o.path, testCheckFuncArgs[0], int64min, int64max)
+	case "TestCheckResourceInt64AttrJsonEq":
+		if len(testCheckFuncArgs) != 2 {
+			t.Fatalf("%s requires 2 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
+		}
+		o.checks = append(o.checks, resource.TestCheckResourceAttrWith(o.path, testCheckFuncArgs[0], func(s string) error {
+			var d diag.Diagnostics
+			if !utils.JSONEqual(types.StringValue(testCheckFuncArgs[1]), types.StringValue(s), &d) {
+				return fmt.Errorf("expected %q, got %q", testCheckFuncArgs[1], s)
+			}
+			if d.HasError() {
+				sb := strings.Builder{}
+				for i, de := range d.Errors() {
+					sb.WriteString(fmt.Sprintf("error %d summary: %q", i, de.Summary()))
+					sb.WriteString(fmt.Sprintf("error %d detail: %q", i, de.Detail()))
+				}
+				return errors.New(sb.String())
+			}
+			return nil
+		}))
+		o.logLines.appendf("TestCheckResourceInt64AttrJsonEq(%s, %q %q)", o.path, testCheckFuncArgs[0], testCheckFuncArgs[1])
 	}
 }
 

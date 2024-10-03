@@ -31,6 +31,7 @@ var (
 	ResourceIntegerPool                             = resourceIntegerPool{}
 	ResourceIpv4Pool                                = resourceIpv4Pool{}
 	ResourceIpv6Pool                                = resourceIpv6Pool{}
+	ResourceTelemetryServiceRegistryEntry           = resourceTelemetryServiceRegistryEntry{}
 	ResourceTemplateCollapsed                       = resourceTemplateCollapsed{}
 	ResourceTemplatePodBased                        = resourceTemplatePodBased{}
 	ResourceVniPool                                 = resourceVniPool{}
