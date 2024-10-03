@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"net/netip"
 	"regexp"
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -204,6 +207,9 @@ func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Con
 	}
 
 	idx := 0
+	// todo: Fold getLoopbackInterfaceNode into this function, or at least clean up the
+	//  passing of json.RawMessage because we're only using it for a single purpose now.
+	//  Maybe use this: https://github.com/Juniper/apstra-go-sdk/issues/421
 	rawJson := getLoopbackInterfaceNode(ctx, bp, nodeId, idx, diags)
 	if diags.HasError() {
 		return
@@ -364,50 +370,72 @@ func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstr
 	}
 }
 
-func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
-	if !utils.HasValue(o.LoopbackIpv4) && !utils.HasValue(o.LoopbackIpv6) {
-		return
+func getLoopbackNodeAndSecurityZoneIDs(ctx context.Context, bp *apstra.TwoStageL3ClosClient, systemNodeId apstra.ObjectId, loopIdx int, diags *diag.Diagnostics) (apstra.ObjectId, apstra.ObjectId) {
+	query := new(apstra.PathQuery).
+		SetBlueprintId(bp.Id()).
+		SetClient(bp.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(systemNodeId)},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("loopback")},
+			{Key: "loopback_id", Value: apstra.QEIntVal(loopIdx)},
+			{Key: "name", Value: apstra.QEStringVal("n_interface")},
+		}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeMemberInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{apstra.NodeTypeSecurityZoneInstance.QEEAttribute()}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeInstantiatedBy.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSecurityZone.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal("n_security_zone")},
+		})
+
+	var queryResponse struct {
+		Items []struct {
+			Interface struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_interface"`
+			SecurityZone struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_security_zone"`
+		} `json:"items"`
 	}
 
-	idx := 0
-	rawJson := getLoopbackInterfaceNode(ctx, bp, nodeId, idx, diags)
-	if diags.HasError() {
-		return
-	}
-
-	if len(rawJson) == 0 && utils.HasValue(o.LoopbackIpv4) {
-		diags.AddAttributeError(
-			path.Root("system_attributes").AtName("loopback_ipv4"),
-			"Cannot set loopback address",
-			fmt.Sprintf("system %q has no associated loopback %d node -- is it a spine or leaf switch?", nodeId, idx))
-	}
-	if len(rawJson) == 0 && utils.HasValue(o.LoopbackIpv6) {
-		diags.AddAttributeError(
-			path.Root("system_attributes").AtName("loopback_ipv6"),
-			"Cannot set loopback address",
-			fmt.Sprintf("system %q has no associated loopback %d node -- is it a spine or leaf switch?", nodeId, idx))
-	}
-	if diags.HasError() {
-		return
-	}
-
-	var loopbackNode struct {
-		Id *apstra.ObjectId `json:"id"`
-	}
-
-	err := json.Unmarshal(rawJson, &loopbackNode)
+	err := query.Do(ctx, &queryResponse)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed while unpacking system %q loopback %d node", nodeId, idx), err.Error())
-		return
+		diags.AddError("failed while querying for loopback interface and security zone", err.Error())
+		return "", ""
 	}
-
-	if loopbackNode.Id == nil {
+	if len(queryResponse.Items) != 1 {
 		diags.AddError(
-			fmt.Sprintf("failed parsing loopback %d node linked with node %q", idx, nodeId),
-			fmt.Sprintf("loopback %d node has no field `id`: %q", idx, string(rawJson)))
-		return
+			fmt.Sprintf("expected exactly one loopback and security zone node pair, got %d", len(queryResponse.Items)),
+			fmt.Sprintf("graph query: %q", query),
+		)
+		return "", ""
 	}
 
+	ifId, szId := queryResponse.Items[0].Interface.Id, queryResponse.Items[0].SecurityZone.Id
+
+	if ifId == "" {
+		diags.AddError(
+			"got empty interface ID",
+			fmt.Sprintf("graph query: %q", query),
+		)
+	}
+	if szId == "" {
+		diags.AddError(
+			"got empty security zone ID",
+			fmt.Sprintf("graph query: %q", query),
+		)
+	}
+
+	return ifId, szId
+}
+
+func (o *DeviceAllocationSystemAttributes) legacySetLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
 	patch := &struct {
 		IPv4Addr string `json:"ipv4_addr,omitempty"`
 		IPv6Addr string `json:"ipv6_addr,omitempty"`
@@ -416,9 +444,48 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		IPv6Addr: o.LoopbackIpv6.ValueString(),
 	}
 
-	err = bp.PatchNode(ctx, *loopbackNode.Id, &patch, nil)
+	err := bp.PatchNode(ctx, nodeId, &patch, nil)
 	if err != nil {
-		diags.AddError(fmt.Sprintf("failed setting loopback addresses to interface node %q", loopbackNode.Id), err.Error())
+		diags.AddError(fmt.Sprintf("failed setting loopback addresses to interface node %q", nodeId), err.Error())
+		return
+	}
+}
+
+func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+	if !utils.HasValue(o.LoopbackIpv4) && !utils.HasValue(o.LoopbackIpv6) {
+		return
+	}
+
+	idx := 0 // we always are interested in loopback 0
+
+	loopbackNodeId, securityZoneId := getLoopbackNodeAndSecurityZoneIDs(ctx, bp, nodeId, idx, diags)
+	if diags.HasError() {
+		return
+	}
+
+	if compatibility.ApiNotSupportsSetLoopbackIps.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		// we must be talking to Apstra 4.x
+		o.legacySetLoopbacks(ctx, bp, loopbackNodeId, diags)
+		return
+	}
+
+	// Use new() here to ensure we have invalid non-nil prefix pointers. These will remove values from the API.
+	ipv4Addr, ipv6Addr := new(netip.Prefix), new(netip.Prefix)
+	if utils.HasValue(o.LoopbackIpv4) {
+		ipv4Addr = utils.ToPtr(netip.MustParsePrefix(o.LoopbackIpv4.ValueString()))
+	}
+	if utils.HasValue(o.LoopbackIpv6) {
+		ipv6Addr = utils.ToPtr(netip.MustParsePrefix(o.LoopbackIpv6.ValueString()))
+	}
+
+	err := bp.SetSecurityZoneLoopbacks(ctx, securityZoneId, map[apstra.ObjectId]apstra.SecurityZoneLoopback{
+		loopbackNodeId: {
+			IPv4Addr: ipv4Addr,
+			IPv6Addr: ipv6Addr,
+		},
+	})
+	if err != nil {
+		diags.AddError("failed while setting loopback addresses", err.Error())
 		return
 	}
 }
