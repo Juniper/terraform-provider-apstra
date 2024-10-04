@@ -11,6 +11,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -211,15 +212,30 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 			require.NoError(t, err)
 			t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
+			var bpClient *apstra.TwoStageL3ClosClient
+
 			if tCase.ipv6 {
-				bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-				require.NoError(t, err)
+				if bpClient == nil {
+					bpClient, err = client.NewTwoStageL3ClosClient(ctx, id)
+					require.NoError(t, err)
+				}
 
 				fs, err := bpClient.GetFabricSettings(ctx)
 				require.NoError(t, err)
 
 				fs.Ipv6Enabled = utils.ToPtr(true)
 				err = bpClient.SetFabricSettings(ctx, fs)
+				require.NoError(t, err)
+			}
+
+			// set anti-affinity policy as needed with Apstra 4.2.0
+			if compatibility.TemplateRequiresAntiAffinityPolicy.Check(apiVersion) && tCase.fabricSettings.AntiAffinityPolicy != nil {
+				if bpClient == nil {
+					bpClient, err = client.NewTwoStageL3ClosClient(ctx, id)
+					require.NoError(t, err)
+				}
+
+				err = bpClient.SetFabricSettings(ctx, &tCase.fabricSettings)
 				require.NoError(t, err)
 			}
 
