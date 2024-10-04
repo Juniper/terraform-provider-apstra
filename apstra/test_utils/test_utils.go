@@ -40,9 +40,9 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 	testClientMutex.Lock()
 	defer testClientMutex.Unlock()
 
-	if sharedClient == nil {
-		TestCfgFileToEnv(t)
+	TestCfgFileToEnv(t)
 
+	if sharedClient == nil {
 		clientCfg, err := utils.NewClientConfig("", "")
 		if err != nil {
 			t.Fatal(err)
