@@ -16,20 +16,24 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra421,
 		apiversions.Apstra4211,
 		apiversions.Apstra422,
+		apiversions.Apstra500,
 	}
 
 	sdkVersions := compatibility.SupportedApiVersions()
 
-	return utils.SliceIntersectionOfAB(providerVersions, sdkVersions)
+	bothVersions := utils.SliceIntersectionOfAB(providerVersions, sdkVersions)
+
+	sort.Slice(bothVersions, func(i, j int) bool {
+		iv := version.Must(version.NewVersion(bothVersions[i]))
+		jv := version.Must(version.NewVersion(bothVersions[j]))
+		return iv.LessThan(jv)
+	})
+
+	return bothVersions
 }
 
 func SupportedApiVersionsPretty() string {
 	supportedVers := SupportedApiVersions()
-	sort.Slice(supportedVers, func(i, j int) bool {
-		iv := version.Must(version.NewVersion(supportedVers[i]))
-		jv := version.Must(version.NewVersion(supportedVers[j]))
-		return iv.LessThan(jv)
-	})
 
 	stop := len(supportedVers) - 1
 	for i := range supportedVers {
