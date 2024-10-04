@@ -3,17 +3,18 @@ package testutils
 import (
 	"context"
 	"errors"
-	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/hcl/v2/hclsimple"
-	"net/http"
-	"os"
-	"path/filepath"
-	"sync"
-	"testing"
-	"time"
 )
 
 const (
@@ -21,13 +22,16 @@ const (
 	timeout        = 60 * time.Second // probably should be added to env vars and to test hcl file
 )
 
-var sharedClient *apstra.Client
-var testClientMutex sync.Mutex
+var (
+	sharedClient    *apstra.Client
+	testClientMutex sync.Mutex
+)
 
 type testConfig struct {
-	Url      string `hcl:"url,optional"`
-	Username string `hcl:"username,optional"`
-	Password string `hcl:"password,optional"`
+	Url                   string `hcl:"url,optional"`
+	Username              string `hcl:"username,optional"`
+	Password              string `hcl:"password,optional"`
+	TlsValidationDisabled bool   `hcl:"tls_validation_disabled,optional"`
 }
 
 func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
@@ -37,10 +41,7 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 	defer testClientMutex.Unlock()
 
 	if sharedClient == nil {
-		err := TestCfgFileToEnv()
-		if err != nil {
-			t.Fatal(err)
-		}
+		TestCfgFileToEnv(t)
 
 		clientCfg, err := utils.NewClientConfig("", "")
 		if err != nil {
@@ -60,42 +61,35 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 	return sharedClient
 }
 
-func TestCfgFileToEnv() error {
+func TestCfgFileToEnv(t testing.TB) {
+	t.Helper()
+
 	absPath, err := filepath.Abs(testConfigFile)
 	if err != nil {
-		return fmt.Errorf("error expanding config file path %s - %w", testConfigFile, err)
+		t.Fatalf("while expanding config file path %s - %s", testConfigFile, err)
 	}
 
 	if _, err = os.Stat(absPath); errors.Is(err, os.ErrNotExist) {
-		return nil
+		return
 	}
 
 	testCfg := new(testConfig)
 	err = hclsimple.DecodeFile(absPath, nil, testCfg)
 	if err != nil {
-		return fmt.Errorf("failed to parse configuration from %q - %w", absPath, err)
+		t.Fatalf("while parsing configuration from %q - %s", absPath, err)
 	}
 
 	if testCfg.Url != "" {
-		err = os.Setenv(constants.EnvUrl, testCfg.Url)
-		if err != nil {
-			return fmt.Errorf("failed setting environment variable %q - %w", constants.EnvUrl, err)
-		}
+		t.Setenv(constants.EnvUrl, testCfg.Url)
 	}
 
 	if testCfg.Username != "" {
-		err = os.Setenv(constants.EnvUsername, testCfg.Username)
-		if err != nil {
-			return fmt.Errorf("failed setting environment variable %q - %w", constants.EnvUsername, err)
-		}
+		t.Setenv(constants.EnvUsername, testCfg.Username)
 	}
 
 	if testCfg.Password != "" {
-		err = os.Setenv(constants.EnvPassword, testCfg.Password)
-		if err != nil {
-			return fmt.Errorf("failed setting environment variable %q - %w", constants.EnvPassword, err)
-		}
+		t.Setenv(constants.EnvPassword, testCfg.Password)
 	}
 
-	return nil
+	t.Setenv(constants.EnvTlsNoVerify, strconv.FormatBool(testCfg.TlsValidationDisabled))
 }
