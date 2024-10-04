@@ -235,6 +235,11 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 					require.NoError(t, err)
 				}
 
+				// force IPv6 lever as specified by the test case (it may need to be on)
+				if tCase.ipv6 {
+					tCase.fabricSettings.Ipv6Enabled = utils.ToPtr(true)
+				}
+
 				err = bpClient.SetFabricSettings(ctx, &tCase.fabricSettings)
 				require.NoError(t, err)
 			}
