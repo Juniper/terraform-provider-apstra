@@ -18,7 +18,9 @@ jobs:
         run: make gofmt
 
       - name: gofumpt
-        run: make gofumpt
+        run: |
+          git fetch origin main --depth 1
+          make gofumpt
 
       - name: go vet
         run: make govet
