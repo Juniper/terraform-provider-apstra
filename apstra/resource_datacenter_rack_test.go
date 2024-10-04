@@ -3,11 +3,12 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"testing"
 )
 
 const (
@@ -21,6 +22,8 @@ resource "apstra_datacenter_rack" "test" {
 
 func TestResourceDatacenterRack(t *testing.T) {
 	ctx := context.Background()
+
+	testutils.TestCfgFileToEnv(t)
 
 	bp := testutils.BlueprintC(t, ctx)
 
