@@ -25,6 +25,8 @@ const (
 var (
 	sharedClient    *apstra.Client
 	testClientMutex sync.Mutex
+	testCfg         *testConfig
+	testCfgMutex    *sync.Mutex = new(sync.Mutex)
 )
 
 type testConfig struct {
@@ -64,19 +66,25 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 func TestCfgFileToEnv(t testing.TB) {
 	t.Helper()
 
-	absPath, err := filepath.Abs(testConfigFile)
-	if err != nil {
-		t.Fatalf("while expanding config file path %s - %s", testConfigFile, err)
-	}
+	testCfgMutex.Lock()
+	defer testCfgMutex.Unlock()
 
-	if _, err = os.Stat(absPath); errors.Is(err, os.ErrNotExist) {
-		return
-	}
+	if testCfg == nil {
+		testCfg = new(testConfig)
 
-	testCfg := new(testConfig)
-	err = hclsimple.DecodeFile(absPath, nil, testCfg)
-	if err != nil {
-		t.Fatalf("while parsing configuration from %q - %s", absPath, err)
+		absPath, err := filepath.Abs(testConfigFile)
+		if err != nil {
+			t.Fatalf("while expanding config file path %s - %s", testConfigFile, err)
+		}
+
+		if _, err = os.Stat(absPath); errors.Is(err, os.ErrNotExist) {
+			return
+		}
+
+		err = hclsimple.DecodeFile(absPath, nil, testCfg)
+		if err != nil {
+			t.Fatalf("while parsing configuration from %q - %s", absPath, err)
+		}
 	}
 
 	if testCfg.Url != "" {
