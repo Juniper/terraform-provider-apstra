@@ -117,12 +117,12 @@ func (p *Provider) Metadata(_ context.Context, _ provider.MetadataRequest, resp 
 
 func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: fmt.Sprintf("The Apstra Provider allows Terraform to manage Juniper Apstra "+
-			"fabrics.\n\nIt covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 "+
-			"capabilities within *Datacenter* Apstra reference design Blueprints.\n\nUse the navigation tree to the "+
-			"left to read about the available resources and data sources.\n\nThis release has been tested with "+
-			"Apstra versions %s.\n\nSome example projects which make use of this provider can be found "+
-			"[here](https://github.com/Juniper/terraform-apstra-examples).",
+		MarkdownDescription: fmt.Sprintf("The Apstra Provider allows Terraform to manage Juniper Apstra fabrics.\n\n"+
+			"It covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 "+
+			"capabilities within *Datacenter* and *Freeform* Apstra reference designs Blueprints.\n\n"+
+			"Use the navigation tree on the left to read about the available resources and data sources.\n\n"+
+			"This release has been tested with Apstra versions %s.\n\n"+
+			"Some example projects which make use of this provider can be found [here](https://github.com/Juniper/terraform-apstra-examples).",
 			compatibility.SupportedApiVersionsPretty()),
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
