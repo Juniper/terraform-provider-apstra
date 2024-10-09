@@ -8,9 +8,9 @@ description: |-
 
 The Apstra Provider allows Terraform to manage Juniper Apstra fabrics.
 
-It covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 capabilities within *Datacenter* Apstra reference design Blueprints.
+It covers day 0 and day 1 operations (design and deployment), and a growing list of day 2 capabilities within *Datacenter* and *Freeform* Apstra reference designs Blueprints.
 
-Use the navigation tree to the left to read about the available resources and data sources.
+Use the navigation tree on the left to read about the available resources and data sources.
 
 This release has been tested with Apstra versions 4.2.0, 4.2.1, 4.2.1.1, 4.2.2, and 5.0.0.
 
