@@ -2,12 +2,14 @@ package tfapstra
 
 import (
 	"fmt"
+	"testing"
+
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"testing"
 )
 
 const (
@@ -34,6 +36,8 @@ resource "apstra_property_set" "test" {
 )
 
 func TestAccResourcePropertySet(t *testing.T) {
+	testutils.TestCfgFileToEnv(t)
+
 	var (
 		testAccResourcePropertySet1Name = acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
 		testAccResourcePropertySetCfg1  = fmt.Sprintf(resourcePropertySetTemplateHCL, testAccResourcePropertySet1Name, data1_string)

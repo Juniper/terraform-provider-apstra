@@ -2,10 +2,12 @@ package tfapstra
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"strings"
 	"testing"
+
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 const (
@@ -21,6 +23,8 @@ resource "apstra_modular_device_profile" "test" {
 )
 
 func TestAccResourceModularDeviceProfile(t *testing.T) {
+	testutils.TestCfgFileToEnv(t)
+
 	name1 := acctest.RandString(5)
 	chassisProfile1 := "Juniper_PTX10008"
 	lineCardProfiles1 := map[int]string{
