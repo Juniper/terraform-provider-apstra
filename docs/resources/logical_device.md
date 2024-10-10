@@ -69,7 +69,7 @@ Required:
 
 Optional:
 
-- `port_roles` (Set of String) One or more of: 'spine', 'superspine', 'leaf', 'access', 'l3_server', 'peer', 'unused', 'generic', by default all values except 'unused' are selected
+- `port_roles` (Set of String) One or more of: 'access', 'generic', 'leaf', 'peer', 'spine', 'superspine', 'unused', by default all values are selected.
 
 
 

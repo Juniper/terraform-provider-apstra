@@ -178,7 +178,7 @@ func (o *System) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.F
 		Label:           o.Name.ValueString(),
 		Hostname:        o.Hostname.ValueString(),
 		Tags:            tags,
-		DeviceProfileId: apstra.ObjectId(o.DeviceProfileId.ValueString()),
+		DeviceProfileId: (*apstra.ObjectId)(o.DeviceProfileId.ValueStringPointer()),
 	}
 }
 
@@ -186,8 +186,7 @@ func (o *System) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData,
 	o.Name = types.StringValue(in.Label)
 	o.Hostname = types.StringValue(in.Hostname)
 	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))
-	o.DeviceProfileId = types.StringValue(string(in.DeviceProfileId))
-	o.DeviceProfileId = utils.StringValueOrNull(ctx, in.DeviceProfileId.String(), diags)
+	o.DeviceProfileId = types.StringPointerValue((*string)(in.DeviceProfileId))
 	o.SystemId = types.StringPointerValue((*string)(in.SystemId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }

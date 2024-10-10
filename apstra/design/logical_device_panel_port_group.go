@@ -3,9 +3,10 @@ package design
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
-	apstradefault "github.com/Juniper/terraform-provider-apstra/apstra/defaults"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -15,11 +16,11 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 type LogicalDevicePanelPortGroup struct {
@@ -47,8 +48,15 @@ func (o LogicalDevicePanelPortGroup) DataSourceAttributes() map[string]dataSourc
 }
 
 func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
-	var allRoleFlagsSet apstra.LogicalDevicePortRoleFlags
-	allRoleFlagsSet.SetAll()
+	// collect all port roles for use in inline documentation and defaulter
+	var allPortRoles apstra.LogicalDevicePortRoles
+	allPortRoles.IncludeAllUses()
+
+	// prepare []attr.Value for defaulter
+	defaultRoles := make([]attr.Value, len(allPortRoles.Strings()))
+	for i, role := range allPortRoles.Strings() {
+		defaultRoles[i] = types.StringValue(role)
+	}
 
 	return map[string]resourceSchema.Attribute{
 		"port_count": resourceSchema.Int64Attribute{
@@ -68,13 +76,13 @@ func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSch
 			Computed:    true,
 			Optional:    true,
 			MarkdownDescription: fmt.Sprintf(
-				"One or more of: '%s', by default all values except 'unused' are selected",
-				strings.Join(allRoleFlagsSet.Strings(), "', '")),
+				"One or more of: '%s', by default all values are selected.",
+				strings.Join(allPortRoles.Strings(), "', '")),
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(stringvalidator.OneOf(allRoleFlagsSet.Strings()...)),
+				setvalidator.ValueStringsAre(stringvalidator.OneOf(allPortRoles.Strings()...)),
 			},
-			Default: apstradefault.PortRolesDefault{},
+			Default: setdefault.StaticValue(types.SetValueMust(types.StringType, defaultRoles)),
 		},
 	}
 }
