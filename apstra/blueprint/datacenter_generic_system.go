@@ -189,7 +189,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 					StartIndex: 1,
 					Schema:     apstra.PortIndexingSchemaAbsolute,
 				},
-				PortGroups: []apstra.LogicalDevicePortGroup{{Count: 1, Speed: "100M", Roles: 0}},
+				PortGroups: []apstra.LogicalDevicePortGroup{{Count: 1, Speed: "100M", Roles: apstra.LogicalDevicePortRoles{}}},
 			}},
 		},
 	}

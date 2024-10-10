@@ -3,7 +3,6 @@ package blueprint
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstradefault "github.com/Juniper/terraform-provider-apstra/apstra/defaults"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -11,6 +10,7 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -74,7 +74,7 @@ func (o VnBinding) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:    true,
 			Computed:    true,
 			ElementType: types.StringType,
-			Default:     apstradefault.StaticDefaultAny(types.SetValueMust(types.StringType, []attr.Value{})),
+			Default:     setdefault.StaticValue(types.SetValueMust(types.StringType, []attr.Value{})),
 		},
 	}
 }

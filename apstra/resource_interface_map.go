@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -572,7 +573,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 			}
 			result = append(result, apstra.InterfaceMapInterface{
 				Name:  intf.Name,
-				Roles: apstra.LogicalDevicePortRoleUnused,
+				Roles: apstra.LogicalDevicePortRoles{enum.PortRoleUnused},
 				Mapping: apstra.InterfaceMapMapping{
 					DPPortId:      portId,
 					DPTransformId: unused.transformId,
@@ -756,7 +757,7 @@ func ldPanelAndPortFromString(in string, diags *diag.Diagnostics) (int, int) {
 
 type ldPortInfo struct {
 	Speed apstra.LogicalDevicePortSpeed
-	Roles apstra.LogicalDevicePortRoleFlags
+	Roles apstra.LogicalDevicePortRoles
 }
 
 // getLogicalDevicePortInfo extracts a map[string]ldPortInfo keyed by logical
@@ -836,7 +837,7 @@ func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp 
 
 		result[i] = apstra.InterfaceMapInterface{
 			Name:  transformation.Interfaces[0].Name,
-			Roles: apstra.LogicalDevicePortRoleUnused,
+			Roles: apstra.LogicalDevicePortRoles{enum.PortRoleUnused},
 			Mapping: apstra.InterfaceMapMapping{
 				DPPortId:      dpPort.PortId,
 				DPTransformId: transformation.TransformationId,

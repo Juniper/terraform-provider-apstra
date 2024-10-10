@@ -299,7 +299,7 @@ func FfBlueprintB(t testing.TB, ctx context.Context, intSystemCount, extSystemCo
 		intSystemIds[i], err = c.CreateSystem(ctx, &apstra.FreeformSystemData{
 			Type:            apstra.SystemTypeInternal,
 			Label:           acctest.RandString(6),
-			DeviceProfileId: dpId,
+			DeviceProfileId: &dpId,
 		})
 		require.NoError(t, err)
 	}

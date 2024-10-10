@@ -134,7 +134,7 @@ func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostic
 		if diags.HasError() {
 			return nil
 		}
-		var reqRoles apstra.LogicalDevicePortRoleFlags
+		var reqRoles apstra.LogicalDevicePortRoles
 		err := reqRoles.FromStrings(roleStrings)
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error parsing port roles: '%s'", strings.Join(roleStrings, "','")), err.Error())
