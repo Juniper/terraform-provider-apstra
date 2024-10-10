@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -25,7 +26,6 @@ func (o VnBinding) attrTypes() map[string]attr.Type {
 		"vlan_id":    types.Int64Type,
 		"access_ids": types.SetType{ElemType: types.StringType},
 	}
-
 }
 
 func (o VnBinding) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
