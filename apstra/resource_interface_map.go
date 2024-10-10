@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -20,10 +25,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"regexp"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -32,9 +33,11 @@ const (
 	ldInterfaceSynax   = "<panel>" + ldInterfaceSep + "<port>"
 )
 
-var _ resource.ResourceWithConfigure = &resourceInterfaceMap{}
-var _ resource.ResourceWithValidateConfig = &resourceInterfaceMap{}
-var _ resourceWithSetClient = &resourceInterfaceMap{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceInterfaceMap{}
+	_ resource.ResourceWithValidateConfig = &resourceInterfaceMap{}
+	_ resourceWithSetClient               = &resourceInterfaceMap{}
+)
 
 type resourceInterfaceMap struct {
 	client *apstra.Client
@@ -520,7 +523,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 				transformId: transformId,
 				interfaces:  unused,
 			}
-			//sliceWithoutInt(transformInterfacesUnused, transformInterface.InterfaceId)
+			// sliceWithoutInt(transformInterfacesUnused, transformInterface.InterfaceId)
 		} else {
 			// New port+transform.
 			// Add it to the tracking map with this interface ID removed from the list
