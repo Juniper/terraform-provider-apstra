@@ -291,8 +291,18 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 		}
 	}
 
-	// load the API response and set the state
+	// record whether we're expecting to find VN bindings
+	bindingsShouldBeNull := state.Bindings.IsNull()
+
+	// load the API response
 	state.LoadApiData(ctx, vn.Data, &resp.Diagnostics)
+
+	// wipe out the bindings if none were recorded in the state (bindings created some other way)
+	if bindingsShouldBeNull && !state.Bindings.IsNull() {
+		state.Bindings = types.MapNull(types.ObjectType{AttrTypes: blueprint.VnBinding{}.AttrTypes()})
+	}
+
+	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
