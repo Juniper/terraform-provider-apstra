@@ -50,12 +50,12 @@ resource "apstra_datacenter_virtual_network" "test" {
 
 ### Required
 
-- `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
 - `blueprint_id` (String) Blueprint ID
 - `name` (String) Virtual Network Name
 
 ### Optional
 
+- `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with no bindings can be created by omitting (or setting `null`) this attribute. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
 - `export_route_targets` (Set of String) Export RTs for this Virtual Network.
 - `import_route_targets` (Set of String) Import RTs for this Virtual Network.
