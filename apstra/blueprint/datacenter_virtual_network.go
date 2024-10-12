@@ -10,10 +10,10 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -917,14 +917,14 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 	}
 }
 
-func (o DatacenterVirtualNetwork) VersionConstraints() apiversions.Constraints {
-	var response apiversions.Constraints
+func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
 
-	if utils.HasValue(o.L3Mtu) {
+	if len(o.Bindings.Elements()) == 0 {
 		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("l3_mtu"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			compatibility.AttributeConstraint{
+				Path:        path.Root("bindings"),
+				Constraints: compatibility.VnEmptyBindingsOk,
 			},
 		)
 	}

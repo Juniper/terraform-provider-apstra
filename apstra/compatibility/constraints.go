@@ -11,4 +11,5 @@ var (
 	BpIbaProbeOk                       = versionconstraints.New(apiversions.LtApstra500)
 	BpIbaWidgetOk                      = versionconstraints.New(apiversions.LtApstra500)
 	TemplateRequiresAntiAffinityPolicy = versionconstraints.New(apiversions.Apstra420)
+	VnEmptyBindingsOk                  = versionconstraints.New(apiversions.GeApstra500)
 )

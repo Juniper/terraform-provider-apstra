@@ -3,24 +3,29 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"time"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterVirtualNetwork{}
-var _ resource.ResourceWithModifyPlan = &resourceDatacenterVirtualNetwork{}
-var _ resource.ResourceWithValidateConfig = &resourceDatacenterVirtualNetwork{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterVirtualNetwork{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterVirtualNetwork{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDatacenterVirtualNetwork{}
+	_ resource.ResourceWithModifyPlan     = &resourceDatacenterVirtualNetwork{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterVirtualNetwork{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterVirtualNetwork{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterVirtualNetwork{}
+	_ resourceWithSetClient               = &resourceDatacenterVirtualNetwork{}
+)
 
 type resourceDatacenterVirtualNetwork struct {
+	client          *apstra.Client
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
@@ -61,37 +66,21 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 	// config + api version validation begins here
 
 	// cannot proceed to config + api version validation if the provider has not been configured
-	if o.getBpClientFunc == nil {
+	if o.client == nil {
 		return
 	}
 
-	// cannot proceed if the blueprint does not exist or is not yet known
-	if config.BlueprintId.IsUnknown() {
-		return
-	}
-
-	bpClient, err := o.getBpClientFunc(ctx, config.BlueprintId.ValueString())
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
 	if err != nil {
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, config.BlueprintId), err.Error())
-			return
-		}
-		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, config.BlueprintId), err.Error())
-		return
-	}
-
-	// get the api version from the client
-	apiVersion, err := version.NewVersion(bpClient.Client().ApiVersion())
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", bpClient.Client().ApiVersion()), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
 		return
 	}
 
 	// validate the configuration
 	resp.Diagnostics.Append(
-		apiversions.ValidateConstraints(
+		compatibility.ValidateConfigConstraints(
 			ctx,
-			apiversions.ValidateConstraintsRequest{
+			compatibility.ValidateConfigConstraintsRequest{
 				Version:     apiVersion,
 				Constraints: config.VersionConstraints(),
 			},
@@ -142,7 +131,7 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 		return
 	}
 
-	//Retrieve values from plan
+	// Retrieve values from plan
 	var plan blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -433,4 +422,8 @@ func (o *resourceDatacenterVirtualNetwork) setBpClientFunc(f func(context.Contex
 
 func (o *resourceDatacenterVirtualNetwork) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDatacenterVirtualNetwork) setClient(client *apstra.Client) {
+	o.client = client
 }

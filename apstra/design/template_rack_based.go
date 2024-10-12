@@ -8,7 +8,6 @@ import (
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -319,25 +318,6 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 
 	// repackage the destination Spine in o
 	o.Spine = utils.ObjectValueOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
-}
-
-func (o TemplateRackBased) VersionConstraints() apiversions.Constraints {
-	var response apiversions.Constraints
-
-	if o.FabricAddressing.IsUnknown() {
-		return apiversions.Constraints{} // cannot validate
-	}
-
-	if !o.FabricAddressing.IsNull() {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("fabric_link_addressing"),
-				Constraints: version.MustConstraints(version.NewConstraint(apiversions.Apstra410)),
-			},
-		)
-	}
-
-	return response
 }
 
 func NewTemplateRackBasedObject(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Object {

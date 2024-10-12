@@ -32,7 +32,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 type DatacenterGenericSystem struct {
@@ -1100,35 +1099,4 @@ func (o *DatacenterGenericSystem) ClearConnectivityTemplatesFromLinks(ctx contex
 			err.Error())
 		return
 	}
-}
-
-func (o DatacenterGenericSystem) VersionConstraints(ctx context.Context, diags *diag.Diagnostics) apiversions.Constraints {
-	var result apiversions.Constraints
-
-	// cannot determine version constraints while links are unknown
-	if o.Links.IsUnknown() {
-		return result
-	}
-
-	for _, linkAV := range o.Links.Elements() {
-		if linkAV.IsUnknown() {
-			continue // skip unknown links
-		}
-
-		var dcgsl DatacenterGenericSystemLink
-		diags.Append(linkAV.(types.Object).As(ctx, &dcgsl, basetypes.ObjectAsOptions{})...)
-		if diags.HasError() {
-			return result
-		}
-
-		linkConstraints := dcgsl.versionConstraintsAsGenericSystemLink(ctx, path.Root("links").AtSetValue(linkAV), diags)
-		for _, ac := range linkConstraints.AttributeConstraints() {
-			result.AddAttributeConstraints(ac)
-		}
-		for _, oc := range linkConstraints.OtherConstraints() {
-			result.AddOtherConstraints(oc)
-		}
-	}
-
-	return result
 }

@@ -8,7 +8,6 @@ import (
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -190,23 +189,4 @@ func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *Templ
 	//diags.Append(o.PodInfos.ElementsAs(ctx, &srcPodInfoMap, false)...)
 	//
 	//
-}
-
-func (o TemplatePodBased) VersionConstraints() apiversions.Constraints {
-	var response apiversions.Constraints
-
-	if o.FabricAddressing.IsUnknown() {
-		return apiversions.Constraints{} // cannot validate
-	}
-
-	if !o.FabricAddressing.IsNull() {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("fabric_link_addressing"),
-				Constraints: version.MustConstraints(version.NewConstraint(apiversions.Apstra410)),
-			},
-		)
-	}
-
-	return response
 }

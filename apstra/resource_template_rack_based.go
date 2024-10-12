@@ -5,19 +5,16 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure      = &resourceTemplateRackBased{}
-	_ resource.ResourceWithValidateConfig = &resourceTemplateRackBased{}
-	_ resourceWithSetClient               = &resourceTemplateRackBased{}
+	_ resource.ResourceWithConfigure = &resourceTemplateRackBased{}
+	_ resourceWithSetClient          = &resourceTemplateRackBased{}
 )
 
 type resourceTemplateRackBased struct {
@@ -38,41 +35,6 @@ func (o *resourceTemplateRackBased) Schema(_ context.Context, _ resource.SchemaR
 			"a complete 3-stage Blueprint, or as pod in a 5-stage Blueprint.",
 		Attributes: design.TemplateRackBased{}.ResourceAttributes(),
 	}
-}
-
-func (o *resourceTemplateRackBased) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config design.TemplateRackBased
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// config-only validation begins here (there is none)
-
-	// cannot proceed to config + api version validation if the provider has not been configured
-	if o.client == nil {
-		return
-	}
-
-	// config + api version validation begins here
-
-	// get the api version from the client
-	apiVersion, err := version.NewVersion(o.client.ApiVersion())
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
-		return
-	}
-
-	// validate the configuration
-	resp.Diagnostics.Append(
-		apiversions.ValidateConstraints(
-			ctx,
-			apiversions.ValidateConstraintsRequest{
-				Version:     apiVersion,
-				Constraints: config.VersionConstraints(),
-			},
-		)...,
-	)
 }
 
 func (o *resourceTemplateRackBased) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
