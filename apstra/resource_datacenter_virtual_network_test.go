@@ -146,9 +146,9 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
-	//bp, err := client.NewTwoStageL3ClosClient(ctx, "ab4468ce-c007-441c-876c-5cec6566496b")
-	//szId := apstra.ObjectId("H0NOxllV2AQ2qRroxA")
-	//Create blueprint and routing zone
+	// bp, err := client.NewTwoStageL3ClosClient(ctx, "ab4468ce-c007-441c-876c-5cec6566496b")
+	// szId := apstra.ObjectId("H0NOxllV2AQ2qRroxA")
+	// Create blueprint and routing zone
 	bp := testutils.BlueprintC(t, ctx)
 	szId := testutils.SecurityZoneA(t, ctx, bp, true)
 
