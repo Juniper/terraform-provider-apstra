@@ -54,7 +54,7 @@ type resourceDatacenterVirtualNetworkTemplate struct {
 func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) string {
 	bindings := new(strings.Builder)
 	if o.bindings == nil {
-		return "null"
+		bindings.WriteString("null")
 	} else {
 		bindings.WriteString("{")
 		for _, binding := range o.bindings {
@@ -146,11 +146,11 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
-	bp, err := client.NewTwoStageL3ClosClient(ctx, "ab4468ce-c007-441c-876c-5cec6566496b")
-	szId := apstra.ObjectId("H0NOxllV2AQ2qRroxA")
-	////Create blueprint and routing zone
-	//bp := testutils.BlueprintC(t, ctx)
-	//szId := testutils.SecurityZoneA(t, ctx, bp, true)
+	//bp, err := client.NewTwoStageL3ClosClient(ctx, "ab4468ce-c007-441c-876c-5cec6566496b")
+	//szId := apstra.ObjectId("H0NOxllV2AQ2qRroxA")
+	//Create blueprint and routing zone
+	bp := testutils.BlueprintC(t, ctx)
+	szId := testutils.SecurityZoneA(t, ctx, bp, true)
 
 	type node struct {
 		Label string `json:"label"`
@@ -160,7 +160,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	var systemNodesResponse struct {
 		Nodes map[string]node `json:"nodes"`
 	}
-	err = bp.GetNodes(ctx, apstra.NodeTypeSystem, &systemNodesResponse)
+	err := bp.GetNodes(ctx, apstra.NodeTypeSystem, &systemNodesResponse)
 	require.NoError(t, err)
 
 	var redundancyGroupNodesResponse struct {
@@ -187,7 +187,34 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"no_bindings": {
+		"no_bindings_vlan": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings:      nil,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings:      nil,
+					},
+				},
+			},
+		},
+		"no_bindings_vlxlan": {
 			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
@@ -201,9 +228,59 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings:      nil,
 					},
 				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings:      nil,
+					},
+				},
 			},
 		},
-		"single_leaf_binding": {
+		"single_leaf_binding_vlan": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
+								vlanId:    utils.ToPtr(10),
+								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
+								vlanId:    utils.ToPtr(11),
+								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+							},
+						},
+					},
+				},
+			},
+		},
+		"single_leaf_binding_vxlan": {
 			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
@@ -217,7 +294,24 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(10),
+								vlanId:    utils.ToPtr(20),
+								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
+								vlanId:    utils.ToPtr(21),
 								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
 							},
 						},
