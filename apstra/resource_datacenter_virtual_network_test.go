@@ -131,7 +131,6 @@ func (o resourceDatacenterVirtualNetworkTemplateBinding) render() string {
 }
 
 func (o resourceDatacenterVirtualNetworkTemplateBinding) addTestChecks(t testing.TB, testChecks *testChecks) {
-	// testChecks.append(t, "TestCheckResourceAttrSet", "bindings."+o.leafId)
 	if o.vlanId != nil {
 		testChecks.append(t, "TestCheckResourceAttr", "bindings."+o.leafId+".vlan_id", strconv.Itoa(*o.vlanId))
 		testChecks.append(t, "TestCheckResourceAttr", "bindings."+o.leafId+".access_ids.#", strconv.Itoa(len(o.accessIds)))
@@ -139,7 +138,6 @@ func (o resourceDatacenterVirtualNetworkTemplateBinding) addTestChecks(t testing
 			testChecks.append(t, "TestCheckTypeSetElemAttr", "bindings."+o.leafId+".access_ids.*", access)
 		}
 	}
-	// todo more checks here
 }
 
 func TestAccDatacenterVirtualNetwork(t *testing.T) {
@@ -319,7 +317,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"vlan_with_binding_start_minimal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -366,7 +363,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"vlan_with_binding_start_maximal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -416,7 +412,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"vxlan_with_binding_start_minimal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -467,6 +462,72 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
+							},
+						},
+					},
+				},
+			},
+		},
+		"vxlan_with_binding_start_maximal": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
+								vlanId:    utils.ToPtr(711),
+								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
+							},
+							{
+								leafId:    nodesByLabel["l2_one_access_003_leaf1"],
+								vlanId:    utils.ToPtr(712),
+								accessIds: []string{nodesByLabel["l2_one_access_003_access1"]},
+							},
+							{
+								leafId:    nodesByLabel["l2_esi_acs_dual_001_leaf_pair1"],
+								vlanId:    utils.ToPtr(713),
+								accessIds: []string{nodesByLabel["l2_esi_acs_dual_001_access_pair1"]},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						vni:           nil,
+						routingZoneId: szId,
+						l3Mtu:         nil,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    nodesByLabel["l2_one_access_001_leaf1"],
+								vlanId:    utils.ToPtr(731),
+								accessIds: []string{nodesByLabel["l2_one_access_001_access1"]},
+							},
+							{
+								leafId:    nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
+								vlanId:    utils.ToPtr(733),
+								accessIds: []string{nodesByLabel["l2_esi_acs_dual_002_access_pair1"]},
 							},
 						},
 					},
