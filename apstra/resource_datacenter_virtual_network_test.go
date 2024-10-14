@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"strconv"
 	"strings"
 	"testing"
@@ -152,9 +153,12 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	bp := testutils.BlueprintC(t, ctx)
 	szId := testutils.SecurityZoneA(t, ctx, bp, true)
 
+	// struct used for both system nodes and redundancy group nodes
 	type node struct {
-		Label string `json:"label"`
-		Id    string `json:"id"`
+		Id         string `json:"id"`
+		Label      string `json:"label"`
+		SystemType string `json:"system_type"` // only applies to system nodes
+		Role       string `json:"role"`        // only applies to system nodes
 	}
 
 	var systemNodesResponse struct {
@@ -169,12 +173,14 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	err = bp.GetNodes(ctx, apstra.NodeTypeRedundancyGroup, &redundancyGroupNodesResponse)
 	require.NoError(t, err)
 
-	labelToNodeId := make(map[string]string, len(systemNodesResponse.Nodes)+len(redundancyGroupNodesResponse.Nodes))
+	nodesByLabel := make(map[string]string)
 	for k, v := range systemNodesResponse.Nodes {
-		labelToNodeId[v.Label] = k
+		if v.SystemType == "switch" && (v.Role == "leaf" || v.Role == "access") {
+			nodesByLabel[v.Label] = k
+		}
 	}
 	for k, v := range redundancyGroupNodesResponse.Nodes {
-		labelToNodeId[v.Label] = k
+		nodesByLabel[v.Label] = k
 	}
 
 	type testStep struct {
@@ -187,7 +193,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"no_bindings_vlan": {
+		"no_bindings_vlan_start_minimal": {
 			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
@@ -195,10 +201,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVlan.String(),
-						vni:           nil,
 						routingZoneId: szId,
-						l3Mtu:         nil,
-						bindings:      nil,
 					},
 				},
 				{
@@ -206,15 +209,52 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVlan.String(),
-						vni:           nil,
 						routingZoneId: szId,
-						l3Mtu:         nil,
-						bindings:      nil,
+						l3Mtu:         utils.ToPtr(8800),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
 					},
 				},
 			},
 		},
-		"no_bindings_vlxlan": {
+		"no_bindings_vlan_start_maximal": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+						l3Mtu:         utils.ToPtr(8800),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+						l3Mtu:         utils.ToPtr(8900),
+					},
+				},
+			},
+		},
+		"no_bindings_vxlan_start_minimal": {
 			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
@@ -222,10 +262,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVxlan.String(),
-						vni:           nil,
 						routingZoneId: szId,
-						l3Mtu:         nil,
-						bindings:      nil,
 					},
 				},
 				{
@@ -233,15 +270,55 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVxlan.String(),
-						vni:           nil,
+						vni:           utils.ToPtr(rand.IntN(10000) + 5000),
 						routingZoneId: szId,
-						l3Mtu:         nil,
-						bindings:      nil,
+						l3Mtu:         utils.ToPtr(8800),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						routingZoneId: szId,
 					},
 				},
 			},
 		},
-		"single_leaf_binding_vlan": {
+		"no_bindings_vxlan_start_maximal": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						vni:           utils.ToPtr(rand.IntN(10000) + 5000),
+						routingZoneId: szId,
+						l3Mtu:         utils.ToPtr(8800),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						vni:           utils.ToPtr(rand.IntN(10000) + 5000),
+						routingZoneId: szId,
+						l3Mtu:         utils.ToPtr(8900),
+					},
+				},
+			},
+		},
+		"vlan_with_binding_start_minimal": {
 			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
@@ -249,14 +326,10 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVlan.String(),
-						vni:           nil,
 						routingZoneId: szId,
-						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
-								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(10),
-								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+								leafId: nodesByLabel["l2_one_access_001_leaf1"],
 							},
 						},
 					},
@@ -266,21 +339,83 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVlan.String(),
-						vni:           nil,
 						routingZoneId: szId,
-						l3Mtu:         nil,
+						l3Mtu:         utils.ToPtr(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
-								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(11),
-								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
+								vlanId:    utils.ToPtr(51),
+								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_one_access_003_leaf1"],
 							},
 						},
 					},
 				},
 			},
 		},
-		"single_leaf_binding_vxlan": {
+		"vlan_with_binding_start_maximal": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+						l3Mtu:         utils.ToPtr(8800),
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    nodesByLabel["l2_one_access_001_leaf1"],
+								vlanId:    utils.ToPtr(61),
+								accessIds: []string{nodesByLabel["l2_one_access_001_access1"]},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_one_access_001_leaf1"],
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVlan.String(),
+						routingZoneId: szId,
+						l3Mtu:         utils.ToPtr(8900),
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
+								vlanId:    utils.ToPtr(63),
+								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
+							},
+						},
+					},
+				},
+			},
+		},
+		"vxlan_with_binding_start_minimal": {
 			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
 			steps: []testStep{
 				{
@@ -288,14 +423,10 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        apstra.VnTypeVxlan.String(),
-						vni:           nil,
 						routingZoneId: szId,
-						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
-								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(20),
-								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+								leafId: nodesByLabel["l2_one_access_001_leaf1"],
 							},
 						},
 					},
@@ -310,9 +441,32 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
-								leafId:    labelToNodeId["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(21),
-								accessIds: []string{labelToNodeId["l2_one_access_001_access1"]},
+								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
+								vlanId:    utils.ToPtr(721),
+								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
+							},
+							{
+								leafId:    nodesByLabel["l2_one_access_003_leaf1"],
+								vlanId:    utils.ToPtr(722),
+								accessIds: []string{nodesByLabel["l2_one_access_003_access1"]},
+							},
+							{
+								leafId:    nodesByLabel["l2_esi_acs_dual_001_leaf_pair1"],
+								vlanId:    utils.ToPtr(723),
+								accessIds: []string{nodesByLabel["l2_esi_acs_dual_001_access_pair1"]},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        apstra.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
 							},
 						},
 					},
@@ -379,7 +533,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			routingZoneId: szId.String(),
 			bindings: []bindingParams{
 				{
-					leafId: labelToNodeId["l2_one_access_001_leaf1"],
+					leafId: nodesByLabel["l2_one_access_001_leaf1"],
 					vlanId: "null",
 				},
 			},
@@ -392,7 +546,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			routingZoneId: szId.String(),
 			bindings: []bindingParams{
 				{
-					leafId: labelToNodeId["l2_one_access_001_leaf1"],
+					leafId: nodesByLabel["l2_one_access_001_leaf1"],
 					vlanId: "7",
 				},
 			},
@@ -405,7 +559,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			routingZoneId: szId.String(),
 			bindings: []bindingParams{
 				{
-					leafId: labelToNodeId["l2_one_access_001_leaf1"],
+					leafId: nodesByLabel["l2_one_access_001_leaf1"],
 					vlanId: "null",
 				},
 			},
