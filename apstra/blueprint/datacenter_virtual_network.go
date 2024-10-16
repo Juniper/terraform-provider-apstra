@@ -10,10 +10,10 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -370,13 +370,14 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		},
 		"bindings": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Bindings make a Virtual Network available on Leaf Switches and Access Switches. " +
-				"At least one binding entry is required. The value is a map keyed by graph db node IDs of *either* " +
-				"Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf " +
-				"Switches). Practitioners are encouraged to consider using the " +
+				"At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with " +
+				"no bindings can be created by omitting (or setting `null`) this attribute. The value is a map " +
+				"keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch " +
+				"redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the " +
 				"[`apstra_datacenter_virtual_network_binding_constructor`]" +
 				"(../data-sources/datacenter_virtual_network_binding_constructor) data source to populate " +
 				"this map.",
-			Required: true,
+			Optional: true,
 			Validators: []validator.Map{
 				mapvalidator.SizeAtLeast(1),
 				apstravalidator.WhenValueAtMustBeMap(
@@ -571,9 +572,10 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	}
 
 	if o.Type.ValueString() == apstra.VnTypeVlan.String() {
-		// Exactly one binding is required when type==vlan.
+		// Maximum of one binding is required when type==vlan.
 		// Apstra requires vlan == vni when creating a "vlan" type VN.
-		if vnBindings[0].VlanId != nil {
+		// VNI attribute is forbidden when type == VLAN
+		if len(vnBindings) > 0 && vnBindings[0].VlanId != nil {
 			v := apstra.VNI(*vnBindings[0].VlanId)
 			vnId = &v
 		}
@@ -917,14 +919,14 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 	}
 }
 
-func (o DatacenterVirtualNetwork) VersionConstraints() apiversions.Constraints {
-	var response apiversions.Constraints
+func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
 
-	if utils.HasValue(o.L3Mtu) {
+	if len(o.Bindings.Elements()) == 0 {
 		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("l3_mtu"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
+			compatibility.AttributeConstraint{
+				Path:        path.Root("bindings"),
+				Constraints: compatibility.VnEmptyBindingsOk,
 			},
 		)
 	}

@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -240,14 +241,14 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, bpClient *apstra.Two
 		}
 
 		var d diag.Diagnostics
-		bindings[k], d = types.ObjectValueFrom(ctx, VnBinding{}.attrTypes(), b)
+		bindings[k], d = types.ObjectValueFrom(ctx, VnBinding{}.AttrTypes(), b)
 		diags.Append(d...)
 		if diags.HasError() {
 			return
 		}
 	}
 
-	o.Bindings = types.MapValueMust(types.ObjectType{AttrTypes: VnBinding{}.attrTypes()}, bindings)
+	o.Bindings = types.MapValueMust(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()}, bindings)
 }
 
 // accessSwitchIdsToParentLeafIds returns a map keyed by graph db 'system' node

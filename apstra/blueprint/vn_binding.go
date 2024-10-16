@@ -21,7 +21,7 @@ type VnBinding struct {
 	AccessIds types.Set   `tfsdk:"access_ids"`
 }
 
-func (o VnBinding) attrTypes() map[string]attr.Type {
+func (o VnBinding) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"vlan_id":    types.Int64Type,
 		"access_ids": types.SetType{ElemType: types.StringType},
@@ -105,20 +105,24 @@ func (o *VnBinding) LoadApiData(ctx context.Context, in apstra.VnBinding, diags 
 }
 
 func newBindingMap(ctx context.Context, in []apstra.VnBinding, diags *diag.Diagnostics) types.Map {
+	if len(in) == 0 {
+		return types.MapNull(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()})
+	}
+
 	bindings := make(map[string]attr.Value)
 	for i := range in {
 		var b VnBinding
 		b.LoadApiData(ctx, in[i], diags)
 		if diags.HasError() {
-			return types.MapNull(types.ObjectType{AttrTypes: VnBinding{}.attrTypes()})
+			return types.MapNull(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()})
 		}
 		bindings[in[i].SystemId.String()] = types.ObjectValueMust(
-			VnBinding{}.attrTypes(),
+			VnBinding{}.AttrTypes(),
 			map[string]attr.Value{
 				"vlan_id":    b.VlanId,
 				"access_ids": b.AccessIds,
 			},
 		)
 	}
-	return types.MapValueMust(types.ObjectType{AttrTypes: VnBinding{}.attrTypes()}, bindings)
+	return types.MapValueMust(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()}, bindings)
 }

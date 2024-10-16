@@ -645,68 +645,6 @@ func (o *Blueprint) SetName(ctx context.Context, bpClient *apstra.TwoStageL3Clos
 	}
 }
 
-func (o Blueprint) VersionConstraints() apiversions.Constraints {
-	var response apiversions.Constraints
-
-	if utils.HasValue(o.FabricAddressing) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("fabric_addressing"),
-			Constraints: apiversions.Ge411,
-		})
-	}
-
-	if utils.HasValue(o.DefaultSviL3Mtu) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("default_svi_l3_mtu"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	if utils.HasValue(o.FabricMtu) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("fabric_mtu"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	if utils.HasValue(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("junos_evpn_max_nexthop_and_interface_number"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	if utils.HasValue(o.JunosEvpnRoutingInstanceModeMacVrf) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("junos_evpn_routing_instance_mode_mac_vrf"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	if utils.HasValue(o.JunosExOverlayEcmp) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("junos_ex_overlay_ecmp"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	if utils.HasValue(o.JunosGracefulRestart) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("junos_graceful_restart"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	if utils.HasValue(o.OptimizeRoutingZoneFootprint) {
-		response.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.Root("optimize_routing_zone_footprint"),
-			Constraints: apiversions.Ge420,
-		})
-	}
-
-	return response
-}
-
 func (o *Blueprint) GetFabricSettings(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	fabricSettings, err := bp.GetFabricSettings(ctx)
 	if err != nil {

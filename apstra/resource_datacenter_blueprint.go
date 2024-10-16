@@ -15,12 +15,11 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure      = &resourceDatacenterBlueprint{}
-	_ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
-	_ resourceWithSetClient               = &resourceDatacenterBlueprint{}
-	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterBlueprint{}
-	_ resourceWithSetBpLockFunc           = &resourceDatacenterBlueprint{}
-	_ resourceWithSetBpUnlockFunc         = &resourceDatacenterBlueprint{}
+	_ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
+	_ resourceWithSetClient          = &resourceDatacenterBlueprint{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpUnlockFunc    = &resourceDatacenterBlueprint{}
 )
 
 type resourceDatacenterBlueprint struct {
@@ -43,41 +42,6 @@ func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.Schem
 		MarkdownDescription: docCategoryDatacenter + "This resource instantiates a Datacenter Blueprint from a template.",
 		Attributes:          blueprint.Blueprint{}.ResourceAttributes(),
 	}
-}
-
-func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config blueprint.Blueprint
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// config-only validation begins here (there is none)
-
-	// cannot proceed to config + api version validation if the provider has not been configured
-	if o.client == nil {
-		return
-	}
-
-	// config + api version validation begins here
-
-	// get the api version from the client
-	apiVersion, err := version.NewVersion(o.client.ApiVersion())
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
-		return
-	}
-
-	// validate the configuration
-	resp.Diagnostics.Append(
-		apiversions.ValidateConstraints(
-			ctx,
-			apiversions.ValidateConstraintsRequest{
-				Version:     apiVersion,
-				Constraints: config.VersionConstraints(),
-			},
-		)...,
-	)
 }
 
 func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -103,7 +67,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 
 	// Commit the ID to the state in case we're not able to run to completion
 	plan.Id = types.StringValue(id.String())
-	//plan.AntiAffinityPolicy = types.ObjectNull(blueprint.AntiAffinityPolicy{}.AttrTypes())
+	// plan.AntiAffinityPolicy = types.ObjectNull(blueprint.AntiAffinityPolicy{}.AttrTypes())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return

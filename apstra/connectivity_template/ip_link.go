@@ -6,13 +6,14 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -21,8 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"sort"
-	"strings"
 )
 
 var _ Primitive = &IpLink{}
@@ -191,21 +190,6 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 	o.Name = types.StringValue(in.Label)
 	o.L3Mtu = utils.Int64ValueOrNull(ctx, attributes.L3Mtu, diags)
-}
-
-func (o IpLink) VersionConstraints() apiversions.Constraints {
-	var response apiversions.Constraints
-
-	if !o.L3Mtu.IsNull() {
-		response.AddAttributeConstraints(
-			apiversions.AttributeConstraint{
-				Path:        path.Root("l3_mtu"),
-				Constraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra420)),
-			},
-		)
-	}
-
-	return response
 }
 
 var _ JsonPrimitive = &ipLinkPrototype{}

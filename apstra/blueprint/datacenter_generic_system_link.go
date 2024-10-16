@@ -6,15 +6,12 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -197,18 +194,4 @@ func (o *DatacenterGenericSystemLink) updateTransformId(ctx context.Context, sta
 			}
 		}
 	}
-}
-
-func (o *DatacenterGenericSystemLink) versionConstraintsAsGenericSystemLink(_ context.Context, path path.Path, _ *diag.Diagnostics) apiversions.Constraints {
-	var result apiversions.Constraints
-
-	// can't use tags in 4.1.1 or earlier because the API endpoint we use in Read() doesn't return them
-	if utils.HasValue(o.Tags) {
-		result.AddAttributeConstraints(apiversions.AttributeConstraint{
-			Path:        path.AtName("tags"),
-			Constraints: version.MustConstraints(version.NewConstraint("> " + apiversions.Apstra411)),
-		})
-	}
-
-	return result
 }
