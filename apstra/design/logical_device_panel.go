@@ -3,6 +3,8 @@ package design
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -17,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 type LogicalDevicePanel struct {
@@ -134,7 +135,7 @@ func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostic
 		if diags.HasError() {
 			return nil
 		}
-		var reqRoles apstra.LogicalDevicePortRoleFlags
+		var reqRoles apstra.LogicalDevicePortRoles
 		err := reqRoles.FromStrings(roleStrings)
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error parsing port roles: '%s'", strings.Join(roleStrings, "','")), err.Error())
