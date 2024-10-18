@@ -6,17 +6,18 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
-	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand/v2"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 )
 
 const dataSourceBlueprintDeviceRenderedConfigHCL = `

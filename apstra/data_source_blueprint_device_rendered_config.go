@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -12,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintNodeConfig{}
-var _ datasourceWithSetClient = &dataSourceBlueprintNodeConfig{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceBlueprintNodeConfig{}
+	_ datasourceWithSetClient            = &dataSourceBlueprintNodeConfig{}
+)
 
 type dataSourceBlueprintNodeConfig struct {
 	client *apstra.Client
