@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -95,23 +96,24 @@ func (o Ipv6Pool) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"total": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Total number of addresses in the IPv6 pool.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Number{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Status of the IPv6 pool. " +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"used": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Count of used addresses in the IPv6 pool. " +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Number{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Percent of used addresses in the IPv6 pool. " +
-				"Note that this element is probably better read from a `data` source because it will be more up-to-date.",
-			Computed: true,
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.Float64{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 	}
 }
