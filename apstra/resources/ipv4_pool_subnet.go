@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
@@ -11,6 +12,7 @@ import (
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -52,8 +54,9 @@ func (o Ipv4PoolSubnet) DataSourceAttributes() map[string]dataSourceSchema.Attri
 func (o Ipv4PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"network": resourceSchema.StringAttribute{
 			MarkdownDescription: "Network specification in CIDR syntax (\"192.0.2.0/24\").",
@@ -63,16 +66,19 @@ func (o Ipv4PoolSubnet) ResourceAttributes() map[string]resourceSchema.Attribute
 			// ParseCidr is still required because the IPv4PrefixType doesn't enforce the zero address.
 		},
 		"total": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Number{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"used": resourceSchema.NumberAttribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Number{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Float64{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -95,20 +96,24 @@ func (o AsnPool) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"total": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"status": resourceSchema.StringAttribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"used": resourceSchema.Int64Attribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Int64{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 		"used_percentage": resourceSchema.Float64Attribute{
-			MarkdownDescription: "Mutable read-only is always null in a Resource. Use the matching Data Source for this information.",
+			MarkdownDescription: "Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.Float64{apstraplanmodifier.UseNullStateForUnknown()},
 		},
 	}
 }
