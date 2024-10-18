@@ -40,10 +40,10 @@ resource "apstra_asn_pool" "rfc5398" {
 ### Read-Only
 
 - `id` (String) Apstra ID number of the pool
-- `status` (String) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
-- `total` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
-- `used` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
-- `used_percentage` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `status` (String) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
+- `total` (Number) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
+- `used` (Number) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
+- `used_percentage` (Number) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
 
 <a id="nestedatt--ranges"></a>
 ### Nested Schema for `ranges`
@@ -55,10 +55,10 @@ Required:
 
 Read-Only:
 
-- `status` (String) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
-- `total` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
-- `used` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
-- `used_percentage` (Number) Mutable read-only is always null in a Resource. Use the matching Data Source for this information.
+- `status` (String) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
+- `total` (Number) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
+- `used` (Number) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
+- `used_percentage` (Number) Mutable read-only attribute is always null in a Resource. Use the matching Data Source for this information.
 
 
 
