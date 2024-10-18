@@ -6,7 +6,7 @@ go 1.22.5
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20241010000234-c27c2a93c8cc
+	github.com/Juniper/apstra-go-sdk v0.0.0-20241017000354-6a9a100626cc
 	github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4
 	github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820
 	github.com/google/go-cmp v0.6.0

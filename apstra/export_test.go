@@ -3,11 +3,14 @@ package tfapstra
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
 var (
+	DataSourceBlueprintNodeConfig = dataSourceBlueprintNodeConfig{}
+
 	ResourceAgentProfile                            = resourceAgentProfile{}
 	ResourceAsnPool                                 = resourceAsnPool{}
 	ResourceDatacenterConnectivityTemplateInterface = resourceDatacenterConnectivityTemplateInterface{}
@@ -37,6 +40,20 @@ var (
 	ResourceTemplatePodBased                        = resourceTemplatePodBased{}
 	ResourceVniPool                                 = resourceVniPool{}
 )
+
+func DatasourceName(ctx context.Context, d datasource.DataSource) string {
+	var pMdReq provider.MetadataRequest
+	var pMdResp provider.MetadataResponse
+	NewProvider().Metadata(ctx, pMdReq, &pMdResp)
+
+	var dMdReq datasource.MetadataRequest
+	var dMdResp datasource.MetadataResponse
+
+	dMdReq.ProviderTypeName = pMdResp.TypeName
+	d.Metadata(ctx, dMdReq, &dMdResp)
+
+	return dMdResp.TypeName
+}
 
 func ResourceName(ctx context.Context, r resource.Resource) string {
 	var pMdReq provider.MetadataRequest
