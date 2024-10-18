@@ -12,8 +12,8 @@ type RenderedConfig struct {
 	BlueprintId types.String `tfsdk:"blueprint_id"`
 	SystemId    types.String `tfsdk:"system_id"`
 	NodeId      types.String `tfsdk:"node_id"`
-	StagedCfg   types.String `tfsdk:"staged_config""`
-	DeployedCfg types.String `tfsdk:"deployed_config""`
+	StagedCfg   types.String `tfsdk:"staged_config"`
+	DeployedCfg types.String `tfsdk:"deployed_config"`
 	Incremental types.String `tfsdk:"incremental_config"`
 }
 
