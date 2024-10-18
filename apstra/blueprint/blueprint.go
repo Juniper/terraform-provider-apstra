@@ -330,8 +330,6 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 					apstra.AddressingSchemeIp46.String(),
 				}, ", ")),
 			Optional: true,
-			// todo once depreciated 4.1.0 add this
-			// Default: stringdefault.StaticString(apstra.AddressingSchemeIp4.String()),
 			Validators: []validator.String{stringvalidator.OneOf(
 				apstra.AddressingSchemeIp4.String(),
 				apstra.AddressingSchemeIp6.String(),
