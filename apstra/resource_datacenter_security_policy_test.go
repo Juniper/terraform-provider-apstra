@@ -11,7 +11,6 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -349,7 +348,6 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.source_ports.#", "4"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.destination_ports.#", "1"),
 			},
-			minVersion: version.Must(version.NewVersion(apiversions.Apstra412)),
 		},
 		{
 			config: apstra.PolicyData{
@@ -418,7 +416,6 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.source_ports.#", "3"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.destination_ports.#", "2"),
 			},
-			minVersion: version.Must(version.NewVersion(apiversions.Apstra412)),
 		},
 		{
 			config: apstra.PolicyData{

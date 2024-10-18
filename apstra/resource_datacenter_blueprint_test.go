@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -508,7 +507,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			},
 		},
 		"evpn_start_minimal_42x": {
-			apiVersionConstraints: apiversions.Ge420,
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
@@ -670,7 +668,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			},
 		},
 		"evpn_start_maximal_42x": {
-			apiVersionConstraints: apiversions.Ge420,
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
@@ -1198,7 +1195,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			},
 		},
 		"ip_start_minimal_42x": {
-			apiVersionConstraints: apiversions.Ge420,
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
@@ -1360,7 +1356,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 			},
 		},
 		"ip_start_maximal_42x": {
-			apiVersionConstraints: apiversions.Ge420,
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{

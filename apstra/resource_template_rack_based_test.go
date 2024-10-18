@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -90,7 +89,6 @@ func TestResourceTemplateRackBased(t *testing.T) {
 
 	testCases := map[string]testCase{
 		"a": {
-			apiVersionConstraints: version.MustConstraints(version.NewConstraint(">=" + apiversions.Apstra411)),
 			testCase: resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps: []resource.TestStep{
@@ -136,67 +134,6 @@ func TestResourceTemplateRackBased(t *testing.T) {
 							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "name", "a2_"+rs),
 							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "asn_allocation_scheme", "single"),
 							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "overlay_control_protocol", "static"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "spine.count", "2"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "spine.logical_device_id", "AOS-4x10-1"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "rack_infos.%", "1"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "rack_infos.L2_Virtual_Dual_2x_Links.count", "2"),
-						}...),
-					},
-				},
-			},
-		},
-
-		"b": {
-			apiVersionConstraints: version.MustConstraints(version.NewConstraint(apiversions.Apstra410)),
-			testCase: resource.TestCase{
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				Steps: []resource.TestStep{
-					{
-						Config: renderConfig(config{
-							name:                   "b1_" + rs,
-							asnAllocationScheme:    "unique",
-							overlayControlProtocol: "evpn",
-							rackInfos: map[string]int{
-								"L2_Virtual": 1,
-							},
-							spine: spine{
-								count:           1,
-								logicalDeviceId: "AOS-7x10-Spine",
-							},
-							fabricLinkAddressing: "ipv4",
-						}),
-						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
-							resource.TestCheckResourceAttrSet("apstra_template_rack_based.test", "id"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "name", "b1_"+rs),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "asn_allocation_scheme", "unique"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "overlay_control_protocol", "evpn"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "fabric_link_addressing", "ipv4"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "spine.count", "1"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "spine.logical_device_id", "AOS-7x10-Spine"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "rack_infos.%", "1"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "rack_infos.L2_Virtual.count", "1"),
-						}...),
-					},
-					{
-						Config: renderConfig(config{
-							name:                   "b2_" + rs,
-							asnAllocationScheme:    "single",
-							overlayControlProtocol: "static",
-							rackInfos: map[string]int{
-								"L2_Virtual_Dual_2x_Links": 2,
-							},
-							spine: spine{
-								count:           2,
-								logicalDeviceId: "AOS-4x10-1",
-							},
-							fabricLinkAddressing: "ipv6",
-						}),
-						Check: resource.ComposeAggregateTestCheckFunc([]resource.TestCheckFunc{
-							resource.TestCheckResourceAttrSet("apstra_template_rack_based.test", "id"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "name", "b2_"+rs),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "asn_allocation_scheme", "single"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "overlay_control_protocol", "static"),
-							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "fabric_link_addressing", "ipv6"),
 							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "spine.count", "2"),
 							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "spine.logical_device_id", "AOS-4x10-1"),
 							resource.TestCheckResourceAttr("apstra_template_rack_based.test", "rack_infos.%", "1"),

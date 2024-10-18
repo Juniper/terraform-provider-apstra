@@ -8,7 +8,6 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -324,8 +323,8 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"fabric_addressing": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Addressing scheme for both superspine/spine and spine/leaf links. "+
-				"Requires Apstra %s. Must be one of: %s",
-				apiversions.Ge411, strings.Join([]string{
+				"Must be one of: %s",
+				strings.Join([]string{
 					apstra.AddressingSchemeIp4.String(),
 					apstra.AddressingSchemeIp6.String(),
 					apstra.AddressingSchemeIp46.String(),
@@ -423,7 +422,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"default_ip_links_to_generic_mtu": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("Default L3 MTU for IP links to generic systems. A null or empty "+
 				"value implies AOS will not render explicit MTU value and system defaults will be used. Should be an "+
-				"even number between %d and %d. Requires Apstra %s", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
+				"even number between %d and %d.", constants.L3MtuMin, constants.L3MtuMax),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -433,7 +432,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"default_svi_l3_mtu": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("Default L3 MTU for SVI interfaces. Should be an even number "+
-				"between %d and %d. Requires Apstra %s.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
+				"between %d and %d.", constants.L3MtuMin, constants.L3MtuMax),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -455,19 +454,19 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"evpn_type_5_routes": resourceSchema.BoolAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: fmt.Sprintf("When `true`, all EVPN VTEPs in the fabric will redistribute "+
-				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table. Currently, "+
-				"this option is only certified for Juniper Junos. FRR (SONiC) does this implicitly and cannot be "+
-				"disabled. This setting will be ignored. On Arista and Cisco, no configuration is rendered and will "+
-				"result in a Blueprint warning that it is not supported by AOS. This value is disabled by default, as "+
-				"it generates a very large number of routes in the BGP routing table and takes large amounts of TCAM. "+
-				"When these /32 & /128 routes are generated, they enable direct unicast routing to host destinations "+
-				"on VNIs that are not stretched to the ingress VTEP, and avoid a route lookup to a subnet (eg, /24) "+
-				"that may be hosted on many leafs. Requires Apstra %s.", apiversions.Ge420),
+			MarkdownDescription: "When `true`, all EVPN VTEPs in the fabric will redistribute " +
+				"ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table. Currently, " +
+				"this option is only certified for Juniper Junos. FRR (SONiC) does this implicitly and cannot be " +
+				"disabled. This setting will be ignored. On Arista and Cisco, no configuration is rendered and will " +
+				"result in a Blueprint warning that it is not supported by AOS. This value is disabled by default, as " +
+				"it generates a very large number of routes in the BGP routing table and takes large amounts of TCAM. " +
+				"When these /32 & /128 routes are generated, they enable direct unicast routing to host destinations " +
+				"on VNIs that are not stretched to the ingress VTEP, and avoid a route lookup to a subnet (eg, /24) " +
+				"that may be hosted on many leafs.",
 		},
 		"fabric_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("MTU of fabric links. Must be an even number between %d and %d. "+
-				"Requires Apstra %s.", constants.L3MtuMin, constants.L3MtuMax, apiversions.Ge420),
+			MarkdownDescription: fmt.Sprintf("MTU of fabric links. Must be an even number between %d and %d.",
+				constants.L3MtuMin, constants.L3MtuMax),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -495,33 +494,31 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"junos_evpn_max_nexthop_and_interface_number": resourceSchema.BoolAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: fmt.Sprintf("**Changing this value will result in a disruptive restart of the "+
-				"PFE.** Enables configuring the maximum number of nexthops and interface numbers reserved for use in "+
-				"EVPN-VXLAN overlay network on Junos leaf devices. AOS default is `true`. Requires Apstra %s",
-				apiversions.Ge420),
+			MarkdownDescription: "**Changing this value will result in a disruptive restart of the " +
+				"PFE.** Enables configuring the maximum number of nexthops and interface numbers reserved for use in " +
+				"EVPN-VXLAN overlay network on Junos leaf devices. AOS default is `true`.",
 		},
 		"junos_evpn_routing_instance_mode_mac_vrf": resourceSchema.BoolAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: fmt.Sprintf("In releases before 4.2, Apstra used a single default switch "+
-				"instance as the configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for "+
-				"all new blueprints and normalized the configuration of Junos to Junos Evolved. This option allows you "+
-				"to transition Junos devices to the MAC-VRF configuration model for any blueprints deployed before the "+
-				"4.2 release. All models use the VLAN-Aware service type. Requires Apstra %s", apiversions.Ge420),
+			MarkdownDescription: "In releases before 4.2, Apstra used a single default switch " +
+				"instance as the configuration model for Junos. In Apstra 4.2, Apstra transitioned to using MAC-VRF for " +
+				"all new blueprints and normalized the configuration of Junos to Junos Evolved. This option allows you " +
+				"to transition Junos devices to the MAC-VRF configuration model for any blueprints deployed before the " +
+				"4.2 release. All models use the VLAN-Aware service type.",
 		},
 		"junos_ex_overlay_ecmp": resourceSchema.BoolAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: fmt.Sprintf("**Changing this value will result in a disruptive restart of the "+
-				"PFE on EX-series devices.** When `true,`VXLAN Overlay ECMP will be enabled on Junos EX-series devices. "+
-				"Requires Apstra %s.", apiversions.Ge420),
+			MarkdownDescription: "**Changing this value will result in a disruptive restart of the " +
+				"PFE on EX-series devices.** When `true,`VXLAN Overlay ECMP will be enabled on Junos EX-series devices. ",
 		},
 		"junos_graceful_restart": resourceSchema.BoolAttribute{
 			Computed: true,
 			Optional: true,
-			MarkdownDescription: fmt.Sprintf("**Changing this value may result in a flap of all BGP sessions as "+
-				"the sessions are re-negotiated.** When `true`, the bgp graceful restart feature is enabled on Junos "+
-				"devices. Requires Apstra %s", apiversions.Ge420),
+			MarkdownDescription: "**Changing this value may result in a flap of all BGP sessions as " +
+				"the sessions are re-negotiated.** When `true`, the bgp graceful restart feature is enabled on Junos " +
+				"devices.",
 		},
 		"max_evpn_routes_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
@@ -573,8 +570,8 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators: []validator.Int64{int64validator.Between(-1, math.MaxUint32)},
 		},
 		"optimize_routing_zone_footprint": resourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("When `true`: routing zones will not be rendered on leafs where "+
-				"they are not required, resulting in less resource consumption. Requires Apstra %s", apiversions.Ge420),
+			MarkdownDescription: "When `true`: routing zones will not be rendered on leafs where " +
+				"they are not required, resulting in less resource consumption.",
 			Optional: true,
 			Computed: true,
 		},

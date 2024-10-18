@@ -11,7 +11,6 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -93,9 +92,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			},
 		},
 		"links": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: fmt.Sprintf("Generic System link details. Note that tagging Links requires "+
-				"Apstra %s or newer.", apiversions.Apstra412),
-			Required: true,
+			MarkdownDescription: "Generic System link details.",
+			Required:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: DatacenterGenericSystemLink{}.ResourceAttributes(),
 			},
@@ -122,26 +120,20 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:            true,
 		},
 		"port_channel_id_min": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
-				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
-				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
-				"need only be unique per system.", apiversions.Apstra412),
-			Optional: true,
-			Computed: true,
-			Default:  int64default.StaticInt64(design.PoIdMin),
+			MarkdownDescription: "Omit this attribute to allow any available port-channel to be used.",
+			Optional:            true,
+			Computed:            true,
+			Default:             int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
 			},
 		},
 		"port_channel_id_max": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("Omit this attribute to allow any available port-channel to be "+
-				"used. In Apstra version %s and earlier, all port channel min/max constraints had to be unique per "+
-				"blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they "+
-				"need only be unique per system.", apiversions.Apstra412),
-			Optional: true,
-			Computed: true,
-			Default:  int64default.StaticInt64(design.PoIdMin),
+			MarkdownDescription: "Omit this attribute to allow any available port-channel to be used.",
+			Optional:            true,
+			Computed:            true,
+			Default:             int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
 				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),

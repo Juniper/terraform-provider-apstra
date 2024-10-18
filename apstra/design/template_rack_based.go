@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -79,9 +78,9 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
-				"Apstra %s.", apiversions.Apstra410),
-			Computed: true,
+			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
+			Computed:            true,
 		},
 		"rack_infos": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
@@ -118,10 +117,9 @@ func (o TemplateRackBased) DataSourceAttributesNested() map[string]dataSourceSch
 			Computed:            true,
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
-				"Apstra %s.", apiversions.Apstra410),
-			Computed: true,
+			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
+			Computed:            true,
 		},
 		"rack_infos": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
@@ -166,12 +164,11 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 			},
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Required for "+
-				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
-			Optional:   true,
-			Computed:   true,
-			Validators: []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
+			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
+			Optional:            true,
+			Computed:            true,
+			Validators:          []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details) keyed by Rack Type ID.",
@@ -209,9 +206,9 @@ func (o TemplateRackBased) ResourceAttributesNested() map[string]resourceSchema.
 			Computed:            true,
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Leaf links. Applies only to "+
-				"Apstra %s.", apiversions.Apstra410),
-			Computed: true,
+			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
+			Computed:            true,
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",

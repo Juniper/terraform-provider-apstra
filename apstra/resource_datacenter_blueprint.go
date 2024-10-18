@@ -3,9 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -88,8 +88,8 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	}
 
 	// Apstra 4.2.1 allows us to set *some* fabric settings as part of blueprint creation.
-	// Depending on what's in the plan, we might not need to invoke SetFabricSettings().
-	if !apiversions.Ge421.Check(apiVersion) || plan.Ipv6Applications.ValueBool() {
+	// Depending on the version and what's in the plan, we might not need to invoke SetFabricSettings().
+	if !compatibility.FabricSettingsSetInCreate.Check(apiVersion) || plan.Ipv6Applications.ValueBool() {
 		// Set the fabric settings
 		plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
