@@ -79,7 +79,7 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `links` (Attributes Set) Generic System link details. Note that tagging Links requires Apstra 4.1.2 or newer. (see [below for nested schema](#nestedatt--links))
+- `links` (Attributes Set) Generic System link details. (see [below for nested schema](#nestedatt--links))
 
 ### Optional
 
@@ -94,8 +94,8 @@ resource "apstra_datacenter_generic_system" "example" {
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation
 - `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation
 - `name` (String) Name displayed in the Apstra web UI.
-- `port_channel_id_max` (Number) Omit this attribute to allow any available port-channel to be used. In Apstra version 4.1.2 and earlier, all port channel min/max constraints had to be unique per blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they need only be unique per system.
-- `port_channel_id_min` (Number) Omit this attribute to allow any available port-channel to be used. In Apstra version 4.1.2 and earlier, all port channel min/max constraints had to be unique per blueprint. Port channel ranges could not overlap. This requirement has been relaxed, and now they need only be unique per system.
+- `port_channel_id_max` (Number) Omit this attribute to allow any available port-channel to be used.
+- `port_channel_id_min` (Number) Omit this attribute to allow any available port-channel to be used.
 - `tags` (Set of String) Tag labels to be applied to this Generic System. If a Tag doesn't exist in the Blueprint it will be created automatically.
 
 ### Read-Only

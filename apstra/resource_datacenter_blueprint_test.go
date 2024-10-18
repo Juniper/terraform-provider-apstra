@@ -1563,7 +1563,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
-			//t.Parallel()
+			// t.Parallel()
 			if !tCase.apiVersionConstraints.Check(apiVersion) {
 				t.Skipf("API version %s does not satisfy version constraints(%s) of test %q",
 					apiVersion, tCase.apiVersionConstraints, tName)
