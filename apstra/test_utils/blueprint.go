@@ -264,6 +264,97 @@ func BlueprintG(t testing.TB, ctx context.Context, cleanup bool) *apstra.TwoStag
 	return bpClient
 }
 
+//func BlueprintH(t testing.TB, ctx context.Context, cleanup bool) *apstra.TwoStageL3ClosClient {
+//}
+
+func BlueprintI(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	bpId, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		Label:      acctest.RandString(6),
+		TemplateId: "L3_Collapsed_ESI",
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, bpId)) })
+
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, bpId)
+	require.NoError(t, err)
+
+	// assign leaf interface maps
+	leafIds := GetSystemIds(t, ctx, bpClient, "leaf")
+	mappings := make(apstra.SystemIdToInterfaceMapAssignment, len(leafIds))
+	for _, leafId := range leafIds {
+		mappings[leafId.String()] = "Juniper_vQFX__AOS-7x10-Leaf"
+	}
+	err = bpClient.SetInterfaceMapAssignments(ctx, mappings)
+	require.NoError(t, err)
+
+	// set leaf loopback pool
+	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		ResourceGroup: apstra.ResourceGroup{
+			Type: apstra.ResourceTypeIp4Pool,
+			Name: apstra.ResourceGroupNameLeafIp4,
+		},
+		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
+	})
+	require.NoError(t, err)
+
+	// set leaf-leaf pool
+	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		ResourceGroup: apstra.ResourceGroup{
+			Type: apstra.ResourceTypeIp4Pool,
+			Name: apstra.ResourceGroupNameLeafLeafIp4,
+		},
+		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
+	})
+	require.NoError(t, err)
+
+	// set leaf ASN pool
+	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		ResourceGroup: apstra.ResourceGroup{
+			Type: apstra.ResourceTypeAsnPool,
+			Name: apstra.ResourceGroupNameLeafAsn,
+		},
+		PoolIds: []apstra.ObjectId{"Private-64512-65534"},
+	})
+	require.NoError(t, err)
+
+	// set VN VNI pool
+	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		ResourceGroup: apstra.ResourceGroup{
+			Type: apstra.ResourceTypeVniPool,
+			Name: apstra.ResourceGroupNameEvpnL3Vni,
+		},
+		PoolIds: []apstra.ObjectId{"Default-10000-20000"},
+	})
+	require.NoError(t, err)
+
+	// set VN VNI pool
+	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		ResourceGroup: apstra.ResourceGroup{
+			Type: apstra.ResourceTypeVniPool,
+			Name: apstra.ResourceGroupNameVxlanVnIds,
+		},
+		PoolIds: []apstra.ObjectId{"Default-10000-20000"},
+	})
+	require.NoError(t, err)
+
+	// commit
+	bpStatus, err := client.GetBlueprintStatus(ctx, bpClient.Id())
+	require.NoError(t, err)
+	_, err = client.DeployBlueprint(ctx, &apstra.BlueprintDeployRequest{
+		Id:          bpClient.Id(),
+		Description: "initial commit in test: " + t.Name(),
+		Version:     bpStatus.Version,
+	})
+	require.NoError(t, err)
+
+	return bpClient
+}
+
 func FfBlueprintA(t testing.TB, ctx context.Context) *apstra.FreeformClient {
 	t.Helper()
 

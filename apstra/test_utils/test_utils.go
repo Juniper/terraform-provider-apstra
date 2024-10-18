@@ -15,6 +15,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/hcl/v2/hclsimple"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -100,4 +101,37 @@ func TestCfgFileToEnv(t testing.TB) {
 	}
 
 	t.Setenv(constants.EnvTlsNoVerify, strconv.FormatBool(testCfg.TlsValidationDisabled))
+}
+
+func GetSystemIds(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, role string) map[string]apstra.ObjectId {
+	t.Helper()
+
+	leafQuery := new(apstra.PathQuery).
+		SetClient(bp.Client()).
+		SetBlueprintId(bp.Id()).
+		SetBlueprintType(apstra.BlueprintTypeStaging).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{"role", apstra.QEStringVal(role)},
+			{"name", apstra.QEStringVal("n_system")},
+		})
+
+	var leafQueryResult struct {
+		Items []struct {
+			System struct {
+				Id    apstra.ObjectId `json:"id"`
+				Label string          `json:"label"`
+			} `json:"n_system"`
+		} `json:"items"`
+	}
+
+	err := leafQuery.Do(ctx, &leafQueryResult)
+	require.NoError(t, err)
+
+	result := make(map[string]apstra.ObjectId, len(leafQueryResult.Items))
+	for _, item := range leafQueryResult.Items {
+		result[item.System.Label] = item.System.Id
+	}
+
+	return result
 }

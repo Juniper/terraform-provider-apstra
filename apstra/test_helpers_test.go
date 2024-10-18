@@ -67,11 +67,11 @@ func stringPtrOrNull[S ~string](in *S) string {
 	return fmt.Sprintf(`%q`, *in)
 }
 
-func stringOrNull(in string) string {
+func stringOrNull[S ~string](in S) string {
 	if in == "" {
 		return "null"
 	}
-	return `"` + in + `"`
+	return fmt.Sprintf("%q", in)
 }
 
 func ipOrNull(in net.IP) string {

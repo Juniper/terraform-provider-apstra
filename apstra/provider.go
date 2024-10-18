@@ -520,6 +520,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceBlueprintIbaWidgets{} },
 		func() datasource.DataSource { return &dataSourceBlueprintIbaDashboard{} },
 		func() datasource.DataSource { return &dataSourceBlueprintIbaDashboards{} },
+		func() datasource.DataSource { return &dataSourceBlueprintNodeConfig{} },
 		func() datasource.DataSource { return &dataSourceBlueprints{} },
 		func() datasource.DataSource { return &dataSourceConfiglet{} },
 		func() datasource.DataSource { return &dataSourceConfiglets{} },
