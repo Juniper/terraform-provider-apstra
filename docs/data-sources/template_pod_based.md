@@ -35,7 +35,7 @@ resource "apstra_template_pod_based" "example" {
 
 ### Read-Only
 
-- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/Superspine links. Applies only to Apstra 4.1.0.
+- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/Superspine links.
 - `pod_infos` (Attributes Map) Map of Pod Type info (count + details) (see [below for nested schema](#nestedatt--pod_infos))
 - `super_spine` (Attributes) Super Spine layer details (see [below for nested schema](#nestedatt--super_spine))
 
@@ -53,7 +53,7 @@ Read-Only:
 Read-Only:
 
 - `asn_allocation_scheme` (String) "unique" is for 3-stage designs; "single" is for 5-stage designs.
-- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/Leaf links. Applies only to Apstra 4.1.0.
+- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/Leaf links.
 - `id` (String) ID of the pod inside the 5 stage template.
 - `name` (String) Name of the pod inside the 5 stage template.
 - `overlay_control_protocol` (String) Defines the inter-rack virtual network overlay protocol in the fabric.

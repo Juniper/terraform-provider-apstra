@@ -10,7 +10,6 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -304,7 +303,6 @@ func TestResourceDatacenterGenericSystem_A(t *testing.T) {
 
 	testCases := map[string]testCase{
 		"lots_of_changes": {
-			versionConstraints: version.MustConstraints(version.NewConstraint(">" + apiversions.Apstra411)), // tags allowed in 4.1.1 only
 			steps: []testStep{
 				{
 					genericSystem: genericSystem{

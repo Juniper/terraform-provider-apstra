@@ -9,12 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -104,38 +101,7 @@ func TestResourceTemplatePodBased(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"apstra_410_only": {
-			apiVersionConstraints: apiversions.Eq410,
-			steps: []testStep{
-				{
-					config: resourceTestPodTemplate{
-						name:                 acctest.RandString(6),
-						fabricLinkAddressing: utils.ToPtr(apstra.AddressingSchemeIp4.String()),
-						ssLd:                 "AOS-4x40_8x10-1",
-						perPlaneCount:        2,
-						podInfo: map[string]int{
-							"pod_single": 1,
-							"pod_mlag":   1,
-						},
-					},
-				},
-				{
-					config: resourceTestPodTemplate{
-						name:                 acctest.RandString(6),
-						fabricLinkAddressing: utils.ToPtr(apstra.AddressingSchemeIp4.String()),
-						ssLd:                 "AOS-4x40_8x10-1",
-						perPlaneCount:        4,
-						planeCount:           utils.ToPtr(2),
-						podInfo: map[string]int{
-							"pod_single": 2,
-							"pod_mlag":   2,
-						},
-					},
-				},
-			},
-		},
 		"apstra_411_and_later": {
-			apiVersionConstraints: apiversions.Ge411,
 			steps: []testStep{
 				{
 					config: resourceTestPodTemplate{

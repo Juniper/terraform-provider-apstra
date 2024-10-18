@@ -2,10 +2,8 @@ package design
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -66,10 +64,9 @@ func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Att
 			Attributes:          SuperSpine{}.DataSourceAttributes(),
 		},
 		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/Superspine links. Applies only to "+
-				"Apstra %s.", apiversions.Apstra410),
-			Computed: true,
+			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/Superspine links.",
+			Computed:            true,
 		},
 		"pod_infos": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Pod Type info (count + details)",
@@ -99,12 +96,11 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			Attributes:          SuperSpine{}.ResourceAttributes(),
 		},
 		"fabric_link_addressing": resourceSchema.StringAttribute{
-			DeprecationMessage: fmt.Sprintf("Apstra %s is not supported by this release. This field must not be used.", apiversions.Apstra410),
-			MarkdownDescription: fmt.Sprintf("Fabric addressing scheme for Spine/SuperSpine links. Required for "+
-				"Apstra <= %s, not supported by Apstra >= %s.", apiversions.Apstra410, apiversions.Apstra411),
-			Optional:   true,
-			Computed:   true,
-			Validators: []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
+			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
+			MarkdownDescription: "Fabric addressing scheme for Spine/SuperSpine links.",
+			Optional:            true,
+			Computed:            true,
+			Validators:          []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
 		},
 		"pod_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Pod Type info (count + details) keyed by Pod Based Template ID.",
