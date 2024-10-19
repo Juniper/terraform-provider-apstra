@@ -61,6 +61,8 @@ func GetTestClient(t testing.TB, ctx context.Context) *apstra.Client {
 		}
 	}
 
+	t.Logf("\n\t%s running against Apstra %s", t.Name(), sharedClient.ApiVersion())
+
 	return sharedClient
 }
 
