@@ -3,6 +3,9 @@ package design
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -16,8 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"sort"
-	"strings"
 )
 
 type RackType struct {
@@ -270,17 +271,17 @@ func (o *RackType) Request(ctx context.Context, diags *diag.Diagnostics) *apstra
 		return nil
 	}
 
-	leafSwitches := o.leafSwitches(ctx, diags)
+	leafSwitches := o.LeafSwitchMap(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
 
-	accessSwitches := o.accessSwitches(ctx, diags)
+	accessSwitches := o.AccessSwitchMap(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
 
-	genericSystems := o.genericSystems(ctx, diags)
+	genericSystems := o.GenericSystemMap(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -397,7 +398,7 @@ func ValidateRackType(ctx context.Context, in *apstra.RackType, diags *diag.Diag
 	}
 }
 
-func (o *RackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]LeafSwitch {
+func (o *RackType) LeafSwitchMap(ctx context.Context, diags *diag.Diagnostics) map[string]LeafSwitch {
 	leafSwitches := make(map[string]LeafSwitch, len(o.LeafSwitches.Elements()))
 	d := o.LeafSwitches.ElementsAs(ctx, &leafSwitches, false)
 	diags.Append(d...)
@@ -409,7 +410,7 @@ func (o *RackType) leafSwitches(ctx context.Context, diags *diag.Diagnostics) ma
 }
 
 func (o *RackType) leafSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *LeafSwitch {
-	leafSwitches := o.leafSwitches(ctx, diags)
+	leafSwitches := o.LeafSwitchMap(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -421,7 +422,7 @@ func (o *RackType) leafSwitchByName(ctx context.Context, requested string, diags
 	return nil
 }
 
-func (o *RackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) map[string]AccessSwitch {
+func (o *RackType) AccessSwitchMap(ctx context.Context, diags *diag.Diagnostics) map[string]AccessSwitch {
 	accessSwitches := make(map[string]AccessSwitch, len(o.AccessSwitches.Elements()))
 	d := o.AccessSwitches.ElementsAs(ctx, &accessSwitches, false)
 	diags.Append(d...)
@@ -433,7 +434,7 @@ func (o *RackType) accessSwitches(ctx context.Context, diags *diag.Diagnostics) 
 }
 
 func (o *RackType) accessSwitchByName(ctx context.Context, requested string, diags *diag.Diagnostics) *AccessSwitch {
-	accessSwitches := o.accessSwitches(ctx, diags)
+	accessSwitches := o.AccessSwitchMap(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -445,7 +446,7 @@ func (o *RackType) accessSwitchByName(ctx context.Context, requested string, dia
 	return nil
 }
 
-func (o *RackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) map[string]GenericSystem {
+func (o *RackType) GenericSystemMap(ctx context.Context, diags *diag.Diagnostics) map[string]GenericSystem {
 	genericSystems := make(map[string]GenericSystem, len(o.GenericSystems.Elements()))
 	d := o.GenericSystems.ElementsAs(ctx, &genericSystems, true)
 	diags.Append(d...)
@@ -457,12 +458,12 @@ func (o *RackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) 
 }
 
 //func (o *RackType) genericSystemByName(ctx context.Context, requested string, diags *diag.Diagnostics) *GenericSystem {
-//	genericSystems := o.genericSystems(ctx, diags)
+//	GenericSystemMap := o.GenericSystemMap(ctx, diags)
 //	if diags.HasError() {
 //		return nil
 //	}
 //
-//	if gs, ok := genericSystems[requested]; ok {
+//	if gs, ok := GenericSystemMap[requested]; ok {
 //		return &gs
 //	}
 //
@@ -474,13 +475,13 @@ func (o *RackType) genericSystems(ctx context.Context, diags *diag.Diagnostics) 
 // RackType to be used as state.
 func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, diags *diag.Diagnostics) {
 	// first extract native go structs from the TF set of objects
-	dstLeafSwitches := o.leafSwitches(ctx, diags)
-	dstAccessSwitches := o.accessSwitches(ctx, diags)
-	dstGenericSystems := o.genericSystems(ctx, diags)
+	dstLeafSwitches := o.LeafSwitchMap(ctx, diags)
+	dstAccessSwitches := o.AccessSwitchMap(ctx, diags)
+	dstGenericSystems := o.GenericSystemMap(ctx, diags)
 
 	// invoke the CopyWriteOnlyElements on every leaf switch object
 	for name, dstLeafSwitch := range dstLeafSwitches {
-		srcLeafSwitch, ok := src.leafSwitches(ctx, diags)[name]
+		srcLeafSwitch, ok := src.LeafSwitchMap(ctx, diags)[name]
 		if !ok {
 			continue
 		}
@@ -497,7 +498,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 
 	// invoke the CopyWriteOnlyElements on every access switch object
 	for name, dstAccessSwitch := range dstAccessSwitches {
-		srcAccessSwitch, ok := src.accessSwitches(ctx, diags)[name]
+		srcAccessSwitch, ok := src.AccessSwitchMap(ctx, diags)[name]
 		if !ok {
 			continue
 		}
@@ -514,7 +515,7 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 
 	// invoke the CopyWriteOnlyElements on every generic system object
 	for name, dstGenericSystem := range dstGenericSystems {
-		srcGenericSystem, ok := src.genericSystems(ctx, diags)[name]
+		srcGenericSystem, ok := src.GenericSystemMap(ctx, diags)[name]
 		if !ok {
 			continue
 		}
