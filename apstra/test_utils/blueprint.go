@@ -192,29 +192,8 @@ func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	return bpClient
 }
 
-func BlueprintE(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
-	t.Helper()
-
-	client := GetTestClient(t, ctx)
-	template := TemplateD(t, ctx)
-	name := acctest.RandString(10)
-	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
-		Label:      name,
-		TemplateId: template.Id,
-		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
-		},
-	})
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
-
-	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
-	require.NoError(t, err)
-
-	return bpClient
-}
+//func BlueprintE(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
+//}
 
 func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
 	t.Helper()
