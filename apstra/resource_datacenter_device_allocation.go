@@ -308,14 +308,11 @@ func (o *resourceDeviceAllocation) Update(ctx context.Context, req resource.Upda
 		return
 	}
 
-	// read back any apstra-assigned attributes
+	// read back any apstra-assigned attributes; copy them to the state
 	plan.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// read and save any apstra-assigned values
-	plan.GetSystemAttributes(ctx, bp, &resp.Diagnostics)
 	state.SystemAttributes = plan.SystemAttributes
 
 	// copy the deploy mode to the deprecated root-level attribute
