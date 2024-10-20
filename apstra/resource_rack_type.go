@@ -2,16 +2,22 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceRackType{}
-var _ resourceWithSetClient = &resourceRackType{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceRackType{}
+	_ resource.ResourceWithValidateConfig = &resourceRackType{}
+	_ resourceWithSetClient               = &resourceRackType{}
+)
 
 type resourceRackType struct {
 	client *apstra.Client
@@ -29,6 +35,87 @@ func (o *resourceRackType) Schema(_ context.Context, _ resource.SchemaRequest, r
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDesign + "This resource creates a Rack Type in the Apstra Design tab.",
 		Attributes:          design.RackType{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceRackType) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config
+	var config design.RackType
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if config.LeafSwitches.IsUnknown() || config.AccessSwitches.IsUnknown() || config.GenericSystems.IsUnknown() {
+		return // cannot proceed
+	}
+
+	leafSwitches := config.LeafSwitchMap(ctx, &resp.Diagnostics)
+	accessSwitches := config.AccessSwitchMap(ctx, &resp.Diagnostics)
+	genericSystems := config.GenericSystemMap(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	for accessSwitchName, accessSwitch := range accessSwitches {
+		if _, ok := leafSwitches[accessSwitchName]; ok {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("access_switches").AtMapKey(accessSwitchName),
+				errInvalidConfig,
+				fmt.Sprintf("switch names must be unique - cannot have leaf and switches named %q", accessSwitchName),
+			)
+		}
+
+		if accessSwitch.Links.IsUnknown() {
+			return // cannot proceed
+		}
+
+		links := accessSwitch.GetLinks(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		for linkName, link := range links {
+			if link.TargetSwitchName.IsUnknown() {
+				return // cannot proceed
+			}
+
+			_, leafSwitchExists := leafSwitches[link.TargetSwitchName.ValueString()]
+			if !leafSwitchExists {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("access_switches").AtMapKey(accessSwitchName).AtName("links").AtMapKey(linkName),
+					errInvalidConfig,
+					fmt.Sprintf("switch named %q is not among the declared leaf switches", link.TargetSwitchName.ValueString()),
+				)
+			}
+		}
+	}
+
+	for genericSystemName, genericSystem := range genericSystems {
+		if genericSystem.Links.IsUnknown() {
+			return // cannot proceed
+		}
+
+		links := genericSystem.GetLinks(ctx, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		for linkName, link := range links {
+			if link.TargetSwitchName.IsUnknown() {
+				return // cannot proceed
+			}
+
+			_, leafSwitchExists := leafSwitches[link.TargetSwitchName.ValueString()]
+			_, accessSwitchExists := accessSwitches[link.TargetSwitchName.ValueString()]
+			if !leafSwitchExists && !accessSwitchExists {
+				resp.Diagnostics.AddAttributeError(
+					path.Root("generic_systems").AtMapKey(genericSystemName).AtName("links").AtMapKey(linkName),
+					errInvalidConfig,
+					fmt.Sprintf("switch named %q is not among the declared leaf or access switches", link.TargetSwitchName.ValueString()),
+				)
+			}
+		}
 	}
 }
 
@@ -186,7 +273,6 @@ func (o *resourceRackType) Delete(ctx context.Context, req resource.DeleteReques
 		resp.Diagnostics.AddError("error deleting Rack Type", err.Error())
 		return
 	}
-
 }
 
 func (o *resourceRackType) setClient(client *apstra.Client) {
