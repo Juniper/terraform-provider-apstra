@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	DataSourceBlueprintNodeConfig = dataSourceBlueprintNodeConfig{}
+	DataSourceBlueprintNodeConfig   = dataSourceBlueprintNodeConfig{}
+	DataSourceDatacenterSystemNodes = dataSourceDatacenterSystemNodes{}
 
 	ResourceAgentProfile                            = resourceAgentProfile{}
 	ResourceAsnPool                                 = resourceAsnPool{}
