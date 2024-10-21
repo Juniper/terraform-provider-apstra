@@ -38,9 +38,7 @@ func (o MustBeOneOfValidator) MarkdownDescription(_ context.Context) string {
 	return fmt.Sprintf("Ensure that the value is one of the following : %s", o.OneOf)
 }
 
-func (o MustBeOneOfValidator) Validate(_ context.Context, req MustBeOneOfValidatorRequest,
-	resp *MustBeOneOfValidatorResponse,
-) {
+func (o MustBeOneOfValidator) Validate(_ context.Context, req MustBeOneOfValidatorRequest, resp *MustBeOneOfValidatorResponse) {
 	for _, v := range o.OneOf {
 		if req.ConfigValue.Equal(v) {
 			return
