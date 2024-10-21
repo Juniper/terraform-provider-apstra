@@ -53,10 +53,6 @@ resource "apstra_template_rack_based" "r" {
 - `rack_infos` (Attributes Map) Map of Rack Type info (count + details) keyed by Rack Type ID. (see [below for nested schema](#nestedatt--rack_infos))
 - `spine` (Attributes) Spine layer details (see [below for nested schema](#nestedatt--spine))
 
-### Optional
-
-- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/Leaf links.
-
 ### Read-Only
 
 - `id` (String) Apstra ID of the Rack Based Template.
