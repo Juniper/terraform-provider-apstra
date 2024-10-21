@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -38,7 +39,8 @@ func (o MustBeOneOfValidator) MarkdownDescription(_ context.Context) string {
 }
 
 func (o MustBeOneOfValidator) Validate(_ context.Context, req MustBeOneOfValidatorRequest,
-	resp *MustBeOneOfValidatorResponse) {
+	resp *MustBeOneOfValidatorResponse,
+) {
 	for _, v := range o.OneOf {
 		if req.ConfigValue.Equal(v) {
 			return

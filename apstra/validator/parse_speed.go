@@ -3,9 +3,10 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"strings"
 )
 
 var _ validator.String = ParseSpeedValidator{}
