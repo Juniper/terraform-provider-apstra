@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -11,9 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-var (
-	_ NineTypesValidator = ForbiddenWhenValueIsValidator{}
-)
+var _ NineTypesValidator = ForbiddenWhenValueIsValidator{}
 
 type ForbiddenWhenValueIsValidator struct {
 	Expression path.Expression
@@ -82,7 +81,7 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 			if o.Value.Equal(mpVal) {
 				resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 					req.Path,
-					fmt.Sprintf("attribute %q must not be set when %q has value %s, got: %q", req.Path, mp, mpVal, req.ConfigValue),
+					fmt.Sprintf("attribute %q must not be set when %q has value %s, got: %s", req.Path, mp, mpVal, req.ConfigValue),
 				))
 			}
 		}

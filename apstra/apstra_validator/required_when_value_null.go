@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -10,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-var (
-	_ NineTypesValidator = RequiredWhenValueNullValidator{}
-)
+var _ NineTypesValidator = RequiredWhenValueNullValidator{}
 
 type RequiredWhenValueNullValidator struct {
 	expression path.Expression
@@ -30,7 +29,7 @@ type RequiredWhenValueNullResponse struct {
 }
 
 func (o RequiredWhenValueNullValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that a value is supplied when attribute at %q is null", o.expression.String())
+	return fmt.Sprintf("Ensures that a value is supplied when attribute at %s is null", o.expression.String())
 }
 
 func (o RequiredWhenValueNullValidator) MarkdownDescription(ctx context.Context) string {
@@ -84,7 +83,7 @@ func (o RequiredWhenValueNullValidator) Validate(ctx context.Context, req Requir
 			resp.Diagnostics.AddAttributeError(
 				req.Path,
 				"Missing required attribute",
-				fmt.Sprintf("Attribute %q required when attribute %q is null.", req.Path, mp.String()),
+				fmt.Sprintf("Attribute %q required when attribute %q is null.", req.Path, mp),
 			)
 		}
 	}

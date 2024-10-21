@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -32,7 +33,7 @@ type valueAtMustBeValidatorResponse struct {
 }
 
 func (o valueAtMustBeValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("element at %q must be: %q (null is %t)", o.expression, o.value.String(), o.nullOk)
+	return fmt.Sprintf("element at %q must be: %s (null is %t)", o.expression, o.value, o.nullOk)
 }
 
 func (o valueAtMustBeValidator) MarkdownDescription(ctx context.Context) string {
