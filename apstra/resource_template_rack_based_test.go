@@ -23,7 +23,6 @@ resource "apstra_template_rack_based" "test" {
   overlay_control_protocol = %q // mandatory field
   rack_infos               = %s // mandatory field
   spine                    = %s // mandatory field
-  fabric_link_addressing   = %s
 }
 `
 	resourceTemplateRackBasedRackInfoHcl = `
@@ -68,7 +67,6 @@ func TestResourceTemplateRackBased(t *testing.T) {
 		overlayControlProtocol string
 		rackInfos              map[string]int
 		spine                  spine
-		fabricLinkAddressing   string
 	}
 
 	renderConfig := func(config config) string {
@@ -78,7 +76,6 @@ func TestResourceTemplateRackBased(t *testing.T) {
 			config.overlayControlProtocol,
 			renderRackInfos(config.rackInfos),
 			renderSpine(config.spine),
-			stringOrNull(config.fabricLinkAddressing),
 		)
 	}
 

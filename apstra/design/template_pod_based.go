@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -21,11 +20,10 @@ import (
 )
 
 type TemplatePodBased struct {
-	Id               types.String `tfsdk:"id"`
-	Name             types.String `tfsdk:"name"`
-	SuperSpine       types.Object `tfsdk:"super_spine"`
-	FabricAddressing types.String `tfsdk:"fabric_link_addressing"`
-	PodInfos         types.Map    `tfsdk:"pod_infos"`
+	Id         types.String `tfsdk:"id"`
+	Name       types.String `tfsdk:"name"`
+	SuperSpine types.Object `tfsdk:"super_spine"`
+	PodInfos   types.Map    `tfsdk:"pod_infos"`
 }
 
 func (o TemplatePodBased) AttrTypes() map[string]attr.Type {
@@ -63,11 +61,6 @@ func (o TemplatePodBased) DataSourceAttributes() map[string]dataSourceSchema.Att
 			Computed:            true,
 			Attributes:          SuperSpine{}.DataSourceAttributes(),
 		},
-		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
-			MarkdownDescription: "Fabric addressing scheme for Spine/Superspine links.",
-			Computed:            true,
-		},
 		"pod_infos": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Pod Type info (count + details)",
 			Computed:            true,
@@ -94,13 +87,6 @@ func (o TemplatePodBased) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: "SuperSpine layer details",
 			Required:            true,
 			Attributes:          SuperSpine{}.ResourceAttributes(),
-		},
-		"fabric_link_addressing": resourceSchema.StringAttribute{
-			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
-			MarkdownDescription: "Fabric addressing scheme for Spine/SuperSpine links.",
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
 		},
 		"pod_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Pod Type info (count + details) keyed by Pod Based Template ID.",
@@ -154,7 +140,6 @@ func (o *TemplatePodBased) LoadApiData(ctx context.Context, in *apstra.TemplateP
 	o.Name = types.StringValue(in.DisplayName)
 	o.SuperSpine = NewDesignTemplateSuperSpineObject(ctx, &in.Superspine, diags)
 	o.PodInfos = NewPodInfoMap(ctx, in, diags)
-	o.FabricAddressing = types.StringNull()
 }
 
 func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *TemplatePodBased, diags *diag.Diagnostics) {

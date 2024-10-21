@@ -39,10 +39,6 @@ resource "apstra_template_pod_based" "example" {
 - `pod_infos` (Attributes Map) Map of Pod Type info (count + details) keyed by Pod Based Template ID. (see [below for nested schema](#nestedatt--pod_infos))
 - `super_spine` (Attributes) SuperSpine layer details (see [below for nested schema](#nestedatt--super_spine))
 
-### Optional
-
-- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/SuperSpine links.
-
 ### Read-Only
 
 - `id` (String) Apstra ID of the Pod Based Template.

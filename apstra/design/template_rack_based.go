@@ -27,7 +27,6 @@ type TemplateRackBased struct {
 	Spine                  types.Object `tfsdk:"spine"`
 	AsnAllocation          types.String `tfsdk:"asn_allocation_scheme"`
 	OverlayControlProtocol types.String `tfsdk:"overlay_control_protocol"`
-	FabricAddressing       types.String `tfsdk:"fabric_link_addressing"`
 	RackInfos              types.Map    `tfsdk:"rack_infos"`
 }
 
@@ -38,7 +37,6 @@ func (o TemplateRackBased) AttrTypes() map[string]attr.Type {
 		"spine":                    types.ObjectType{AttrTypes: Spine{}.AttrTypes()},
 		"asn_allocation_scheme":    types.StringType,
 		"overlay_control_protocol": types.StringType,
-		"fabric_link_addressing":   types.StringType,
 		"rack_infos":               types.MapType{ElemType: types.ObjectType{AttrTypes: TemplateRackInfo{}.AttrTypes()}},
 	}
 }
@@ -77,11 +75,6 @@ func (o TemplateRackBased) DataSourceAttributes() map[string]dataSourceSchema.At
 			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
 			Computed:            true,
 		},
-		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
-			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
-			Computed:            true,
-		},
 		"rack_infos": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
 			Computed:            true,
@@ -114,11 +107,6 @@ func (o TemplateRackBased) DataSourceAttributesNested() map[string]dataSourceSch
 		},
 		"overlay_control_protocol": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
-			Computed:            true,
-		},
-		"fabric_link_addressing": dataSourceSchema.StringAttribute{
-			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
-			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
 			Computed:            true,
 		},
 		"rack_infos": dataSourceSchema.MapNestedAttribute{
@@ -292,7 +280,6 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
 	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
-	o.FabricAddressing = types.StringNull()
 }
 
 func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *TemplateRackBased, diags *diag.Diagnostics) {
