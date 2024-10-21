@@ -11,32 +11,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-var _ NineTypesValidator = RequiredWhenValueNullValidator{}
+var _ NineTypesValidator = RequiredWhenValueIsValidator{}
 
-type RequiredWhenValueNullValidator struct {
+type RequiredWhenValueIsValidator struct {
 	expression path.Expression
+	value      attr.Value
 }
 
-type RequiredWhenValueNullRequest struct {
+type RequiredWhenValueIsRequest struct {
 	Config         tfsdk.Config
 	ConfigValue    attr.Value
 	Path           path.Path
 	PathExpression path.Expression
 }
 
-type RequiredWhenValueNullResponse struct {
+type RequiredWhenValueIsResponse struct {
 	Diagnostics diag.Diagnostics
 }
 
-func (o RequiredWhenValueNullValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that a value is supplied when attribute at %s is null", o.expression.String())
+func (o RequiredWhenValueIsValidator) Description(_ context.Context) string {
+	return fmt.Sprintf("Ensures that a value is supplied when attribute at %s has value %s", o.expression.String(), o.value)
 }
 
-func (o RequiredWhenValueNullValidator) MarkdownDescription(ctx context.Context) string {
+func (o RequiredWhenValueIsValidator) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o RequiredWhenValueNullValidator) Validate(ctx context.Context, req RequiredWhenValueNullRequest, resp *RequiredWhenValueNullResponse) {
+func (o RequiredWhenValueIsValidator) Validate(ctx context.Context, req RequiredWhenValueIsRequest, resp *RequiredWhenValueIsResponse) {
 	// can't proceed while value is unknown
 	if req.ConfigValue.IsUnknown() {
 		return
@@ -57,7 +58,7 @@ func (o RequiredWhenValueNullValidator) Validate(ctx context.Context, req Requir
 		}
 
 		for _, mp := range matchedPaths {
-			// If the user specifies the same attribute this apstra_validator is applied to,
+			// If the user specifies the same attribute this validator is applied to,
 			// also as part of the input, skip it
 			if mp.Equal(req.Path) {
 				continue
@@ -70,162 +71,160 @@ func (o RequiredWhenValueNullValidator) Validate(ctx context.Context, req Requir
 				continue // Collect all errors
 			}
 
-			// Unknown attributes can't be validated
-			if mpVal.IsUnknown() {
+			// Unknown and Null attributes can't satisfy the valueIs condition
+			if mpVal.IsNull() || mpVal.IsUnknown() {
 				return
 			}
 
-			// If the specified attribute isn't null, then we're done
-			if !mpVal.IsNull() {
-				return
+			if mpVal.Equal(o.value) {
+				resp.Diagnostics.AddAttributeError(
+					req.Path,
+					"Missing required attribute",
+					fmt.Sprintf("Attribute %q required when %q has value %s.", req.Path, mp, mpVal),
+				)
 			}
-
-			resp.Diagnostics.AddAttributeError(
-				req.Path,
-				"Missing required attribute",
-				fmt.Sprintf("Attribute %q required when attribute %q is null.", req.Path, mp),
-			)
 		}
 	}
 }
 
-func (o RequiredWhenValueNullValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateFloat64(ctx context.Context, req validator.Float64Request, resp *validator.Float64Response) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateFloat64(ctx context.Context, req validator.Float64Request, resp *validator.Float64Response) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateMap(ctx context.Context, req validator.MapRequest, resp *validator.MapResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateMap(ctx context.Context, req validator.MapRequest, resp *validator.MapResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateNumber(ctx context.Context, req validator.NumberRequest, resp *validator.NumberResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateNumber(ctx context.Context, req validator.NumberRequest, resp *validator.NumberResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func (o RequiredWhenValueNullValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
-	validateReq := RequiredWhenValueNullRequest{
+func (o RequiredWhenValueIsValidator) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
+	validateReq := RequiredWhenValueIsRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
 		Path:           req.Path,
 		PathExpression: req.PathExpression,
 	}
 
-	validateResp := &RequiredWhenValueNullResponse{}
+	validateResp := &RequiredWhenValueIsResponse{}
 
 	o.Validate(ctx, validateReq, validateResp)
 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func RequiredWhenValueNull(expression path.Expression) RequiredWhenValueNullValidator {
-	return RequiredWhenValueNullValidator{
+func RequiredWhenValueIs(expression path.Expression, value attr.Value) RequiredWhenValueIsValidator {
+	return RequiredWhenValueIsValidator{
 		expression: expression,
+		value:      value,
 	}
 }

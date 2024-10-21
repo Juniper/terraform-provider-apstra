@@ -66,7 +66,7 @@ func (o DifferentFromValidator) Validate(ctx context.Context, req DifferentFromV
 		}
 
 		for _, mp := range matchedPaths {
-			// If the user specifies the same attribute this apstra_validator is applied to,
+			// If the user specifies the same attribute this validator is applied to,
 			// also as part of the input, skip it
 			if mp.Equal(req.Path) {
 				continue

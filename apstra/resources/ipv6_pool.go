@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/apstra_plan_modifier"
+	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"

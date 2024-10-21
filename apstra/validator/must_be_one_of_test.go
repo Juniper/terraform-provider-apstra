@@ -2,7 +2,7 @@ package apstravalidator_test
 
 import (
 	"context"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math/big"
