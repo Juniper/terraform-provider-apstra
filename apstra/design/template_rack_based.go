@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -150,13 +149,6 @@ func (o TemplateRackBased) ResourceAttributes() map[string]resourceSchema.Attrib
 				stringvalidator.OneOf(OverlayControlProtocolEvpn, OverlayControlProtocolStatic),
 				// todo make sure not ipv6 with evpn
 			},
-		},
-		"fabric_link_addressing": resourceSchema.StringAttribute{
-			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
-			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
-			Optional:            true,
-			Computed:            true,
-			Validators:          []validator.String{apstravalidator.MustBeOneOf([]attr.Value{types.StringNull()})},
 		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details) keyed by Rack Type ID.",
