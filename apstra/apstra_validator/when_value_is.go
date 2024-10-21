@@ -3,11 +3,12 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 var _ NineTypesValidator = whenValueIsValidator{}

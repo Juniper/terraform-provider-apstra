@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -10,9 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-var (
-	_ NineTypesValidator = RequiredWhenValueNullValidator{}
-)
+var _ NineTypesValidator = RequiredWhenValueNullValidator{}
 
 type RequiredWhenValueNullValidator struct {
 	expression path.Expression

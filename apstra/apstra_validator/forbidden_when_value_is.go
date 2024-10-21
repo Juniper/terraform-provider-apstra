@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -11,9 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 )
 
-var (
-	_ NineTypesValidator = ForbiddenWhenValueIsValidator{}
-)
+var _ NineTypesValidator = ForbiddenWhenValueIsValidator{}
 
 type ForbiddenWhenValueIsValidator struct {
 	Expression path.Expression
