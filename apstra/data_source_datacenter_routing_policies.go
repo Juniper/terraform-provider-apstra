@@ -3,10 +3,11 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -16,8 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterRoutingPolicies{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterRoutingPolicies{}
+)
 
 type dataSourceDatacenterRoutingPolicies struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

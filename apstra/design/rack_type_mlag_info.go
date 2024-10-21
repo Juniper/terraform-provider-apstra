@@ -2,8 +2,9 @@ package design
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -130,7 +131,8 @@ func (o MlagInfo) AttrTypes() map[string]attr.Type {
 		"peer_link_port_channel_id":    types.Int64Type,
 		"l3_peer_link_count":           types.Int64Type,
 		"l3_peer_link_speed":           types.StringType,
-		"l3_peer_link_port_channel_id": types.Int64Type}
+		"l3_peer_link_port_channel_id": types.Int64Type,
+	}
 }
 
 func (o *MlagInfo) LoadApiData(_ context.Context, in *apstra.LeafMlagInfo, diags *diag.Diagnostics) {

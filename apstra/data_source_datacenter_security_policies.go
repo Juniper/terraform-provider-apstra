@@ -3,10 +3,11 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -17,8 +18,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterSecurityPolicies{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterSecurityPolicies{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterSecurityPolicies{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterSecurityPolicies{}
+)
 
 type dataSourceDatacenterSecurityPolicies struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -125,7 +128,6 @@ func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req dat
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
-
 }
 
 func (o *dataSourceDatacenterSecurityPolicies) getAllSpIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {

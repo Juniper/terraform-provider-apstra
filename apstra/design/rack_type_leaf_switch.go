@@ -3,9 +3,11 @@ package design
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/apstra_validator"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -17,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"strings"
 )
 
 func ValidateLeafSwitch(rt *apstra.RackType, i int, diags *diag.Diagnostics) {
@@ -325,5 +326,6 @@ func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fc
 func LeafRedundancyModes() []string {
 	return []string{
 		apstra.LeafRedundancyProtocolEsi.String(),
-		apstra.LeafRedundancyProtocolMlag.String()}
+		apstra.LeafRedundancyProtocolMlag.String(),
+	}
 }
