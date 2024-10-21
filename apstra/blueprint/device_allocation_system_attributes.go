@@ -201,71 +201,85 @@ func (o *DeviceAllocationSystemAttributes) getAsn(ctx context.Context, bp *apstr
 	o.Asn = types.Int64Value(int64(asn))
 }
 
+// getLoopback0Addresses loads the IPv4 and IPv6 values of Loopback0 from the API. It does not overwrite known values.
 func (o *DeviceAllocationSystemAttributes) getLoopback0Addresses(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
 	if utils.HasValue(o.LoopbackIpv4) && utils.HasValue(o.LoopbackIpv6) {
 		return
 	}
 
-	idx := 0
-	// todo: Fold getLoopbackInterfaceNode into this function, or at least clean up the
-	//  passing of json.RawMessage because we're only using it for a single purpose now.
-	//  Maybe use this: https://github.com/Juniper/apstra-go-sdk/issues/421
-	rawJson := getLoopbackInterfaceNode(ctx, bp, nodeId, idx, diags)
-	if diags.HasError() {
+	idx := 0 // loopback 0
+
+	query := new(apstra.PathQuery).
+		SetBlueprintId(bp.Id()).
+		SetClient(bp.Client()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(nodeId)},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("loopback")},
+			{Key: "loopback_id", Value: apstra.QEIntVal(idx)},
+			{Key: "name", Value: apstra.QEStringVal("n_interface")},
+		})
+
+	var queryResult struct {
+		Items []struct {
+			Node struct {
+				IPv4Addr *string `json:"ipv4_addr"`
+				IPv6Addr *string `json:"ipv6_addr"`
+			} `json:"n_interface"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &queryResult)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed while querying for system %q loopback %d node", nodeId, idx), err.Error())
 		return
 	}
 
-	if len(rawJson) == 0 {
+	switch len(queryResult.Items) {
+	case 0:
+		// no loopback node found
 		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
 		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
-		return // no loopback idx interface node found
-	}
-
-	var loopbackNode struct {
-		IPv4Addr *string `json:"ipv4_addr"`
-		IPv6Addr *string `json:"ipv6_addr"`
-	}
-
-	err := json.Unmarshal(rawJson, &loopbackNode)
-	if err != nil {
+		return
+	case 1:
+		// this is the normal case - handled below
+	default:
 		diags.AddError(
-			fmt.Sprintf("failed while unpacking system %q loopback %d interface node", nodeId, idx),
-			err.Error(),
+			fmt.Sprintf("unexpected rewult while querying for system %q loopback node %d", nodeId, idx),
+			fmt.Sprintf("node has graph relationships with %d loopback nodes with id %d", len(queryResult.Items), idx),
 		)
 		return
 	}
 
-	if loopbackNode.IPv4Addr == nil && loopbackNode.IPv6Addr == nil {
+	if !utils.HasValue(o.LoopbackIpv4) { // don't overwrite known values (apparently?)
 		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
-		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
-		return // no loopback IP addresses found in domain node
-	}
-
-	if !utils.HasValue(o.LoopbackIpv4) {
-		o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixNull()
-		if loopbackNode.IPv4Addr != nil && len(*loopbackNode.IPv4Addr) != 0 {
-			_, _, err := net.ParseCIDR(*loopbackNode.IPv4Addr)
+		if queryResult.Items[0].Node.IPv4Addr != nil && *queryResult.Items[0].Node.IPv4Addr != "" {
+			_, _, err := net.ParseCIDR(*queryResult.Items[0].Node.IPv4Addr)
 			if err != nil {
 				diags.AddError(
-					fmt.Sprintf("failed to parse `ipv4_addr` from API response %q", string(rawJson)),
+					fmt.Sprintf("failed to parse API response value for `ipv4_addr`: %q", *queryResult.Items[0].Node.IPv4Addr),
 					err.Error())
 				return
 			}
-			o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(*loopbackNode.IPv4Addr)
+			o.LoopbackIpv4 = cidrtypes.NewIPv4PrefixValue(*queryResult.Items[0].Node.IPv4Addr)
 		}
 	}
 
-	if !utils.HasValue(o.LoopbackIpv6) {
+	if !utils.HasValue(o.LoopbackIpv6) { // don't overwrite known values (apparently?)
 		o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixNull()
-		if loopbackNode.IPv6Addr != nil && len(*loopbackNode.IPv6Addr) != 0 {
-			_, _, err := net.ParseCIDR(*loopbackNode.IPv6Addr)
+		if queryResult.Items[0].Node.IPv6Addr != nil && *queryResult.Items[0].Node.IPv6Addr != "" {
+			_, _, err := net.ParseCIDR(*queryResult.Items[0].Node.IPv6Addr)
 			if err != nil {
 				diags.AddError(
-					fmt.Sprintf("failed to parse `ipv6_addr` from API response %q", string(rawJson)),
+					fmt.Sprintf("failed to parse API response value for `ipv6_addr`: %q", *queryResult.Items[0].Node.IPv6Addr),
 					err.Error())
 				return
 			}
-			o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(*loopbackNode.IPv6Addr)
+			o.LoopbackIpv6 = cidrtypes.NewIPv6PrefixValue(*queryResult.Items[0].Node.IPv6Addr)
 		}
 	}
 }
@@ -596,48 +610,6 @@ func getDomainNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId 
 		diags.AddError(
 			fmt.Sprintf("unexpected rewult while querying for system %q domain node", nodeId),
 			fmt.Sprintf("node has graph relationships with %d domain nodes", len(queryResult.Items)),
-		)
-		return nil
-	}
-}
-
-func getLoopbackInterfaceNode(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, idx int, diags *diag.Diagnostics) json.RawMessage {
-	query := new(apstra.PathQuery).
-		SetBlueprintId(bp.Id()).
-		SetClient(bp.Client()).
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeSystem.QEEAttribute(),
-			{Key: "id", Value: apstra.QEStringVal(nodeId)},
-		}).
-		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-		Node([]apstra.QEEAttribute{
-			apstra.NodeTypeInterface.QEEAttribute(),
-			{Key: "if_type", Value: apstra.QEStringVal("loopback")},
-			{Key: "loopback_id", Value: apstra.QEIntVal(idx)},
-			{Key: "name", Value: apstra.QEStringVal("n_interface")},
-		})
-
-	var queryResult struct {
-		Items []struct {
-			Node json.RawMessage `json:"n_interface"`
-		} `json:"items"`
-	}
-
-	err := query.Do(ctx, &queryResult)
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed while querying for system %q loopback %d node", nodeId, idx), err.Error())
-		return nil
-	}
-
-	switch len(queryResult.Items) {
-	case 0:
-		return nil
-	case 1:
-		return queryResult.Items[0].Node
-	default:
-		diags.AddError(
-			fmt.Sprintf("unexpected rewult while querying for system %q loopback node %d", nodeId, idx),
-			fmt.Sprintf("node has graph relationships with %d loopback nodes with id %d", len(queryResult.Items), idx),
 		)
 		return nil
 	}
