@@ -71,7 +71,10 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Create(ctx context.C
 	addIds, _ := plan.AddDelRequest(ctx, nil, &resp.Diagnostics)
 	err = bp.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
 	if err != nil {
-		resp.Diagnostics.AddError("failed applying Connectivity Template", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed while assigning Connectivity Templates %s to Application Point %s", plan.ConnectivityTemplateIds, plan.ApplicationPointId),
+			err.Error(),
+		)
 		return
 	}
 
@@ -178,7 +181,10 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 	// add any required CTs
 	err = bp.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
 	if err != nil {
-		resp.Diagnostics.AddError("failed assigning connectivity templates", err.Error())
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("failed while assigning Connectivity Templates %s to Application Point %s", plan.ConnectivityTemplateIds, plan.ApplicationPointId),
+			err.Error(),
+		)
 		return
 	}
 
