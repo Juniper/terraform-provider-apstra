@@ -28,11 +28,10 @@ type TemplatePodBased struct {
 
 func (o TemplatePodBased) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"id":                     types.StringType,
-		"name":                   types.StringType,
-		"super_spine":            types.ObjectType{AttrTypes: SuperSpine{}.AttrTypes()},
-		"fabric_link_addressing": types.StringType,
-		"pod_infos":              types.MapType{ElemType: types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}},
+		"id":          types.StringType,
+		"name":        types.StringType,
+		"super_spine": types.ObjectType{AttrTypes: SuperSpine{}.AttrTypes()},
+		"pod_infos":   types.MapType{ElemType: types.ObjectType{AttrTypes: TemplatePodInfo{}.AttrTypes()}},
 	}
 }
 
