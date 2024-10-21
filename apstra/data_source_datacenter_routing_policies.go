@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -16,8 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterRoutingPolicies{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingPolicies{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterRoutingPolicies{}
+)
 
 type dataSourceDatacenterRoutingPolicies struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

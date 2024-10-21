@@ -2,6 +2,7 @@ package apstraplanmodifier
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 )
@@ -26,4 +27,4 @@ func BoolRequiresReplaceWhenSwitchingTo(to bool) boolplanmodifier.RequiresReplac
 	}
 }
 
-//func requiresReplaceWhenSwitchingTo() func(context.Context, planmodifier.BoolRequest, *RequiresReplaceIfFuncResponse)
+// func requiresReplaceWhenSwitchingTo() func(context.Context, planmodifier.BoolRequest, *RequiresReplaceIfFuncResponse)

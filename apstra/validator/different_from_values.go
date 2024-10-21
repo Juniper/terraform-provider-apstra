@@ -3,6 +3,7 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"

@@ -2,11 +2,12 @@ package apstravalidator_test
 
 import (
 	"context"
+	"math/big"
+	"testing"
+
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"math/big"
-	"testing"
 )
 
 func TestMustBeOneOfValidator(t *testing.T) {

@@ -3,6 +3,8 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -17,11 +19,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"net"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetworks{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterVirtualNetworks{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetworks{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterVirtualNetworks{}
+)
 
 type dataSourceDatacenterVirtualNetworks struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

@@ -2,9 +2,10 @@ package apstravalidator
 
 import (
 	"context"
+	"net"
+
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	"net"
 )
 
 var _ validator.String = ParseIpValidator{}

@@ -2,10 +2,11 @@ package apstravalidator
 
 import (
 	"context"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"testing"
 )
 
 func TestParseRtValidator(t *testing.T) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -11,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
 )
 
 var _ Primitive = &StaticRoute{}

@@ -6,6 +6,10 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"math"
+	"net"
+	"sort"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
@@ -18,9 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"math"
-	"net"
-	"sort"
 )
 
 var _ Primitive = &DynamicBgpPeering{}

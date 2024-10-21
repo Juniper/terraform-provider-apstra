@@ -3,13 +3,14 @@ package apstravalidator
 import (
 	"context"
 	"fmt"
+	"net"
+
 	"github.com/IBM/netaddr"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
 )
 
 var _ validator.String = fallsWithinCidrValidator{}

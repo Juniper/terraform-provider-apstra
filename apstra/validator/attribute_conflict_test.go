@@ -2,12 +2,13 @@ package apstravalidator
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"log"
-	"testing"
 )
 
 func TestAttributeConflictValidator(t *testing.T) {

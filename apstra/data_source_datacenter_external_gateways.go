@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -16,8 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateways{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterExternalGateways{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateways{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterExternalGateways{}
+)
 
 type dataSourceDatacenterExternalGateways struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)

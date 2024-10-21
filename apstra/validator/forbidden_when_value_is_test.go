@@ -2,6 +2,8 @@ package apstravalidator_test
 
 import (
 	"context"
+	"testing"
+
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -9,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"testing"
 )
 
 func TestForbiddenWhenValueIsValidator(t *testing.T) {
