@@ -185,11 +185,6 @@ func (o TemplateRackBased) ResourceAttributesNested() map[string]resourceSchema.
 			MarkdownDescription: "Defines the inter-rack virtual network overlay protocol in the fabric.",
 			Computed:            true,
 		},
-		"fabric_link_addressing": resourceSchema.StringAttribute{
-			DeprecationMessage:  "Apstra 4.1.0 is not supported by this release. This field must not be used.",
-			MarkdownDescription: "Fabric addressing scheme for Spine/Leaf links.",
-			Computed:            true,
-		},
 		"rack_infos": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of Rack Type info (count + details)",
 			Computed:            true,

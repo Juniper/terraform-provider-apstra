@@ -60,7 +60,6 @@ Read-Only:
 Read-Only:
 
 - `asn_allocation_scheme` (String) "unique" is for 3-stage designs; "single" is for 5-stage designs.
-- `fabric_link_addressing` (String, Deprecated) Fabric addressing scheme for Spine/Leaf links.
 - `id` (String) ID of the pod inside the 5 stage template.
 - `name` (String) Name of the pod inside the 5 stage template.
 - `overlay_control_protocol` (String) Defines the inter-rack virtual network overlay protocol in the fabric.
