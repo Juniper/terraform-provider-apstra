@@ -21,7 +21,6 @@ const (
 	resourceTemplatePodBasedHCL = `
 resource %q %q {
   name                   = %q
-  fabric_link_addressing = %s
   super_spine = {
     logical_device_id = %q
     per_plane_count   = %d
@@ -35,12 +34,11 @@ resource %q %q {
 )
 
 type resourceTestPodTemplate struct {
-	name                 string
-	fabricLinkAddressing *string
-	ssLd                 string
-	perPlaneCount        int
-	planeCount           *int
-	podInfo              map[string]int
+	name          string
+	ssLd          string
+	perPlaneCount int
+	planeCount    *int
+	podInfo       map[string]int
 }
 
 func (o resourceTestPodTemplate) render(rType, rName string) string {
@@ -51,7 +49,6 @@ func (o resourceTestPodTemplate) render(rType, rName string) string {
 	return fmt.Sprintf(resourceTemplatePodBasedHCL,
 		rType, rName,
 		o.name,
-		stringPtrOrNull(o.fabricLinkAddressing),
 		o.ssLd,
 		o.perPlaneCount,
 		intPtrOrNull(o.planeCount),
@@ -65,10 +62,6 @@ func (o resourceTestPodTemplate) testChecks(t testing.TB, rType, rName string) t
 	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
-
-	if o.fabricLinkAddressing != nil {
-		result.append(t, "TestCheckResourceAttr", "fabric_link_addressing", *o.fabricLinkAddressing)
-	}
 
 	result.append(t, "TestCheckResourceAttr", "super_spine.logical_device_id", o.ssLd)
 	result.append(t, "TestCheckResourceAttr", "super_spine.per_plane_count", strconv.Itoa(o.perPlaneCount))
