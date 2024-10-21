@@ -57,7 +57,7 @@ func (o whenValueIsValidator) Description(ctx context.Context) string {
 		descriptions = append(descriptions, v.Description(ctx))
 	}
 
-	return fmt.Sprintf("element must satisfy all validations: %s becuase value is %q", strings.Join(descriptions, " + "), o.trigger)
+	return fmt.Sprintf("element must satisfy all validations: %s becuase value is %s", strings.Join(descriptions, " + "), o.trigger)
 }
 
 func (o whenValueIsValidator) MarkdownDescription(ctx context.Context) string {
@@ -78,7 +78,7 @@ func (o whenValueIsValidator) ValidateBool(ctx context.Context, req validator.Bo
 	for _, v := range o.boolValidators {
 		vResponse := new(validator.BoolResponse)
 		v.ValidateBool(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -97,7 +97,7 @@ func (o whenValueIsValidator) ValidateFloat64(ctx context.Context, req validator
 	for _, v := range o.float64Validators {
 		vResponse := new(validator.Float64Response)
 		v.ValidateFloat64(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -116,7 +116,7 @@ func (o whenValueIsValidator) ValidateInt64(ctx context.Context, req validator.I
 	for _, v := range o.int64Validators {
 		vResponse := new(validator.Int64Response)
 		v.ValidateInt64(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -135,7 +135,7 @@ func (o whenValueIsValidator) ValidateList(ctx context.Context, req validator.Li
 	for _, v := range o.listValidators {
 		vResponse := new(validator.ListResponse)
 		v.ValidateList(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -154,7 +154,7 @@ func (o whenValueIsValidator) ValidateMap(ctx context.Context, req validator.Map
 	for _, v := range o.mapValidators {
 		vResponse := new(validator.MapResponse)
 		v.ValidateMap(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -173,7 +173,7 @@ func (o whenValueIsValidator) ValidateNumber(ctx context.Context, req validator.
 	for _, v := range o.numberValidators {
 		vResponse := new(validator.NumberResponse)
 		v.ValidateNumber(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -192,7 +192,7 @@ func (o whenValueIsValidator) ValidateObject(ctx context.Context, req validator.
 	for _, v := range o.objectValidators {
 		vResponse := new(validator.ObjectResponse)
 		v.ValidateObject(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -211,7 +211,7 @@ func (o whenValueIsValidator) ValidateSet(ctx context.Context, req validator.Set
 	for _, v := range o.setValidators {
 		vResponse := new(validator.SetResponse)
 		v.ValidateSet(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }
@@ -230,7 +230,7 @@ func (o whenValueIsValidator) ValidateString(ctx context.Context, req validator.
 	for _, v := range o.stringValidators {
 		vResponse := new(validator.StringResponse)
 		v.ValidateString(ctx, req, vResponse)
-		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %q", req.Path, o.trigger), vResponse.Diagnostics...)
+		utils.WrapEachDiagnostic(fmt.Sprintf("When attribute %s is %s", req.Path, o.trigger), vResponse.Diagnostics...)
 		resp.Diagnostics.Append(vResponse.Diagnostics...)
 	}
 }

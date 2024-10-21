@@ -31,7 +31,7 @@ type RequiredWhenValueIsResponse struct {
 }
 
 func (o RequiredWhenValueIsValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that a value is supplied when attribute at %q has value %q", o.expression.String(), o.value)
+	return fmt.Sprintf("Ensures that a value is supplied when attribute at %s has value %s", o.expression.String(), o.value)
 }
 
 func (o RequiredWhenValueIsValidator) MarkdownDescription(ctx context.Context) string {
@@ -81,7 +81,7 @@ func (o RequiredWhenValueIsValidator) Validate(ctx context.Context, req Required
 				resp.Diagnostics.AddAttributeError(
 					req.Path,
 					"Missing required attribute",
-					fmt.Sprintf("Attribute %q required when %q has value %q.", req.Path, mp.String(), mpVal.String()),
+					fmt.Sprintf("Attribute %q required when %q has value %s.", req.Path, mp, mpVal),
 				)
 			}
 		}

@@ -82,7 +82,7 @@ func (o ForbiddenWhenValueIsValidator) Validate(ctx context.Context, req Forbidd
 			if o.Value.Equal(mpVal) {
 				resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 					req.Path,
-					fmt.Sprintf("attribute %q must not be set when %q has value %s, got: %q", req.Path, mp, mpVal, req.ConfigValue),
+					fmt.Sprintf("attribute %q must not be set when %q has value %s, got: %s", req.Path, mp, mpVal, req.ConfigValue),
 				))
 			}
 		}
