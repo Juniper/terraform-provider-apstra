@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -84,7 +85,7 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed:            true,
 		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Routing Zone ID (only applies when `type == %s`", apstra.VnTypeVxlan),
+			MarkdownDescription: fmt.Sprintf("Routing Zone ID (only applies when `type == %s`", enum.VnTypeVxlan),
 			Computed:            true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
@@ -98,7 +99,7 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 		"reserve_vlan": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all `bindings` "+
 				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to "+
-				"which the Virtual Network has not yet been deployed.", apstra.VnTypeVxlan),
+				"which the Virtual Network has not yet been deployed.", enum.VnTypeVxlan),
 			Computed: true,
 		},
 		"bindings": dataSourceSchema.MapNestedAttribute{
@@ -190,7 +191,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Optional:            true,
 		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`)", apstra.VnTypeVxlan),
+			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`)", enum.VnTypeVxlan),
 			Optional:            true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
@@ -204,7 +205,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 		"reserve_vlan": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all `bindings` "+
 				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to "+
-				"which the Virtual Network has not yet been deployed.", apstra.VnTypeVxlan),
+				"which the Virtual Network has not yet been deployed.", enum.VnTypeVxlan),
 			Optional: true,
 		},
 		"bindings": dataSourceSchema.MapNestedAttribute{
@@ -308,23 +309,23 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: "Virtual Network Type",
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(apstra.VnTypeVxlan.String()),
+			Default:             stringdefault.StaticString(enum.VnTypeVxlan.String()),
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{
 				// specifically enumerated types - SDK supports additional
 				// types which do not make sense in this context.
-				stringvalidator.OneOf(apstra.VnTypeVlan.String(), apstra.VnTypeVxlan.String()),
+				stringvalidator.OneOf(enum.VnTypeVlan.String(), enum.VnTypeVxlan.String()),
 			},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`", apstra.VnTypeVxlan),
+			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`", enum.VnTypeVxlan),
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.RequiredWhenValueIs(
 					path.MatchRelative().AtParent().AtName("type"),
-					types.StringValue(apstra.VnTypeVxlan.String()),
+					types.StringValue(enum.VnTypeVxlan.String()),
 				),
 				apstravalidator.RequiredWhenValueNull(
 					path.MatchRelative().AtParent().AtName("type"),
@@ -343,7 +344,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				int64validator.Between(constants.VniMin, constants.VniMax),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("type"),
-					types.StringValue(apstra.VnTypeVlan.String()),
+					types.StringValue(enum.VnTypeVlan.String()),
 				),
 			},
 		},
@@ -355,14 +356,14 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks "+
 				"when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, "+
 				"even on switches to which the Virtual Network has not yet been deployed. The only "+
-				"accepted values is `true`.", apstra.VnTypeVxlan.String()),
+				"accepted values is `true`.", enum.VnTypeVxlan.String()),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueIsBool(types.BoolValue(true),
 					apstravalidator.ValueAtMustBeBool(
 						path.MatchRelative().AtParent().AtName("type"),
-						types.StringValue(apstra.VnTypeVxlan.String()),
+						types.StringValue(enum.VnTypeVxlan.String()),
 						false,
 					),
 				),
@@ -382,7 +383,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				mapvalidator.SizeAtLeast(1),
 				apstravalidator.WhenValueAtMustBeMap(
 					path.MatchRelative().AtParent().AtName("type"),
-					types.StringValue(apstra.VnTypeVlan.String()),
+					types.StringValue(enum.VnTypeVlan.String()),
 					mapvalidator.SizeAtMost(1),
 				),
 			},
@@ -541,7 +542,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 }
 
 func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.VirtualNetworkData {
-	var vnType apstra.VnType
+	var vnType enum.VnType
 	err := vnType.FromString(o.Type.ValueString())
 	if err != nil {
 		diags.Append(
@@ -571,7 +572,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		vnId = &v
 	}
 
-	if o.Type.ValueString() == apstra.VnTypeVlan.String() {
+	if o.Type.ValueString() == enum.VnTypeVlan.String() {
 		// Maximum of one binding is required when type==vlan.
 		// Apstra requires vlan == vni when creating a "vlan" type VN.
 		// VNI attribute is forbidden when type == VLAN

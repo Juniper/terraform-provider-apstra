@@ -49,7 +49,7 @@ resource %q %q {
 type resourceFreeformLink struct {
 	blueprintId string
 	name        string
-	endpoints   []apstra.FreeformEndpoint
+	endpoints   []apstra.FreeformEthernetEndpoint
 	tags        []string
 }
 
@@ -207,7 +207,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -240,7 +240,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -272,7 +272,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -309,7 +309,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -341,7 +341,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -374,7 +374,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -411,7 +411,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -444,7 +444,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -476,7 +476,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -514,7 +514,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -546,7 +546,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -579,7 +579,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -615,7 +615,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -639,7 +639,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -669,7 +669,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -704,7 +704,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -734,7 +734,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -765,7 +765,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -799,7 +799,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: extSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -820,7 +820,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: intSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -848,7 +848,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: extSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -873,7 +873,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: extSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -901,7 +901,7 @@ func TestResourceFreeformLink(t *testing.T) {
 					config: resourceFreeformLink{
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: extSysIds[0],
 								Interface: apstra.FreeformInterface{
@@ -922,7 +922,7 @@ func TestResourceFreeformLink(t *testing.T) {
 						blueprintId: bp.Id().String(),
 						name:        acctest.RandString(6),
 						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEndpoint{
+						endpoints: []apstra.FreeformEthernetEndpoint{
 							{
 								SystemId: extSysIds[0],
 								Interface: apstra.FreeformInterface{

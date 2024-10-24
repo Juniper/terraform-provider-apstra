@@ -5,11 +5,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"testing"
 )
 
 const (
@@ -60,7 +62,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 				Ipv4Subnet:     randIpNetMust(t, "10.0.0.0/16"),
 				Label:          acctest.RandString(5),
 				SecurityZoneId: zoneId,
-				VnType:         apstra.VnTypeVxlan,
+				VnType:         enum.VnTypeVxlan,
 				VnBindings:     vnBindings,
 			},
 		},
@@ -70,7 +72,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 				Ipv4Subnet:     randIpNetMust(t, "10.1.0.0/16"),
 				Label:          acctest.RandString(5),
 				SecurityZoneId: zoneId,
-				VnType:         apstra.VnTypeVlan,
+				VnType:         enum.VnTypeVlan,
 				VnBindings:     []apstra.VnBinding{{SystemId: apstra.ObjectId(leafIdStrings[0])}},
 			},
 		},

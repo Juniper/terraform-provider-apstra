@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type Endpoint struct {
+type LinkEndpoint struct {
 	InterfaceName    types.String         `tfsdk:"interface_name"`
 	InterfaceId      types.String         `tfsdk:"interface_id"`
 	TransformationId types.Int64          `tfsdk:"transformation_id"`
@@ -30,7 +30,7 @@ type Endpoint struct {
 	Tags             types.Set            `tfsdk:"tags"`
 }
 
-func (o Endpoint) attrTypes() map[string]attr.Type {
+func (o LinkEndpoint) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"interface_name":    types.StringType,
 		"interface_id":      types.StringType,
@@ -41,7 +41,7 @@ func (o Endpoint) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o Endpoint) DatasourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o LinkEndpoint) DatasourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"interface_name": dataSourceSchema.StringAttribute{
 			Computed:            true,
@@ -73,7 +73,7 @@ func (o Endpoint) DatasourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o Endpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o LinkEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"interface_name": resourceSchema.StringAttribute{
 			Optional:            true,
@@ -119,7 +119,7 @@ func (o Endpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o *Endpoint) request(ctx context.Context, systemId string, diags *diag.Diagnostics) *apstra.FreeformEndpoint {
+func (o *LinkEndpoint) request(ctx context.Context, systemId string, diags *diag.Diagnostics) *apstra.FreeformEthernetEndpoint {
 	var ipNet4, ipNet6 *net.IPNet
 	if utils.HasValue(o.Ipv4Address) {
 		var ip4 net.IP
@@ -140,7 +140,7 @@ func (o *Endpoint) request(ctx context.Context, systemId string, diags *diag.Dia
 		transformationId = utils.ToPtr(int(o.TransformationId.ValueInt64()))
 	}
 
-	return &apstra.FreeformEndpoint{
+	return &apstra.FreeformEthernetEndpoint{
 		SystemId: apstra.ObjectId(systemId),
 		Interface: apstra.FreeformInterface{
 			Data: &apstra.FreeformInterfaceData{
@@ -154,7 +154,7 @@ func (o *Endpoint) request(ctx context.Context, systemId string, diags *diag.Dia
 	}
 }
 
-func (o *Endpoint) loadApiData(ctx context.Context, in apstra.FreeformEndpoint, diags *diag.Diagnostics) {
+func (o *LinkEndpoint) loadApiData(ctx context.Context, in apstra.FreeformEthernetEndpoint, diags *diag.Diagnostics) {
 	if in.Interface.Id == nil {
 		diags.AddError(
 			fmt.Sprintf("api returned nil interface Id for system %s", in.SystemId),
@@ -182,16 +182,16 @@ func (o *Endpoint) loadApiData(ctx context.Context, in apstra.FreeformEndpoint, 
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Interface.Data.Tags, diags)
 }
 
-func newFreeformEndpointMap(ctx context.Context, in [2]apstra.FreeformEndpoint, diags *diag.Diagnostics) types.Map {
-	endpoints := make(map[string]Endpoint, len(in))
+func newFreeformEndpointMap(ctx context.Context, in [2]apstra.FreeformEthernetEndpoint, diags *diag.Diagnostics) types.Map {
+	endpoints := make(map[string]LinkEndpoint, len(in))
 	for i := range in {
-		var endpoint Endpoint
+		var endpoint LinkEndpoint
 		endpoint.loadApiData(ctx, in[i], diags)
 		endpoints[in[i].SystemId.String()] = endpoint
 	}
 	if diags.HasError() {
-		return types.MapNull(types.ObjectType{AttrTypes: Endpoint{}.attrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: LinkEndpoint{}.attrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: Endpoint{}.attrTypes()}, endpoints, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LinkEndpoint{}.attrTypes()}, endpoints, diags)
 }

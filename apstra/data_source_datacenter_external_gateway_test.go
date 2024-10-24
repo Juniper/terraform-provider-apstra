@@ -49,7 +49,7 @@ func TestDatacenterExternalGateway(t *testing.T) {
 
 	rgConfigs := []apstra.RemoteGatewayData{
 		{
-			RouteTypes:     enum.RemoteGatewayRouteTypesAll,
+			RouteTypes:     enum.RemoteGatewayRouteTypeAll,
 			LocalGwNodes:   leafIds,
 			GwAsn:          rand.Uint32(),
 			GwIp:           randIpvAddressMust(t, "10.0.0.0/8"),
@@ -60,7 +60,7 @@ func TestDatacenterExternalGateway(t *testing.T) {
 			Password:       &password,
 		},
 		{
-			RouteTypes:     enum.RemoteGatewayRouteTypesFiveOnly,
+			RouteTypes:     enum.RemoteGatewayRouteTypeFiveOnly,
 			LocalGwNodes:   leafIds,
 			GwAsn:          rand.Uint32(),
 			GwIp:           randIpvAddressMust(t, "10.0.0.0/8"),

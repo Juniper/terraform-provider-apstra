@@ -72,7 +72,7 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: "Endpoints of the  Link, a Map keyed by System ID.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: Endpoint{}.DatasourceAttributes(),
+				Attributes: LinkEndpoint{}.DatasourceAttributes(),
 			},
 		},
 		"tags": dataSourceSchema.SetAttribute{
@@ -115,7 +115,7 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"endpoints": resourceSchema.MapNestedAttribute{
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: Endpoint{}.ResourceAttributes(),
+				Attributes: LinkEndpoint{}.ResourceAttributes(),
 			},
 			PlanModifiers:       []planmodifier.Map{mapplanmodifier.RequiresReplace()},
 			MarkdownDescription: "Endpoints of the  Link, a Map keyed by System ID.",
@@ -141,13 +141,13 @@ func (o *Link) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.Fre
 		return nil
 	}
 
-	var endpoints map[string]Endpoint
+	var endpoints map[string]LinkEndpoint
 	diags.Append(o.Endpoints.ElementsAs(ctx, &endpoints, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
-	var epArray [2]apstra.FreeformEndpoint
+	var epArray [2]apstra.FreeformEthernetEndpoint
 	var i int
 	for systemId, endpoint := range endpoints {
 		epArray[i] = *endpoint.request(ctx, systemId, diags)
