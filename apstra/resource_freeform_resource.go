@@ -51,6 +51,15 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 		return
 	}
 
+	// cannot proceed with unknown values
+	if config.Type.IsUnknown() ||
+		config.AllocatedFrom.IsUnknown() ||
+		config.IntValue.IsUnknown() ||
+		config.Ipv4Value.IsUnknown() ||
+		config.Ipv6Value.IsUnknown() {
+		return
+	}
+
 	var resourceType enum.FFResourceType
 	err := utils.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
 	if err != nil {
