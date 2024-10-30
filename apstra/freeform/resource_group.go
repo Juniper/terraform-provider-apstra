@@ -3,8 +3,8 @@ package freeform
 import (
 	"context"
 	"encoding/json"
-	"regexp"
 
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 
@@ -97,9 +97,7 @@ func (o ResourceGroup) ResourceAttributes() map[string]resourceSchema.Attribute 
 			MarkdownDescription: "Freeform Resource Group name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(
-					regexp.MustCompile("^[a-zA-Z0-9.-_]+$"),
-					"name may consist only of the following characters : a-zA-Z0-9.-_"),
+				stringvalidator.RegexMatches(apstraregexp.StdNameConstraint, apstraregexp.StdNameConstraintMsg),
 			},
 		},
 		"parent_id": resourceSchema.StringAttribute{

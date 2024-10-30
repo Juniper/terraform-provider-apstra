@@ -3,9 +3,9 @@ package freeform
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -87,7 +87,6 @@ func (o System) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 }
 
 func (o System) ResourceAttributes() map[string]resourceSchema.Attribute {
-	hostnameRegexp := "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$"
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
@@ -104,14 +103,14 @@ func (o System) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Freeform System name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"), "name may consist only of the following characters : a-zA-Z0-9.-_"),
+				stringvalidator.RegexMatches(apstraregexp.StdNameConstraint, apstraregexp.StdNameConstraintMsg),
 			},
 		},
 		"hostname": resourceSchema.StringAttribute{
 			MarkdownDescription: "Hostname of the Freeform System.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile(hostnameRegexp), "must match regex "+hostnameRegexp),
+				stringvalidator.RegexMatches(apstraregexp.FreeformHostnameConstraint, apstraregexp.FreeformHostnameConstraintMsg),
 			},
 		},
 		"deploy_mode": resourceSchema.StringAttribute{

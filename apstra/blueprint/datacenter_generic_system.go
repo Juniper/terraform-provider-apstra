@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"regexp"
 	"sort"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -76,8 +76,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9.-]+$"),
-					"only alphanumeric characters, '.' and '-' allowed."),
+				stringvalidator.RegexMatches(apstraregexp.HostNameConstraint, apstraregexp.HostNameConstraintMsg),
 				stringvalidator.LengthBetween(1, 32),
 			},
 		},

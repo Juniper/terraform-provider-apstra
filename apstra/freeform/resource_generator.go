@@ -3,15 +3,14 @@ package freeform
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -110,10 +109,7 @@ func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attrib
 			MarkdownDescription: "Freeform Resource Generator name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(
-					regexp.MustCompile("^[a-zA-Z0-9.-_]+$"),
-					"name may consist only of the following characters : a-zA-Z0-9.-_",
-				),
+				stringvalidator.RegexMatches(apstraregexp.StdNameConstraint, apstraregexp.StdNameConstraintMsg),
 			},
 		},
 		"scope": resourceSchema.StringAttribute{

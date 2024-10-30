@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -67,8 +67,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Optional:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthBetween(1, 17),
-				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
-					"only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(apstraregexp.AlphaNumW2HLConstraint, apstraregexp.AlphaNumW2HLConstraintMsg),
 			},
 		},
 		"vrf_name": dataSourceSchema.StringAttribute{
@@ -208,8 +207,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "Name displayed in the Apstra web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9_-]+$"),
-					"only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(apstraregexp.AlphaNumW2HLConstraint, apstraregexp.AlphaNumW2HLConstraintMsg),
 				stringvalidator.LengthBetween(1, 15),
 			},
 		},
