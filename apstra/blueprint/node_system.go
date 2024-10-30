@@ -79,6 +79,9 @@ func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.C
 	case !o.Id.IsNull():
 		desiredNode, ok = nodeResponse.Nodes[o.Id.ValueString()]
 		if !ok {
+			if o.NullWhenNotFound.ValueBool() {
+				o.Attributes = types.ObjectNull(NodeTypeSystemAttributes{}.AttrTypes())
+			}
 			diags.AddError("Node not found",
 				fmt.Sprintf("Node with ID %q not found in blueprint %q",
 					o.Id.ValueString(), o.BlueprintId.ValueString()))
@@ -92,6 +95,9 @@ func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.C
 			}
 		}
 		if !ok {
+			if o.NullWhenNotFound.ValueBool() {
+				o.Attributes = types.ObjectNull(NodeTypeSystemAttributes{}.AttrTypes())
+			}
 			diags.AddError("Node not found",
 				fmt.Sprintf("Node with Name %q not found in blueprint %q",
 					o.Name.ValueString(), o.BlueprintId.ValueString()))
