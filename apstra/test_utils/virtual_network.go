@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +23,7 @@ func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoSt
 		Label:          acctest.RandString(6),
 		SecurityZoneId: SecurityZoneA(t, ctx, client, cleanup),
 		VnBindings:     vnBindings,
-		VnType:         apstra.VnTypeVxlan,
+		VnType:         enum.VnTypeVxlan,
 	})
 	require.NoError(t, err)
 	if cleanup {

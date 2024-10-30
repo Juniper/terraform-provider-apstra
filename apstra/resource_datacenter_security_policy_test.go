@@ -152,7 +152,7 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			Ipv4Enabled: true,
 			Label:       acctest.RandString(5),
 			VnBindings:  []apstra.VnBinding{{SystemId: apstra.ObjectId(leafIds[i])}},
-			VnType:      apstra.VnTypeVlan,
+			VnType:      enum.VnTypeVlan,
 		})
 		if err != nil {
 			t.Fatal(err)
