@@ -3,11 +3,11 @@ package freeform
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -86,8 +86,7 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9.-_]+$"),
-					"name may consist only of the following characters : a-zA-Z0-9.-_"),
+				stringvalidator.RegexMatches(apstraregexp.StdNameConstraint, apstraregexp.StdNameConstraintMsg),
 			},
 		},
 		"type": resourceSchema.StringAttribute{

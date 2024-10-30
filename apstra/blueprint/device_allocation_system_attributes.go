@@ -14,6 +14,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
@@ -63,8 +64,7 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 			Computed:            true,
 			MarkdownDescription: "Hostname of the System node.",
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(regexp.MustCompile("^[A-Za-z0-9.-]+$"),
-					"only alphanumeric characters, '.' and '-' allowed."),
+				stringvalidator.RegexMatches(apstraregexp.HostNameConstraint, apstraregexp.HostNameConstraintMsg),
 				stringvalidator.LengthBetween(1, 32),
 			},
 		},

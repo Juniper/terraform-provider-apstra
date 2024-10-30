@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"regexp"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -42,7 +42,6 @@ type DatacenterRoutingPolicy struct {
 }
 
 func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute {
-	nameRE := regexp.MustCompile("^[A-Za-z0-9_-]+$")
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
@@ -54,7 +53,7 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthBetween(1, 17),
-				stringvalidator.RegexMatches(nameRE, "only underscore, dash and alphanumeric characters allowed."),
+				stringvalidator.RegexMatches(apstraregexp.AlphaNumW2HLConstraint, apstraregexp.AlphaNumW2HLConstraintMsg),
 			},
 		},
 		"description": resourceSchema.StringAttribute{

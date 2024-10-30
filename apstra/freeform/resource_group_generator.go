@@ -2,9 +2,9 @@ package freeform
 
 import (
 	"context"
-	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -84,10 +84,7 @@ func (o GroupGenerator) ResourceAttributes() map[string]resourceSchema.Attribute
 			MarkdownDescription: "Freeform Group Generator name as shown in the Web UI.",
 			Required:            true,
 			Validators: []validator.String{
-				stringvalidator.RegexMatches(
-					regexp.MustCompile("^[a-zA-Z0-9.-_]+$"),
-					"name may consist only of the following characters : a-zA-Z0-9.-_",
-				),
+				stringvalidator.RegexMatches(apstraregexp.StdNameConstraint, apstraregexp.StdNameConstraintMsg),
 			},
 		},
 		"scope": resourceSchema.StringAttribute{
