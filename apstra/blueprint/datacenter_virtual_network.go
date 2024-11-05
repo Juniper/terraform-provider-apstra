@@ -922,6 +922,10 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConstraints {
 	var response compatibility.ConfigConstraints
 
+	if o.Bindings.IsUnknown() {
+		return response // cannot validate with unknown bindings
+	}
+
 	if len(o.Bindings.Elements()) == 0 {
 		response.AddAttributeConstraints(
 			compatibility.AttributeConstraint{
