@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"log"
 	"math"
 	"math/rand/v2"
 	"strconv"
@@ -147,7 +148,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "system_id"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "deployed_config"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "staged_config"),
-				resource.TestCheckResourceAttr("data."+datasourceType+".test", "incremental_config", ""),
+				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "incremental_config"),
 				resource.TestCheckResourceAttrWith("data."+datasourceType+".test", "deployed_config", atLeast100Lines),
 				resource.TestCheckResourceAttrWith("data."+datasourceType+".test", "staged_config", atLeast100Lines),
 			},
@@ -160,7 +161,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 				resource.TestCheckResourceAttr("data."+datasourceType+".test", "system_id", sysIds[0].String()),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "deployed_config"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "staged_config"),
-				resource.TestCheckResourceAttr("data."+datasourceType+".test", "incremental_config", ""),
+				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "incremental_config"),
 				resource.TestCheckResourceAttrWith("data."+datasourceType+".test", "deployed_config", atLeast100Lines),
 				resource.TestCheckResourceAttrWith("data."+datasourceType+".test", "staged_config", atLeast100Lines),
 			},
@@ -199,28 +200,32 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 		},
 	}
 
-	// bpModificationWg delays modifications to the blueprint until pre-modification tests are complete
+	// bpModificationWg delays modifications to the blueprint until pre-modification tests are
+	// complete. Test cases which do not include pre-work contribute to (and delete from) this
+	// WG. Test cases which include pre-work must wait
 	bpModificationWg := new(sync.WaitGroup)
-
-	// testCaseStartWg ensures that no test case starts begins before all have had a chance
-	// to pile onto bpModificationWg
-	testCaseStartWg := new(sync.WaitGroup)
-	testCaseStartWg.Add(len(testCases))
+	for tName, tCase := range testCases {
+		if tCase.preFunc == nil {
+			log.Println(tName, "adding to bpModificationWg")
+			bpModificationWg.Add(1)
+		}
+	}
 
 	for tName, tCase := range testCases {
 		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+
 			if tCase.config.nodeId == "" && tCase.config.systemId == "" {
-				testCaseStartWg.Done()
+				if tCase.preFunc == nil {
+					log.Println(tName, "done-ing to bpModificationWg")
+					bpModificationWg.Done()
+				}
 				t.Skipf("skipping because node has no system assigned")
 				return
 			}
-			t.Parallel()
 
-			if tCase.preFunc == nil {
-				bpModificationWg.Add(1)
-				testCaseStartWg.Done()
-			} else {
-				testCaseStartWg.Done()
+			if tCase.preFunc != nil {
+				log.Printf("%s waiting for bpModificationWg", tName)
 				bpModificationWg.Wait()
 				tCase.preFunc(t, ctx, bp)
 			}
@@ -239,6 +244,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 			})
 
 			if tCase.preFunc == nil {
+				log.Println(tName, "done-ing to bpModificationWg")
 				bpModificationWg.Done() // release test cases which will make changes
 			}
 		})
