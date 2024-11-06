@@ -48,7 +48,7 @@ resource "apstra_datacenter_connectivity_templates_assignment" "a" {
 ### Read-Only
 
 - `ip_link_ids` (Map of Map of String) New Logical Links are created when Connectivity Templates containing *IP Link* primitives are attached to a switch interface. These logical links may or may not be VLAN-tagged. This attribute is a two-dimensional map. The outer map is keyed by Connectivity Template ID. The inner map is keyed by VLAN number. Untagged Logical Links are represented in the inner map by key `0`.
-**Note:** requires `fetch_iplink_ids = true`
+**Note:** requires `fetch_ip_link_ids = true`
 
 
 

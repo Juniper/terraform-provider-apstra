@@ -60,7 +60,7 @@ func (o ConnectivityTemplateAssignments) ResourceAttributes() map[string]resourc
 				"primitives are attached to a switch interface. These logical links may or may not be VLAN-tagged. " +
 				"This attribute is a two-dimensional map. The outer map is keyed by Application Point ID. The inner " +
 				"map is keyed by VLAN number. Untagged Logical Links are represented in the inner map by key `0`.\n" +
-				"**Note:** requires `fetch_iplink_ids = true`",
+				"**Note:** requires `fetch_ip_link_ids = true`",
 			Computed:    true,
 			ElementType: types.MapType{ElemType: types.StringType},
 		},
