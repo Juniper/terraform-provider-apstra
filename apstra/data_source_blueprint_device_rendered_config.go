@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -48,64 +49,66 @@ func (o *dataSourceBlueprintNodeConfig) Read(ctx context.Context, req datasource
 
 	bpId := apstra.ObjectId(config.BlueprintId.ValueString())
 
+	var deployed, staged string
+	var diff *apstra.RenderDiff
 	var err error
-	var deployed, staged, incremental string
 	var ace apstra.ClientErr
 
 	switch {
 	case !config.NodeId.IsNull():
-		node := apstra.ObjectId(config.NodeId.ValueString())
-		deployed, err = o.client.GetNodeRenderedConfig(ctx, bpId, node, enum.RenderedConfigTypeDeployed)
+		deployed, err = o.client.GetNodeRenderedConfig(ctx, bpId, apstra.ObjectId(config.NodeId.ValueString()), enum.RenderedConfigTypeDeployed)
 		if err != nil {
 			if !errors.As(err, &ace) || ace.Type() != apstra.ErrNotfound {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch deployed configuration for node %s", config.NodeId), err.Error())
 				return
 			}
 		}
-		staged, err = o.client.GetNodeRenderedConfig(ctx, bpId, node, enum.RenderedConfigTypeStaging)
+		staged, err = o.client.GetNodeRenderedConfig(ctx, bpId, apstra.ObjectId(config.NodeId.ValueString()), enum.RenderedConfigTypeStaging)
 		if err != nil {
 			if !errors.As(err, &ace) || ace.Type() != apstra.ErrNotfound {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch staged configuration for node %s", config.NodeId), err.Error())
 				return
 			}
 		}
-		diff, err := o.client.GetNodeRenderedConfigDiff(ctx, bpId, node)
+		diff, err = o.client.GetNodeRenderedConfigDiff(ctx, bpId, apstra.ObjectId(config.NodeId.ValueString()))
 		if err != nil {
 			if !errors.As(err, &ace) || ace.Type() != apstra.ErrNotfound {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch incremental configuration for node %s", config.NodeId), err.Error())
 				return
 			}
 		}
-		incremental = diff.Config
 	case !config.SystemId.IsNull():
-		system := apstra.ObjectId(config.SystemId.ValueString())
-		deployed, err = o.client.GetSystemRenderedConfig(ctx, bpId, system, enum.RenderedConfigTypeDeployed)
+		deployed, err = o.client.GetSystemRenderedConfig(ctx, bpId, apstra.ObjectId(config.SystemId.ValueString()), enum.RenderedConfigTypeDeployed)
 		if err != nil {
 			if !errors.As(err, &ace) || ace.Type() != apstra.ErrNotfound {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch deployed configuration for system %s", config.SystemId), err.Error())
 				return
 			}
 		}
-		staged, err = o.client.GetSystemRenderedConfig(ctx, bpId, system, enum.RenderedConfigTypeStaging)
+		staged, err = o.client.GetSystemRenderedConfig(ctx, bpId, apstra.ObjectId(config.SystemId.ValueString()), enum.RenderedConfigTypeStaging)
 		if err != nil {
 			if !errors.As(err, &ace) || ace.Type() != apstra.ErrNotfound {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch staged configuration for system %s", config.SystemId), err.Error())
 				return
 			}
 		}
-		diff, err := o.client.GetSystemRenderedConfigDiff(ctx, bpId, system)
+		diff, err = o.client.GetSystemRenderedConfigDiff(ctx, bpId, apstra.ObjectId(config.SystemId.ValueString()))
 		if err != nil {
 			if !errors.As(err, &ace) || ace.Type() != apstra.ErrNotfound {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch incremental configuration for system %s", config.SystemId), err.Error())
 				return
 			}
 		}
-		incremental = diff.Config
+	}
+
+	if diff != nil {
+		config.Incremental = utils.StringValueOrNull(ctx, diff.Config, &resp.Diagnostics)
+	} else {
+		config.Incremental = types.StringNull()
 	}
 
 	config.DeployedCfg = utils.StringValueOrNull(ctx, deployed, &resp.Diagnostics)
 	config.StagedCfg = utils.StringValueOrNull(ctx, staged, &resp.Diagnostics)
-	config.Incremental = utils.StringValueOrNull(ctx, incremental, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
