@@ -2,6 +2,9 @@ package tfapstra
 
 import (
 	"context"
+	"fmt"
+	"net"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -10,11 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"net"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceAgents{}
-var _ datasourceWithSetClient = &dataSourceAgents{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceAgents{}
+	_ datasourceWithSetClient            = &dataSourceAgents{}
+)
 
 type dataSourceAgents struct {
 	client *apstra.Client
@@ -123,6 +127,18 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 
 		if !filter.OffBox.IsNull() && filter.OffBox.ValueBool() != bool(agent.Config.AgentTypeOffBox) {
 			continue
+		}
+
+		if !filter.Location.IsNull() {
+			systemInfo, err := o.client.GetSystemInfo(ctx, agent.Status.SystemId)
+			if err != nil {
+				resp.Diagnostics.AddError(fmt.Sprintf("While getting info for system %q", agent.Status.SystemId), err.Error())
+				return
+			}
+
+			if filter.Location.ValueString() != systemInfo.UserConfig.Location {
+				continue
+			}
 		}
 
 		agentIdVals = append(agentIdVals, types.StringValue(agent.Id.String()))

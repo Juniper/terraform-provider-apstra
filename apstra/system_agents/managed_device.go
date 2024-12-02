@@ -29,6 +29,7 @@ type ManagedDevice struct {
 	DeviceKey      types.String `tfsdk:"device_key"`
 	AgentProfileId types.String `tfsdk:"agent_profile_id"`
 	OffBox         types.Bool   `tfsdk:"off_box"`
+	Location       types.String `tfsdk:"location"`
 }
 
 func (o ManagedDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -56,6 +57,10 @@ func (o ManagedDevice) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 		},
 		"off_box": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the agent runs on the switch (true) or on an Apstra node (false).",
+			Computed:            true,
+		},
+		"location": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Device `location` field.",
 			Computed:            true,
 		},
 	}
@@ -98,7 +103,12 @@ func (o ManagedDevice) DataSourceFilterAttributes() map[string]dataSourceSchema.
 				path.MatchRoot("filter").AtName("device_key"),
 				path.MatchRoot("filter").AtName("agent_profile_id"),
 				path.MatchRoot("filter").AtName("off_box"),
+				path.MatchRoot("filter").AtName("location"),
 			)},
+		},
+		"location": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Device `location` field.",
+			Optional:            true,
 		},
 	}
 }
@@ -141,6 +151,11 @@ func (o ManagedDevice) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Default:             booldefault.StaticBool(true),
 			PlanModifiers:       []planmodifier.Bool{boolplanmodifier.RequiresReplace()},
 		},
+		"location": resourceSchema.StringAttribute{
+			MarkdownDescription: "Device `location` field.",
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.AlsoRequires(path.MatchRoot("device_key"))},
+		},
 	}
 }
 
@@ -159,6 +174,13 @@ func (o *ManagedDevice) LoadApiData(_ context.Context, in *apstra.SystemAgent, _
 	o.AgentProfileId = types.StringValue(string(in.Config.Profile))
 	o.OffBox = types.BoolValue(bool(in.Config.AgentTypeOffBox))
 	o.AgentId = types.StringValue(string(in.Id))
+}
+
+func (o *ManagedDevice) LoadUserConfig(_ context.Context, in apstra.SystemUserConfig, _ *diag.Diagnostics) {
+	o.Location = types.StringNull()
+	if in.Location != "" {
+		o.Location = types.StringValue(in.Location)
+	}
 }
 
 func (o *ManagedDevice) ValidateAgentProfile(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
@@ -193,11 +215,11 @@ func (o *ManagedDevice) ValidateAgentProfile(ctx context.Context, client *apstra
 	}
 }
 
-func (o *ManagedDevice) Acknowledge(ctx context.Context, si *apstra.ManagedSystemInfo, client *apstra.Client, diags *diag.Diagnostics) {
-	// update with new SystemUserConfig
+func (o *ManagedDevice) SetUserConfig(ctx context.Context, si *apstra.ManagedSystemInfo, client *apstra.Client, diags *diag.Diagnostics) {
 	err := client.UpdateSystem(ctx, apstra.SystemId(o.SystemId.ValueString()), &apstra.SystemUserConfig{
 		AosHclModel: si.Facts.AosHclModel,
 		AdminState:  apstra.SystemAdminStateNormal,
+		Location:    o.Location.ValueString(),
 	})
 	if err != nil {
 		diags.AddError(
