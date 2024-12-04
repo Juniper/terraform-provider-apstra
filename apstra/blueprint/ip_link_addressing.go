@@ -6,9 +6,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
