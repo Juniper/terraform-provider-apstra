@@ -130,10 +130,5 @@ resource "apstra_datacenter_ip_link_addressing" "example" {
 - `switch_ipv6_address` (String) IPv6 address in CIDR notation.
 - `switch_ipv6_address_type` (String) Allowed values: [`link_local`,`none`,`numbered`]
 
-### Read-Only
-
-- `generic_interface_id` (String) Apstra graph node ID of the node to which `generic` IP information will be associated.
-- `switch_interface_id` (String) Apstra graph node ID of the node to which `switch` IP information will be associated.
-
 
 
