@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplate{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterConnectivityTemplate{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterConnectivityTemplate{}
+var (
+	_ resource.ResourceWithConfigure = &resourceDatacenterConnectivityTemplate{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterConnectivityTemplate{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterConnectivityTemplate{}
+)
 
 type resourceDatacenterConnectivityTemplate struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -31,7 +34,11 @@ func (o *resourceDatacenterConnectivityTemplate) Configure(ctx context.Context, 
 func (o *resourceDatacenterConnectivityTemplate) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Connectivity Template within a Datacenter Blueprint.",
-		Attributes:          blueprint.ConnectivityTemplate{}.ResourceAttributes(),
+		DeprecationMessage: "This resource will be removed in a future version. Please migrate your configurations to use " +
+			"one of the new Connectivity Template resources: `apstra_datacenter_connectivity_template_interface`, " +
+			"`apstra_datacenter_connectivity_template_loopback`, `apstra_datacenter_connectivity_template_svi`, or " +
+			"`apstra_datacenter_connectivity_template_system`.",
+		Attributes: blueprint.ConnectivityTemplate{}.ResourceAttributes(),
 	}
 }
 

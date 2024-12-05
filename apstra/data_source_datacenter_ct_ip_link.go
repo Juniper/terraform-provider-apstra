@@ -29,6 +29,11 @@ func (o *dataSourceDatacenterCtIpLink) Schema(_ context.Context, _ datasource.Sc
 		MarkdownDescription: docCategoryDatacenter + "This data source composes a Connectivity Template Primitive as a JSON string, " +
 			"suitable for use in the `primitives` attribute of an `apstra_datacenter_connectivity_template` " +
 			"resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.",
+		DeprecationMessage: "This data source will be removed in a future version. Please migrate your use of the " +
+			"`apstra_datacenter_connectivity_template` resource (the likely reason this data source is being invoked) " +
+			"to one of the new resources which do not depend on this data source: " +
+			"`apstra_datacenter_connectivity_template_interface`, `apstra_datacenter_connectivity_template_loopback`, " +
+			"`apstra_datacenter_connectivity_template_svi`, or `apstra_datacenter_connectivity_template_system`.",
 		Attributes: connectivitytemplate.IpLink{}.DataSourceAttributes(),
 	}
 }
