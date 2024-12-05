@@ -252,8 +252,3 @@ func (o *IpLinkAddressing) LoadApiData(_ context.Context, in *apstra.TwoStageL3C
 		o.GenericIpv6Addr = cidrtypes.NewIPv6PrefixValue(genericEp.Subinterface.Ipv6Addr.String())
 	}
 }
-
-type PrivateInterfaceIds struct {
-	SwitchInterface  apstra.ObjectId `json:"switch_interface"`
-	GenericInterface apstra.ObjectId `json:"generic_interface"`
-}
