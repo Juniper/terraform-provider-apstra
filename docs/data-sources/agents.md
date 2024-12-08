@@ -43,6 +43,7 @@ Optional:
 - `agent_id` (String) Apstra ID for the Managed Device Agent.
 - `agent_profile_id` (String) ID of the Agent Profile associated with the Agent.
 - `device_key` (String) Key which uniquely identifies a System asset, probably a serial number.
+- `location` (String) Device `location` field.
 - `management_ip` (String) Management IP address of the System.
 - `off_box` (Boolean) Indicates whether the agent runs on the switch (true) or on an Apstra node (false).
 - `system_id` (String) Apstra ID for the System onboarded by the Managed Device Agent.

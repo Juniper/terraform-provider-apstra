@@ -32,6 +32,7 @@ data "apstra_agent" "foo" {
 
 - `agent_profile_id` (String) Agent Profile ID associated with the Agent.
 - `device_key` (String) Key which uniquely identifies a System asset probably the serial number.
+- `location` (String) Device `location` field.
 - `management_ip` (String) Management IP address of the system managed by the Agent.
 - `off_box` (Boolean) Indicates whether the agent runs on the switch (true) or on an Apstra node (false).
 - `system_id` (String) Apstra ID for the System managed by the Agent.

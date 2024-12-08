@@ -65,6 +65,7 @@ resource "apstra_managed_device" "example" {
 ### Optional
 
 - `device_key` (String) Key which uniquely identifies a System asset. Possibly a MAC address or serial number.
+- `location` (String) Device `location` field.
 - `off_box` (Boolean) Indicates that an *offbox* agent should be created (required for Junos devices, default: `true`)
 
 ### Read-Only

@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceManagedDevice{}
-var _ resourceWithSetClient = &resourceManagedDevice{}
+var (
+	_ resource.ResourceWithConfigure = &resourceManagedDevice{}
+	_ resourceWithSetClient          = &resourceManagedDevice{}
+)
 
 type resourceManagedDevice struct {
 	client *apstra.Client
@@ -76,9 +79,7 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 	// figure out the new switch system ID
 	agentInfo, err := o.client.GetSystemAgent(ctx, agentId)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"error fetching Agent info",
-			err.Error())
+		resp.Diagnostics.AddError("error fetching Agent info", err.Error())
 		return
 	}
 	plan.SystemId = types.StringValue(string(agentInfo.Status.SystemId))
@@ -87,15 +88,14 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 		// figure out the actual serial number (device_key)
 		systemInfo, err := o.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
 		if err != nil {
-			resp.Diagnostics.AddError(
-				"error fetching system info",
-				err.Error())
+			resp.Diagnostics.AddError("error fetching system info", err.Error())
+			return
 		}
 
 		// validate discovered device_key (serial number)
 		if plan.DeviceKey.ValueString() == systemInfo.DeviceKey {
 			// "acknowledge" the managed device:q
-			plan.Acknowledge(ctx, systemInfo, o.client, &resp.Diagnostics)
+			plan.SetUserConfig(ctx, systemInfo, o.client, &resp.Diagnostics)
 		} else {
 			// device_key supplied by config does not match discovered asset
 			resp.Diagnostics.AddAttributeError(
@@ -104,6 +104,7 @@ func (o *resourceManagedDevice) Create(ctx context.Context, req resource.CreateR
 				fmt.Sprintf("config expects switch device_key %q, device reports %q",
 					plan.DeviceKey.ValueString(), systemInfo.DeviceKey),
 			)
+			// do not return here -- the state needs to be set below
 		}
 	}
 
@@ -142,6 +143,18 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 		return
 	}
 
+	// Get System info from Api
+	systemInfo, err := o.client.GetSystemInfo(ctx, agentInfo.Status.SystemId)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error fetching system info",
+			fmt.Sprintf("Could not Read system info for %q - %s", agentInfo.Status.SystemId, err.Error()),
+		)
+		return
+	}
+
+	newState.LoadUserConfig(ctx, systemInfo.UserConfig, &resp.Diagnostics)
+
 	// Device_key has 'requiresReplace()', so if it's not set in the state,
 	// then it's also not set in the config. Only fetch the serial number if
 	// the config is expecting a serial number.
@@ -158,6 +171,13 @@ func (o *resourceManagedDevice) Read(ctx context.Context, req resource.ReadReque
 
 // Update resource
 func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Get state values
+	var state systemAgents.ManagedDevice
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Get plan values
 	var plan systemAgents.ManagedDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -171,18 +191,38 @@ func (o *resourceManagedDevice) Update(ctx context.Context, req resource.UpdateR
 		return
 	}
 
-	// agent profile ID is the only value permitted to change (others trigger replacement)
-	err := o.client.AssignAgentProfile(ctx, &apstra.AssignAgentProfileRequest{
-		SystemAgents: []apstra.ObjectId{apstra.ObjectId(plan.AgentId.ValueString())},
-		ProfileId:    apstra.ObjectId(plan.AgentProfileId.ValueString()),
-	})
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"error updating managed device agent",
-			fmt.Sprintf("error while updating managed device agent %q (%s) - %s",
-				plan.AgentId.ValueString(), plan.ManagementIp.ValueString(), err.Error()),
-		)
-		return
+	// agent profile ID is one of only a handful of values permitted to change (others trigger replacement)
+	if !plan.AgentProfileId.Equal(state.AgentProfileId) {
+		err := o.client.AssignAgentProfile(ctx, &apstra.AssignAgentProfileRequest{
+			SystemAgents: []apstra.ObjectId{apstra.ObjectId(plan.AgentId.ValueString())},
+			ProfileId:    apstra.ObjectId(plan.AgentProfileId.ValueString()),
+		})
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"error updating managed device agent",
+				fmt.Sprintf("error while updating managed device agent %q (%s) - %s",
+					plan.AgentId.ValueString(), plan.ManagementIp.ValueString(), err.Error()),
+			)
+			return
+		}
+	}
+
+	// Location is one of only a handful of values permitted to change (others trigger replacement)
+	if !plan.Location.Equal(state.Location) {
+		// Get System info from Api
+		systemInfo, err := o.client.GetSystemInfo(ctx, apstra.SystemId(state.DeviceKey.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError(
+				"error fetching system info",
+				fmt.Sprintf("Could not Read system info for %s - %s", state.DeviceKey, err.Error()),
+			)
+			return
+		}
+
+		plan.SetUserConfig(ctx, systemInfo, o.client, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// set state to match plan

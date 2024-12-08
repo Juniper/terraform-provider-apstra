@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -10,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceAgent{}
-var _ datasourceWithSetClient = &dataSourceAgent{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceAgent{}
+	_ datasourceWithSetClient            = &dataSourceAgent{}
+)
 
 type dataSourceAgent struct {
 	client *apstra.Client
@@ -60,6 +63,18 @@ func (o *dataSourceAgent) Read(ctx context.Context, req datasource.ReadRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// Get System info from Api
+	systemInfo, err := o.client.GetSystemInfo(ctx, agent.Status.SystemId)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error fetching system info",
+			fmt.Sprintf("Could not Read system info for %q - %s", agent.Status.SystemId, err.Error()),
+		)
+		return
+	}
+
+	config.LoadUserConfig(ctx, systemInfo.UserConfig, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
