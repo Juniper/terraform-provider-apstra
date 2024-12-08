@@ -3,13 +3,14 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"net"
+
 	connectivitytemplate "github.com/Juniper/terraform-provider-apstra/apstra/connectivity_template"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"net"
 )
 
 var _ datasource.DataSourceWithValidateConfig = &dataSourceDatacenterCtCustomStaticRoute{}
@@ -25,6 +26,11 @@ func (o *dataSourceDatacenterCtCustomStaticRoute) Schema(_ context.Context, _ da
 		MarkdownDescription: docCategoryDatacenter + "This data source composes a Connectivity Template Primitive as a JSON string, " +
 			"suitable for use in the `primitives` attribute of an `apstra_datacenter_connectivity_template` " +
 			"resource or the `child_primitives` attribute of a Different Connectivity Template Primitive.",
+		DeprecationMessage: "This data source will be removed in a future version. Please migrate your use of the " +
+			"`apstra_datacenter_connectivity_template` resource (the likely reason this data source is being invoked) " +
+			"to one of the new resources which do not depend on this data source: " +
+			"`apstra_datacenter_connectivity_template_interface`, `apstra_datacenter_connectivity_template_loopback`, " +
+			"`apstra_datacenter_connectivity_template_svi`, or `apstra_datacenter_connectivity_template_system`.",
 		Attributes: connectivitytemplate.CustomStaticRoute{}.DataSourceAttributes(),
 	}
 }
