@@ -3,16 +3,15 @@ package tfapstra
 import (
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net"
 	"net/netip"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -48,14 +47,15 @@ func (o *resourceDatacenterIpLinkAddressing) Schema(_ context.Context, _ resourc
 }
 
 func (o *resourceDatacenterIpLinkAddressing) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Extract the configuration.
 	var config blueprint.IpLinkAddressing
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Parse IPv4 and IPv6 addresses found in the configuration.
 	var switchIpv4, switchIpv6, genericIpv4, genericIpv6 netip.Prefix
-
 	if !config.SwitchIpv4Addr.IsNull() {
 		switchIpv4, _ = netip.ParsePrefix(config.SwitchIpv4Addr.ValueString())
 	}
@@ -69,6 +69,7 @@ func (o *resourceDatacenterIpLinkAddressing) ValidateConfig(ctx context.Context,
 		genericIpv6, _ = netip.ParsePrefix(config.GenericIpv6Addr.ValueString())
 	}
 
+	// checkPrefix appends an error if the prefix is valid, but is not suitable for use on a point-to-point link
 	checkPrefix := func(prefix netip.Prefix, path path.Path) {
 		if !prefix.IsValid() {
 			return
@@ -122,6 +123,7 @@ func (o *resourceDatacenterIpLinkAddressing) ValidateConfig(ctx context.Context,
 	checkPrefix(genericIpv4, path.Root("generic_ipv4_address"))
 	checkPrefix(genericIpv6, path.Root("generic_ipv6_address"))
 
+	// checkPrefixPair appends an error if the switch/generic address pairs aren't suitable for use together on a point-to-point link
 	checkPrefixPair := func(switchPrefix, genericPrefix netip.Prefix) {
 		if !switchPrefix.IsValid() || !genericPrefix.IsValid() {
 			return
@@ -184,8 +186,8 @@ func (o *resourceDatacenterIpLinkAddressing) Create(ctx context.Context, req res
 		return
 	}
 
-	// fetch the link so that we can "compute" (learn) the switch/generic subinterface IDs
-	link, err := bp.GetSubinterfaceLink(ctx, apstra.ObjectId(plan.LinkId.ValueString()))
+	// retrieve the link details by ID - we need the IDs of the interface nodes returned by this call
+	apiData, err := bp.GetSubinterfaceLink(ctx, apstra.ObjectId(plan.LinkId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
@@ -199,19 +201,31 @@ func (o *resourceDatacenterIpLinkAddressing) Create(ctx context.Context, req res
 		return
 	}
 
-	// LoadImmutableData only needs to be done once, and only in the Create() method.
-	plan.LoadImmutableData(ctx, link, resp)
+	// extract the interface IDs from the API response
+	var privateInterfaceIds private.ResourceDatacenterIpLinkAddressingInterfaceIds
+	privateInterfaceIds.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// save initial interface addressing (addressed/local/none) to private state for use in Delete()
+	var privateInterfaceAddressing private.ResourceDatacenterIpLinkAddressingInterfaceAddressing
+	privateInterfaceAddressing.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	privateInterfaceAddressing.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create a subinterface addressing request
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, privateInterfaceIds, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// update the subinterface
+	// update the subinterfaces
 	err = bp.UpdateSubinterfaces(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to add subinterface addressing", err.Error())
@@ -251,8 +265,15 @@ func (o *resourceDatacenterIpLinkAddressing) Read(ctx context.Context, req resou
 		return
 	}
 
+	// load the API details to a private state object
+	var privateInterfaceIds private.ResourceDatacenterIpLinkAddressingInterfaceIds
+	privateInterfaceIds.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// load the state
-	state.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	state.LoadApiData(ctx, apiData, privateInterfaceIds, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -288,8 +309,30 @@ func (o *resourceDatacenterIpLinkAddressing) Update(ctx context.Context, req res
 		return
 	}
 
+	// retrieve the link details by ID - we need the IDs of the interface nodes returned by this call
+	apiData, err := bp.GetSubinterfaceLink(ctx, apstra.ObjectId(plan.LinkId.ValueString()))
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("link_id"),
+				"Link not found",
+				fmt.Sprintf("Link %s not found in blueprint %s", plan.LinkId, plan.BlueprintId),
+			)
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch link %s info", plan.LinkId), err.Error())
+		return
+	}
+
+	// extract the interface IDs from the API response
+	var privateInterfaceIds private.ResourceDatacenterIpLinkAddressingInterfaceIds
+	privateInterfaceIds.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// create a subinterface addressing request
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, privateInterfaceIds, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -331,59 +374,40 @@ func (o *resourceDatacenterIpLinkAddressing) Delete(ctx context.Context, req res
 		return
 	}
 
-	// collect the switch/server v4/v6 addressing types saved to private state during create
-	pBytes, d := req.Private.GetKey(ctx, "ep_addr_types")
-	resp.Diagnostics.Append(d...)
+	// Extract interface IDs stashed away by Create().
+	var privateInterfaceAddressing private.ResourceDatacenterIpLinkAddressingInterfaceAddressing
+	privateInterfaceAddressing.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	var private struct {
-		SwitchIpv4AddressType  string `json:"switch_ipv4_address_type"`
-		SwitchIpv6AddressType  string `json:"switch_ipv6_address_type"`
-		GenericIpv4AddressType string `json:"generic_ipv4_address_type"`
-		GenericIpv6AddressType string `json:"generic_ipv6_address_type"`
-	}
-	err = json.Unmarshal(pBytes, &private)
+	// retrieve the link details by ID - we need the IDs of the interface nodes returned by this call
+	apiData, err := bp.GetSubinterfaceLink(ctx, apstra.ObjectId(state.LinkId.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError("failed unmarshaling private data", err.Error())
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf("failed to fetch link %s info", state.LinkId), err.Error())
 		return
 	}
 
-	// unpack the private state into apstra objects
-	var switchIpv4AddressType, genericIpv4AddressType enum.InterfaceNumberingIpv4Type
-	var switchIpv6AddressType, genericIpv6AddressType enum.InterfaceNumberingIpv6Type
-	err = utils.ApiStringerFromFriendlyString(&switchIpv4AddressType, private.SwitchIpv4AddressType)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to parse private data switch_ipv4_address_type", err.Error())
-		return
-	}
-	err = utils.ApiStringerFromFriendlyString(&switchIpv6AddressType, private.SwitchIpv6AddressType)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to parse private data switch_ipv6_address_type", err.Error())
-		return
-	}
-	err = utils.ApiStringerFromFriendlyString(&genericIpv4AddressType, private.GenericIpv4AddressType)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to parse private data generic_ipv4_address_type", err.Error())
-		return
-	}
-	err = utils.ApiStringerFromFriendlyString(&genericIpv6AddressType, private.GenericIpv6AddressType)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to parse private data generic_ipv6_address_type", err.Error())
+	// extract the interface IDs from the API response
+	var privateInterfaceIds private.ResourceDatacenterIpLinkAddressingInterfaceIds
+	privateInterfaceIds.LoadApiData(ctx, apiData, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// create a subinterface addressing request which kills off IPv4 and IPv6
-	// addressing for each subinterface associated with the link.
+	// addressing for each subinterface associated with the logical link.
 	request := map[apstra.ObjectId]apstra.TwoStageL3ClosSubinterface{
-		apstra.ObjectId(state.SwitchIntfId.ValueString()): {
-			Ipv4AddrType: switchIpv4AddressType,
-			Ipv6AddrType: switchIpv6AddressType,
+		privateInterfaceIds.SwitchInterface: {
+			Ipv4AddrType: privateInterfaceAddressing.SwitchIpv4,
+			Ipv6AddrType: privateInterfaceAddressing.SwitchIpv6,
 		},
-		apstra.ObjectId(state.GenericIntfId.ValueString()): {
-			Ipv4AddrType: genericIpv4AddressType,
-			Ipv6AddrType: genericIpv6AddressType,
+		privateInterfaceIds.GenericInterface: {
+			Ipv4AddrType: privateInterfaceAddressing.GenericIpv4,
+			Ipv6AddrType: privateInterfaceAddressing.GenericIpv6,
 		},
 	}
 
