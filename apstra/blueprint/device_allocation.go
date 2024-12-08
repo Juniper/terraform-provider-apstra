@@ -303,7 +303,7 @@ func (o *DeviceAllocation) PopulateDataFromGraphDb(ctx context.Context, client *
 		// device_key known, initial_interface_map_id unknown.
 		o.deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
 	case !o.DeviceKey.IsNull() && utils.HasValue(o.InitialInterfaceMapId):
-		// device_key known, initial_interface_map_id known.
+		// both device_key known, initial_interface_map_id are known.
 		o.deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx, client, diags) // this will clear BlueprintId on 404
 		if o.BlueprintId.IsNull() {
 			return
@@ -617,6 +617,13 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx conte
 		deviceProfileId = si.Facts.AosHclModel.String()
 	}
 
+	// interfaceMapAttributes will be used in the query below. It's not included in the builder
+	// below to facilitate conditional inclusion of the initial interface map ID.
+	interfaceMapAttributes := []apstra.QEEAttribute{apstra.NodeTypeInterfaceMap.QEEAttribute()}
+	if utils.HasValue(o.InitialInterfaceMapId) {
+		interfaceMapAttributes = append(interfaceMapAttributes, apstra.QEEAttribute{Key: "id", Value: apstra.QEStringVal(o.InitialInterfaceMapId.ValueString())})
+	}
+
 	query := new(apstra.PathQuery).
 		SetClient(client).
 		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
@@ -625,7 +632,7 @@ func (o *DeviceAllocation) deviceProfileNodeIdFromSystemIdAndDeviceKey(ctx conte
 		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLogicalDevice.QEEAttribute()}).
 		Node([]apstra.QEEAttribute{apstra.NodeTypeLogicalDevice.QEEAttribute()}).
 		In([]apstra.QEEAttribute{apstra.RelationshipTypeLogicalDevice.QEEAttribute()}).
-		Node([]apstra.QEEAttribute{apstra.NodeTypeInterfaceMap.QEEAttribute()}).
+		Node(interfaceMapAttributes).
 		Out([]apstra.QEEAttribute{apstra.RelationshipTypeDeviceProfile.QEEAttribute()}).
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeDeviceProfile.QEEAttribute(),
