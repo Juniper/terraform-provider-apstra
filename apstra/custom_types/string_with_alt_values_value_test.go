@@ -2,10 +2,11 @@ package customtypes_test
 
 import (
 	"context"
+	"testing"
+
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestStringWithAltValues_StringSemanticEquals(t *testing.T) {

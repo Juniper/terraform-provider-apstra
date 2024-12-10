@@ -2,11 +2,12 @@ package customtypes_test
 
 import (
 	"context"
+	"testing"
+
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestStringWithAltValuesType_ValueFromTerraform(t *testing.T) {
@@ -52,5 +53,4 @@ func TestStringWithAltValuesType_ValueFromTerraform(t *testing.T) {
 			require.Truef(t, got.Equal(tCase.expectation), "values not equal %s, %s", tCase.expectation, got)
 		})
 	}
-
 }
