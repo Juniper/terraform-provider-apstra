@@ -50,19 +50,16 @@ func (t IPv46AddressType) ValueFromString(_ context.Context, in basetypes.String
 // for the provider to consume the data with.
 func (t IPv46AddressType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.StringType.ValueFromTerraform(ctx, in)
-
 	if err != nil {
 		return nil, err
 	}
 
 	stringValue, ok := attrValue.(basetypes.StringValue)
-
 	if !ok {
 		return nil, fmt.Errorf("unexpected value type of %T", attrValue)
 	}
 
 	stringValuable, diags := t.ValueFromString(ctx, stringValue)
-
 	if diags.HasError() {
 		return nil, fmt.Errorf("unexpected error converting StringValue to StringValuable: %v", diags)
 	}
