@@ -26,9 +26,14 @@ func TestStringWithAltValues_StringSemanticEquals(t *testing.T) {
 			givenValue:    customtypes.NewStringWithAltValuesValue("foo"),
 			expectedMatch: true,
 		},
-		"semantically equal": {
+		"semantically equal - given matches an alt value": {
 			currentValue:  customtypes.NewStringWithAltValuesValue("foo", "bar", "baz", "bang"),
 			givenValue:    customtypes.NewStringWithAltValuesValue("baz"),
+			expectedMatch: true,
+		},
+		"semantically equal - current matches an alt value": {
+			currentValue:  customtypes.NewStringWithAltValuesValue("baz"),
+			givenValue:    customtypes.NewStringWithAltValuesValue("foo", "bar", "baz", "bang"),
 			expectedMatch: true,
 		},
 		"not equal": {

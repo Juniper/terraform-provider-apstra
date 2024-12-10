@@ -31,6 +31,9 @@ func (v StringWithAltValues) Equal(o attr.Value) bool {
 	return v.StringValue.Equal(other.StringValue)
 }
 
+// StringSemanticEquals implements the semantic equality check. According to this
+// (https://discuss.hashicorp.com/t/can-semantic-equality-check-in-custom-types-be-asymmetrical/60644/2?u=hqnvylrx)
+// semantic equality checks on custom types are always implementeed as oldValue.SemanticEquals(ctx, newValue)
 func (v StringWithAltValues) StringSemanticEquals(_ context.Context, newValuable basetypes.StringValuable) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -55,6 +58,13 @@ func (v StringWithAltValues) StringSemanticEquals(_ context.Context, newValuable
 	// check new value against our "alt" values
 	for _, a := range v.altValues {
 		if a.Equal(newValue) {
+			return true, diags
+		}
+	}
+
+	// check old value against new "alt" values
+	for _, a := range newValue.altValues {
+		if a.Equal(v) {
 			return true, diags
 		}
 	}
