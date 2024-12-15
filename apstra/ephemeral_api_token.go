@@ -142,16 +142,19 @@ func (o *ephemeralToken) Renew(ctx context.Context, req ephemeral.RenewRequest, 
 }
 
 func (o *ephemeralToken) Close(ctx context.Context, req ephemeral.CloseRequest, resp *ephemeral.CloseResponse) {
+	// extract the private state data
+	var privateEphemeralApiToken private.EphemeralApiToken
+	privateEphemeralApiToken.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
+	if privateEphemeralApiToken.DoNotLogOut {
+		return
+	}
+
 	// create a new client based on the embedded client's config
 	client, err := o.client.Config().NewClient(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating new client", err.Error())
 		return
 	}
-
-	// extract the private state data
-	var privateEphemeralApiToken private.EphemeralApiToken
-	privateEphemeralApiToken.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
 
 	// swap the API token from private state into the new client
 	client.SetApiToken(privateEphemeralApiToken.Token)

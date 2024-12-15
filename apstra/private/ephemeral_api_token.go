@@ -12,12 +12,7 @@ type EphemeralApiToken struct {
 	Token         string        `json:"token"`
 	ExpiresAt     time.Time     `json:"expires_at"`
 	WarnThreshold time.Duration `json:"warn_threshold"`
-}
-
-func (o *EphemeralApiToken) LoadApiData(_ context.Context, token string, expiresAt time.Time, warnThreshold time.Duration, diags *diag.Diagnostics) {
-	o.Token = token
-	o.ExpiresAt = expiresAt
-	o.WarnThreshold = warnThreshold
+	DoNotLogOut   bool          `json:"do_not_log_out"`
 }
 
 func (o *EphemeralApiToken) LoadPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
