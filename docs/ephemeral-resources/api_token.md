@@ -2,12 +2,12 @@
 page_title: "apstra_api_token Ephemeral Resource - terraform-provider-apstra"
 subcategory: "Authentication"
 description: |-
-  This Ephemeral Resource retrieves a unique API token and invalidates it on exit.
+  This Ephemeral Resource retrieves a unique API token and (optionally) invalidates it on exit.
 ---
 
 # apstra_api_token (Ephemeral Resource)
 
-This Ephemeral Resource retrieves a unique API token and invalidates it on exit.
+This Ephemeral Resource retrieves a unique API token and (optionally) invalidates it on exit.
 
 
 ## Example Usage
