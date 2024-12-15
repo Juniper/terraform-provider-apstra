@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -52,47 +51,47 @@ func BlueprintConfigletA(t testing.TB, ctx context.Context, client *apstra.TwoSt
 
 // TestWidgetsAB instantiates two predefined probes and creates widgets from them,
 // returning the widget Object Id and the IbaWidgetData object used for creation
-func TestWidgetsAB(t testing.TB, ctx context.Context, bpClient *apstra.TwoStageL3ClosClient) (apstra.ObjectId, apstra.IbaWidgetData, apstra.ObjectId, apstra.IbaWidgetData) {
-	probeAId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
-		Name: "bgp_session",
-		Data: []byte(`{
-			"Label":     "BGP Session Flapping",
-			"Duration":  300,
-			"Threshold": 40
-		}`),
-	})
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeAId)) })
-
-	probeBId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
-		Name: "drain_node_traffic_anomaly",
-		Data: []byte(`{
-			"Label":     "Drain Traffic Anomaly",
-			"Threshold": 100000
-		}`),
-	})
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeBId)) })
-
-	widgetA := apstra.IbaWidgetData{
-		Type:      enum.IbaWidgetTypeStage,
-		Label:     "BGP Session Flapping",
-		ProbeId:   probeAId,
-		StageName: "BGP Session",
-	}
-	widgetAId, err := bpClient.CreateIbaWidget(ctx, &widgetA)
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetAId)) })
-
-	widgetB := apstra.IbaWidgetData{
-		Type:      enum.IbaWidgetTypeStage,
-		Label:     "Drain Traffic Anomaly",
-		ProbeId:   probeBId,
-		StageName: "excess_range",
-	}
-	widgetBId, err := bpClient.CreateIbaWidget(ctx, &widgetB)
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetBId)) })
-
-	return widgetAId, widgetA, widgetBId, widgetB
-}
+//func TestWidgetsAB(t testing.TB, ctx context.Context, bpClient *apstra.TwoStageL3ClosClient) (apstra.ObjectId, apstra.IbaWidgetData, apstra.ObjectId, apstra.IbaWidgetData) {
+//	probeAId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
+//		Name: "bgp_session",
+//		Data: []byte(`{
+//			"Label":     "BGP Session Flapping",
+//			"Duration":  300,
+//			"Threshold": 40
+//		}`),
+//	})
+//	require.NoError(t, err)
+//	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeAId)) })
+//
+//	probeBId, err := bpClient.InstantiateIbaPredefinedProbe(ctx, &apstra.IbaPredefinedProbeRequest{
+//		Name: "drain_node_traffic_anomaly",
+//		Data: []byte(`{
+//			"Label":     "Drain Traffic Anomaly",
+//			"Threshold": 100000
+//		}`),
+//	})
+//	require.NoError(t, err)
+//	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaProbe(ctx, probeBId)) })
+//
+//	widgetA := apstra.IbaWidgetData{
+//		Type:      enum.IbaWidgetTypeStage,
+//		Label:     "BGP Session Flapping",
+//		ProbeId:   probeAId,
+//		StageName: "BGP Session",
+//	}
+//	widgetAId, err := bpClient.CreateIbaWidget(ctx, &widgetA)
+//	require.NoError(t, err)
+//	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetAId)) })
+//
+//	widgetB := apstra.IbaWidgetData{
+//		Type:      enum.IbaWidgetTypeStage,
+//		Label:     "Drain Traffic Anomaly",
+//		ProbeId:   probeBId,
+//		StageName: "excess_range",
+//	}
+//	widgetBId, err := bpClient.CreateIbaWidget(ctx, &widgetB)
+//	require.NoError(t, err)
+//	t.Cleanup(func() { require.NoError(t, bpClient.DeleteIbaWidget(ctx, widgetBId)) })
+//
+//	return widgetAId, widgetA, widgetBId, widgetB
+//}
