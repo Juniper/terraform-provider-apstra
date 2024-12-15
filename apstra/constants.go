@@ -21,10 +21,10 @@ const (
 
 	docCategorySeparator      = " --- "
 	docCategoryAuthentication = "Authentication" + docCategorySeparator
-	docCategoryDesign         = "Design" + docCategorySeparator
-	docCategoryResources      = "Resource Pools" + docCategorySeparator
 	docCategoryDatacenter     = "Reference Design: Datacenter" + docCategorySeparator
+	docCategoryDesign         = "Design" + docCategorySeparator
+	docCategoryDevices        = "Devices" + docCategorySeparator
 	docCategoryFreeform       = "Reference Design: Freeform" + docCategorySeparator
 	docCategoryRefDesignAny   = "Reference Design: Shared" + docCategorySeparator
-	docCategoryDevices        = "Devices" + docCategorySeparator
+	docCategoryResources      = "Resource Pools" + docCategorySeparator
 )
