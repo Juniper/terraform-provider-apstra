@@ -17,6 +17,7 @@ This Ephemeral Resource retrieves a unique API token and invalidates it on exit.
 
 ### Optional
 
+- `do_not_log_out` (Boolean) By default, API sessions are closed when Terraform's `Close` operation calls `logout`. Set this value to `true` to prevent ending the session when Terraform determines the API key is no longer in use.
 - `warn_seconds` (Number) Terraform will produce a warning when the token value is referenced with less than this amount of time remaining before expiration. Note that determination of remaining token lifetime depends on clock sync between the Apstra server and the Terraform host. Value `0` disables warnings. Default value is `60`.
 
 ### Read-Only

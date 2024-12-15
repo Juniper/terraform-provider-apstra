@@ -24,6 +24,7 @@ type ApiToken struct {
 	UserName    types.String `tfsdk:"user_name"`
 	WarnSeconds types.Int64  `tfsdk:"warn_seconds"`
 	ExpiresAt   time.Time    `tfsdk:"-"`
+	DoNotLogOut types.Bool   `tfsdk:"do_not_log_out"`
 }
 
 func (o ApiToken) EphemeralAttributes() map[string]ephemeralSchema.Attribute {
@@ -48,6 +49,12 @@ func (o ApiToken) EphemeralAttributes() map[string]ephemeralSchema.Attribute {
 				"determination of remaining token lifetime depends on clock sync between the Apstra server and "+
 				"the Terraform host. Value `0` disables warnings. Default value is `%d`.", apiTokenDefaultWarning),
 			Validators: []validator.Int64{int64validator.AtLeast(0)},
+		},
+		"do_not_log_out": ephemeralSchema.BoolAttribute{
+			Optional: true,
+			MarkdownDescription: "By default, API sessions are closed when Terraform's `Close` operation calls " +
+				"`logout`. Set this value to `true` to prevent ending the session when Terraform determines the " +
+				"API key is no longer in use.",
 		},
 	}
 }
@@ -94,6 +101,7 @@ func (o *ApiToken) SetPrivateState(ctx context.Context, ps private.State, diags 
 		Token:         o.Value.ValueString(),
 		ExpiresAt:     o.ExpiresAt,
 		WarnThreshold: time.Duration(o.WarnSeconds.ValueInt64()) * time.Second,
+		DoNotLogOut:   o.DoNotLogOut.ValueBool(),
 	}
 	privateEphemeralApiToken.SetPrivateState(ctx, ps, diags)
 }
