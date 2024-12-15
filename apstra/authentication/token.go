@@ -90,7 +90,7 @@ func (o *ApiToken) SetDefaults() {
 }
 
 func (o *ApiToken) SetPrivateState(ctx context.Context, ps private.State, diags *diag.Diagnostics) {
-	var privateEphemeralApiToken = private.EphemeralApiToken{
+	privateEphemeralApiToken := private.EphemeralApiToken{
 		Token:         o.Value.ValueString(),
 		ExpiresAt:     o.ExpiresAt,
 		WarnThreshold: time.Duration(o.WarnSeconds.ValueInt64()) * time.Second,
