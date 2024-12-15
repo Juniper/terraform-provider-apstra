@@ -48,5 +48,4 @@ func configureDataSource(_ context.Context, ds datasource.DataSourceWithConfigur
 	if ds, ok := ds.(datasourceWithSetFfBpClientFunc); ok {
 		ds.setBpClientFunc(pd.getFreeformClient)
 	}
-
 }
