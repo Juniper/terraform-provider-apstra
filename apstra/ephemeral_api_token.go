@@ -31,7 +31,7 @@ func (o *ephemeralToken) Metadata(_ context.Context, req ephemeral.MetadataReque
 
 func (o *ephemeralToken) Schema(_ context.Context, _ ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "This Ephemeral Resource retrieves a unique API token and invalidates it on exit.",
+		MarkdownDescription: docCategoryAuthentication + "This Ephemeral Resource retrieves a unique API token and invalidates it on exit.",
 		Attributes:          authentication.ApiToken{}.EphemeralAttributes(),
 	}
 }
