@@ -69,7 +69,7 @@ func (o *ApiToken) LoadApiData(_ context.Context, in string, diags *diag.Diagnos
 	claimsB64 := parts[1] + strings.Repeat("=", (4-len(parts[1])%4)%4) // pad the b64 part as necessary
 	claimsBytes, err := base64.StdEncoding.DecodeString(claimsB64)
 	if err != nil {
-		diags.AddError("failed decoding token claims", err.Error())
+		diags.AddError("failed base64 decoding token claims", err.Error())
 		return
 	}
 
@@ -80,7 +80,7 @@ func (o *ApiToken) LoadApiData(_ context.Context, in string, diags *diag.Diagnos
 	}
 	err = json.Unmarshal(claimsBytes, &claims)
 	if err != nil {
-		diags.AddError("failed unpacking token claims", err.Error())
+		diags.AddError("failed unmarshaling token claims JSON payload", err.Error())
 		return
 	}
 

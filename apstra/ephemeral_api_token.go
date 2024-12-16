@@ -16,8 +16,8 @@ import (
 var (
 	_ ephemeral.EphemeralResource              = (*ephemeralToken)(nil)
 	_ ephemeral.EphemeralResourceWithClose     = (*ephemeralToken)(nil)
-	_ ephemeral.EphemeralResourceWithRenew     = (*ephemeralToken)(nil)
 	_ ephemeral.EphemeralResourceWithConfigure = (*ephemeralToken)(nil)
+	_ ephemeral.EphemeralResourceWithRenew     = (*ephemeralToken)(nil)
 	_ ephemeralWithSetClient                   = (*ephemeralToken)(nil)
 )
 
@@ -31,7 +31,7 @@ func (o *ephemeralToken) Metadata(_ context.Context, req ephemeral.MetadataReque
 
 func (o *ephemeralToken) Schema(_ context.Context, _ ephemeral.SchemaRequest, resp *ephemeral.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryAuthentication + "This Ephemeral Resource retrieves a unique API token and (optionally) invalidates it on exit.",
+		MarkdownDescription: docCategoryAuthentication + "This Ephemeral Resource retrieves a unique API token and (optionally) invalidates it on Close.",
 		Attributes:          authentication.ApiToken{}.EphemeralAttributes(),
 	}
 }
@@ -71,7 +71,8 @@ func (o *ephemeralToken) Open(ctx context.Context, req ephemeral.OpenRequest, re
 		return
 	}
 
-	// destroy the new client without invalidating the API token we just collected
+	// destroy the new client without invalidating the API token we just collected.
+	// We use Logout() here because it stops the task monitor goroutine.
 	client.SetApiToken("")
 	err = client.Logout(ctx)
 	if err != nil {
@@ -80,11 +81,6 @@ func (o *ephemeralToken) Open(ctx context.Context, req ephemeral.OpenRequest, re
 	}
 
 	config.LoadApiData(ctx, token, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	config.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -108,7 +104,13 @@ func (o *ephemeralToken) Open(ctx context.Context, req ephemeral.OpenRequest, re
 		)
 	}
 
-	// set the refresh timestamp
+	// save the private state
+	config.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set the renew timestamp to the early warning time
 	resp.RenewAt = config.ExpiresAt.Add(-1 * warn)
 
 	// set the result
@@ -138,6 +140,7 @@ func (o *ephemeralToken) Renew(ctx context.Context, req ephemeral.RenewRequest, 
 		)
 	}
 
+	// set the renew timestamp to the expiration time
 	resp.RenewAt = privateEphemeralApiToken.ExpiresAt
 }
 
@@ -145,8 +148,13 @@ func (o *ephemeralToken) Close(ctx context.Context, req ephemeral.CloseRequest, 
 	// extract the private state data
 	var privateEphemeralApiToken private.EphemeralApiToken
 	privateEphemeralApiToken.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
+
 	if privateEphemeralApiToken.DoNotLogOut {
-		return
+		return // user doesn't want the token invalidated, so there's nothing to do
+	}
+
+	if time.Now().After(privateEphemeralApiToken.ExpiresAt) {
+		return // token has already expired, so there's nothing to do
 	}
 
 	// create a new client based on the embedded client's config
@@ -156,10 +164,10 @@ func (o *ephemeralToken) Close(ctx context.Context, req ephemeral.CloseRequest, 
 		return
 	}
 
-	// swap the API token from private state into the new client
+	// copy the API token from private state into the new client
 	client.SetApiToken(privateEphemeralApiToken.Token)
 
-	// log out the client
+	// log out the client using the swapped-in token
 	err = client.Logout(ctx)
 	if err != nil {
 		var ace apstra.ClientErr
