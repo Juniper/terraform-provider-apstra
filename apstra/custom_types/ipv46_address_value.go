@@ -71,7 +71,6 @@ func (v IPv46Address) Type(_ context.Context) attr.Type {
 
 func (v IPv46Address) Equal(o attr.Value) bool {
 	other, ok := o.(IPv46Address)
-
 	if !ok {
 		return false
 	}
