@@ -140,6 +140,10 @@ Optional:
 - `static_routes` (Attributes Map) Map of network IPv4 or IPv6 destination prefixes reachable via this IP Link (see [below for nested schema](#nestedatt--ip_links--static_routes))
 - `vlan_id` (Number) 802.1Q tag number to use for tagged IP Link. Omit for untagged IP Link.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--ip_links--bgp_peering_generic_systems"></a>
 ### Nested Schema for `ip_links.bgp_peering_generic_systems`
 
@@ -169,12 +173,20 @@ Optional:
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--bgp_peering_generic_systems--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--ip_links--bgp_peering_generic_systems--routing_policies"></a>
 ### Nested Schema for `ip_links.bgp_peering_generic_systems.routing_policies`
 
 Required:
 
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 
@@ -197,12 +209,20 @@ Optional:
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--bgp_peering_ip_endpoints--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--ip_links--bgp_peering_ip_endpoints--routing_policies"></a>
 ### Nested Schema for `ip_links.bgp_peering_ip_endpoints.routing_policies`
 
 Required:
 
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 
@@ -226,12 +246,20 @@ Optional:
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--ip_links--dynamic_bgp_peerings--routing_policies"></a>
 ### Nested Schema for `ip_links.dynamic_bgp_peerings.routing_policies`
 
 Required:
 
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 
@@ -243,6 +271,10 @@ Required:
 - `network` (String) Destination network in CIDR notation
 - `share_ip_endpoint` (Boolean) Indicates whether the next-hop IP address is shared across multiple remote systems. Default:  Default: `false`
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 
 
 <a id="nestedatt--routing_zone_constraints"></a>
@@ -252,6 +284,10 @@ Required:
 
 - `routing_zone_constraint_id` (String) Routing Zone Constraint ID to be applied
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 
 <a id="nestedatt--virtual_network_multiples"></a>
 ### Nested Schema for `virtual_network_multiples`
@@ -260,6 +296,10 @@ Optional:
 
 - `tagged_vn_ids` (Set of String) IDs of the Virtual Networks which should be tagged on the link
 - `untagged_vn_id` (String) ID of the Virtual Network which should be untagged on the link
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 <a id="nestedatt--virtual_network_singles"></a>
@@ -274,6 +314,10 @@ Optional:
 
 - `bgp_peering_generic_systems` (Attributes Map) Map of BGP Peering (Generic System) primitives (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems))
 - `static_routes` (Attributes Map) Map of Static Route primitives (see [below for nested schema](#nestedatt--virtual_network_singles--static_routes))
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 <a id="nestedatt--virtual_network_singles--bgp_peering_generic_systems"></a>
 ### Nested Schema for `virtual_network_singles.bgp_peering_generic_systems`
@@ -304,12 +348,20 @@ Optional:
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--virtual_network_singles--bgp_peering_generic_systems--routing_policies"></a>
 ### Nested Schema for `virtual_network_singles.bgp_peering_generic_systems.routing_policies`
 
 Required:
 
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 
@@ -320,6 +372,10 @@ Required:
 
 - `network` (String) Destination network in CIDR notation
 - `share_ip_endpoint` (Boolean) Indicates whether the next-hop IP address is shared across multiple remote systems. Default:  Default: `false`
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 

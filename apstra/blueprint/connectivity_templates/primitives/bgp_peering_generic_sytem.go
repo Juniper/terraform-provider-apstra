@@ -20,11 +20,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type BgpPeeringGenericSystem struct {
+	Id                 types.String `tfsdk:"id"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -41,6 +44,7 @@ type BgpPeeringGenericSystem struct {
 
 func (o BgpPeeringGenericSystem) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":                   types.StringType,
 		"ttl":                  types.Int64Type,
 		"bfd_enabled":          types.BoolType,
 		"password":             types.StringType,
@@ -58,6 +62,11 @@ func (o BgpPeeringGenericSystem) AttrTypes() map[string]attr.Type {
 
 func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"ttl": resourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
@@ -202,7 +211,15 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 }
 
 func (o BgpPeeringGenericSystem) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	result := apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
@@ -224,6 +241,9 @@ func BgpPeeringGenericSystemSubpolicies(ctx context.Context, bgpPeeringGenericSy
 	i := 0
 	for k, v := range bgpPeeringGenericSystems {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -260,7 +280,7 @@ func newBgpPeeringGenericSystem(_ context.Context, in *apstra.ConnectivityTempla
 }
 
 func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]BgpPeeringGenericSystem, len(subpolicies))
+	result := make(map[string]BgpPeeringGenericSystem)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -278,6 +298,7 @@ func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpo
 			}
 
 			newPrimitive := newBgpPeeringGenericSystem(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			result[subpolicy.Label] = newPrimitive
 		}

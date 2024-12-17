@@ -12,17 +12,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type VirtualNetworkMultiple struct {
+	Id           types.String `tfsdk:"id"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
 }
 
 func (o VirtualNetworkMultiple) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":             types.StringType,
 		"untagged_vn_id": types.StringType,
 		"tagged_vn_ids":  types.SetType{ElemType: types.StringType},
 	}
@@ -30,6 +34,11 @@ func (o VirtualNetworkMultiple) AttrTypes() map[string]attr.Type {
 
 func (o VirtualNetworkMultiple) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"untagged_vn_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Virtual Network which should be untagged on the link",
 			Optional:            true,
@@ -62,7 +71,15 @@ func (o VirtualNetworkMultiple) attributes(ctx context.Context, diags *diag.Diag
 }
 
 func (o VirtualNetworkMultiple) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
@@ -79,6 +96,9 @@ func VirtualNetworkMultipleSubpolicies(ctx context.Context, virtualNetworkMultip
 	i := 0
 	for k, v := range VirtualNetworkMultiples {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -95,7 +115,7 @@ func newVirtualNetworkMultiple(ctx context.Context, in *apstra.ConnectivityTempl
 }
 
 func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]VirtualNetworkMultiple, len(subpolicies))
+	result := make(map[string]VirtualNetworkMultiple)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -113,6 +133,7 @@ func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpol
 			}
 
 			newPrimitive := newVirtualNetworkMultiple(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}

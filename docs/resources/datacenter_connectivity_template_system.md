@@ -76,5 +76,9 @@ Required:
 - `next_hop` (String) Next-hop router address
 - `routing_zone_id` (String) Routing Zone ID where this route should be installed
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 
 

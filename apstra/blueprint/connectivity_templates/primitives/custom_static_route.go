@@ -16,11 +16,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type CustomStaticRoute struct {
+	Id            types.String             `tfsdk:"id"`
 	RoutingZoneId types.String             `tfsdk:"routing_zone_id"`
 	Network       customtypes.IPv46Prefix  `tfsdk:"network"`
 	NextHop       customtypes.IPv46Address `tfsdk:"next_hop"`
@@ -28,6 +31,7 @@ type CustomStaticRoute struct {
 
 func (o CustomStaticRoute) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":              types.StringType,
 		"routing_zone_id": types.StringType,
 		"network":         customtypes.IPv46PrefixType{},
 		"next_hop":        customtypes.IPv46AddressType{},
@@ -36,6 +40,11 @@ func (o CustomStaticRoute) AttrTypes() map[string]attr.Type {
 
 func (o CustomStaticRoute) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"routing_zone_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Zone ID where this route should be installed",
 			Required:            true,
@@ -72,7 +81,6 @@ func (o CustomStaticRoute) attributes(_ context.Context, _ *diag.Diagnostics) *a
 	nextHop := net.ParseIP(o.NextHop.ValueString())
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute{
-		Label:        o.NextHop.ValueString(), // todo is this necessary?
 		Network:      network,
 		NextHop:      nextHop,
 		SecurityZone: (*apstra.ObjectId)(o.RoutingZoneId.ValueStringPointer()),
@@ -80,7 +88,15 @@ func (o CustomStaticRoute) attributes(_ context.Context, _ *diag.Diagnostics) *a
 }
 
 func (o CustomStaticRoute) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
@@ -97,6 +113,9 @@ func CustomStaticRouteSubpolicies(ctx context.Context, customStaticRouteMap type
 	i := 0
 	for k, v := range customStaticRoutes {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -114,7 +133,7 @@ func newCustomStaticRoute(_ context.Context, in *apstra.ConnectivityTemplatePrim
 }
 
 func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]CustomStaticRoute, len(subpolicies))
+	result := make(map[string]CustomStaticRoute)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -132,6 +151,7 @@ func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies
 			}
 
 			newPrimitive := newCustomStaticRoute(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}

@@ -106,6 +106,7 @@ func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.D
 }
 
 func (o *ConnectivityTemplateLoopback) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.Id = types.StringPointerValue((*string)(in.Id))
 	o.Name = types.StringValue(in.Label)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)

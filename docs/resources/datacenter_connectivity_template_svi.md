@@ -126,12 +126,20 @@ Optional:
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--bgp_peering_ip_endpoints--routing_policies"></a>
 ### Nested Schema for `bgp_peering_ip_endpoints.routing_policies`
 
 Required:
 
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 
@@ -155,12 +163,20 @@ Optional:
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+
 <a id="nestedatt--dynamic_bgp_peerings--routing_policies"></a>
 ### Nested Schema for `dynamic_bgp_peerings.routing_policies`
 
 Required:
 
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
 
 
 

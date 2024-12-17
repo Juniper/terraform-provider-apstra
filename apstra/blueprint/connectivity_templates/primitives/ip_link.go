@@ -16,11 +16,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type IpLink struct {
+	Id                       types.String `tfsdk:"id"`
 	RoutingZoneId            types.String `tfsdk:"routing_zone_id"`
 	VlanId                   types.Int64  `tfsdk:"vlan_id"`
 	L3Mtu                    types.Int64  `tfsdk:"l3_mtu"`
@@ -34,6 +37,7 @@ type IpLink struct {
 
 func (o IpLink) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":                          types.StringType,
 		"routing_zone_id":             types.StringType,
 		"vlan_id":                     types.Int64Type,
 		"l3_mtu":                      types.Int64Type,
@@ -48,6 +52,11 @@ func (o IpLink) AttrTypes() map[string]attr.Type {
 
 func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"routing_zone_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Node ID of the Routing Zone to which this IP Link should belong.",
 			Required:            true,
@@ -170,7 +179,15 @@ func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.C
 }
 
 func (o IpLink) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	result := apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
@@ -195,6 +212,9 @@ func IpLinkSubpolicies(ctx context.Context, ipLinkMap types.Map, diags *diag.Dia
 	i := 0
 	for k, v := range ipLinks {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -228,7 +248,7 @@ func newIpLink(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttrib
 }
 
 func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]IpLink, len(subpolicies))
+	result := make(map[string]IpLink)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -246,6 +266,7 @@ func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.
 			}
 
 			newPrimitive := newIpLink(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			newPrimitive.BgpPeeringGenericSystems = BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.BgpPeeringIpEndpoints = BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.DynamicBgpPeerings = DynamicBgpPeeringPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)

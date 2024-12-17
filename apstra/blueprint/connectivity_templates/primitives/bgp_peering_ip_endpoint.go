@@ -19,11 +19,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type BgpPeeringIpEndpoint struct {
+	Id              types.String        `tfsdk:"id"`
 	NeighborAsn     types.Int64         `tfsdk:"neighbor_asn"`
 	Ttl             types.Int64         `tfsdk:"ttl"`
 	BfdEnabled      types.Bool          `tfsdk:"bfd_enabled"`
@@ -38,6 +41,7 @@ type BgpPeeringIpEndpoint struct {
 
 func (o BgpPeeringIpEndpoint) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":               types.StringType,
 		"neighbor_asn":     types.Int64Type,
 		"ttl":              types.Int64Type,
 		"bfd_enabled":      types.BoolType,
@@ -53,6 +57,11 @@ func (o BgpPeeringIpEndpoint) AttrTypes() map[string]attr.Type {
 
 func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"neighbor_asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",
 			Optional:            true,
@@ -172,7 +181,15 @@ func (o BgpPeeringIpEndpoint) attributes(_ context.Context, _ *diag.Diagnostics)
 }
 
 func (o BgpPeeringIpEndpoint) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	result := apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
@@ -194,6 +211,9 @@ func BgpPeeringIpEndpointSubpolicies(ctx context.Context, bgpPeeringIpEndpointMa
 	i := 0
 	for k, v := range bgpPeeringIpEndpoints {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -224,7 +244,7 @@ func newBgpPeeringIpEndpoint(_ context.Context, in *apstra.ConnectivityTemplateP
 }
 
 func BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]BgpPeeringIpEndpoint, len(subpolicies))
+	result := make(map[string]BgpPeeringIpEndpoint)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -242,6 +262,7 @@ func BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx context.Context, subpolic
 			}
 
 			newPrimitive := newBgpPeeringIpEndpoint(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			result[subpolicy.Label] = newPrimitive
 		}

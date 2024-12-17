@@ -16,6 +16,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -265,6 +266,8 @@ func (o providerConfig) handleMutexFlag(_ context.Context, diags *diag.Diagnosti
 }
 
 func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	uuid.SetNodeID([]byte("apstra"))
+
 	terraformVersionWarnings(ctx, req.TerraformVersion, &resp.Diagnostics)
 
 	// Retrieve provider data from configuration

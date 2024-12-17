@@ -12,11 +12,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type VirtualNetworkSingle struct {
+	Id                       types.String `tfsdk:"id"`
 	VirtualNetworkId         types.String `tfsdk:"virtual_network_id"`
 	Tagged                   types.Bool   `tfsdk:"tagged"`
 	BgpPeeringGenericSystems types.Map    `tfsdk:"bgp_peering_generic_systems"`
@@ -25,6 +28,7 @@ type VirtualNetworkSingle struct {
 
 func (o VirtualNetworkSingle) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":                          types.StringType,
 		"virtual_network_id":          types.StringType,
 		"tagged":                      types.BoolType,
 		"bgp_peering_generic_systems": types.MapType{ElemType: types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}},
@@ -34,6 +38,11 @@ func (o VirtualNetworkSingle) AttrTypes() map[string]attr.Type {
 
 func (o VirtualNetworkSingle) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"virtual_network_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the desired Virtual Network",
 			Required:            true,
@@ -69,7 +78,15 @@ func (o VirtualNetworkSingle) attributes(_ context.Context, _ *diag.Diagnostics)
 }
 
 func (o VirtualNetworkSingle) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
@@ -86,6 +103,9 @@ func VirtualNetworkSingleSubpolicies(ctx context.Context, virtualNetworkSingleMa
 	i := 0
 	for k, v := range VirtualNetworkSingles {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -102,7 +122,7 @@ func newVirtualNetworkSingle(_ context.Context, in *apstra.ConnectivityTemplateP
 }
 
 func VirtualNetworkSinglePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]VirtualNetworkSingle, len(subpolicies))
+	result := make(map[string]VirtualNetworkSingle)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -120,6 +140,7 @@ func VirtualNetworkSinglePrimitivesFromSubpolicies(ctx context.Context, subpolic
 			}
 
 			newPrimitive := newVirtualNetworkSingle(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			newPrimitive.BgpPeeringGenericSystems = BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.StaticRoutes = StaticRoutePrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			result[subpolicy.Label] = newPrimitive

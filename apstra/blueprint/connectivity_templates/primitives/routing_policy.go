@@ -12,22 +12,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type RoutingPolicy struct {
+	Id              types.String `tfsdk:"id"`
 	RoutingPolicyId types.String `tfsdk:"routing_policy_id"`
 }
 
 func (o RoutingPolicy) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":                types.StringType,
 		"routing_policy_id": types.StringType,
 	}
 }
 
 func (o RoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"routing_policy_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Policy ID to be applied",
 			Required:            true,
@@ -43,7 +52,15 @@ func (o RoutingPolicy) attributes(_ context.Context, _ *diag.Diagnostics) *apstr
 }
 
 func (o RoutingPolicy) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
@@ -60,6 +77,9 @@ func RoutingPolicySubpolicies(ctx context.Context, routingPolicyMap types.Map, d
 	i := 0
 	for k, v := range routingPolicies {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -75,7 +95,7 @@ func newRoutingPolicy(_ context.Context, in *apstra.ConnectivityTemplatePrimitiv
 }
 
 func RoutingPolicyPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]RoutingPolicy, len(subpolicies))
+	result := make(map[string]RoutingPolicy)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -93,6 +113,7 @@ func RoutingPolicyPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*
 			}
 
 			newPrimitive := newRoutingPolicy(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}

@@ -12,22 +12,31 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type RoutingZoneConstraint struct {
+	Id                      types.String `tfsdk:"id"`
 	RoutingZoneConstraintId types.String `tfsdk:"routing_zone_constraint_id"`
 }
 
 func (o RoutingZoneConstraint) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
+		"id":                         types.StringType,
 		"routing_zone_constraint_id": types.StringType,
 	}
 }
 
 func (o RoutingZoneConstraint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"routing_zone_constraint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Zone Constraint ID to be applied",
 			Required:            true,
@@ -43,7 +52,15 @@ func (o RoutingZoneConstraint) attributes(_ context.Context, _ *diag.Diagnostics
 }
 
 func (o RoutingZoneConstraint) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
+	if !utils.HasValue(o.Id) {
+		o.Id = utils.NewUuidStringVal(diags)
+		if diags.HasError() {
+			return nil
+		}
+	}
+
 	return &apstra.ConnectivityTemplatePrimitive{
+		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
 		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
@@ -60,6 +77,9 @@ func RoutingZoneConstraintSubpolicies(ctx context.Context, routingZoneConstraint
 	i := 0
 	for k, v := range routingZoneConstraints {
 		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
 		subpolicies[i].Label = k
 		i++
 	}
@@ -75,7 +95,7 @@ func newRoutingZoneConstraint(_ context.Context, in *apstra.ConnectivityTemplate
 }
 
 func RoutingZoneConstraintPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]RoutingZoneConstraint, len(subpolicies))
+	result := make(map[string]RoutingZoneConstraint)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -93,6 +113,7 @@ func RoutingZoneConstraintPrimitivesFromSubpolicies(ctx context.Context, subpoli
 			}
 
 			newPrimitive := newRoutingZoneConstraint(ctx, p, diags)
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}
