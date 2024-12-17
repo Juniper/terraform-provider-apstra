@@ -48,10 +48,12 @@ This resource creates a Connectivity Template suitable for use with Application 
 # a different Routing Zone and include all Virtual Networks from that
 # Routing Zone.
 
+locals { blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4" }
+
 # First, find the IDs of the interesting routing zones using the
 # apstra_datacenter_routing_zones data source with a couple of filters:
 data "apstra_datacenter_routing_zones" "selected" {
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   filters = [
     {
       name = "dev"
@@ -66,7 +68,7 @@ data "apstra_datacenter_routing_zones" "selected" {
 # its details available in a map.
 data "apstra_datacenter_routing_zone" "selected" {
   for_each     = data.apstra_datacenter_routing_zones.selected.ids
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   id           = each.value
 }
 
@@ -74,7 +76,7 @@ data "apstra_datacenter_routing_zone" "selected" {
 # associated Virtual Networks.
 data "apstra_datacenter_virtual_networks" "selected" {
   for_each     = data.apstra_datacenter_routing_zone.selected
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   filters = [
     {
       routing_zone_id = each.value.id
@@ -87,15 +89,15 @@ data "apstra_datacenter_virtual_networks" "selected" {
 # of these primitives lists all of the Virtual Networks in
 # that Routing Zone.
 resource "apstra_datacenter_connectivity_template_interface" "example" {
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   name         = "Tagged handoff to all VNs from multiple RZs"
   description  = format("All VNs from the following RZs: \n - %s", join("\n - ", [for rz in data.apstra_datacenter_routing_zone.selected : rz.name]))
-  virtual_network_multiples = [
-    for rz in data.apstra_datacenter_routing_zone.selected : {
+  virtual_network_multiples = {
+    for rz in data.apstra_datacenter_routing_zone.selected : format("rz '%s' networks", rz.name) => {
       name          = format("rz '%s' networks", rz.name)
       tagged_vn_ids = data.apstra_datacenter_virtual_networks.selected[rz.id].ids
     }
-  ]
+  }
 }
 ```
 
@@ -112,7 +114,7 @@ resource "apstra_datacenter_connectivity_template_interface" "example" {
 - `description` (String) Connectivity Template Description displayed in the web UI
 - `ip_links` (Attributes Map) Map of *IP Link* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links))
 - `routing_zone_constraints` (Attributes Map) Map of *Routing Zone Constraint* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--routing_zone_constraints))
-- `tags` (Map of String) Map of Tags associated with this Connectivity Template
+- `tags` (Set of String) Set of Tags associated with this Connectivity Template
 - `virtual_network_multiples` (Attributes Map) Map of *Virtual Network (Multiple)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--virtual_network_multiples))
 - `virtual_network_singles` (Attributes Map) Map of *Virtual Network (Single)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--virtual_network_singles))
 
