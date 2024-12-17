@@ -11,7 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -21,40 +21,33 @@ import (
 )
 
 type IpLink struct {
-	Name                     types.String `tfsdk:"name"`
 	RoutingZoneId            types.String `tfsdk:"routing_zone_id"`
 	VlanId                   types.Int64  `tfsdk:"vlan_id"`
 	L3Mtu                    types.Int64  `tfsdk:"l3_mtu"`
 	Ipv4AddressingType       types.String `tfsdk:"ipv4_addressing_type"`
 	Ipv6AddressingType       types.String `tfsdk:"ipv6_addressing_type"`
-	BgpPeeringGenericSystems types.Set    `tfsdk:"bgp_peering_generic_systems"`
-	BgpPeeringIpEndpoints    types.Set    `tfsdk:"bgp_peering_ip_endpoints"`
-	DynamicBgpPeerings       types.Set    `tfsdk:"dynamic_bgp_peerings"`
-	StaticRoutes             types.Set    `tfsdk:"static_routes"`
+	BgpPeeringGenericSystems types.Map    `tfsdk:"bgp_peering_generic_systems"`
+	BgpPeeringIpEndpoints    types.Map    `tfsdk:"bgp_peering_ip_endpoints"`
+	DynamicBgpPeerings       types.Map    `tfsdk:"dynamic_bgp_peerings"`
+	StaticRoutes             types.Map    `tfsdk:"static_routes"`
 }
 
 func (o IpLink) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":                        types.StringType,
 		"routing_zone_id":             types.StringType,
 		"vlan_id":                     types.Int64Type,
 		"l3_mtu":                      types.Int64Type,
 		"ipv4_addressing_type":        types.StringType,
 		"ipv6_addressing_type":        types.StringType,
-		"bgp_peering_generic_systems": types.SetType{ElemType: types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}},
-		"bgp_peering_ip_endpoints":    types.SetType{ElemType: types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}},
-		"dynamic_bgp_peerings":        types.SetType{ElemType: types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}},
-		"static_routes":               types.SetType{ElemType: types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}},
+		"bgp_peering_generic_systems": types.MapType{ElemType: types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}},
+		"bgp_peering_ip_endpoints":    types.MapType{ElemType: types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}},
+		"dynamic_bgp_peerings":        types.MapType{ElemType: types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}},
+		"static_routes":               types.MapType{ElemType: types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}},
 	}
 }
 
 func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used by the web UI on the Primitive \"block\" in the Connectivity Template.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"routing_zone_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Node ID of the Routing Zone to which this IP Link should belong.",
 			Required:            true,
@@ -106,34 +99,34 @@ func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNumbered),
 			)},
 		},
-		"bgp_peering_generic_systems": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of BGP Peering (Generic System) primitives",
+		"bgp_peering_generic_systems": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of BGP Peering (Generic System) primitives",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: BgpPeeringGenericSystem{}.ResourceAttributes(),
 			},
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 			Optional:   true,
 		},
-		"bgp_peering_ip_endpoints": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template",
+		"bgp_peering_ip_endpoints": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: BgpPeeringIpEndpoint{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
-		"dynamic_bgp_peerings": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *Dynamic BGP Peering* Primitives in this Connectivity Template",
+		"dynamic_bgp_peerings": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *Dynamic BGP Peering* Primitives in this Connectivity Template",
 			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: DynamicBgpPeering{}.ResourceAttributes()},
 			Optional:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
-		"static_routes": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of network IPv4 or IPv6 destination prefixes reachable via this IP Link",
+		"static_routes": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of network IPv4 or IPv6 destination prefixes reachable via this IP Link",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: StaticRoute{}.ResourceAttributes(),
 			},
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 			Optional:   true,
 		},
 	}
@@ -167,7 +160,6 @@ func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.C
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-		Label:              o.Name.ValueString(), // todo is this necessary?
 		SecurityZone:       (*apstra.ObjectId)(o.RoutingZoneId.ValueStringPointer()),
 		Tagged:             !o.VlanId.IsNull(),
 		Vlan:               vlan,
@@ -179,7 +171,7 @@ func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.C
 
 func (o IpLink) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	result := apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
 	}
@@ -192,16 +184,19 @@ func (o IpLink) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.
 	return &result
 }
 
-func IpLinkSubpolicies(ctx context.Context, ipLinkSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var ipLinks []IpLink
-	diags.Append(ipLinkSet.ElementsAs(ctx, &ipLinks, false)...)
+func IpLinkSubpolicies(ctx context.Context, ipLinkMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var ipLinks map[string]IpLink
+	diags.Append(ipLinkMap.ElementsAs(ctx, &ipLinks, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(ipLinks))
-	for i, ipLink := range ipLinks {
-		subpolicies[i] = ipLink.primitive(ctx, diags)
+	i := 0
+	for k, v := range ipLinks {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -232,8 +227,8 @@ func newIpLink(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttrib
 	return result
 }
 
-func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []IpLink
+func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]IpLink, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -251,17 +246,16 @@ func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.
 			}
 
 			newPrimitive := newIpLink(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
 			newPrimitive.BgpPeeringGenericSystems = BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.BgpPeeringIpEndpoints = BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.DynamicBgpPeerings = DynamicBgpPeeringPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			newPrimitive.StaticRoutes = StaticRoutePrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: IpLink{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: IpLink{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
 }

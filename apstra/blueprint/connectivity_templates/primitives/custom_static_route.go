@@ -21,7 +21,6 @@ import (
 )
 
 type CustomStaticRoute struct {
-	Name          types.String             `tfsdk:"name"`
 	RoutingZoneId types.String             `tfsdk:"routing_zone_id"`
 	Network       customtypes.IPv46Prefix  `tfsdk:"network"`
 	NextHop       customtypes.IPv46Address `tfsdk:"next_hop"`
@@ -29,7 +28,6 @@ type CustomStaticRoute struct {
 
 func (o CustomStaticRoute) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":            types.StringType,
 		"routing_zone_id": types.StringType,
 		"network":         customtypes.IPv46PrefixType{},
 		"next_hop":        customtypes.IPv46AddressType{},
@@ -38,11 +36,6 @@ func (o CustomStaticRoute) AttrTypes() map[string]attr.Type {
 
 func (o CustomStaticRoute) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"routing_zone_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Zone ID where this route should be installed",
 			Required:            true,
@@ -88,21 +81,24 @@ func (o CustomStaticRoute) attributes(_ context.Context, _ *diag.Diagnostics) *a
 
 func (o CustomStaticRoute) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
 }
 
-func CustomStaticRouteSubpolicies(ctx context.Context, customStaticRouteSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var customStaticRoutes []CustomStaticRoute
-	diags.Append(customStaticRouteSet.ElementsAs(ctx, &customStaticRoutes, false)...)
+func CustomStaticRouteSubpolicies(ctx context.Context, customStaticRouteMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var customStaticRoutes map[string]CustomStaticRoute
+	diags.Append(customStaticRouteMap.ElementsAs(ctx, &customStaticRoutes, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(customStaticRoutes))
-	for i, customStaticRoute := range customStaticRoutes {
-		subpolicies[i] = customStaticRoute.primitive(ctx, diags)
+	i := 0
+	for k, v := range customStaticRoutes {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -117,8 +113,8 @@ func newCustomStaticRoute(_ context.Context, in *apstra.ConnectivityTemplatePrim
 	}
 }
 
-func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []CustomStaticRoute
+func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]CustomStaticRoute, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -136,13 +132,12 @@ func CustomStaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies
 			}
 
 			newPrimitive := newCustomStaticRoute(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: CustomStaticRoute{}.AttrTypes()}, result, diags)
 }

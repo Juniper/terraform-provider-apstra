@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint/connectivity_templates/primitives"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -23,7 +24,7 @@ type ConnectivityTemplateSystem struct {
 	Name               types.String `tfsdk:"name"`
 	Description        types.String `tfsdk:"description"`
 	Tags               types.Set    `tfsdk:"tags"`
-	CustomStaticRoutes types.Set    `tfsdk:"custom_static_routes"`
+	CustomStaticRoutes types.Map    `tfsdk:"custom_static_routes"`
 }
 
 func (o ConnectivityTemplateSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -58,13 +59,13 @@ func (o ConnectivityTemplateSystem) ResourceAttributes() map[string]resourceSche
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
-		"custom_static_routes": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *Custom Static Route* Primitives in this Connectivity Template.",
+		"custom_static_routes": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *Custom Static Route* Primitives in this Connectivity Template.",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: primitives.CustomStaticRoute{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -74,18 +75,19 @@ func (o *ConnectivityTemplateSystem) ValidateConfig(ctx context.Context, diags *
 		return
 	}
 
-	var customStaticRoutes []primitives.CustomStaticRoute
+	customStaticRoutes := make(map[string]primitives.CustomStaticRoute)
 	diags.Append(o.CustomStaticRoutes.ElementsAs(ctx, &customStaticRoutes, false)...)
 	if diags.HasError() {
 		return
 	}
 
-	for i, attrVal := range o.CustomStaticRoutes.Elements() {
-		if attrVal.IsUnknown() {
+	for k, v := range o.CustomStaticRoutes.Elements() {
+		if v.IsUnknown() {
 			continue
 		}
 
-		customStaticRoutes[i].ValidateConfig(ctx, path.Root("custom_static_routes").AtSetValue(attrVal), diags)
+		customStaticRoute := customStaticRoutes[k]
+		customStaticRoute.ValidateConfig(ctx, path.Root("custom_static_routes").AtMapKey(k), diags)
 	}
 }
 

@@ -13,7 +13,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,7 +24,6 @@ import (
 )
 
 type BgpPeeringIpEndpoint struct {
-	Name            types.String        `tfsdk:"name"`
 	NeighborAsn     types.Int64         `tfsdk:"neighbor_asn"`
 	Ttl             types.Int64         `tfsdk:"ttl"`
 	BfdEnabled      types.Bool          `tfsdk:"bfd_enabled"`
@@ -34,12 +33,11 @@ type BgpPeeringIpEndpoint struct {
 	LocalAsn        types.Int64         `tfsdk:"local_asn"`
 	Ipv4Address     iptypes.IPv4Address `tfsdk:"ipv4_address"`
 	Ipv6Address     iptypes.IPv6Address `tfsdk:"ipv6_address"`
-	RoutingPolicies types.Set           `tfsdk:"routing_policies"`
+	RoutingPolicies types.Map           `tfsdk:"routing_policies"`
 }
 
 func (o BgpPeeringIpEndpoint) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":             types.StringType,
 		"neighbor_asn":     types.Int64Type,
 		"ttl":              types.Int64Type,
 		"bfd_enabled":      types.BoolType,
@@ -49,17 +47,12 @@ func (o BgpPeeringIpEndpoint) AttrTypes() map[string]attr.Type {
 		"local_asn":        types.Int64Type,
 		"ipv4_address":     iptypes.IPv4AddressType{},
 		"ipv6_address":     iptypes.IPv6AddressType{},
-		"routing_policies": types.SetType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
+		"routing_policies": types.MapType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
 	}
 }
 
 func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used by the web UI on the Primitive \"block\" in the Connectivity Template.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"neighbor_asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",
 			Optional:            true,
@@ -120,13 +113,13 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 			CustomType:          iptypes.IPv6AddressType{},
 			Optional:            true,
 		},
-		"routing_policies": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
+		"routing_policies": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RoutingPolicy{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -163,7 +156,6 @@ func (o BgpPeeringIpEndpoint) attributes(_ context.Context, _ *diag.Diagnostics)
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt{
-		Label:              o.Name.ValueString(), // todo is this necessary?
 		Asn:                neighborAsn,
 		Bfd:                o.BfdEnabled.ValueBool(),
 		Holdtime:           holdTime,
@@ -181,7 +173,7 @@ func (o BgpPeeringIpEndpoint) attributes(_ context.Context, _ *diag.Diagnostics)
 
 func (o BgpPeeringIpEndpoint) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	result := apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
 	}
@@ -191,16 +183,19 @@ func (o BgpPeeringIpEndpoint) primitive(ctx context.Context, diags *diag.Diagnos
 	return &result
 }
 
-func BgpPeeringIpEndpointSubpolicies(ctx context.Context, bgpPeeringIpEndpointSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var bgpPeeringIpEndpoints []BgpPeeringIpEndpoint
-	diags.Append(bgpPeeringIpEndpointSet.ElementsAs(ctx, &bgpPeeringIpEndpoints, false)...)
+func BgpPeeringIpEndpointSubpolicies(ctx context.Context, bgpPeeringIpEndpointMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var bgpPeeringIpEndpoints map[string]BgpPeeringIpEndpoint
+	diags.Append(bgpPeeringIpEndpointMap.ElementsAs(ctx, &bgpPeeringIpEndpoints, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(bgpPeeringIpEndpoints))
-	for i, bgpPeeringIpEndpoint := range bgpPeeringIpEndpoints {
-		subpolicies[i] = bgpPeeringIpEndpoint.primitive(ctx, diags)
+	i := 0
+	for k, v := range bgpPeeringIpEndpoints {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -228,8 +223,8 @@ func newBgpPeeringIpEndpoint(_ context.Context, in *apstra.ConnectivityTemplateP
 	return result
 }
 
-func BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []BgpPeeringIpEndpoint
+func BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]BgpPeeringIpEndpoint, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -247,14 +242,13 @@ func BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx context.Context, subpolic
 			}
 
 			newPrimitive := newBgpPeeringIpEndpoint(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
 }

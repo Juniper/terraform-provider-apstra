@@ -9,7 +9,6 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -18,14 +17,12 @@ import (
 )
 
 type VirtualNetworkMultiple struct {
-	Name         types.String `tfsdk:"name"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
 }
 
 func (o VirtualNetworkMultiple) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":           types.StringType,
 		"untagged_vn_id": types.StringType,
 		"tagged_vn_ids":  types.SetType{ElemType: types.StringType},
 	}
@@ -33,11 +30,6 @@ func (o VirtualNetworkMultiple) AttrTypes() map[string]attr.Type {
 
 func (o VirtualNetworkMultiple) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"untagged_vn_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Virtual Network which should be untagged on the link",
 			Optional:            true,
@@ -71,21 +63,24 @@ func (o VirtualNetworkMultiple) attributes(ctx context.Context, diags *diag.Diag
 
 func (o VirtualNetworkMultiple) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
 }
 
-func VirtualNetworkMultipleSubpolicies(ctx context.Context, virtualNetworkMultipleSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var VirtualNetworkMultiples []VirtualNetworkMultiple
-	diags.Append(virtualNetworkMultipleSet.ElementsAs(ctx, &VirtualNetworkMultiples, false)...)
+func VirtualNetworkMultipleSubpolicies(ctx context.Context, virtualNetworkMultipleMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var VirtualNetworkMultiples map[string]VirtualNetworkMultiple
+	diags.Append(virtualNetworkMultipleMap.ElementsAs(ctx, &VirtualNetworkMultiples, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(VirtualNetworkMultiples))
-	for i, virtualNetworkMultiple := range VirtualNetworkMultiples {
-		subpolicies[i] = virtualNetworkMultiple.primitive(ctx, diags)
+	i := 0
+	for k, v := range VirtualNetworkMultiples {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -99,8 +94,8 @@ func newVirtualNetworkMultiple(ctx context.Context, in *apstra.ConnectivityTempl
 	}
 }
 
-func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []VirtualNetworkMultiple
+func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]VirtualNetworkMultiple, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -118,13 +113,12 @@ func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpol
 			}
 
 			newPrimitive := newVirtualNetworkMultiple(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
 }

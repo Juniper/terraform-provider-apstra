@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -25,7 +25,6 @@ import (
 )
 
 type DynamicBgpPeering struct {
-	Name            types.String         `tfsdk:"name"`
 	Ttl             types.Int64          `tfsdk:"ttl"`
 	BfdEnabled      types.Bool           `tfsdk:"bfd_enabled"`
 	Password        types.String         `tfsdk:"password"`
@@ -36,12 +35,11 @@ type DynamicBgpPeering struct {
 	LocalAsn        types.Int64          `tfsdk:"local_asn"`
 	Ipv4PeerPrefix  cidrtypes.IPv4Prefix `tfsdk:"ipv4_peer_prefix"`
 	Ipv6PeerPrefix  cidrtypes.IPv6Prefix `tfsdk:"ipv6_peer_prefix"`
-	RoutingPolicies types.Set            `tfsdk:"routing_policies"`
+	RoutingPolicies types.Map            `tfsdk:"routing_policies"`
 }
 
 func (o DynamicBgpPeering) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":             types.StringType,
 		"ttl":              types.Int64Type,
 		"bfd_enabled":      types.BoolType,
 		"password":         types.StringType,
@@ -52,17 +50,12 @@ func (o DynamicBgpPeering) AttrTypes() map[string]attr.Type {
 		"local_asn":        types.Int64Type,
 		"ipv4_peer_prefix": cidrtypes.IPv4PrefixType{},
 		"ipv6_peer_prefix": cidrtypes.IPv6PrefixType{},
-		"routing_policies": types.SetType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
+		"routing_policies": types.MapType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
 	}
 }
 
 func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used by the web UI on the Primitive \"block\" in the Connectivity Template.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"ttl": resourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
@@ -128,13 +121,13 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_enabled"), types.BoolValue(false)),
 			},
 		},
-		"routing_policies": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
+		"routing_policies": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RoutingPolicy{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -174,7 +167,6 @@ func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *a
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface{
-		Label:                 o.Name.ValueString(), // todo is this necessary?
 		Bfd:                   o.BfdEnabled.ValueBool(),
 		Holdtime:              holdTime,
 		Ipv4Safi:              o.Ipv4Enabled.ValueBool(),
@@ -192,7 +184,7 @@ func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *a
 
 func (o DynamicBgpPeering) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	result := apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
 	}
@@ -202,16 +194,19 @@ func (o DynamicBgpPeering) primitive(ctx context.Context, diags *diag.Diagnostic
 	return &result
 }
 
-func DynamicBgpPeeringSubpolicies(ctx context.Context, dynamicBgpPeeringSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var dynamicBgpPeerings []DynamicBgpPeering
-	diags.Append(dynamicBgpPeeringSet.ElementsAs(ctx, &dynamicBgpPeerings, false)...)
+func DynamicBgpPeeringSubpolicies(ctx context.Context, dynamicBgpPeeringMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var dynamicBgpPeerings map[string]DynamicBgpPeering
+	diags.Append(dynamicBgpPeeringMap.ElementsAs(ctx, &dynamicBgpPeerings, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(dynamicBgpPeerings))
-	for i, dynamicBgpPeering := range dynamicBgpPeerings {
-		subpolicies[i] = dynamicBgpPeering.primitive(ctx, diags)
+	i := 0
+	for k, v := range dynamicBgpPeerings {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -240,8 +235,8 @@ func newDynamicBgpPeering(_ context.Context, in *apstra.ConnectivityTemplatePrim
 	return result
 }
 
-func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []DynamicBgpPeering
+func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]DynamicBgpPeering, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -259,14 +254,13 @@ func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies
 			}
 
 			newPrimitive := newDynamicBgpPeering(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
 }

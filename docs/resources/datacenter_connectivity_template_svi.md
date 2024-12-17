@@ -101,10 +101,10 @@ resource "apstra_datacenter_routing_policy" "allow_10_3_0_0-16_in" {
 
 ### Optional
 
-- `bgp_peering_ip_endpoints` (Attributes Set) Set of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints))
+- `bgp_peering_ip_endpoints` (Attributes Map) Map of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints))
 - `description` (String) Connectivity Template Description displayed in the web UI
-- `dynamic_bgp_peerings` (Attributes Set) Set of *Dynamic BGP Peering* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--dynamic_bgp_peerings))
-- `tags` (Set of String) Set of Tags associated with this Connectivity Template
+- `dynamic_bgp_peerings` (Attributes Map) Map of *Dynamic BGP Peering* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--dynamic_bgp_peerings))
+- `tags` (Map of String) Map of Tags associated with this Connectivity Template
 
 ### Read-Only
 
@@ -116,7 +116,6 @@ resource "apstra_datacenter_routing_policy" "allow_10_3_0_0-16_in" {
 Required:
 
 - `bfd_enabled` (Boolean) Enable BFD.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 
 Optional:
 
@@ -127,7 +126,7 @@ Optional:
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
 <a id="nestedatt--bgp_peering_ip_endpoints--routing_policies"></a>
@@ -135,7 +134,6 @@ Optional:
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
 
 
@@ -148,7 +146,6 @@ Required:
 - `bfd_enabled` (Boolean) Enable BFD.
 - `ipv4_enabled` (Boolean) Enables peering with IPv4 neighbors.
 - `ipv6_enabled` (Boolean) Enables peering with IPv6 neighbors.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 
 Optional:
 
@@ -158,7 +155,7 @@ Optional:
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
 <a id="nestedatt--dynamic_bgp_peerings--routing_policies"></a>
@@ -166,7 +163,6 @@ Optional:
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
 
 

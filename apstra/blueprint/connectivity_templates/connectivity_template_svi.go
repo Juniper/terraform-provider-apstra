@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint/connectivity_templates/primitives"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -22,8 +23,8 @@ type ConnectivityTemplateSvi struct {
 	Name                  types.String `tfsdk:"name"`
 	Description           types.String `tfsdk:"description"`
 	Tags                  types.Set    `tfsdk:"tags"`
-	BgpPeeringIpEndpoints types.Set    `tfsdk:"bgp_peering_ip_endpoints"`
-	DynamicBgpPeerings    types.Set    `tfsdk:"dynamic_bgp_peerings"`
+	BgpPeeringIpEndpoints types.Map    `tfsdk:"bgp_peering_ip_endpoints"`
+	DynamicBgpPeerings    types.Map    `tfsdk:"dynamic_bgp_peerings"`
 }
 
 func (o ConnectivityTemplateSvi) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -58,17 +59,17 @@ func (o ConnectivityTemplateSvi) ResourceAttributes() map[string]resourceSchema.
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
-		"bgp_peering_ip_endpoints": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template",
+		"bgp_peering_ip_endpoints": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template",
 			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: primitives.BgpPeeringIpEndpoint{}.ResourceAttributes()},
 			Optional:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
-		"dynamic_bgp_peerings": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *Dynamic BGP Peering* Primitives in this Connectivity Template",
+		"dynamic_bgp_peerings": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *Dynamic BGP Peering* Primitives in this Connectivity Template",
 			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: primitives.DynamicBgpPeering{}.ResourceAttributes()},
 			Optional:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }

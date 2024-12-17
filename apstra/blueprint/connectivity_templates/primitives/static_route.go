@@ -10,23 +10,19 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type StaticRoute struct {
-	Name    types.String            `tfsdk:"name"`
 	Network customtypes.IPv46Prefix `tfsdk:"network"`
 	Shared  types.Bool              `tfsdk:"share_ip_endpoint"`
 }
 
 func (o StaticRoute) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":              types.StringType,
 		"network":           customtypes.IPv46PrefixType{},
 		"share_ip_endpoint": types.BoolType,
 	}
@@ -34,11 +30,6 @@ func (o StaticRoute) AttrTypes() map[string]attr.Type {
 
 func (o StaticRoute) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"network": resourceSchema.StringAttribute{
 			MarkdownDescription: "Destination network in CIDR notation",
 			CustomType:          customtypes.IPv46PrefixType{},
@@ -63,21 +54,24 @@ func (o StaticRoute) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.
 
 func (o StaticRoute) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
 }
 
-func StaticRouteSubpolicies(ctx context.Context, StaticRouteSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var StaticRoutes []StaticRoute
-	diags.Append(StaticRouteSet.ElementsAs(ctx, &StaticRoutes, false)...)
+func StaticRouteSubpolicies(ctx context.Context, StaticRouteMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var StaticRoutes map[string]StaticRoute
+	diags.Append(StaticRouteMap.ElementsAs(ctx, &StaticRoutes, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(StaticRoutes))
-	for i, staticRoute := range StaticRoutes {
-		subpolicies[i] = staticRoute.primitive(ctx, diags)
+	i := 0
+	for k, v := range StaticRoutes {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -91,8 +85,8 @@ func newStaticRoute(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveA
 	}
 }
 
-func StaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []StaticRoute
+func StaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]StaticRoute, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -110,13 +104,12 @@ func StaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*ap
 			}
 
 			newPrimitive := newStaticRoute(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}, result, diags)
 }

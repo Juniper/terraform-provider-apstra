@@ -13,7 +13,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -25,7 +25,6 @@ import (
 )
 
 type BgpPeeringGenericSystem struct {
-	Name               types.String `tfsdk:"name"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -37,12 +36,11 @@ type BgpPeeringGenericSystem struct {
 	NeighborAsnDynamic types.Bool   `tfsdk:"neighbor_asn_dynamic"`
 	PeerFromLoopback   types.Bool   `tfsdk:"peer_from_loopback"`
 	PeerTo             types.String `tfsdk:"peer_to"`
-	RoutingPolicies    types.Set    `tfsdk:"routing_policies"`
+	RoutingPolicies    types.Map    `tfsdk:"routing_policies"`
 }
 
 func (o BgpPeeringGenericSystem) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":                 types.StringType,
 		"ttl":                  types.Int64Type,
 		"bfd_enabled":          types.BoolType,
 		"password":             types.StringType,
@@ -54,17 +52,12 @@ func (o BgpPeeringGenericSystem) AttrTypes() map[string]attr.Type {
 		"neighbor_asn_dynamic": types.BoolType,
 		"peer_from_loopback":   types.BoolType,
 		"peer_to":              types.StringType,
-		"routing_policies":     types.SetType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
+		"routing_policies":     types.MapType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
 	}
 }
 
 func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used by the web UI on the Primitive \"block\" in the Connectivity Template.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"ttl": resourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
 			Optional:            true,
@@ -141,13 +134,13 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.OneOf(utils.PeerToTypes()...)},
 		},
-		"routing_policies": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
+		"routing_policies": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RoutingPolicy{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -192,7 +185,6 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi{
-		// Label:              o.Name.ValueString(), // todo is this necessary?
 		Bfd:                   o.BfdEnabled.ValueBool(),
 		Holdtime:              holdTime,
 		Ipv4Safi:              o.Ipv4AddressingType.ValueString() != utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone),
@@ -211,7 +203,7 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 
 func (o BgpPeeringGenericSystem) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	result := apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 		// Subpolicies: // set below
 	}
@@ -221,16 +213,19 @@ func (o BgpPeeringGenericSystem) primitive(ctx context.Context, diags *diag.Diag
 	return &result
 }
 
-func BgpPeeringGenericSystemSubpolicies(ctx context.Context, bgpPeeringGenericSystemSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var bgpPeeringGenericSystems []BgpPeeringGenericSystem
-	diags.Append(bgpPeeringGenericSystemSet.ElementsAs(ctx, &bgpPeeringGenericSystems, false)...)
+func BgpPeeringGenericSystemSubpolicies(ctx context.Context, bgpPeeringGenericSystemMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var bgpPeeringGenericSystems map[string]BgpPeeringGenericSystem
+	diags.Append(bgpPeeringGenericSystemMap.ElementsAs(ctx, &bgpPeeringGenericSystems, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(bgpPeeringGenericSystems))
-	for i, bgpPeeringGenericSystem := range bgpPeeringGenericSystems {
-		subpolicies[i] = bgpPeeringGenericSystem.primitive(ctx, diags)
+	i := 0
+	for k, v := range bgpPeeringGenericSystems {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -264,8 +259,8 @@ func newBgpPeeringGenericSystem(_ context.Context, in *apstra.ConnectivityTempla
 	return result
 }
 
-func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []BgpPeeringGenericSystem
+func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]BgpPeeringGenericSystem, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -283,14 +278,13 @@ func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpo
 			}
 
 			newPrimitive := newBgpPeeringGenericSystem(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
 }

@@ -48,7 +48,7 @@ resource "apstra_datacenter_connectivity_template_system" "DC_1" {
 
 ### Optional
 
-- `custom_static_routes` (Attributes Set) Set of *Custom Static Route* Primitives in this Connectivity Template. (see [below for nested schema](#nestedatt--custom_static_routes))
+- `custom_static_routes` (Attributes Map) Map of *Custom Static Route* Primitives in this Connectivity Template. (see [below for nested schema](#nestedatt--custom_static_routes))
 - `description` (String) Connectivity Template Description displayed in the web UI.
 - `tags` (Set of String) Set of Tags associated with this Connectivity Template.
 
@@ -61,7 +61,6 @@ resource "apstra_datacenter_connectivity_template_system" "DC_1" {
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `network` (String) Destination network in CIDR notation
 - `next_hop` (String) Next-hop router address
 - `routing_zone_id` (String) Routing Zone ID where this route should be installed

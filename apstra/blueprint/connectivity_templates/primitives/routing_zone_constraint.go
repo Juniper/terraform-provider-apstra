@@ -17,24 +17,17 @@ import (
 )
 
 type RoutingZoneConstraint struct {
-	Name                    types.String `tfsdk:"name"`
 	RoutingZoneConstraintId types.String `tfsdk:"routing_zone_constraint_id"`
 }
 
 func (o RoutingZoneConstraint) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":                       types.StringType,
 		"routing_zone_constraint_id": types.StringType,
 	}
 }
 
 func (o RoutingZoneConstraint) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used on the Primitive \"block\" in the Connectivity Template",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"routing_zone_constraint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Zone Constraint ID to be applied",
 			Required:            true,
@@ -51,21 +44,24 @@ func (o RoutingZoneConstraint) attributes(_ context.Context, _ *diag.Diagnostics
 
 func (o RoutingZoneConstraint) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
 	return &apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
+		// Label:       // set by caller
 		Attributes: o.attributes(ctx, diags),
 	}
 }
 
-func RoutingZoneConstraintSubpolicies(ctx context.Context, routingZoneConstraintSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var routingZoneConstraints []RoutingZoneConstraint
-	diags.Append(routingZoneConstraintSet.ElementsAs(ctx, &routingZoneConstraints, false)...)
+func RoutingZoneConstraintSubpolicies(ctx context.Context, routingZoneConstraintMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var routingZoneConstraints map[string]RoutingZoneConstraint
+	diags.Append(routingZoneConstraintMap.ElementsAs(ctx, &routingZoneConstraints, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(routingZoneConstraints))
-	for i, routingZoneConstraint := range routingZoneConstraints {
-		subpolicies[i] = routingZoneConstraint.primitive(ctx, diags)
+	i := 0
+	for k, v := range routingZoneConstraints {
+		subpolicies[i] = v.primitive(ctx, diags)
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -78,8 +74,8 @@ func newRoutingZoneConstraint(_ context.Context, in *apstra.ConnectivityTemplate
 	}
 }
 
-func RoutingZoneConstraintPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []RoutingZoneConstraint
+func RoutingZoneConstraintPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]RoutingZoneConstraint, len(subpolicies))
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -97,13 +93,12 @@ func RoutingZoneConstraintPrimitivesFromSubpolicies(ctx context.Context, subpoli
 			}
 
 			newPrimitive := newRoutingZoneConstraint(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: RoutingZoneConstraint{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: RoutingZoneConstraint{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: RoutingZoneConstraint{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RoutingZoneConstraint{}.AttrTypes()}, result, diags)
 }
