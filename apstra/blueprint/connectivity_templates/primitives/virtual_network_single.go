@@ -208,13 +208,19 @@ func (o virtualNetworkSingleBatchIdPlanModifier) MarkdownDescription(ctx context
 }
 
 func (o virtualNetworkSingleBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
-	var plan VirtualNetworkSingle
+	var plan, state VirtualNetworkSingle
+
+	// unpacking the parent object's plan should always work
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// do we have any children?
+	// attempting to unpack the parent object's state indicates whether state *exists*
+	d := req.State.GetAttribute(ctx, req.Path.ParentPath(), &state)
+	stateDoesNotExist := d.HasError()
+
+	// do we have zero children?
 	if len(plan.BgpPeeringGenericSystems.Elements())+
 		len(plan.StaticRoutes.Elements()) == 0 {
 		resp.PlanValue = types.StringNull() // with no children the batch id should be null
@@ -222,8 +228,9 @@ func (o virtualNetworkSingleBatchIdPlanModifier) PlanModifyString(ctx context.Co
 	}
 
 	// are we a new object?
-	if plan.Id.IsUnknown() {
+	if stateDoesNotExist {
 		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+		return
 	}
 
 	// we're not new, and we have children. use the old value
