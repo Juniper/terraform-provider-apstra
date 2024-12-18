@@ -50,6 +50,7 @@ func (o VirtualNetworkSingle) ResourceAttributes() map[string]resourceSchema.Att
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{virtualNetworkSingleBatchPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -169,15 +170,15 @@ func VirtualNetworkSinglePrimitivesFromSubpolicies(ctx context.Context, subpolic
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
 }
 
-func LoadIDsIntoVirtualNetworkMultipleMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]VirtualNetworkMultiple, len(inMap.Elements()))
+func LoadIDsIntoVirtualNetworkSingleMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]VirtualNetworkSingle, len(inMap.Elements()))
 	inMap.ElementsAs(ctx, &result, false)
 	if diags.HasError() {
-		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()})
 	}
 
 	for _, p := range subpolicies {
-		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachMultipleVlan); !ok {
+		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan); !ok {
 			continue // wrong type and nil value both wind up getting skipped
 		}
 
@@ -185,9 +186,46 @@ func LoadIDsIntoVirtualNetworkMultipleMap(ctx context.Context, subpolicies []*ap
 			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
 			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
+			v.BgpPeeringGenericSystems = LoadIDsIntoBgpPeeringGenericSystemMap(ctx, p.Subpolicies, v.BgpPeeringGenericSystems, diags)
+			v.StaticRoutes = LoadIDsIntoStaticRouteMap(ctx, p.Subpolicies, v.StaticRoutes, diags)
 			result[p.Label] = v
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
+}
+
+var _ planmodifier.String = (*virtualNetworkSingleBatchPlanModifier)(nil)
+
+type virtualNetworkSingleBatchPlanModifier struct{}
+
+func (o virtualNetworkSingleBatchPlanModifier) Description(_ context.Context) string {
+	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+}
+
+func (o virtualNetworkSingleBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o virtualNetworkSingleBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	var plan VirtualNetworkSingle
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// do we have any children?
+	if len(plan.BgpPeeringGenericSystems.Elements())+
+		len(plan.StaticRoutes.Elements()) == 0 {
+		resp.PlanValue = types.StringNull() // with no children the batch id should be null
+		return
+	}
+
+	// are we a new object?
+	if plan.Id.IsUnknown() {
+		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+	}
+
+	// we're not new, and we have children. use the old value
+	resp.PlanValue = req.StateValue
 }

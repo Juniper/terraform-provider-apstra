@@ -74,6 +74,7 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{bgpPeeringGenericSystemBatchPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -345,4 +346,32 @@ func LoadIDsIntoBgpPeeringGenericSystemMap(ctx context.Context, subpolicies []*a
 	}
 
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
+}
+
+var _ planmodifier.String = (*bgpPeeringGenericSystemBatchPlanModifier)(nil)
+
+type bgpPeeringGenericSystemBatchPlanModifier struct{}
+
+func (o bgpPeeringGenericSystemBatchPlanModifier) Description(_ context.Context) string {
+	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+}
+
+func (o bgpPeeringGenericSystemBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o bgpPeeringGenericSystemBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	var plan BgpPeeringGenericSystem
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// do we have any children?
+	if len(plan.RoutingPolicies.Elements()) == 0 {
+		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+	}
+
+	// we're not new, and we have children. use the old value
+	resp.PlanValue = req.StateValue
 }

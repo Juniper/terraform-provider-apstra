@@ -20,7 +20,6 @@ import (
 
 type RoutingZoneConstraint struct {
 	Id                      types.String `tfsdk:"id"`
-	BatchId                 types.String `tfsdk:"batch_id"`
 	PipelineId              types.String `tfsdk:"pipeline_id"`
 	RoutingZoneConstraintId types.String `tfsdk:"routing_zone_constraint_id"`
 }
@@ -28,7 +27,6 @@ type RoutingZoneConstraint struct {
 func (o RoutingZoneConstraint) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":                         types.StringType,
-		"batch_id":                   types.StringType,
 		"pipeline_id":                types.StringType,
 		"routing_zone_constraint_id": types.StringType,
 	}
@@ -40,10 +38,6 @@ func (o RoutingZoneConstraint) ResourceAttributes() map[string]resourceSchema.At
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-		},
-		"batch_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
-			Computed:            true,
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -72,9 +66,6 @@ func (o RoutingZoneConstraint) primitive(ctx context.Context, diags *diag.Diagno
 	}
 	if !o.Id.IsUnknown() {
 		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
-	}
-	if !o.BatchId.IsUnknown() {
-		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
 	return &result
@@ -129,7 +120,6 @@ func RoutingZoneConstraintPrimitivesFromSubpolicies(ctx context.Context, subpoli
 			newPrimitive := newRoutingZoneConstraint(ctx, p, diags)
 			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
 			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
-			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}
@@ -155,7 +145,6 @@ func LoadIDsIntoRoutingZoneConstraintMap(ctx context.Context, subpolicies []*aps
 		if v, ok := result[p.Label]; ok {
 			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
-			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
 			result[p.Label] = v
 		}
 	}

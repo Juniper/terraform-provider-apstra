@@ -72,6 +72,7 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{dynamicBgpPeeringBatchPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -321,4 +322,38 @@ func LoadIDsIntoDynamicBgpPeeringMap(ctx context.Context, subpolicies []*apstra.
 	}
 
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+}
+
+var _ planmodifier.String = (*dynamicBgpPeeringBatchPlanModifier)(nil)
+
+type dynamicBgpPeeringBatchPlanModifier struct{}
+
+func (o dynamicBgpPeeringBatchPlanModifier) Description(_ context.Context) string {
+	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+}
+
+func (o dynamicBgpPeeringBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o dynamicBgpPeeringBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	var plan DynamicBgpPeering
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// do we have any children?
+	if len(plan.RoutingPolicies.Elements()) == 0 {
+		resp.PlanValue = types.StringNull() // with no children the batch id should be null
+		return
+	}
+
+	// are we a new object?
+	if plan.Id.IsUnknown() {
+		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+	}
+
+	// we're not new, and we have children. use the old value
+	resp.PlanValue = req.StateValue
 }

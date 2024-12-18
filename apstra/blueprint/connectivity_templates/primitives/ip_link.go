@@ -64,6 +64,7 @@ func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{ipLinkBatchPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -319,4 +320,41 @@ func LoadIDsIntoIpLinkMap(ctx context.Context, subpolicies []*apstra.Connectivit
 	}
 
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
+}
+
+var _ planmodifier.String = (*ipLinkBatchPlanModifier)(nil)
+
+type ipLinkBatchPlanModifier struct{}
+
+func (o ipLinkBatchPlanModifier) Description(_ context.Context) string {
+	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+}
+
+func (o ipLinkBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o ipLinkBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	var plan IpLink
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// do we have any children?
+	if len(plan.BgpPeeringGenericSystems.Elements())+
+		len(plan.BgpPeeringIpEndpoints.Elements())+
+		len(plan.DynamicBgpPeerings.Elements())+
+		len(plan.StaticRoutes.Elements()) == 0 {
+		resp.PlanValue = types.StringNull() // with no children the batch id should be null
+		return
+	}
+
+	// are we a new object?
+	if plan.Id.IsUnknown() {
+		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+	}
+
+	// we're not new, and we have children. use the old value
+	resp.PlanValue = req.StateValue
 }

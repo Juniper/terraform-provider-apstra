@@ -20,7 +20,6 @@ import (
 
 type StaticRoute struct {
 	Id         types.String            `tfsdk:"id"`
-	BatchId    types.String            `tfsdk:"batch_id"`
 	PipelineId types.String            `tfsdk:"pipeline_id"`
 	Network    customtypes.IPv46Prefix `tfsdk:"network"`
 	Shared     types.Bool              `tfsdk:"share_ip_endpoint"`
@@ -29,7 +28,6 @@ type StaticRoute struct {
 func (o StaticRoute) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":                types.StringType,
-		"batch_id":          types.StringType,
 		"pipeline_id":       types.StringType,
 		"network":           customtypes.IPv46PrefixType{},
 		"share_ip_endpoint": types.BoolType,
@@ -42,10 +40,6 @@ func (o StaticRoute) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-		},
-		"batch_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
-			Computed:            true,
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -82,9 +76,6 @@ func (o StaticRoute) primitive(ctx context.Context, diags *diag.Diagnostics) *ap
 	}
 	if !o.Id.IsUnknown() {
 		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
-	}
-	if !o.BatchId.IsUnknown() {
-		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
 	return &result
@@ -140,7 +131,6 @@ func StaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*ap
 			newPrimitive := newStaticRoute(ctx, p, diags)
 			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
 			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
-			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}
@@ -166,7 +156,6 @@ func LoadIDsIntoStaticRouteMap(ctx context.Context, subpolicies []*apstra.Connec
 		if v, ok := result[p.Label]; ok {
 			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
-			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
 			result[p.Label] = v
 		}
 	}

@@ -20,7 +20,6 @@ import (
 
 type VirtualNetworkMultiple struct {
 	Id           types.String `tfsdk:"id"`
-	BatchId      types.String `tfsdk:"batch_id"`
 	PipelineId   types.String `tfsdk:"pipeline_id"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
@@ -29,7 +28,6 @@ type VirtualNetworkMultiple struct {
 func (o VirtualNetworkMultiple) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":             types.StringType,
-		"batch_id":       types.StringType,
 		"pipeline_id":    types.StringType,
 		"untagged_vn_id": types.StringType,
 		"tagged_vn_ids":  types.SetType{ElemType: types.StringType},
@@ -42,10 +40,6 @@ func (o VirtualNetworkMultiple) ResourceAttributes() map[string]resourceSchema.A
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-		},
-		"batch_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
-			Computed:            true,
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -91,9 +85,6 @@ func (o VirtualNetworkMultiple) primitive(ctx context.Context, diags *diag.Diagn
 	}
 	if !o.Id.IsUnknown() {
 		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
-	}
-	if !o.BatchId.IsUnknown() {
-		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
 	return &result
@@ -149,7 +140,6 @@ func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpol
 			newPrimitive := newVirtualNetworkMultiple(ctx, p, diags)
 			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
 			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
-			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}
@@ -160,27 +150,24 @@ func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpol
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
 }
 
-func LoadIDsIntoVirtualNetworkSingleMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
-	result := make(map[string]VirtualNetworkSingle, len(inMap.Elements()))
+func LoadIDsIntoVirtualNetworkMultipleMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]VirtualNetworkMultiple, len(inMap.Elements()))
 	inMap.ElementsAs(ctx, &result, false)
 	if diags.HasError() {
-		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()})
 	}
 
 	for _, p := range subpolicies {
-		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan); !ok {
+		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachMultipleVlan); !ok {
 			continue // wrong type and nil value both wind up getting skipped
 		}
 
 		if v, ok := result[p.Label]; ok {
 			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
-			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
-			v.BgpPeeringGenericSystems = LoadIDsIntoBgpPeeringGenericSystemMap(ctx, p.Subpolicies, v.BgpPeeringGenericSystems, diags)
-			v.StaticRoutes = LoadIDsIntoStaticRouteMap(ctx, p.Subpolicies, v.StaticRoutes, diags)
 			result[p.Label] = v
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
 }
