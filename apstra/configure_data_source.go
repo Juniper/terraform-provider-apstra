@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
@@ -48,5 +49,4 @@ func configureDataSource(_ context.Context, ds datasource.DataSourceWithConfigur
 	if ds, ok := ds.(datasourceWithSetFfBpClientFunc); ok {
 		ds.setBpClientFunc(pd.getFreeformClient)
 	}
-
 }

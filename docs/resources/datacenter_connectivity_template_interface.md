@@ -3,20 +3,13 @@ page_title: "apstra_datacenter_connectivity_template_interface Resource - terraf
 subcategory: "Reference Design: Datacenter"
 description: |-
   This resource creates a Connectivity Template suitable for use with Application Points of type interface within a Datacenter Blueprint. interface Application Points use the following Connectivity Template Primitive hierarchy:
-   - Virtual Network (Single)
-     - Static Route
-     - BGP Peering (Generic System)
-       - Routing Policy
-   - Virtual Network (Multiple)
-   - IP Link
-     - BGP Peering (Generic System)
-       - Routing Policy
-     - BGP Peering (IP Endpoint)
-       - Routing Policy
-     - Dynamic BGP Peering
-       - Routing Policy
-     - Static Route
-   - Routing Zone Constraint
+  Virtual Network (Single)
+  Static RouteBGP Peering (Generic System)
+  Routing PolicyVirtual Network (Multiple)IP Link
+  BGP Peering (Generic System)
+  Routing PolicyBGP Peering (IP Endpoint)
+  Routing PolicyDynamic BGP Peering
+  Routing PolicyStatic RouteRouting Zone Constraint
 ---
 
 # apstra_datacenter_connectivity_template_interface (Resource)

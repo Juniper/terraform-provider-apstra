@@ -94,7 +94,7 @@ Read-Only:
 - `tags` (Attributes Set) Details any tags applied to this Access Switch. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags))
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--esi_lag_info"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.esi_lag_info`
 
 Read-Only:
 
@@ -103,7 +103,7 @@ Read-Only:
 
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--links"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.links`
 
 Read-Only:
 
@@ -112,11 +112,11 @@ Read-Only:
 - `speed` (String) Speed of this Link.
 - `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in data source contexts.
-- `tags` (Attributes Set) Details any tags applied to this Link. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags--tags))
+- `tags` (Attributes Set) Details any tags applied to this Link. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--links--tags))
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags--tags"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.tags.target_switch_name`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--links--tags"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.links.tags`
 
 Read-Only:
 
@@ -127,25 +127,25 @@ Read-Only:
 
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--logical_device"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.logical_device`
 
 Read-Only:
 
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Logical device display name.
-- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags--panels))
+- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--logical_device--panels))
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags--panels"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.tags.panels`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--logical_device--panels"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.logical_device.panels`
 
 Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
-- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags--panels--port_groups))
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--logical_device--panels--port_groups))
 - `rows` (Number) Physical vertical dimension of the panel.
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--tags--panels--port_groups"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.tags.panels.rows`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--access_switches--logical_device--panels--port_groups"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.access_switches.logical_device.panels.port_groups`
 
 Read-Only:
 
@@ -182,7 +182,7 @@ Read-Only:
 - `tags` (Attributes Set) Details any tags applied to this Generic System. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags))
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--links"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.links`
 
 Read-Only:
 
@@ -191,11 +191,11 @@ Read-Only:
 - `speed` (String) Speed of this Link.
 - `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in data source contexts.
-- `tags` (Attributes Set) Details any tags applied to this Link. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags--tags))
+- `tags` (Attributes Set) Details any tags applied to this Link. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--links--tags))
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags--tags"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.tags.target_switch_name`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--links--tags"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.links.tags`
 
 Read-Only:
 
@@ -206,25 +206,25 @@ Read-Only:
 
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--logical_device"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.logical_device`
 
 Read-Only:
 
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Logical device display name.
-- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags--panels))
+- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--logical_device--panels))
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags--panels"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.tags.panels`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--logical_device--panels"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.logical_device.panels`
 
 Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
-- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags--panels--port_groups))
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--logical_device--panels--port_groups))
 - `rows` (Number) Physical vertical dimension of the panel.
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--tags--panels--port_groups"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.tags.panels.rows`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--generic_systems--logical_device--panels--port_groups"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.generic_systems.logical_device.panels.port_groups`
 
 Read-Only:
 
@@ -261,25 +261,25 @@ Read-Only:
 - `tags` (Attributes Set) Details any tags applied to this Leaf Switch. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--tags))
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--logical_device"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.logical_device`
 
 Read-Only:
 
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Logical device display name.
-- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--tags--panels))
+- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--logical_device--panels))
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--tags--panels"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.tags.panels`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--logical_device--panels"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.logical_device.panels`
 
 Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
-- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--tags--panels--port_groups))
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--logical_device--panels--port_groups))
 - `rows` (Number) Physical vertical dimension of the panel.
 
-<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--tags--panels--port_groups"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.tags.panels.rows`
+<a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--logical_device--panels--port_groups"></a>
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.logical_device.panels.port_groups`
 
 Read-Only:
 
@@ -291,7 +291,7 @@ Read-Only:
 
 
 <a id="nestedatt--pod_infos--pod_type--rack_infos--rack_type--leaf_switches--mlag_info"></a>
-### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.tags`
+### Nested Schema for `pod_infos.pod_type.rack_infos.rack_type.leaf_switches.mlag_info`
 
 Read-Only:
 
@@ -331,25 +331,25 @@ Read-Only:
 - `tags` (Attributes Set) Details any tags applied to the Spine Switches. (see [below for nested schema](#nestedatt--pod_infos--pod_type--spine--tags))
 
 <a id="nestedatt--pod_infos--pod_type--spine--logical_device"></a>
-### Nested Schema for `pod_infos.pod_type.spine.tags`
+### Nested Schema for `pod_infos.pod_type.spine.logical_device`
 
 Read-Only:
 
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Logical device display name.
-- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--spine--tags--panels))
+- `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--pod_infos--pod_type--spine--logical_device--panels))
 
-<a id="nestedatt--pod_infos--pod_type--spine--tags--panels"></a>
-### Nested Schema for `pod_infos.pod_type.spine.tags.panels`
+<a id="nestedatt--pod_infos--pod_type--spine--logical_device--panels"></a>
+### Nested Schema for `pod_infos.pod_type.spine.logical_device.panels`
 
 Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
-- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--spine--tags--panels--port_groups))
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--pod_infos--pod_type--spine--logical_device--panels--port_groups))
 - `rows` (Number) Physical vertical dimension of the panel.
 
-<a id="nestedatt--pod_infos--pod_type--spine--tags--panels--port_groups"></a>
-### Nested Schema for `pod_infos.pod_type.spine.tags.panels.rows`
+<a id="nestedatt--pod_infos--pod_type--spine--logical_device--panels--port_groups"></a>
+### Nested Schema for `pod_infos.pod_type.spine.logical_device.panels.port_groups`
 
 Read-Only:
 
@@ -404,7 +404,7 @@ Read-Only:
 - `rows` (Number) Physical vertical dimension of the panel.
 
 <a id="nestedatt--super_spine--logical_device--panels--port_groups"></a>
-### Nested Schema for `super_spine.logical_device.panels.rows`
+### Nested Schema for `super_spine.logical_device.panels.port_groups`
 
 Read-Only:
 

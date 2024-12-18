@@ -89,7 +89,7 @@ Read-Only:
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
 <a id="nestedatt--rack_type--access_switches--links--tags"></a>
-### Nested Schema for `rack_type.access_switches.links.target_switch_name`
+### Nested Schema for `rack_type.access_switches.links.tags`
 
 Required:
 
@@ -174,7 +174,7 @@ Read-Only:
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
 
 <a id="nestedatt--rack_type--generic_systems--links--tags"></a>
-### Nested Schema for `rack_type.generic_systems.links.target_switch_name`
+### Nested Schema for `rack_type.generic_systems.links.tags`
 
 Required:
 

@@ -125,7 +125,7 @@ Read-Only:
 - `rows` (Number) Physical vertical dimension of the panel.
 
 <a id="nestedatt--access_switches--logical_device--panels--port_groups"></a>
-### Nested Schema for `access_switches.logical_device.panels.rows`
+### Nested Schema for `access_switches.logical_device.panels.port_groups`
 
 Read-Only:
 
@@ -204,7 +204,7 @@ Read-Only:
 - `rows` (Number) Physical vertical dimension of the panel.
 
 <a id="nestedatt--generic_systems--logical_device--panels--port_groups"></a>
-### Nested Schema for `generic_systems.logical_device.panels.rows`
+### Nested Schema for `generic_systems.logical_device.panels.port_groups`
 
 Read-Only:
 
@@ -259,7 +259,7 @@ Read-Only:
 - `rows` (Number) Physical vertical dimension of the panel.
 
 <a id="nestedatt--leaf_switches--logical_device--panels--port_groups"></a>
-### Nested Schema for `leaf_switches.logical_device.panels.rows`
+### Nested Schema for `leaf_switches.logical_device.panels.port_groups`
 
 Read-Only:
 

@@ -3,7 +3,7 @@ page_title: "apstra_datacenter_connectivity_template_system Resource - terraform
 subcategory: "Reference Design: Datacenter"
 description: |-
   This resource creates a Connectivity Template suitable for use with Application Points of type system within a Datacenter Blueprint. system Application Points use the following Connectivity Template Primitive hierarchy:
-   - Custom Static Route
+  Custom Static Route
 ---
 
 # apstra_datacenter_connectivity_template_system (Resource)

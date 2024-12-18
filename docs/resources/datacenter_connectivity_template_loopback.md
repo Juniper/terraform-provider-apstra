@@ -3,8 +3,8 @@ page_title: "apstra_datacenter_connectivity_template_loopback Resource - terrafo
 subcategory: "Reference Design: Datacenter"
 description: |-
   This resource creates a Connectivity Template suitable for use with Application Points of type loopback within a Datacenter Blueprint. loopback Application Points use the following Connectivity Template Primitive hierarchy:
-   - BGP Peering (IP Endpoint)
-     - Routing Policy
+  BGP Peering (IP Endpoint)
+  Routing Policy
 ---
 
 # apstra_datacenter_connectivity_template_loopback (Resource)

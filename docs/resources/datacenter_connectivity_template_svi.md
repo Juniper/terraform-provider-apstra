@@ -3,10 +3,9 @@ page_title: "apstra_datacenter_connectivity_template_svi Resource - terraform-pr
 subcategory: "Reference Design: Datacenter"
 description: |-
   This resource creates a Connectivity Template suitable for use with Application Points of type svi within a Datacenter Blueprint. svi Application Points use the following Connectivity Template Primitive hierarchy:
-   - BGP Peering (IP Endpoint)
-     - Routing Policy
-   - Dynamic BGP Peering
-     - Routing Policy
+  BGP Peering (IP Endpoint)
+  Routing PolicyDynamic BGP Peering
+  Routing Policy
 ---
 
 # apstra_datacenter_connectivity_template_svi (Resource)

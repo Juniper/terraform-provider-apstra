@@ -19,11 +19,12 @@ const (
 	errBpClientCreateSummary                  = "Failed to create client for Blueprint %s"
 	errBpNotFoundSummary                      = "Blueprint %s not found"
 
-	docCategorySeparator    = " --- "
-	docCategoryDesign       = "Design" + docCategorySeparator
-	docCategoryResources    = "Resource Pools" + docCategorySeparator
-	docCategoryDatacenter   = "Reference Design: Datacenter" + docCategorySeparator
-	docCategoryFreeform     = "Reference Design: Freeform" + docCategorySeparator
-	docCategoryRefDesignAny = "Reference Design: Shared" + docCategorySeparator
-	docCategoryDevices      = "Devices" + docCategorySeparator
+	docCategorySeparator      = " --- "
+	docCategoryAuthentication = "Authentication" + docCategorySeparator
+	docCategoryDatacenter     = "Reference Design: Datacenter" + docCategorySeparator
+	docCategoryDesign         = "Design" + docCategorySeparator
+	docCategoryDevices        = "Devices" + docCategorySeparator
+	docCategoryFreeform       = "Reference Design: Freeform" + docCategorySeparator
+	docCategoryRefDesignAny   = "Reference Design: Shared" + docCategorySeparator
+	docCategoryResources      = "Resource Pools" + docCategorySeparator
 )
