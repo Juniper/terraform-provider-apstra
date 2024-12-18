@@ -112,3 +112,7 @@ func (o *ConnectivityTemplateLoopback) LoadApiData(ctx context.Context, in *apst
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
 	o.BgpPeeringIpEndpoints = primitives.BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 }
+
+func (o *ConnectivityTemplateLoopback) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.BgpPeeringIpEndpoints = primitives.LoadIDsIntoBgpPeeringIpEndpointMap(ctx, in.Subpolicies, o.BgpPeeringIpEndpoints, diags)
+}

@@ -309,3 +309,25 @@ func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpo
 
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
 }
+
+func LoadIDsIntoBgpPeeringGenericSystemMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]BgpPeeringGenericSystem, len(inMap.Elements()))
+	inMap.ElementsAs(ctx, &result, false)
+	if diags.HasError() {
+		return types.MapNull(types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()})
+	}
+
+	for _, p := range subpolicies {
+		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi); !ok {
+			continue // wrong type and nil value both wind up getting skipped
+		}
+
+		if v, ok := result[p.Label]; ok {
+			v.Id = types.StringPointerValue((*string)(p.Id))
+			v.RoutingPolicies = LoadIDsIntoRoutingPolicyMap(ctx, p.Subpolicies, v.RoutingPolicies, diags)
+			result[p.Label] = v
+		}
+	}
+
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
+}

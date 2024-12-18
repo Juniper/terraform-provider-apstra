@@ -280,3 +280,28 @@ func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.
 
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
 }
+
+func LoadIDsIntoCustomIpLinkMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]IpLink, len(inMap.Elements()))
+	inMap.ElementsAs(ctx, &result, false)
+	if diags.HasError() {
+		return types.MapNull(types.ObjectType{AttrTypes: IpLink{}.AttrTypes()})
+	}
+
+	for _, p := range subpolicies {
+		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink); !ok {
+			continue // wrong type and nil value both wind up getting skipped
+		}
+
+		if v, ok := result[p.Label]; ok {
+			v.Id = types.StringPointerValue((*string)(p.Id))
+			v.BgpPeeringGenericSystems = LoadIDsIntoBgpPeeringGenericSystemMap(ctx, p.Subpolicies, v.BgpPeeringGenericSystems, diags)
+			v.BgpPeeringIpEndpoints = LoadIDsIntoBgpPeeringIpEndpointMap(ctx, p.Subpolicies, v.BgpPeeringIpEndpoints, diags)
+			v.DynamicBgpPeerings = LoadIDsIntoDynamicBgpPeeringMap(ctx, p.Subpolicies, v.DynamicBgpPeerings, diags)
+			v.StaticRoutes = LoadIDsIntoStaticRouteMap(ctx, p.Subpolicies, v.StaticRoutes, diags)
+			result[p.Label] = v
+		}
+	}
+
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
+}

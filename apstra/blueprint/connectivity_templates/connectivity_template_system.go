@@ -134,3 +134,7 @@ func (o *ConnectivityTemplateSystem) LoadApiData(ctx context.Context, in *apstra
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
 	o.CustomStaticRoutes = primitives.CustomStaticRoutePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 }
+
+func (o *ConnectivityTemplateSystem) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.CustomStaticRoutes = primitives.LoadIDsIntoCustomStaticRouteMap(ctx, in.Subpolicies, o.CustomStaticRoutes, diags)
+}

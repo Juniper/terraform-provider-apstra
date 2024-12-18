@@ -119,3 +119,8 @@ func (o *ConnectivityTemplateSvi) LoadApiData(ctx context.Context, in *apstra.Co
 	o.BgpPeeringIpEndpoints = primitives.BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 	o.DynamicBgpPeerings = primitives.DynamicBgpPeeringPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 }
+
+func (o *ConnectivityTemplateSvi) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.BgpPeeringIpEndpoints = primitives.LoadIDsIntoBgpPeeringIpEndpointMap(ctx, in.Subpolicies, o.BgpPeeringIpEndpoints, diags)
+	o.DynamicBgpPeerings = primitives.LoadIDsIntoDynamicBgpPeeringMap(ctx, in.Subpolicies, o.DynamicBgpPeerings, diags)
+}

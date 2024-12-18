@@ -145,3 +145,10 @@ func (o *ConnectivityTemplateInterface) LoadApiData(ctx context.Context, in *aps
 	o.VirtualNetworkMultiples = primitives.VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 	o.VirtualNetworkSingles = primitives.VirtualNetworkSinglePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 }
+
+func (o *ConnectivityTemplateInterface) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.IpLinks = primitives.LoadIDsIntoCustomStaticRouteMap(ctx, in.Subpolicies, o.IpLinks, diags)
+	o.RoutingZoneConstraints = primitives.LoadIDsIntoRoutingZoneConstraintMap(ctx, in.Subpolicies, o.RoutingZoneConstraints, diags)
+	o.VirtualNetworkMultiples = primitives.LoadIDsIntoVirtualNetworkMultipleMap(ctx, in.Subpolicies, o.VirtualNetworkMultiples, diags)
+	o.VirtualNetworkSingles = primitives.LoadIDsIntoVirtualNetworkSingleMap(ctx, in.Subpolicies, o.VirtualNetworkSingles, diags)
+}
