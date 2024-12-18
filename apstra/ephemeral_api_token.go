@@ -71,8 +71,10 @@ func (o *ephemeralToken) Open(ctx context.Context, req ephemeral.OpenRequest, re
 		return
 	}
 
-	// destroy the new client without invalidating the API token we just collected.
-	// We use Logout() here because it stops the task monitor goroutine.
+	// Destroy the new client without invalidating the API token we just collected.
+	// We call Logout() here only for the side effect of stopping the task monitor
+	// goroutine. This client *can't* invalidate the session because it no longer
+	// has an API token.
 	client.SetApiToken("")
 	err = client.Logout(ctx)
 	if err != nil {
