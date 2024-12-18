@@ -64,7 +64,7 @@ func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{ipLinkBatchPlanModifier{}},
+			PlanModifiers:       []planmodifier.String{ipLinkBatchIdPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -322,19 +322,19 @@ func LoadIDsIntoIpLinkMap(ctx context.Context, subpolicies []*apstra.Connectivit
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
 }
 
-var _ planmodifier.String = (*ipLinkBatchPlanModifier)(nil)
+var _ planmodifier.String = (*ipLinkBatchIdPlanModifier)(nil)
 
-type ipLinkBatchPlanModifier struct{}
+type ipLinkBatchIdPlanModifier struct{}
 
-func (o ipLinkBatchPlanModifier) Description(_ context.Context) string {
+func (o ipLinkBatchIdPlanModifier) Description(_ context.Context) string {
 	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
 }
 
-func (o ipLinkBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+func (o ipLinkBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o ipLinkBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan IpLink
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {

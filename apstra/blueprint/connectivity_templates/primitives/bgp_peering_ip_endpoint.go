@@ -69,7 +69,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{bgpPeeringIpEndpointBatchPlanModifier{}},
+			PlanModifiers:       []planmodifier.String{bgpPeeringIpEndpointBatchIdPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -313,19 +313,19 @@ func LoadIDsIntoBgpPeeringIpEndpointMap(ctx context.Context, subpolicies []*apst
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
 }
 
-var _ planmodifier.String = (*bgpPeeringIpEndpointBatchPlanModifier)(nil)
+var _ planmodifier.String = (*bgpPeeringIpEndpointBatchIdPlanModifier)(nil)
 
-type bgpPeeringIpEndpointBatchPlanModifier struct{}
+type bgpPeeringIpEndpointBatchIdPlanModifier struct{}
 
-func (o bgpPeeringIpEndpointBatchPlanModifier) Description(_ context.Context) string {
+func (o bgpPeeringIpEndpointBatchIdPlanModifier) Description(_ context.Context) string {
 	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
 }
 
-func (o bgpPeeringIpEndpointBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+func (o bgpPeeringIpEndpointBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o bgpPeeringIpEndpointBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+func (o bgpPeeringIpEndpointBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan BgpPeeringIpEndpoint
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {

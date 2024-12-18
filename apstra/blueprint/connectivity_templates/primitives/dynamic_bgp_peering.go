@@ -72,7 +72,7 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{dynamicBgpPeeringBatchPlanModifier{}},
+			PlanModifiers:       []planmodifier.String{dynamicBgpPeeringBatchIdPlanModifier{}},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
@@ -324,19 +324,19 @@ func LoadIDsIntoDynamicBgpPeeringMap(ctx context.Context, subpolicies []*apstra.
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
 }
 
-var _ planmodifier.String = (*dynamicBgpPeeringBatchPlanModifier)(nil)
+var _ planmodifier.String = (*dynamicBgpPeeringBatchIdPlanModifier)(nil)
 
-type dynamicBgpPeeringBatchPlanModifier struct{}
+type dynamicBgpPeeringBatchIdPlanModifier struct{}
 
-func (o dynamicBgpPeeringBatchPlanModifier) Description(_ context.Context) string {
+func (o dynamicBgpPeeringBatchIdPlanModifier) Description(_ context.Context) string {
 	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
 }
 
-func (o dynamicBgpPeeringBatchPlanModifier) MarkdownDescription(ctx context.Context) string {
+func (o dynamicBgpPeeringBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
 	return o.Description(ctx)
 }
 
-func (o dynamicBgpPeeringBatchPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+func (o dynamicBgpPeeringBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan DynamicBgpPeering
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {
