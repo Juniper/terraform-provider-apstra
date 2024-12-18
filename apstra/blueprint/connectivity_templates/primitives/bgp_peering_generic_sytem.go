@@ -28,6 +28,8 @@ import (
 
 type BgpPeeringGenericSystem struct {
 	Id                 types.String `tfsdk:"id"`
+	BatchId            types.String `tfsdk:"batch_id"`
+	PipelineId         types.String `tfsdk:"pipeline_id"`
 	Ttl                types.Int64  `tfsdk:"ttl"`
 	BfdEnabled         types.Bool   `tfsdk:"bfd_enabled"`
 	Password           types.String `tfsdk:"password"`
@@ -45,6 +47,8 @@ type BgpPeeringGenericSystem struct {
 func (o BgpPeeringGenericSystem) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":                   types.StringType,
+		"batch_id":             types.StringType,
+		"pipeline_id":          types.StringType,
 		"ttl":                  types.Int64Type,
 		"bfd_enabled":          types.BoolType,
 		"password":             types.StringType,
@@ -64,6 +68,15 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"batch_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
+			Computed:            true,
+		},
+		"pipeline_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -211,18 +224,16 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 }
 
 func (o BgpPeeringGenericSystem) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
-	if !utils.HasValue(o.Id) {
-		o.Id = utils.NewUuidStringVal(diags)
-		if diags.HasError() {
-			return nil
-		}
-	}
+	result := apstra.ConnectivityTemplatePrimitive{Attributes: o.attributes(ctx, diags)}
 
-	result := apstra.ConnectivityTemplatePrimitive{
-		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
-		// Label:       // set by caller
-		Attributes: o.attributes(ctx, diags),
-		// Subpolicies: // set below
+	if !o.PipelineId.IsUnknown() {
+		result.PipelineId = (*apstra.ObjectId)(o.PipelineId.ValueStringPointer()) // nil when null
+	}
+	if !o.Id.IsUnknown() {
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
+	}
+	if !o.BatchId.IsUnknown() {
+		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
 	result.Subpolicies = append(result.Subpolicies, RoutingPolicySubpolicies(ctx, o.RoutingPolicies, diags)...)
@@ -298,7 +309,9 @@ func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpo
 			}
 
 			newPrimitive := newBgpPeeringGenericSystem(ctx, p, diags)
+			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
 			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
+			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
 			result[subpolicy.Label] = newPrimitive
 		}
@@ -323,7 +336,9 @@ func LoadIDsIntoBgpPeeringGenericSystemMap(ctx context.Context, subpolicies []*a
 		}
 
 		if v, ok := result[p.Label]; ok {
+			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
+			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
 			v.RoutingPolicies = LoadIDsIntoRoutingPolicyMap(ctx, p.Subpolicies, v.RoutingPolicies, diags)
 			result[p.Label] = v
 		}

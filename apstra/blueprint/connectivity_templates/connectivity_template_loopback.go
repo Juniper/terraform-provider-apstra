@@ -85,7 +85,7 @@ func (o ConnectivityTemplateLoopback) Request(ctx context.Context, diags *diag.D
 
 	// try to set the root batch policy ID from o.Id
 	if !o.Id.IsUnknown() {
-		result.Id = utils.ToPtr(apstra.ObjectId(o.Id.ValueString()))
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
 	}
 
 	// set remaining policy IDs
@@ -114,5 +114,7 @@ func (o *ConnectivityTemplateLoopback) LoadApiData(ctx context.Context, in *apst
 }
 
 func (o *ConnectivityTemplateLoopback) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.Id = types.StringPointerValue((*string)(in.Id))
+
 	o.BgpPeeringIpEndpoints = primitives.LoadIDsIntoBgpPeeringIpEndpointMap(ctx, in.Subpolicies, o.BgpPeeringIpEndpoints, diags)
 }

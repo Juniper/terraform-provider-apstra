@@ -107,7 +107,7 @@ func (o ConnectivityTemplateSystem) Request(ctx context.Context, diags *diag.Dia
 
 	// try to set the root batch policy ID from o.Id
 	if !o.Id.IsUnknown() {
-		result.Id = utils.ToPtr(apstra.ObjectId(o.Id.ValueString()))
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
 	}
 
 	// set remaining policy IDs
@@ -136,5 +136,7 @@ func (o *ConnectivityTemplateSystem) LoadApiData(ctx context.Context, in *apstra
 }
 
 func (o *ConnectivityTemplateSystem) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.Id = types.StringPointerValue((*string)(in.Id))
+
 	o.CustomStaticRoutes = primitives.LoadIDsIntoCustomStaticRouteMap(ctx, in.Subpolicies, o.CustomStaticRoutes, diags)
 }

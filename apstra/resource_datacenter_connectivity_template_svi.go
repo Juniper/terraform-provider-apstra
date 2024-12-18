@@ -132,7 +132,6 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Create(ctx context.Context, 
 	}
 
 	// set the state
-	plan.Id = types.StringValue(string(*request.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

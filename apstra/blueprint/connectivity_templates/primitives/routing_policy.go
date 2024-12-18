@@ -20,12 +20,16 @@ import (
 
 type RoutingPolicy struct {
 	Id              types.String `tfsdk:"id"`
+	BatchId         types.String `tfsdk:"batch_id"`
+	PipelineId      types.String `tfsdk:"pipeline_id"`
 	RoutingPolicyId types.String `tfsdk:"routing_policy_id"`
 }
 
 func (o RoutingPolicy) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":                types.StringType,
+		"batch_id":          types.StringType,
+		"pipeline_id":       types.StringType,
 		"routing_policy_id": types.StringType,
 	}
 }
@@ -34,6 +38,15 @@ func (o RoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute 
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"batch_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
+			Computed:            true,
+		},
+		"pipeline_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -52,18 +65,19 @@ func (o RoutingPolicy) attributes(_ context.Context, _ *diag.Diagnostics) *apstr
 }
 
 func (o RoutingPolicy) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
-	if !utils.HasValue(o.Id) {
-		o.Id = utils.NewUuidStringVal(diags)
-		if diags.HasError() {
-			return nil
-		}
+	result := apstra.ConnectivityTemplatePrimitive{Attributes: o.attributes(ctx, diags)}
+
+	if !o.PipelineId.IsUnknown() {
+		result.PipelineId = (*apstra.ObjectId)(o.PipelineId.ValueStringPointer()) // nil when null
+	}
+	if !o.Id.IsUnknown() {
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
+	}
+	if !o.BatchId.IsUnknown() {
+		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
-	return &apstra.ConnectivityTemplatePrimitive{
-		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
-		// Label:       // set by caller
-		Attributes: o.attributes(ctx, diags),
-	}
+	return &result
 }
 
 func RoutingPolicySubpolicies(ctx context.Context, routingPolicyMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
@@ -113,7 +127,9 @@ func RoutingPolicyPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*
 			}
 
 			newPrimitive := newRoutingPolicy(ctx, p, diags)
+			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
 			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
+			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}
@@ -137,7 +153,9 @@ func LoadIDsIntoRoutingPolicyMap(ctx context.Context, subpolicies []*apstra.Conn
 		}
 
 		if v, ok := result[p.Label]; ok {
+			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
+			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
 			result[p.Label] = v
 		}
 	}

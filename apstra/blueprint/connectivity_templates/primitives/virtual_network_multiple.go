@@ -20,6 +20,8 @@ import (
 
 type VirtualNetworkMultiple struct {
 	Id           types.String `tfsdk:"id"`
+	BatchId      types.String `tfsdk:"batch_id"`
+	PipelineId   types.String `tfsdk:"pipeline_id"`
 	UntaggedVnId types.String `tfsdk:"untagged_vn_id"`
 	TaggedVnIds  types.Set    `tfsdk:"tagged_vn_ids"`
 }
@@ -27,6 +29,8 @@ type VirtualNetworkMultiple struct {
 func (o VirtualNetworkMultiple) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":             types.StringType,
+		"batch_id":       types.StringType,
+		"pipeline_id":    types.StringType,
 		"untagged_vn_id": types.StringType,
 		"tagged_vn_ids":  types.SetType{ElemType: types.StringType},
 	}
@@ -36,6 +40,15 @@ func (o VirtualNetworkMultiple) ResourceAttributes() map[string]resourceSchema.A
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"batch_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
+			Computed:            true,
+		},
+		"pipeline_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -71,18 +84,19 @@ func (o VirtualNetworkMultiple) attributes(ctx context.Context, diags *diag.Diag
 }
 
 func (o VirtualNetworkMultiple) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
-	if !utils.HasValue(o.Id) {
-		o.Id = utils.NewUuidStringVal(diags)
-		if diags.HasError() {
-			return nil
-		}
+	result := apstra.ConnectivityTemplatePrimitive{Attributes: o.attributes(ctx, diags)}
+
+	if !o.PipelineId.IsUnknown() {
+		result.PipelineId = (*apstra.ObjectId)(o.PipelineId.ValueStringPointer()) // nil when null
+	}
+	if !o.Id.IsUnknown() {
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
+	}
+	if !o.BatchId.IsUnknown() {
+		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
-	return &apstra.ConnectivityTemplatePrimitive{
-		Id: (*apstra.ObjectId)(o.Id.ValueStringPointer()),
-		// Label:       // set by caller
-		Attributes: o.attributes(ctx, diags),
-	}
+	return &result
 }
 
 func VirtualNetworkMultipleSubpolicies(ctx context.Context, virtualNetworkMultipleMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
@@ -133,7 +147,9 @@ func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpol
 			}
 
 			newPrimitive := newVirtualNetworkMultiple(ctx, p, diags)
+			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
 			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
+			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			result[subpolicy.Label] = newPrimitive
 		}
 	}
@@ -157,7 +173,9 @@ func LoadIDsIntoVirtualNetworkSingleMap(ctx context.Context, subpolicies []*apst
 		}
 
 		if v, ok := result[p.Label]; ok {
+			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
 			v.Id = types.StringPointerValue((*string)(p.Id))
+			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
 			v.BgpPeeringGenericSystems = LoadIDsIntoBgpPeeringGenericSystemMap(ctx, p.Subpolicies, v.BgpPeeringGenericSystems, diags)
 			v.StaticRoutes = LoadIDsIntoStaticRouteMap(ctx, p.Subpolicies, v.StaticRoutes, diags)
 			result[p.Label] = v
