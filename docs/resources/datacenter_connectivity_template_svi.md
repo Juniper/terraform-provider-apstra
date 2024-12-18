@@ -128,7 +128,9 @@ Optional:
 
 Read-Only:
 
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
 - `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--bgp_peering_ip_endpoints--routing_policies"></a>
 ### Nested Schema for `bgp_peering_ip_endpoints.routing_policies`
@@ -139,7 +141,9 @@ Required:
 
 Read-Only:
 
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
 - `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -165,7 +169,9 @@ Optional:
 
 Read-Only:
 
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
 - `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--dynamic_bgp_peerings--routing_policies"></a>
 ### Nested Schema for `dynamic_bgp_peerings.routing_policies`
@@ -176,7 +182,9 @@ Required:
 
 Read-Only:
 
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
 - `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 

@@ -78,7 +78,9 @@ Required:
 
 Read-Only:
 
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
 - `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
