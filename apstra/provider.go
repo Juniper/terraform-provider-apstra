@@ -55,7 +55,7 @@ https://registry.terraform.io/providers/Juniper/apstra/%s/docs#tls_validation_di
 var commit, tag string // populated by goreleaser
 
 var (
-	_ provider.Provider                       = &Provider{}
+	_ provider.Provider                       = (*Provider)(nil)
 	_ provider.ProviderWithEphemeralResources = (*Provider)(nil)
 )
 
