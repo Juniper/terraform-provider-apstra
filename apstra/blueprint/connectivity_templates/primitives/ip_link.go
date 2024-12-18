@@ -281,7 +281,7 @@ func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.
 	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
 }
 
-func LoadIDsIntoCustomIpLinkMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
+func LoadIDsIntoIpLinkMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
 	result := make(map[string]IpLink, len(inMap.Elements()))
 	inMap.ElementsAs(ctx, &result, false)
 	if diags.HasError() {
