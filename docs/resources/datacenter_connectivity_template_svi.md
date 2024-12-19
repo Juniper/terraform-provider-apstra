@@ -24,66 +24,63 @@ This resource creates a Connectivity Template suitable for use with Application 
 # "svi" application points. It has two BGP peering (IP Endpoint)
 # primitives. Each BGP Peering (IP Endpoint) primitive has two routing
 # policy primitives.
+
+locals { blueprint_id = "fe771218-3e83-450b-acb9-643567644013" }
+
 resource "apstra_datacenter_connectivity_template_svi" "example" {
-  blueprint_id = "fe771218-3e83-450b-acb9-643567644013"
+  blueprint_id = local.blueprint_id
   name         = "example connectivity template"
   description  = "peer with juniper and microsoft"
-  bgp_peering_ip_endpoints = [
-    {
-      name           = "juniper"
+  bgp_peering_ip_endpoints = {
+    juniper = {
       neighbor_asn   = 14203
       keepalive_time = 1
       hold_time      = 3
       bfd_enabled    = true
       ipv4_address   = "192.0.2.11"
-      routing_policies = [
-        {
-          name              = apstra_datacenter_routing_policy.allow_10_1_0_0-16_out.name
+      routing_policies = {
+        (apstra_datacenter_routing_policy.allow_10_1_0_0-16_out.name) = {
           routing_policy_id = apstra_datacenter_routing_policy.allow_10_1_0_0-16_out.id
         },
-        {
-          name              = apstra_datacenter_routing_policy.allow_10_2_0_0-16_in.name
+        (apstra_datacenter_routing_policy.allow_10_2_0_0-16_in.name) = {
           routing_policy_id = apstra_datacenter_routing_policy.allow_10_2_0_0-16_in.id
         }
-      ]
+      }
     },
-    {
-      name           = "microsoft"
+    microsoft = {
       neighbor_asn   = 8975
       keepalive_time = 1
       hold_time      = 3
       bfd_enabled    = true
       ipv6_address   = "3fff::1"
-      routing_policies = [
-        {
-          name              = apstra_datacenter_routing_policy.allow_10_1_0_0-16_out.name
+      routing_policies = {
+        (apstra_datacenter_routing_policy.allow_10_1_0_0-16_out.name) = {
           routing_policy_id = apstra_datacenter_routing_policy.allow_10_1_0_0-16_out.id
         },
-        {
-          name              = apstra_datacenter_routing_policy.allow_10_3_0_0-16_in.name
+        (apstra_datacenter_routing_policy.allow_10_3_0_0-16_in.name) = {
           routing_policy_id = apstra_datacenter_routing_policy.allow_10_3_0_0-16_in.id
         }
-      ]
+      }
     },
-  ]
+  }
 }
 
 resource "apstra_datacenter_routing_policy" "allow_10_1_0_0-16_out" {
-  blueprint_id  = "fe771218-3e83-450b-acb9-643567644013"
+  blueprint_id = local.blueprint_id
   name          = "10_1_0_0-16_out"
   import_policy = "extra_only"
   extra_exports = [{ prefix = "10.1.0.0/16", action = "permit" }]
 }
 
 resource "apstra_datacenter_routing_policy" "allow_10_2_0_0-16_in" {
-  blueprint_id  = "fe771218-3e83-450b-acb9-643567644013"
+  blueprint_id = local.blueprint_id
   name          = "10_2_0_0-16_in"
   import_policy = "extra_only"
   extra_imports = [{ prefix = "10.2.0.0/16", action = "permit" }]
 }
 
 resource "apstra_datacenter_routing_policy" "allow_10_3_0_0-16_in" {
-  blueprint_id  = "fe771218-3e83-450b-acb9-643567644013"
+  blueprint_id = local.blueprint_id
   name          = "10_3_0_0-16_in"
   import_policy = "extra_only"
   extra_imports = [{ prefix = "10.3.0.0/16", action = "permit" }]
@@ -100,9 +97,9 @@ resource "apstra_datacenter_routing_policy" "allow_10_3_0_0-16_in" {
 
 ### Optional
 
-- `bgp_peering_ip_endpoints` (Attributes Set) Set of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints))
+- `bgp_peering_ip_endpoints` (Attributes Map) Map of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints))
 - `description` (String) Connectivity Template Description displayed in the web UI
-- `dynamic_bgp_peerings` (Attributes Set) Set of *Dynamic BGP Peering* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--dynamic_bgp_peerings))
+- `dynamic_bgp_peerings` (Attributes Map) Map of *Dynamic BGP Peering* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--dynamic_bgp_peerings))
 - `tags` (Set of String) Set of Tags associated with this Connectivity Template
 
 ### Read-Only
@@ -115,7 +112,6 @@ resource "apstra_datacenter_routing_policy" "allow_10_3_0_0-16_in" {
 Required:
 
 - `bfd_enabled` (Boolean) Enable BFD.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 
 Optional:
 
@@ -126,16 +122,26 @@ Optional:
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--bgp_peering_ip_endpoints--routing_policies"></a>
 ### Nested Schema for `bgp_peering_ip_endpoints.routing_policies`
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -147,7 +153,6 @@ Required:
 - `bfd_enabled` (Boolean) Enable BFD.
 - `ipv4_enabled` (Boolean) Enables peering with IPv4 neighbors.
 - `ipv6_enabled` (Boolean) Enables peering with IPv6 neighbors.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 
 Optional:
 
@@ -157,16 +162,26 @@ Optional:
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--dynamic_bgp_peerings--routing_policies"></a>
 ### Nested Schema for `dynamic_bgp_peerings.routing_policies`
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 

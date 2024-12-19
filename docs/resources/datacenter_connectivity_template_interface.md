@@ -41,10 +41,12 @@ This resource creates a Connectivity Template suitable for use with Application 
 # a different Routing Zone and include all Virtual Networks from that
 # Routing Zone.
 
+locals { blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4" }
+
 # First, find the IDs of the interesting routing zones using the
 # apstra_datacenter_routing_zones data source with a couple of filters:
 data "apstra_datacenter_routing_zones" "selected" {
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   filters = [
     {
       name = "dev"
@@ -59,7 +61,7 @@ data "apstra_datacenter_routing_zones" "selected" {
 # its details available in a map.
 data "apstra_datacenter_routing_zone" "selected" {
   for_each     = data.apstra_datacenter_routing_zones.selected.ids
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   id           = each.value
 }
 
@@ -67,7 +69,7 @@ data "apstra_datacenter_routing_zone" "selected" {
 # associated Virtual Networks.
 data "apstra_datacenter_virtual_networks" "selected" {
   for_each     = data.apstra_datacenter_routing_zone.selected
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   filters = [
     {
       routing_zone_id = each.value.id
@@ -80,15 +82,15 @@ data "apstra_datacenter_virtual_networks" "selected" {
 # of these primitives lists all of the Virtual Networks in
 # that Routing Zone.
 resource "apstra_datacenter_connectivity_template_interface" "example" {
-  blueprint_id = "82a4dde9-eb98-4666-a010-d82f66296be4"
+  blueprint_id = local.blueprint_id
   name         = "Tagged handoff to all VNs from multiple RZs"
   description  = format("All VNs from the following RZs: \n - %s", join("\n - ", [for rz in data.apstra_datacenter_routing_zone.selected : rz.name]))
-  virtual_network_multiples = [
-    for rz in data.apstra_datacenter_routing_zone.selected : {
+  virtual_network_multiples = {
+    for rz in data.apstra_datacenter_routing_zone.selected : format("rz '%s' networks", rz.name) => {
       name          = format("rz '%s' networks", rz.name)
       tagged_vn_ids = data.apstra_datacenter_virtual_networks.selected[rz.id].ids
     }
-  ]
+  }
 }
 ```
 
@@ -103,11 +105,11 @@ resource "apstra_datacenter_connectivity_template_interface" "example" {
 ### Optional
 
 - `description` (String) Connectivity Template Description displayed in the web UI
-- `ip_links` (Attributes Set) Set of *IP Link* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links))
-- `routing_zone_constraints` (Attributes Set) Set of *Routing Zone Constraint* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--routing_zone_constraints))
+- `ip_links` (Attributes Map) Map of *IP Link* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links))
+- `routing_zone_constraints` (Attributes Map) Map of *Routing Zone Constraint* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--routing_zone_constraints))
 - `tags` (Set of String) Set of Tags associated with this Connectivity Template
-- `virtual_network_multiples` (Attributes Set) Set of *Virtual Network (Multiple)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--virtual_network_multiples))
-- `virtual_network_singles` (Attributes Set) Set of *Virtual Network (Single)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--virtual_network_singles))
+- `virtual_network_multiples` (Attributes Map) Map of *Virtual Network (Multiple)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--virtual_network_multiples))
+- `virtual_network_singles` (Attributes Map) Map of *Virtual Network (Single)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--virtual_network_singles))
 
 ### Read-Only
 
@@ -120,17 +122,22 @@ Required:
 
 - `ipv4_addressing_type` (String) One of `none`, `numbered`
 - `ipv6_addressing_type` (String) One of `none`, `link_local`, `numbered`
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 - `routing_zone_id` (String) Node ID of the Routing Zone to which this IP Link should belong.
 
 Optional:
 
-- `bgp_peering_generic_systems` (Attributes Set) Set of BGP Peering (Generic System) primitives (see [below for nested schema](#nestedatt--ip_links--bgp_peering_generic_systems))
-- `bgp_peering_ip_endpoints` (Attributes Set) Set of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links--bgp_peering_ip_endpoints))
-- `dynamic_bgp_peerings` (Attributes Set) Set of *Dynamic BGP Peering* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links--dynamic_bgp_peerings))
+- `bgp_peering_generic_systems` (Attributes Map) Map of BGP Peering (Generic System) primitives (see [below for nested schema](#nestedatt--ip_links--bgp_peering_generic_systems))
+- `bgp_peering_ip_endpoints` (Attributes Map) Map of *BGP Peering (IP Endpoint)* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links--bgp_peering_ip_endpoints))
+- `dynamic_bgp_peerings` (Attributes Map) Map of *Dynamic BGP Peering* Primitives in this Connectivity Template (see [below for nested schema](#nestedatt--ip_links--dynamic_bgp_peerings))
 - `l3_mtu` (Number) L3 MTU for sub-interfaces on leaf (spine/superspine) side and generic side. Configuration is applicable only when Fabric MTU is enabled. Value must be even number rom 1280 to 9216, if not specified - Default IP Links to Generic Systems MTU from Virtual Network Policy s used
-- `static_routes` (Attributes Set) Set of network IPv4 or IPv6 destination prefixes reachable via this IP Link (see [below for nested schema](#nestedatt--ip_links--static_routes))
+- `static_routes` (Attributes Map) Map of network IPv4 or IPv6 destination prefixes reachable via this IP Link (see [below for nested schema](#nestedatt--ip_links--static_routes))
 - `vlan_id` (Number) 802.1Q tag number to use for tagged IP Link. Omit for untagged IP Link.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--ip_links--bgp_peering_generic_systems"></a>
 ### Nested Schema for `ip_links.bgp_peering_generic_systems`
@@ -145,7 +152,6 @@ Required:
   - none
   - addressed
   - link_local
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 - `neighbor_asn_dynamic` (Boolean) When `true`, the BGP process will accept connections from any peer AS.
 - `peer_from_loopback` (Boolean) Enable to peer from loopback interface. Default behavior peers from physical interface.
 - `peer_to` (String) Must be one of: 
@@ -159,16 +165,26 @@ Optional:
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--bgp_peering_generic_systems--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--bgp_peering_generic_systems--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--ip_links--bgp_peering_generic_systems--routing_policies"></a>
 ### Nested Schema for `ip_links.bgp_peering_generic_systems.routing_policies`
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -178,7 +194,6 @@ Required:
 Required:
 
 - `bfd_enabled` (Boolean) Enable BFD.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 
 Optional:
 
@@ -189,16 +204,26 @@ Optional:
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--bgp_peering_ip_endpoints--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--bgp_peering_ip_endpoints--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--ip_links--bgp_peering_ip_endpoints--routing_policies"></a>
 ### Nested Schema for `ip_links.bgp_peering_ip_endpoints.routing_policies`
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -210,7 +235,6 @@ Required:
 - `bfd_enabled` (Boolean) Enable BFD.
 - `ipv4_enabled` (Boolean) Enables peering with IPv4 neighbors.
 - `ipv6_enabled` (Boolean) Enables peering with IPv6 neighbors.
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 
 Optional:
 
@@ -220,16 +244,26 @@ Optional:
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--dynamic_bgp_peerings--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--ip_links--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--ip_links--dynamic_bgp_peerings--routing_policies"></a>
 ### Nested Schema for `ip_links.dynamic_bgp_peerings.routing_policies`
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -238,9 +272,13 @@ Required:
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `network` (String) Destination network in CIDR notation
 - `share_ip_endpoint` (Boolean) Indicates whether the next-hop IP address is shared across multiple remote systems. Default:  Default: `false`
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -249,21 +287,26 @@ Required:
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_zone_constraint_id` (String) Routing Zone Constraint ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 <a id="nestedatt--virtual_network_multiples"></a>
 ### Nested Schema for `virtual_network_multiples`
 
-Required:
-
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
-
 Optional:
 
 - `tagged_vn_ids` (Set of String) IDs of the Virtual Networks which should be tagged on the link
 - `untagged_vn_id` (String) ID of the Virtual Network which should be untagged on the link
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 <a id="nestedatt--virtual_network_singles"></a>
@@ -271,14 +314,19 @@ Optional:
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `tagged` (Boolean) Indicates whether the selected Virtual Network should be presented with an 802.1Q tag
 - `virtual_network_id` (String) ID of the desired Virtual Network
 
 Optional:
 
-- `bgp_peering_generic_systems` (Attributes Set) Set of BGP Peering (Generic System) primitives (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems))
-- `static_routes` (Attributes Set) Set of Static Route primitives (see [below for nested schema](#nestedatt--virtual_network_singles--static_routes))
+- `bgp_peering_generic_systems` (Attributes Map) Map of BGP Peering (Generic System) primitives (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems))
+- `static_routes` (Attributes Map) Map of Static Route primitives (see [below for nested schema](#nestedatt--virtual_network_singles--static_routes))
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--virtual_network_singles--bgp_peering_generic_systems"></a>
 ### Nested Schema for `virtual_network_singles.bgp_peering_generic_systems`
@@ -293,7 +341,6 @@ Required:
   - none
   - addressed
   - link_local
-- `name` (String) Label used by the web UI on the Primitive "block" in the Connectivity Template.
 - `neighbor_asn_dynamic` (Boolean) When `true`, the BGP process will accept connections from any peer AS.
 - `peer_from_loopback` (Boolean) Enable to peer from loopback interface. Default behavior peers from physical interface.
 - `peer_to` (String) Must be one of: 
@@ -307,16 +354,26 @@ Optional:
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `password` (String) Password used to secure the BGP session.
-- `routing_policies` (Attributes Set) Set of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems--routing_policies))
+- `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
+
+Read-Only:
+
+- `batch_id` (String) Unique identifier for this CT Primitive Element's downstream collection
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 <a id="nestedatt--virtual_network_singles--bgp_peering_generic_systems--routing_policies"></a>
 ### Nested Schema for `virtual_network_singles.bgp_peering_generic_systems.routing_policies`
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `routing_policy_id` (String) Routing Policy ID to be applied
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
@@ -325,9 +382,13 @@ Required:
 
 Required:
 
-- `name` (String) Label used on the Primitive "block" in the Connectivity Template
 - `network` (String) Destination network in CIDR notation
 - `share_ip_endpoint` (Boolean) Indicates whether the next-hop IP address is shared across multiple remote systems. Default:  Default: `false`
+
+Read-Only:
+
+- `id` (String) Unique identifier for this CT Primitive element
+- `pipeline_id` (String) Unique identifier for this CT Primitive Element's upstream pipeline
 
 
 
