@@ -5,7 +5,6 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"math/rand/v2"
 	"strconv"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 

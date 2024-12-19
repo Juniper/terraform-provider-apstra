@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -100,91 +102,91 @@ func TestResourceDatacenteConnectivityTemplateSystem(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		//"start_minimal": {
-		//	steps: []testStep{
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId: bp.Id().String(),
-		//				name:        acctest.RandString(6),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				description:        acctest.RandString(6),
-		//				tags:               randomStrings(rand.IntN(5)+2, 6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId: bp.Id().String(),
-		//				name:        acctest.RandString(6),
-		//			},
-		//		},
-		//	},
-		//},
-		//"start_maximal": {
-		//	steps: []testStep{
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				description:        acctest.RandString(6),
-		//				tags:               randomStrings(rand.IntN(5)+2, 6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId: bp.Id().String(),
-		//				name:        acctest.RandString(6),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				description:        acctest.RandString(6),
-		//				tags:               randomStrings(rand.IntN(5)+2, 6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 3, 3, bp, cleanup),
-		//			},
-		//		},
-		//	},
-		//},
-		//"change_labels": {
-		//	steps: []testStep{
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSystem{
-		//				blueprintId:        bp.Id().String(),
-		//				name:               acctest.RandString(6),
-		//				customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
-		//			},
-		//		},
-		//	},
-		//},
+		"start_minimal": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						description:        acctest.RandString(6),
+						tags:               randomStrings(rand.IntN(5)+2, 6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+			},
+		},
+		"start_maximal": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						description:        acctest.RandString(6),
+						tags:               randomStrings(rand.IntN(5)+2, 6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						description:        acctest.RandString(6),
+						tags:               randomStrings(rand.IntN(5)+2, 6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 3, 3, bp, cleanup),
+					},
+				},
+			},
+		},
+		"change_labels": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSystem{
+						blueprintId:        bp.Id().String(),
+						name:               acctest.RandString(6),
+						customStaticRoutes: randomCustomStaticRoutes(t, ctx, 2, 2, bp, cleanup),
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterConnectivityTemplateSystem)

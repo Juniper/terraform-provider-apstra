@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand/v2"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -91,13 +93,13 @@ func (o resourceDataCenterConnectivityTemplateSvi) testChecks(t testing.TB, bpId
 
 	result.append(t, "TestCheckResourceAttr", "bgp_peering_ip_endpoints.%", strconv.Itoa(len(o.bgpPeeringIpEndoints)))
 	for k, v := range o.bgpPeeringIpEndoints {
-		for _, check := range v.testChecks("bgp_peering_ip_endpoints[" + k + "]") {
+		for _, check := range v.testChecks("bgp_peering_ip_endpoints." + k) {
 			result.append(t, check[0], check[1:]...)
 		}
 	}
 
-	result.append(t, "TestCheckResourceAttr", "dynamic_bgp_peerings.%", strconv.Itoa(len(o.bgpPeeringIpEndoints)))
-	for k, v := range o.bgpPeeringIpEndoints {
+	result.append(t, "TestCheckResourceAttr", "dynamic_bgp_peerings.%", strconv.Itoa(len(o.dynamicBgpPeerings)))
+	for k, v := range o.dynamicBgpPeerings {
 		for _, check := range v.testChecks("dynamic_bgp_peerings." + k) {
 			result.append(t, check[0], check[1:]...)
 		}
@@ -130,62 +132,62 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		//"start_minimal": {
-		//	steps: []testStep{
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSvi{
-		//				blueprintId: bp.Id().String(),
-		//				name:        acctest.RandString(6),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSvi{
-		//				blueprintId:          bp.Id().String(),
-		//				name:                 acctest.RandString(6),
-		//				description:          acctest.RandString(6),
-		//				tags:                 randomStrings(rand.IntN(5)+2, 6),
-		//				bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
-		//				dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSvi{
-		//				blueprintId: bp.Id().String(),
-		//				name:        acctest.RandString(6),
-		//			},
-		//		},
-		//	},
-		//},
-		//"start_maximal": {
-		//	steps: []testStep{
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSvi{
-		//				blueprintId:          bp.Id().String(),
-		//				name:                 acctest.RandString(6),
-		//				description:          acctest.RandString(6),
-		//				tags:                 randomStrings(rand.IntN(5)+2, 6),
-		//				bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
-		//				dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSvi{
-		//				blueprintId: bp.Id().String(),
-		//				name:        acctest.RandString(6),
-		//			},
-		//		},
-		//		{
-		//			config: resourceDataCenterConnectivityTemplateSvi{
-		//				blueprintId:          bp.Id().String(),
-		//				name:                 acctest.RandString(6),
-		//				description:          acctest.RandString(6),
-		//				tags:                 randomStrings(rand.IntN(5)+2, 6),
-		//				bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
-		//				dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
-		//			},
-		//		},
-		//	},
-		//},
+		"start_minimal": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateSvi{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSvi{
+						blueprintId:          bp.Id().String(),
+						name:                 acctest.RandString(6),
+						description:          acctest.RandString(6),
+						tags:                 randomStrings(rand.IntN(5)+2, 6),
+						bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSvi{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+			},
+		},
+		"start_maximal": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateSvi{
+						blueprintId:          bp.Id().String(),
+						name:                 acctest.RandString(6),
+						description:          acctest.RandString(6),
+						tags:                 randomStrings(rand.IntN(5)+2, 6),
+						bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSvi{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateSvi{
+						blueprintId:          bp.Id().String(),
+						name:                 acctest.RandString(6),
+						description:          acctest.RandString(6),
+						tags:                 randomStrings(rand.IntN(5)+2, 6),
+						bgpPeeringIpEndoints: randomBgpPeeringIpEndpointPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+						dynamicBgpPeerings:   randomDynamicBgpPeeringPrimitives(t, ctx, rand.IntN(3)+2, bp, cleanup),
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterConnectivityTemplateSvi)
