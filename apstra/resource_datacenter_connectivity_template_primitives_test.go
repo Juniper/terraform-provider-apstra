@@ -22,7 +22,6 @@ import (
 )
 
 const resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL = `{
-  name            = %q
   routing_zone_id = %q
   network         = %q
   next_hop        = %q
@@ -30,7 +29,6 @@ const resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL = `{
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute struct {
-	name          string
 	routingZoneId string
 	network       net.IPNet
 	nextHop       net.IP
@@ -40,7 +38,6 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) render
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRouteHCL,
-			o.name,
 			o.routingZoneId,
 			o.network.String(),
 			o.nextHop.String(),
@@ -48,21 +45,18 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) render
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":            o.name,
-		"routing_zone_id": o.routingZoneId,
-		"network":         o.network.String(),
-		"next_hop":        o.nextHop.String(),
-	}
-
+func (o resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute) testChecks(path string) [][]string {
+	var result [][]string
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_zone_id", o.routingZoneId})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".network", o.network.String()})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".next_hop", o.nextHop.String()})
 	return result
 }
 
-func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6Count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute {
+func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6Count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute, ipv4Count+ipv6Count)
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute, ipv4Count+ipv6Count)
 
 	rzName := acctest.RandString(6)
 	rzId, err := client.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
@@ -73,9 +67,8 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 	require.NoError(t, err)
 
 	// add IPv4 routes
-	for i := range ipv4Count {
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute{
-			name:          acctest.RandString(6),
+	for range ipv4Count {
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute{
 			routingZoneId: rzId.String(),
 			network:       randomSlash31(t, "10.0.0.0/8"),
 			nextHop:       randIpvAddressMust(t, "10.0.0.0/8"),
@@ -83,9 +76,8 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 	}
 
 	// add IPv6 routes
-	for i := range ipv6Count {
-		result[ipv4Count+i] = resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute{
-			name:          acctest.RandString(6),
+	for range ipv6Count {
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute{
 			routingZoneId: rzId.String(),
 			network:       randomSlash127(t, "2001:db8::/32"),
 			nextHop:       randIpvAddressMust(t, "2001:db8::/32"),
@@ -96,13 +88,11 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicyHCL = `{
-  name              = %q
   routing_policy_id = %q
 },
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy struct {
-	name            string
 	routingPolicyId string
 }
 
@@ -110,25 +100,22 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) render(ind
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicyHCL,
-			o.name,
 			o.routingPolicyId,
 		),
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name": o.name,
-	}
-
+func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy) testChecks(path string) [][]string {
+	var result [][]string
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_policy_id", o.routingPolicyId})
 	return result
 }
 
-func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy {
+func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy, count)
-	for i := range result {
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy, count)
+	for range count {
 		policyId, err := client.CreateRoutingPolicy(ctx, &apstra.DcRoutingPolicyData{
 			Label:        acctest.RandString(6),
 			PolicyType:   apstra.DcRoutingPolicyTypeUser,
@@ -136,8 +123,7 @@ func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client 
 		})
 		require.NoError(t, err)
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy{
-			name:            acctest.RandString(6),
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy{
 			routingPolicyId: policyId.String(),
 		}
 	}
@@ -146,10 +132,9 @@ func randomRoutingPolicies(t testing.TB, ctx context.Context, count int, client 
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpointHCL = `{
-  name             = %q
   neighbor_asn     = %s
   ttl              = %s
-  bfd_enabled      = %q
+  bfd_enabled      = %s
   password         = %s
   keepalive_time   = %s
   hold_time        = %s
@@ -161,7 +146,6 @@ const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpointHCL = `
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint struct {
-	name            string
 	neighborAsn     *int
 	ttl             *int
 	bfdEnabled      bool
@@ -171,24 +155,23 @@ type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint struct 
 	localAsn        *int
 	ipv4Address     net.IP
 	ipv6Address     net.IP
-	routingPolicies []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
+	routingPolicies map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint) render(indent int) string {
 	routingPolicies := "null"
 	if len(o.routingPolicies) > 0 {
 		sb := new(strings.Builder)
-		for _, routingPolicy := range o.routingPolicies {
-			sb.WriteString(routingPolicy.render(indent))
+		for k, v := range o.routingPolicies {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		routingPolicies = "[\n" + sb.String() + "  ]"
+		routingPolicies = "{\n" + sb.String() + "  }"
 	}
 
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpointHCL,
-			o.name,
 			intPtrOrNull(o.neighborAsn),
 			intPtrOrNull(o.ttl),
 			strconv.FormatBool(o.bfdEnabled),
@@ -203,46 +186,62 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint) ren
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name": o.name,
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint) testChecks(path string) [][]string {
+	var result [][]string
+	if o.neighborAsn == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".neighbor_asn"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".neighbor_asn", strconv.Itoa(*o.neighborAsn)})
 	}
-	if o.neighborAsn != nil {
-		result["neighbor_asn"] = strconv.Itoa(*o.neighborAsn)
+	if o.ttl == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ttl"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ttl", strconv.Itoa(*o.ttl)})
 	}
-	if o.ttl != nil {
-		result["ttl"] = strconv.Itoa(*o.ttl)
+	result = append(result, []string{"TestCheckResourceAttr", path + ".bfd_enabled", strconv.FormatBool(o.bfdEnabled)})
+	if o.password == "" {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".password"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".password", o.password})
 	}
-	result["bfd_enabled"] = strconv.FormatBool(o.bfdEnabled)
-	if o.password != "" {
-		result["password"] = o.password
+	if o.keepaliveTime == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".keepalive_time"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".keepalive_time", strconv.Itoa(*o.keepaliveTime)})
 	}
-	if o.keepaliveTime != nil {
-		result["keepalive_time"] = strconv.Itoa(*o.keepaliveTime)
+	if o.holdTime == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".hold_time"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".hold_time", strconv.Itoa(*o.holdTime)})
 	}
-	if o.holdTime != nil {
-		result["hold_time"] = strconv.Itoa(*o.holdTime)
+	if o.localAsn == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".local_asn"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".local_asn", strconv.Itoa(*o.localAsn)})
 	}
-	if o.localAsn != nil {
-		result["local_asn"] = strconv.Itoa(*o.localAsn)
+	if o.ipv4Address == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ipv4_address"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ipv4_address", o.ipv4Address.String()})
 	}
-	if o.ipv4Address.String() != "<nil>" {
-		result["ipv4_address"] = o.ipv4Address.String()
+	if o.ipv6Address == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ipv6_address"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ipv6_address", o.ipv6Address.String()})
 	}
-	if o.ipv6Address.String() != "<nil>" {
-		result["ipv6_address"] = o.ipv6Address.String()
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_policies.%", strconv.Itoa(len(o.routingPolicies))})
+	for k, v := range o.routingPolicies {
+		result = append(result, v.testChecks(path+".routing_policies."+k)...)
 	}
-
-	// todo: --------------- add routing policies to map ... somehow?
 
 	return result
 }
 
-func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint {
+func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint, count)
-	for i := range result {
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint, count)
+	for range count {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
 			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
@@ -257,8 +256,7 @@ func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, cou
 			ipv6Address = randIpvAddressMust(t, "2001:db8::/32")
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint{
-			name:            acctest.RandString(6),
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint{
 			neighborAsn:     oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:      oneOf(true, false),
@@ -276,9 +274,8 @@ func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, cou
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringHCL = `{
-  name             = %q
   ttl              = %s
-  bfd_enabled      = %q
+  bfd_enabled      = %s
   password         = %s
   keepalive_time   = %s
   hold_time        = %s
@@ -292,7 +289,6 @@ const resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringHCL = `{
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering struct {
-	name            string
 	ttl             *int
 	bfdEnabled      bool
 	password        string
@@ -303,23 +299,22 @@ type resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering struct {
 	localAsn        *int
 	ipv4PeerPrefix  net.IPNet
 	ipv6PeerPrefix  net.IPNet
-	routingPolicies []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
+	routingPolicies map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering) render(indent int) string {
 	routingPolicies := "null"
 	if len(o.routingPolicies) > 0 {
 		sb := new(strings.Builder)
-		for _, routingPolicy := range o.routingPolicies {
-			sb.WriteString(routingPolicy.render(indent))
+		for k, v := range o.routingPolicies {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		routingPolicies = "[\n" + sb.String() + "  ]"
+		routingPolicies = "{\n" + sb.String() + "  }"
 	}
 
 	return tfapstra.Indent(indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeeringHCL,
-			o.name,
 			intPtrOrNull(o.ttl),
 			strconv.FormatBool(o.bfdEnabled),
 			stringOrNull(o.password),
@@ -335,45 +330,59 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering) render
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":         o.name,
-		"bfd_enabled":  strconv.FormatBool(o.bfdEnabled),
-		"ipv4_enabled": strconv.FormatBool(o.ipv4Enabled),
-		"ipv6_enabled": strconv.FormatBool(o.ipv6Enabled),
+func (o resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering) testChecks(path string) [][]string {
+	var result [][]string
+	if o.ttl == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ttl"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ttl", strconv.Itoa(*o.ttl)})
 	}
-	if o.ttl != nil {
-		result["ttl"] = strconv.Itoa(*o.ttl)
+	result = append(result, []string{"TestCheckResourceAttr", path + ".bfd_enabled", strconv.FormatBool(o.bfdEnabled)})
+	if o.password == "" {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".password"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".password", o.password})
 	}
-	if o.password != "" {
-		result["password"] = o.password
+	if o.keepaliveTime == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".keepalive_time"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".keepalive_time", strconv.Itoa(*o.keepaliveTime)})
 	}
-	if o.keepaliveTime != nil {
-		result["keepalive_time"] = strconv.Itoa(*o.keepaliveTime)
+	if o.holdTime == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".hold_time"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".hold_time", strconv.Itoa(*o.holdTime)})
 	}
-	if o.holdTime != nil {
-		result["hold_time"] = strconv.Itoa(*o.holdTime)
+	result = append(result, []string{"TestCheckResourceAttr", path + ".ipv4_enabled", strconv.FormatBool(o.ipv4Enabled)})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".ipv6_enabled", strconv.FormatBool(o.ipv6Enabled)})
+	if o.localAsn == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".local_asn"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".local_asn", strconv.Itoa(*o.localAsn)})
 	}
-	if o.localAsn != nil {
-		result["local_asn"] = strconv.Itoa(*o.localAsn)
+	if o.ipv4PeerPrefix.IP == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ipv4_peer_prefix"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ipv4_peer_prefix", o.ipv4PeerPrefix.String()})
 	}
-	if o.ipv4PeerPrefix.String() != "<nil>" {
-		result["ipv4_peer_prefix"] = o.ipv4PeerPrefix.String()
+	if o.ipv6PeerPrefix.IP == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ipv6_peer_prefix"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ipv6_peer_prefix", o.ipv6PeerPrefix.String()})
 	}
-	if o.ipv6PeerPrefix.String() != "<nil>" {
-		result["ipv6_peer_prefix"] = o.ipv6PeerPrefix.String()
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_policies.%", strconv.Itoa(len(o.routingPolicies))})
+	for k, v := range o.routingPolicies {
+		result = append(result, v.testChecks(path+".routing_policies."+k)...)
 	}
-
-	// todo: --------------- add routing policies to map ... somehow?
 
 	return result
 }
 
-func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering {
+func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering, count)
-	for i := range result {
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering, count)
+	for range count {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
 			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
@@ -400,8 +409,7 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 			ipv6PeerPrefix = randomPrefix(t, "3fff::/20", 64)
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering{
-			name:            acctest.RandString(6),
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering{
 			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
@@ -420,9 +428,8 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemHCL = `{
-  name                 = %q
   ttl                  = %s
-  bfd_enabled          = %q
+  bfd_enabled          = %s
   password             = %s
   keepalive_time       = %s
   hold_time            = %s
@@ -437,7 +444,6 @@ const resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemHCL 
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem struct {
-	name               string
 	ttl                *int
 	bfdEnabled         bool
 	password           string
@@ -449,23 +455,22 @@ type resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem stru
 	neighborAsnDynamic bool
 	peerFromLoopback   bool
 	peerTo             apstra.CtPrimitiveBgpPeerTo
-	routingPolicies    []resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
+	routingPolicies    map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingPolicy
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) render(indent int) string {
 	routingPolicies := "null"
 	if len(o.routingPolicies) > 0 {
 		sb := new(strings.Builder)
-		for _, routingPolicy := range o.routingPolicies {
-			sb.WriteString(routingPolicy.render(indent))
+		for k, v := range o.routingPolicies {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		routingPolicies = "[\n" + sb.String() + "  ]"
+		routingPolicies = "{\n" + sb.String() + "  }"
 	}
 
 	return tfapstra.Indent(indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystemHCL,
-			o.name,
 			intPtrOrNull(o.ttl),
 			strconv.FormatBool(o.bfdEnabled),
 			stringOrNull(o.password),
@@ -482,46 +487,52 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) 
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":                 o.name,
-		"bfd_enabled":          strconv.FormatBool(o.bfdEnabled),
-		"neighbor_asn_dynamic": strconv.FormatBool(o.neighborAsnDynamic),
-		"peer_from_loopback":   strconv.FormatBool(o.peerFromLoopback),
-		"peer_to":              utils.StringersToFriendlyString(o.peerTo),
+func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) testChecks(path string) [][]string {
+	var result [][]string
+	if o.ttl == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".ttl"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".ttl", strconv.Itoa(*o.ttl)})
 	}
-	if o.ttl != nil {
-		result["ttl"] = strconv.Itoa(*o.ttl)
+	result = append(result, []string{"TestCheckResourceAttr", path + ".bfd_enabled", strconv.FormatBool(o.bfdEnabled)})
+	if o.password == "" {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".password"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".password", o.password})
 	}
-	if o.password != "" {
-		result["password"] = o.password
+	if o.keepaliveTime == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".keepalive_time"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".keepalive_time", strconv.Itoa(*o.keepaliveTime)})
 	}
-	if o.keepaliveTime != nil {
-		result["keepalive_time"] = strconv.Itoa(*o.keepaliveTime)
+	if o.holdTime == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".hold_time"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".hold_time", strconv.Itoa(*o.holdTime)})
 	}
-	if o.holdTime != nil {
-		result["hold_time"] = strconv.Itoa(*o.holdTime)
+	result = append(result, []string{"TestCheckResourceAttr", path + ".ipv4_addressing_type", o.ipv4Addressing.String()})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".ipv6_addressing_type", o.ipv6Addressing.String()})
+	if o.localAsn == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".local_asn"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".local_asn", strconv.Itoa(*o.localAsn)})
 	}
-	if o.ipv4Addressing.String() != "" {
-		result["ipv4_addressing"] = o.ipv4Addressing.String()
+	result = append(result, []string{"TestCheckResourceAttr", path + ".neighbor_asn_dynamic", strconv.FormatBool(o.neighborAsnDynamic)})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".peer_from_loopback", strconv.FormatBool(o.peerFromLoopback)})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".peer_to", o.peerTo.String()})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_policies.%", strconv.Itoa(len(o.routingPolicies))})
+	for k, v := range o.routingPolicies {
+		result = append(result, v.testChecks(path+".routing_policies."+k)...)
 	}
-	if o.ipv6Addressing.String() != "" {
-		result["ipv6_addressing"] = o.ipv6Addressing.String()
-	}
-	if o.localAsn != nil {
-		result["local_asn"] = strconv.Itoa(*o.localAsn)
-	}
-
-	// todo: --------------- add routing policies to map ... somehow?
 
 	return result
 }
 
-func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem {
+func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem, count)
-	for i := range result {
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem, count)
+	for range count {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
 			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
@@ -559,8 +570,7 @@ func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, 
 			)
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem{
-			name:               acctest.RandString(6),
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem{
 			ttl:                utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:         oneOf(true, false),
 			password:           oneOf(acctest.RandString(6), ""),
@@ -580,14 +590,12 @@ func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, 
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveStaticRouteHCL = `{
-  name              = %q
   network           = %q
   share_ip_endpoint = %s
 },
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveStaticRoute struct {
-	name            string
 	network         net.IPNet
 	shareIpEndpoint bool
 }
@@ -596,41 +604,35 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveStaticRoute) render(inden
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveStaticRouteHCL,
-			o.name,
 			o.network.String(),
 			strconv.FormatBool(o.shareIpEndpoint),
 		),
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveStaticRoute) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":              o.name,
-		"network":           o.network.String(),
-		"share_ip_endpoint": strconv.FormatBool(o.shareIpEndpoint),
-	}
-
+func (o resourceDataCenterConnectivityTemplatePrimitiveStaticRoute) testChecks(path string) [][]string {
+	var result [][]string
+	result = append(result, []string{"TestCheckResourceAttr", path + ".network", o.network.String()})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".share_ip_endpoint", strconv.FormatBool(o.shareIpEndpoint)})
 	return result
 }
 
-func randomStaticRoutePrimitives(t testing.TB, _ context.Context, ipv4Count, ipv6Count int, _ *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveStaticRoute {
+func randomStaticRoutePrimitives(t testing.TB, _ context.Context, ipv4Count, ipv6Count int, _ *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute, ipv4Count+ipv6Count)
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute, ipv4Count+ipv6Count)
 
 	// add IPv4 routes
-	for i := range ipv4Count {
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveStaticRoute{
-			name:            acctest.RandString(6),
+	for range ipv4Count {
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveStaticRoute{
 			network:         randomPrefix(t, "10.0.0.0/8", 24),
 			shareIpEndpoint: oneOf(true, false),
 		}
 	}
 
 	// add IPv6 routes
-	for i := range ipv6Count {
-		result[ipv4Count+i] = resourceDataCenterConnectivityTemplatePrimitiveStaticRoute{
-			name:            acctest.RandString(6),
+	for range ipv6Count {
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveStaticRoute{
 			network:         randomPrefix(t, "2001:db8::/32", 64),
 			shareIpEndpoint: oneOf(true, false),
 		}
@@ -640,14 +642,12 @@ func randomStaticRoutePrimitives(t testing.TB, _ context.Context, ipv4Count, ipv
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL = `{
-  name               = %q
   virtual_network_id = %q
   tagged             = %q
 },
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle struct {
-	name             string
 	virtualNetworkId string
 	tagged           bool
 }
@@ -656,33 +656,25 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) ren
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL,
-			o.name,
 			o.virtualNetworkId,
 			strconv.FormatBool(o.tagged),
 		),
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":               o.name,
-		"virtual_network_id": o.virtualNetworkId,
-		"tagged":             strconv.FormatBool(o.tagged),
-	}
-
-	// todo: --------------- add static routes to map ... somehow?
-	// todo: --------------- add routing policies to map ... somehow?
-
+func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) testChecks(path string) [][]string {
+	var result [][]string
+	result = append(result, []string{"TestCheckResourceAttr", path + ".virtual_network_id", o.virtualNetworkId})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".tagged", strconv.FormatBool(o.tagged)})
 	return result
 }
 
-func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle {
+func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
-	for i := range result {
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
-			name:             acctest.RandString(6),
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
+	for range count {
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
 			virtualNetworkId: testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String(),
 			tagged:           oneOf(true, false),
 		}
@@ -692,14 +684,12 @@ func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, c
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultipleHCL = `{
-  name           = %q
   untagged_vn_id = %s
   tagged_vn_ids  = %s
 },
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple struct {
-	name         string
 	untaggedVnId string
 	taggedVnIds  []string
 }
@@ -708,56 +698,56 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple) r
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultipleHCL,
-			o.name,
 			stringOrNull(o.untaggedVnId),
 			stringSliceOrNull(o.taggedVnIds),
 		),
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":           o.name,
-		"untagged_vn_id": o.untaggedVnId,
+func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple) testChecks(path string) [][]string {
+	var result [][]string
+	if o.untaggedVnId == "" {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".untagged_vn_id"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".untagged_vn_id", o.untaggedVnId})
 	}
-
-	//if len(o.taggedVnIds) > 0 {
-	//	todo how to add a set to this map?
-	//}
-
+	result = append(result, []string{"TestCheckResourceAttr", path + ".tagged_vn_ids.#", strconv.Itoa(len(o.taggedVnIds))})
+	for _, taggedVnId := range o.taggedVnIds {
+		result = append(result, []string{"TestCheckTypeSetElemAttr", path + ".tagged_vn_ids.*", taggedVnId})
+	}
 	return result
 }
 
-func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple {
+func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple, count)
-	for i := range result {
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple{
-			name: acctest.RandString(6),
-		}
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple, count)
+	for range count {
+		var taggedVnIds []string
+		var untaggedVnId string
 		if rand.Int()%2 == 0 {
 			for range rand.IntN(3) {
-				result[i].taggedVnIds = append(result[i].taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String())
+				taggedVnIds = append(taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String())
 			}
 		}
-		if rand.Int()%2 == 0 || len(result[i].taggedVnIds) == 0 {
-			result[i].untaggedVnId = testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String()
+		if rand.Int()%2 == 0 || len(taggedVnIds) == 0 {
+			untaggedVnId = testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String()
 		}
-
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple{
+			taggedVnIds:  taggedVnIds,
+			untaggedVnId: untaggedVnId,
+		}
 	}
 
 	return result
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraintHCL = `{
-  name                       = %q
   routing_zone_constraint_id = %q
 },
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint struct {
-	name                    string
 	routingZoneConstraintId string
 }
 
@@ -765,22 +755,18 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint) re
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraintHCL,
-			o.name,
 			o.routingZoneConstraintId,
 		),
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":                       o.name,
-		"routing_zone_constraint_id": o.routingZoneConstraintId,
-	}
-
+func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint) testChecks(path string) [][]string {
+	var result [][]string
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_zone_constraint_id", o.routingZoneConstraintId})
 	return result
 }
 
-func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint {
+func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint {
 	t.Helper()
 
 	var routingZoneIds []apstra.ObjectId
@@ -795,8 +781,8 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 		}
 	}
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint, count)
-	for i := range result {
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint, count)
+	for range count {
 		policyId, err := client.CreateRoutingZoneConstraint(ctx, &apstra.RoutingZoneConstraintData{
 			Label:           acctest.RandString(6),
 			Mode:            oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny, enum.RoutingZoneConstraintModeNone),
@@ -805,8 +791,7 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 		})
 		require.NoError(t, err)
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint{
-			name:                    acctest.RandString(6),
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint{
 			routingZoneConstraintId: policyId.String(),
 		}
 	}
@@ -815,7 +800,6 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveIpLinkHCL = `{
-  name                        = %q
   routing_zone_id             = %q
   vlan_id                     = %s
   l3_mtu                      = %s
@@ -829,63 +813,61 @@ const resourceDataCenterConnectivityTemplatePrimitiveIpLinkHCL = `{
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveIpLink struct {
-	name                     string
 	routingZoneId            string
 	vlanId                   *int
 	l3Mtu                    *int
 	ipv4AddressingType       apstra.CtPrimitiveIPv4AddressingType
 	ipv6AddressingType       apstra.CtPrimitiveIPv6AddressingType
-	bgpPeeringGenericSystems []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem
-	bgpPeeringIpEndpoints    []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
-	dynamicBgpPeerings       []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering
-	staticRoutes             []resourceDataCenterConnectivityTemplatePrimitiveStaticRoute
+	bgpPeeringGenericSystems map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem
+	bgpPeeringIpEndpoints    map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
+	dynamicBgpPeerings       map[string]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering
+	staticRoutes             map[string]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) render(indent int) string {
 	bgpPeeringGenericSystems := "null"
 	if len(o.bgpPeeringGenericSystems) > 0 {
 		sb := new(strings.Builder)
-		for _, bgpPeeringGenericSystem := range o.bgpPeeringGenericSystems {
-			sb.WriteString(bgpPeeringGenericSystem.render(indent))
+		for k, v := range o.bgpPeeringGenericSystems {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		bgpPeeringGenericSystems = "[\n" + sb.String() + "  ]"
+		bgpPeeringGenericSystems = "{\n" + sb.String() + "  }"
 	}
 
 	bgpPeeringIpEndpoints := "null"
 	if len(o.bgpPeeringIpEndpoints) > 0 {
 		sb := new(strings.Builder)
-		for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndpoints {
-			sb.WriteString(bgpPeeringIpEndpoint.render(indent))
+		for k, v := range o.bgpPeeringIpEndpoints {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		bgpPeeringIpEndpoints = "[\n" + sb.String() + "  ]"
+		bgpPeeringIpEndpoints = "{\n" + sb.String() + "  }"
 	}
 
 	dynamicBgpPeerings := "null"
 	if len(o.dynamicBgpPeerings) > 0 {
 		sb := new(strings.Builder)
-		for _, dynamicBgpPeering := range o.dynamicBgpPeerings {
-			sb.WriteString(dynamicBgpPeering.render(indent))
+		for k, v := range o.dynamicBgpPeerings {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		dynamicBgpPeerings = "[\n" + sb.String() + "  ]"
+		dynamicBgpPeerings = "{\n" + sb.String() + "  }"
 	}
 
 	staticRoutes := "null"
 	if len(o.staticRoutes) > 0 {
 		sb := new(strings.Builder)
-		for _, staticRoute := range o.staticRoutes {
-			sb.WriteString(staticRoute.render(indent))
+		for k, v := range o.staticRoutes {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
 		}
 
-		staticRoutes = "[\n" + sb.String() + "  ]"
+		staticRoutes = "{\n" + sb.String() + "  }"
 	}
 
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveIpLinkHCL,
-			o.name,
 			o.routingZoneId,
 			intPtrOrNull(o.vlanId),
 			intPtrOrNull(o.l3Mtu),
@@ -899,28 +881,45 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) render(indent int
 	)
 }
 
-func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) valueAsMapForChecks() map[string]string {
-	result := map[string]string{
-		"name":                 o.name,
-		"routing_zone_id":      o.routingZoneId,
-		"ipv4_addressing_type": utils.StringersToFriendlyString(o.ipv4AddressingType),
-		"ipv6_addressing_type": utils.StringersToFriendlyString(o.ipv6AddressingType),
+func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) testChecks(path string) [][]string {
+	var result [][]string
+	result = append(result, []string{"TestCheckResourceAttr", path + ".routing_zone_id", o.routingZoneId})
+	if o.vlanId == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".vlan_id"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".vlan_id", strconv.Itoa(*o.vlanId)})
 	}
-	if o.vlanId != nil {
-		result["vlan_id"] = strconv.Itoa(*o.vlanId)
+	if o.l3Mtu == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".l3_mtu"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".l3_mtu", strconv.Itoa(*o.l3Mtu)})
 	}
-	if o.l3Mtu != nil {
-		result["l3_mtu"] = strconv.Itoa(*o.l3Mtu)
+	result = append(result, []string{"TestCheckResourceAttr", path + ".ipv4_addressing_type", o.ipv4AddressingType.String()})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".ipv6_addressing_type", o.ipv6AddressingType.String()})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".bgp_peering_generic_systems.%", strconv.Itoa(len(o.bgpPeeringGenericSystems))})
+	for k, v := range o.bgpPeeringGenericSystems {
+		result = append(result, v.testChecks(path+".bgp_peering_generic_systems."+k)...)
 	}
-
+	result = append(result, []string{"TestCheckResourceAttr", path + ".bgp_peering_ip_endpoints.%", strconv.Itoa(len(o.bgpPeeringIpEndpoints))})
+	for k, v := range o.bgpPeeringIpEndpoints {
+		result = append(result, v.testChecks(path+".bgp_peering_ip_endpoints."+k)...)
+	}
+	result = append(result, []string{"TestCheckResourceAttr", path + ".dynamic_bgp_peerings.%", strconv.Itoa(len(o.dynamicBgpPeerings))})
+	for k, v := range o.dynamicBgpPeerings {
+		result = append(result, v.testChecks(path+".dynamic_bgp_peerings."+k)...)
+	}
+	result = append(result, []string{"TestCheckResourceAttr", path + ".static_routes.%", strconv.Itoa(len(o.staticRoutes))})
+	for k, v := range o.staticRoutes {
+		result = append(result, v.testChecks(path+".static_routes."+k)...)
+	}
 	return result
 }
 
-func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) []resourceDataCenterConnectivityTemplatePrimitiveIpLink {
+func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveIpLink {
 	t.Helper()
 
-	result := make([]resourceDataCenterConnectivityTemplatePrimitiveIpLink, count)
-	for i := range result {
+	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveIpLink, count)
+	for range count {
 		var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
 		var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
 		switch rand.IntN(3) {
@@ -935,8 +934,7 @@ func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.
 			ipv6AddressingType = oneOf(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal, apstra.CtPrimitiveIPv6AddressingTypeNumbered)
 		}
 
-		result[i] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
-			name:                     acctest.RandString(6),
+		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
 			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup).String(),
 			vlanId:                   oneOf(nil, utils.ToPtr(rand.IntN(4000)+100)),
 			l3Mtu:                    oneOf(nil, utils.ToPtr((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),

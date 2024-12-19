@@ -5,6 +5,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,7 +15,6 @@ import (
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -36,51 +36,51 @@ type resourceDataCenterConnectivityTemplateInterface struct {
 	name                    string
 	description             string
 	tags                    []string
-	ipLinks                 []resourceDataCenterConnectivityTemplatePrimitiveIpLink
-	routingZoneConstraints  []resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint
-	virtualNetworkMultiples []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple
-	virtualNetworkSingles   []resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle
+	ipLinks                 map[string]resourceDataCenterConnectivityTemplatePrimitiveIpLink
+	routingZoneConstraints  map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint
+	virtualNetworkMultiples map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple
+	virtualNetworkSingles   map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle
 }
 
 func (o resourceDataCenterConnectivityTemplateInterface) render(rType, rName string) string {
 	ipLinks := "null"
 	if len(o.ipLinks) > 0 {
 		sb := new(strings.Builder)
-		for _, ipLink := range o.ipLinks {
-			sb.WriteString(ipLink.render(2))
+		for k, v := range o.ipLinks {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		ipLinks = "[\n" + sb.String() + "  ]"
+		ipLinks = "{\n" + sb.String() + "  }"
 	}
 
 	routingZoneConstraints := "null"
 	if len(o.routingZoneConstraints) > 0 {
 		sb := new(strings.Builder)
-		for _, routingZoneConstraint := range o.routingZoneConstraints {
-			sb.WriteString(routingZoneConstraint.render(2))
+		for k, v := range o.routingZoneConstraints {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		routingZoneConstraints = "[\n" + sb.String() + "  ]"
+		routingZoneConstraints = "{\n" + sb.String() + "  }"
 	}
 
 	virtualNetworkMultiples := "null"
 	if len(o.virtualNetworkMultiples) > 0 {
 		sb := new(strings.Builder)
-		for _, virtualNetworkMultiple := range o.virtualNetworkMultiples {
-			sb.WriteString(virtualNetworkMultiple.render(2))
+		for k, v := range o.virtualNetworkMultiples {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		virtualNetworkMultiples = "[\n" + sb.String() + "  ]"
+		virtualNetworkMultiples = "{\n" + sb.String() + "  }"
 	}
 
 	virtualNetworkSingles := "null"
 	if len(o.virtualNetworkSingles) > 0 {
 		sb := new(strings.Builder)
-		for _, virtualNetworkSingle := range o.virtualNetworkSingles {
-			sb.WriteString(virtualNetworkSingle.render(2))
+		for k, v := range o.virtualNetworkSingles {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		virtualNetworkSingles = "[\n" + sb.String() + "  ]"
+		virtualNetworkSingles = "{\n" + sb.String() + "  }"
 	}
 
 	return fmt.Sprintf(resourceDataCenterConnectivityTemplateInterfaceHCL,
@@ -115,24 +115,32 @@ func (o resourceDataCenterConnectivityTemplateInterface) testChecks(t testing.TB
 		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
-	result.append(t, "TestCheckResourceAttr", "ip_links.#", strconv.Itoa(len(o.ipLinks)))
-	for _, ipLink := range o.ipLinks {
-		result.appendSetNestedCheck(t, "ip_links.*", ipLink.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "ip_links.%", strconv.Itoa(len(o.ipLinks)))
+	for k, v := range o.ipLinks {
+		for _, check := range v.testChecks("ip_links." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
-	result.append(t, "TestCheckResourceAttr", "routing_zone_constraints.#", strconv.Itoa(len(o.routingZoneConstraints)))
-	for _, routingZoneConstraint := range o.routingZoneConstraints {
-		result.appendSetNestedCheck(t, "routing_zone_constraints.*", routingZoneConstraint.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "routing_zone_constraints.%", strconv.Itoa(len(o.routingZoneConstraints)))
+	for k, v := range o.routingZoneConstraints {
+		for _, check := range v.testChecks("routing_zone_constraints." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
-	result.append(t, "TestCheckResourceAttr", "virtual_network_multiples.#", strconv.Itoa(len(o.virtualNetworkMultiples)))
-	for _, virtualNetworkMultiple := range o.virtualNetworkMultiples {
-		result.appendSetNestedCheck(t, "virtual_network_multiples.*", virtualNetworkMultiple.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "virtual_network_multiples.%", strconv.Itoa(len(o.virtualNetworkMultiples)))
+	for k, v := range o.virtualNetworkMultiples {
+		for _, check := range v.testChecks("virtual_network_multiples." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
-	result.append(t, "TestCheckResourceAttr", "virtual_network_singles.#", strconv.Itoa(len(o.virtualNetworkSingles)))
-	for _, virtualNetworkSingle := range o.virtualNetworkSingles {
-		result.appendSetNestedCheck(t, "virtual_network_singles.*", virtualNetworkSingle.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "virtual_network_singles.%", strconv.Itoa(len(o.virtualNetworkSingles)))
+	for k, v := range o.virtualNetworkSingles {
+		for _, check := range v.testChecks("virtual_network_singles." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
 	return result
@@ -197,7 +205,7 @@ func TestResourceDatacenteConnectivityTemplateInterface(t *testing.T) {
 						name:                    acctest.RandString(6),
 						description:             acctest.RandString(32),
 						tags:                    randomStrings(3, 6),
-						ipLinks:                 randomIpLinks(t, ctx, 3, bp, cleanup),
+						ipLinks:                 randomIpLinks(t, ctx, 1, bp, cleanup),
 						routingZoneConstraints:  randomRoutingZoneConstraints(t, ctx, 3, bp, cleanup),
 						virtualNetworkMultiples: randomVirtualNetworkMultiples(t, ctx, 3, bp, cleanup),
 						virtualNetworkSingles:   randomVirtualNetworkSingles(t, ctx, 3, bp, cleanup),

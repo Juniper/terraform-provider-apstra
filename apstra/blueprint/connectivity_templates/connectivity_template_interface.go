@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint/connectivity_templates/primitives"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -22,10 +23,10 @@ type ConnectivityTemplateInterface struct {
 	Name                    types.String `tfsdk:"name"`
 	Description             types.String `tfsdk:"description"`
 	Tags                    types.Set    `tfsdk:"tags"`
-	IpLinks                 types.Set    `tfsdk:"ip_links"`
-	RoutingZoneConstraints  types.Set    `tfsdk:"routing_zone_constraints"`
-	VirtualNetworkMultiples types.Set    `tfsdk:"virtual_network_multiples"`
-	VirtualNetworkSingles   types.Set    `tfsdk:"virtual_network_singles"`
+	IpLinks                 types.Map    `tfsdk:"ip_links"`
+	RoutingZoneConstraints  types.Map    `tfsdk:"routing_zone_constraints"`
+	VirtualNetworkMultiples types.Map    `tfsdk:"virtual_network_multiples"`
+	VirtualNetworkSingles   types.Map    `tfsdk:"virtual_network_singles"`
 }
 
 func (o ConnectivityTemplateInterface) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -60,37 +61,37 @@ func (o ConnectivityTemplateInterface) ResourceAttributes() map[string]resourceS
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
-		"ip_links": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *IP Link* Primitives in this Connectivity Template",
+		"ip_links": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *IP Link* Primitives in this Connectivity Template",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: primitives.IpLink{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
-		"routing_zone_constraints": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *Routing Zone Constraint* Primitives in this Connectivity Template",
+		"routing_zone_constraints": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *Routing Zone Constraint* Primitives in this Connectivity Template",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: primitives.RoutingZoneConstraint{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
-		"virtual_network_multiples": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *Virtual Network (Multiple)* Primitives in this Connectivity Template",
+		"virtual_network_multiples": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *Virtual Network (Multiple)* Primitives in this Connectivity Template",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: primitives.VirtualNetworkMultiple{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
-		"virtual_network_singles": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of *Virtual Network (Single)* Primitives in this Connectivity Template",
+		"virtual_network_singles": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of *Virtual Network (Single)* Primitives in this Connectivity Template",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: primitives.VirtualNetworkSingle{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -114,7 +115,7 @@ func (o ConnectivityTemplateInterface) Request(ctx context.Context, diags *diag.
 
 	// try to set the root batch policy ID from o.Id
 	if !o.Id.IsUnknown() {
-		result.Id = utils.ToPtr(apstra.ObjectId(o.Id.ValueString()))
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
 	}
 
 	// set remaining policy IDs
@@ -135,6 +136,7 @@ func (o ConnectivityTemplateInterface) Request(ctx context.Context, diags *diag.
 }
 
 func (o *ConnectivityTemplateInterface) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.Id = types.StringPointerValue((*string)(in.Id))
 	o.Name = types.StringValue(in.Label)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
@@ -142,4 +144,13 @@ func (o *ConnectivityTemplateInterface) LoadApiData(ctx context.Context, in *aps
 	o.RoutingZoneConstraints = primitives.RoutingZoneConstraintPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 	o.VirtualNetworkMultiples = primitives.VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 	o.VirtualNetworkSingles = primitives.VirtualNetworkSinglePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
+}
+
+func (o *ConnectivityTemplateInterface) LoadPrimitiveIds(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
+	o.Id = types.StringPointerValue((*string)(in.Id))
+
+	o.IpLinks = primitives.LoadIDsIntoIpLinkMap(ctx, in.Subpolicies, o.IpLinks, diags)
+	o.RoutingZoneConstraints = primitives.LoadIDsIntoRoutingZoneConstraintMap(ctx, in.Subpolicies, o.RoutingZoneConstraints, diags)
+	o.VirtualNetworkMultiples = primitives.LoadIDsIntoVirtualNetworkMultipleMap(ctx, in.Subpolicies, o.VirtualNetworkMultiples, diags)
+	o.VirtualNetworkSingles = primitives.LoadIDsIntoVirtualNetworkSingleMap(ctx, in.Subpolicies, o.VirtualNetworkSingles, diags)
 }

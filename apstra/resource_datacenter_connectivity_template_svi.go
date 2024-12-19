@@ -121,6 +121,9 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Create(ctx context.Context, 
 		return
 	}
 
+	// load locally-generated IDs from the request object
+	plan.LoadPrimitiveIds(ctx, request, &resp.Diagnostics)
+
 	// send the request to Apstra
 	err = bp.CreateConnectivityTemplate(ctx, request)
 	if err != nil {
@@ -129,7 +132,6 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Create(ctx context.Context, 
 	}
 
 	// set the state
-	plan.Id = types.StringValue(string(*request.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -201,6 +203,9 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Update(ctx context.Context, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// load locally-generated IDs from the request object
+	plan.LoadPrimitiveIds(ctx, request, &resp.Diagnostics)
 
 	// send the request to Apstra
 	err = bp.UpdateConnectivityTemplate(ctx, request)
