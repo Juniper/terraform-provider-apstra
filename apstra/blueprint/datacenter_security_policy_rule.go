@@ -212,10 +212,10 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 			Computed: true,
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueAtMustBeBool(
-					path.MatchRelative().AtParent().AtName("protocol"),
+					path.MatchRelative().AtParent().AtName("protocol").Resolve(),
 					types.StringValue(enum.PolicyRuleProtocolTcp.Value),
 					apstravalidator.ValueAtMustBeBool(
-						path.MatchRelative().AtParent().AtName("protocol"),
+						path.MatchRelative().AtParent().AtName("protocol").Resolve(),
 						types.StringValue(enum.PolicyRuleProtocolTcp.Value),
 						true,
 					),

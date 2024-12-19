@@ -68,12 +68,12 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"to the `name` attribute will not affect the names of those systems. It's a create-time one-shot operation.",
 			Optional: true,
 			Validators: []validator.Bool{
-				boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name")),
+				boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name").Resolve()),
 				apstravalidator.MustBeOneOf([]attr.Value{
 					types.BoolValue(true),
 					types.BoolNull(),
 				}),
-				boolvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("rack_elements_name_one_shot")),
+				boolvalidator.ConflictsWith(path.MatchRelative().AtParent().AtName("rack_elements_name_one_shot").Resolve()),
 			},
 		},
 		"rack_elements_name_one_shot": resourceSchema.BoolAttribute{
@@ -83,7 +83,7 @@ func (o Rack) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"changes to the `name` attribute will not affect those elements. It's a create-time operation only.",
 			Optional: true,
 			Validators: []validator.Bool{
-				boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name")),
+				boolvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("name").Resolve()),
 				apstravalidator.MustBeOneOf([]attr.Value{
 					types.BoolValue(true),
 					types.BoolNull(),

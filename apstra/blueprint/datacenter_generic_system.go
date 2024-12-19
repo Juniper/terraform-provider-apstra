@@ -125,7 +125,7 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Default:             int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max").Resolve()),
 			},
 		},
 		"port_channel_id_max": resourceSchema.Int64Attribute{
@@ -135,8 +135,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Default:             int64default.StaticInt64(design.PoIdMin),
 			Validators: []validator.Int64{
 				int64validator.Between(design.PoIdMin, design.PoIdMax),
-				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min").Resolve()),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min").Resolve()),
 			},
 		},
 		"external": resourceSchema.BoolAttribute{

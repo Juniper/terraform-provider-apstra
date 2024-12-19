@@ -76,7 +76,7 @@ func (o VniPoolRange) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required: true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.VniMin, constants.VniMax),
-				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first").Resolve()),
 			},
 		},
 		"total": resourceSchema.Int64Attribute{

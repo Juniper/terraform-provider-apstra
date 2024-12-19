@@ -65,7 +65,7 @@ func (o DatacenterSecurityPolicyRulePortRange) ResourceAttributes() map[string]r
 			Required:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(1, 65535),
-				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("from_port")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("from_port").Resolve()),
 			},
 		},
 	}

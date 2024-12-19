@@ -98,7 +98,7 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.BgpKeepaliveMin, constants.BgpKeepaliveMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("hold_time")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("hold_time").Resolve()),
 			},
 		},
 		"hold_time": resourceSchema.Int64Attribute{
@@ -106,8 +106,8 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.BgpHoldMin, constants.BgpHoldMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("keepalive_time")),
-				apstravalidator.AtLeastProductOf(3, path.MatchRelative().AtParent().AtName("keepalive_time")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("keepalive_time").Resolve()),
+				apstravalidator.AtLeastProductOf(3, path.MatchRelative().AtParent().AtName("keepalive_time").Resolve()),
 			},
 		},
 		"ipv4_enabled": resourceSchema.BoolAttribute{
@@ -131,8 +131,8 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 			CustomType:          cidrtypes.IPv4PrefixType{},
 			Optional:            true,
 			Validators: []validator.String{
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv4_enabled"), types.BoolNull()),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv4_enabled"), types.BoolValue(false)),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv4_enabled").Resolve(), types.BoolNull()),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv4_enabled").Resolve(), types.BoolValue(false)),
 			},
 		},
 		"ipv6_peer_prefix": resourceSchema.StringAttribute{
@@ -140,8 +140,8 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Optional:            true,
 			Validators: []validator.String{
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_enabled"), types.BoolNull()),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_enabled"), types.BoolValue(false)),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_enabled").Resolve(), types.BoolNull()),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_enabled").Resolve(), types.BoolValue(false)),
 			},
 		},
 		"routing_policies": resourceSchema.MapNestedAttribute{

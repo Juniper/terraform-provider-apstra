@@ -100,7 +100,7 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.BgpKeepaliveMin, constants.BgpKeepaliveMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("hold_time")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("hold_time").Resolve()),
 			},
 		},
 		"hold_time": resourceSchema.Int64Attribute{
@@ -108,8 +108,8 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 			Optional:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(constants.BgpHoldMin, constants.BgpHoldMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("keepalive_time")),
-				apstravalidator.AtLeastProductOf(3, path.MatchRelative().AtParent().AtName("keepalive_time")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("keepalive_time").Resolve()),
+				apstravalidator.AtLeastProductOf(3, path.MatchRelative().AtParent().AtName("keepalive_time").Resolve()),
 			},
 		},
 		"ipv4_addressing_type": resourceSchema.StringAttribute{

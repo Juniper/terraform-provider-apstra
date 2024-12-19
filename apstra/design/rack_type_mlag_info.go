@@ -83,7 +83,7 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(PoIdMin, PoIdMax),
-				apstravalidator.DifferentFrom(path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id")),
+				apstravalidator.DifferentFrom(path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id").Resolve()),
 			},
 		},
 		"l3_peer_link_count": resourceSchema.Int64Attribute{
@@ -92,8 +92,8 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators: []validator.Int64{
 				int64validator.AtLeast(1),
 				int64validator.AlsoRequires(
-					path.MatchRelative().AtParent().AtName("l3_peer_link_speed"),
-					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id"),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_speed").Resolve(),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id").Resolve(),
 				),
 			},
 		},
@@ -103,8 +103,8 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators: []validator.String{
 				apstravalidator.ParseSpeed(),
 				stringvalidator.AlsoRequires(
-					path.MatchRelative().AtParent().AtName("l3_peer_link_count"),
-					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id"),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_count").Resolve(),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_port_channel_id").Resolve(),
 				),
 			},
 		},
@@ -114,10 +114,10 @@ func (o MlagInfo) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Validators: []validator.Int64{
 				int64validator.Between(PoIdMin, PoIdMax),
 				int64validator.AlsoRequires(
-					path.MatchRelative().AtParent().AtName("l3_peer_link_count"),
-					path.MatchRelative().AtParent().AtName("l3_peer_link_speed"),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_count").Resolve(),
+					path.MatchRelative().AtParent().AtName("l3_peer_link_speed").Resolve(),
 				),
-				apstravalidator.DifferentFrom(path.MatchRelative().AtParent().AtName("peer_link_port_channel_id")),
+				apstravalidator.DifferentFrom(path.MatchRelative().AtParent().AtName("peer_link_port_channel_id").Resolve()),
 			},
 		},
 	}

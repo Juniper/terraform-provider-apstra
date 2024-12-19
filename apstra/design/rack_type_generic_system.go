@@ -103,8 +103,8 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Computed:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(PoIdMin, PoIdMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
-				int64validator.AtMostSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_max")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_max").Resolve()),
+				int64validator.AtMostSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_max").Resolve()),
 			},
 		},
 		"port_channel_id_max": resourceSchema.Int64Attribute{
@@ -113,8 +113,8 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Computed:            true,
 			Validators: []validator.Int64{
 				int64validator.Between(PoIdMin, PoIdMax),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
-				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("port_channel_id_min").Resolve()),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("port_channel_id_min").Resolve()),
 			},
 		},
 		"count": resourceSchema.Int64Attribute{

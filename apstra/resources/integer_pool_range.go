@@ -81,7 +81,7 @@ func (o IntegerPoolRange) ResourceAttributes() map[string]resourceSchema.Attribu
 			Required: true,
 			Validators: []validator.Int64{
 				int64validator.Between(IntegerPoolMin, IntegerPoolMax),
-				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first")),
+				int64validator.AtLeastSumOf(path.MatchRelative().AtParent().AtName("first").Resolve()),
 			},
 		},
 		"total": resourceSchema.Int64Attribute{

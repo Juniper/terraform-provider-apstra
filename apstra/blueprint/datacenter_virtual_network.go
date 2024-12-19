@@ -323,11 +323,11 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.RequiredWhenValueIs(
-					path.MatchRelative().AtParent().AtName("type"),
+					path.MatchRelative().AtParent().AtName("type").Resolve(),
 					types.StringValue(enum.VnTypeVxlan.String()),
 				),
 				apstravalidator.RequiredWhenValueNull(
-					path.MatchRelative().AtParent().AtName("type"),
+					path.MatchRelative().AtParent().AtName("type").Resolve(),
 				),
 			},
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
@@ -342,7 +342,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.Int64{
 				int64validator.Between(constants.VniMin, constants.VniMax),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("type"),
+					path.MatchRelative().AtParent().AtName("type").Resolve(),
 					types.StringValue(enum.VnTypeVlan.String()),
 				),
 			},
@@ -361,7 +361,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueIsBool(types.BoolValue(true),
 					apstravalidator.ValueAtMustBeBool(
-						path.MatchRelative().AtParent().AtName("type"),
+						path.MatchRelative().AtParent().AtName("type").Resolve(),
 						types.StringValue(enum.VnTypeVxlan.String()),
 						false,
 					),
@@ -381,7 +381,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.Map{
 				mapvalidator.SizeAtLeast(1),
 				apstravalidator.WhenValueAtMustBeMap(
-					path.MatchRelative().AtParent().AtName("type"),
+					path.MatchRelative().AtParent().AtName("type").Resolve(),
 					types.StringValue(enum.VnTypeVlan.String()),
 					mapvalidator.SizeAtMost(1),
 				),
@@ -398,8 +398,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.Bool{
 				apstravalidator.WhenValueIsBool(types.BoolValue(true),
 					apstravalidator.AlsoRequiresNOf(1,
-						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
-						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
+						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled").Resolve(),
+						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled").Resolve(),
 					),
 				),
 			},
@@ -427,7 +427,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				apstravalidator.ParseCidr(true, false),
 				apstravalidator.WhenValueSetString(
 					apstravalidator.ValueAtMustBeString(
-						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
+						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled").Resolve(),
 						types.BoolValue(true), false,
 					),
 				),
@@ -444,7 +444,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				apstravalidator.ParseCidr(false, true),
 				apstravalidator.WhenValueSetString(
 					apstravalidator.ValueAtMustBeString(
-						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
+						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled").Resolve(),
 						types.BoolValue(true), false,
 					),
 				),
@@ -459,7 +459,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				apstravalidator.WhenValueIsBool(
 					types.BoolValue(true),
 					apstravalidator.ValueAtMustBeBool(
-						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
+						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled").Resolve(),
 						types.BoolValue(true),
 						false,
 					),
@@ -475,7 +475,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				apstravalidator.WhenValueIsBool(
 					types.BoolValue(true),
 					apstravalidator.ValueAtMustBeBool(
-						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
+						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled").Resolve(),
 						types.BoolValue(true),
 						false,
 					),
@@ -491,7 +491,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.String{
 				apstravalidator.ParseIp(true, false),
 				apstravalidator.FallsWithinCidr(
-					path.MatchRelative().AtParent().AtName("ipv4_subnet"),
+					path.MatchRelative().AtParent().AtName("ipv4_subnet").Resolve(),
 					false, false),
 			},
 		},
@@ -504,7 +504,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.String{
 				apstravalidator.ParseIp(false, true),
 				apstravalidator.FallsWithinCidr(
-					path.MatchRelative().AtParent().AtName("ipv6_subnet"),
+					path.MatchRelative().AtParent().AtName("ipv6_subnet").Resolve(),
 					true, true),
 			},
 		},

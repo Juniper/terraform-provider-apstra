@@ -80,7 +80,7 @@ func (o LinkEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "The interface name, as found in the associated Device Profile, e.g. `xe-0/0/0`",
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("transformation_id")),
+				stringvalidator.AlsoRequires(path.MatchRelative().AtParent().AtName("transformation_id").Resolve()),
 			},
 		},
 		"interface_id": resourceSchema.StringAttribute{
@@ -92,7 +92,7 @@ func (o LinkEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: "ID # of the transformation in the Device Profile",
 			Validators: []validator.Int64{
 				int64validator.AtLeast(1),
-				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("interface_name")),
+				int64validator.AlsoRequires(path.MatchRelative().AtParent().AtName("interface_name").Resolve()),
 			},
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
