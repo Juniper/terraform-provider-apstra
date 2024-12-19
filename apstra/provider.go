@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -53,7 +54,10 @@ https://registry.terraform.io/providers/Juniper/apstra/%s/docs#tls_validation_di
 
 var commit, tag string // populated by goreleaser
 
-var _ provider.Provider = &Provider{}
+var (
+	_ provider.Provider                       = (*Provider)(nil)
+	_ provider.ProviderWithEphemeralResources = (*Provider)(nil)
+)
 
 // NewProvider instantiates the provider in main
 func NewProvider() provider.Provider {
@@ -488,8 +492,8 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		return freeformClient, nil
 	}
 
-	// data passed to Resource and DataSource Configure() methods
-	pd := &providerData{
+	// data passed to Resource, DataSource, and Ephemeral Configure() methods
+	pd := providerData{
 		client:                  client,
 		providerVersion:         p.Version + "-" + p.Commit,
 		terraformVersion:        req.TerraformVersion,
@@ -499,8 +503,9 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		getFreeformClient:       getFreeformClient,
 		experimental:            config.Experimental.ValueBool(),
 	}
-	resp.ResourceData = pd
-	resp.DataSourceData = pd
+	resp.ResourceData = &pd
+	resp.DataSourceData = &pd
+	resp.EphemeralResourceData = &pd
 }
 
 // DataSources defines provider data sources
@@ -589,6 +594,13 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceVirtualNetworkBindingConstructor{} },
 		func() datasource.DataSource { return &dataSourceVniPool{} },
 		func() datasource.DataSource { return &dataSourceVniPools{} },
+	}
+}
+
+// EphemeralResources defines provider ephemeral resources
+func (p *Provider) EphemeralResources(_ context.Context) []func() ephemeral.EphemeralResource {
+	return []func() ephemeral.EphemeralResource{
+		func() ephemeral.EphemeralResource { return &ephemeralToken{} },
 	}
 }
 
