@@ -152,15 +152,13 @@ func (o DatacenterRoutingZoneConstraint) ResourceAttributes() map[string]resourc
 			Validators:          []validator.Int64{int64validator.Between(0, 255)},
 		},
 		"routing_zones_list_constraint": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf(
-				fmt.Sprintf("Instance constraint mode.\n"+
-					"- `%s` - only allow the specified routing zones (add specific routing zones to allow)\n"+
-					"- `%s` - denies allocation of specified routing zones (add specific routing zones to deny)\n"+
-					"- `%s` - no additional constraints on routing zones (any routing zones)",
-					utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
-					utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
-					utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
-				),
+			MarkdownDescription: fmt.Sprintf("Instance constraint mode.\n"+
+				"- `%s` - only allow the specified routing zones (add specific routing zones to allow)\n"+
+				"- `%s` - denies allocation of specified routing zones (add specific routing zones to deny)\n"+
+				"- `%s` - no additional constraints on routing zones (any routing zones)",
+				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
+				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
 			),
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
