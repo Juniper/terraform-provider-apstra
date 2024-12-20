@@ -3,11 +3,14 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
 type DatacenterRoutingZoneConstraint struct {
@@ -29,7 +31,7 @@ type DatacenterRoutingZoneConstraint struct {
 	Constraints                types.Set    `tfsdk:"constraints"`
 }
 
-func (o DatacenterRoutingZoneConstraint) DatasourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o DatacenterRoutingZoneConstraint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID. Required when `name` is omitted.",
@@ -77,6 +79,51 @@ func (o DatacenterRoutingZoneConstraint) DatasourceAttributes() map[string]dataS
 			),
 			Computed:    true,
 			ElementType: types.StringType,
+		},
+	}
+}
+
+func (o DatacenterRoutingZoneConstraint) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+	return map[string]dataSourceSchema.Attribute{
+		"id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
+		},
+		"name": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Name displayed in the Apstra web UI.",
+			Optional:            true,
+		},
+		"max_count_constraint": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "The maximum number of Routing Zones that the Application Point can be part of.",
+			Optional:            true,
+		},
+		"routing_zones_list_constraint": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(
+				"Routing Zone constraint mode. One of: %s.", strings.Join(
+					[]string{
+						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow) + "`",
+						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny) + "`",
+						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone) + "`",
+					}, ", "),
+			),
+			Optional: true,
+			Validators: []validator.String{stringvalidator.OneOf( // validated b/c this runs through rosetta
+				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
+				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
+			)},
+		},
+		"constraints": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Routing Zone IDs. All Routing Zones supplied here are used to match the " +
+				"Routing Zone Constraint, but a matching Routing Zone Constraintmay have additional Security Zones " +
+				"not enumerated in this set.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 	}
 }
@@ -163,7 +210,7 @@ func (o DatacenterRoutingZoneConstraint) Request(ctx context.Context, diags *dia
 	return &result
 }
 
-func (o *DatacenterRoutingZoneConstraint) LoadApiData(ctx context.Context, in *apstra.RoutingZoneConstraintData, diags *diag.Diagnostics) {
+func (o *DatacenterRoutingZoneConstraint) LoadApiData(ctx context.Context, in apstra.RoutingZoneConstraintData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	if in.MaxRoutingZones == nil {
 		o.MaxCountConstraint = types.Int64Null()
@@ -172,4 +219,47 @@ func (o *DatacenterRoutingZoneConstraint) LoadApiData(ctx context.Context, in *a
 	}
 	o.RoutingZonesListConstraint = types.StringValue(in.Mode.String())
 	o.Constraints = utils.SetValueOrNull(ctx, types.StringType, in.RoutingZoneIds, diags)
+}
+
+func (o DatacenterRoutingZoneConstraint) Query(ctx context.Context, rzcResultName string, diags *diag.Diagnostics) *apstra.MatchQuery {
+	rzcNameAttr := apstra.QEEAttribute{Key: "name", Value: apstra.QEStringVal(rzcResultName)}
+	nodeAttributes := []apstra.QEEAttribute{rzcNameAttr, apstra.NodeTypeRoutingZoneConstraint.QEEAttribute()}
+
+	// add the name to the match, if any
+	if !o.Name.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Name.ValueString())})
+	}
+
+	// add the max to the match, if any
+	if !o.MaxCountConstraint.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{Key: "max_count_constraint", Value: apstra.QEIntVal(o.MaxCountConstraint.ValueInt64())})
+	}
+
+	// add the mode to the match, if any
+	if !o.RoutingZonesListConstraint.IsNull() {
+		var rzcm enum.RoutingZoneConstraintMode
+		err := utils.ApiStringerFromFriendlyString(&rzcm, o.RoutingZonesListConstraint.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("failed converting %s to API type", o.RoutingZonesListConstraint), err.Error())
+			return nil
+		}
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{Key: "routing_zones_list_constraint", Value: apstra.QEStringVal(rzcm.String())})
+	}
+
+	query := new(apstra.MatchQuery).Match(new(apstra.PathQuery).Node(nodeAttributes))
+
+	var rzIds []string
+	diags.Append(o.Constraints.ElementsAs(ctx, &rzIds, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	for _, rzId := range rzIds {
+		query.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{rzcNameAttr}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeConstraint.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{apstra.NodeTypeSecurityZone.QEEAttribute(), {Key: "id", Value: apstra.QEStringVal(rzId)}}))
+	}
+
+	return query
 }

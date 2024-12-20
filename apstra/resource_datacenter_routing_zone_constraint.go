@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZoneConstraint{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRoutingZoneConstraint{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingZoneConstraint{}
+var (
+	_ resource.ResourceWithConfigure = &resourceDatacenterRoutingZoneConstraint{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterRoutingZoneConstraint{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterRoutingZoneConstraint{}
+)
 
 type resourceDatacenterRoutingZoneConstraint struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -109,8 +112,12 @@ func (o *resourceDatacenterRoutingZoneConstraint) Read(ctx context.Context, req 
 		resp.Diagnostics.AddError("error retrieving routing zone constraint", err.Error())
 		return
 	}
+	if api == nil || api.Data == nil {
+		resp.Diagnostics.AddError("failed reading Routing Zone Constraint", "api response has no payload")
+		return
+	}
 
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, *api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
