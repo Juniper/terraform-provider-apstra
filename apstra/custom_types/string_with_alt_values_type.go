@@ -11,27 +11,27 @@ import (
 )
 
 var (
-	_ basetypes.StringTypable = (*IPv46AddressType)(nil)
-	_ attr.Type               = (*IPv46AddressType)(nil)
+	_ basetypes.StringTypable = (*StringWithAltValuesType)(nil)
+	_ attr.Type               = (*StringWithAltValuesType)(nil)
 )
 
-type IPv46AddressType struct {
+type StringWithAltValuesType struct {
 	basetypes.StringType
 }
 
 // String returns a human readable string of the type name.
-func (t IPv46AddressType) String() string {
-	return "customtypes.IPv46AddressType"
+func (t StringWithAltValuesType) String() string {
+	return "customtypes.StringWithAltValues"
 }
 
 // ValueType returns the Value type.
-func (t IPv46AddressType) ValueType(_ context.Context) attr.Value {
-	return IPv46Address{}
+func (t StringWithAltValuesType) ValueType(_ context.Context) attr.Value {
+	return StringWithAltValues{}
 }
 
 // Equal returns true if the given type is equivalent.
-func (t IPv46AddressType) Equal(o attr.Type) bool {
-	other, ok := o.(IPv46AddressType)
+func (t StringWithAltValuesType) Equal(o attr.Type) bool {
+	other, ok := o.(StringWithAltValuesType)
 
 	if !ok {
 		return false
@@ -41,15 +41,15 @@ func (t IPv46AddressType) Equal(o attr.Type) bool {
 }
 
 // ValueFromString returns a StringValuable type given a StringValue.
-func (t IPv46AddressType) ValueFromString(_ context.Context, in basetypes.StringValue) (basetypes.StringValuable, diag.Diagnostics) {
-	return IPv46Address{
+func (t StringWithAltValuesType) ValueFromString(_ context.Context, in basetypes.StringValue) (basetypes.StringValuable, diag.Diagnostics) {
+	return StringWithAltValues{
 		StringValue: in,
 	}, nil
 }
 
 // ValueFromTerraform returns a Value given a tftypes.Value.  This is meant to convert the tftypes.Value into a more convenient Go type
 // for the provider to consume the data with.
-func (t IPv46AddressType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
+func (t StringWithAltValuesType) ValueFromTerraform(ctx context.Context, in tftypes.Value) (attr.Value, error) {
 	attrValue, err := t.StringType.ValueFromTerraform(ctx, in)
 	if err != nil {
 		return nil, err
