@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"net"
@@ -255,6 +256,27 @@ func randomIPs(t testing.TB, n int, ipv4Cidr, ipv6Cidr string) []string {
 		s, err := acctest.RandIpAddress(cidrBlocks[rand.Intn(len(cidrBlocks))])
 		require.NoError(t, err)
 		result[i] = s
+	}
+
+	return result
+}
+
+func randomSelection[A comparable](s []A, n int) []A {
+	l := len(s)
+	if l < n {
+		log.Panicf("cannot randomly select %d members from a set of %d", n, l)
+	}
+
+	m := make(map[A]struct{}, n)
+	for len(m) < n {
+		m[s[rand.Intn(l)]] = struct{}{}
+	}
+
+	result := make([]A, n)
+	i := 0
+	for k := range m {
+		result[i] = k
+		i++
 	}
 
 	return result
