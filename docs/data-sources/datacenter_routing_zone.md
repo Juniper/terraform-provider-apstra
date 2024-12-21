@@ -54,12 +54,12 @@ output "routing_zone" {
 
 ### Required
 
-- `blueprint_id` (String) Apstra Blueprint ID. Required when `id` is omitted.
+- `blueprint_id` (String) Apstra Blueprint ID.
 
 ### Optional
 
 - `id` (String) Apstra graph node ID. Required when `name` is omitted.
-- `name` (String) Name displayed in the Apstra web UI.
+- `name` (String) Name displayed in the Apstra web UI. Required when `id` is omitted.
 
 ### Read-Only
 

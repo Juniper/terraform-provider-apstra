@@ -57,12 +57,12 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			},
 		},
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID. Required when `id` is omitted.",
+			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name displayed in the Apstra web UI.",
+			MarkdownDescription: "Name displayed in the Apstra web UI. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
