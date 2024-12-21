@@ -32,18 +32,18 @@ type resourceDataCenterConnectivityTemplateSystem struct {
 	name               string
 	description        string
 	tags               []string
-	customStaticRoutes []resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute
+	customStaticRoutes map[string]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute
 }
 
 func (o resourceDataCenterConnectivityTemplateSystem) render(rType, rName string) string {
 	customStaticRoutes := "null"
 	if len(o.customStaticRoutes) > 0 {
 		sb := new(strings.Builder)
-		for _, customStaticRoute := range o.customStaticRoutes {
-			sb.WriteString(customStaticRoute.render(2))
+		for k, v := range o.customStaticRoutes {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		customStaticRoutes = "[\n" + sb.String() + "  ]"
+		customStaticRoutes = "{\n" + sb.String() + "  }"
 	}
 
 	return fmt.Sprintf(resourceDataCenterConnectivityTemplateSystemHCL,
@@ -75,9 +75,11 @@ func (o resourceDataCenterConnectivityTemplateSystem) testChecks(t testing.TB, b
 		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
-	result.append(t, "TestCheckResourceAttr", "custom_static_routes.#", strconv.Itoa(len(o.customStaticRoutes)))
-	for _, customStaticRoute := range o.customStaticRoutes {
-		result.appendSetNestedCheck(t, "custom_static_routes.*", customStaticRoute.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "custom_static_routes.%", strconv.Itoa(len(o.customStaticRoutes)))
+	for k, v := range o.customStaticRoutes {
+		for _, check := range v.testChecks("custom_static_routes." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
 	return result

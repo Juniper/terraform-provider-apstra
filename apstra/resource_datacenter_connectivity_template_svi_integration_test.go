@@ -35,30 +35,30 @@ type resourceDataCenterConnectivityTemplateSvi struct {
 	name                 string
 	description          string
 	tags                 []string
-	bgpPeeringIpEndoints []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
-	dynamicBgpPeerings   []resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering
+	bgpPeeringIpEndoints map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
+	dynamicBgpPeerings   map[string]resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering
 }
 
 func (o resourceDataCenterConnectivityTemplateSvi) render(rType, rName string) string {
 	bgpPeeringIpEndoints := "null"
 	if len(o.bgpPeeringIpEndoints) > 0 {
 		sb := new(strings.Builder)
-		for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndoints {
-			sb.WriteString(bgpPeeringIpEndpoint.render(2))
+		for k, v := range o.bgpPeeringIpEndoints {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		bgpPeeringIpEndoints = "[\n" + sb.String() + "  ]"
+		bgpPeeringIpEndoints = "{\n" + sb.String() + "  }"
 	}
 
 	dynamicBgpPeerings := "null"
 
 	if len(o.dynamicBgpPeerings) > 0 {
 		sb := new(strings.Builder)
-		for _, dynamicBgpPeering := range o.dynamicBgpPeerings {
-			sb.WriteString(dynamicBgpPeering.render(2))
+		for k, v := range o.dynamicBgpPeerings {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		dynamicBgpPeerings = "[\n" + sb.String() + "  ]"
+		dynamicBgpPeerings = "{\n" + sb.String() + "  }"
 	}
 
 	return fmt.Sprintf(resourceDataCenterConnectivityTemplateSviHCL,
@@ -91,14 +91,18 @@ func (o resourceDataCenterConnectivityTemplateSvi) testChecks(t testing.TB, bpId
 		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
-	result.append(t, "TestCheckResourceAttr", "bgp_peering_ip_endpoints.#", strconv.Itoa(len(o.bgpPeeringIpEndoints)))
-	for _, bgpPeeringIpEndoint := range o.bgpPeeringIpEndoints {
-		result.appendSetNestedCheck(t, "bgp_peering_ip_endpoints.*", bgpPeeringIpEndoint.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "bgp_peering_ip_endpoints.%", strconv.Itoa(len(o.bgpPeeringIpEndoints)))
+	for k, v := range o.bgpPeeringIpEndoints {
+		for _, check := range v.testChecks("bgp_peering_ip_endpoints." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
-	result.append(t, "TestCheckResourceAttr", "dynamic_bgp_peerings.#", strconv.Itoa(len(o.dynamicBgpPeerings)))
-	for _, dynamicBgpPeering := range o.dynamicBgpPeerings {
-		result.appendSetNestedCheck(t, "dynamic_bgp_peerings.*", dynamicBgpPeering.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "dynamic_bgp_peerings.%", strconv.Itoa(len(o.dynamicBgpPeerings)))
+	for k, v := range o.dynamicBgpPeerings {
+		for _, check := range v.testChecks("dynamic_bgp_peerings." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
 	return result

@@ -9,7 +9,6 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -87,6 +86,9 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Create(ctx context.Contex
 		return
 	}
 
+	// load locally-generated IDs from the request object
+	plan.LoadPrimitiveIds(ctx, request, &resp.Diagnostics)
+
 	// send the request to Apstra
 	err = bp.CreateConnectivityTemplate(ctx, request)
 	if err != nil {
@@ -95,7 +97,6 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Create(ctx context.Contex
 	}
 
 	// set the state
-	plan.Id = types.StringValue(string(*request.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -167,6 +168,9 @@ func (o *resourceDatacenterConnectivityTemplateSystem) Update(ctx context.Contex
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// load locally-generated IDs from the request object
+	plan.LoadPrimitiveIds(ctx, request, &resp.Diagnostics)
 
 	// send the request to Apstra
 	err = bp.UpdateConnectivityTemplate(ctx, request)
