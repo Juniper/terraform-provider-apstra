@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -68,22 +67,15 @@ func (o *resourceDatacenterConnectivityTemplateSvi) ValidateConfig(ctx context.C
 	}
 
 	// extract DynamicBgpPeerings
-	var dynamicBgpPeerings []primitives.DynamicBgpPeering
+	var dynamicBgpPeerings map[string]primitives.DynamicBgpPeering
 	resp.Diagnostics.Append(config.DynamicBgpPeerings.ElementsAs(ctx, &dynamicBgpPeerings, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	for _, dynamicBgpPeering := range dynamicBgpPeerings {
-		// extract set value for use in error pathing.
-		// Note this doesn't currently work. https://github.com/hashicorp/terraform/issues/33491
-		setVal, d := types.ObjectValueFrom(ctx, dynamicBgpPeering.AttrTypes(), &dynamicBgpPeering)
-		resp.Diagnostics.Append(d...)
-		if resp.Diagnostics.HasError() {
-			return
-		}
-
-		dynamicBgpPeering.ValidateConfig(ctx, path.Root("dynamic_bgp_peerings").AtSetValue(setVal), &resp.Diagnostics)
+	// Validate each dynamic BGP peering object
+	for k, v := range dynamicBgpPeerings {
+		v.ValidateConfig(ctx, path.Root("dynamic_bgp_peerings").AtMapKey(k), &resp.Diagnostics)
 	}
 }
 
@@ -121,6 +113,9 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Create(ctx context.Context, 
 		return
 	}
 
+	// load locally-generated IDs from the request object
+	plan.LoadPrimitiveIds(ctx, request, &resp.Diagnostics)
+
 	// send the request to Apstra
 	err = bp.CreateConnectivityTemplate(ctx, request)
 	if err != nil {
@@ -129,7 +124,6 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Create(ctx context.Context, 
 	}
 
 	// set the state
-	plan.Id = types.StringValue(string(*request.Id))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -201,6 +195,9 @@ func (o *resourceDatacenterConnectivityTemplateSvi) Update(ctx context.Context, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// load locally-generated IDs from the request object
+	plan.LoadPrimitiveIds(ctx, request, &resp.Diagnostics)
 
 	// send the request to Apstra
 	err = bp.UpdateConnectivityTemplate(ctx, request)

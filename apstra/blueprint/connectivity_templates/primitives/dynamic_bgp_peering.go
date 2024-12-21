@@ -14,18 +14,22 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type DynamicBgpPeering struct {
-	Name            types.String         `tfsdk:"name"`
+	Id              types.String         `tfsdk:"id"`
+	BatchId         types.String         `tfsdk:"batch_id"`
+	PipelineId      types.String         `tfsdk:"pipeline_id"`
 	Ttl             types.Int64          `tfsdk:"ttl"`
 	BfdEnabled      types.Bool           `tfsdk:"bfd_enabled"`
 	Password        types.String         `tfsdk:"password"`
@@ -36,12 +40,14 @@ type DynamicBgpPeering struct {
 	LocalAsn        types.Int64          `tfsdk:"local_asn"`
 	Ipv4PeerPrefix  cidrtypes.IPv4Prefix `tfsdk:"ipv4_peer_prefix"`
 	Ipv6PeerPrefix  cidrtypes.IPv6Prefix `tfsdk:"ipv6_peer_prefix"`
-	RoutingPolicies types.Set            `tfsdk:"routing_policies"`
+	RoutingPolicies types.Map            `tfsdk:"routing_policies"`
 }
 
 func (o DynamicBgpPeering) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"name":             types.StringType,
+		"id":               types.StringType,
+		"batch_id":         types.StringType,
+		"pipeline_id":      types.StringType,
 		"ttl":              types.Int64Type,
 		"bfd_enabled":      types.BoolType,
 		"password":         types.StringType,
@@ -52,16 +58,26 @@ func (o DynamicBgpPeering) AttrTypes() map[string]attr.Type {
 		"local_asn":        types.Int64Type,
 		"ipv4_peer_prefix": cidrtypes.IPv4PrefixType{},
 		"ipv6_peer_prefix": cidrtypes.IPv6PrefixType{},
-		"routing_policies": types.SetType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
+		"routing_policies": types.MapType{ElemType: types.ObjectType{AttrTypes: RoutingPolicy{}.AttrTypes()}},
 	}
 }
 
 func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Label used by the web UI on the Primitive \"block\" in the Connectivity Template.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive element",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
+		"batch_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{dynamicBgpPeeringBatchIdPlanModifier{}},
+		},
+		"pipeline_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"ttl": resourceSchema.Int64Attribute{
 			MarkdownDescription: "BGP Time To Live. Omit to use device defaults.",
@@ -128,13 +144,13 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_enabled"), types.BoolValue(false)),
 			},
 		},
-		"routing_policies": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
+		"routing_policies": resourceSchema.MapNestedAttribute{
+			MarkdownDescription: "Map of Routing Policy Primitives to be used with this *Protocol Endpoint*.",
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RoutingPolicy{}.ResourceAttributes(),
 			},
 			Optional:   true,
-			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -174,7 +190,6 @@ func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *a
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface{
-		Label:                 o.Name.ValueString(), // todo is this necessary?
 		Bfd:                   o.BfdEnabled.ValueBool(),
 		Holdtime:              holdTime,
 		Ipv4Safi:              o.Ipv4Enabled.ValueBool(),
@@ -191,10 +206,16 @@ func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *a
 }
 
 func (o DynamicBgpPeering) primitive(ctx context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitive {
-	result := apstra.ConnectivityTemplatePrimitive{
-		Label:      o.Name.ValueString(),
-		Attributes: o.attributes(ctx, diags),
-		// Subpolicies: // set below
+	result := apstra.ConnectivityTemplatePrimitive{Attributes: o.attributes(ctx, diags)}
+
+	if !o.PipelineId.IsUnknown() {
+		result.PipelineId = (*apstra.ObjectId)(o.PipelineId.ValueStringPointer()) // nil when null
+	}
+	if !o.Id.IsUnknown() {
+		result.Id = (*apstra.ObjectId)(o.Id.ValueStringPointer()) // nil when null
+	}
+	if !o.BatchId.IsUnknown() {
+		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
 	result.Subpolicies = append(result.Subpolicies, RoutingPolicySubpolicies(ctx, o.RoutingPolicies, diags)...)
@@ -202,16 +223,22 @@ func (o DynamicBgpPeering) primitive(ctx context.Context, diags *diag.Diagnostic
 	return &result
 }
 
-func DynamicBgpPeeringSubpolicies(ctx context.Context, dynamicBgpPeeringSet types.Set, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
-	var dynamicBgpPeerings []DynamicBgpPeering
-	diags.Append(dynamicBgpPeeringSet.ElementsAs(ctx, &dynamicBgpPeerings, false)...)
+func DynamicBgpPeeringSubpolicies(ctx context.Context, dynamicBgpPeeringMap types.Map, diags *diag.Diagnostics) []*apstra.ConnectivityTemplatePrimitive {
+	var dynamicBgpPeerings map[string]DynamicBgpPeering
+	diags.Append(dynamicBgpPeeringMap.ElementsAs(ctx, &dynamicBgpPeerings, false)...)
 	if diags.HasError() {
 		return nil
 	}
 
 	subpolicies := make([]*apstra.ConnectivityTemplatePrimitive, len(dynamicBgpPeerings))
-	for i, dynamicBgpPeering := range dynamicBgpPeerings {
-		subpolicies[i] = dynamicBgpPeering.primitive(ctx, diags)
+	i := 0
+	for k, v := range dynamicBgpPeerings {
+		subpolicies[i] = v.primitive(ctx, diags)
+		if diags.HasError() {
+			return nil
+		}
+		subpolicies[i].Label = k
+		i++
 	}
 
 	return subpolicies
@@ -240,8 +267,8 @@ func newDynamicBgpPeering(_ context.Context, in *apstra.ConnectivityTemplatePrim
 	return result
 }
 
-func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Set {
-	var result []DynamicBgpPeering
+func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]DynamicBgpPeering)
 
 	for i, subpolicy := range subpolicies {
 		if subpolicy == nil {
@@ -259,14 +286,81 @@ func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies
 			}
 
 			newPrimitive := newDynamicBgpPeering(ctx, p, diags)
-			newPrimitive.Name = utils.StringValueOrNull(ctx, subpolicy.Label, diags)
+			newPrimitive.PipelineId = types.StringPointerValue((*string)(subpolicy.PipelineId))
+			newPrimitive.Id = types.StringPointerValue((*string)(subpolicy.Id))
+			newPrimitive.BatchId = types.StringPointerValue((*string)(subpolicy.BatchId))
 			newPrimitive.RoutingPolicies = RoutingPolicyPrimitivesFromSubpolicies(ctx, subpolicy.Subpolicies, diags)
-			result = append(result, newPrimitive)
+			result[subpolicy.Label] = newPrimitive
 		}
 	}
 	if diags.HasError() {
-		return types.SetNull(types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()})
+		return types.MapNull(types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+}
+
+func LoadIDsIntoDynamicBgpPeeringMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
+	result := make(map[string]DynamicBgpPeering, len(inMap.Elements()))
+	inMap.ElementsAs(ctx, &result, false)
+	if diags.HasError() {
+		return types.MapNull(types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()})
+	}
+
+	for _, p := range subpolicies {
+		if _, ok := p.Attributes.(*apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface); !ok {
+			continue // wrong type and nil value both wind up getting skipped
+		}
+
+		if v, ok := result[p.Label]; ok {
+			v.PipelineId = types.StringPointerValue((*string)(p.PipelineId))
+			v.Id = types.StringPointerValue((*string)(p.Id))
+			v.BatchId = types.StringPointerValue((*string)(p.BatchId))
+			v.RoutingPolicies = LoadIDsIntoRoutingPolicyMap(ctx, p.Subpolicies, v.RoutingPolicies, diags)
+			result[p.Label] = v
+		}
+	}
+
+	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+}
+
+var _ planmodifier.String = (*dynamicBgpPeeringBatchIdPlanModifier)(nil)
+
+type dynamicBgpPeeringBatchIdPlanModifier struct{}
+
+func (o dynamicBgpPeeringBatchIdPlanModifier) Description(_ context.Context) string {
+	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+}
+
+func (o dynamicBgpPeeringBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
+	return o.Description(ctx)
+}
+
+func (o dynamicBgpPeeringBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
+	var plan, state DynamicBgpPeering
+
+	// unpacking the parent object's plan should always work
+	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// attempting to unpack the parent object's state indicates whether state *exists*
+	d := req.State.GetAttribute(ctx, req.Path.ParentPath(), &state)
+	stateDoesNotExist := d.HasError()
+
+	// do we have zero children?
+	if len(plan.RoutingPolicies.Elements()) == 0 {
+		resp.PlanValue = types.StringNull() // with no children the batch id should be null
+		return
+	}
+
+	// are we a new object?
+	if stateDoesNotExist {
+		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+		return
+	}
+
+	// we're not new, and we have children. use the old value
+	resp.PlanValue = req.StateValue
 }

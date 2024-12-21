@@ -32,18 +32,18 @@ type resourceDataCenterConnectivityTemplateLoopback struct {
 	name                 string
 	description          string
 	tags                 []string
-	bgpPeeringIpEndoints []resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
+	bgpPeeringIpEndoints map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint
 }
 
 func (o resourceDataCenterConnectivityTemplateLoopback) render(rType, rName string) string {
 	bgpPeeringIpEndoints := "null"
 	if len(o.bgpPeeringIpEndoints) > 0 {
 		sb := new(strings.Builder)
-		for _, bgpPeeringIpEndpoint := range o.bgpPeeringIpEndoints {
-			sb.WriteString(bgpPeeringIpEndpoint.render(2))
+		for k, v := range o.bgpPeeringIpEndoints {
+			sb.WriteString(tfapstra.Indent(2, k+" = "+v.render(2)))
 		}
 
-		bgpPeeringIpEndoints = "[\n" + sb.String() + "  ]"
+		bgpPeeringIpEndoints = "{\n" + sb.String() + "  }"
 	}
 
 	return fmt.Sprintf(resourceDataCenterConnectivityTemplateLoopbackHCL,
@@ -75,9 +75,11 @@ func (o resourceDataCenterConnectivityTemplateLoopback) testChecks(t testing.TB,
 		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
-	result.append(t, "TestCheckResourceAttr", "bgp_peering_ip_endpoints.#", strconv.Itoa(len(o.bgpPeeringIpEndoints)))
-	for _, bgpPeeringIpEndoint := range o.bgpPeeringIpEndoints {
-		result.appendSetNestedCheck(t, "bgp_peering_ip_endpoints.*", bgpPeeringIpEndoint.valueAsMapForChecks())
+	result.append(t, "TestCheckResourceAttr", "bgp_peering_ip_endpoints.%", strconv.Itoa(len(o.bgpPeeringIpEndoints)))
+	for k, v := range o.bgpPeeringIpEndoints {
+		for _, check := range v.testChecks("bgp_peering_ip_endpoints." + k) {
+			result.append(t, check[0], check[1:]...)
+		}
 	}
 
 	return result
