@@ -3,6 +3,7 @@ package blueprint
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -62,7 +63,7 @@ func (o VirtualNetworkBindings) ResourceAttributes() map[string]resourceSchema.A
 	}
 }
 
-func (o VirtualNetworkBindings) Request(ctx context.Context, ps private.State, diags *diag.Diagnostics) *apstra.VirtualNetworkBindingsRequest {
+func (o VirtualNetworkBindings) Request(ctx context.Context, rgMap map[string]*apstra.RedundancyGroupInfo, ps private.State, diags *diag.Diagnostics) *apstra.VirtualNetworkBindingsRequest {
 	// private state enumerates previously-created bindings which we may need to delete
 	var p private.ResourceDatacenterVirtualNetworkBindings
 	if ps != nil {
@@ -78,9 +79,17 @@ func (o VirtualNetworkBindings) Request(ctx context.Context, ps private.State, d
 		return nil
 	}
 
-	vnBindings := make(map[apstra.ObjectId]*apstra.VnBinding, len(o.Bindings.Elements()))
+	// Build a map of bindings we'll send to the API. Because of possible redundancy
+	// group IDs, we don't know the actual size of this map yet.
+	vnBindings := make(map[apstra.ObjectId]*apstra.VnBinding)
 	for _, vnBinding := range vnBindingSlice {
-		vnBindings[apstra.ObjectId(vnBinding.LeafId.ValueString())] = vnBinding.Request(ctx, diags)
+		// Determine if the leaf binding should be treated as an ESI/MLAG binding
+		if rgi, ok := rgMap[vnBinding.LeafId.ValueString()]; ok {
+			// This leaf switch ID is half of a pair. Swap in the RG ID in its place.
+			vnBinding.LeafId = customtypes.NewStringWithAltValuesValue(rgi.Id.String())
+		}
+
+		vnBindings[apstra.ObjectId(vnBinding.LeafId.ValueString())] = vnBinding.Request(ctx, rgMap, diags)
 		delete(p.SystemIdToVlan, vnBinding.LeafId.ValueString()) // remove this from the to-be-deleted list
 	}
 	for deleteMe := range p.SystemIdToVlan {
@@ -135,3 +144,15 @@ func (o VirtualNetworkBindings) SetPrivateState(ctx context.Context, ps private.
 
 	p.SetPrivateState(ctx, ps, diags)
 }
+
+//func redundantVnBindings(binding VirtualNetworkBinding, rgi apstra.RedundancyGroupInfo) map[apstra.ObjectId]*apstra.VnBinding {
+//	result := make(map[apstra.ObjectId]*apstra.VnBinding, 2)
+//	for _, sysId := range rgi.SystemIds {
+//		result[sysId] =VirtualNetworkBinding{
+//			LeafId:    customtypes.NewStringWithAltValuesValue(rgi.SystemIds[0].String()),
+//			VlanId:    vnBinding.VlanId,
+//			AccessIds: types.Set{},
+//		}.Request(ctx, diags)
+//	}
+//	}
+//}

@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -108,12 +109,19 @@ func (o *resourceDatacenterVirtualNetworkBindings) Create(ctx context.Context, r
 		return
 	}
 
-	// create a bindings request
-	request := plan.Request(ctx, nil, &resp.Diagnostics)
+	// Get redundancy group info for this blueprint
+	rgiMap := getRgiMap(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// create a bindings request, using nil for prior state
+	request := plan.Request(ctx, rgiMap, nil, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create the bindings using the SDK's Update method so that we do not wipe out any existing bindings
 	err = bp.UpdateVirtualNetworkLeafBindings(ctx, *request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to set virtual network bindings", err.Error())
@@ -155,17 +163,10 @@ func (o *resourceDatacenterVirtualNetworkBindings) Read(ctx context.Context, req
 		return
 	}
 
-	// collect redundancy group info and prepare a map keyed by RG id *and* system IDs
-	allRgiInfo, err := bp.GetAllRedundancyGroupInfo(ctx)
-	if err != nil {
-		resp.Diagnostics.AddError("failed to read redundancy groups from blueprint", err.Error())
+	// Get redundancy group info for this blueprint
+	rgiMap := getRgiMap(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
-	}
-	rgiMap := make(map[string]*apstra.RedundancyGroupInfo, len(allRgiInfo)*3)
-	for _, v := range allRgiInfo {
-		rgiMap[v.Id.String()] = &v
-		rgiMap[v.SystemIds[0].String()] = &v
-		rgiMap[v.SystemIds[1].String()] = &v
 	}
 
 	state.LoadApiData(ctx, vn.Data, rgiMap, resp.Private, &resp.Diagnostics)
@@ -200,11 +201,19 @@ func (o *resourceDatacenterVirtualNetworkBindings) Update(ctx context.Context, r
 		return
 	}
 
-	request := plan.Request(ctx, req.Private, &resp.Diagnostics)
+	// Get redundancy group info for this blueprint
+	rgiMap := getRgiMap(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// create a bindings request
+	request := plan.Request(ctx, rgiMap, req.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create the bindings using the SDK's Update method so that we do not wipe out any existing bindings
 	err = bp.UpdateVirtualNetworkLeafBindings(ctx, *request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to set virtual network bindings", err.Error())
@@ -244,6 +253,12 @@ func (o *resourceDatacenterVirtualNetworkBindings) Delete(ctx context.Context, r
 		return
 	}
 
+	// Get redundancy group info for this blueprint
+	rgiMap := getRgiMap(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Create an empty plan using state values
 	plan := blueprint.VirtualNetworkBindings{
 		BlueprintId:      state.BlueprintId,
@@ -252,7 +267,7 @@ func (o *resourceDatacenterVirtualNetworkBindings) Delete(ctx context.Context, r
 	}
 
 	// create a bindings request (private enumerates work to be un-done)
-	request := plan.Request(ctx, req.Private, &resp.Diagnostics)
+	request := plan.Request(ctx, rgiMap, req.Private, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -277,4 +292,21 @@ func (o *resourceDatacenterVirtualNetworkBindings) setBpLockFunc(f func(context.
 
 func (o *resourceDatacenterVirtualNetworkBindings) setClient(client *apstra.Client) {
 	o.client = client
+}
+
+func getRgiMap(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) map[string]*apstra.RedundancyGroupInfo {
+	allRgiInfo, err := bp.GetAllRedundancyGroupInfo(ctx)
+	if err != nil {
+		diags.AddError("failed to read redundancy groups from blueprint", err.Error())
+		return nil
+	}
+
+	result := make(map[string]*apstra.RedundancyGroupInfo, len(allRgiInfo)*3)
+	for _, rgiInfo := range allRgiInfo {
+		result[rgiInfo.Id.String()] = &rgiInfo
+		result[rgiInfo.SystemIds[0].String()] = &rgiInfo
+		result[rgiInfo.SystemIds[1].String()] = &rgiInfo
+	}
+
+	return result
 }
