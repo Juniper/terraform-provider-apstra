@@ -3,6 +3,8 @@ package customtypes_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -12,7 +14,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSetWithSemanticEquals_SetSemanticEquals(t *testing.T) {
@@ -262,5 +263,4 @@ func TestSetWithSemanticEquals_ValidateAttribute(t *testing.T) {
 			}
 		})
 	}
-
 }
