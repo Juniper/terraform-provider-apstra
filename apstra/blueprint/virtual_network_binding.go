@@ -17,18 +17,19 @@ import (
 )
 
 type VirtualNetworkBinding struct {
-	LeafId    customtypes.StringWithAltValues `tfsdk:"leaf_id"`
-	VlanId    types.Int64                     `tfsdk:"vlan_id"`
-	AccessIds types.Set                       `tfsdk:"access_ids"`
-	//AccessIds customtypes.SetWithSemanticEquals `tfsdk:"access_ids"`
+	LeafId customtypes.StringWithAltValues `tfsdk:"leaf_id"`
+	VlanId types.Int64                     `tfsdk:"vlan_id"`
+	//AccessIds types.Set                       `tfsdk:"access_ids"`
+	AccessIds customtypes.SetWithSemanticEquals `tfsdk:"access_ids"`
 }
 
 func (o VirtualNetworkBinding) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"leaf_id":    customtypes.StringWithAltValuesType{},
-		"vlan_id":    types.Int64Type,
-		"access_ids": types.SetType{ElemType: customtypes.StringWithAltValuesType{}},
-		//"access_ids": customtypes.SetWithSemanticEqualsType{ElemType: customtypes.StringWithAltValuesType{}},
+		"leaf_id": customtypes.StringWithAltValuesType{},
+		"vlan_id": types.Int64Type,
+		//"access_ids": types.SetType{ElemType: customtypes.StringWithAltValuesType{}},
+		"access_ids": customtypes.NewSetWithSemanticEqualsType(customtypes.StringWithAltValuesType{}),
+		//"access_ids": customtypes.NewSetWithSemanticEqualsType(types.StringType),
 	}
 }
 
@@ -47,10 +48,11 @@ func (o VirtualNetworkBinding) ResourceAttributes() map[string]resourceSchema.At
 		},
 		"access_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "Access Switch IDs associated with this Leaf Switch",
-			//CustomType:          customtypes.SetWithSemanticEqualsType{},
-			Optional:    true,
-			ElementType: customtypes.StringWithAltValuesType{},
-			Validators:  []validator.Set{setvalidator.SizeAtLeast(1)},
+			CustomType:          customtypes.NewSetWithSemanticEqualsType(customtypes.StringWithAltValuesType{}),
+			Optional:            true,
+			ElementType:         customtypes.StringWithAltValuesType{},
+			//ElementType: types.StringType,
+			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
 }
