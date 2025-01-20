@@ -327,7 +327,7 @@ var _ planmodifier.String = (*ipLinkBatchIdPlanModifier)(nil)
 type ipLinkBatchIdPlanModifier struct{}
 
 func (o ipLinkBatchIdPlanModifier) Description(_ context.Context) string {
-	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+	return "preserves the the state value unless we're transitioning between zero and non-zero child primitives, in which case null or unknown is planned"
 }
 
 func (o ipLinkBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
@@ -337,7 +337,7 @@ func (o ipLinkBatchIdPlanModifier) MarkdownDescription(ctx context.Context) stri
 func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan, state IpLink
 
-	// unpacking the parent object's plan should always work
+	// unpacking the parent object's planed value should always work
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -347,16 +347,20 @@ func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req pla
 	d := req.State.GetAttribute(ctx, req.Path.ParentPath(), &state)
 	stateDoesNotExist := d.HasError()
 
-	// are we a new object?
-	if stateDoesNotExist {
-		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
-		return
-	}
-
 	planHasChildren := len(plan.BgpPeeringGenericSystems.Elements())+
 		len(plan.BgpPeeringIpEndpoints.Elements())+
 		len(plan.DynamicBgpPeerings.Elements())+
 		len(plan.StaticRoutes.Elements()) > 0
+
+	// are we a new object?
+	if stateDoesNotExist {
+		if planHasChildren {
+			resp.PlanValue = types.StringUnknown()
+		} else {
+			resp.PlanValue = types.StringNull()
+		}
+		return
+	}
 
 	stateHasChildren := len(state.BgpPeeringGenericSystems.Elements())+
 		len(state.BgpPeeringIpEndpoints.Elements())+

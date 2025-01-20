@@ -203,7 +203,7 @@ var _ planmodifier.String = (*virtualNetworkSingleBatchIdPlanModifier)(nil)
 type virtualNetworkSingleBatchIdPlanModifier struct{}
 
 func (o virtualNetworkSingleBatchIdPlanModifier) Description(_ context.Context) string {
-	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+	return "preserves the the state value unless we're transitioning between zero and non-zero child primitives, in which case null or unknown is planned"
 }
 
 func (o virtualNetworkSingleBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
@@ -213,7 +213,7 @@ func (o virtualNetworkSingleBatchIdPlanModifier) MarkdownDescription(ctx context
 func (o virtualNetworkSingleBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan, state VirtualNetworkSingle
 
-	// unpacking the parent object's plan should always work
+	// unpacking the parent object's planed value should always work
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -223,14 +223,18 @@ func (o virtualNetworkSingleBatchIdPlanModifier) PlanModifyString(ctx context.Co
 	d := req.State.GetAttribute(ctx, req.Path.ParentPath(), &state)
 	stateDoesNotExist := d.HasError()
 
-	// are we a new object?
-	if stateDoesNotExist {
-		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
-		return
-	}
-
 	planHasChildren := len(plan.BgpPeeringGenericSystems.Elements())+
 		len(plan.StaticRoutes.Elements()) > 0
+
+	// are we a new object?
+	if stateDoesNotExist {
+		if planHasChildren {
+			resp.PlanValue = types.StringUnknown()
+		} else {
+			resp.PlanValue = types.StringNull()
+		}
+		return
+	}
 
 	stateHasChildren := len(state.BgpPeeringGenericSystems.Elements())+
 		len(state.StaticRoutes.Elements()) > 0
