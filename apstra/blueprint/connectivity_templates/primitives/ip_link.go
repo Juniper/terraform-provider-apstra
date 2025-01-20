@@ -347,21 +347,31 @@ func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req pla
 	d := req.State.GetAttribute(ctx, req.Path.ParentPath(), &state)
 	stateDoesNotExist := d.HasError()
 
-	// do we have zero children?
-	if len(plan.BgpPeeringGenericSystems.Elements())+
-		len(plan.BgpPeeringIpEndpoints.Elements())+
-		len(plan.DynamicBgpPeerings.Elements())+
-		len(plan.StaticRoutes.Elements()) == 0 {
-		resp.PlanValue = types.StringNull() // with no children the batch id should be null
-		return
-	}
-
 	// are we a new object?
 	if stateDoesNotExist {
 		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
 		return
 	}
 
-	// we're not new, and we have children. use the old value
-	resp.PlanValue = req.StateValue
+	planHasChildren := len(plan.BgpPeeringGenericSystems.Elements())+
+		len(plan.BgpPeeringIpEndpoints.Elements())+
+		len(plan.DynamicBgpPeerings.Elements())+
+		len(plan.StaticRoutes.Elements()) > 0
+
+	stateHasChildren := len(state.BgpPeeringGenericSystems.Elements())+
+		len(state.BgpPeeringIpEndpoints.Elements())+
+		len(state.DynamicBgpPeerings.Elements())+
+		len(state.StaticRoutes.Elements()) > 0
+
+	if planHasChildren == stateHasChildren {
+		// state and plan agree about whether a batch ID is required. Reuse the old value.
+		resp.PlanValue = req.StateValue
+	}
+
+	// We've either gained our first, or lost our last child primitive. Set the plan value accordingly.
+	if planHasChildren {
+		resp.PlanValue = types.StringUnknown()
+	} else {
+		resp.PlanValue = types.StringNull()
+	}
 }
