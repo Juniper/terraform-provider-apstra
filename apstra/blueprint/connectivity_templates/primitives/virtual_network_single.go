@@ -104,6 +104,9 @@ func (o VirtualNetworkSingle) primitive(ctx context.Context, diags *diag.Diagnos
 		result.BatchId = (*apstra.ObjectId)(o.BatchId.ValueStringPointer()) // nil when null
 	}
 
+	result.Subpolicies = append(result.Subpolicies, BgpPeeringGenericSystemSubpolicies(ctx, o.BgpPeeringGenericSystems, diags)...)
+	result.Subpolicies = append(result.Subpolicies, StaticRouteSubpolicies(ctx, o.StaticRoutes, diags)...)
+
 	return &result
 }
 
