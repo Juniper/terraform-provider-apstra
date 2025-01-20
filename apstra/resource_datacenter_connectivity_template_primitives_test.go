@@ -642,22 +642,48 @@ func randomStaticRoutePrimitives(t testing.TB, _ context.Context, ipv4Count, ipv
 }
 
 const resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL = `{
-  virtual_network_id = %q
-  tagged             = %q
+  virtual_network_id          = %q
+  tagged                      = %q
+  bgp_peering_generic_systems = %s
+  static_routes               = %s
 },
 `
 
 type resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle struct {
-	virtualNetworkId string
-	tagged           bool
+	virtualNetworkId         string
+	tagged                   bool
+	bgpPeeringGenericSystems map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem
+	staticRoutes             map[string]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute
 }
 
 func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) render(indent int) string {
+	bgpPeeringGenericSystems := "null"
+	if len(o.bgpPeeringGenericSystems) > 0 {
+		sb := new(strings.Builder)
+		for k, v := range o.bgpPeeringGenericSystems {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
+		}
+
+		bgpPeeringGenericSystems = "{\n" + sb.String() + "  }"
+	}
+
+	staticRoutes := "null"
+	if len(o.staticRoutes) > 0 {
+		sb := new(strings.Builder)
+		for k, v := range o.staticRoutes {
+			sb.WriteString(tfapstra.Indent(indent, k+" = "+v.render(indent)))
+		}
+
+		staticRoutes = "{\n" + sb.String() + "  }"
+	}
+
 	return tfapstra.Indent(
 		indent,
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL,
 			o.virtualNetworkId,
 			strconv.FormatBool(o.tagged),
+			bgpPeeringGenericSystems,
+			staticRoutes,
 		),
 	)
 }
@@ -666,6 +692,14 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) tes
 	var result [][]string
 	result = append(result, []string{"TestCheckResourceAttr", path + ".virtual_network_id", o.virtualNetworkId})
 	result = append(result, []string{"TestCheckResourceAttr", path + ".tagged", strconv.FormatBool(o.tagged)})
+	result = append(result, []string{"TestCheckResourceAttr", path + ".bgp_peering_generic_systems.%", strconv.Itoa(len(o.bgpPeeringGenericSystems))})
+	for k, v := range o.bgpPeeringGenericSystems {
+		result = append(result, v.testChecks(path+".bgp_peering_generic_systems."+k)...)
+	}
+	result = append(result, []string{"TestCheckResourceAttr", path + ".static_routes.%", strconv.Itoa(len(o.staticRoutes))})
+	for k, v := range o.staticRoutes {
+		result = append(result, v.testChecks(path+".static_routes."+k)...)
+	}
 	return result
 }
 
@@ -675,8 +709,10 @@ func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, c
 	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
 	for range count {
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
-			virtualNetworkId: testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String(),
-			tagged:           oneOf(true, false),
+			virtualNetworkId:         testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String(),
+			tagged:                   oneOf(true, false),
+			bgpPeeringGenericSystems: randomBgpPeeringGenericSystemPrimitives(t, ctx, rand.IntN(3), client, cleanup),
+			staticRoutes:             randomStaticRoutePrimitives(t, ctx, rand.IntN(3), rand.IntN(3), client, cleanup),
 		}
 	}
 
