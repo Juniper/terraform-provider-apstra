@@ -22,6 +22,48 @@ type SetWithSemanticEquals struct {
 	ignoreLength bool
 }
 
+func (s SetWithSemanticEquals) Equal(o attr.Value) bool {
+	other, ok := o.(SetWithSemanticEquals)
+	if !ok {
+		return false
+	}
+
+	sType := s.ElementType(context.Background())
+	oType := other.ElementType(context.Background())
+
+	// A set with no elementType is an invalid state
+	if sType == nil || oType == nil {
+		return false
+	}
+
+	// element types must match
+	if !sType.Equal(oType) {
+		return false
+	}
+
+	// states must mach
+	if s.IsNull() != other.IsNull() || s.IsUnknown() != other.IsUnknown() {
+		return false
+	}
+
+	// unknown and null state have nothing more to check
+	if s.IsNull() || s.IsUnknown() {
+		return true
+	}
+
+	if len(s.Elements()) != len(other.Elements()) {
+		return false
+	}
+
+	for _, elem := range s.Elements() {
+		if !other.eqContains(elem) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (s SetWithSemanticEquals) SetSemanticEquals(ctx context.Context, other basetypes.SetValuable) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
@@ -56,13 +98,13 @@ func (s SetWithSemanticEquals) SetSemanticEquals(ctx context.Context, other base
 	}
 
 	for _, elem := range s.Elements() {
-		if !o.contains(ctx, elem, &diags) {
+		if !o.semanticContains(ctx, elem, &diags) {
 			return false, diags
 		}
 	}
 
 	for _, elem := range o.Elements() {
-		if !s.contains(ctx, elem, &diags) {
+		if !s.semanticContains(ctx, elem, &diags) {
 			return false, diags
 		}
 	}
@@ -70,7 +112,16 @@ func (s SetWithSemanticEquals) SetSemanticEquals(ctx context.Context, other base
 	return true, diags
 }
 
-func (s SetWithSemanticEquals) contains(ctx context.Context, v attr.Value, diags *diag.Diagnostics) bool {
+func (s SetWithSemanticEquals) eqContains(v attr.Value) bool {
+	for _, elem := range s.Elements() {
+		if v.Equal(elem) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s SetWithSemanticEquals) semanticContains(ctx context.Context, v attr.Value, diags *diag.Diagnostics) bool {
 	for _, elem := range s.Elements() {
 		if elem, ok := elem.(basetypes.BoolValuableWithSemanticEquals); ok {
 			ok, d := elem.BoolSemanticEquals(ctx, v.(basetypes.BoolValuableWithSemanticEquals))
