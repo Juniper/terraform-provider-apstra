@@ -327,7 +327,7 @@ var _ planmodifier.String = (*ipLinkBatchIdPlanModifier)(nil)
 type ipLinkBatchIdPlanModifier struct{}
 
 func (o ipLinkBatchIdPlanModifier) Description(_ context.Context) string {
-	return "preserves the the state value unless all child primitives have been removed, in which case null is planned"
+	return "preserves the the state value unless we're transitioning between zero and non-zero child primitives, in which case null or unknown is planned"
 }
 
 func (o ipLinkBatchIdPlanModifier) MarkdownDescription(ctx context.Context) string {
@@ -337,7 +337,7 @@ func (o ipLinkBatchIdPlanModifier) MarkdownDescription(ctx context.Context) stri
 func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan, state IpLink
 
-	// unpacking the parent object's plan should always work
+	// unpacking the parent object's planned value should always work
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -347,21 +347,36 @@ func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req pla
 	d := req.State.GetAttribute(ctx, req.Path.ParentPath(), &state)
 	stateDoesNotExist := d.HasError()
 
-	// do we have zero children?
-	if len(plan.BgpPeeringGenericSystems.Elements())+
+	planHasChildren := len(plan.BgpPeeringGenericSystems.Elements())+
 		len(plan.BgpPeeringIpEndpoints.Elements())+
 		len(plan.DynamicBgpPeerings.Elements())+
-		len(plan.StaticRoutes.Elements()) == 0 {
-		resp.PlanValue = types.StringNull() // with no children the batch id should be null
-		return
-	}
+		len(plan.StaticRoutes.Elements()) > 0
 
 	// are we a new object?
 	if stateDoesNotExist {
-		resp.PlanValue = types.StringUnknown() // we are a new object. the batch id is not knowable
+		if planHasChildren {
+			resp.PlanValue = types.StringUnknown()
+		} else {
+			resp.PlanValue = types.StringNull()
+		}
 		return
 	}
 
-	// we're not new, and we have children. use the old value
-	resp.PlanValue = req.StateValue
+	stateHasChildren := len(state.BgpPeeringGenericSystems.Elements())+
+		len(state.BgpPeeringIpEndpoints.Elements())+
+		len(state.DynamicBgpPeerings.Elements())+
+		len(state.StaticRoutes.Elements()) > 0
+
+	if planHasChildren == stateHasChildren {
+		// state and plan agree about whether a batch ID is required. Reuse the old value.
+		resp.PlanValue = req.StateValue
+		return
+	}
+
+	// We've either gained our first, or lost our last child primitive. Set the plan value accordingly.
+	if planHasChildren {
+		resp.PlanValue = types.StringUnknown()
+	} else {
+		resp.PlanValue = types.StringNull()
+	}
 }
