@@ -51,7 +51,6 @@ resource "apstra_datacenter_connectivity_template_interface" "example" {
   description  = format("All VNs from the following RZs: \n - %s", join("\n - ", [for rz in data.apstra_datacenter_routing_zone.selected : rz.name]))
   virtual_network_multiples = {
     for rz in data.apstra_datacenter_routing_zone.selected : format("rz '%s' networks", rz.name) => {
-      name          = format("rz '%s' networks", rz.name)
       tagged_vn_ids = data.apstra_datacenter_virtual_networks.selected[rz.id].ids
     }
   }
