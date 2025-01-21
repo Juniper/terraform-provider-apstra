@@ -337,7 +337,7 @@ func (o ipLinkBatchIdPlanModifier) MarkdownDescription(ctx context.Context) stri
 func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req planmodifier.StringRequest, resp *planmodifier.StringResponse) {
 	var plan, state IpLink
 
-	// unpacking the parent object's planed value should always work
+	// unpacking the parent object's planned value should always work
 	resp.Diagnostics.Append(req.Plan.GetAttribute(ctx, req.Path.ParentPath(), &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -370,6 +370,7 @@ func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req pla
 	if planHasChildren == stateHasChildren {
 		// state and plan agree about whether a batch ID is required. Reuse the old value.
 		resp.PlanValue = req.StateValue
+		return
 	}
 
 	// We've either gained our first, or lost our last child primitive. Set the plan value accordingly.
