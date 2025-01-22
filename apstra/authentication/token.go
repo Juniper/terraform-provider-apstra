@@ -52,9 +52,10 @@ func (o ApiToken) EphemeralAttributes() map[string]ephemeralSchema.Attribute {
 		},
 		"do_not_log_out": ephemeralSchema.BoolAttribute{
 			Optional: true,
-			MarkdownDescription: "By default, API sessions are closed when Terraform's `Close` operation calls " +
-				"`logout`. Set this value to `true` to prevent ending the session when Terraform determines the " +
-				"API key is no longer in use.",
+			MarkdownDescription: "By default, tokens / API sessions produced by this resource are invalidated by " +
+				"calling Apstra's `logout` API when Terraform invokes `Close` on this resource. Setting this " +
+				"attribute to `true` changes that behavior. `logout` will not be called, and the token produced by " +
+				"this resource will remain valid until it expires or something else invalidates it.",
 		},
 	}
 }
