@@ -28,40 +28,7 @@ func (s SetWithSemanticEquals) Equal(o attr.Value) bool {
 		return false
 	}
 
-	sType := s.ElementType(context.Background())
-	oType := other.ElementType(context.Background())
-
-	// A set with no elementType is an invalid state
-	if sType == nil || oType == nil {
-		return false
-	}
-
-	// element types must match
-	if !sType.Equal(oType) {
-		return false
-	}
-
-	// states must mach
-	if s.IsNull() != other.IsNull() || s.IsUnknown() != other.IsUnknown() {
-		return false
-	}
-
-	// unknown and null state have nothing more to check
-	if s.IsNull() || s.IsUnknown() {
-		return true
-	}
-
-	if len(s.Elements()) != len(other.Elements()) {
-		return false
-	}
-
-	for _, elem := range s.Elements() {
-		if !other.eqContains(elem) {
-			return false
-		}
-	}
-
-	return true
+	return s.SetValue.Equal(other.SetValue)
 }
 
 func (s SetWithSemanticEquals) SetSemanticEquals(ctx context.Context, other basetypes.SetValuable) (bool, diag.Diagnostics) {
