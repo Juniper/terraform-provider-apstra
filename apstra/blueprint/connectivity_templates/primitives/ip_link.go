@@ -352,9 +352,14 @@ func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req pla
 		len(plan.DynamicBgpPeerings.Elements())+
 		len(plan.StaticRoutes.Elements()) > 0
 
+	planChildrenUnknown := plan.BgpPeeringGenericSystems.IsUnknown() ||
+		plan.BgpPeeringIpEndpoints.IsUnknown() ||
+		plan.DynamicBgpPeerings.IsUnknown() ||
+		plan.StaticRoutes.IsUnknown()
+
 	// are we a new object?
 	if stateDoesNotExist {
-		if planHasChildren {
+		if planHasChildren || planChildrenUnknown {
 			resp.PlanValue = types.StringUnknown()
 		} else {
 			resp.PlanValue = types.StringNull()
@@ -367,14 +372,14 @@ func (o ipLinkBatchIdPlanModifier) PlanModifyString(ctx context.Context, req pla
 		len(state.DynamicBgpPeerings.Elements())+
 		len(state.StaticRoutes.Elements()) > 0
 
-	if planHasChildren == stateHasChildren {
+	if (planHasChildren || planChildrenUnknown) == stateHasChildren {
 		// state and plan agree about whether a batch ID is required. Reuse the old value.
 		resp.PlanValue = req.StateValue
 		return
 	}
 
 	// We've either gained our first, or lost our last child primitive. Set the plan value accordingly.
-	if planHasChildren {
+	if planHasChildren || planChildrenUnknown {
 		resp.PlanValue = types.StringUnknown()
 	} else {
 		resp.PlanValue = types.StringNull()
