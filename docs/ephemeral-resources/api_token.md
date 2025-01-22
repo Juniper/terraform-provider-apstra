@@ -44,7 +44,7 @@ resource "null_resource" "example" {
 
 ### Optional
 
-- `do_not_log_out` (Boolean) By default, API sessions are closed when Terraform's `Close` operation calls `logout`. Set this value to `true` to prevent ending the session when Terraform determines the API key is no longer in use.
+- `do_not_log_out` (Boolean) By default, tokens / API sessions produced by this resource are invalidated by calling Apstra's `logout` API when Terraform invokes `Close` on this resource. Setting this attribute to `true` changes that behavior. `logout` will not be called, and the token produced by this resource will remain valid until it expires or something else invalidates it.
 - `warn_seconds` (Number) Terraform will produce a warning when the token value is referenced with less than this amount of time remaining before expiration. Note that determination of remaining token lifetime depends on clock sync between the Apstra server and the Terraform host. Value `0` disables warnings. Default value is `60`.
 
 ### Read-Only
