@@ -375,9 +375,11 @@ func (o bgpPeeringGenericSystemBatchIdPlanModifier) PlanModifyString(ctx context
 
 	planHasChildren := len(plan.RoutingPolicies.Elements()) > 0
 
+	planChildrenUnknown := plan.RoutingPolicies.IsUnknown()
+
 	// are we a new object?
 	if stateDoesNotExist {
-		if planHasChildren {
+		if planHasChildren || planChildrenUnknown {
 			resp.PlanValue = types.StringUnknown()
 		} else {
 			resp.PlanValue = types.StringNull()
@@ -387,14 +389,14 @@ func (o bgpPeeringGenericSystemBatchIdPlanModifier) PlanModifyString(ctx context
 
 	stateHasChildren := len(state.RoutingPolicies.Elements()) > 0
 
-	if planHasChildren == stateHasChildren {
+	if (planHasChildren || planChildrenUnknown) == stateHasChildren {
 		// state and plan agree about whether a batch ID is required. Reuse the old value.
 		resp.PlanValue = req.StateValue
 		return
 	}
 
 	// We've either gained our first, or lost our last child primitive. Set the plan value accordingly.
-	if planHasChildren {
+	if planHasChildren || planChildrenUnknown {
 		resp.PlanValue = types.StringUnknown()
 	} else {
 		resp.PlanValue = types.StringNull()
