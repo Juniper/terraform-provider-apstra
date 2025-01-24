@@ -204,7 +204,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 
 			// create the blueprint
 			id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-				RefDesign:      apstra.RefDesignTwoStageL3Clos,
+				RefDesign:      enum.RefDesignDatacenter,
 				Label:          tCase.label,
 				TemplateId:     tCase.templateId,
 				FabricSettings: &tCase.fabricSettings,

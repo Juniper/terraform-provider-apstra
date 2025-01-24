@@ -3,6 +3,7 @@ package design
 import (
 	"context"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -80,7 +81,7 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 	var d diag.Diagnostics
 
 	// We only use the Datacenter Reference Design
-	refArchs := []apstra.RefDesign{apstra.RefDesignTwoStageL3Clos}
+	refArchs := []enum.RefDesign{enum.RefDesignDatacenter}
 
 	// Extract configlet generators
 	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))

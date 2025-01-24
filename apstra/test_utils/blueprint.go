@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"context"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"sync"
 	"testing"
 
@@ -54,7 +55,7 @@ func BlueprintA(t testing.TB, ctx context.Context, name ...string) *apstra.TwoSt
 	}
 
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      bpname,
 		TemplateId: "L2_Virtual_EVPN",
 		FabricSettings: &apstra.FabricSettings{
@@ -78,7 +79,7 @@ func BlueprintB(t testing.TB, ctx context.Context) (*apstra.TwoStageL3ClosClient
 	template := TemplateA(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
@@ -102,7 +103,7 @@ func BlueprintC(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	template := TemplateB(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
@@ -124,7 +125,7 @@ func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	template := TemplateC(t, ctx)
 	name := acctest.RandString(10)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      name,
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
@@ -201,7 +202,7 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	client := GetTestClient(t, ctx)
 	template := TemplateE(t, ctx)
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      acctest.RandString(10),
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
@@ -224,7 +225,7 @@ func BlueprintG(t testing.TB, ctx context.Context, cleanup bool) *apstra.TwoStag
 	client := GetTestClient(t, ctx)
 
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      acctest.RandString(8),
 		TemplateId: "L2_Virtual_EVPN",
 		FabricSettings: &apstra.FabricSettings{
@@ -252,7 +253,7 @@ func BlueprintI(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	client := GetTestClient(t, ctx)
 
 	bpId, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:  apstra.RefDesignTwoStageL3Clos,
+		RefDesign:  enum.RefDesignDatacenter,
 		Label:      acctest.RandString(6),
 		TemplateId: "L3_Collapsed_ESI",
 	})

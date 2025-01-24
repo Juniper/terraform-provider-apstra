@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -96,7 +97,7 @@ func (o *dataSourceDatacenterConfiglets) Read(ctx context.Context, req datasourc
 			return
 		}
 
-		platforms := make([]apstra.PlatformOS, len(platformStrings))
+		platforms := make([]enum.ConfigletStyle, len(platformStrings))
 		for i := range platformStrings {
 			err := platforms[i].FromString(platformStrings[i])
 			if err != nil {

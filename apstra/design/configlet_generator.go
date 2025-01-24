@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -101,13 +102,13 @@ func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *apstra.Configl
 func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.ConfigletGenerator {
 	var err error
 
-	var configStyle apstra.PlatformOS
+	var configStyle enum.ConfigletStyle
 	err = configStyle.FromString(o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet config_style %q", o.ConfigStyle.ValueString()), err.Error())
 	}
 
-	var section apstra.ConfigletSection
+	var section enum.ConfigletSection
 	err = utils.ApiStringerFromFriendlyString(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())

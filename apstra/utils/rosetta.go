@@ -71,7 +71,7 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 	switch in0 := in[0].(type) {
 	case apstra.AsnAllocationScheme:
 		return asnAllocationSchemeToFriendlyString(in0)
-	case apstra.ConfigletSection:
+	case enum.ConfigletSection:
 		return configletSectionToFriendlyString(in0, in[1:]...)
 	case apstra.CtPrimitiveIPv4AddressingType:
 		return ctPrimitiveIPv4AddressingTypeToFriendlyString(in0)
@@ -89,7 +89,7 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return overlayControlProtocolToFriendlyString(in0)
 	case enum.PolicyRuleProtocol:
 		return policyRuleProtocolToFriendlyString(in0)
-	case apstra.RefDesign:
+	case enum.RefDesign:
 		return refDesignToFriendlyString(in0)
 	case apstra.ResourceGroupName:
 		return resourceGroupNameToFriendlyString(in0)
@@ -117,7 +117,7 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 	switch target := target.(type) {
 	case *apstra.AsnAllocationScheme:
 		return asnAllocationSchemeFromFriendlyString(target, in...)
-	case *apstra.ConfigletSection:
+	case *enum.ConfigletSection:
 		return configletSectionFromFriendlyString(target, in...)
 	case *apstra.CtPrimitiveIPv4AddressingType:
 		return ctPrimitiveIPv4AddressingTypeFromFriendlyString(target, in...)
@@ -135,7 +135,7 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return overlayControlProtocolFromFriendlyString(target, in...)
 	case *enum.PolicyRuleProtocol:
 		return policyRuleProtocolFromFriendlyString(target, in[0])
-	case *apstra.RefDesign:
+	case *enum.RefDesign:
 		return refDesignFromFriendlyString(target, in...)
 	case *apstra.ResourceGroupName:
 		return resourceGroupNameFromFriendlyString(target, in...)
@@ -157,28 +157,28 @@ func asnAllocationSchemeToFriendlyString(in apstra.AsnAllocationScheme) string {
 	return in.String()
 }
 
-func configletSectionToFriendlyString(in apstra.ConfigletSection, additionalInfo ...fmt.Stringer) string {
+func configletSectionToFriendlyString(in enum.ConfigletSection, additionalInfo ...fmt.Stringer) string {
 	if len(additionalInfo) == 0 {
 		return in.String()
 	}
 
-	os, ok := additionalInfo[0].(apstra.PlatformOS)
+	os, ok := additionalInfo[0].(enum.ConfigletStyle)
 	if !ok {
 		return in.String()
 	}
 
 	switch os {
-	case apstra.PlatformOSJunos:
+	case enum.ConfigletStyleJunos:
 		switch in {
-		case apstra.ConfigletSectionSystem:
+		case enum.ConfigletSectionSystem:
 			return junOSTopLevelHierarchical
-		case apstra.ConfigletSectionSetBasedSystem:
+		case enum.ConfigletSectionSetBasedSystem:
 			return junOSTopLevelSetDelete
-		case apstra.ConfigletSectionSetBasedInterface:
+		case enum.ConfigletSectionSetBasedInterface:
 			return junOSInterfaceLevelSet
-		case apstra.ConfigletSectionDeleteBasedInterface:
+		case enum.ConfigletSectionDeleteBasedInterface:
 			return junOSInterfaceLevelDelete
-		case apstra.ConfigletSectionInterface:
+		case enum.ConfigletSectionInterface:
 			return junOSInterfaceLevelHierarchical
 		}
 	}
@@ -255,9 +255,9 @@ func policyRuleProtocolToFriendlyString(in enum.PolicyRuleProtocol) string {
 	return strings.ToLower(in.String())
 }
 
-func refDesignToFriendlyString(in apstra.RefDesign) string {
+func refDesignToFriendlyString(in enum.RefDesign) string {
 	switch in {
-	case apstra.RefDesignTwoStageL3Clos:
+	case enum.RefDesignDatacenter:
 		return refDesignDataCenter
 	}
 
@@ -312,7 +312,7 @@ func asnAllocationSchemeFromFriendlyString(target *apstra.AsnAllocationScheme, i
 	return nil
 }
 
-func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...string) error {
+func configletSectionFromFriendlyString(target *enum.ConfigletSection, in ...string) error {
 	switch len(in) {
 	case 0:
 		return target.FromString("")
@@ -323,21 +323,21 @@ func configletSectionFromFriendlyString(target *apstra.ConfigletSection, in ...s
 	section := in[0]
 	platform := in[1]
 
-	if platform != apstra.PlatformOSJunos.String() {
+	if platform != enum.ConfigletStyleJunos.String() {
 		return target.FromString(section)
 	}
 
 	switch section {
 	case junOSTopLevelHierarchical:
-		*target = apstra.ConfigletSectionSystem
+		*target = enum.ConfigletSectionSystem
 	case junOSInterfaceLevelHierarchical:
-		*target = apstra.ConfigletSectionInterface
+		*target = enum.ConfigletSectionInterface
 	case junOSTopLevelSetDelete:
-		*target = apstra.ConfigletSectionSetBasedSystem
+		*target = enum.ConfigletSectionSetBasedSystem
 	case junOSInterfaceLevelDelete:
-		*target = apstra.ConfigletSectionDeleteBasedInterface
+		*target = enum.ConfigletSectionDeleteBasedInterface
 	case junOSInterfaceLevelSet:
-		*target = apstra.ConfigletSectionSetBasedInterface
+		*target = enum.ConfigletSectionSetBasedInterface
 	default:
 		return target.FromString(section)
 	}
@@ -461,14 +461,14 @@ func policyRuleProtocolFromFriendlyString(target *enum.PolicyRuleProtocol, s str
 	return nil
 }
 
-func refDesignFromFriendlyString(target *apstra.RefDesign, in ...string) error {
+func refDesignFromFriendlyString(target *enum.RefDesign, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
 	case refDesignDataCenter:
-		*target = apstra.RefDesignTwoStageL3Clos
+		*target = enum.RefDesignDatacenter
 	default:
 		return target.FromString(in[0])
 	}

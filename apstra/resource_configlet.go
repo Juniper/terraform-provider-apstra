@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -38,37 +39,37 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 }
 func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// create a map of each friendly (aligned with the web UI) config section names keyed by platform
-	platformToAllowedSectionsMap := map[apstra.PlatformOS][]string{
-		apstra.PlatformOSJunos: {
-			utils.StringersToFriendlyString(apstra.ConfigletSectionSystem, apstra.PlatformOSJunos),
-			utils.StringersToFriendlyString(apstra.ConfigletSectionSetBasedSystem, apstra.PlatformOSJunos),
-			utils.StringersToFriendlyString(apstra.ConfigletSectionSetBasedInterface, apstra.PlatformOSJunos),
-			utils.StringersToFriendlyString(apstra.ConfigletSectionDeleteBasedInterface, apstra.PlatformOSJunos),
-			utils.StringersToFriendlyString(apstra.ConfigletSectionInterface, apstra.PlatformOSJunos),
+	platformToAllowedSectionsMap := map[enum.ConfigletStyle][]string{
+		enum.ConfigletStyleJunos: {
+			utils.StringersToFriendlyString(enum.ConfigletSectionSystem, enum.ConfigletStyleJunos),
+			utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem, enum.ConfigletStyleJunos),
+			utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface, enum.ConfigletStyleJunos),
+			utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface, enum.ConfigletStyleJunos),
+			utils.StringersToFriendlyString(enum.ConfigletSectionInterface, enum.ConfigletStyleJunos),
 		},
-		apstra.PlatformOSCumulus: {
-			apstra.ConfigletSectionFRR.String(),
-			apstra.ConfigletSectionInterface.String(),
-			apstra.ConfigletSectionFile.String(),
-			apstra.ConfigletSectionOSPF.String(),
+		enum.ConfigletStyleCumulus: {
+			enum.ConfigletSectionFrr.String(),
+			enum.ConfigletSectionInterface.String(),
+			enum.ConfigletSectionFile.String(),
+			enum.ConfigletSectionOspf.String(),
 		},
-		apstra.PlatformOSNxos: {
-			apstra.ConfigletSectionSystem.String(),
-			apstra.ConfigletSectionInterface.String(),
-			apstra.ConfigletSectionSystemTop.String(),
-			apstra.ConfigletSectionOSPF.String(),
+		enum.ConfigletStyleNxos: {
+			enum.ConfigletSectionSystem.String(),
+			enum.ConfigletSectionInterface.String(),
+			enum.ConfigletSectionSystemTop.String(),
+			enum.ConfigletSectionOspf.String(),
 		},
-		apstra.PlatformOSEos: {
-			apstra.ConfigletSectionSystem.String(),
-			apstra.ConfigletSectionInterface.String(),
-			apstra.ConfigletSectionSystemTop.String(),
-			apstra.ConfigletSectionOSPF.String(),
+		enum.ConfigletStyleEos: {
+			enum.ConfigletSectionSystem.String(),
+			enum.ConfigletSectionInterface.String(),
+			enum.ConfigletSectionSystemTop.String(),
+			enum.ConfigletSectionOspf.String(),
 		},
-		apstra.PlatformOSSonic: {
-			apstra.ConfigletSectionSystem.String(),
-			apstra.ConfigletSectionFile.String(),
-			apstra.ConfigletSectionOSPF.String(),
-			apstra.ConfigletSectionFRR.String(),
+		enum.ConfigletStyleSonic: {
+			enum.ConfigletSectionSystem.String(),
+			enum.ConfigletSectionFile.String(),
+			enum.ConfigletSectionOspf.String(),
+			enum.ConfigletSectionFrr.String(),
 		},
 	}
 
@@ -97,8 +98,8 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 			continue // cannot validate with unknown value
 		}
 
-		// extract the platform/config_style from the generator object as an SDK iota type
-		var platform apstra.PlatformOS
+		// extract the platform/config_style from the generator object as an SDK enum type
+		var platform enum.ConfigletStyle
 		err := platform.FromString(generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(

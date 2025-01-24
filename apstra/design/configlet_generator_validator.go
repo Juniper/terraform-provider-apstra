@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -39,7 +40,7 @@ func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req val
 		return
 	}
 
-	if !utils.ItemInSlice(request.Section, request.ConfigStyle.ValidSections()) {
+	if !utils.ItemInSlice(request.Section, apstra.ValidConfigletSections(request.ConfigStyle)) {
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 			req.Path.AtName("section"),
 			fmt.Sprintf("Section %q not valid with config_style %q",
@@ -47,11 +48,11 @@ func (o ConfigletGeneratorValidator) ValidateObject(ctx context.Context, req val
 		))
 	}
 
-	if !generator.FileName.IsNull() && request.Section != apstra.ConfigletSectionFile {
+	if !generator.FileName.IsNull() && request.Section != enum.ConfigletSectionFile {
 		resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 			req.Path.AtName("filename"),
 			fmt.Sprintf("'filename' attribute permitted only when section == %q",
-				apstra.ConfigletSectionFile.String()),
+				enum.ConfigletSectionFile.String()),
 		))
 	}
 }

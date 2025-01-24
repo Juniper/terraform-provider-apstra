@@ -3,12 +3,13 @@ package utils
 import (
 	"fmt"
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"sort"
 	"strings"
 )
 
-func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []apstra.PlatformOS) bool {
-	supportedPlatforms := make(map[apstra.PlatformOS]struct{})
+func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []enum.ConfigletStyle) bool {
+	supportedPlatforms := make(map[enum.ConfigletStyle]struct{})
 	for _, generator := range configletdata.Generators {
 		supportedPlatforms[generator.ConfigStyle] = struct{}{}
 	}
@@ -42,9 +43,9 @@ func AllConfigletSectionNames() []string {
 	return result
 }
 
-func ConfigletSectionNamesByOS(os apstra.PlatformOS) []string {
+func ConfigletSectionNamesByOS(os enum.ConfigletStyle) []string {
 	var r []string
-	for _, v := range os.ValidSections() {
+	for _, v := range apstra.ValidConfigletSections(os) {
 		r = append(r, StringersToFriendlyString(v, os))
 	}
 	return r
@@ -52,7 +53,7 @@ func ConfigletSectionNamesByOS(os apstra.PlatformOS) []string {
 
 func ConfigletValidSectionsMap() map[string][]string {
 	var m = make(map[string][]string)
-	for _, i := range apstra.AllPlatformOSes() {
+	for _, i := range enum.ConfigletStyles.Members() {
 		m[i.String()] = ConfigletSectionNamesByOS(i)
 	}
 	return m
@@ -82,10 +83,10 @@ func ValidSectionsAsTable() string {
 }
 
 func AllPlatformOSNames() []string {
-	platforms := apstra.AllPlatformOSes()
-	result := make([]string, len(platforms))
-	for i := range platforms {
-		result[i] = platforms[i].String()
+	configletStyles := enum.ConfigletStyles.Members()
+	result := make([]string, len(configletStyles))
+	for i, configletStyle := range configletStyles {
+		result[i] = configletStyle.String()
 	}
 	return result
 }
