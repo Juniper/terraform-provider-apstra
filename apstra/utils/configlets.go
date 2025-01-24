@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"sort"
 	"strings"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
 func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []enum.ConfigletStyle) bool {
@@ -52,7 +53,7 @@ func ConfigletSectionNamesByOS(os enum.ConfigletStyle) []string {
 }
 
 func ConfigletValidSectionsMap() map[string][]string {
-	var m = make(map[string][]string)
+	m := make(map[string][]string)
 	for _, i := range enum.ConfigletStyles.Members() {
 		m[i.String()] = ConfigletSectionNamesByOS(i)
 	}

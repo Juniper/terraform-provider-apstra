@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -14,8 +15,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
-var _ datasourceWithSetClient = &dataSourceConfiglets{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceConfiglets{}
+	_ datasourceWithSetClient            = &dataSourceConfiglets{}
+)
 
 type dataSourceConfiglets struct {
 	client *apstra.Client

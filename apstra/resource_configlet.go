@@ -3,6 +3,8 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -12,12 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strings"
 )
 
-var _ resource.ResourceWithConfigure = &resourceConfiglet{}
-var _ resource.ResourceWithValidateConfig = &resourceConfiglet{}
-var _ resourceWithSetClient = &resourceConfiglet{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceConfiglet{}
+	_ resource.ResourceWithValidateConfig = &resourceConfiglet{}
+	_ resourceWithSetClient               = &resourceConfiglet{}
+)
 
 type resourceConfiglet struct {
 	client *apstra.Client
@@ -37,6 +40,7 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 		Attributes:          design.Configlet{}.ResourceAttributes(),
 	}
 }
+
 func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// create a map of each friendly (aligned with the web UI) config section names keyed by platform
 	platformToAllowedSectionsMap := map[enum.ConfigletStyle][]string{

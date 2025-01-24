@@ -3,6 +3,7 @@ package design
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -13,8 +14,7 @@ import (
 
 var _ validator.Object = ConfigletGeneratorValidator{}
 
-type ConfigletGeneratorValidator struct {
-}
+type ConfigletGeneratorValidator struct{}
 
 func (o ConfigletGeneratorValidator) Description(_ context.Context) string {
 	return "Ensures that the section names matches the config style."

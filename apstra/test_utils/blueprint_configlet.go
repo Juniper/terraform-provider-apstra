@@ -2,9 +2,9 @@ package testutils
 
 import (
 	"context"
-	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"testing"
 
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/stretchr/testify/require"
