@@ -44,20 +44,20 @@ func AllConfigletSectionNames() []string {
 	return result
 }
 
-func ConfigletSectionNamesByOS(os enum.ConfigletStyle) []string {
-	var r []string
-	for _, v := range apstra.ValidConfigletSections(os) {
-		r = append(r, StringersToFriendlyString(v, os))
+func ConfigletSectionNamesByStyle(style enum.ConfigletStyle) []string {
+	var result []string
+	for _, v := range apstra.ValidConfigletSections(style) {
+		result = append(result, StringersToFriendlyString(v, style))
 	}
-	return r
+	return result
 }
 
 func ConfigletValidSectionsMap() map[string][]string {
-	m := make(map[string][]string)
+	result := make(map[string][]string)
 	for _, i := range enum.ConfigletStyles.Members() {
-		m[i.String()] = ConfigletSectionNamesByOS(i)
+		result[i.String()] = ConfigletSectionNamesByStyle(i)
 	}
-	return m
+	return result
 }
 
 func ValidSectionsAsTable() string {
