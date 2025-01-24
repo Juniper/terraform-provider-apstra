@@ -89,5 +89,6 @@ func AllPlatformOSNames() []string {
 	for i, configletStyle := range configletStyles {
 		result[i] = configletStyle.String()
 	}
+	sort.Strings(result)
 	return result
 }
