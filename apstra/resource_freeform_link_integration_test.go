@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -126,69 +125,13 @@ func (o resourceFreeformLink) testChecks(t testing.TB, rType, rName string, ipAl
 	return result
 }
 
-func TestResourceFreeformLink(t *testing.T) {
+func TestResourceFreeformLinkWithIpAllocationDisabled(t *testing.T) {
 	ctx := context.Background()
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
 	// create a blueprint
 	bp, intSysIds, extSysIds := testutils.FfBlueprintB(t, ctx, 2, 2)
-
-	// create an ipv4 allocation group
-	ipv4AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
-		Name:    acctest.RandString(6),
-		Type:    enum.ResourcePoolTypeIpv4,
-		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
-	})
-	require.NoError(t, err)
-
-	// create an ipv6 allocation group
-	ipv6AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
-		Name:    acctest.RandString(6),
-		Type:    enum.ResourcePoolTypeIpv6,
-		PoolIds: []apstra.ObjectId{"Private-fc01-a05-fab-48"},
-	})
-	require.NoError(t, err)
-
-	// create a resource group
-	raGroupId, err := bp.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{
-		Label: acctest.RandString(6),
-	})
-	require.NoError(t, err)
-
-	var associateIpResourcesToLinksDone bool
-	associateIpResourcesToLinksMutex := new(sync.Mutex)
-	associateIpResourcesToLinks := func(t testing.TB) {
-		t.Helper()
-
-		associateIpResourcesToLinksMutex.Lock()
-		defer associateIpResourcesToLinksMutex.Unlock()
-		if associateIpResourcesToLinksDone {
-			return
-		}
-
-		associateIpResourcesToLinksDone = true
-
-		_, err = bp.CreateResourceGenerator(ctx, &apstra.FreeformResourceGeneratorData{
-			ResourceType:    enum.FFResourceTypeIpv4,
-			Label:           acctest.RandString(6),
-			Scope:           "node(type='link', name='target')",
-			AllocatedFrom:   &ipv4AllocGroupId,
-			ContainerId:     raGroupId,
-			SubnetPrefixLen: utils.ToPtr(31),
-		})
-		require.NoError(t, err)
-
-		_, err = bp.CreateResourceGenerator(ctx, &apstra.FreeformResourceGeneratorData{
-			ResourceType:    enum.FFResourceTypeIpv6,
-			Label:           acctest.RandString(6),
-			Scope:           "node(type='link', name='target')",
-			AllocatedFrom:   &ipv6AllocGroupId,
-			ContainerId:     raGroupId,
-			SubnetPrefixLen: utils.ToPtr(127),
-		})
-		require.NoError(t, err)
-	}
 
 	type testStep struct {
 		config resourceFreeformLink
@@ -201,7 +144,7 @@ func TestResourceFreeformLink(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"int_int_start_minimal_ip_allocation_disabled": {
+		"int_int_start_minimal": {
 			steps: []testStep{
 				{
 					config: resourceFreeformLink{
@@ -302,7 +245,7 @@ func TestResourceFreeformLink(t *testing.T) {
 				},
 			},
 		},
-		"int_int_start_maximal_ip_allocation_disabled": {
+		"int_int_start_maximal": {
 			steps: []testStep{
 				{
 					config: resourceFreeformLink{
@@ -404,6 +347,444 @@ func TestResourceFreeformLink(t *testing.T) {
 				},
 			},
 		},
+		"int_ext_start_minimal": {
+			steps: []testStep{
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           utils.ToPtr("ge-0/0/7"),
+										TransformationId: utils.ToPtr(1),
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           utils.ToPtr("ge-0/0/7"),
+										TransformationId: utils.ToPtr(1),
+										Ipv4Address:      &net.IPNet{IP: net.ParseIP("192.168.10.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
+										Tags:             randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("192.168.10.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           utils.ToPtr("ge-0/0/7"),
+										TransformationId: utils.ToPtr(1),
+										Ipv4Address:      nil,
+										Ipv6Address:      nil,
+										Tags:             nil,
+									},
+								},
+							},
+							{
+								SystemId: intSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: nil,
+										Ipv6Address: nil,
+										Tags:        nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"int_ext_start_maximal": {
+			steps: []testStep{
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           utils.ToPtr("ge-0/0/8"),
+										TransformationId: utils.ToPtr(1),
+										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.1.1.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
+										Tags:             randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.1.1.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::2"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           utils.ToPtr("ge-0/0/8"),
+										TransformationId: utils.ToPtr(2),
+										Ipv4Address:      nil,
+										Ipv6Address:      nil,
+										Tags:             nil,
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: nil,
+										Ipv6Address: nil,
+										Tags:        nil,
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										IfName:           utils.ToPtr("ge-0/0/8"),
+										TransformationId: utils.ToPtr(1),
+										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.2.1.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
+										Tags:             randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.2.1.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"ext_ext_start_minimal": {
+			steps: []testStep{
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+							{
+								SystemId: extSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: intSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("192.168.10.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+							{
+								SystemId: intSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("192.168.10.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+							{
+								SystemId: extSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"ext_ext_start_maximal": {
+			steps: []testStep{
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.1.1.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.1.1.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::2"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+							{
+								SystemId: extSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceFreeformLink{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+						tags:        randomStrings(rand.Intn(10)+2, 6),
+						endpoints: []apstra.FreeformEthernetEndpoint{
+							{
+								SystemId: extSysIds[0],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.2.1.1"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+							{
+								SystemId: extSysIds[1],
+								Interface: apstra.FreeformInterface{
+									Data: &apstra.FreeformInterfaceData{
+										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.2.1.2"), Mask: net.CIDRMask(30, 32)},
+										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
+										Tags:        randomStrings(rand.Intn(10)+2, 6),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceFreeformLink)
+
+	for tName, tCase := range testCases {
+		tName, tCase := tName, tCase
+		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+
+			if !tCase.apiVersionConstraints.Check(apiVersion) {
+				t.Skipf("test case %s requires Apstra %s", tName, tCase.apiVersionConstraints.String())
+			}
+
+			steps := make([]resource.TestStep, len(tCase.steps))
+			for i, step := range tCase.steps {
+				config := step.config.render(resourceType, tName)
+				checks := step.config.testChecks(t, resourceType, tName, tCase.ipAllocationEnabled)
+
+				chkLog := checks.string()
+				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
+
+				t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
+				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
+
+				steps[i] = resource.TestStep{
+					Config: insecureProviderConfigHCL + config,
+					Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
+				}
+			}
+
+			resource.Test(t, resource.TestCase{
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps:                    steps,
+			})
+		})
+	}
+}
+
+func TestResourceFreeformLinkWithIpAllocationEnabled(t *testing.T) {
+	ctx := context.Background()
+	client := testutils.GetTestClient(t, ctx)
+	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
+
+	// create a blueprint
+	bp, intSysIds, _ := testutils.FfBlueprintB(t, ctx, 2, 2)
+
+	// create an ipv4 allocation group
+	ipv4AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
+		Name:    acctest.RandString(6),
+		Type:    enum.ResourcePoolTypeIpv4,
+		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
+	})
+	require.NoError(t, err)
+
+	// create an ipv6 allocation group
+	ipv6AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
+		Name:    acctest.RandString(6),
+		Type:    enum.ResourcePoolTypeIpv6,
+		PoolIds: []apstra.ObjectId{"Private-fc01-a05-fab-48"},
+	})
+	require.NoError(t, err)
+
+	// create a resource group
+	raGroupId, err := bp.CreateRaGroup(ctx, &apstra.FreeformRaGroupData{
+		Label: acctest.RandString(6),
+	})
+	require.NoError(t, err)
+
+	_, err = bp.CreateResourceGenerator(ctx, &apstra.FreeformResourceGeneratorData{
+		ResourceType:    enum.FFResourceTypeIpv4,
+		Label:           acctest.RandString(6),
+		Scope:           "node(type='link', name='target')",
+		AllocatedFrom:   &ipv4AllocGroupId,
+		ContainerId:     raGroupId,
+		SubnetPrefixLen: utils.ToPtr(31),
+	})
+	require.NoError(t, err)
+
+	_, err = bp.CreateResourceGenerator(ctx, &apstra.FreeformResourceGeneratorData{
+		ResourceType:    enum.FFResourceTypeIpv6,
+		Label:           acctest.RandString(6),
+		Scope:           "node(type='link', name='target')",
+		AllocatedFrom:   &ipv6AllocGroupId,
+		ContainerId:     raGroupId,
+		SubnetPrefixLen: utils.ToPtr(127),
+	})
+	require.NoError(t, err)
+
+	type testStep struct {
+		config resourceFreeformLink
+	}
+
+	type testCase struct {
+		ipAllocationEnabled   bool
+		apiVersionConstraints version.Constraints
+		steps                 []testStep
+	}
+
+	testCases := map[string]testCase{
 		"int_int_start_minimal_ip_allocation_enabled": {
 			ipAllocationEnabled: true,
 			steps: []testStep{
@@ -609,353 +990,6 @@ func TestResourceFreeformLink(t *testing.T) {
 				},
 			},
 		},
-		"int_ext_start_minimal_ip_allocation_disabled": {
-			steps: []testStep{
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										IfName:           utils.ToPtr("ge-0/0/7"),
-										TransformationId: utils.ToPtr(1),
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										IfName:           utils.ToPtr("ge-0/0/7"),
-										TransformationId: utils.ToPtr(1),
-										Ipv4Address:      &net.IPNet{IP: net.ParseIP("192.168.10.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
-										Tags:             randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("192.168.10.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										IfName:           utils.ToPtr("ge-0/0/7"),
-										TransformationId: utils.ToPtr(1),
-										Ipv4Address:      nil,
-										Ipv6Address:      nil,
-										Tags:             nil,
-									},
-								},
-							},
-							{
-								SystemId: intSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: nil,
-										Ipv6Address: nil,
-										Tags:        nil,
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"int_ext_start_maximal_ip_allocation_disabled": {
-			steps: []testStep{
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										IfName:           utils.ToPtr("ge-0/0/8"),
-										TransformationId: utils.ToPtr(1),
-										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.1.1.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
-										Tags:             randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.1.1.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::2"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										IfName:           utils.ToPtr("ge-0/0/8"),
-										TransformationId: utils.ToPtr(2),
-										Ipv4Address:      nil,
-										Ipv6Address:      nil,
-										Tags:             nil,
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: nil,
-										Ipv6Address: nil,
-										Tags:        nil,
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										IfName:           utils.ToPtr("ge-0/0/8"),
-										TransformationId: utils.ToPtr(1),
-										Ipv4Address:      &net.IPNet{IP: net.ParseIP("10.2.1.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address:      &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
-										Tags:             randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.2.1.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"ext_ext_start_minimal_ip_allocation_disabled": {
-			steps: []testStep{
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-							{
-								SystemId: extSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: intSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("192.168.10.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-							{
-								SystemId: intSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("192.168.10.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-							{
-								SystemId: extSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"ext_ext_start_maximal_ip_allocation_disabled": {
-			steps: []testStep{
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.1.1.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::1"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.1.1.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::2"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-							{
-								SystemId: extSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{},
-								},
-							},
-						},
-					},
-				},
-				{
-					config: resourceFreeformLink{
-						blueprintId: bp.Id().String(),
-						name:        acctest.RandString(6),
-						tags:        randomStrings(rand.Intn(10)+2, 6),
-						endpoints: []apstra.FreeformEthernetEndpoint{
-							{
-								SystemId: extSysIds[0],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.2.1.1"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::3"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-							{
-								SystemId: extSysIds[1],
-								Interface: apstra.FreeformInterface{
-									Data: &apstra.FreeformInterfaceData{
-										Ipv4Address: &net.IPNet{IP: net.ParseIP("10.2.1.2"), Mask: net.CIDRMask(30, 32)},
-										Ipv6Address: &net.IPNet{IP: net.ParseIP("2001:db8::4"), Mask: net.CIDRMask(64, 128)},
-										Tags:        randomStrings(rand.Intn(10)+2, 6),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	// each test case which DOES NOT expect resource allocation to be set up will decrement the wait group when it's done
-	resourceAllocationWg := new(sync.WaitGroup)
-	for _, tc := range testCases {
-		if !tc.ipAllocationEnabled {
-			resourceAllocationWg.Add(1)
-		}
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceFreeformLink)
@@ -963,15 +997,10 @@ func TestResourceFreeformLink(t *testing.T) {
 	for tName, tCase := range testCases {
 		tName, tCase := tName, tCase
 		t.Run(tName, func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel() running these tests in parallel exposes some API races
 
 			if !tCase.apiVersionConstraints.Check(apiVersion) {
 				t.Skipf("test case %s requires Apstra %s", tName, tCase.apiVersionConstraints.String())
-			}
-
-			if tCase.ipAllocationEnabled {
-				resourceAllocationWg.Wait()
-				associateIpResourcesToLinks(t)
 			}
 
 			steps := make([]resource.TestStep, len(tCase.steps))
@@ -995,10 +1024,6 @@ func TestResourceFreeformLink(t *testing.T) {
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps:                    steps,
 			})
-
-			if !tCase.ipAllocationEnabled {
-				resourceAllocationWg.Done()
-			}
 		})
 	}
 }
