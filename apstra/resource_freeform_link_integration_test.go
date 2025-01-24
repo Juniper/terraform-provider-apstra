@@ -785,7 +785,7 @@ func TestResourceFreeformLinkWithIpAllocationEnabled(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"int_int_start_minimal_ip_allocation_enabled": {
+		"int_int_start_minimal": {
 			ipAllocationEnabled: true,
 			steps: []testStep{
 				{
@@ -887,7 +887,7 @@ func TestResourceFreeformLinkWithIpAllocationEnabled(t *testing.T) {
 				},
 			},
 		},
-		"int_int_start_maximal_ip_allocation_enabled": {
+		"int_int_start_maximal": {
 			ipAllocationEnabled: true,
 			steps: []testStep{
 				{
