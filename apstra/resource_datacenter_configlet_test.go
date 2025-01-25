@@ -39,6 +39,7 @@ func TestAccResourceDatacenterConfiglet(t *testing.T) {
 
 	// Set up a Catalog Property Set
 	cc, data := testutils.CatalogConfigletA(t, ctx, client)
+	_ = cc
 
 	// BlueprintA returns a bpClient and the template from which the blueprint was created
 	bpClient := testutils.MakeOrFindBlueprint(t, ctx, "BPA", testutils.BlueprintA)
