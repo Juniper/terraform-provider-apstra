@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +22,10 @@ func CatalogConfigletA(t testing.TB, ctx context.Context, client *apstra.Client)
 
 		configletData := apstra.ConfigletData{
 			DisplayName: name,
-			RefArchs:    []apstra.RefDesign{apstra.RefDesignTwoStageL3Clos},
+			RefArchs:    []enum.RefDesign{enum.RefDesignDatacenter},
 			Generators: []apstra.ConfigletGenerator{{
-				ConfigStyle:  apstra.PlatformOSJunos,
-				Section:      apstra.ConfigletSectionSystem,
+				ConfigStyle:  enum.ConfigletStyleJunos,
+				Section:      enum.ConfigletSectionSystem,
 				TemplateText: "interfaces {\n   {% if 'leaf1' in hostname %}\n    xe-0/0/3 {\n      disable;\n    }\n   {% endif %}\n   {% if 'leaf2' in hostname %}\n    xe-0/0/2 {\n      disable;\n    }\n   {% endif %}\n}",
 			}},
 		}

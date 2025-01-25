@@ -708,7 +708,7 @@ func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 	fabricSettings.Ipv6Enabled = nil
 
 	result := apstra.CreateBlueprintFromTemplateRequest{
-		RefDesign:      apstra.RefDesignTwoStageL3Clos,
+		RefDesign:      enum.RefDesignDatacenter,
 		Label:          o.Name.ValueString(),
 		TemplateId:     apstra.ObjectId(o.TemplateId.ValueString()),
 		FabricSettings: fabricSettings,

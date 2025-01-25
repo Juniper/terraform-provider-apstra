@@ -19,14 +19,14 @@ func TestRosetta(t *testing.T) {
 		{string: "unique", stringers: []fmt.Stringer{apstra.AsnAllocationSchemeDistinct}},
 		{string: "single", stringers: []fmt.Stringer{apstra.AsnAllocationSchemeSingle}},
 
-		{string: "delete_based_interface", stringers: []fmt.Stringer{apstra.ConfigletSectionDeleteBasedInterface, apstra.PlatformOSCumulus}},
-		{string: "file", stringers: []fmt.Stringer{apstra.ConfigletSectionFile}},
+		{string: "delete_based_interface", stringers: []fmt.Stringer{enum.ConfigletSectionDeleteBasedInterface, enum.ConfigletStyleCumulus}},
+		{string: "file", stringers: []fmt.Stringer{enum.ConfigletSectionFile}},
 
-		{string: "top_level_hierarchical", stringers: []fmt.Stringer{apstra.ConfigletSectionSystem, apstra.PlatformOSJunos}},
-		{string: "top_level_set_delete", stringers: []fmt.Stringer{apstra.ConfigletSectionSetBasedSystem, apstra.PlatformOSJunos}},
-		{string: "interface_level_hierarchical", stringers: []fmt.Stringer{apstra.ConfigletSectionInterface, apstra.PlatformOSJunos}},
-		{string: "interface_level_set", stringers: []fmt.Stringer{apstra.ConfigletSectionSetBasedInterface, apstra.PlatformOSJunos}},
-		{string: "interface_level_delete", stringers: []fmt.Stringer{apstra.ConfigletSectionDeleteBasedInterface, apstra.PlatformOSJunos}},
+		{string: "top_level_hierarchical", stringers: []fmt.Stringer{enum.ConfigletSectionSystem, enum.ConfigletStyleJunos}},
+		{string: "top_level_set_delete", stringers: []fmt.Stringer{enum.ConfigletSectionSetBasedSystem, enum.ConfigletStyleJunos}},
+		{string: "interface_level_hierarchical", stringers: []fmt.Stringer{enum.ConfigletSectionInterface, enum.ConfigletStyleJunos}},
+		{string: "interface_level_set", stringers: []fmt.Stringer{enum.ConfigletSectionSetBasedInterface, enum.ConfigletStyleJunos}},
+		{string: "interface_level_delete", stringers: []fmt.Stringer{enum.ConfigletSectionDeleteBasedInterface, enum.ConfigletStyleJunos}},
 
 		{string: "static", stringers: []fmt.Stringer{apstra.OverlayControlProtocolNone}},
 		{string: "evpn", stringers: []fmt.Stringer{apstra.OverlayControlProtocolEvpn}},
@@ -36,8 +36,8 @@ func TestRosetta(t *testing.T) {
 		{string: "tcp", stringers: []fmt.Stringer{enum.PolicyRuleProtocolTcp}},
 		{string: "udp", stringers: []fmt.Stringer{enum.PolicyRuleProtocolUdp}},
 
-		{string: "datacenter", stringers: []fmt.Stringer{apstra.RefDesignTwoStageL3Clos}},
-		{string: "freeform", stringers: []fmt.Stringer{apstra.RefDesignFreeform}},
+		{string: "datacenter", stringers: []fmt.Stringer{enum.RefDesignDatacenter}},
+		{string: "freeform", stringers: []fmt.Stringer{enum.RefDesignFreeform}},
 
 		{string: "vni_virtual_network_ids", stringers: []fmt.Stringer{apstra.ResourceGroupNameVxlanVnIds}},
 		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4}},
@@ -66,8 +66,8 @@ func TestRosetta(t *testing.T) {
 		// test creating iota/stringer type from friendly string
 		var target StringerWithFromString
 		switch tc.stringers[0].(type) {
-		case apstra.ConfigletSection:
-			x := apstra.ConfigletSection(-1)
+		case enum.ConfigletSection:
+			x := enum.ConfigletSection{}
 			target = &x
 		case apstra.CtPrimitiveIPv4AddressingType:
 			x := apstra.CtPrimitiveIPv4AddressingType(-1)
@@ -90,8 +90,8 @@ func TestRosetta(t *testing.T) {
 		case enum.PolicyRuleProtocol:
 			x := enum.PolicyRuleProtocol{}
 			target = &x
-		case apstra.RefDesign:
-			x := apstra.RefDesign(-1)
+		case enum.RefDesign:
+			x := enum.RefDesign{}
 			target = &x
 		case apstra.ResourceGroupName:
 			x := apstra.ResourceGroupName(-1)

@@ -2,13 +2,15 @@ package utils
 
 import (
 	"fmt"
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"sort"
 	"strings"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 )
 
-func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []apstra.PlatformOS) bool {
-	supportedPlatforms := make(map[apstra.PlatformOS]struct{})
+func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []enum.ConfigletStyle) bool {
+	supportedPlatforms := make(map[enum.ConfigletStyle]struct{})
 	for _, generator := range configletdata.Generators {
 		supportedPlatforms[generator.ConfigStyle] = struct{}{}
 	}
@@ -42,20 +44,20 @@ func AllConfigletSectionNames() []string {
 	return result
 }
 
-func ConfigletSectionNamesByOS(os apstra.PlatformOS) []string {
-	var r []string
-	for _, v := range os.ValidSections() {
-		r = append(r, StringersToFriendlyString(v, os))
+func ConfigletSectionNamesByStyle(style enum.ConfigletStyle) []string {
+	var result []string
+	for _, v := range apstra.ValidConfigletSections(style) {
+		result = append(result, StringersToFriendlyString(v, style))
 	}
-	return r
+	return result
 }
 
 func ConfigletValidSectionsMap() map[string][]string {
-	var m = make(map[string][]string)
-	for _, i := range apstra.AllPlatformOSes() {
-		m[i.String()] = ConfigletSectionNamesByOS(i)
+	result := make(map[string][]string)
+	for _, i := range enum.ConfigletStyles.Members() {
+		result[i.String()] = ConfigletSectionNamesByStyle(i)
 	}
-	return m
+	return result
 }
 
 func ValidSectionsAsTable() string {
@@ -82,10 +84,11 @@ func ValidSectionsAsTable() string {
 }
 
 func AllPlatformOSNames() []string {
-	platforms := apstra.AllPlatformOSes()
-	result := make([]string, len(platforms))
-	for i := range platforms {
-		result[i] = platforms[i].String()
+	configletStyles := enum.ConfigletStyles.Members()
+	result := make([]string, len(configletStyles))
+	for i, configletStyle := range configletStyles {
+		result[i] = configletStyle.String()
 	}
+	sort.Strings(result)
 	return result
 }

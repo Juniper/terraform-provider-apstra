@@ -2,7 +2,9 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -12,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
-var _ datasourceWithSetClient = &dataSourceBlueprints{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceBlueprints{}
+	_ datasourceWithSetClient            = &dataSourceBlueprints{}
+)
 
 type dataSourceBlueprints struct {
 	client *apstra.Client
@@ -40,8 +44,8 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 				MarkdownDescription: "Optional filter to select only Blueprints matching the specified Reference Design.",
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
-					utils.StringersToFriendlyString(apstra.RefDesignTwoStageL3Clos),
-					apstra.RefDesignFreeform.String(),
+					utils.StringersToFriendlyString(enum.RefDesignDatacenter),
+					enum.RefDesignFreeform.String(),
 				)},
 			},
 		},
