@@ -135,4 +135,5 @@ Read-Only:
 - `filename` (String) FileName
 - `negation_template_text` (String) Negation Template Text
 - `section` (String) Config Section
+- `section_condition` (String) Section Condition
 - `template_text` (String) Template Text

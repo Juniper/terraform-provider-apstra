@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_configlet Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource imports a Configlet into a Blueprint.
+  This resource adds a Configlet to a Blueprint, either by importing from the Global Catalog, or by creating one from scratch.
 ---
 
 # apstra_datacenter_configlet (Resource)
 
-This resource imports a Configlet into a Blueprint.
+This resource adds a Configlet to a Blueprint, either by importing from the Global Catalog, or by creating one from scratch.
 
 
 ## Example Usage
@@ -176,7 +176,7 @@ output "created" {
 Required:
 
 - `config_style` (String) Specifies the switch platform, must be one of 'cumulus', 'eos', 'junos', 'nxos', 'sonic'.
-- `section` (String) Specifies where in the target device the configlet should be  applied. Varies by network OS:
+- `section` (String) Specifies where in the target device the configlet should be applied. Varies by network OS:
 
   | **Config Style**  | **Valid Sections** |
   |---|---|
@@ -191,6 +191,7 @@ Optional:
 
 - `filename` (String) FileName
 - `negation_template_text` (String) Negation Template Text
+- `section_condition` (String) Used to select interfaces for configlets used in sections `interface`, `set_based_interface` and `delete_based_interface`. See references to *Advanced Condition Editor* in the [Apstra User Guide](https://www.juniper.net/documentation/us/en/software/apstra5.0/apstra-user-guide/topics/task/configlet-import-blueprint.html). e.g. `role in ["spine_leaf"]`
 
 
 
