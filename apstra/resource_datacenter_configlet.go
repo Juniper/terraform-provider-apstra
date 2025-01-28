@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -14,10 +15,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConfiglet{}
-var _ resource.ResourceWithValidateConfig = &resourceDatacenterConfiglet{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterConfiglet{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterConfiglet{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDatacenterConfiglet{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterConfiglet{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterConfiglet{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterConfiglet{}
+)
 
 type resourceDatacenterConfiglet struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
