@@ -48,33 +48,35 @@ func (o *resourceDatacenterConfiglet) ValidateConfig(ctx context.Context, req re
 		return
 	}
 
+	// Delay Validation until the involved attributes have a known value.
 	if config.Generators.IsUnknown() {
 		return
 	}
 
+	// extract generators from config
 	var generators []blueprint.ConfigletGenerator
 	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// validate each generator
 	for i, generator := range generators {
 		if generator.ConfigStyle.IsUnknown() || generator.Section.IsUnknown() {
-			continue
+			continue // cannot validate with unknown value
 		}
 
-		var err error
-
+		// parse the config style
 		var configletStyle enum.ConfigletStyle
-		err = utils.ApiStringerFromFriendlyString(&configletStyle, generator.ConfigStyle.ValueString())
+		err := utils.ApiStringerFromFriendlyString(&configletStyle, generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("generators").AtListIndex(i),
-				fmt.Sprintf("failed to parse config_style %s",
-					generator.ConfigStyle), err.Error(),
+				fmt.Sprintf("failed to parse config_style %s", generator.ConfigStyle), err.Error(),
 			)
 		}
 
+		// parse the config section
 		var configletSection enum.ConfigletSection
 		err = utils.ApiStringerFromFriendlyString(&configletSection, generator.Section.ValueString(), generator.ConfigStyle.ValueString())
 		if err != nil {

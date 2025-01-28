@@ -2,8 +2,10 @@ package blueprint
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -20,9 +22,9 @@ import (
 type DatacenterConfiglet struct {
 	BlueprintId        types.String `tfsdk:"blueprint_id"`
 	Id                 types.String `tfsdk:"id"`
+	Name               types.String `tfsdk:"name"`
 	Condition          types.String `tfsdk:"condition"`
 	CatalogConfigletID types.String `tfsdk:"catalog_configlet_id"`
-	Name               types.String `tfsdk:"name"`
 	Generators         types.List   `tfsdk:"generators"`
 }
 
@@ -90,7 +92,10 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			Optional:      true,
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				apstravalidator.RequiredWhenValueNull(path.MatchRoot("catalog_configlet_id")),
+			},
 		},
 		"condition": resourceSchema.StringAttribute{
 			MarkdownDescription: "Condition determines where the Configlet is applied.",

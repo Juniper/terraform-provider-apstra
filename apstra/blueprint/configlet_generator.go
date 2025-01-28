@@ -85,27 +85,27 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFile)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFrr)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionOspf)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
 				),
 			},
@@ -129,41 +129,41 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 
 				// required by section file
 				apstravalidator.RequiredWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFile)),
 				),
 
 				// incompatible with sections other than file
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFrr)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionOspf)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
-					path.MatchRelative().AtParent().AtName("section").Resolve(),
+					path.MatchRelative().AtParent().AtName("section"),
 					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
 				),
 			},

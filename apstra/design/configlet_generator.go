@@ -3,15 +3,18 @@ package design
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -77,7 +80,44 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 		"filename": resourceSchema.StringAttribute{
 			MarkdownDescription: "FileName",
 			Optional:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Validators: []validator.String{
+				stringvalidator.LengthAtLeast(1),
+				stringvalidator.RegexMatches(regexp.MustCompile("^/etc/"), "Only files in /etc/ are supported for configlets"),
+
+				// incompatible with sections other than file
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionInterface)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFrr)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionOspf)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystem)),
+				),
+				apstravalidator.ForbiddenWhenValueIs(
+					path.MatchRelative().AtParent().AtName("section"),
+					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
+				),
+			},
 		},
 	}
 }

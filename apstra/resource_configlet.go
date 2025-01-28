@@ -3,8 +3,6 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -42,41 +40,6 @@ func (o *resourceConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, 
 }
 
 func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	// create a map of each friendly (aligned with the web UI) config section names keyed by platform
-	platformToAllowedSectionsMap := map[enum.ConfigletStyle][]string{
-		enum.ConfigletStyleJunos: {
-			utils.StringersToFriendlyString(enum.ConfigletSectionSystem, enum.ConfigletStyleJunos),
-			utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem, enum.ConfigletStyleJunos),
-			utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface, enum.ConfigletStyleJunos),
-			utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface, enum.ConfigletStyleJunos),
-			utils.StringersToFriendlyString(enum.ConfigletSectionInterface, enum.ConfigletStyleJunos),
-		},
-		enum.ConfigletStyleCumulus: {
-			enum.ConfigletSectionFrr.String(),
-			enum.ConfigletSectionInterface.String(),
-			enum.ConfigletSectionFile.String(),
-			enum.ConfigletSectionOspf.String(),
-		},
-		enum.ConfigletStyleNxos: {
-			enum.ConfigletSectionSystem.String(),
-			enum.ConfigletSectionInterface.String(),
-			enum.ConfigletSectionSystemTop.String(),
-			enum.ConfigletSectionOspf.String(),
-		},
-		enum.ConfigletStyleEos: {
-			enum.ConfigletSectionSystem.String(),
-			enum.ConfigletSectionInterface.String(),
-			enum.ConfigletSectionSystemTop.String(),
-			enum.ConfigletSectionOspf.String(),
-		},
-		enum.ConfigletStyleSonic: {
-			enum.ConfigletSectionSystem.String(),
-			enum.ConfigletSectionFile.String(),
-			enum.ConfigletSectionOspf.String(),
-			enum.ConfigletSectionFrr.String(),
-		},
-	}
-
 	// Retrieve values from config
 	var config design.Configlet
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -102,36 +65,36 @@ func (o *resourceConfiglet) ValidateConfig(ctx context.Context, req resource.Val
 			continue // cannot validate with unknown value
 		}
 
-		// extract the platform/config_style from the generator object as an SDK enum type
-		var platform enum.ConfigletStyle
-		err := platform.FromString(generator.ConfigStyle.ValueString())
+		// parse the config style
+		var configletStyle enum.ConfigletStyle
+		err := utils.ApiStringerFromFriendlyString(&configletStyle, generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("generators").AtListIndex(i),
-				fmt.Sprintf("unknown config style %q validation should have caught this", platform),
-				err.Error())
-			return
+				fmt.Sprintf("failed to parse config_style %s", generator.ConfigStyle), err.Error(),
+			)
 		}
 
-		// ensure that the validation map has an entry for this platform
-		var ok bool
-		if _, ok = platformToAllowedSectionsMap[platform]; !ok {
+		// parse the config section
+		var configletSection enum.ConfigletSection
+		err = utils.ApiStringerFromFriendlyString(&configletSection, generator.Section.ValueString(), generator.ConfigStyle.ValueString())
+		if err != nil {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("generators").AtListIndex(i),
-				fmt.Sprintf("cannot validate config style %q config sections - this is a provider issue", platform),
-				fmt.Sprintf("cannot validate config style %q config sections - this is a provider issue", platform))
-			return
+				fmt.Sprintf("failed to parse section %s",
+					generator.Section), err.Error(),
+			)
 		}
 
-		// ensure that the configured section is valid for the specified platform
-		if !utils.SliceContains(generator.Section.ValueString(), platformToAllowedSectionsMap[platform]) {
-			resp.Diagnostics.Append(
-				validatordiag.InvalidAttributeCombinationDiagnostic(
-					path.Root("generators").AtListIndex(i),
-					fmt.Sprintf("config style %q allows sections \"%s\", got %s",
-						platform, strings.Join(platformToAllowedSectionsMap[platform], "\", \""), generator.Section),
-				),
-			)
+		if resp.Diagnostics.HasError() {
+			continue
+		}
+
+		if !utils.ItemInSlice(configletSection, apstra.ValidConfigletSections(configletStyle)) {
+			resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+				path.Root("generators").AtListIndex(i),
+				fmt.Sprintf("Section %s not valid with config_style %s", generator.Section, generator.ConfigStyle),
+			))
 		}
 	}
 }
