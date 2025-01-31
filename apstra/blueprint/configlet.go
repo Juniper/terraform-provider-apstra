@@ -60,7 +60,7 @@ func (o DatacenterConfiglet) DataSourceAttributes() map[string]dataSourceSchema.
 			Computed:            true,
 		},
 		"catalog_configlet_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Will be null in the data source",
+			MarkdownDescription: "This attribute is always `null` in data source context. Ignore.",
 			Computed:            true,
 		},
 		"generators": dataSourceSchema.ListNestedAttribute{
@@ -87,8 +87,8 @@ func (o DatacenterConfiglet) ResourceAttributes() map[string]resourceSchema.Attr
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Configlet name. When omitted, the name found in the catalog configlet will be used." +
-				" Required when the `generators` attribute is specified.",
+			MarkdownDescription: "Configlet name. When omitted, the name found in the catalog configlet will be used. " +
+				"Required when the `generators` attribute is specified.",
 			Optional:      true,
 			Computed:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},

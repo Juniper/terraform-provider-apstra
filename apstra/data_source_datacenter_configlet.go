@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglet{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterConfiglet{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterConfiglet{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterConfiglet{}
+)
 
 type dataSourceDatacenterConfiglet struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -86,6 +89,10 @@ func (o *dataSourceDatacenterConfiglet) Read(ctx context.Context, req datasource
 			)
 			return
 		}
+	}
+	if api == nil {
+		resp.Diagnostics.AddError("invalid API response", "configlet payload is nil")
+		return
 	}
 
 	config.Id = types.StringValue(api.Id.String())

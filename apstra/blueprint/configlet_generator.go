@@ -183,7 +183,7 @@ func (o ConfigletGenerator) AttrTypes() map[string]attr.Type {
 }
 
 func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *apstra.ConfigletGenerator, diags *diag.Diagnostics) {
-	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
+	o.ConfigStyle = types.StringValue(utils.StringersToFriendlyString(in.ConfigStyle))
 	o.Section = types.StringValue(utils.StringersToFriendlyString(in.Section, in.ConfigStyle))
 	o.SectionCondition = utils.StringValueOrNull(ctx, in.SectionCondition, diags)
 	o.TemplateText = types.StringValue(in.TemplateText)
