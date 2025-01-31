@@ -64,6 +64,7 @@ data "apstra_datacenter_virtual_networks" "prod_unreserved_with_dhcp" {
 
 Optional:
 
+- `description` (String) Virtual Network Description
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
 - `export_route_targets` (Set of String) This is a set of *required* export RTs, not an exact-match list.
 - `import_route_targets` (Set of String) This is a set of *required* import RTs, not an exact-match list.
@@ -99,6 +100,7 @@ Read-Only:
 
 Optional:
 
+- `description` (String) Virtual Network Description
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
 - `export_route_targets` (Set of String) This is a set of *required* export RTs, not an exact-match list.
 - `import_route_targets` (Set of String) This is a set of *required* import RTs, not an exact-match list.
