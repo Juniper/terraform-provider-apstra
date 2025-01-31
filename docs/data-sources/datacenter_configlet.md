@@ -122,7 +122,7 @@ output "all_blueprint_configlet_names" {
 
 ### Read-Only
 
-- `catalog_configlet_id` (String) Will be null in the data source
+- `catalog_configlet_id` (String) This attribute is always `null` in data source context. Ignore.
 - `condition` (String) Condition determines where the Configlet is applied.
 - `generators` (Attributes List) Ordered list of Generators (see [below for nested schema](#nestedatt--generators))
 
