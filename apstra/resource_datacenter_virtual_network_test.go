@@ -28,6 +28,7 @@ const (
 resource %q %q {
   blueprint_id    = %q
   name            = %q
+  description     = %s
   type            = %s
   vni             = %s
   routing_zone_id = %s
@@ -46,6 +47,7 @@ resource %q %q {
 type resourceDatacenterVirtualNetworkTemplate struct {
 	blueprintId   apstra.ObjectId
 	name          string
+	description   string
 	vnType        string
 	vni           *int
 	routingZoneId apstra.ObjectId
@@ -70,6 +72,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		rType, rName,
 		o.blueprintId,
 		o.name,
+		stringOrNull(o.description),
 		stringOrNull(o.vnType),
 		intPtrOrNull(o.vni),
 		stringOrNull(o.routingZoneId.String()),
@@ -529,6 +532,67 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 								accessIds: []string{nodesByLabel["l2_esi_acs_dual_002_access_pair1"]},
 							},
 						},
+					},
+				},
+			},
+		},
+		"start_no_description": {
+			apiVersionConstraints: compatibility.VnDescriptionOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+			},
+		},
+		"start_with_description": {
+			apiVersionConstraints: compatibility.VnDescriptionOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
 					},
 				},
 			},

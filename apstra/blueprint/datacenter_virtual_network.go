@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -34,6 +35,7 @@ import (
 type DatacenterVirtualNetwork struct {
 	Id                      types.String `tfsdk:"id"`
 	Name                    types.String `tfsdk:"name"`
+	Description             types.String `tfsdk:"description"`
 	BlueprintId             types.String `tfsdk:"blueprint_id"`
 	Type                    types.String `tfsdk:"type"`
 	RoutingZoneId           types.String `tfsdk:"routing_zone_id"`
@@ -78,6 +80,10 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			MarkdownDescription: "Virtual Network Name",
 			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Description",
+			Computed:            true,
 		},
 		"type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Type",
@@ -183,6 +189,10 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 		},
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Virtual Network Name",
+			Optional:            true,
+		},
+		"description": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Description",
 			Optional:            true,
 		},
 		"type": dataSourceSchema.StringAttribute{
@@ -296,6 +306,14 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Validators: []validator.String{
 				stringvalidator.LengthBetween(1, 30),
 				stringvalidator.RegexMatches(apstraregexp.AlphaNumW2HLConstraint, apstraregexp.AlphaNumW2HLConstraintMsg),
+			},
+		},
+		"description": resourceSchema.StringAttribute{
+			MarkdownDescription: "Virtual Network Description",
+			Optional:            true,
+			Validators: []validator.String{
+				stringvalidator.LengthBetween(1, 222),
+				stringvalidator.RegexMatches(regexp.MustCompile(`^[^"<>\\?]+$`), `must not contain the following characters: ", <, >, \, ?`),
 			},
 		},
 		"blueprint_id": resourceSchema.StringAttribute{
@@ -626,6 +644,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	}
 
 	return &apstra.VirtualNetworkData{
+		Description:               o.Description.ValueString(),
 		DhcpService:               apstra.DhcpServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
 		Ipv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
 		Ipv4Subnet:                ipv4Subnet,
@@ -659,6 +678,7 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	}
 
 	o.Name = types.StringValue(in.Label)
+	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
 	o.Type = types.StringValue(in.VnType.String())
 	o.RoutingZoneId = types.StringValue(in.SecurityZoneId.String())
 	o.Bindings = newBindingMap(ctx, in.VnBindings, diags)
@@ -702,6 +722,13 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "label",
 			Value: apstra.QEStringVal(o.Name.ValueString()),
+		})
+	}
+
+	if !o.Description.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "description",
+			Value: apstra.QEStringVal(o.Description.ValueString()),
 		})
 	}
 
@@ -922,15 +949,20 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConstraints {
 	var response compatibility.ConfigConstraints
 
-	if o.Bindings.IsUnknown() {
-		return response // cannot validate with unknown bindings
-	}
-
-	if len(o.Bindings.Elements()) == 0 {
+	if !o.Bindings.IsUnknown() && len(o.Bindings.Elements()) == 0 {
 		response.AddAttributeConstraints(
 			compatibility.AttributeConstraint{
 				Path:        path.Root("bindings"),
 				Constraints: compatibility.VnEmptyBindingsOk,
+			},
+		)
+	}
+
+	if utils.HasValue(o.Description) {
+		response.AddAttributeConstraints(
+			compatibility.AttributeConstraint{
+				Path:        path.Root("description"),
+				Constraints: compatibility.VnDescriptionOk,
 			},
 		)
 	}
