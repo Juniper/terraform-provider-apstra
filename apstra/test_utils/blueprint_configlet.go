@@ -6,38 +6,26 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
 
-func CatalogConfigletA(t testing.TB, ctx context.Context, client *apstra.Client) (apstra.ObjectId, *apstra.ConfigletData) {
+func CatalogConfigletA(t testing.TB, ctx context.Context, client *apstra.Client) apstra.ObjectId {
 	t.Helper()
 
-	name := "CatalogConfigletA"
-	configlet, err := client.GetConfigletByName(ctx, name)
-	if err != nil {
-		if !utils.IsApstra404(err) {
-			require.NoError(t, err) // we cannot handle non-404 errors
-		}
+	id, err := client.CreateConfiglet(context.Background(), &apstra.ConfigletData{
+		DisplayName: acctest.RandString(6),
+		RefArchs:    []enum.RefDesign{enum.RefDesignDatacenter},
+		Generators: []apstra.ConfigletGenerator{{
+			ConfigStyle:  enum.ConfigletStyleJunos,
+			Section:      enum.ConfigletSectionSystem,
+			TemplateText: "interfaces {\n   {% if 'leaf1' in hostname %}\n    xe-0/0/3 {\n      disable;\n    }\n   {% endif %}\n   {% if 'leaf2' in hostname %}\n    xe-0/0/2 {\n      disable;\n    }\n   {% endif %}\n}",
+		}},
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteConfiglet(ctx, id)) })
 
-		configletData := apstra.ConfigletData{
-			DisplayName: name,
-			RefArchs:    []enum.RefDesign{enum.RefDesignDatacenter},
-			Generators: []apstra.ConfigletGenerator{{
-				ConfigStyle:  enum.ConfigletStyleJunos,
-				Section:      enum.ConfigletSectionSystem,
-				TemplateText: "interfaces {\n   {% if 'leaf1' in hostname %}\n    xe-0/0/3 {\n      disable;\n    }\n   {% endif %}\n   {% if 'leaf2' in hostname %}\n    xe-0/0/2 {\n      disable;\n    }\n   {% endif %}\n}",
-			}},
-		}
-
-		id, err := client.CreateConfiglet(context.Background(), &configletData)
-		require.NoError(t, err)
-		t.Cleanup(func() { require.NoError(t, client.DeleteConfiglet(ctx, id)) })
-
-		return id, &configletData
-	}
-
-	return configlet.Id, configlet.Data
+	return id
 }
 
 func BlueprintConfigletA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cid apstra.ObjectId, condition string) apstra.ObjectId {

@@ -71,23 +71,15 @@ func (o Configlet) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: ConfigletGenerator{}.ResourceAttributesNested(),
-				Validators: []validator.Object{ValidateConfigletGenerator()},
 			},
 			Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 		},
 	}
 }
 
-func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletData {
-	var d diag.Diagnostics
-
-	// We only use the Datacenter Reference Design
-	refArchs := []enum.RefDesign{enum.RefDesignDatacenter}
-
-	// Extract configlet generators
-	tfGenerators := make([]ConfigletGenerator, len(o.Generators.Elements()))
-	d = o.Generators.ElementsAs(ctx, &tfGenerators, false)
-	diags.Append(d...)
+func (o Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ConfigletData {
+	var tfGenerators []ConfigletGenerator
+	diags.Append(o.Generators.ElementsAs(ctx, &tfGenerators, false)...)
 	if diags.HasError() {
 		return nil
 	}
@@ -103,7 +95,7 @@ func (o *Configlet) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 
 	return &apstra.ConfigletData{
 		DisplayName: o.Name.ValueString(),
-		RefArchs:    refArchs,
+		RefArchs:    []enum.RefDesign{enum.RefDesignDatacenter}, // We only use the Datacenter Reference Design
 		Generators:  generators,
 	}
 }

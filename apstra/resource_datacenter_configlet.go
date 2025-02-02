@@ -3,19 +3,24 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
-	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterConfiglet{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterConfiglet{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterConfiglet{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDatacenterConfiglet{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterConfiglet{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterConfiglet{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterConfiglet{}
+)
 
 type resourceDatacenterConfiglet struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -32,8 +37,69 @@ func (o *resourceDatacenterConfiglet) Configure(ctx context.Context, req resourc
 
 func (o *resourceDatacenterConfiglet) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource imports a Configlet into a Blueprint.",
-		Attributes:          blueprint.DatacenterConfiglet{}.ResourceAttributes(),
+		MarkdownDescription: docCategoryDatacenter + "This resource adds a Configlet to a Blueprint, either by " +
+			"importing from the Global Catalog, or by creating one from scratch.",
+		Attributes: blueprint.DatacenterConfiglet{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceDatacenterConfiglet) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config
+	var config blueprint.DatacenterConfiglet
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Delay Validation until the involved attributes have a known value.
+	if config.Generators.IsUnknown() {
+		return
+	}
+
+	// extract generators from config
+	var generators []blueprint.ConfigletGenerator
+	resp.Diagnostics.Append(config.Generators.ElementsAs(ctx, &generators, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// validate each generator
+	for i, generator := range generators {
+		if generator.ConfigStyle.IsUnknown() || generator.Section.IsUnknown() {
+			continue // cannot validate with unknown value
+		}
+
+		// parse the config style
+		var configletStyle enum.ConfigletStyle
+		err := utils.ApiStringerFromFriendlyString(&configletStyle, generator.ConfigStyle.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("generators").AtListIndex(i),
+				fmt.Sprintf("failed to parse config_style %s", generator.ConfigStyle), err.Error(),
+			)
+		}
+
+		// parse the config section
+		var configletSection enum.ConfigletSection
+		err = utils.ApiStringerFromFriendlyString(&configletSection, generator.Section.ValueString(), generator.ConfigStyle.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("generators").AtListIndex(i),
+				fmt.Sprintf("failed to parse section %s",
+					generator.Section), err.Error(),
+			)
+		}
+
+		if resp.Diagnostics.HasError() {
+			continue
+		}
+
+		if !utils.ItemInSlice(configletSection, apstra.ValidConfigletSections(configletStyle)) {
+			resp.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+				path.Root("generators").AtListIndex(i),
+				fmt.Sprintf("Section %s not valid with config_style %s", generator.Section, generator.ConfigStyle),
+			))
+		}
 	}
 }
 
@@ -56,25 +122,17 @@ func (o *resourceDatacenterConfiglet) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// pull the configlet from the catalog if the user specified one
+	// create a plan based on the catalog configlet if a catalog ID was supplied
 	if !plan.CatalogConfigletID.IsNull() {
-		api, err := bp.Client().GetConfiglet(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()))
+		catalogConfiglet, err := bp.Client().GetConfiglet(ctx, apstra.ObjectId(plan.CatalogConfigletID.ValueString()))
 		if err != nil {
 			resp.Diagnostics.AddError("Error reading Configlet from catalog", err.Error())
 			return
 		}
 
-		// extract the needed details from the API response
-		var catalogConfigletData design.Configlet
-		catalogConfigletData.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+		plan.LoadCatalogConfigletData(ctx, catalogConfiglet.Data, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
-		}
-
-		// update the plan with data from the catalog object
-		plan.Generators = catalogConfigletData.Generators
-		if plan.Name.IsUnknown() {
-			plan.Name = catalogConfigletData.Name
 		}
 	}
 
