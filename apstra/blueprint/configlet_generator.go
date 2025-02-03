@@ -73,10 +73,10 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 			Validators: []validator.String{stringvalidator.OneOf(utils.AllConfigletSectionNames()...)},
 		},
 		"section_condition": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Used to select interfaces for configlets used in sections "+
-				"`%s`, `%s` and `%s`. See references to *Advanced Condition Editor* in the [Apstra User Guide]"+
-				"(https://www.juniper.net/documentation/us/en/software/apstra5.0/apstra-user-guide/topics/task/configlet-import-blueprint.html). "+
-				"e.g. `role in [\"spine_leaf\"]`",
+			MarkdownDescription: fmt.Sprintf("Used to select interfaces where configlets should be applied, "+
+				"e.g. `role in [\"spine_leaf\"]`. Only applies to configlets for sections `%s`, `%s` and `%s`. See "+
+				"references to *Advanced Condition Editor* in the [Apstra User Guide]"+
+				"(https://www.juniper.net/documentation/us/en/software/apstra5.0/apstra-user-guide/topics/task/configlet-import-blueprint.html).",
 				utils.StringersToFriendlyString(enum.ConfigletSectionInterface),
 				utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface),
 				utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface),

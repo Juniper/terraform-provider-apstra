@@ -191,7 +191,7 @@ Optional:
 
 - `filename` (String) FileName
 - `negation_template_text` (String) Negation Template Text
-- `section_condition` (String) Used to select interfaces for configlets used in sections `interface`, `set_based_interface` and `delete_based_interface`. See references to *Advanced Condition Editor* in the [Apstra User Guide](https://www.juniper.net/documentation/us/en/software/apstra5.0/apstra-user-guide/topics/task/configlet-import-blueprint.html). e.g. `role in ["spine_leaf"]`
+- `section_condition` (String) Used to select interfaces where configlets should be applied, e.g. `role in ["spine_leaf"]`. Only applies to configlets for sections `interface`, `set_based_interface` and `delete_based_interface`. See references to *Advanced Condition Editor* in the [Apstra User Guide](https://www.juniper.net/documentation/us/en/software/apstra5.0/apstra-user-guide/topics/task/configlet-import-blueprint.html).
 
 
 
