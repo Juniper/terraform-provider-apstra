@@ -12,5 +12,6 @@ var (
 	BpIbaWidgetOk                      = versionconstraints.New(apiversions.LtApstra500)
 	FabricSettingsSetInCreate          = versionconstraints.New(apiversions.GeApstra421)
 	TemplateRequiresAntiAffinityPolicy = versionconstraints.New(apiversions.Apstra420)
+	VnDescriptionOk                    = versionconstraints.New(">= 5.0.0")
 	VnEmptyBindingsOk                  = versionconstraints.New(">= 5.0.0")
 )
