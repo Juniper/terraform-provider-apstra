@@ -1,9 +1,9 @@
 ---
 page_title: "apstra_raw_json Resource - terraform-provider-apstra"
-subcategory: "Experimental"
+subcategory: "Footgun"
 description: |-
   !!! Warning !!!
-  This is an experimental resource intended only to solve problems not addressed by the normal resources.Use is discouraged and not supported. You're on your own with this thing.
+  This is resource is intended only to solve problems not addressed by the normal resources.Its use is discouraged and not supported. You're on your own with this thing.
   !!! Warning !!!
   This resource creates an object from a raw JSON payload via POST request. It assumes that the API will respond with a payload containing the new object ID: {"id": "xxxxxxxx"}. Config drift detection is not implemented, but update-in-place should be possible.. The Update() and Delete() functions append the ID (/xxxxxxxx) to the URL.
 ---
@@ -11,7 +11,7 @@ description: |-
 # apstra_raw_json (Resource)
 
 **!!! Warning !!!**
-This is an *experimental* resource intended only to solve problems not addressed by the normal resources.Use is discouraged and not supported. You're on your own with this thing.
+This is resource is intended only to solve problems not addressed by the normal resources.Its use is discouraged and not supported. You're on your own with this thing.
 **!!! Warning !!!**
 
 This resource creates an object from a raw JSON payload via `POST` request. It assumes that the API will respond with a payload containing the new object ID: `{"id": "xxxxxxxx"}`. Config drift detection is not implemented, but update-in-place should be possible.. The `Update()` and `Delete()` functions append the ID (`/xxxxxxxx`) to the URL.
