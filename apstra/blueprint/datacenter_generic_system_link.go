@@ -111,7 +111,7 @@ func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Di
 	return &result
 }
 
-func (o *DatacenterGenericSystemLink) digest() string {
+func (o *DatacenterGenericSystemLink) Digest() string {
 	return o.TargetSwitchId.ValueString() + ":" + o.TargetSwitchIfName.ValueString()
 }
 
@@ -147,7 +147,7 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 			o.TargetSwitchIfTransformId = types.Int64Null()
 			return
 		}
-		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.digest()), err.Error())
+		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.Digest()), err.Error())
 		return
 	}
 

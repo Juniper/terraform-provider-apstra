@@ -185,7 +185,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 	}
 
 	// extract []DatacenterGenericSystemLink from the plan
-	planLinks := o.links(ctx, diags)
+	planLinks := o.GetLinks(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -221,7 +221,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 	return &request
 }
 
-func (o *DatacenterGenericSystem) links(ctx context.Context, diags *diag.Diagnostics) []DatacenterGenericSystemLink {
+func (o *DatacenterGenericSystem) GetLinks(ctx context.Context, diags *diag.Diagnostics) []DatacenterGenericSystemLink {
 	var result []DatacenterGenericSystemLink
 	diags.Append(o.Links.ElementsAs(ctx, &result, false)...)
 	return result
@@ -245,13 +245,13 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	// optional field) in our result. If `group_label` isn't found in the
 	// prior state, that means the user omitted it, so we should leave it `null`
 	// regardless of the value returned by the API.
-	stateLinks := o.links(ctx, diags)
+	stateLinks := o.GetLinks(ctx, diags)
 	if diags.HasError() {
 		return
 	}
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
-		stateLinksMap[link.digest()] = &stateLinks[i]
+		stateLinksMap[link.Digest()] = &stateLinks[i]
 	}
 
 	// get the list of links from the API and filter out non-Ethernet links
@@ -280,7 +280,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 		// specified `group_label`. The `group_label` attribute is not
 		// "Computed", so we must return `null` to avoid state churn if the
 		// user opted for `null` by not setting it.
-		if link, ok := stateLinksMap[dcgsl.digest()]; ok {
+		if link, ok := stateLinksMap[dcgsl.Digest()]; ok {
 			if link.GroupLabel.IsNull() {
 				dcgsl.GroupLabel = types.StringNull()
 			}
@@ -441,11 +441,11 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	// transform plan and state links into a map keyed by link digest (device:port)
 	planLinksMap := make(map[string]*DatacenterGenericSystemLink, len(planLinks))
 	for i, link := range planLinks {
-		planLinksMap[link.digest()] = &planLinks[i]
+		planLinksMap[link.Digest()] = &planLinks[i]
 	}
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
-		stateLinksMap[link.digest()] = &stateLinks[i]
+		stateLinksMap[link.Digest()] = &stateLinks[i]
 	}
 
 	// compare plan and state, make lists of links to add / check+update / delete
@@ -861,7 +861,7 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 	digests := make(map[string]bool, len(links))      // track switch interfaces in use
 	groupModes := make(map[string]string, len(links)) // track lag modes per group
 	for _, link := range links {
-		digest := link.digest()
+		digest := link.Digest()
 		if digests[digest] {
 			resp.Diagnostics.Append(
 				validatordiag.InvalidAttributeCombinationDiagnostic(
