@@ -24,7 +24,7 @@ const (
 	docCategoryDatacenter     = "Reference Design: Datacenter" + docCategorySeparator
 	docCategoryDesign         = "Design" + docCategorySeparator
 	docCategoryDevices        = "Devices" + docCategorySeparator
-	docCategoryExperimental   = "Experimental" + docCategorySeparator
+	docCategoryFootGun        = "Footgun" + docCategorySeparator
 	docCategoryFreeform       = "Reference Design: Freeform" + docCategorySeparator
 	docCategoryRefDesignAny   = "Reference Design: Shared" + docCategorySeparator
 	docCategoryResources      = "Resource Pools" + docCategorySeparator

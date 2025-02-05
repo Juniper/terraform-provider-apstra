@@ -34,9 +34,9 @@ func (o *resourceRawJson) Configure(ctx context.Context, req resource.ConfigureR
 
 func (o *resourceRawJson) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryExperimental + "**!!! Warning !!!**\n" +
-			"This is an *experimental* resource intended only to solve problems not addressed by the normal resources." +
-			"Use is discouraged and not supported. You're on your own with this thing.\n" +
+		MarkdownDescription: docCategoryFootGun + "**!!! Warning !!!**\n" +
+			"This is resource is intended only to solve problems not addressed by the normal resources." +
+			"Its use is discouraged and not supported. You're on your own with this thing.\n" +
 			"**!!! Warning !!!**\n\n" +
 			"This resource creates an object from a raw JSON payload via `POST` request. It assumes that the API will " +
 			"respond with a payload containing the new object ID: `{\"id\": \"xxxxxxxx\"}`. Config drift detection is " +
@@ -88,6 +88,11 @@ func (o *resourceRawJson) Read(ctx context.Context, req resource.ReadRequest, re
 	var state raw.RawJson
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if state.Id.IsNull() {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
 
