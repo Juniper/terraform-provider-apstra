@@ -24,9 +24,11 @@ type RawJson struct {
 func (o *RawJson) ResourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			MarkdownDescription: "The ID of the raw JSON object.",
-			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			MarkdownDescription: "The ID of the raw JSON object. We attempt to determine the ID from the API response. " +
+				"If the ID can be anticipated, it is possible to specify it here.",
+			Computed:      true,
+			Optional:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"url": schema.StringAttribute{
 			MarkdownDescription: "The API URL associated with the raw JSON object.",
