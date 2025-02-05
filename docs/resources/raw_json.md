@@ -47,9 +47,12 @@ resource "apstra_raw_json" "example" {
 - `payload` (String) JSON payload used to create and update the raw JSON object.
 - `url` (String) The API URL associated with the raw JSON object.
 
+### Optional
+
+- `id` (String) The ID of the raw JSON object. We attempt to determine the ID from the API response. If the ID can be anticipated, it is possible to specify it here.
+
 ### Read-Only
 
-- `id` (String) The ID of the raw JSON object.
 - `update_method` (String) The method used to update the JSON object. Must be one of `PUT` or `PATCH`. Default: `PUT`
 
 
