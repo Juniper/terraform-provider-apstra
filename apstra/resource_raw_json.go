@@ -73,11 +73,14 @@ func (o *resourceRawJson) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	plan.Id = types.StringPointerValue(idResponse.Id)
+	if plan.Id.IsUnknown() {
+		plan.Id = types.StringPointerValue(idResponse.Id)
+	}
+
 	if plan.Id.IsNull() {
 		resp.Diagnostics.AddWarning(
 			"ID is null",
-			"creation did not produce an error, but we failed to find an object ID in the API response",
+			"creation did not produce an error, but no ID was specified in the configuration and we failed to find one in the API response",
 		)
 	}
 
