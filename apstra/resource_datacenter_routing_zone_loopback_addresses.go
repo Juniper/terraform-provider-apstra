@@ -46,9 +46,12 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Schema(_ context.Contex
 			"using the `apstra_datacenter_device_allocation` resource. Configuring loopback interface addresses using "+
 			"both resources can lead to configuration churn, and should be avoided.\n\n"+
 			"Note that loopback interface addresses can only be configured on switches *actively participating* in "+
-			"the given Routing Zone. For Leaf Switch loopback interfaces in non-default Routing Zones, participation "+
-			"requires that a Virtual Network belonging to the Routing Zone be bound to the Switch. The Terraform "+
-			"project must be structured to ensure that those bindings exist before this resource is created or updated.\n\n"+
+			"the given Routing Zone. Leaf Switch participation in non-default Routing Zone requires one of these:\n\n"+
+			" - A Virtual Network in the Routing Zone is bound to the switch\n"+
+			" - A Connectivity Template with an IP Link primitive or routing information for the Routing Zones is assigned to the switch\n"+
+			" - The switch is acting as a DCI gateway for the Routing Zone.\n\n"+
+			"The Terraform project must be structured to ensure Routing Zone participation by switches mentioned in "+
+			"this resource before the resource is created or updated.\n\n"+
 			"Requires Apstra %s.", compatibility.SecurityZoneLoopbackApiSupported),
 		Attributes: blueprint.RoutingZoneLoopbacks{}.ResourceAttributes(),
 	}

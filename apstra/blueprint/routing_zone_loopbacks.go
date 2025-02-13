@@ -40,7 +40,7 @@ func (o RoutingZoneLoopbacks) ResourceAttributes() map[string]resourceSchema.Att
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"loopbacks": resourceSchema.MapNestedAttribute{
-			MarkdownDescription: "Map of Loopback IPv4 and IPv6 addresses, keyed by System Node ID.",
+			MarkdownDescription: "Map of Loopback IPv4 and IPv6 addresses, keyed by System (switch) Node ID.",
 			Required:            true,
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RoutingZoneLoopback{}.ResourceAttributes(),
