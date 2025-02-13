@@ -25,6 +25,7 @@ var (
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
 	ResourceDatacenterRoutingZoneConstraint                = resourceDatacenterRoutingZoneConstraint{}
+	ResourceDatacenterRoutingZoneLoopbackAddresses         = resourceDatacenterRoutingZoneLoopbackAddresses{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}
 	ResourceFreeformBlueprint                              = resourceFreeformBlueprint{}

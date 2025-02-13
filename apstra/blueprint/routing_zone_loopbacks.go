@@ -3,17 +3,18 @@ package blueprint
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"net/netip"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -44,11 +45,12 @@ func (o RoutingZoneLoopbacks) ResourceAttributes() map[string]resourceSchema.Att
 			NestedObject: resourceSchema.NestedAttributeObject{
 				Attributes: RoutingZoneLoopback{}.ResourceAttributes(),
 			},
+			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
 	}
 }
 
-func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, ps private.State, diags *diag.Diagnostics) (map[apstra.ObjectId]apstra.SecurityZoneLoopback, *private.ResourceDatacenterRoutingZoneLoopbackAddresses) {
+func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses, diags *diag.Diagnostics) (map[apstra.ObjectId]apstra.SecurityZoneLoopback, *private.ResourceDatacenterRoutingZoneLoopbackAddresses) {
 	// API response will allow us to determine interface IDs from system IDs
 	szInfo, err := bp.GetSecurityZoneInfo(ctx, apstra.ObjectId(o.RoutingZoneId.ValueString()))
 	if err != nil {
@@ -69,15 +71,6 @@ func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3
 	diags.Append(o.Loopbacks.ElementsAs(ctx, &planLoopbackMap, false)...)
 	if diags.HasError() {
 		return nil, nil
-	}
-
-	// extract private state (previously configured loopbacks)
-	var previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses
-	if ps != nil { // ps will be nil prior to initial creation
-		previousLoopbackMap.LoadPrivateState(ctx, ps, diags)
-		if diags.HasError() {
-			return nil, nil
-		}
 	}
 
 	// we return these two maps

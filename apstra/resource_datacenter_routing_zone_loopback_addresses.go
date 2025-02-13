@@ -3,12 +3,15 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -37,11 +40,11 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Schema(_ context.Contex
 			"Note that the loopback addresses within the `default` routing zone can also be configured using the "+
 			"`apstra_datacenter_device_allocation` resource. Configuring interfaces using both resources can lead to "+
 			"configuration churn.\n\n"+
-			"Note that loopback addresses can only be configured on Systems *actively participating* in the Routing "+
-			"Zone. For leaf switches, this means a Virtual Network belonging to the Routing Zone is bound to the Leaf "+
-			"Switch. The Terraform project must be structured carefully to ensure that those bindings are created before "+
-			"this resource is created.\n\n"+
-			" Requires Apstra %s.", compatibility.SecurityZoneLoopbackApiSupported),
+			"Note that loopback addresses can only be configured on Systems *actively participating* in the Given "+
+			"Routing Zone. For leaf switches, this means a Virtual Network belonging to the Routing Zone is bound to "+
+			"the Leaf Switch. The Terraform project must be structured carefully to ensure that those bindings exist "+
+			"before this resource is created or updated.\n\n"+
+			"Requires Apstra %s.", compatibility.SecurityZoneLoopbackApiSupported),
 		Attributes: blueprint.RoutingZoneLoopbacks{}.ResourceAttributes(),
 	}
 }
@@ -132,13 +135,115 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Read(ctx context.Contex
 }
 
 func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//TODO implement me
-	panic("implement me")
+	var plan blueprint.RoutingZoneLoopbacks
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf("blueprint %s not found", plan.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
+		return
+	}
+
+	// extract private state (previously configured loopbacks)
+	var previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses
+	previousLoopbackMap.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create an API request
+	request, ps := plan.Request(ctx, bp, previousLoopbackMap, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// record assignments to private state
+	ps.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// set loopback addresses
+	err = bp.SetSecurityZoneLoopbacks(ctx, apstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to set loopback addresses", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	//TODO implement me
-	panic("implement me")
+	var state blueprint.RoutingZoneLoopbacks
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create a plan with empty loopback address map
+	plan := blueprint.RoutingZoneLoopbacks{
+		BlueprintId:   state.BlueprintId,
+		RoutingZoneId: state.RoutingZoneId,
+		Loopbacks:     types.MapNull(types.ObjectType{AttrTypes: blueprint.RoutingZoneLoopback{}.AttrTypes()}),
+	}
+
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError("failed to create blueprint client", err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			fmt.Sprintf("error locking blueprint %q mutex", plan.BlueprintId.ValueString()),
+			err.Error())
+		return
+	}
+
+	// extract private state (previously configured loopbacks)
+	var previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses
+	previousLoopbackMap.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create an API request
+	request, _ := plan.Request(ctx, bp, previousLoopbackMap, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// clear loopback addresses
+	err = bp.SetSecurityZoneLoopbacks(ctx, apstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to set loopback addresses", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (o *resourceDatacenterRoutingZoneLoopbackAddresses) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
