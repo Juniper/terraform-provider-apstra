@@ -2,19 +2,19 @@
 page_title: "apstra_datacenter_routing_zone_loopback_addresses Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource configures loopback addresses of switch nodes in a Datacenter Blueprint.
-  Note that the loopback addresses within the default routing zone can also be configured using the apstra_datacenter_device_allocation resource. Configuring interfaces using both resources can lead to configuration churn.
-  Note that loopback addresses can only be configured on Systems actively participating in the Given Routing Zone. For leaf switches, this means a Virtual Network belonging to the Routing Zone is bound to the Leaf Switch. The Terraform project must be structured carefully to ensure that those bindings exist before this resource is created or updated.
+  This resource configures loopback interface addresses of switch nodes in a Datacenter Blueprint.
+  Note that the loopback interface addresses within the default routing zone can also be configured using the apstra_datacenter_device_allocation resource. Configuring loopback interface addresses using both resources can lead to configuration churn, and should be avoided.
+  Note that loopback interface addresses can only be configured on switches actively participating in the given Routing Zone. For Leaf Switch loopback interfaces in non-default Routing Zones, participation requires that a Virtual Network belonging to the Routing Zone be bound to the Switch. The Terraform project must be structured to ensure that those bindings exist before this resource is created or updated.
   Requires Apstra >=5.0.0.
 ---
 
 # apstra_datacenter_routing_zone_loopback_addresses (Resource)
 
-This resource configures loopback addresses of *switch* nodes in a Datacenter Blueprint.
+This resource configures loopback interface addresses of *switch* nodes in a Datacenter Blueprint.
 
-Note that the loopback addresses within the `default` routing zone can also be configured using the `apstra_datacenter_device_allocation` resource. Configuring interfaces using both resources can lead to configuration churn.
+Note that the loopback interface addresses within the `default` routing zone can also be configured using the `apstra_datacenter_device_allocation` resource. Configuring loopback interface addresses using both resources can lead to configuration churn, and should be avoided.
 
-Note that loopback addresses can only be configured on Systems *actively participating* in the Given Routing Zone. For leaf switches, this means a Virtual Network belonging to the Routing Zone is bound to the Leaf Switch. The Terraform project must be structured carefully to ensure that those bindings exist before this resource is created or updated.
+Note that loopback interface addresses can only be configured on switches *actively participating* in the given Routing Zone. For Leaf Switch loopback interfaces in non-default Routing Zones, participation requires that a Virtual Network belonging to the Routing Zone be bound to the Switch. The Terraform project must be structured to ensure that those bindings exist before this resource is created or updated.
 
 Requires Apstra >=5.0.0.
 

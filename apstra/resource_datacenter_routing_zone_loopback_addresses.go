@@ -7,20 +7,25 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
-	_ resourceWithSetDcBpClientFunc  = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
-	_ resourceWithSetBpLockFunc      = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resource.ResourceWithConfigure      = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resource.ResourceWithValidateConfig = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resourceWithSetClient               = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resourceWithSetDcBpClientFunc       = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resourceWithSetBpLockFunc           = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
 )
 
 type resourceDatacenterRoutingZoneLoopbackAddresses struct {
+	client          *apstra.Client
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
@@ -35,17 +40,30 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Configure(ctx context.C
 
 func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + fmt.Sprintf("This resource configures loopback addresses "+
-			"of *switch* nodes in a Datacenter Blueprint.\n\n"+
-			"Note that the loopback addresses within the `default` routing zone can also be configured using the "+
-			"`apstra_datacenter_device_allocation` resource. Configuring interfaces using both resources can lead to "+
-			"configuration churn.\n\n"+
-			"Note that loopback addresses can only be configured on Systems *actively participating* in the Given "+
-			"Routing Zone. For leaf switches, this means a Virtual Network belonging to the Routing Zone is bound to "+
-			"the Leaf Switch. The Terraform project must be structured carefully to ensure that those bindings exist "+
-			"before this resource is created or updated.\n\n"+
+		MarkdownDescription: docCategoryDatacenter + fmt.Sprintf("This resource configures loopback interface "+
+			"addresses of *switch* nodes in a Datacenter Blueprint.\n\n"+
+			"Note that the loopback interface addresses within the `default` routing zone can also be configured "+
+			"using the `apstra_datacenter_device_allocation` resource. Configuring loopback interface addresses using "+
+			"both resources can lead to configuration churn, and should be avoided.\n\n"+
+			"Note that loopback interface addresses can only be configured on switches *actively participating* in "+
+			"the given Routing Zone. For Leaf Switch loopback interfaces in non-default Routing Zones, participation "+
+			"requires that a Virtual Network belonging to the Routing Zone be bound to the Switch. The Terraform "+
+			"project must be structured to ensure that those bindings exist before this resource is created or updated.\n\n"+
 			"Requires Apstra %s.", compatibility.SecurityZoneLoopbackApiSupported),
 		Attributes: blueprint.RoutingZoneLoopbacks{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceDatacenterRoutingZoneLoopbackAddresses) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	if o.client == nil {
+		return
+	}
+
+	if !compatibility.SecurityZoneLoopbackApiSupported.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+		resp.Diagnostics.AddError(
+			constants.ErrInvalidConfig,
+			"this resource requires Apstra "+compatibility.SecurityZoneLoopbackApiSupported.String(),
+		)
 	}
 }
 
@@ -252,4 +270,8 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) setBpClientFunc(f func(
 
 func (o *resourceDatacenterRoutingZoneLoopbackAddresses) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDatacenterRoutingZoneLoopbackAddresses) setClient(client *apstra.Client) {
+	o.client = client
 }
