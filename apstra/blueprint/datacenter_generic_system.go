@@ -450,32 +450,53 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 
 	// compare plan and state, make lists of links to add / check+update / delete
 	var addLinks, updateLinksPlan, updateLinksState, delLinks []*DatacenterGenericSystemLink
-	for digest := range planLinksMap {
-		if _, ok := stateLinksMap[digest]; !ok {
-			addLinks = append(addLinks, planLinksMap[digest])
+	var speedChangeLinkDigests []string
+	for digest, planLink := range planLinksMap {
+		if stateLink, ok := stateLinksMap[digest]; !ok {
+			// target switch:port not found in state - this is a net new link
+			addLinks = append(addLinks, planLink)
 		} else {
-			// "updateLinks" is two slices: plan and state, so that we can
-			// compare and change only required attributes.
-			updateLinksPlan = append(updateLinksPlan, planLinksMap[digest])
-			updateLinksState = append(updateLinksState, stateLinksMap[digest])
+			// link exists in plan and state; check if the speed has changed
+			if !planLink.TargetSwitchIfTransformId.Equal(stateLink.TargetSwitchIfTransformId) {
+				// speed has changed
+				speedChangeLinkDigests = append(speedChangeLinkDigests, digest)
+			} else {
+				// speed remains the same - the link survives, but may need other attributes updated
+				//
+				// "updateLinks" is two slices: plan and state, so that we can
+				// compare and change only required attributes, if any.
+				updateLinksPlan = append(updateLinksPlan, planLink)
+				updateLinksState = append(updateLinksState, stateLink)
+			}
 		}
 	}
+
+	// any links in state but not in plan must be deleted
 	for digest := range stateLinksMap {
 		if _, ok := planLinksMap[digest]; !ok {
 			delLinks = append(delLinks, stateLinksMap[digest])
 		}
 	}
 
-	o.addLinksToSystem(ctx, addLinks, bp, diags)
-	if diags.HasError() {
-		return
+	// delete, then add links where the transform id (speed) must be changed
+	for _, digest := range speedChangeLinkDigests {
+		o.deleteLinksFromSystem(ctx, []*DatacenterGenericSystemLink{stateLinksMap[digest]}, bp, diags)
+		o.addLinksToSystem(ctx, []*DatacenterGenericSystemLink{planLinksMap[digest]}, bp, diags)
 	}
 
+	// delete links no longer in the plan
 	o.deleteLinksFromSystem(ctx, delLinks, bp, diags)
 	if diags.HasError() {
 		return
 	}
 
+	// add net new links
+	o.addLinksToSystem(ctx, addLinks, bp, diags)
+	if diags.HasError() {
+		return
+	}
+
+	// update links in both plan and state (where the transform ID has not changed)
 	o.updateLinkParams(ctx, updateLinksPlan, updateLinksState, bp, diags)
 	if diags.HasError() {
 		return
@@ -858,44 +879,50 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		return
 	}
 
+	// validate switch endpoint
 	digests := make(map[string]bool, len(links))      // track switch interfaces in use
 	groupModes := make(map[string]string, len(links)) // track lag modes per group
 	for _, link := range links {
-		digest := link.Digest()
-		if digests[digest] {
-			resp.Diagnostics.Append(
-				validatordiag.InvalidAttributeCombinationDiagnostic(
-					req.Path,
-					fmt.Sprintf("multiple links claim interface %s on switch %s",
-						link.TargetSwitchIfName, link.TargetSwitchId),
-				),
-			)
-			return
+		if !link.TargetSwitchId.IsUnknown() || !link.TargetSwitchIfName.IsUnknown() { // skip impossible-to-calculate digests
+			digest := link.Digest()
+			if digests[digest] {
+				resp.Diagnostics.Append(
+					validatordiag.InvalidAttributeCombinationDiagnostic(
+						req.Path,
+						fmt.Sprintf("multiple links claim interface %s on switch %s",
+							link.TargetSwitchIfName, link.TargetSwitchId),
+					),
+				)
+				return
+			}
 		}
 
-		lagMode := link.LagMode.ValueString()
-		if groupMode, ok := groupModes[link.GroupLabel.ValueString()]; ok && !link.GroupLabel.IsNull() {
-			// we have seen this group label before
+		// validate LAG configuration
+		if !link.LagMode.IsUnknown() || !link.GroupLabel.IsUnknown() { // skip impossible-to-evaluate LAGs
+			lagMode := link.LagMode.ValueString()
+			if groupMode, ok := groupModes[link.GroupLabel.ValueString()]; ok && !link.GroupLabel.IsNull() {
+				// we have seen this group label before
 
-			if link.LagMode.IsNull() {
-				resp.Diagnostics.Append(
-					validatordiag.InvalidAttributeCombinationDiagnostic(
-						req.Path,
-						fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
-							link.GroupLabel.ValueString())))
-				return
-			}
+				if link.LagMode.IsNull() {
+					resp.Diagnostics.Append(
+						validatordiag.InvalidAttributeCombinationDiagnostic(
+							req.Path,
+							fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
+								link.GroupLabel.ValueString())))
+					return
+				}
 
-			if groupMode != lagMode {
-				resp.Diagnostics.Append(
-					validatordiag.InvalidAttributeCombinationDiagnostic(
-						req.Path,
-						fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
-							link.GroupLabel.ValueString(), groupMode, lagMode)))
-				return
+				if groupMode != lagMode {
+					resp.Diagnostics.Append(
+						validatordiag.InvalidAttributeCombinationDiagnostic(
+							req.Path,
+							fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
+								link.GroupLabel.ValueString(), groupMode, lagMode)))
+					return
+				}
+			} else {
+				groupModes[link.GroupLabel.ValueString()] = lagMode
 			}
-		} else {
-			groupModes[link.GroupLabel.ValueString()] = lagMode
 		}
 	}
 }

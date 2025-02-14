@@ -67,23 +67,23 @@ func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req re
 		return
 	}
 
-	// digests uniquely identify an endpoint. Make a map of 'em for quick lookup.
-	planDigests := make(map[string]struct{}, len(planLinks))
+	// digests uniquely identify an endpoint. Make a map for quick lookup of transform ID.
+	planDigestsToTransform := make(map[string]int64, len(planLinks))
 	for _, link := range planLinks {
-		planDigests[link.Digest()] = struct{}{}
+		planDigestsToTransform[link.Digest()] = link.TargetSwitchIfTransformId.ValueInt64()
 	}
 
-	// determine whether all links are being replaced
-	linksRequireReplace := true
+	// determine whether all links are being replaced, or speed changed
+	linksForceReplace := true // assume the worst
 	for _, link := range stateLinks {
-		if _, ok := planDigests[link.Digest()]; ok {
-			// This link from state is also in the plan. Let it live!
-			linksRequireReplace = false
+		if transform, ok := planDigestsToTransform[link.Digest()]; ok && link.TargetSwitchIfTransformId.ValueInt64() == transform {
+			// Same target port, same speed -- the server survives!
+			linksForceReplace = false
 			break
 		}
 	}
 
-	if linksRequireReplace {
+	if linksForceReplace {
 		resp.RequiresReplace.Append(path.Root("links"))
 	}
 }
