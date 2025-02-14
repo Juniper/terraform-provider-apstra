@@ -632,6 +632,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterRack{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZoneConstraint{} },
+		func() resource.Resource { return &resourceDatacenterRoutingZoneLoopbackAddresses{} },
 		func() resource.Resource { return &resourceDatacenterRoutingPolicy{} },
 		func() resource.Resource { return &resourceDatacenterSecurityPolicy{} },
 		func() resource.Resource { return &resourceDatacenterIpLinkAddressing{} },
