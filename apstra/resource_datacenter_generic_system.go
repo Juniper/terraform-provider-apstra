@@ -10,15 +10,17 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceDatacenterGenericSystem{}
-	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterGenericSystem{}
-	_ resourceWithSetBpLockFunc      = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithConfigure  = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithModifyPlan = &resourceDatacenterGenericSystem{}
+	_ resourceWithSetDcBpClientFunc   = &resourceDatacenterGenericSystem{}
+	_ resourceWithSetBpLockFunc       = &resourceDatacenterGenericSystem{}
 )
 
 type resourceDatacenterGenericSystem struct {
@@ -38,6 +40,51 @@ func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.S
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Generic System within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterGenericSystem{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	if req.Plan.Raw.IsNull() {
+		return // we must be about to call Destroy()
+	}
+
+	if req.State.Raw.IsNull() {
+		return // we must be about to call Create()
+	}
+
+	// extract plan and state
+	var plan, state blueprint.DatacenterGenericSystem
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// extract links from plan and state
+	planLinks := plan.GetLinks(ctx, &resp.Diagnostics)
+	stateLinks := state.GetLinks(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// digests uniquely identify an endpoint. Make a map for quick lookup of transform ID.
+	planDigestsToTransform := make(map[string]int64, len(planLinks))
+	for _, link := range planLinks {
+		planDigestsToTransform[link.Digest()] = link.TargetSwitchIfTransformId.ValueInt64()
+	}
+
+	// determine whether all links are being replaced, or speed changed
+	linksForceReplace := true // assume the worst
+	for _, link := range stateLinks {
+		if transform, ok := planDigestsToTransform[link.Digest()]; ok && link.TargetSwitchIfTransformId.ValueInt64() == transform {
+			// Same target port, same speed -- the server survives!
+			linksForceReplace = false
+			break
+		}
+	}
+
+	if linksForceReplace {
+		resp.RequiresReplace.Append(path.Root("links"))
 	}
 }
 

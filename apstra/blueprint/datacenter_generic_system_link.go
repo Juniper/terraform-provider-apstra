@@ -13,8 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -45,7 +43,6 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			MarkdownDescription: "Transformation ID sets the operational mode of an interface.",
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
-			PlanModifiers:       []planmodifier.Int64{int64planmodifier.RequiresReplace()},
 		},
 		"group_label": resourceSchema.StringAttribute{
 			MarkdownDescription: "This field is used to collect multiple links into aggregation " +
@@ -111,7 +108,7 @@ func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Di
 	return &result
 }
 
-func (o *DatacenterGenericSystemLink) digest() string {
+func (o *DatacenterGenericSystemLink) Digest() string {
 	return o.TargetSwitchId.ValueString() + ":" + o.TargetSwitchIfName.ValueString()
 }
 
@@ -147,7 +144,7 @@ func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client
 			o.TargetSwitchIfTransformId = types.Int64Null()
 			return
 		}
-		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.digest()), err.Error())
+		diags.AddError(fmt.Sprintf("failed to get transform ID for %q", o.Digest()), err.Error())
 		return
 	}
 
