@@ -196,15 +196,57 @@ func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 //func BlueprintE(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
 //}
 
+// BlueprintF creates a blueprint with switches where a single port is represented
+// by two different names:
+// - xe-0/0/0 - transform 1
+// - ge-0/0/0 - transform 2 and 3
 func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient {
 	t.Helper()
 
 	client := GetTestClient(t, ctx)
-	template := TemplateE(t, ctx)
+
+	rackId, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
+		DisplayName:              acctest.RandString(6),
+		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
+			{
+				Label:              acctest.RandString(6),
+				LinkPerSpineCount:  1,
+				LinkPerSpineSpeed:  "40G",
+				RedundancyProtocol: apstra.LeafRedundancyProtocolEsi,
+				LogicalDeviceId:    "AOS-48x10_6x40-2",
+			},
+			{
+				Label:              acctest.RandString(6),
+				LinkPerSpineCount:  1,
+				LinkPerSpineSpeed:  "40G",
+				RedundancyProtocol: apstra.LeafRedundancyProtocolEsi,
+				LogicalDeviceId:    "AOS-48x10_6x40-2",
+			},
+		},
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, rackId)) })
+
+	templateId, err := client.CreateRackBasedTemplate(ctx, &apstra.CreateRackBasedTemplateRequest{
+		DisplayName: acctest.RandString(6),
+		Spine: &apstra.TemplateElementSpineRequest{
+			Count:         1,
+			LogicalDevice: "AOS-16x40-1",
+		},
+		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{rackId: {Count: 1}},
+		//DhcpServiceIntent:    nil,
+		//AntiAffinityPolicy:   nil,
+		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
+		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, rackId)) })
+
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  enum.RefDesignDatacenter,
 		Label:      acctest.RandString(10),
-		TemplateId: template.Id,
+		TemplateId: templateId,
 		FabricSettings: &apstra.FabricSettings{
 			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
 			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
@@ -214,6 +256,22 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
 
 	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
+	require.NoError(t, err)
+
+	// set interface map on all leafs
+	leafs := GetSystemIds(t, ctx, bpClient, "leaf")
+	assignents := make(apstra.SystemIdToInterfaceMapAssignment, len(leafs))
+	for _, leaf := range leafs {
+		assignents[leaf.String()] = "Juniper_QFX5100-48S__AOS-48x10_6x40-2"
+	}
+	err = bpClient.SetInterfaceMapAssignments(ctx, assignents)
+	require.NoError(t, err)
+
+	// enable IPv6
+	settings, err := bpClient.GetFabricSettings(ctx)
+	require.NoError(t, err)
+	settings.Ipv6Enabled = utils.ToPtr(true)
+	err = bpClient.SetFabricSettings(ctx, settings)
 	require.NoError(t, err)
 
 	return bpClient
