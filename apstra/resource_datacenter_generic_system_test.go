@@ -3,20 +3,22 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
-	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
-	"golang.org/x/exp/maps"
 	"math/rand/v2"
 	"net"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"golang.org/x/exp/maps"
 )
 
 const resourceDataCenterGenericSystemLinkHCL = `
@@ -47,6 +49,25 @@ func (o *resourceDataCenterGenericSystemLink) render() string {
 		o.targetSwitchTf,
 		stringOrNull(o.groupLabel),
 	)
+}
+
+func (o *resourceDataCenterGenericSystemLink) addTestChecks(t testing.TB, testChecks *testChecks) {
+	m := map[string]string{
+		"target_switch_id":              o.targetSwitchId.String(),
+		"target_switch_if_name":         o.targetSwitchIf,
+		"target_switch_if_transform_id": strconv.Itoa(o.targetSwitchTf),
+	}
+	if len(o.tags) > 0 {
+		m["tags.#"] = strconv.Itoa(len(o.tags))
+		// todo - each tag, somehow? not critical, the extra plan stage will catch it
+	}
+	if o.lagMode != apstra.RackLinkLagModeNone {
+		m["lag_mode"] = utils.StringersToFriendlyString(o.lagMode)
+	}
+	if o.groupLabel != "" {
+		m["group_label"] = o.groupLabel
+	}
+	testChecks.appendSetNestedCheck(t, "links.*", m)
 }
 
 const resourceDataCenterGenericSystemHCL = `
@@ -116,6 +137,61 @@ func (o resourceDataCenterGenericSystem) render(rType, rName string, bpId apstra
 func (o resourceDataCenterGenericSystem) testChecks(t testing.TB, bpId apstra.ObjectId, rType, rName string) testChecks {
 	result := newTestChecks(rType + "." + rName)
 
+	// required and computed attributes can always be checked
+	result.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
+	result.append(t, "TestCheckResourceAttrSet", "id")
+	if o.name == "" {
+		result.append(t, "TestMatchResourceAttr", "name", "^.+$")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "name", o.name)
+	}
+	if o.hostname == "" {
+		result.append(t, "TestMatchResourceAttr", "hostname", "^.+$")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "hostname", o.hostname)
+	}
+	if o.asn != nil {
+		result.append(t, "TestCheckResourceAttr", "asn", strconv.Itoa(*o.asn))
+	}
+	if o.loopback4 != nil {
+		result.append(t, "TestCheckResourceAttr", "loopback_ipv4", o.loopback4.String())
+	}
+	if o.loopback6 != nil {
+		result.append(t, "TestCheckResourceAttr", "loopback_ipv6", o.loopback6.String())
+	}
+	if len(o.tags) == 0 {
+		result.append(t, "TestCheckNoResourceAttr", "tags")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	}
+	for _, tag := range o.tags {
+		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
+	}
+	if o.deployMode == nil {
+		result.append(t, "TestCheckResourceAttr", "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDeploy))
+	} else {
+		result.append(t, "TestCheckResourceAttr", "deploy_mode", *o.deployMode)
+	}
+	if o.portChannelIdMin == nil {
+		result.append(t, "TestCheckResourceAttr", "port_channel_id_min", "0")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "port_channel_id_min", strconv.Itoa(*o.portChannelIdMin))
+	}
+	if o.portChannelIdMax == nil {
+		result.append(t, "TestCheckResourceAttr", "port_channel_id_max", "0")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "port_channel_id_max", strconv.Itoa(*o.portChannelIdMax))
+	}
+	if o.clearCtsOnDestroy == nil {
+		result.append(t, "TestCheckNoResourceAttr", "clear_cts_on_destroy")
+	} else {
+		result.append(t, "TestCheckResourceAttr", "clear_cts_on_destroy", strconv.FormatBool(*o.clearCtsOnDestroy))
+	}
+	result.append(t, "TestCheckResourceAttr", "links.#", strconv.Itoa(len(o.links)))
+	for _, link := range o.links {
+		link.addTestChecks(t, &result)
+	}
+
 	return result
 }
 
@@ -141,31 +217,141 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 	type testCase struct {
 		steps              []testStep
 		versionConstraints version.Constraints
+		preconfig          func(t *testing.T)
 	}
 
 	testCases := map[string]testCase{
-		"a": {
+		"start_maximal_fixed_lag_mode": {
 			steps: []testStep{
 				{
 					config: resourceDataCenterGenericSystem{
-						name:              "name",
-						hostname:          "hostname",
+						name:              acctest.RandString(6),
+						hostname:          acctest.RandString(6),
 						asn:               utils.ToPtr(10),
 						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
 						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr(rand.IntN(100) + 0),
-						portChannelIdMax:  utils.ToPtr(rand.IntN(100) + 100),
+						portChannelIdMin:  utils.ToPtr((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict
+						portChannelIdMax:  utils.ToPtr((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict
+						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagModeActive,
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchTf: 1,
+								groupLabel:     oneOf(acctest.RandString(6), ""),
+							},
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagModeActive,
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchTf: 1,
+								groupLabel:     oneOf(acctest.RandString(6), ""),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						name:              acctest.RandString(6),
+						hostname:          acctest.RandString(6),
+						asn:               utils.ToPtr(10),
+						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						tags:              oneOf(randomStrings(3, 3), nil),
+						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  utils.ToPtr((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict
+						portChannelIdMax:  utils.ToPtr((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict
+						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagModePassive,
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchTf: 1,
+								groupLabel:     oneOf(acctest.RandString(6), ""),
+							},
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagModePassive,
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchTf: 1,
+								groupLabel:     oneOf(acctest.RandString(6), ""),
+							},
+						},
+					},
+				},
+			},
+		},
+		"start_minimal": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						name:              acctest.RandString(6),
+						hostname:          acctest.RandString(6),
+						asn:               utils.ToPtr(10),
+						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						tags:              oneOf(randomStrings(3, 3), nil),
+						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  utils.ToPtr((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict
+						portChannelIdMax:  utils.ToPtr((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict
 						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[0],
-								targetSwitchIf: "xe-0/0/0",
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
 								targetSwitchTf: 1,
-								groupLabel:     oneOf(acctest.RandString(3), ""),
+								groupLabel:     acctest.RandString(6),
+							},
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
+								targetSwitchTf: 1,
 							},
 						},
 					},

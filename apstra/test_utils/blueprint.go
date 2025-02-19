@@ -241,7 +241,7 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	})
 	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, rackId)) })
+	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, templateId)) })
 
 	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
 		RefDesign:  enum.RefDesignDatacenter,
