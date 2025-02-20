@@ -480,8 +480,64 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 
 	// delete, then add links where the transform id (speed) must be changed
 	for _, digest := range speedChangeLinkDigests {
-		o.deleteLinksFromSystem(ctx, []*DatacenterGenericSystemLink{stateLinksMap[digest]}, bp, diags)
-		o.addLinksToSystem(ctx, []*DatacenterGenericSystemLink{planLinksMap[digest]}, bp, diags)
+		stateLink := stateLinksMap[digest]
+		planLink := planLinksMap[digest]
+
+		var err error
+		var ifId apstra.ObjectId
+		var ctSlice []apstra.ObjectId
+
+		// if the config calls for it, clear CTs which block re-creation of links
+		if o.ClearCtsOnDestroy.ValueBool() {
+			// determine the interface ID so we can clear CTs as needed
+			ifId, err = IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(stateLink.TargetSwitchId.ValueString()), stateLink.TargetSwitchIfName.ValueString())
+			if err != nil {
+				diags.AddError("Failed to determine interface ID", err.Error())
+				return
+			}
+
+			// discover CTs in use
+			ctMap, err := bp.GetConnectivityTemplatesByApplicationPoints(ctx, []apstra.ObjectId{ifId})
+			if err != nil {
+				diags.AddError("Failed to determine connectivity templates in use", err.Error())
+				return
+			}
+
+			// prepare the CTs to be re-applied
+			for ctId, used := range ctMap[ifId] {
+				if used {
+					ctSlice = append(ctSlice, ctId)
+				}
+			}
+		}
+
+		o.deleteLinksFromSystem(ctx, []*DatacenterGenericSystemLink{stateLink}, bp, diags)
+		if diags.HasError() {
+			return
+		}
+
+		o.addLinksToSystem(ctx, []*DatacenterGenericSystemLink{planLink}, bp, diags)
+		if diags.HasError() {
+			return
+		}
+
+		// if the config called for deletion, restore CTs which blocked re-creation of links
+		if o.ClearCtsOnDestroy.ValueBool() {
+			// determine the NEW interface ID so we can reattach the CT
+			ifId, err = IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(stateLink.TargetSwitchId.ValueString()), stateLink.TargetSwitchIfName.ValueString())
+			if err != nil {
+				diags.AddError("Failed to determine interface ID", err.Error())
+				return
+			}
+
+			// reassign the CTs
+			if len(ctSlice) > 0 {
+				err = bp.SetApplicationPointConnectivityTemplates(ctx, ifId, ctSlice)
+				if err != nil {
+					diags.AddError("Failed to reassign connectivity templates", err.Error())
+				}
+			}
+		}
 	}
 
 	// delete links no longer in the plan
@@ -567,7 +623,7 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 
 	// see if the user could have avoided this problem...
 	if !o.ClearCtsOnDestroy.ValueBool() {
-		diags.AddWarning(
+		diags.AddError(
 			fmt.Sprintf("Cannot delete links with Connectivity Templates assigned: %v", detail.LinkIds),
 			"You can set 'clear_cts_on_destroy = true' to override this behavior",
 		)
@@ -851,6 +907,45 @@ func (o *DatacenterGenericSystem) linkId(ctx context.Context, link *DatacenterGe
 		return ""
 	}
 	return linkIds[0]
+}
+
+func IfIdFromSwIdAndIfName(ctx context.Context, bp *apstra.TwoStageL3ClosClient, swId apstra.ObjectId, ifName string) (apstra.ObjectId, error) {
+	query := new(apstra.PathQuery).
+		SetClient(bp.Client()).
+		SetBlueprintId(bp.Id()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(swId)},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_name", Value: apstra.QEStringVal(ifName)},
+			{Key: "name", Value: apstra.QEStringVal("n_interface")},
+		})
+
+	var response struct {
+		Items []struct {
+			Interface struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_interface"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &response)
+	if err != nil {
+		return "", fmt.Errorf("failed querying for interface %q ID from node %q: %w", ifName, swId, err)
+	}
+
+	switch len(response.Items) {
+	case 0:
+		return "", fmt.Errorf("interface %q not found on switch with ID %q", ifName, swId)
+	case 1:
+	default:
+		return "", fmt.Errorf("multiple matches (%d) for interface %q on switch with ID %q", len(response.Items), ifName, swId)
+	}
+
+	return response.Items[0].Interface.Id, nil
 }
 
 // this validator is here because (a) it's just for one attribute of this

@@ -45,7 +45,7 @@ func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.S
 
 func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	if req.Plan.Raw.IsNull() {
-		return // we must be about to call Destroy()
+		return // we must be about to call Delete()
 	}
 
 	if req.State.Raw.IsNull() {
@@ -73,13 +73,23 @@ func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req re
 		planDigestsToTransform[link.Digest()] = link.TargetSwitchIfTransformId.ValueInt64()
 	}
 
-	// determine whether all links are being replaced, or speed changed
+	// determine whether link changes force system replacement
 	linksForceReplace := true // assume the worst
-	for _, link := range stateLinks {
-		if transform, ok := planDigestsToTransform[link.Digest()]; ok && link.TargetSwitchIfTransformId.ValueInt64() == transform {
-			// Same target port, same speed -- the server survives!
-			linksForceReplace = false
-			break
+	for _, stateLink := range stateLinks {
+		if planTransform, ok := planDigestsToTransform[stateLink.Digest()]; ok {
+			//	stateLink stateLinkDigest appears in plan and state but transform may have changed
+			if stateLink.TargetSwitchIfTransformId.ValueInt64() == planTransform {
+				// not only does the planned digest match the state, the transform ID hasn't changed either - the server survives!
+				linksForceReplace = false
+				break
+			} else {
+				// the digest (switch:port) is the same, but the transform id has changed
+				if len(stateLinks) > 1 {
+					// we have multiple links and can swap 'em around one-at-a-time - the server survives!
+					linksForceReplace = false
+					break
+				}
+			}
 		}
 	}
 

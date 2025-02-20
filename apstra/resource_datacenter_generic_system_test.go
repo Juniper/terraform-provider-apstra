@@ -3,6 +3,7 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"math/rand/v2"
 	"net"
 	"sort"
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 )
 
@@ -209,18 +211,102 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 		leafSwitchIds[i] = leafNameToId[leafName]
 	}
 
+	// determine routing zone ID so we can create a CT
+	sz, err := bp.GetSecurityZoneByVrfName(ctx, "default")
+	require.NoError(t, err)
+
+	// create the CT
+	ct := apstra.ConnectivityTemplate{
+		Label: acctest.RandString(6),
+		Subpolicies: []*apstra.ConnectivityTemplatePrimitive{
+			{
+				Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
+					SecurityZone:       utils.ToPtr(sz.Id),
+					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,
+					IPv6AddressingType: apstra.CtPrimitiveIPv6AddressingTypeNone,
+				},
+			},
+		},
+	}
+	require.NoError(t, ct.SetIds())
+	require.NoError(t, ct.SetUserData())
+	require.NoError(t, bp.CreateConnectivityTemplate(ctx, &ct))
+
+	attachCtToSingleLink := func(t *testing.T, swId apstra.ObjectId, ifName string) {
+		ifId, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, swId, ifName)
+		require.NoError(t, err)
+		require.NoError(t, bp.SetApplicationPointConnectivityTemplates(context.Background(), ifId, []apstra.ObjectId{*ct.Id}))
+	}
+
 	type testStep struct {
 		config    resourceDataCenterGenericSystem
-		preConfig func(t *testing.T)
+		preconfig func(t *testing.T)
 	}
 
 	type testCase struct {
 		steps              []testStep
 		versionConstraints version.Constraints
-		preconfig          func(t *testing.T)
 	}
 
 	testCases := map[string]testCase{
+		"start_minimal": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						name:              acctest.RandString(6),
+						hostname:          acctest.RandString(6),
+						asn:               utils.ToPtr(10),
+						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						tags:              oneOf(randomStrings(3, 3), nil),
+						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  utils.ToPtr((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict with other test cases
+						portChannelIdMax:  utils.ToPtr((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+							{
+								tags:           oneOf(randomStrings(3, 3), nil),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+			},
+		},
 		"start_maximal_fixed_lag_mode": {
 			steps: []testStep{
 				{
@@ -232,15 +318,15 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
 						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict
-						portChannelIdMax:  utils.ToPtr((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict
+						portChannelIdMin:  utils.ToPtr((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
+						portChannelIdMax:  utils.ToPtr((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
 						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
 								groupLabel:     oneOf(acctest.RandString(6), ""),
 							},
@@ -248,7 +334,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								tags:           oneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
 								groupLabel:     oneOf(acctest.RandString(6), ""),
 							},
@@ -260,7 +346,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
 							},
 						},
@@ -275,15 +361,15 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
 						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict
-						portChannelIdMax:  utils.ToPtr((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict
+						portChannelIdMin:  utils.ToPtr((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
+						portChannelIdMax:  utils.ToPtr((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
 						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[0],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
 								groupLabel:     oneOf(acctest.RandString(6), ""),
 							},
@@ -291,7 +377,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								tags:           oneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict
+								targetSwitchIf: "xe-0/0/1", // 0 avoids conflict with other test cases
 								targetSwitchTf: 1,
 								groupLabel:     oneOf(acctest.RandString(6), ""),
 							},
@@ -300,47 +386,50 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				},
 			},
 		},
-		"start_minimal": {
+		"delete_with_ct_attached": {
 			steps: []testStep{
 				{
 					config: resourceDataCenterGenericSystem{
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
+								targetSwitchIf: "xe-0/0/2", // 2 avoids conflict with other test cases
 								targetSwitchTf: 1,
 							},
 						},
 					},
 				},
 				{
+					preconfig: func(t *testing.T) {
+						attachCtToSingleLink(t, leafSwitchIds[1], "xe-0/0/2") // 2 avoids conflict with other test cases
+					},
 					config: resourceDataCenterGenericSystem{
-						name:              acctest.RandString(6),
-						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict
-						portChannelIdMax:  utils.ToPtr((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						clearCtsOnDestroy: utils.ToPtr(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
-								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/2", // 2 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+		"change_speed_of_all_links": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
 								targetSwitchId: leafSwitchIds[0],
-								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
-								targetSwitchTf: 1,
-								groupLabel:     acctest.RandString(6),
+								targetSwitchIf: "ge-0/0/3", // 3 avoids conflict with other test cases
+								targetSwitchTf: 2,
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
-								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
-								targetSwitchTf: 1,
-								groupLabel:     acctest.RandString(6),
+								targetSwitchIf: "ge-0/0/3", // 3 avoids conflict with other test cases
+								targetSwitchTf: 2,
 							},
 						},
 					},
@@ -349,9 +438,56 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						links: []resourceDataCenterGenericSystemLink{
 							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "ge-0/0/3", // 3 avoids conflict with other test cases
+								targetSwitchTf: 3,
+							},
+							{
 								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict
-								targetSwitchTf: 1,
+								targetSwitchIf: "ge-0/0/3", // 3 avoids conflict with other test cases
+								targetSwitchTf: 3,
+							},
+						},
+					},
+				},
+			},
+		},
+		"change_speed_of_all_links_with_ct_attached": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						clearCtsOnDestroy: utils.ToPtr(true),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "ge-0/0/4", // 4 avoids conflict with other test cases
+								targetSwitchTf: 2,
+							},
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "ge-0/0/4", // 4 avoids conflict with other test cases
+								targetSwitchTf: 2,
+							},
+						},
+					},
+				},
+				{
+					preconfig: func(t *testing.T) {
+						attachCtToSingleLink(t, leafSwitchIds[0], "ge-0/0/4") // 4 avoids conflict with other test cases
+						attachCtToSingleLink(t, leafSwitchIds[1], "ge-0/0/4") // 4 avoids conflict with other test cases
+					},
+					config: resourceDataCenterGenericSystem{
+						clearCtsOnDestroy: utils.ToPtr(true),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "ge-0/0/4", // 4 avoids conflict with other test cases
+								targetSwitchTf: 3,
+							},
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "ge-0/0/4", // 4 avoids conflict with other test cases
+								targetSwitchTf: 3,
 							},
 						},
 					},
@@ -362,9 +498,19 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterGenericSystem)
 
+	//wg := new(sync.WaitGroup) // ensures we run test cases without preconfig first
+	//wg.Add(len(testCases))
+
 	for tName, tCase := range testCases {
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
+
+			//if tCase.preconfig != nil {
+			//	wg.Done()
+			//	wg.Wait()
+			//} else {
+			//	defer wg.Done()
+			//}
 
 			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
 				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
@@ -385,6 +531,9 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					Config: insecureProviderConfigHCL + config,
 					Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
 				}
+				if step.preconfig != nil {
+					steps[i].PreConfig = func() { step.preconfig(t) }
+				}
 			}
 
 			resource.Test(t, resource.TestCase{
@@ -393,6 +542,43 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 			})
 		})
 	}
+
+	//for tName, tCase := range testCasesWithResources {
+	//	require.NotNilf(t, tCase.preconfig, "test case %s has no preconfig func, should be in other map", tName)
+	//
+	//	t.Run(tName, func(t *testing.T) {
+	//		t.Parallel()
+	//
+	//		if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+	//			t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
+	//		}
+	//
+	//		wg.Wait() // wait for earlier resources to complete before running preconfig
+	//		tCase.preconfig(t)
+	//
+	//		steps := make([]resource.TestStep, len(tCase.steps))
+	//		for i, step := range tCase.steps {
+	//			config := step.config.render(resourceType, tName, bp.Id())
+	//			checks := step.config.testChecks(t, bp.Id(), resourceType, tName)
+	//
+	//			chkLog := checks.string()
+	//			stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
+	//
+	//			t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
+	//			t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
+	//
+	//			steps[i] = resource.TestStep{
+	//				Config: insecureProviderConfigHCL + config,
+	//				Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
+	//			}
+	//		}
+	//
+	//		resource.Test(t, resource.TestCase{
+	//			ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+	//			Steps:                    steps,
+	//		})
+	//	})
+	//}
 }
 
 //func TestResourceDatacenterGenericSystem_A(t *testing.T) {
