@@ -3,8 +3,6 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
-	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"math/rand/v2"
 	"net"
 	"sort"
@@ -15,11 +13,13 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 )

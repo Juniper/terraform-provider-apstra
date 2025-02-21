@@ -234,9 +234,7 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 			Count:         1,
 			LogicalDevice: "AOS-16x40-1",
 		},
-		RackInfos: map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{rackId: {Count: 1}},
-		//DhcpServiceIntent:    nil,
-		//AntiAffinityPolicy:   nil,
+		RackInfos:            map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{rackId: {Count: 1}},
 		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	})
