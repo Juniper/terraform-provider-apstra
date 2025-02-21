@@ -964,7 +964,7 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 		}
 		if binding.VlanId.IsNull() {
 			invalidConfigDueToNullVlan = true
-			continue // todo: should this be 'break' instead?
+			break
 		}
 		reservedVlanIds[binding.VlanId.ValueInt64()] = struct{}{}
 	}
