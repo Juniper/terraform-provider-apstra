@@ -185,7 +185,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 	}
 
 	// extract []DatacenterGenericSystemLink from the plan
-	planLinks := o.links(ctx, diags)
+	planLinks := o.GetLinks(ctx, diags)
 	if diags.HasError() {
 		return nil
 	}
@@ -221,7 +221,7 @@ func (o *DatacenterGenericSystem) CreateRequest(ctx context.Context, diags *diag
 	return &request
 }
 
-func (o *DatacenterGenericSystem) links(ctx context.Context, diags *diag.Diagnostics) []DatacenterGenericSystemLink {
+func (o *DatacenterGenericSystem) GetLinks(ctx context.Context, diags *diag.Diagnostics) []DatacenterGenericSystemLink {
 	var result []DatacenterGenericSystemLink
 	diags.Append(o.Links.ElementsAs(ctx, &result, false)...)
 	return result
@@ -245,13 +245,13 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	// optional field) in our result. If `group_label` isn't found in the
 	// prior state, that means the user omitted it, so we should leave it `null`
 	// regardless of the value returned by the API.
-	stateLinks := o.links(ctx, diags)
+	stateLinks := o.GetLinks(ctx, diags)
 	if diags.HasError() {
 		return
 	}
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
-		stateLinksMap[link.digest()] = &stateLinks[i]
+		stateLinksMap[link.Digest()] = &stateLinks[i]
 	}
 
 	// get the list of links from the API and filter out non-Ethernet links
@@ -280,7 +280,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 		// specified `group_label`. The `group_label` attribute is not
 		// "Computed", so we must return `null` to avoid state churn if the
 		// user opted for `null` by not setting it.
-		if link, ok := stateLinksMap[dcgsl.digest()]; ok {
+		if link, ok := stateLinksMap[dcgsl.Digest()]; ok {
 			if link.GroupLabel.IsNull() {
 				dcgsl.GroupLabel = types.StringNull()
 			}
@@ -441,41 +441,120 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	// transform plan and state links into a map keyed by link digest (device:port)
 	planLinksMap := make(map[string]*DatacenterGenericSystemLink, len(planLinks))
 	for i, link := range planLinks {
-		planLinksMap[link.digest()] = &planLinks[i]
+		planLinksMap[link.Digest()] = &planLinks[i]
 	}
 	stateLinksMap := make(map[string]*DatacenterGenericSystemLink, len(stateLinks))
 	for i, link := range stateLinks {
-		stateLinksMap[link.digest()] = &stateLinks[i]
+		stateLinksMap[link.Digest()] = &stateLinks[i]
 	}
 
 	// compare plan and state, make lists of links to add / check+update / delete
 	var addLinks, updateLinksPlan, updateLinksState, delLinks []*DatacenterGenericSystemLink
-	for digest := range planLinksMap {
-		if _, ok := stateLinksMap[digest]; !ok {
-			addLinks = append(addLinks, planLinksMap[digest])
-		} else {
-			// "updateLinks" is two slices: plan and state, so that we can
-			// compare and change only required attributes.
-			updateLinksPlan = append(updateLinksPlan, planLinksMap[digest])
-			updateLinksState = append(updateLinksState, stateLinksMap[digest])
+	var speedChangeLinkDigests []string
+	for digest, planLink := range planLinksMap {
+		stateLink, ok := stateLinksMap[digest]
+		if !ok {
+			// target switch:port not found in state - this is a net new link
+			addLinks = append(addLinks, planLink)
+			continue
 		}
+
+		// link exists in plan and state; check if the speed has changed
+		if !planLink.TargetSwitchIfTransformId.Equal(stateLink.TargetSwitchIfTransformId) {
+			speedChangeLinkDigests = append(speedChangeLinkDigests, digest)
+			continue
+		}
+
+		// speed remains the same - the link survives, but may need other attributes updated
+		//
+		// "updateLinks" is two slices: plan and state, so that we can
+		// compare and change only required attributes, if any.
+		updateLinksPlan = append(updateLinksPlan, planLink)
+		updateLinksState = append(updateLinksState, stateLink)
 	}
+
+	// any links in state but not in plan must be deleted
 	for digest := range stateLinksMap {
 		if _, ok := planLinksMap[digest]; !ok {
 			delLinks = append(delLinks, stateLinksMap[digest])
 		}
 	}
 
-	o.addLinksToSystem(ctx, addLinks, bp, diags)
-	if diags.HasError() {
-		return
+	// delete, then add links where the transform id (speed) must be changed
+	for _, digest := range speedChangeLinkDigests {
+		stateLink := stateLinksMap[digest]
+		planLink := planLinksMap[digest]
+
+		var err error
+		var ifId apstra.ObjectId
+		var ctSlice []apstra.ObjectId
+
+		// if the config calls for it, clear CTs which block re-creation of links
+		if o.ClearCtsOnDestroy.ValueBool() {
+			// determine the interface ID so we can clear CTs as needed
+			ifId, err = IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(stateLink.TargetSwitchId.ValueString()), stateLink.TargetSwitchIfName.ValueString())
+			if err != nil {
+				diags.AddError("Failed to determine interface ID", err.Error())
+				return
+			}
+
+			// discover CTs in use
+			ctMap, err := bp.GetConnectivityTemplatesByApplicationPoints(ctx, []apstra.ObjectId{ifId})
+			if err != nil {
+				diags.AddError("Failed to determine connectivity templates in use", err.Error())
+				return
+			}
+
+			// prepare the CTs to be re-applied
+			for ctId, used := range ctMap[ifId] {
+				if used {
+					ctSlice = append(ctSlice, ctId)
+				}
+			}
+		}
+
+		o.deleteLinksFromSystem(ctx, []*DatacenterGenericSystemLink{stateLink}, bp, diags)
+		if diags.HasError() {
+			return
+		}
+
+		o.addLinksToSystem(ctx, []*DatacenterGenericSystemLink{planLink}, bp, diags)
+		if diags.HasError() {
+			return
+		}
+
+		// if the config called for deletion, restore CTs which blocked re-creation of links
+		if o.ClearCtsOnDestroy.ValueBool() {
+			// determine the NEW interface ID so we can reattach the CT
+			ifId, err = IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(stateLink.TargetSwitchId.ValueString()), stateLink.TargetSwitchIfName.ValueString())
+			if err != nil {
+				diags.AddError("Failed to determine interface ID", err.Error())
+				return
+			}
+
+			// reassign the CTs
+			if len(ctSlice) > 0 {
+				err = bp.SetApplicationPointConnectivityTemplates(ctx, ifId, ctSlice)
+				if err != nil {
+					diags.AddError("Failed to reassign connectivity templates", err.Error())
+				}
+			}
+		}
 	}
 
+	// delete links no longer in the plan
 	o.deleteLinksFromSystem(ctx, delLinks, bp, diags)
 	if diags.HasError() {
 		return
 	}
 
+	// add net new links
+	o.addLinksToSystem(ctx, addLinks, bp, diags)
+	if diags.HasError() {
+		return
+	}
+
+	// update links in both plan and state (where the transform ID has not changed)
 	o.updateLinkParams(ctx, updateLinksPlan, updateLinksState, bp, diags)
 	if diags.HasError() {
 		return
@@ -546,7 +625,7 @@ func (o *DatacenterGenericSystem) deleteLinksFromSystem(ctx context.Context, lin
 
 	// see if the user could have avoided this problem...
 	if !o.ClearCtsOnDestroy.ValueBool() {
-		diags.AddWarning(
+		diags.AddError(
 			fmt.Sprintf("Cannot delete links with Connectivity Templates assigned: %v", detail.LinkIds),
 			"You can set 'clear_cts_on_destroy = true' to override this behavior",
 		)
@@ -832,6 +911,46 @@ func (o *DatacenterGenericSystem) linkId(ctx context.Context, link *DatacenterGe
 	return linkIds[0]
 }
 
+func IfIdFromSwIdAndIfName(ctx context.Context, bp *apstra.TwoStageL3ClosClient, swId apstra.ObjectId, ifName string) (apstra.ObjectId, error) {
+	query := new(apstra.PathQuery).
+		SetClient(bp.Client()).
+		SetBlueprintId(bp.Id()).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(swId)},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_name", Value: apstra.QEStringVal(ifName)},
+			{Key: "if_type", Value: apstra.QEStringVal(apstra.InterfaceTypeEthernet.String())},
+			{Key: "name", Value: apstra.QEStringVal("n_interface")},
+		})
+
+	var response struct {
+		Items []struct {
+			Interface struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_interface"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &response)
+	if err != nil {
+		return "", fmt.Errorf("failed querying for interface %q ID from node %q: %w", ifName, swId, err)
+	}
+
+	switch len(response.Items) {
+	case 0:
+		return "", fmt.Errorf("interface %q not found on switch with ID %q", ifName, swId)
+	case 1:
+	default:
+		return "", fmt.Errorf("multiple matches (%d) for interface %q on switch with ID %q", len(response.Items), ifName, swId)
+	}
+
+	return response.Items[0].Interface.Id, nil
+}
+
 // this validator is here because (a) it's just for one attribute of this
 // resource and (2) it uses structs from the blueprint package and would cause
 // an import cycle if we put it there.
@@ -858,44 +977,50 @@ func (o genericSystemLinkSetValidator) ValidateSet(ctx context.Context, req vali
 		return
 	}
 
+	// validate switch endpoint
 	digests := make(map[string]bool, len(links))      // track switch interfaces in use
 	groupModes := make(map[string]string, len(links)) // track lag modes per group
 	for _, link := range links {
-		digest := link.digest()
-		if digests[digest] {
-			resp.Diagnostics.Append(
-				validatordiag.InvalidAttributeCombinationDiagnostic(
-					req.Path,
-					fmt.Sprintf("multiple links claim interface %s on switch %s",
-						link.TargetSwitchIfName, link.TargetSwitchId),
-				),
-			)
-			return
+		if !link.TargetSwitchId.IsUnknown() || !link.TargetSwitchIfName.IsUnknown() { // skip impossible-to-calculate digests
+			digest := link.Digest()
+			if digests[digest] {
+				resp.Diagnostics.Append(
+					validatordiag.InvalidAttributeCombinationDiagnostic(
+						req.Path,
+						fmt.Sprintf("multiple links claim interface %s on switch %s",
+							link.TargetSwitchIfName, link.TargetSwitchId),
+					),
+				)
+				return
+			}
 		}
 
-		lagMode := link.LagMode.ValueString()
-		if groupMode, ok := groupModes[link.GroupLabel.ValueString()]; ok && !link.GroupLabel.IsNull() {
-			// we have seen this group label before
+		// validate LAG configuration
+		if !link.LagMode.IsUnknown() || !link.GroupLabel.IsUnknown() { // skip impossible-to-evaluate LAGs
+			lagMode := link.LagMode.ValueString()
+			if groupMode, ok := groupModes[link.GroupLabel.ValueString()]; ok && !link.GroupLabel.IsNull() {
+				// we have seen this group label before
 
-			if link.LagMode.IsNull() {
-				resp.Diagnostics.Append(
-					validatordiag.InvalidAttributeCombinationDiagnostic(
-						req.Path,
-						fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
-							link.GroupLabel.ValueString())))
-				return
-			}
+				if link.LagMode.IsNull() {
+					resp.Diagnostics.Append(
+						validatordiag.InvalidAttributeCombinationDiagnostic(
+							req.Path,
+							fmt.Sprintf("because multiple interfaces share group label %q, lag_mode must be set",
+								link.GroupLabel.ValueString())))
+					return
+				}
 
-			if groupMode != lagMode {
-				resp.Diagnostics.Append(
-					validatordiag.InvalidAttributeCombinationDiagnostic(
-						req.Path,
-						fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
-							link.GroupLabel.ValueString(), groupMode, lagMode)))
-				return
+				if groupMode != lagMode {
+					resp.Diagnostics.Append(
+						validatordiag.InvalidAttributeCombinationDiagnostic(
+							req.Path,
+							fmt.Sprintf("interfaces with group label %q have mismatched 'lag_mode': %q and %q",
+								link.GroupLabel.ValueString(), groupMode, lagMode)))
+					return
+				}
+			} else {
+				groupModes[link.GroupLabel.ValueString()] = lagMode
 			}
-		} else {
-			groupModes[link.GroupLabel.ValueString()] = lagMode
 		}
 	}
 }
