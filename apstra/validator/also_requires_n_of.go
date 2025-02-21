@@ -43,6 +43,10 @@ func (o AlsoRequiresNOfValidator) MarkdownDescription(_ context.Context) string 
 }
 
 func (o AlsoRequiresNOfValidator) Validate(ctx context.Context, req AlsoRequiresNOfValidatorRequest, resp *AlsoRequiresNOfValidatorResponse) {
+	if req.ConfigValue.IsNull() {
+		return
+	}
+
 	expressions := req.PathExpression.MergeExpressions(o.PathExpressions...)
 	for i := range expressions {
 		expressions[i] = expressions[i].Resolve()
