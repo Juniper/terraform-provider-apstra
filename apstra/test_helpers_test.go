@@ -647,7 +647,7 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 
 		o.checks = append(o.checks, testcheck.TestCheckResourceInt64AttrBetween(o.path, testCheckFuncArgs[0], int64min, int64max))
 		o.logLines.appendf("TestCheckResourceInt64AttrBetween(%s, %q, %d, %d)", o.path, testCheckFuncArgs[0], int64min, int64max)
-	case "TestCheckResourceInt64AttrJsonEq":
+	case "TestCheckResourceJsonEq":
 		if len(testCheckFuncArgs) != 2 {
 			t.Fatalf("%s requires 2 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
 		}
@@ -666,7 +666,7 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 			}
 			return nil
 		}))
-		o.logLines.appendf("TestCheckResourceInt64AttrJsonEq(%s, %q %q)", o.path, testCheckFuncArgs[0], testCheckFuncArgs[1])
+		o.logLines.appendf("TestCheckResourceJsonEq(%s, %q %q)", o.path, testCheckFuncArgs[0], testCheckFuncArgs[1])
 	}
 }
 
