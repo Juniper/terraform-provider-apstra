@@ -12,6 +12,7 @@ import (
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
@@ -42,6 +43,7 @@ type DatacenterVirtualNetwork struct {
 	Vni                     types.Int64  `tfsdk:"vni"`
 	HadPriorVniConfig       types.Bool   `tfsdk:"had_prior_vni_config"`
 	ReserveVlan             types.Bool   `tfsdk:"reserve_vlan"`
+	ReservedVlanId          types.Int64  `tfsdk:"reserved_vlan_id"`
 	Bindings                types.Map    `tfsdk:"bindings"`
 	DhcpServiceEnabled      types.Bool   `tfsdk:"dhcp_service_enabled"`
 	IPv4ConnectivityEnabled types.Bool   `tfsdk:"ipv4_connectivity_enabled"`
@@ -106,6 +108,10 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to "+
 				"which the Virtual Network has not yet been deployed.", enum.VnTypeVxlan),
 			Computed: true,
+		},
+		"reserved_vlan_id": dataSourceSchema.Int64Attribute{
+			MarkdownDescription: "Reserved VLAN ID, if any.",
+			Computed:            true,
 		},
 		"bindings": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Details availability of the virtual network on leaf and access switches",
@@ -212,10 +218,12 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Computed:            true,
 		},
 		"reserve_vlan": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all `bindings` "+
-				"use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to "+
-				"which the Virtual Network has not yet been deployed.", enum.VnTypeVxlan),
-			Optional: true,
+			MarkdownDescription: "Selects only virtual networks with the *Reserve across blueprint* box checked.",
+			Optional:            true,
+		},
+		"reserved_vlan_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.",
+			Optional:            true,
 		},
 		"bindings": dataSourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Not applicable in filter context. Ignore.",
@@ -384,6 +392,21 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 						false,
 					),
 				),
+				apstravalidator.AlsoRequiresNOf(1,
+					path.MatchRoot("bindings"),
+					path.MatchRoot("reserved_vlan_id"),
+				),
+			},
+		},
+		"reserved_vlan_id": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Used to specify the reserved VLAN ID without specifying any *bindings*.",
+			Optional:            true,
+			Computed:            true,
+			Validators: []validator.Int64{
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("reserve_vlan"), types.BoolNull()),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("reserve_vlan"), types.BoolValue(false)),
+				int64validator.ConflictsWith(path.MatchRoot("bindings")),
+				int64validator.Between(design.VlanMin, design.VlanMax),
 			},
 		},
 		"bindings": resourceSchema.MapNestedAttribute{
@@ -601,7 +624,11 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 
 	var reservedVlanId *apstra.Vlan
 	if o.ReserveVlan.ValueBool() {
-		reservedVlanId = vnBindings[0].VlanId
+		if !o.ReservedVlanId.IsNull() {
+			reservedVlanId = utils.ToPtr(apstra.Vlan(o.ReservedVlanId.ValueInt64()))
+		} else {
+			reservedVlanId = vnBindings[0].VlanId
+		}
 	}
 
 	var ipv4Subnet, ipv6Subnet *net.IPNet
@@ -687,6 +714,11 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	o.IPv4ConnectivityEnabled = types.BoolValue(in.Ipv4Enabled)
 	o.IPv6ConnectivityEnabled = types.BoolValue(in.Ipv6Enabled)
 	o.ReserveVlan = types.BoolValue(in.ReservedVlanId != nil)
+	if in.ReservedVlanId == nil {
+		o.ReservedVlanId = types.Int64Null()
+	} else {
+		o.ReservedVlanId = types.Int64Value(int64(*in.ReservedVlanId))
+	}
 	if in.Ipv4Subnet == nil {
 		o.IPv4Subnet = types.StringNull()
 	} else {
@@ -750,6 +782,13 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "reserved_vlan_id",
 			Value: apstra.QENone(!o.ReserveVlan.ValueBool()),
+		})
+	}
+
+	if !o.ReservedVlanId.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "reserved_vlan_id",
+			Value: apstra.QEIntVal(o.ReservedVlanId.ValueInt64()),
 		})
 	}
 
@@ -925,7 +964,7 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 		}
 		if binding.VlanId.IsNull() {
 			invalidConfigDueToNullVlan = true
-			continue // todo: should this be 'break' instead?
+			break
 		}
 		reservedVlanIds[binding.VlanId.ValueInt64()] = struct{}{}
 	}

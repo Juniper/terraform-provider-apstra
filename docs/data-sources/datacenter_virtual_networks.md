@@ -78,7 +78,8 @@ Optional:
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
 - `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
 - `name` (String) Virtual Network Name
-- `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
+- `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
+- `reserved_vlan_id` (String) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
@@ -114,7 +115,8 @@ Optional:
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
 - `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
 - `name` (String) Virtual Network Name
-- `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
+- `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
+- `reserved_vlan_id` (String) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
