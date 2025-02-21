@@ -921,6 +921,7 @@ func IfIdFromSwIdAndIfName(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeInterface.QEEAttribute(),
 			{Key: "if_name", Value: apstra.QEStringVal(ifName)},
+			{Key: "if_type", Value: apstra.QEStringVal(apstra.InterfaceTypeEthernet.String())},
 			{Key: "name", Value: apstra.QEStringVal("n_interface")},
 		})
 

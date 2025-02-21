@@ -1,3 +1,5 @@
+//go:build integration
+
 package tfapstra
 
 import (
@@ -67,29 +69,39 @@ func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req re
 		return
 	}
 
-	// digests uniquely identify an endpoint. Make a map for quick lookup of transform ID.
-	planDigestsToTransform := make(map[string]int64, len(planLinks))
+	// digests uniquely identify an endpoint. Make a map for quick lookup by digest
+	planLinksByDigest := make(map[string]blueprint.DatacenterGenericSystemLink, len(planLinks))
 	for _, link := range planLinks {
-		planDigestsToTransform[link.Digest()] = link.TargetSwitchIfTransformId.ValueInt64()
+		planLinksByDigest[link.Digest()] = link
 	}
 
 	// determine whether link changes force system replacement
 	linksForceReplace := true // assume the worst
 	for _, stateLink := range stateLinks {
-		if planTransform, ok := planDigestsToTransform[stateLink.Digest()]; ok {
-			//	stateLink stateLinkDigest appears in plan and state but transform may have changed
-			if stateLink.TargetSwitchIfTransformId.ValueInt64() == planTransform {
-				// not only does the planned digest match the state, the transform ID hasn't changed either - the server survives!
-				linksForceReplace = false
-				break
-			} else {
-				// the digest (switch:port) is the same, but the transform id has changed
-				if len(stateLinks) > 1 {
-					// we have multiple links and can swap 'em around one-at-a-time - the server survives!
-					linksForceReplace = false
-					break
-				}
-			}
+		planLink, ok := planLinksByDigest[stateLink.Digest()]
+		if !ok {
+			continue // the link is new - continue to assume the worst
+		}
+
+		//	the link is not new, but other details may have changed...
+		if stateLink.TargetSwitchIfTransformId.ValueInt64() == planLink.TargetSwitchIfTransformId.ValueInt64() {
+			// plan and state link details (switch, port, transform) match for at least one link. The server survives.
+			linksForceReplace = false
+			break
+		}
+
+		// the target switch and port are the same, but the transform id has changed
+		if !planLink.LagMode.Equal(stateLink.LagMode) {
+			// the lag mode AND transform have changed. Server must be replaced. because we cannot update lag transform link-by-link
+			break
+		}
+
+		// the target switch and port are the same, the transform id has changed and we are not part of a LAG
+		if len(stateLinks) > 1 {
+			// because we have other links, transform/speed changes like this will be handled by replacing
+			// links one-at-a-time (the other links will prevent the server from being orphaned)
+			linksForceReplace = false
+			break
 		}
 	}
 
