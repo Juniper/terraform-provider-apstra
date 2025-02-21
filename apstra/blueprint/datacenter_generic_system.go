@@ -452,23 +452,25 @@ func (o *DatacenterGenericSystem) UpdateLinkSet(ctx context.Context, state *Data
 	var addLinks, updateLinksPlan, updateLinksState, delLinks []*DatacenterGenericSystemLink
 	var speedChangeLinkDigests []string
 	for digest, planLink := range planLinksMap {
-		if stateLink, ok := stateLinksMap[digest]; !ok {
+		stateLink, ok := stateLinksMap[digest]
+		if !ok {
 			// target switch:port not found in state - this is a net new link
 			addLinks = append(addLinks, planLink)
-		} else {
-			// link exists in plan and state; check if the speed has changed
-			if !planLink.TargetSwitchIfTransformId.Equal(stateLink.TargetSwitchIfTransformId) {
-				// speed has changed
-				speedChangeLinkDigests = append(speedChangeLinkDigests, digest)
-			} else {
-				// speed remains the same - the link survives, but may need other attributes updated
-				//
-				// "updateLinks" is two slices: plan and state, so that we can
-				// compare and change only required attributes, if any.
-				updateLinksPlan = append(updateLinksPlan, planLink)
-				updateLinksState = append(updateLinksState, stateLink)
-			}
+			continue
 		}
+
+		// link exists in plan and state; check if the speed has changed
+		if !planLink.TargetSwitchIfTransformId.Equal(stateLink.TargetSwitchIfTransformId) {
+			speedChangeLinkDigests = append(speedChangeLinkDigests, digest)
+			continue
+		}
+
+		// speed remains the same - the link survives, but may need other attributes updated
+		//
+		// "updateLinks" is two slices: plan and state, so that we can
+		// compare and change only required attributes, if any.
+		updateLinksPlan = append(updateLinksPlan, planLink)
+		updateLinksState = append(updateLinksState, stateLink)
 	}
 
 	// any links in state but not in plan must be deleted
