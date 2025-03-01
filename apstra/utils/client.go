@@ -61,7 +61,9 @@ func NewClientConfig(apstraUrl, envVarPrefix string) (*apstra.ClientCfg, error) 
 		if val, ok := os.LookupEnv(envVarPrefix + constants.EnvUsername); ok {
 			user = val
 		} else {
-			return nil, errors.New("unable to determine apstra username - " + fmt.Sprintf(urlEncodeMsg, UrlEscapeTable()))
+			if _, ok := os.LookupEnv(apstra.EnvAosOpsEdgeId); !ok {
+				return nil, errors.New("unable to determine apstra username - " + fmt.Sprintf(urlEncodeMsg, UrlEscapeTable()))
+			}
 		}
 	}
 
@@ -71,7 +73,9 @@ func NewClientConfig(apstraUrl, envVarPrefix string) (*apstra.ClientCfg, error) 
 		if val, ok := os.LookupEnv(envVarPrefix + constants.EnvPassword); ok {
 			pass = val
 		} else {
-			return nil, errors.New("unable to determine apstra password")
+			if _, ok := os.LookupEnv(apstra.EnvAosOpsEdgeId); !ok {
+				return nil, errors.New("unable to determine apstra password")
+			}
 		}
 	}
 
