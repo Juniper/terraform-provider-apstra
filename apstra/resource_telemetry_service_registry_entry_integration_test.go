@@ -148,7 +148,7 @@ func (o resourceTelemetryServiceRegistryEntry) testChecks(t testing.TB, rType, r
 
 	// required and computed attributes can always be checked
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
-	result.append(t, "TestCheckResourceInt64AttrJsonEq", "application_schema", o.applicationSchema)
+	result.append(t, "TestCheckResourceJsonEq", "application_schema", o.applicationSchema)
 	result.append(t, "TestCheckResourceAttr", "storage_schema_path", o.storageSchemaPath)
 	result.append(t, "TestCheckResourceAttrSet", "version")
 	result.append(t, "TestCheckResourceAttr", "built_in", "false")
