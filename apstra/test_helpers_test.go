@@ -12,6 +12,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -667,6 +668,13 @@ func (o *testChecks) append(t testing.TB, testCheckFuncName string, testCheckFun
 			return nil
 		}))
 		o.logLines.appendf("TestCheckResourceJsonEq(%s, %q %q)", o.path, testCheckFuncArgs[0], testCheckFuncArgs[1])
+	case "TestMatchResourceAttr":
+		if len(testCheckFuncArgs) != 2 {
+			t.Fatalf("%s requires 2 args, got %d", testCheckFuncName, len(testCheckFuncArgs))
+		}
+		re := regexp.MustCompile(testCheckFuncArgs[1])
+		o.checks = append(o.checks, resource.TestMatchResourceAttr(o.path, testCheckFuncArgs[0], re))
+		o.logLines.appendf("TestCheckResourceAttr(%s, %q, %q)", o.path, testCheckFuncArgs[0], testCheckFuncArgs[1])
 	}
 }
 
