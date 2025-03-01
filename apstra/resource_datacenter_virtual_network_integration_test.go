@@ -26,14 +26,16 @@ import (
 const (
 	resourceDatacenterVirtualNetworkTemplateHCL = `
 resource %q %q {
-  blueprint_id    = %q
-  name            = %q
-  description     = %s
-  type            = %s
-  vni             = %s
-  routing_zone_id = %s
-  l3_mtu          = %s
-  bindings        = %s
+  blueprint_id     = %q
+  name             = %q
+  description      = %s
+  type             = %s
+  vni              = %s
+  routing_zone_id  = %s
+  l3_mtu           = %s
+  bindings         = %s
+  reserve_vlan     = %s
+  reserved_vlan_id = %s
 }
 `
 	resourceDatacenterVirtualNetworkTemplateBindingHCL = `
@@ -45,14 +47,16 @@ resource %q %q {
 )
 
 type resourceDatacenterVirtualNetworkTemplate struct {
-	blueprintId   apstra.ObjectId
-	name          string
-	description   string
-	vnType        string
-	vni           *int
-	routingZoneId apstra.ObjectId
-	l3Mtu         *int
-	bindings      []resourceDatacenterVirtualNetworkTemplateBinding
+	blueprintId    apstra.ObjectId
+	name           string
+	description    string
+	vnType         string
+	vni            *int
+	routingZoneId  apstra.ObjectId
+	l3Mtu          *int
+	bindings       []resourceDatacenterVirtualNetworkTemplateBinding
+	reserveVlan    *bool
+	reservedVlanId *int
 }
 
 func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) string {
@@ -78,6 +82,8 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		stringOrNull(o.routingZoneId.String()),
 		intPtrOrNull(o.l3Mtu),
 		bindings.String(),
+		boolPtrOrNull(o.reserveVlan),
+		intPtrOrNull(o.reservedVlanId),
 	)
 }
 
@@ -593,6 +599,31 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						routingZoneId: szId,
+					},
+				},
+			},
+		},
+		"no_bindings_reserved_vlan_id": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:    bp.Id(),
+						name:           acctest.RandString(6),
+						vnType:         enum.VnTypeVxlan.String(),
+						routingZoneId:  szId,
+						reserveVlan:    utils.ToPtr(true),
+						reservedVlanId: utils.ToPtr(1100),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:    bp.Id(),
+						name:           acctest.RandString(6),
+						vnType:         enum.VnTypeVxlan.String(),
+						routingZoneId:  szId,
+						reserveVlan:    utils.ToPtr(true),
+						reservedVlanId: utils.ToPtr(1101),
 					},
 				},
 			},
