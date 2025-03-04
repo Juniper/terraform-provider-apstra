@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -100,6 +102,16 @@ func TestCfgFileToEnv(t testing.TB) {
 
 	if testCfg.Password != "" {
 		t.Setenv(constants.EnvPassword, testCfg.Password)
+	}
+
+	if testCfg.Username == "" && testCfg.Password == "" && testCfg.Url != "" {
+		u, err := url.Parse(testCfg.Url)
+		require.NoError(t, err)
+
+		if u.Path != "" {
+			t.Setenv(apstra.EnvAosOpsEdgeId, path.Base(u.Path))
+			t.Setenv(constants.EnvUrl, u.Scheme+"://"+u.Host)
+		}
 	}
 
 	t.Setenv(constants.EnvTlsNoVerify, strconv.FormatBool(testCfg.TlsValidationDisabled))
