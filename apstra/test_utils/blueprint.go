@@ -5,11 +5,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
-	"github.com/hashicorp/go-version"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
