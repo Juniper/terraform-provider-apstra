@@ -18,6 +18,7 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra422,
 		apiversions.Apstra500,
 		apiversions.Apstra501,
+		apiversions.Apstra510,
 	}
 
 	sdkVersions := compatibility.SupportedApiVersions()
