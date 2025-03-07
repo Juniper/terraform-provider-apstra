@@ -3,6 +3,7 @@ package private
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )

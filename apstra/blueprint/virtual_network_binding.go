@@ -2,6 +2,7 @@ package blueprint
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -19,7 +20,7 @@ import (
 type VirtualNetworkBinding struct {
 	LeafId customtypes.StringWithAltValues `tfsdk:"leaf_id"`
 	VlanId types.Int64                     `tfsdk:"vlan_id"`
-	//AccessIds types.Set                       `tfsdk:"access_ids"`
+	// AccessIds types.Set                       `tfsdk:"access_ids"`
 	AccessIds customtypes.SetWithSemanticEquals `tfsdk:"access_ids"`
 }
 
@@ -51,7 +52,7 @@ func (o VirtualNetworkBinding) ResourceAttributes() map[string]resourceSchema.At
 			CustomType:          customtypes.NewSetWithSemanticEqualsType(customtypes.StringWithAltValuesType{}),
 			Optional:            true,
 			ElementType:         customtypes.StringWithAltValuesType{},
-			//ElementType: types.StringType,
+			// ElementType: types.StringType,
 			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
@@ -75,7 +76,7 @@ func (o VirtualNetworkBinding) Request(ctx context.Context, rgInfo map[string]*a
 	//utils.Uniq(accessSwitchNodeIds) // if the user specified both switches, we created dups. Clean em up.
 
 	return &apstra.VnBinding{
-		//AccessSwitchNodeIds: accessSwitchNodeIds,
+		// AccessSwitchNodeIds: accessSwitchNodeIds,
 		SystemId: apstra.ObjectId(o.LeafId.ValueString()),
 		VlanId:   vlanId,
 	}
