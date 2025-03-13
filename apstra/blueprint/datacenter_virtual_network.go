@@ -221,7 +221,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			MarkdownDescription: "Selects only virtual networks with the *Reserve across blueprint* box checked.",
 			Optional:            true,
 		},
-		"reserved_vlan_id": dataSourceSchema.StringAttribute{
+		"reserved_vlan_id": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.",
 			Optional:            true,
 		},
