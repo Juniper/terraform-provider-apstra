@@ -79,7 +79,7 @@ Optional:
 - `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
 - `name` (String) Virtual Network Name
 - `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
-- `reserved_vlan_id` (String) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
+- `reserved_vlan_id` (Number) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
@@ -116,7 +116,7 @@ Optional:
 - `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
 - `name` (String) Virtual Network Name
 - `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
-- `reserved_vlan_id` (String) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
+- `reserved_vlan_id` (Number) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
