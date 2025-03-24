@@ -628,6 +628,25 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
+		"issue_1055": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						reserveVlan:   utils.ToPtr(true),
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_one_access_001_leaf1"],
+								vlanId: utils.ToPtr(1101),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterVirtualNetwork)
