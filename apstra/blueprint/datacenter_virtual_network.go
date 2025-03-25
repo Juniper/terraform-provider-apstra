@@ -623,7 +623,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 
 	var reservedVlanId *apstra.Vlan
 	if o.ReserveVlan.ValueBool() {
-		if !o.ReservedVlanId.IsNull() {
+		if utils.HasValue(o.ReservedVlanId) {
 			reservedVlanId = utils.ToPtr(apstra.Vlan(o.ReservedVlanId.ValueInt64()))
 		} else {
 			reservedVlanId = vnBindings[0].VlanId
