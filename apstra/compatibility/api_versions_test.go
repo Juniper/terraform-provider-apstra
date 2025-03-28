@@ -29,8 +29,8 @@ func TestSupportedApiVersionsPretty(t *testing.T) {
 	expected := apiversions.Apstra420 + ", " +
 		apiversions.Apstra421 + ", " +
 		apiversions.Apstra4211 + ", " +
-		apiversions.Apstra422 + ", and " +
-		apiversions.Apstra500 + ", and " +
+		apiversions.Apstra422 + "," +
+		apiversions.Apstra500 + "," +
 		apiversions.Apstra501 + ", and " +
 		apiversions.Apstra510
 
