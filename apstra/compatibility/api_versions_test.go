@@ -13,6 +13,7 @@ func TestSupportedApiVersions(t *testing.T) {
 		apiversions.Apstra4211,
 		apiversions.Apstra422,
 		apiversions.Apstra500,
+		apiversions.Apstra510,
 	}
 
 	result := SupportedApiVersions()
@@ -28,7 +29,8 @@ func TestSupportedApiVersionsPretty(t *testing.T) {
 			apiversions.Apstra421 + ", " +
 			apiversions.Apstra4211 + ", " +
 			apiversions.Apstra422 + ", and " +
-			apiversions.Apstra500
+			apiversions.Apstra500 + ", and " +
+			apiversions.Apstra510
 
 	result := SupportedApiVersionsPretty()
 	if expected != result {
