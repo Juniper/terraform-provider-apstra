@@ -110,7 +110,7 @@ func (o DeviceAllocation) ResourceAttributes() map[string]resourceSchema.Attribu
 		},
 		"system_attributes": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Attributes which should be set on the pre-existing system node may be configured " +
-				"here.\n\nNote that omitting a previously configured value (e.g. setting and then subsequently " +
+				"here.\n  \n  Note that omitting a previously configured value (e.g. setting and then subsequently " +
 				"clearing `asn` from the configuration) will not cause the system to revert to an Apstra-assigned " +
 				"value. Omitting a configuration element says \"I have no opinion about this value\" to Terraform. " +
 				"There is no mechanism to revert to Apstra-assigned values for the attributes in this block.",
