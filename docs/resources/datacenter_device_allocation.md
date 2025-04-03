@@ -87,8 +87,8 @@ resource "apstra_datacenter_device_allocation" "r" {
 - `device_key` (String) Unique ID for a Managed Device, generally the serial number, used to assign a Managed Device to a fabric role.
 - `initial_interface_map_id` (String) Interface Maps link a Logical Device (fabric design element) to a Device Profile (description of a specific hardware model). The value of this field must be the graph node ID (bootstrapped from Global Catalog ID) of an Interface Map. A value is required when `device_key` is omitted, or when `device_key` is supplied, but does not provide enough information to automatically select an Interface Map. The ID is used only at resource creation (in the initial `apply` operation) and for replacement when the configuration is modified. Apstra flexible fabric expansion operations should not trigger state churn due to the current Interface Map ID being inconsistent with the configured value.
 - `system_attributes` (Attributes) Attributes which should be set on the pre-existing system node may be configured here.
-
-Note that omitting a previously configured value (e.g. setting and then subsequently clearing `asn` from the configuration) will not cause the system to revert to an Apstra-assigned value. Omitting a configuration element says "I have no opinion about this value" to Terraform. There is no mechanism to revert to Apstra-assigned values for the attributes in this block. (see [below for nested schema](#nestedatt--system_attributes))
+  
+  Note that omitting a previously configured value (e.g. setting and then subsequently clearing `asn` from the configuration) will not cause the system to revert to an Apstra-assigned value. Omitting a configuration element says "I have no opinion about this value" to Terraform. There is no mechanism to revert to Apstra-assigned values for the attributes in this block. (see [below for nested schema](#nestedatt--system_attributes))
 
 ### Read-Only
 
