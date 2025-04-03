@@ -39,6 +39,7 @@ func (o *RawJson) ResourceAttributes() map[string]schema.Attribute {
 			MarkdownDescription: fmt.Sprintf("The method used to update the JSON object. Must be one of "+
 				"`%s` or `%s`. Default: `%s`", http.MethodPut, http.MethodPatch, http.MethodPut),
 			Computed:   true,
+			Optional:   true,
 			Default:    stringdefault.StaticString(http.MethodPut),
 			Validators: []validator.String{stringvalidator.OneOf(http.MethodPut, http.MethodPatch)},
 		},
