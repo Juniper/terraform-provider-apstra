@@ -1,0 +1,63 @@
+diff --git a/apstra/blueprint/datacenter_virtual_network.go b/apstra/blueprint/datacenter_virtual_network.go
+index abcdef1..1234567 100644
+--- a/apstra/blueprint/datacenter_virtual_network.go
++++ b/apstra/blueprint/datacenter_virtual_network.go
+@@ -57,6 +57,7 @@ type DatacenterVirtualNetwork struct {
+ 	L3Mtu                   types.Int64  `tfsdk:"l3_mtu"`
+ 	ImportRouteTargets      types.Set    `tfsdk:"import_route_targets"`
+ 	ExportRouteTargets      types.Set    `tfsdk:"export_route_targets"`
++	SviIps                  types.Set    `tfsdk:"svi_ips"`
+ }
+ 
+ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema.Attribute {
+@@ -177,6 +178,14 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema.
+ 			ElementType:         types.StringType,
+ 			Validators:          []validator.Set{setvalidator.ValueStringsAre(apstravalidator.ParseRT())},
+ 		},
++		"svi_ips": resourceSchema.SetNestedAttribute{
++			MarkdownDescription: "SVI IP assignments for switches in the virtual network. This allows explicit " +
++				"control over the secondary virtual interface IPs assigned to switches, preventing overlaps " +
++				"when identical virtual networks are created in multiple blueprints.",
++			Optional: true,
++			NestedObject: resourceSchema.NestedAttributeObject{
++				Attributes: SviIp{}.ResourceAttributes(),
++			},
++		},
+ 	}
+ 	return attrs
+ }
+@@ -672,6 +681,26 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
+ 			}
+ 		}
+ 
++		// Add SviIps to the request if provided
++		if !o.SviIps.IsNull() {
++			var sviIpsSlice []SviIp
++			diags.Append(o.SviIps.ElementsAs(ctx, &sviIpsSlice, false)...)
++			if diags.HasError() {
++				return nil
++			}
++
++			apiSviIps := make([]apstra.SviIp, len(sviIpsSlice))
++			for i, sviIp := range sviIpsSlice {
++				apiSviIps[i] = *sviIp.Request(ctx, diags)
++				if diags.HasError() {
++					return nil
++				}
++			}
++			
++			// Add SVI IPs to the request
++			result.SviIps = apiSviIps
++		}
++
+ 		return result
+ 	}
+ }
+@@ -680,6 +709,9 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
+ 	// Existing implementation...
+ 
+ 	// Add SviIps loading
++	o.SviIps = LoadApiSviIps(ctx, in.SviIps, diags)
++	
++	// Rest of the existing implementation...
+ }
