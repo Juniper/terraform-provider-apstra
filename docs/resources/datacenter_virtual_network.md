@@ -72,6 +72,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
 - `reserved_vlan_id` (Number) Used to specify the reserved VLAN ID without specifying any *bindings*.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
+- `svi_ips` (Block Set) SVI IP assignments for switches in the virtual network. This allows explicit control over the secondary virtual interface IPs assigned to switches, preventing overlaps when identical virtual networks are created in multiple blueprints. (see [below for nested schema](#nestedatt--svi_ips))
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../resources/datacenter_resource_pool_allocation) to role `vni_virtual_network_ids`.
 
@@ -88,5 +89,38 @@ Optional:
 - `access_ids` (Set of String) The graph db node ID of the access switch `system` node (nonredundant access switch) or `redundancy_group` node (ESI LAG access switches) beneath `leaf_id` to which this VN should be bound.
 - `vlan_id` (Number) When not specified, Apstra will choose the VLAN to be used on each switch.
 
+<a id="nestedatt--svi_ips"></a>
+### Nested Schema for `svi_ips`
+
+Required:
+
+- `system_id` (String) System ID of the switch for this SVI IP assignment.
+
+Optional:
+
+- `ipv4_address` (String) IPv4 address with CIDR notation (e.g., '192.0.2.2/24').
+- `ipv4_mode` (String) SVI IPv4 mode: 'disabled', 'enabled', or 'forced'. Default: "enabled".
+- `ipv6_address` (String) IPv6 address with CIDR notation (e.g., '2001:db8::2/64').
+- `ipv6_mode` (String) SVI IPv6 mode: 'disabled', 'enabled', 'forced', or 'link_local'. Default: "disabled".
+
+## SVI IP Management
+
+The `svi_ips` attribute allows explicit control over Secondary Virtual Interface IPs (SVI IPs) assigned to switches in a virtual network. This is particularly useful for multi-datacenter deployments where preventing IP overlaps between identical virtual networks in different datacenters is important.
+
+### Example with SVI IPs
+
+```terraform
+svi_ips {
+  system_id    = apstra_datacenter_device_allocation.leaf1.system_id
+  ipv4_address = "192.0.2.2/24"
+  ipv4_mode    = "enabled"
+}
+
+svi_ips {
+  system_id    = apstra_datacenter_device_allocation.leaf2.system_id
+  ipv4_address = "192.0.2.3/24"
+  ipv4_mode    = "enabled"
+}
+```
 
 

@@ -57,6 +57,7 @@ type DatacenterVirtualNetwork struct {
 	L3Mtu                   types.Int64  `tfsdk:"l3_mtu"`
 	ImportRouteTargets      types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets      types.Set    `tfsdk:"export_route_targets"`
+	SviIps                  types.Set    `tfsdk:"svi_ips"`
 }
 
 func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -302,7 +303,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 }
 
 func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema.Attribute {
-	return map[string]resourceSchema.Attribute{
+	attrs := map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
 			Computed:            true,
