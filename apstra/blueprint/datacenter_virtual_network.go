@@ -221,7 +221,7 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			MarkdownDescription: "Selects only virtual networks with the *Reserve across blueprint* box checked.",
 			Optional:            true,
 		},
-		"reserved_vlan_id": dataSourceSchema.StringAttribute{
+		"reserved_vlan_id": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.",
 			Optional:            true,
 		},
@@ -378,18 +378,17 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Computed:            true,
 		},
 		"reserve_vlan": resourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks "+
-				"when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, "+
-				"even on switches to which the Virtual Network has not yet been deployed. The only "+
-				"accepted values is `true`.", enum.VnTypeVxlan.String()),
+			MarkdownDescription: fmt.Sprintf("For use only with `%s` type Virtual networks when all "+
+				"`bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on "+
+				"switches to which the Virtual Network has not yet been deployed.", enum.VnTypeVxlan.String()),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Bool{
-				apstravalidator.WhenValueIsBool(types.BoolValue(true),
-					apstravalidator.ValueAtMustBeBool(
+				apstravalidator.WhenValueIsBool(
+					types.BoolValue(true),
+					apstravalidator.ForbiddenWhenValueIs(
 						path.MatchRelative().AtParent().AtName("type"),
-						types.StringValue(enum.VnTypeVxlan.String()),
-						false,
+						types.StringValue(enum.VnTypeVlan.String()),
 					),
 				),
 				apstravalidator.AlsoRequiresNOf(1,
@@ -624,7 +623,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 
 	var reservedVlanId *apstra.Vlan
 	if o.ReserveVlan.ValueBool() {
-		if !o.ReservedVlanId.IsNull() {
+		if utils.HasValue(o.ReservedVlanId) {
 			reservedVlanId = utils.ToPtr(apstra.Vlan(o.ReservedVlanId.ValueInt64()))
 		} else {
 			reservedVlanId = vnBindings[0].VlanId

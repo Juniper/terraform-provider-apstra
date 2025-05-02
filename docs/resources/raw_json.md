@@ -50,9 +50,6 @@ resource "apstra_raw_json" "example" {
 ### Optional
 
 - `id` (String) The ID of the raw JSON object. We attempt to determine the ID from the API response. If the ID can be anticipated, it is possible to specify it here.
-
-### Read-Only
-
 - `update_method` (String) The method used to update the JSON object. Must be one of `PUT` or `PATCH`. Default: `PUT`
 
 
