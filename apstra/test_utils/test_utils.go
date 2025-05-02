@@ -4,9 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"sync"
@@ -36,6 +34,7 @@ type testConfig struct {
 	Url                   string `hcl:"url,optional"`
 	Username              string `hcl:"username,optional"`
 	Password              string `hcl:"password,optional"`
+	ApiOpsDcId            string `hcl:"api_ops_dc_id,optional"`
 	TlsValidationDisabled bool   `hcl:"tls_validation_disabled,optional"`
 }
 
@@ -104,14 +103,8 @@ func TestCfgFileToEnv(t testing.TB) {
 		t.Setenv(constants.EnvPassword, testCfg.Password)
 	}
 
-	if testCfg.Username == "" && testCfg.Password == "" && testCfg.Url != "" {
-		u, err := url.Parse(testCfg.Url)
-		require.NoError(t, err)
-
-		if u.Path != "" {
-			t.Setenv(apstra.EnvAosOpsEdgeId, path.Base(u.Path))
-			t.Setenv(constants.EnvUrl, u.Scheme+"://"+u.Host)
-		}
+	if testCfg.ApiOpsDcId != "" {
+		t.Setenv("API_OPS_DATACENTER_EDGE_ID", testCfg.ApiOpsDcId)
 	}
 
 	t.Setenv(constants.EnvTlsNoVerify, strconv.FormatBool(testCfg.TlsValidationDisabled))
