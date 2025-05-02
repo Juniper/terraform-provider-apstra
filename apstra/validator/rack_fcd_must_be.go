@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -20,7 +20,7 @@ var (
 )
 
 type RackFabricConnectivityDesignMustBeValidator struct {
-	fcd apstra.FabricConnectivityDesign
+	fcd enum.FabricConnectivityDesign
 }
 
 type RackFabricConnectivityDesignMustBeValidatorRequest struct {
@@ -35,7 +35,7 @@ type RackFabricConnectivityDesignMustBeValidatorResponse struct {
 }
 
 func (o RackFabricConnectivityDesignMustBeValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that the parent 'rack_type' has 'fabric_connectivity_design' %q", o.fcd.String())
+	return fmt.Sprintf("Ensures that the parent 'rack_type' has 'fabric_connectivity_design' %q", o.fcd)
 }
 
 func (o RackFabricConnectivityDesignMustBeValidator) MarkdownDescription(ctx context.Context) string {
@@ -90,13 +90,13 @@ func (o RackFabricConnectivityDesignMustBeValidator) ValidateString(ctx context.
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func Int64FabricConnectivityDesignMustBe(fcd apstra.FabricConnectivityDesign) validator.Int64 {
+func Int64FabricConnectivityDesignMustBe(fcd enum.FabricConnectivityDesign) validator.Int64 {
 	return RackFabricConnectivityDesignMustBeValidator{
 		fcd: fcd,
 	}
 }
 
-func StringFabricConnectivityDesignMustBe(fcd apstra.FabricConnectivityDesign) validator.String {
+func StringFabricConnectivityDesignMustBe(fcd enum.FabricConnectivityDesign) validator.String {
 	return RackFabricConnectivityDesignMustBeValidator{
 		fcd: fcd,
 	}

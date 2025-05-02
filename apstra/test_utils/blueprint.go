@@ -209,7 +209,7 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 
 	rackId, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              acctest.RandString(6),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:              acctest.RandString(6),

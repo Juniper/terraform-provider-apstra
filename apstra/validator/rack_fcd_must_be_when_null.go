@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -20,7 +20,7 @@ var (
 )
 
 type RackFabricConnectivityDesignMustBeWhenNullValidator struct {
-	fcd apstra.FabricConnectivityDesign
+	fcd enum.FabricConnectivityDesign
 }
 
 type RackFabricConnectivityDesignMustBeWhenNullValidatorRequest struct {
@@ -35,7 +35,7 @@ type RackFabricConnectivityDesignMustBeWhenNullValidatorResponse struct {
 }
 
 func (o RackFabricConnectivityDesignMustBeWhenNullValidator) Description(_ context.Context) string {
-	return fmt.Sprintf("Ensures that when this value is null, the parent 'rack_type' has 'fabric_connectivity_design' %q", o.fcd.String())
+	return fmt.Sprintf("Ensures that when this value is null, the parent 'rack_type' has 'fabric_connectivity_design' %q", o.fcd)
 }
 
 func (o RackFabricConnectivityDesignMustBeWhenNullValidator) MarkdownDescription(ctx context.Context) string {
@@ -90,13 +90,13 @@ func (o RackFabricConnectivityDesignMustBeWhenNullValidator) ValidateString(ctx 
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func Int64FabricConnectivityDesignMustBeWhenNull(fcd apstra.FabricConnectivityDesign) validator.Int64 {
+func Int64FabricConnectivityDesignMustBeWhenNull(fcd enum.FabricConnectivityDesign) validator.Int64 {
 	return RackFabricConnectivityDesignMustBeWhenNullValidator{
 		fcd: fcd,
 	}
 }
 
-func StringFabricConnectivityDesignMustBeWhenNull(fcd apstra.FabricConnectivityDesign) validator.String {
+func StringFabricConnectivityDesignMustBeWhenNull(fcd enum.FabricConnectivityDesign) validator.String {
 	return RackFabricConnectivityDesignMustBeWhenNullValidator{
 		fcd: fcd,
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -237,8 +238,8 @@ func (o *RackType) LoadApiData(ctx context.Context, in *apstra.RackTypeData, dia
 		return
 	}
 	switch in.FabricConnectivityDesign {
-	case apstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
-	case apstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	case enum.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case enum.FabricConnectivityDesignL3Clos: // this FCD is supported
 	default: // this FCD is unsupported
 		diags.AddError(
 			errProviderBug,
@@ -254,8 +255,8 @@ func (o *RackType) LoadApiData(ctx context.Context, in *apstra.RackTypeData, dia
 	o.GenericSystems = NewGenericSystemMap(ctx, in.GenericSystems, diags)
 }
 
-func (o *RackType) GetFabricConnectivityDesign(_ context.Context, diags *diag.Diagnostics) apstra.FabricConnectivityDesign {
-	var fcd apstra.FabricConnectivityDesign
+func (o *RackType) GetFabricConnectivityDesign(_ context.Context, diags *diag.Diagnostics) enum.FabricConnectivityDesign {
+	var fcd enum.FabricConnectivityDesign
 	err := fcd.FromString(o.FabricConnectivityDesign.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
@@ -362,10 +363,10 @@ func NewRackTypeObject(ctx context.Context, in *apstra.RackTypeData, diags *diag
 	return rtdObj
 }
 
-func ValidateFcdSupport(_ context.Context, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func ValidateFcdSupport(_ context.Context, fcd enum.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	switch fcd {
-	case apstra.FabricConnectivityDesignL3Collapsed: // this FCD is supported
-	case apstra.FabricConnectivityDesignL3Clos: // this FCD is supported
+	case enum.FabricConnectivityDesignL3Collapsed: // this FCD is supported
+	case enum.FabricConnectivityDesignL3Clos: // this FCD is supported
 	default: // this FCD is unsupported
 		diags.AddError(
 			errProviderBug,
