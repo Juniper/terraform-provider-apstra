@@ -104,6 +104,8 @@ func TestCfgFileToEnv(t testing.TB) {
 	}
 
 	if testCfg.ApiOpsDcId != "" {
+		t.Setenv(constants.EnvUsername, "bogus_user")     // set a bogus username when relying on api-ops proxy
+		t.Setenv(constants.EnvPassword, "bogus_password") // set a bogus password when relying on api-ops proxy
 		t.Setenv("API_OPS_DATACENTER_EDGE_ID", testCfg.ApiOpsDcId)
 	}
 
