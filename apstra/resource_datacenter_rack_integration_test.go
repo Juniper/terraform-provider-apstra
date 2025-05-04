@@ -3,9 +3,11 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-version"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -13,106 +15,119 @@ import (
 
 const (
 	resourceDataCenterRackHCL = `
-resource "apstra_datacenter_rack" "test" {
+resource %q %q {
   blueprint_id = %q
   rack_type_id = %q
   name         = %q
 }`
 )
 
+type resourceDataCenterRack struct {
+	BlueprintId apstra.ObjectId
+	RackTypeId  apstra.ObjectId
+	Name        string
+}
+
+func (o resourceDataCenterRack) render(rType, rName string) string {
+	return fmt.Sprintf(resourceDataCenterRackHCL,
+		rType, rName,
+		o.BlueprintId,
+		o.RackTypeId,
+		o.Name,
+	)
+}
+
+func (o resourceDataCenterRack) testChecks(t testing.TB, bpId apstra.ObjectId, rType, rName string) testChecks {
+	result := newTestChecks(rType + "." + rName)
+
+	// ensure ID has been set
+	result.append(t, "TestCheckResourceAttrSet", "id")
+
+	// required and computed attributes can always be checked
+	result.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
+	result.append(t, "TestCheckResourceAttr", "rack_type_id", o.RackTypeId.String())
+	result.append(t, "TestCheckResourceAttr", "name", o.Name)
+
+	return result
+}
+
 func TestResourceDatacenterRack(t *testing.T) {
 	ctx := context.Background()
 
-	testutils.TestCfgFileToEnv(t)
+	//testutils.TestCfgFileToEnv(t)
 
 	bp := testutils.BlueprintC(t, ctx)
 
-	type config struct {
-		rackTypeId apstra.ObjectId
-		name       string
-	}
-
-	renderConfig := func(in config) string {
-		return fmt.Sprintf(resourceDataCenterRackHCL,
-			bp.Id(),
-			in.rackTypeId,
-			in.name,
-		)
-	}
-
 	type step struct {
-		config config
-		checks []resource.TestCheckFunc
+		config resourceDataCenterRack
 	}
 
 	type testCase struct {
-		steps []step
+		steps              []step
+		versionConstraints version.Constraints
 	}
 
 	testCases := map[string]testCase{
 		"start_with_name": {
 			steps: []step{
 				{
-					config: config{
-						rackTypeId: "access_switch",
-						name:       acctest.RandString(5),
-					},
-					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
+					config: resourceDataCenterRack{
+						BlueprintId: bp.Id(),
+						RackTypeId:  "access_switch",
+						Name:        acctest.RandString(5),
 					},
 				},
 				{
-					config: config{
-						rackTypeId: "access_switch",
-						name:       acctest.RandString(5),
-					},
-					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "access_switch"),
+					config: resourceDataCenterRack{
+						BlueprintId: bp.Id(),
+						RackTypeId:  "access_switch",
+						Name:        acctest.RandString(5),
 					},
 				},
 				{
-					config: config{
-						rackTypeId: "L2_Virtual",
-						name:       acctest.RandString(5),
-					},
-					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "L2_Virtual"),
+					config: resourceDataCenterRack{
+						BlueprintId: bp.Id(),
+						RackTypeId:  "L2_Virtual",
+						Name:        acctest.RandString(5),
 					},
 				},
 				{
-					config: config{
-						rackTypeId: "L2_Virtual",
-						name:       acctest.RandString(5),
-					},
-					checks: []resource.TestCheckFunc{
-						resource.TestCheckResourceAttrSet("apstra_datacenter_rack.test", "id"),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "blueprint_id", bp.Id().String()),
-						resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "rack_type_id", "L2_Virtual"),
+					config: resourceDataCenterRack{
+						BlueprintId: bp.Id(),
+						RackTypeId:  "L2_Virtual",
+						Name:        acctest.RandString(5),
 					},
 				},
 			},
 		},
 	}
 
+	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterRack)
+
 	for tName, tCase := range testCases {
-		tName, tCase := tName, tCase
-
-		steps := make([]resource.TestStep, len(tCase.steps))
-		for i, step := range tCase.steps {
-			check := resource.ComposeAggregateTestCheckFunc(append(step.checks, resource.TestCheckResourceAttr("apstra_datacenter_rack.test", "name", step.config.name))...)
-			steps[i] = resource.TestStep{
-				Config: renderConfig(tCase.steps[i].config),
-				Check:  check,
-			}
-		}
-
 		t.Run(tName, func(t *testing.T) {
+
+			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
+			}
+
+			steps := make([]resource.TestStep, len(tCase.steps))
+			for i, step := range tCase.steps {
+				config := step.config.render(resourceType, tName)
+				checks := step.config.testChecks(t, bp.Id(), resourceType, tName)
+
+				chkLog := checks.string()
+				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
+
+				t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
+				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
+
+				steps[i] = resource.TestStep{
+					Config: insecureProviderConfigHCL + config,
+					Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
+				}
+			}
+
 			resource.Test(t, resource.TestCase{
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps:                    steps,
