@@ -54,8 +54,6 @@ func (o resourceDataCenterRack) testChecks(t testing.TB, bpId apstra.ObjectId, r
 func TestResourceDatacenterRack(t *testing.T) {
 	ctx := context.Background()
 
-	//testutils.TestCfgFileToEnv(t)
-
 	bp := testutils.BlueprintC(t, ctx)
 
 	type step struct {
