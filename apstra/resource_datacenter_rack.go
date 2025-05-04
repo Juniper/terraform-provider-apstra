@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterRack{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRack{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterRack{}
+var (
+	_ resource.ResourceWithConfigure = &resourceDatacenterRack{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterRack{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterRack{}
+)
 
 type resourceDatacenterRack struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -100,7 +103,7 @@ func (o *resourceDatacenterRack) Create(ctx context.Context, req resource.Create
 		return
 	}
 
-	//set the state.
+	// set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

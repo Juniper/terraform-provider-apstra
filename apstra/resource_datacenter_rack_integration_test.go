@@ -3,9 +3,9 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-version"
 	"testing"
 
+	"github.com/hashicorp/go-version"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -104,7 +104,6 @@ func TestResourceDatacenterRack(t *testing.T) {
 
 	for tName, tCase := range testCases {
 		t.Run(tName, func(t *testing.T) {
-
 			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
 				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
 			}
