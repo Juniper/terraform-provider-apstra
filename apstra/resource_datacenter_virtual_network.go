@@ -196,7 +196,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	}
 
 	// set tags, if any
-	if utils.HasValue(plan.Tags) {
+	if !plan.Tags.IsNull() {
 		var tags []string
 		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
 		if resp.Diagnostics.HasError() {
