@@ -57,6 +57,7 @@ type DatacenterVirtualNetwork struct {
 	L3Mtu                   types.Int64  `tfsdk:"l3_mtu"`
 	ImportRouteTargets      types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets      types.Set    `tfsdk:"export_route_targets"`
+	Tags                    types.Set    `tfsdk:"tags"`
 }
 
 func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -180,6 +181,11 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
+		"tags": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Tags for this Virtual Network.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 	}
 }
 
@@ -297,6 +303,13 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Optional:            true,
 			ElementType:         types.StringType,
 			Validators:          []validator.Set{setvalidator.ValueStringsAre(apstravalidator.ParseRT())},
+		},
+		"tags": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Tags. All tags supplied here are used to match the Virtual Network, " +
+				"but a matching Virtual Network may have additional tags not enumerated in this set.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 	}
 }
@@ -577,6 +590,12 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
 		},
+		"tags": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of tags for this Virtual Network",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
 	}
 }
 
@@ -741,6 +760,8 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 		o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ImportRTs, diags)
 		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ExportRTs, diags)
 	}
+
+	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
 }
 
 func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
@@ -881,7 +902,8 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(resultName)},
-			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeRouteTargetPolicy.QEEAttribute()}).
+			}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeRouteTargetPolicy.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeRouteTargetPolicy.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(nodeName)},
@@ -900,6 +922,21 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		}
 
 		vnQuery.Match(rtQuery)
+	}
+
+	for _, tag := range o.Tags.Elements() {
+		tagQuery := new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
+			}).
+			In([]apstra.QEEAttribute{apstra.RelationshipTypeTag.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeTag.QEEAttribute(),
+				{Key: "label", Value: apstra.QEStringVal(tag.(types.String).ValueString())},
+			})
+
+		vnQuery.Match(tagQuery)
 	}
 
 	return vnQuery
@@ -1005,5 +1042,12 @@ func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConst
 		)
 	}
 
+	if utils.HasValue(o.Tags) {
+		response.AddAttributeConstraints(
+			compatibility.AttributeConstraint{
+				Path:        path.Root("tags"),
+				Constraints: compatibility.VnTagsOk,
+			})
+	}
 	return response
 }

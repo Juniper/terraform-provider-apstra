@@ -81,6 +81,7 @@ Optional:
 - `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
 - `reserved_vlan_id` (Number) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
+- `tags` (Set of String) Set of Tags. All tags supplied here are used to match the Virtual Network, but a matching Virtual Network may have additional tags not enumerated in this set.
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
 
@@ -118,6 +119,7 @@ Optional:
 - `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
 - `reserved_vlan_id` (Number) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`)
+- `tags` (Set of String) Set of Tags. All tags supplied here are used to match the Virtual Network, but a matching Virtual Network may have additional tags not enumerated in this set.
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
 
