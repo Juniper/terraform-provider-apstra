@@ -46,7 +46,7 @@ Read-Only:
 
 - `access_switches` (Attributes Map) Access Switches are optional, link to Leaf Switches in the same rack (see [below for nested schema](#nestedatt--rack_type--access_switches))
 - `description` (String) Rack Type description, displayed in the Apstra web UI.
-- `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed'.
+- `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed', 'rail_collapsed'.
 - `generic_systems` (Attributes Map) Generic Systems are optional rack elements notmanaged by Apstra: Servers, routers, firewalls, etc... (see [below for nested schema](#nestedatt--rack_type--generic_systems))
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `leaf_switches` (Attributes Map) Each Rack Type is required to have at least one Leaf Switch. (see [below for nested schema](#nestedatt--rack_type--leaf_switches))

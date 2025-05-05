@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -121,15 +122,15 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.OneOf(LeafRedundancyModes()...),
-				apstravalidator.StringFabricConnectivityDesignMustBeWhenValue(apstra.FabricConnectivityDesignL3Clos, "mlag"),
+				apstravalidator.StringFabricConnectivityDesignMustBeWhenValue(enum.FabricConnectivityDesignL3Clos, "mlag"),
 			},
 		},
 		"spine_link_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Links per Spine.",
 			Validators: []validator.Int64{
 				int64validator.AtLeast(1),
-				apstravalidator.Int64FabricConnectivityDesignMustBe(apstra.FabricConnectivityDesignL3Clos),
-				apstravalidator.Int64FabricConnectivityDesignMustBeWhenNull(apstra.FabricConnectivityDesignL3Collapsed),
+				apstravalidator.Int64FabricConnectivityDesignMustBe(enum.FabricConnectivityDesignL3Clos),
+				apstravalidator.Int64FabricConnectivityDesignMustBeWhenNull(enum.FabricConnectivityDesignL3Collapsed),
 			},
 			Optional: true,
 			Computed: true,
@@ -140,8 +141,8 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Optional:            true,
 			Validators: []validator.String{
 				apstravalidator.ParseSpeed(),
-				apstravalidator.StringFabricConnectivityDesignMustBe(apstra.FabricConnectivityDesignL3Clos),
-				apstravalidator.StringFabricConnectivityDesignMustBeWhenNull(apstra.FabricConnectivityDesignL3Collapsed),
+				apstravalidator.StringFabricConnectivityDesignMustBe(enum.FabricConnectivityDesignL3Clos),
+				apstravalidator.StringFabricConnectivityDesignMustBeWhenNull(enum.FabricConnectivityDesignL3Collapsed),
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{
@@ -219,9 +220,9 @@ func (o LeafSwitch) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) *apstra.RackElementLeafSwitchRequest {
+func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd enum.FabricConnectivityDesign, diags *diag.Diagnostics) *apstra.RackElementLeafSwitchRequest {
 	var linkPerSpineCount int
-	if o.SpineLinkCount.IsUnknown() && fcd == apstra.FabricConnectivityDesignL3Clos {
+	if o.SpineLinkCount.IsUnknown() && fcd == enum.FabricConnectivityDesignL3Clos {
 		// config omits 'spine_link_count' set default value (1) for fabric designs which require it
 		linkPerSpineCount = 1
 	} else {
@@ -270,7 +271,7 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd apstra.Fab
 	}
 }
 
-func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) {
+func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeafSwitch, fcd enum.FabricConnectivityDesign, diags *diag.Diagnostics) {
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 
@@ -286,7 +287,7 @@ func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeaf
 		o.RedundancyProtocol = types.StringNull()
 	}
 
-	if fcd == apstra.FabricConnectivityDesignL3Collapsed {
+	if fcd == enum.FabricConnectivityDesignL3Collapsed {
 		o.SpineLinkCount = types.Int64Null()
 		o.SpineLinkSpeed = types.StringNull()
 	} else {
@@ -308,7 +309,7 @@ func (o *LeafSwitch) CopyWriteOnlyElements(ctx context.Context, src *LeafSwitch,
 	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
-func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd apstra.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
+func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd enum.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
 	leafSwitches := make(map[string]LeafSwitch, len(in))
 	for _, leafIn := range in {
 		var ls LeafSwitch

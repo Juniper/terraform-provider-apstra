@@ -23,6 +23,7 @@ var (
 	ResourceDatacenterConnectivityTemplateSystem           = resourceDatacenterConnectivityTemplateSystem{}
 	ResourceDatacenterGenericSystem                        = resourceDatacenterGenericSystem{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
+	ResourceDatacenterRack                                 = resourceDatacenterRack{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
 	ResourceDatacenterRoutingZoneConstraint                = resourceDatacenterRoutingZoneConstraint{}
 	ResourceDatacenterRoutingZoneLoopbackAddresses         = resourceDatacenterRoutingZoneLoopbackAddresses{}
