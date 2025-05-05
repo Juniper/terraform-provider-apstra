@@ -36,6 +36,7 @@ resource %q %q {
   bindings         = %s
   reserve_vlan     = %s
   reserved_vlan_id = %s
+  tags             = %s
 }
 `
 	resourceDatacenterVirtualNetworkTemplateBindingHCL = `
@@ -57,6 +58,7 @@ type resourceDatacenterVirtualNetworkTemplate struct {
 	bindings       []resourceDatacenterVirtualNetworkTemplateBinding
 	reserveVlan    *bool
 	reservedVlanId *int
+	tags           []string
 }
 
 func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) string {
@@ -84,6 +86,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		bindings.String(),
 		boolPtrOrNull(o.reserveVlan),
 		intPtrOrNull(o.reservedVlanId),
+		stringSliceOrNull(o.tags),
 	)
 }
 
@@ -120,6 +123,11 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 		}
 	} else {
 		result.append(t, "TestCheckNoResourceAttr", "bindings")
+	}
+
+	result.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	for _, tag := range o.tags {
+		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
 	return result
@@ -643,6 +651,113 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 								vlanId: utils.ToPtr(1101),
 							},
 						},
+					},
+				},
+			},
+		},
+		"set_clear_set_tags": {
+			apiVersionConstraints: compatibility.VnTagsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          randomStrings(rand.IntN(10)+1, 6),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          randomStrings(rand.IntN(10)+1, 6),
+					},
+				},
+			},
+		},
+		"clear_set_clear_tags": {
+			apiVersionConstraints: compatibility.VnTagsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          randomStrings(rand.IntN(10)+1, 6),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+					},
+				},
+			},
+		},
+		"change_tags_only": {
+			apiVersionConstraints: compatibility.VnTagsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          "change_tags_only",
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          randomStrings(rand.IntN(10)+1, 6),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          "change_tags_only",
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          randomStrings(rand.IntN(10)+1, 6),
+					},
+				},
+			},
+		},
+		"fixed_tags": {
+			apiVersionConstraints: compatibility.VnTagsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          []string{"fixed tag one", "fixed tag two"},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: szId,
+						tags:          []string{"fixed tag one", "fixed tag two"},
 					},
 				},
 			},
