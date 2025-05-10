@@ -23,6 +23,7 @@ type RoutingZoneLoopbacks struct {
 	BlueprintId   types.String `tfsdk:"blueprint_id"`
 	RoutingZoneId types.String `tfsdk:"routing_zone_id"`
 	Loopbacks     types.Map    `tfsdk:"loopbacks"`
+	LoopbackIds   types.Map    `tfsdk:"loopback_ids"`
 }
 
 func (o RoutingZoneLoopbacks) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -47,10 +48,15 @@ func (o RoutingZoneLoopbacks) ResourceAttributes() map[string]resourceSchema.Att
 			},
 			Validators: []validator.Map{mapvalidator.SizeAtLeast(1)},
 		},
+		"loopback_ids": resourceSchema.MapAttribute{
+			MarkdownDescription: "Map of Loopback interface Node IDs configured by this resource, keyed by System (switch) Node ID.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 	}
 }
 
-func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses, diags *diag.Diagnostics) (map[apstra.ObjectId]apstra.SecurityZoneLoopback, *private.ResourceDatacenterRoutingZoneLoopbackAddresses) {
+func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses, diags *diag.Diagnostics) (map[apstra.ObjectId]apstra.SecurityZoneLoopback, *private.ResourceDatacenterRoutingZoneLoopbackAddresses) {
 	// API response will allow us to determine interface IDs from system IDs
 	szInfo, err := bp.GetSecurityZoneInfo(ctx, apstra.ObjectId(o.RoutingZoneId.ValueString()))
 	if err != nil {
@@ -59,12 +65,14 @@ func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3
 	}
 
 	// convert API response to map (switchId -> loopbackId) for easy lookups
-	nodeIdToIfId := make(map[string]apstra.ObjectId)
+	loopbackIds := make(map[string]apstra.ObjectId)
 	for _, memberInterface := range szInfo.MemberInterfaces {
 		for _, loopback := range memberInterface.Loopbacks {
-			nodeIdToIfId[memberInterface.HostingSystem.Id.String()] = loopback.Id
+			// this is a loop, but only one element should exist. See: https://apstra-eng.slack.com/archives/CQBUYMZ39/p1738920079268339
+			loopbackIds[memberInterface.HostingSystem.Id.String()] = loopback.Id
 		}
 	}
+	o.LoopbackIds = utils.MapValueOrNull(ctx, types.StringType, loopbackIds, diags)
 
 	// extract the planned loopbacks
 	var planLoopbackMap map[string]RoutingZoneLoopback
@@ -79,7 +87,7 @@ func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3
 
 	for sysId, loopback := range planLoopbackMap {
 		// ensure the specified system ID exists in the RZ-specific map we got from the API
-		loopbackId, ok := nodeIdToIfId[sysId]
+		loopbackId, ok := loopbackIds[sysId]
 		if !ok {
 			diags.AddError(
 				"System not participating in Routing Zone",
@@ -121,7 +129,7 @@ func (o RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3
 
 	// loop over remaining previous IP assignments; clear them as necessary
 	for sysId, previous := range previousLoopbackMap {
-		ifId, ok := nodeIdToIfId[sysId]
+		ifId, ok := loopbackIds[sysId]
 		if !ok {
 			continue // system no longer exists
 		}
