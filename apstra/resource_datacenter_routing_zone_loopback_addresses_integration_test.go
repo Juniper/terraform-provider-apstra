@@ -88,6 +88,8 @@ func (o resourceDatacenterRoutingZoneLoopbackAddresses) testChecks(t testing.TB,
 		} else {
 			result.append(t, "TestCheckNoResourceAttr", fmt.Sprintf("loopbacks.%s.ipv6_addr", k))
 		}
+
+		result.append(t, "TestCheckResourceAttrSet", fmt.Sprintf("loopback_ids.%s", k))
 	}
 
 	return result
