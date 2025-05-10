@@ -17,10 +17,11 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure  = &resourceDatacenterGenericSystem{}
-	_ resource.ResourceWithModifyPlan = &resourceDatacenterGenericSystem{}
-	_ resourceWithSetDcBpClientFunc   = &resourceDatacenterGenericSystem{}
-	_ resourceWithSetBpLockFunc       = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithModifyPlan     = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterGenericSystem{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterGenericSystem{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterGenericSystem{}
 )
 
 type resourceDatacenterGenericSystem struct {
@@ -40,6 +41,53 @@ func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.S
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Generic System within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterGenericSystem{}.ResourceAttributes(),
+	}
+}
+
+func (o *resourceDatacenterGenericSystem) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.DatacenterGenericSystem
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if config.Links.IsUnknown() {
+		return // cannot validate unknown links
+	}
+
+	// unpack link set as []attr.Value for use in surfacing errors
+	linkVals := config.Links.Elements()
+
+	// unpack link set as []blueprint.DatacenterGenericSystemLink
+	var links []blueprint.DatacenterGenericSystemLink
+	resp.Diagnostics.Append(config.Links.ElementsAs(ctx, &links, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// iterate over links, error on duplicate link digests (switchId:port)
+	linkDigestMap := make(map[string]struct{})
+	for i, link := range links {
+		if linkVals[i].IsUnknown() {
+			continue // cannot evaluate unknown link
+		}
+
+		if link.TargetSwitchId.IsUnknown() || link.TargetSwitchIfName.IsUnknown() {
+			continue // cannot calculate digest of link with unknown fields
+		}
+
+		digest := link.Digest()
+		if _, ok := linkDigestMap[digest]; ok {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("links").AtSetValue(linkVals[i]),
+				"Multiple links use same switch and port",
+				fmt.Sprintf("Switch ID %s interface %s is used by multiple links", link.TargetSwitchId, link.TargetSwitchIfName),
+			)
+			continue
+		}
+
+		linkDigestMap[digest] = struct{}{}
 	}
 }
 
