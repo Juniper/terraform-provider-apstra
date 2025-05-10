@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -193,8 +194,45 @@ func (o resourceDataCenterGenericSystem) testChecks(t testing.TB, bpId apstra.Ob
 		result.append(t, "TestCheckResourceAttr", "clear_cts_on_destroy", strconv.FormatBool(*o.clearCtsOnDestroy))
 	}
 	result.append(t, "TestCheckResourceAttr", "links.#", strconv.Itoa(len(o.links)))
+
+	var unknownGroupLabelCount int
+	knownGroupLabels := make(map[string]struct{})
+
+	tags := make(map[string]struct{})
+	tagsToUnknownGroupLabelCount := make(map[string]int)
+	tagsToKnownGroupLabels := make(map[string]map[string]struct{})
+
 	for _, link := range o.links {
 		link.addTestChecks(t, &result)
+
+		if link.groupLabel == "" {
+			unknownGroupLabelCount++
+		} else {
+			knownGroupLabels[link.groupLabel] = struct{}{}
+		}
+
+		for _, tag := range link.tags {
+			tags[tag] = struct{}{} // keep track of every tag we see for total map size
+
+			if link.groupLabel == "" {
+				tagsToUnknownGroupLabelCount[tag]++ // links with unknown group labels are non-lag - we count them
+			} else {
+				if _, ok := tagsToKnownGroupLabels[tag]; !ok {
+					tagsToKnownGroupLabels[tag] = make(map[string]struct{})
+				}
+				tagsToKnownGroupLabels[tag][link.groupLabel] = struct{}{}
+			}
+		}
+	}
+
+	result.append(t, "TestCheckResourceAttr", "link_application_point_ids_by_group_label.%", strconv.Itoa(unknownGroupLabelCount+len(knownGroupLabels)))
+	for groupLabel := range knownGroupLabels {
+		result.append(t, "TestCheckResourceAttrSet", fmt.Sprintf("link_application_point_ids_by_group_label.%s", groupLabel))
+	}
+
+	result.append(t, "TestCheckResourceAttr", "link_application_point_ids_by_tag.%", strconv.Itoa(len(tags)))
+	for tag := range tags {
+		result.append(t, "TestCheckResourceAttr", fmt.Sprintf("link_application_point_ids_by_tag.%s.#", tag), strconv.Itoa(tagsToUnknownGroupLabelCount[tag]+len(tagsToKnownGroupLabels[tag])))
 	}
 
 	return result
@@ -283,6 +321,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 		config                     resourceDataCenterGenericSystem
 		preconfig                  func(t *testing.T)
 		preApplyResourceActionType plancheck.ResourceActionType
+		expectError                *regexp.Regexp
 	}
 
 	type testCase struct {
@@ -291,6 +330,27 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
+		"switch_port_overlap_error": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: "bogus_switch_id",
+								targetSwitchIf: "0",
+								targetSwitchTf: 1, // *something* must be different between these links, else tf will flatten the set
+							},
+							{
+								targetSwitchId: "bogus_switch_id",
+								targetSwitchIf: "0",
+								targetSwitchTf: 2, // *something* must be different between these links, else tf will flatten the set
+							},
+						},
+					},
+					expectError: regexp.MustCompile("Multiple links use same switch and port"),
+				},
+			},
+		},
 		"start_minimal": {
 			steps: []testStep{
 				{
@@ -1042,6 +1102,101 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				},
 			},
 		},
+		"overlapping_tags": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						name:              acctest.RandString(6),
+						hostname:          acctest.RandString(6),
+						asn:               utils.ToPtr(10),
+						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						tags:              oneOf(randomStrings(3, 3), nil),
+						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  utils.ToPtr((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
+						portChannelIdMax:  utils.ToPtr((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+							{
+								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+							{
+								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								lagMode:        apstra.RackLinkLagModeActive,
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/17", // 17 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     "esi-lag",
+							},
+							{
+								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								lagMode:        apstra.RackLinkLagModeActive,
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/17", // 17 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     "esi-lag",
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						name:              acctest.RandString(6),
+						hostname:          acctest.RandString(6),
+						asn:               utils.ToPtr(10),
+						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						tags:              oneOf(randomStrings(3, 3), nil),
+						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  utils.ToPtr((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
+						portChannelIdMax:  utils.ToPtr((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+							{
+								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
+								targetSwitchTf: 1,
+								groupLabel:     acctest.RandString(6),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterGenericSystem)
@@ -1066,8 +1221,9 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
 
 				steps[i] = resource.TestStep{
-					Config: insecureProviderConfigHCL + config,
-					Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
+					Config:      insecureProviderConfigHCL + config,
+					Check:       resource.ComposeAggregateTestCheckFunc(checks.checks...),
+					ExpectError: step.expectError,
 				}
 				if step.preconfig != nil {
 					steps[i].PreConfig = func() { step.preconfig(t) }

@@ -101,6 +101,8 @@ resource "apstra_datacenter_generic_system" "example" {
 ### Read-Only
 
 - `id` (String) Apstra graph node ID.
+- `link_application_point_ids_by_group_label` (Map of String) Map of application point ids keyed by `group_label`. The value at each key is a string representing the physical or logical (for LAG interfaces) switch port where the server is connected.
+- `link_application_point_ids_by_tag` (Map of Set of String) Map of application point ids keyed by `tag`. The value at each key is a set of strings representing the physical or logical (for LAG interfaces) switch ports where server links tagged with the map key are connected.
 
 <a id="nestedatt--links"></a>
 ### Nested Schema for `links`
