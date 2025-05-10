@@ -181,6 +181,8 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		// don't return here - still want to set the state
 	}
 
+	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics) // don't return here - still want to set the state
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -281,6 +283,11 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	}
 
 	plan.UpdateLinkSet(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
