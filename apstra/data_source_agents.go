@@ -117,7 +117,7 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	var agentIds map[string]struct{}
+	agentIds := make(map[string]struct{})
 	for _, filter := range filters {
 		for _, agent := range agents {
 			if !filter.AgentId.IsNull() && filter.AgentId.ValueString() != agent.Id.String() {
