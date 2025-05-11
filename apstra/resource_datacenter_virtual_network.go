@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -61,6 +62,15 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 	config.ValidateConfigBindingsReservation(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// enabling DHCP requires enabling IPv4 or IPv6
+	if config.DhcpServiceEnabled.ValueBool() &&
+		!config.IPv4ConnectivityEnabled.ValueBool() &&
+		!config.IPv6ConnectivityEnabled.ValueBool() {
+		resp.Diagnostics.AddAttributeError(path.Root("dhcp_service_enabled"), errInvalidConfig,
+			"When `dhcp_service_enabled` is set, at least one of `ipv4_connectivity_enabled` or `ipv6_connectivity_enabled` must also be set.",
+		)
 	}
 
 	// config + api version validation begins here
