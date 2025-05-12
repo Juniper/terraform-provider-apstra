@@ -448,14 +448,6 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional:            true,
 			Computed:            true,
 			Default:             booldefault.StaticBool(false),
-			Validators: []validator.Bool{
-				apstravalidator.WhenValueIsBool(types.BoolValue(true),
-					apstravalidator.AlsoRequiresNOf(1,
-						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
-						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
-					),
-				),
-			},
 		},
 		"ipv4_connectivity_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
