@@ -69,7 +69,7 @@ func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest,
 func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config struct {
 		IDs     types.Set    `tfsdk:"ids"`
-		Filter  types.Object `tfsdk:"filter"`
+		Filter  types.Object `tfsdk:"filter"` // todo: when deleting this attribute, change the validator from using MatchRelative().AtParent() to MatchRoot("filters)
 		Filters types.List   `tfsdk:"filters"`
 	}
 
