@@ -8,9 +8,13 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
@@ -44,26 +48,38 @@ func (o *dataSourceAgents) Schema(_ context.Context, _ datasource.SchemaRequest,
 			},
 			"filter": schema.SingleNestedAttribute{
 				MarkdownDescription: "Agent attributes used as a filter",
+				DeprecationMessage: "The `filter` attribute is deprecated and will be removed in a future " +
+					"release. Please migrate your configuration to use `filters` instead.",
+				Optional:   true,
+				Attributes: systemAgents.ManagedDevice{}.DataSourceFilterAttributes(),
+				Validators: []validator.Object{objectvalidator.ConflictsWith(path.MatchRoot("filters"))},
+			},
+			"filters": schema.ListNestedAttribute{
+				MarkdownDescription: "Agent attributes used as a filters",
 				Optional:            true,
-				Attributes:          systemAgents.ManagedDevice{}.DataSourceFilterAttributes(),
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: systemAgents.ManagedDevice{}.DataSourceFilterAttributes(),
+				},
+				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 			},
 		},
 	}
 }
 
 func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	type systems struct {
-		IDs    types.Set    `tfsdk:"ids"`
-		Filter types.Object `tfsdk:"filter"`
+	var config struct {
+		IDs     types.Set    `tfsdk:"ids"`
+		Filter  types.Object `tfsdk:"filter"` // todo: when deleting this attribute, change the validator from using MatchRelative().AtParent() to MatchRoot("filters)
+		Filters types.List   `tfsdk:"filters"`
 	}
 
-	var config systems
+	// Retrieve values from config.
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if config.Filter.IsNull() {
+	if config.Filter.IsNull() && config.Filters.IsNull() {
 		// no filter specified, use the HTTP OPTIONS method as a shortcut
 		ids, err := o.client.ListSystemAgents(ctx)
 		if err != nil {
@@ -79,10 +95,20 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	filter := &systemAgents.ManagedDevice{}
-	resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
+	var filters []systemAgents.ManagedDevice
+	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	if len(filters) == 0 { // did the user configure `filter` rather than `filters`?
+		var filter systemAgents.ManagedDevice
+		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		filters = append(filters, filter)
 	}
 
 	agents, err := o.client.GetAllSystemAgents(ctx)
@@ -91,57 +117,66 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	var agentIdVals []attr.Value
-	for _, agent := range agents {
-		if !filter.AgentId.IsNull() && filter.AgentId.ValueString() != agent.Id.String() {
-			continue
-		}
-
-		if !filter.SystemId.IsNull() && filter.SystemId.ValueString() != string(agent.Status.SystemId) {
-			continue
-		}
-
-		if !filter.ManagementIp.IsNull() {
-			agentIp := net.ParseIP(agent.Config.ManagementIp)
-			if agentIp == nil {
-				continue // no address or bogus address == no match
-			}
-
-			mgmtNet := filter.IpNetFromManagementIp(ctx, &resp.Diagnostics)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-
-			if !mgmtNet.Contains(agentIp) {
+	agentIds := make(map[string]struct{})
+	for _, filter := range filters {
+		for _, agent := range agents {
+			if !filter.AgentId.IsNull() && filter.AgentId.ValueString() != agent.Id.String() {
 				continue
 			}
-		}
 
-		if !filter.DeviceKey.IsNull() && filter.DeviceKey.ValueString() != string(agent.Status.SystemId) {
-			continue
-		}
-
-		if !filter.AgentProfileId.IsNull() && filter.AgentProfileId.ValueString() != agent.Config.Profile.String() {
-			continue
-		}
-
-		if !filter.OffBox.IsNull() && filter.OffBox.ValueBool() != bool(agent.Config.AgentTypeOffBox) {
-			continue
-		}
-
-		if !filter.Location.IsNull() {
-			systemInfo, err := o.client.GetSystemInfo(ctx, agent.Status.SystemId)
-			if err != nil {
-				resp.Diagnostics.AddError(fmt.Sprintf("While getting info for system %q", agent.Status.SystemId), err.Error())
-				return
-			}
-
-			if filter.Location.ValueString() != systemInfo.UserConfig.Location {
+			if !filter.SystemId.IsNull() && filter.SystemId.ValueString() != string(agent.Status.SystemId) {
 				continue
 			}
-		}
 
-		agentIdVals = append(agentIdVals, types.StringValue(agent.Id.String()))
+			if !filter.ManagementIp.IsNull() {
+				agentIp := net.ParseIP(agent.Config.ManagementIp)
+				if agentIp == nil {
+					continue // no address or bogus address == no match
+				}
+
+				mgmtNet := filter.IpNetFromManagementIp(ctx, &resp.Diagnostics)
+				if resp.Diagnostics.HasError() {
+					return
+				}
+
+				if !mgmtNet.Contains(agentIp) {
+					continue
+				}
+			}
+
+			if !filter.DeviceKey.IsNull() && filter.DeviceKey.ValueString() != string(agent.Status.SystemId) {
+				continue
+			}
+
+			if !filter.AgentProfileId.IsNull() && filter.AgentProfileId.ValueString() != agent.Config.Profile.String() {
+				continue
+			}
+
+			if !filter.OffBox.IsNull() && filter.OffBox.ValueBool() != bool(agent.Config.AgentTypeOffBox) {
+				continue
+			}
+
+			if !filter.Location.IsNull() {
+				systemInfo, err := o.client.GetSystemInfo(ctx, agent.Status.SystemId)
+				if err != nil {
+					resp.Diagnostics.AddError(fmt.Sprintf("While getting info for system %q", agent.Status.SystemId), err.Error())
+					return
+				}
+
+				if filter.Location.ValueString() != systemInfo.UserConfig.Location {
+					continue
+				}
+			}
+
+			agentIds[agent.Id.String()] = struct{}{}
+		}
+	}
+
+	agentIdVals := make([]attr.Value, len(agentIds))
+	var i int
+	for agentId := range agentIds {
+		agentIdVals[i] = types.StringValue(agentId)
+		i++
 	}
 
 	// store the result before committing it to the state
