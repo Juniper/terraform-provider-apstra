@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -320,6 +321,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 		config                     resourceDataCenterGenericSystem
 		preconfig                  func(t *testing.T)
 		preApplyResourceActionType plancheck.ResourceActionType
+		expectError                *regexp.Regexp
 	}
 
 	type testCase struct {
@@ -328,6 +330,27 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
+		"switch_port_overlap_error": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: "bogus_switch_id",
+								targetSwitchIf: "0",
+								targetSwitchTf: 1, // *something* must be different between these links, else tf will flatten the set
+							},
+							{
+								targetSwitchId: "bogus_switch_id",
+								targetSwitchIf: "0",
+								targetSwitchTf: 2, // *something* must be different between these links, else tf will flatten the set
+							},
+						},
+					},
+					expectError: regexp.MustCompile("Multiple links use same switch and port"),
+				},
+			},
+		},
 		"start_minimal": {
 			steps: []testStep{
 				{
@@ -1198,8 +1221,9 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
 
 				steps[i] = resource.TestStep{
-					Config: insecureProviderConfigHCL + config,
-					Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
+					Config:      insecureProviderConfigHCL + config,
+					Check:       resource.ComposeAggregateTestCheckFunc(checks.checks...),
+					ExpectError: step.expectError,
 				}
 				if step.preconfig != nil {
 					steps[i].PreConfig = func() { step.preconfig(t) }
