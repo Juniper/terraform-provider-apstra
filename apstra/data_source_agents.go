@@ -70,7 +70,7 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 	var config struct {
 		IDs     types.Set    `tfsdk:"ids"`
 		Filter  types.Object `tfsdk:"filter"`
-		Filters types.List   `tfsdk:"filter"`
+		Filters types.List   `tfsdk:"filters"`
 	}
 
 	// Retrieve values from config.
