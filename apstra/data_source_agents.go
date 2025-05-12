@@ -101,8 +101,8 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	if len(filters) == 0 {
-		filter := systemAgents.ManagedDevice{}
+	if len(filters) == 0 { // did the user configure `filter` rather than `filters`?
+		var filter systemAgents.ManagedDevice
 		resp.Diagnostics.Append(config.Filter.As(ctx, &filter, basetypes.ObjectAsOptions{})...)
 		if resp.Diagnostics.HasError() {
 			return
