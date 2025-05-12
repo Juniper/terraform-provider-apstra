@@ -91,6 +91,7 @@ func (o DynamicBgpPeering) ResourceAttributes() map[string]resourceSchema.Attrib
 		"password": resourceSchema.StringAttribute{
 			MarkdownDescription: "Password used to secure the BGP session.",
 			Optional:            true,
+			Sensitive:           true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"keepalive_time": resourceSchema.Int64Attribute{
