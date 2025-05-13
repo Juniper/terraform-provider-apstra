@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -9,8 +10,10 @@ import (
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintAnomalies{}
-var _ datasourceWithSetClient = &dataSourceBlueprintAnomalies{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceBlueprintAnomalies{}
+	_ datasourceWithSetClient            = &dataSourceBlueprintAnomalies{}
+)
 
 type dataSourceBlueprintAnomalies struct {
 	client *apstra.Client
