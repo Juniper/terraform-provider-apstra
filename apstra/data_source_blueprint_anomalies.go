@@ -9,8 +9,8 @@ import (
 	_ "github.com/hashicorp/terraform-plugin-framework/provider"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceAnomalies{}
-var _ datasourceWithSetClient = &dataSourceAnomalies{}
+var _ datasource.DataSourceWithConfigure = &dataSourceBlueprintAnomalies{}
+var _ datasourceWithSetClient = &dataSourceBlueprintAnomalies{}
 
 type dataSourceBlueprintAnomalies struct {
 	client *apstra.Client
