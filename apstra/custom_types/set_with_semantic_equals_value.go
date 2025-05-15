@@ -6,72 +6,69 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/attr/xattr"
-
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
 var (
-	_ basetypes.SetValuable                   = (*SetWithSemanticEquals)(nil)
-	_ basetypes.SetValuableWithSemanticEquals = (*SetWithSemanticEquals)(nil)
-	_ xattr.ValidateableAttribute             = (*SetWithSemanticEquals)(nil)
+	_ basetypes.SetValuableWithSemanticEquals = (*SetWithSemanticEqualsValue)(nil)
+	_ xattr.ValidateableAttribute             = (*SetWithSemanticEqualsValue)(nil)
 )
 
-type SetWithSemanticEquals struct {
+type SetWithSemanticEqualsValue struct {
 	basetypes.SetValue
-	ignoreLength bool
 }
 
-func (s SetWithSemanticEquals) Equal(o attr.Value) bool {
-	other, ok := o.(SetWithSemanticEquals)
+func (o SetWithSemanticEqualsValue) Equal(v attr.Value) bool {
+	other, ok := v.(SetWithSemanticEqualsValue)
 	if !ok {
 		return false
 	}
 
-	return s.SetValue.Equal(other.SetValue)
+	return o.SetValue.Equal(other.SetValue)
 }
 
-func (s SetWithSemanticEquals) SetSemanticEquals(ctx context.Context, other basetypes.SetValuable) (bool, diag.Diagnostics) {
+func (o SetWithSemanticEqualsValue) Type(_ context.Context) attr.Type {
+	return SetWithSemanticEqualsType{basetypes.SetType{ElemType: o.ElementType(nil)}}
+}
+
+func (o SetWithSemanticEqualsValue) SetSemanticEquals(ctx context.Context, other basetypes.SetValuable) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	o, ok := other.(SetWithSemanticEquals)
+	o, ok := other.(SetWithSemanticEqualsValue)
 	if !ok {
 		return false, diags
 	}
 
 	// A set with no elementType is an invalid state
-	if s.ElementType(ctx) == nil || o.ElementType(ctx) == nil {
+	if o.ElementType(ctx) == nil || o.ElementType(ctx) == nil {
 		return false, diags
 	}
 
-	if !s.ElementType(ctx).Equal(o.ElementType(ctx)) {
+	if !o.ElementType(ctx).Equal(o.ElementType(ctx)) {
 		return false, diags
 	}
 
-	if s.IsNull() != o.IsNull() {
+	if o.IsNull() != o.IsNull() {
 		return false, diags
 	}
 
-	if s.IsUnknown() != o.IsUnknown() {
+	if o.IsUnknown() != o.IsUnknown() {
 		return false, diags
 	}
 
-	if s.IsNull() || s.IsUnknown() {
+	if o.IsNull() || o.IsUnknown() {
 		return true, diags
 	}
 
-	if !s.ignoreLength && len(s.Elements()) != len(o.Elements()) {
-		return false, diags
-	}
-
-	for _, elem := range s.Elements() {
+	for _, elem := range o.Elements() {
 		if !o.semanticContains(ctx, elem, &diags) {
 			return false, diags
 		}
 	}
 
 	for _, elem := range o.Elements() {
-		if !s.semanticContains(ctx, elem, &diags) {
+		if !o.semanticContains(ctx, elem, &diags) {
 			return false, diags
 		}
 	}
@@ -79,17 +76,8 @@ func (s SetWithSemanticEquals) SetSemanticEquals(ctx context.Context, other base
 	return true, diags
 }
 
-func (s SetWithSemanticEquals) eqContains(v attr.Value) bool {
-	for _, elem := range s.Elements() {
-		if v.Equal(elem) {
-			return true
-		}
-	}
-	return false
-}
-
-func (s SetWithSemanticEquals) semanticContains(ctx context.Context, v attr.Value, diags *diag.Diagnostics) bool {
-	for _, elem := range s.Elements() {
+func (o SetWithSemanticEqualsValue) semanticContains(ctx context.Context, v attr.Value, diags *diag.Diagnostics) bool {
+	for _, elem := range o.Elements() {
 		if elem, ok := elem.(basetypes.BoolValuableWithSemanticEquals); ok {
 			ok, d := elem.BoolSemanticEquals(ctx, v.(basetypes.BoolValuableWithSemanticEquals))
 			diags.Append(d...)
@@ -226,8 +214,8 @@ func (s SetWithSemanticEquals) semanticContains(ctx context.Context, v attr.Valu
 	return false
 }
 
-func (s SetWithSemanticEquals) ValidateAttribute(ctx context.Context, req xattr.ValidateAttributeRequest, resp *xattr.ValidateAttributeResponse) {
-	v := s.ElementType(ctx).ValueType(ctx)
+func (o SetWithSemanticEqualsValue) ValidateAttribute(ctx context.Context, req xattr.ValidateAttributeRequest, resp *xattr.ValidateAttributeResponse) {
+	v := o.ElementType(ctx).ValueType(ctx)
 
 	if _, ok := v.(basetypes.BoolValuableWithSemanticEquals); ok {
 		return
@@ -269,52 +257,47 @@ func (s SetWithSemanticEquals) ValidateAttribute(ctx context.Context, req xattr.
 	resp.Diagnostics.AddAttributeError(
 		req.Path,
 		"Invalid element type in set",
-		fmt.Sprintf("Members of SetWithSemanticEquals must implement semantic equality. Type %T is present "+
+		fmt.Sprintf("Members of SetWithSemanticEqualsValue must implement semantic equality. Type %T is present "+
 			"in the set, but it does not implement semantic equality. This is always an error in the provider. ", v),
 	)
 }
 
-func NewSetWithSemanticEqualsNull(elementType attr.Type) SetWithSemanticEquals {
-	return SetWithSemanticEquals{
-		SetValue:     basetypes.NewSetNull(elementType),
-		ignoreLength: false,
+func NewSetWithSemanticEqualsNull(elementType attr.Type) SetWithSemanticEqualsValue {
+	return SetWithSemanticEqualsValue{
+		SetValue: basetypes.NewSetNull(elementType),
 	}
 }
 
-func NewSetWithSemanticEqualsUnknown(elementType attr.Type) SetWithSemanticEquals {
-	return SetWithSemanticEquals{
-		SetValue:     basetypes.NewSetUnknown(elementType),
-		ignoreLength: false,
+func NewSetWithSemanticEqualsUnknown(elementType attr.Type) SetWithSemanticEqualsValue {
+	return SetWithSemanticEqualsValue{
+		SetValue: basetypes.NewSetUnknown(elementType),
 	}
 }
 
-func NewSetWithSemanticEqualsValue(elementType attr.Type, elements []attr.Value) (SetWithSemanticEquals, diag.Diagnostics) {
+func NewSetWithSemanticEqualsValue(elementType attr.Type, elements []attr.Value) (SetWithSemanticEqualsValue, diag.Diagnostics) {
 	setValue, diags := basetypes.NewSetValue(elementType, elements)
 	if diags.HasError() {
 		return NewSetWithSemanticEqualsUnknown(elementType), diags
 	}
 
-	return SetWithSemanticEquals{
-		SetValue:     setValue,
-		ignoreLength: false,
+	return SetWithSemanticEqualsValue{
+		SetValue: setValue,
 	}, diags
 }
 
-func NewSetWithSemanticEqualsValueFrom(ctx context.Context, elementType attr.Type, elements any) (SetWithSemanticEquals, diag.Diagnostics) {
+func NewSetWithSemanticEqualsValueFrom(ctx context.Context, elementType attr.Type, elements any) (SetWithSemanticEqualsValue, diag.Diagnostics) {
 	setValue, diags := basetypes.NewSetValueFrom(ctx, elementType, elements)
 	if diags.HasError() {
 		return NewSetWithSemanticEqualsUnknown(elementType), diags
 	}
 
-	return SetWithSemanticEquals{
-		SetValue:     setValue,
-		ignoreLength: false,
+	return SetWithSemanticEqualsValue{
+		SetValue: setValue,
 	}, diags
 }
 
-func NewSetWithSemanticEqualsValueMust(elementType attr.Type, elements []attr.Value) SetWithSemanticEquals {
-	return SetWithSemanticEquals{
-		SetValue:     basetypes.NewSetValueMust(elementType, elements),
-		ignoreLength: false,
+func NewSetWithSemanticEqualsValueMust(elementType attr.Type, elements []attr.Value) SetWithSemanticEqualsValue {
+	return SetWithSemanticEqualsValue{
+		SetValue: basetypes.NewSetValueMust(elementType, elements),
 	}
 }

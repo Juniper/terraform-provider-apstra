@@ -3,6 +3,8 @@ package blueprint
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
@@ -38,11 +40,13 @@ func (o VirtualNetworkBindings) ResourceAttributes() map[string]resourceSchema.A
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"virtual_network_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Virtual Network ID.",
 			Required:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"bindings": resourceSchema.SetNestedAttribute{

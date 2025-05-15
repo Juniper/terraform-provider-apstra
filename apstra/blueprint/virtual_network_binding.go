@@ -21,7 +21,7 @@ type VirtualNetworkBinding struct {
 	LeafId customtypes.StringWithAltValues `tfsdk:"leaf_id"`
 	VlanId types.Int64                     `tfsdk:"vlan_id"`
 	// AccessIds types.Set                       `tfsdk:"access_ids"`
-	AccessIds customtypes.SetWithSemanticEquals `tfsdk:"access_ids"`
+	AccessIds customtypes.SetWithSemanticEqualsValue `tfsdk:"access_ids"`
 }
 
 func (o VirtualNetworkBinding) AttrTypes() map[string]attr.Type {

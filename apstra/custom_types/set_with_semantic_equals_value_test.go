@@ -20,7 +20,7 @@ func TestSetWithSemanticEquals_SetSemanticEquals(t *testing.T) {
 	t.Parallel()
 
 	type testCase struct {
-		val      customtypes.SetWithSemanticEquals
+		val      customtypes.SetWithSemanticEqualsValue
 		other    basetypes.SetValuable
 		expected bool
 	}
@@ -207,7 +207,7 @@ func TestSetWithSemanticEquals_ValidateAttribute(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid element type in set",
-					fmt.Sprintf("Members of SetWithSemanticEquals must implement semantic equality. Type %T is present "+
+					fmt.Sprintf("Members of SetWithSemanticEqualsValue must implement semantic equality. Type %T is present "+
 						"in the set, but it does not implement semantic equality. This is always an error in the provider. ", types.String{}),
 				),
 			},
@@ -222,7 +222,7 @@ func TestSetWithSemanticEquals_ValidateAttribute(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid element type in set",
-					fmt.Sprintf("Members of SetWithSemanticEquals must implement semantic equality. Type %T is present "+
+					fmt.Sprintf("Members of SetWithSemanticEqualsValue must implement semantic equality. Type %T is present "+
 						"in the set, but it does not implement semantic equality. This is always an error in the provider. ", types.Int64{}),
 				),
 			},
@@ -233,7 +233,7 @@ func TestSetWithSemanticEquals_ValidateAttribute(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid element type in set",
-					fmt.Sprintf("Members of SetWithSemanticEquals must implement semantic equality. Type %T is present "+
+					fmt.Sprintf("Members of SetWithSemanticEqualsValue must implement semantic equality. Type %T is present "+
 						"in the set, but it does not implement semantic equality. This is always an error in the provider. ", types.Int32{}),
 				),
 			},
@@ -244,7 +244,7 @@ func TestSetWithSemanticEquals_ValidateAttribute(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid element type in set",
-					fmt.Sprintf("Members of SetWithSemanticEquals must implement semantic equality. Type %T is present "+
+					fmt.Sprintf("Members of SetWithSemanticEqualsValue must implement semantic equality. Type %T is present "+
 						"in the set, but it does not implement semantic equality. This is always an error in the provider. ", types.Number{}),
 				),
 			},
@@ -257,7 +257,7 @@ func TestSetWithSemanticEquals_ValidateAttribute(t *testing.T) {
 
 			request := xattr.ValidateAttributeRequest{Path: path.Root("test")}
 			var response xattr.ValidateAttributeResponse
-			customtypes.SetWithSemanticEquals{SetValue: testCase.in}.ValidateAttribute(context.Background(), request, &response)
+			customtypes.SetWithSemanticEqualsValue{SetValue: testCase.in}.ValidateAttribute(context.Background(), request, &response)
 			if diff := cmp.Diff(response.Diagnostics, testCase.expectedDiags); diff != "" {
 				t.Errorf("Unexpected diagnostics (-got, +expected): %s", diff)
 			}
