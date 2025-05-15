@@ -175,7 +175,8 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 		"link_application_point_ids_by_tag": resourceSchema.MapAttribute{
 			MarkdownDescription: "Map of application point ids keyed by `tag`. The value at each key is a set of strings " +
 				"representing the physical or logical (for LAG interfaces) switch ports where server links tagged with " +
-				"the map key are connected.",
+				"the map key are connected. Note that some link tag related config drift may not be reflected in this " +
+				"attribute until after an `apply` has corrected the drift.",
 			ElementType: types.SetType{ElemType: types.StringType},
 			Computed:    true,
 		},
@@ -748,6 +749,44 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLink
 	for i, link := range planLinks {
 		link.updateTransformId(ctx, stateLinks[i], bp, diags)
 	}
+}
+
+// LinkGroupLabels returns a sorted []string representing the group labels
+// assigned to all of the links belonging to the DatacenterGenericSystem
+func (o DatacenterGenericSystem) LinkGroupLabels(ctx context.Context, diags *diag.Diagnostics) []string {
+	var links []DatacenterGenericSystemLink
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	groupLabelMap := make(map[string]struct{}, len(links))
+	for _, link := range links {
+		groupLabelMap[link.GroupLabel.ValueString()] = struct{}{}
+	}
+
+	return utils.MapKeysSorted(groupLabelMap)
+}
+
+// LinkTags returns a sorted []string representing all of the tags
+// assigned to all of the links belonging to the DatacenterGenericSystem
+func (o DatacenterGenericSystem) LinkTags(ctx context.Context, diags *diag.Diagnostics) []string {
+	var links []DatacenterGenericSystemLink
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	tagMap := make(map[string]struct{})
+	for _, link := range links {
+		var tags []string
+		diags.Append(link.Tags.ElementsAs(ctx, &tags, false)...)
+		for _, tag := range tags {
+			tagMap[tag] = struct{}{}
+		}
+	}
+
+	return utils.MapKeysSorted(tagMap)
 }
 
 func lagLinkIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3ClosClient, gsId apstra.ObjectId, groupLabel string) (apstra.ObjectId, error) {
