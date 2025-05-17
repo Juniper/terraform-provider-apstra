@@ -1,8 +1,6 @@
 module github.com/Juniper/terraform-provider-apstra
 
-go 1.22.7
-
-toolchain go1.22.10
+go 1.24.3
 
 //replace github.com/Juniper/apstra-go-sdk => ../apstra-go-sdk
 

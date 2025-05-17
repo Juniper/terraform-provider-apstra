@@ -56,8 +56,8 @@ func (o AllocGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("type of the Allocation Group, must be one of :\n  - `" +
-				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n"),
+			MarkdownDescription: "type of the Allocation Group, must be one of :\n  - `" +
+				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n",
 			Computed: true,
 		},
 		"pool_ids": dataSourceSchema.SetAttribute{
@@ -90,8 +90,8 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("type of the Allocation Group, must be one of :\n  - `" +
-				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n"),
+			MarkdownDescription: "type of the Allocation Group, must be one of :\n  - `" +
+				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
