@@ -7,9 +7,8 @@ package customtypes
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
@@ -20,6 +19,7 @@ type SetWithSemanticEqualsType struct {
 	basetypes.SetType
 }
 
+// Equal returns true if the given type is equivalent.
 func (o SetWithSemanticEqualsType) Equal(in attr.Type) bool {
 	other, ok := in.(SetWithSemanticEqualsType)
 	if !ok {
@@ -37,40 +37,45 @@ func (o SetWithSemanticEqualsType) ValueFromTerraform(ctx context.Context, in tf
 	if !in.Type().Equal(o.TerraformType(ctx)) {
 		return nil, fmt.Errorf("can't use %s as value of Set with ElementType %T, can only use %s values", in.String(), o.ElementType(), o.ElementType().TerraformType(ctx).String())
 	}
+
 	if !in.IsKnown() {
 		return NewSetWithSemanticEqualsUnknown(o.ElementType()), nil
 	}
+
 	if in.IsNull() {
 		return NewSetWithSemanticEqualsNull(o.ElementType()), nil
 	}
-	val := []tftypes.Value{}
+
+	var val []tftypes.Value
 	err := in.As(&val)
 	if err != nil {
 		return nil, err
 	}
-	elems := make([]attr.Value, 0, len(val))
-	for _, elem := range val {
+
+	elems := make([]attr.Value, len(val))
+	for i, elem := range val {
 		av, err := o.ElementType().ValueFromTerraform(ctx, elem)
 		if err != nil {
 			return nil, err
 		}
-		elems = append(elems, av)
+		elems[i] = av
 	}
+
 	// ValueFromTerraform above on each element should make this safe.
 	// Otherwise, this will need to do some Diagnostics to error conversion.
 	return NewSetWithSemanticEqualsValueMust(o.ElementType(), elems), nil
 }
 
 func (o SetWithSemanticEqualsType) ValueType(_ context.Context) attr.Value {
-	return SetWithSemanticEqualsValue{basetypes.NewSetNull(o.ElemType)}
+	return NewSetWithSemanticEqualsNull(o.ElementType())
 }
 
 func (o SetWithSemanticEqualsType) String() string {
 	return "types.SetWithSemanticEqualsType[" + o.ElementType().String() + "]"
 }
 
-func (o SetWithSemanticEqualsType) ValueFromSet(_ context.Context, set basetypes.SetValue) (basetypes.SetValuable, diag.Diagnostics) {
-	return SetWithSemanticEqualsValue{SetValue: set}, nil
+func (o SetWithSemanticEqualsType) ValueFromSet(ctx context.Context, set basetypes.SetValue) (basetypes.SetValuable, diag.Diagnostics) {
+	return NewSetWithSemanticEqualsValue(set.Type(ctx), set.Elements())
 }
 
 func NewSetWithSemanticEqualsType(elemType attr.Type) basetypes.SetTypable {

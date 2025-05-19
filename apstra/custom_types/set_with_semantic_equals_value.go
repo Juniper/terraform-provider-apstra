@@ -32,43 +32,43 @@ func (o SetWithSemanticEqualsValue) Type(_ context.Context) attr.Type {
 	return SetWithSemanticEqualsType{basetypes.SetType{ElemType: o.ElementType(nil)}}
 }
 
-func (o SetWithSemanticEqualsValue) SetSemanticEquals(ctx context.Context, other basetypes.SetValuable) (bool, diag.Diagnostics) {
+func (o SetWithSemanticEqualsValue) SetSemanticEquals(ctx context.Context, v basetypes.SetValuable) (bool, diag.Diagnostics) {
 	var diags diag.Diagnostics
 
-	o, ok := other.(SetWithSemanticEqualsValue)
+	other, ok := v.(SetWithSemanticEqualsValue)
 	if !ok {
 		return false, diags
 	}
 
 	// A set with no elementType is an invalid state
-	if o.ElementType(ctx) == nil || o.ElementType(ctx) == nil {
+	if o.ElementType(ctx) == nil || other.ElementType(ctx) == nil {
 		return false, diags
 	}
 
-	if !o.ElementType(ctx).Equal(o.ElementType(ctx)) {
+	if !o.ElementType(ctx).Equal(other.ElementType(ctx)) {
 		return false, diags
 	}
 
-	if o.IsNull() != o.IsNull() {
+	if o.IsNull() != other.IsNull() {
 		return false, diags
 	}
 
-	if o.IsUnknown() != o.IsUnknown() {
+	if o.IsUnknown() != other.IsUnknown() {
 		return false, diags
 	}
 
-	if o.IsNull() || o.IsUnknown() {
+	if o.IsNull() || other.IsUnknown() {
 		return true, diags
 	}
 
-	for _, elem := range o.Elements() {
+	for _, elem := range other.Elements() {
 		if !o.semanticContains(ctx, elem, &diags) {
 			return false, diags
 		}
 	}
 
 	for _, elem := range o.Elements() {
-		if !o.semanticContains(ctx, elem, &diags) {
+		if !other.semanticContains(ctx, elem, &diags) {
 			return false, diags
 		}
 	}
