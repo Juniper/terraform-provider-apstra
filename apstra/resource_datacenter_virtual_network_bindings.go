@@ -129,7 +129,7 @@ func (o *resourceDatacenterVirtualNetworkBindings) Create(ctx context.Context, r
 		return
 	}
 
-	plan.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	plan.SetPrivateState(ctx, rgiMap, resp.Private, &resp.Diagnostics)
 	// do not return on error - we need to set the state below
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -221,7 +221,7 @@ func (o *resourceDatacenterVirtualNetworkBindings) Update(ctx context.Context, r
 		return
 	}
 
-	plan.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	plan.SetPrivateState(ctx, rgiMap, resp.Private, &resp.Diagnostics)
 	// do not return on error - we need to set the state below
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -295,6 +295,14 @@ func (o *resourceDatacenterVirtualNetworkBindings) setClient(client *apstra.Clie
 	o.client = client
 }
 
+// getRgiMap returns map[string]*apstra.RedundancyGroupInfo keyed by all nodes participating in a redundancy group.
+// For a blueprint containing an ESI leaf switch pair and an ESI access switch pair, this map would have 6 entries:
+// - leaf_a_node_id -> *RedundancyGroupInfo_1
+// - leaf_b_node_id -> *RedundancyGroupInfo_1
+// - redundancy_group_1_node_id -> *RedundancyGroupInfo_2
+// - access_a_node_id -> *RedundancyGroupInfo_2
+// - access_b_node_id -> *RedundancyGroupInfo_2
+// - redundancy_group_2_node_id -> *RedundancyGroupInfo_2
 func getRgiMap(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) map[string]*apstra.RedundancyGroupInfo {
 	allRgiInfo, err := bp.GetAllRedundancyGroupInfo(ctx)
 	if err != nil {

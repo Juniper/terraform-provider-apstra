@@ -3,8 +3,6 @@ package blueprint
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
@@ -15,6 +13,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -134,21 +134,86 @@ func (o *VirtualNetworkBindings) LoadApiData(ctx context.Context, in *apstra.Vir
 	o.DhcpServiceEnabled = types.BoolValue(bool(in.DhcpService))
 }
 
-func (o VirtualNetworkBindings) SetPrivateState(ctx context.Context, ps private.State, diags *diag.Diagnostics) {
-	var bindings []VirtualNetworkBinding
-	diags.Append(o.Bindings.ElementsAs(ctx, &bindings, false)...)
+func (o VirtualNetworkBindings) SetPrivateState(ctx context.Context, rgiMap map[string]*apstra.RedundancyGroupInfo, ps private.State, diags *diag.Diagnostics) {
+	// extract bindings
+	var ourBindings []VirtualNetworkBinding
+	diags.Append(o.Bindings.ElementsAs(ctx, &ourBindings, false)...)
 	if diags.HasError() {
 		return
 	}
 
-	var p private.ResourceDatacenterVirtualNetworkBindings
-	p.SystemIdToVlan = make(map[string]int64, len(bindings))
-	for _, binding := range bindings {
-		p.SystemIdToVlan[binding.LeafId.ValueString()] = binding.VlanId.ValueInt64() // 0 value for null case is okay
+	// convert bindings to SDK type
+	sdkBindings := make([]apstra.VnBinding, len(ourBindings))
+	for i, ourBinding := range ourBindings {
+		sdkBindings[i] = *ourBinding.Request(ctx, rgiMap, diags)
+	}
+	if diags.HasError() {
+		return
 	}
 
+	// extract slice of leaf IDs
+	leafIds := make([]string, len(ourBindings))
+	for i, ourBinding := range ourBindings {
+		leafIds[i] = ourBinding.LeafId.ValueString()
+	}
+
+	// load private state object
+	var p private.ResourceDatacenterVirtualNetworkBindings
+	p.LoadSystemIdToVlanApiData(ctx, sdkBindings, diags)
+	//p.LoadRedundancyGroupIdToSystemIDsApiData(ctx, rgiMap, leafIds, diags)
+	if diags.HasError() {
+		return
+	}
+
+	// set private state
 	p.SetPrivateState(ctx, ps, diags)
 }
+
+//func (o VirtualNetworkBindings) GetRedundancyGroupMemebership(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) map[string][2]string {
+//	query := new(apstra.PathQuery).
+//		SetClient(client).
+//		SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
+//		Node([]apstra.QEEAttribute{
+//			apstra.NodeTypeRedundancyGroup.QEEAttribute(),
+//			{Key: "name", Value: apstra.QEStringVal("n_redundancy_group")},
+//		}).
+//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeComposedOfSystems.QEEAttribute()}).
+//		Node([]apstra.QEEAttribute{
+//			apstra.NodeTypeSystem.QEEAttribute(),
+//			{Key: "system_type", Value: apstra.QEStringVal("switch")},
+//			{Key: "name", Value: apstra.QEStringVal("n_system")},
+//		})
+//
+//	var queryResult struct {
+//		Items []struct {
+//			RedundancyGroup struct {
+//				ID string `json:"id"`
+//			} `json:"n_redundancy_group"`
+//			System struct {
+//				ID string `json:"id"`
+//			} `json:"n_system"`
+//		} `json:"items"`
+//	}
+//
+//	err := query.Do(ctx, &queryResult)
+//	if err != nil {
+//		diags.AddError("Failed querying for redundancy groups", err.Error())
+//		return nil
+//	}
+//
+//	result := make(map[string][2]string, len(queryResult.Items))
+//	for _, item := range queryResult.Items {
+//		resultItem, ok := result[item.RedundancyGroup.ID]
+//		if ok {
+//			resultItem[1] = item.RedundancyGroup.ID // resultItem already existed. Add the item at index 1.
+//		} else {
+//			resultItem[0] = item.RedundancyGroup.ID // resultItem is the zero value. Add the first item.
+//		}
+//		result[item.RedundancyGroup.ID] = resultItem // Add the updated array to the map.
+//	}
+//
+//	return result
+//}
 
 //func redundantVnBindings(binding VirtualNetworkBinding, rgi apstra.RedundancyGroupInfo) map[apstra.ObjectId]*apstra.VnBinding {
 //	result := make(map[apstra.ObjectId]*apstra.VnBinding, 2)

@@ -3,6 +3,7 @@ package private
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,9 +18,10 @@ import (
 // of previously-created bindings which may need to be deleted.
 type ResourceDatacenterVirtualNetworkBindings struct {
 	SystemIdToVlan map[string]int64 `json:"system_id_to_vlan"`
+	//RedundancyGroupIdToSystemIDs map[string][]string `json:"redundancy_group_id_to_system_ids"`
 }
 
-func (o *ResourceDatacenterVirtualNetworkBindings) LoadApiData(_ context.Context, bindings []apstra.VnBinding, diags *diag.Diagnostics) {
+func (o *ResourceDatacenterVirtualNetworkBindings) LoadSystemIdToVlanApiData(_ context.Context, bindings []apstra.VnBinding, _ *diag.Diagnostics) {
 	o.SystemIdToVlan = make(map[string]int64, len(bindings))
 	for _, binding := range bindings {
 		if binding.VlanId == nil {
@@ -30,12 +32,22 @@ func (o *ResourceDatacenterVirtualNetworkBindings) LoadApiData(_ context.Context
 	}
 }
 
+//func (o *ResourceDatacenterVirtualNetworkBindings) LoadRedundancyGroupIdToSystemIDsApiData(_ context.Context, rgiMap map[string]*apstra.RedundancyGroupInfo, ids []string, _ *diag.Diagnostics) {
+//	o.RedundancyGroupIdToSystemIDs = make(map[string][]string)
+//	for _, id := range ids {
+//		if entry, ok := rgiMap[id]; ok {
+//			o.RedundancyGroupIdToSystemIDs[entry.Id.String()] = []string{entry.SystemIds[0].String(), entry.SystemIds[1].String()}
+//		}
+//	}
+//}
+
 func (o *ResourceDatacenterVirtualNetworkBindings) LoadPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
-	b, d := ps.GetKey(ctx, "ResourceDatacenterVirtualNetworkBindings")
+	b, d := ps.GetKey(ctx, fmt.Sprintf("%T", *o))
 	diags.Append(d...)
 	if diags.HasError() {
 		return
 	}
+
 	if len(b) == 0 {
 		return
 	}
@@ -54,5 +66,5 @@ func (o *ResourceDatacenterVirtualNetworkBindings) SetPrivateState(ctx context.C
 		return
 	}
 
-	diags.Append(ps.SetKey(ctx, "ResourceDatacenterVirtualNetworkBindings", b)...)
+	diags.Append(ps.SetKey(ctx, fmt.Sprintf("%T", *o), b)...)
 }

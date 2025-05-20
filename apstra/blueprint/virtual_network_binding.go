@@ -18,18 +18,18 @@ import (
 )
 
 type VirtualNetworkBinding struct {
-	LeafId customtypes.StringWithAltValues `tfsdk:"leaf_id"`
-	VlanId types.Int64                     `tfsdk:"vlan_id"`
-	// AccessIds types.Set                       `tfsdk:"access_ids"`
-	AccessIds customtypes.SetWithSemanticEqualsValue `tfsdk:"access_ids"`
+	LeafId    customtypes.StringWithAltValues `tfsdk:"leaf_id"`
+	VlanId    types.Int64                     `tfsdk:"vlan_id"`
+	AccessIds types.Set                       `tfsdk:"access_ids"`
+	//AccessIds customtypes.SetWithSemanticEqualsValue `tfsdk:"access_ids"`
 }
 
 func (o VirtualNetworkBinding) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"leaf_id": customtypes.StringWithAltValuesType{},
-		"vlan_id": types.Int64Type,
-		//"access_ids": types.SetType{ElemType: customtypes.StringWithAltValuesType{}},
+		"leaf_id":    customtypes.StringWithAltValuesType{},
+		"vlan_id":    types.Int64Type,
 		"access_ids": customtypes.NewSetWithSemanticEqualsType(customtypes.StringWithAltValuesType{}),
+		//"access_ids": types.SetType{ElemType: customtypes.StringWithAltValuesType{}},
 		//"access_ids": customtypes.NewSetWithSemanticEqualsType(types.StringType),
 	}
 }
@@ -49,9 +49,10 @@ func (o VirtualNetworkBinding) ResourceAttributes() map[string]resourceSchema.At
 		},
 		"access_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "Access Switch IDs associated with this Leaf Switch",
-			CustomType:          customtypes.NewSetWithSemanticEqualsType(customtypes.StringWithAltValuesType{}),
-			Optional:            true,
-			ElementType:         customtypes.StringWithAltValuesType{},
+			CustomType:          customtypes.SetWithSemanticEqualsType{},
+			//CustomType:          customtypes.NewSetWithSemanticEqualsType(customtypes.StringWithAltValuesType{}),
+			Optional:    true,
+			ElementType: customtypes.StringWithAltValuesType{},
 			// ElementType: types.StringType,
 			Validators: []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
@@ -64,21 +65,21 @@ func (o VirtualNetworkBinding) Request(ctx context.Context, rgInfo map[string]*a
 		vlanId = utils.ToPtr(apstra.Vlan(o.VlanId.ValueInt64()))
 	}
 
-	//var accessSwitchNodeIds []apstra.ObjectId
-	//diags.Append(o.AccessIds.ElementsAs(ctx, &accessSwitchNodeIds, false)...)
-	//for i, id := range accessSwitchNodeIds {
-	//	// This access switch may be half of a pair...
-	//	if rgi, ok := rgInfo[id.String()]; ok {
-	//		// ESI/MLAG switch pair member. Use the group ID instead.
-	//		accessSwitchNodeIds[i] = rgi.Id
-	//	}
-	//}
-	//utils.Uniq(accessSwitchNodeIds) // if the user specified both switches, we created dups. Clean em up.
+	var accessSwitchNodeIds []apstra.ObjectId
+	diags.Append(o.AccessIds.ElementsAs(ctx, &accessSwitchNodeIds, false)...)
+	for i, id := range accessSwitchNodeIds {
+		// This access switch may be half of a pair...
+		if rgi, ok := rgInfo[id.String()]; ok {
+			// ESI/MLAG switch pair member. Use the group ID instead.
+			accessSwitchNodeIds[i] = rgi.Id
+		}
+	}
+	utils.Uniq(accessSwitchNodeIds) // if the user specified both switches, we created duplicates. Clean em up.
 
 	return &apstra.VnBinding{
-		// AccessSwitchNodeIds: accessSwitchNodeIds,
-		SystemId: apstra.ObjectId(o.LeafId.ValueString()),
-		VlanId:   vlanId,
+		SystemId:            apstra.ObjectId(o.LeafId.ValueString()),
+		VlanId:              vlanId,
+		AccessSwitchNodeIds: accessSwitchNodeIds,
 	}
 }
 
