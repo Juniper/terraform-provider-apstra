@@ -22,6 +22,7 @@ var (
 	ResourceDatacenterConnectivityTemplateSvi              = resourceDatacenterConnectivityTemplateSvi{}
 	ResourceDatacenterConnectivityTemplateSystem           = resourceDatacenterConnectivityTemplateSystem{}
 	ResourceDatacenterGenericSystem                        = resourceDatacenterGenericSystem{}
+	ResourceDatacenterInterconnectDomain                   = resourceDatacenterInterconnectDomain{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRack                                 = resourceDatacenterRack{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}

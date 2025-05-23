@@ -17,11 +17,15 @@ const (
 	stdNameConstraintReString = "^[" + stdNameConstraintChars + "]+$"
 	stdNameConstraintChars    = "a-zA-Z0-9._-"
 	StdNameConstraintMsg      = "value must consist only of the following characters: `" + stdNameConstraintChars + "`."
+
+	alphaCharsRequiredConstraintReString = "^.*[a-zA-Z]+.*$"
+	AlphaCharsRequiredConstraintMsg      = "value must contain at least one letter"
 )
 
 var (
-	AlphaNumW2HLConstraint     = regexp.MustCompile(alphaNumW2HLConstraintReString)
-	FreeformHostnameConstraint = regexp.MustCompile(freeformHostnameConstraintReString)
-	HostNameConstraint         = regexp.MustCompile(hostNameConstraintReString)
-	StdNameConstraint          = regexp.MustCompile(stdNameConstraintReString)
+	AlphaNumW2HLConstraint       = regexp.MustCompile(alphaNumW2HLConstraintReString)
+	FreeformHostnameConstraint   = regexp.MustCompile(freeformHostnameConstraintReString)
+	HostNameConstraint           = regexp.MustCompile(hostNameConstraintReString)
+	StdNameConstraint            = regexp.MustCompile(stdNameConstraintReString)
+	AlphaCharsRequiredConstraint = regexp.MustCompile(alphaCharsRequiredConstraintReString)
 )
