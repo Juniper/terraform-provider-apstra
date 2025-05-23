@@ -171,6 +171,19 @@ func (o *resourceDatacenterInterconnectDomain) Update(ctx context.Context, req r
 		return
 	}
 
+	if plan.EsiMac.IsUnknown() {
+		api, err := bp.GetEvpnInterconnectGroup(ctx, apstra.ObjectId(plan.Id.ValueString()))
+		if err != nil {
+			resp.Diagnostics.AddError("failed reading updated Interconnect Domain ESI MAC", err.Error())
+			return
+		}
+
+		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	// create new state object
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
