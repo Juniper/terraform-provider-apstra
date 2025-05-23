@@ -23,15 +23,15 @@ type resourceDatacenterInterconnectDomain struct {
 	lockFunc        func(context.Context, string) error
 }
 
-func (o resourceDatacenterInterconnectDomain) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_integrated_dci_domain"
+func (o *resourceDatacenterInterconnectDomain) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_interconnect_domain"
 }
 
-func (o resourceDatacenterInterconnectDomain) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterInterconnectDomain) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o resourceDatacenterInterconnectDomain) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterInterconnectDomain) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates an Interconnect Domain within a " +
 			"Datacenter Blueprint. Note that creating of multiple instances of this resource is not currently supported.",
@@ -39,7 +39,7 @@ func (o resourceDatacenterInterconnectDomain) Schema(_ context.Context, _ resour
 	}
 }
 
-func (o resourceDatacenterInterconnectDomain) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterInterconnectDomain) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var plan blueprint.InterconnectDomain
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -75,16 +75,30 @@ func (o resourceDatacenterInterconnectDomain) Create(ctx context.Context, req re
 
 	id, err := bp.CreateEvpnInterconnectGroup(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error interconnect domain", err.Error())
+		resp.Diagnostics.AddError("failed creating interconnect domain", err.Error())
 		return
 	}
 
 	plan.Id = types.StringValue(id.String())
 
+	if plan.EsiMac.IsUnknown() {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...) // just in case we fail
+		api, err := bp.GetEvpnInterconnectGroup(ctx, id)
+		if err != nil {
+			resp.Diagnostics.AddError("failed reading new Interconnect Domain ESI MAC", err.Error())
+			return
+		}
+
+		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o resourceDatacenterInterconnectDomain) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterInterconnectDomain) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
 	var state blueprint.InterconnectDomain
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -103,7 +117,7 @@ func (o resourceDatacenterInterconnectDomain) Read(ctx context.Context, req reso
 		return
 	}
 
-	api, err := bp.GetEvpnInterconnectGroup(ctx, apstra.ObjectId(state.BlueprintId.ValueString()))
+	api, err := bp.GetEvpnInterconnectGroup(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -118,7 +132,7 @@ func (o resourceDatacenterInterconnectDomain) Read(ctx context.Context, req reso
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o resourceDatacenterInterconnectDomain) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterInterconnectDomain) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.InterconnectDomain
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -161,7 +175,7 @@ func (o resourceDatacenterInterconnectDomain) Update(ctx context.Context, req re
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o resourceDatacenterInterconnectDomain) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterInterconnectDomain) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state blueprint.InterconnectDomain
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -200,10 +214,10 @@ func (o resourceDatacenterInterconnectDomain) Delete(ctx context.Context, req re
 	}
 }
 
-func (o resourceDatacenterInterconnectDomain) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+func (o *resourceDatacenterInterconnectDomain) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
 }
 
-func (o resourceDatacenterInterconnectDomain) setBpLockFunc(f func(context.Context, string) error) {
+func (o *resourceDatacenterInterconnectDomain) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
 }

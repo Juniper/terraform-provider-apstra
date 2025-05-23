@@ -2,26 +2,30 @@ package blueprint
 
 import (
 	"context"
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"net"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/hwtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type InterconnectDomain struct {
-	Id                 types.String `tfschema:"id"`
-	BlueprintId        types.String `tfsdk:"blueprint_id"`
-	Name               types.String `tfsdk:"name"`
-	RouteTarget        types.String `tfsdk:"route_target"`
-	InterconnectEsiMac types.String `tfsdk:"interconnect_esi_mac"`
+	Id          types.String       `tfsdk:"id"`
+	BlueprintId types.String       `tfsdk:"blueprint_id"`
+	Name        types.String       `tfsdk:"name"`
+	RouteTarget types.String       `tfsdk:"route_target"`
+	EsiMac      hwtypes.MACAddress `tfsdk:"esi_mac"`
 }
 
 func (o InterconnectDomain) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -47,44 +51,50 @@ func (o InterconnectDomain) DataSourceAttributes() map[string]dataSourceSchema.A
 			MarkdownDescription: "Name displayed in the Apstra web UI. Required when `id` is omitted.",
 			Computed:            true,
 			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"route_target": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "All interconnect gateways MUST use the same Interconnect Route Target (iRT).  The " +
 				"iRT is an additional unique RT for the interconnect domain.",
 			Computed: true,
 		},
-		"interconnect_esi_mac": dataSourceSchema.StringAttribute{
+		"esi_mac": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Each site requires a unique site id iESI at the MAC-VRF level. This can be " +
 				"auto-derived or manually set.",
-			Computed: true,
+			CustomType: hwtypes.MACAddressType{},
+			Computed:   true,
 		},
 	}
 }
 
-func (o InterconnectDomain) DataSourceFilterAttributes() map[string]dataSourceSchema.Attribute {
+func (o InterconnectDomain) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
 			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			MarkdownDescription: "Not applicable in filter context. Ignore.",
+			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Name displayed in the Apstra web UI. Required when `id` is omitted.",
 			Optional:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"route_target": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "All interconnect gateways MUST use the same Interconnect Route Target (iRT).  The " +
 				"iRT is an additional unique RT for the interconnect domain.",
-			Optional: true,
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"interconnect_esi_mac": dataSourceSchema.StringAttribute{
+		"esi_mac": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Each site requires a unique site id iESI at the MAC-VRF level. This can be " +
 				"auto-derived or manually set.",
-			Optional: true,
+			CustomType: hwtypes.MACAddressType{},
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 	}
 }
@@ -94,11 +104,13 @@ func (o InterconnectDomain) ResourceAttributes() map[string]resourceSchema.Attri
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra graph node ID.",
 			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name displayed in the Apstra web UI.",
@@ -113,23 +125,24 @@ func (o InterconnectDomain) ResourceAttributes() map[string]resourceSchema.Attri
 			Required:   true,
 			Validators: []validator.String{apstravalidator.ParseRT()},
 		},
-		"interconnect_esi_mac": resourceSchema.StringAttribute{
+		"esi_mac": resourceSchema.StringAttribute{
 			MarkdownDescription: "Each site requires a unique site id iESI at the MAC-VRF level. This can be " +
 				"auto-derived or manually set.",
-			Required:   true,
-			Validators: []validator.String{apstravalidator.ParseMac()},
+			Optional:   true,
+			Computed:   true,
+			CustomType: hwtypes.MACAddressType{},
 		},
 	}
 }
 
-func (o InterconnectDomain) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.EvpnInterconnectGroupData {
+func (o InterconnectDomain) Request(_ context.Context, diags *diag.Diagnostics) *apstra.EvpnInterconnectGroupData {
 	var esiMac net.HardwareAddr
 
-	if !o.InterconnectEsiMac.IsNull() {
+	if utils.HasValue(o.EsiMac) {
 		var err error
-		esiMac, err = net.ParseMAC(o.InterconnectEsiMac.String())
+		esiMac, err = net.ParseMAC(o.EsiMac.ValueString())
 		if err != nil {
-			diags.AddError("failed to parse interconnect esi mac: "+o.InterconnectEsiMac.String(), err.Error())
+			diags.AddError("failed to parse interconnect esi mac: "+o.EsiMac.ValueString(), err.Error())
 		}
 	}
 
@@ -141,7 +154,7 @@ func (o InterconnectDomain) Request(ctx context.Context, diags *diag.Diagnostics
 }
 
 func (o *InterconnectDomain) LoadApiData(_ context.Context, data *apstra.EvpnInterconnectGroupData, _ *diag.Diagnostics) {
-	o.InterconnectEsiMac = types.StringValue(data.EsiMac.String())
+	o.EsiMac = hwtypes.NewMACAddressValue(data.EsiMac.String())
 	o.Name = types.StringValue(data.Label)
 	o.RouteTarget = types.StringValue(data.RouteTarget)
 }
@@ -149,15 +162,20 @@ func (o *InterconnectDomain) LoadApiData(_ context.Context, data *apstra.EvpnInt
 func (o *InterconnectDomain) Query(resultName string) apstra.QEQuery {
 	attributes := []apstra.QEEAttribute{
 		apstra.NodeTypeEvpnInterconnectGroup.QEEAttribute(),
-		{Key: "name", Value: apstra.QEStringVal("n_evpn_interconnect_group")},
+		{Key: "name", Value: apstra.QEStringVal(resultName)},
+	}
+
+	if !o.Id.IsNull() {
+		attributes = append(attributes, apstra.QEEAttribute{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())})
 	}
 
 	if !o.Name.IsNull() {
 		attributes = append(attributes, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Name.ValueString())})
 	}
 
-	if !o.InterconnectEsiMac.IsNull() {
-		attributes = append(attributes, apstra.QEEAttribute{Key: "interconnect_esi_mac", Value: apstra.QEStringVal(o.InterconnectEsiMac.ValueString())})
+	if !o.EsiMac.IsNull() {
+		mac, _ := net.ParseMAC(o.EsiMac.ValueString()) // ignore error because value is already validated
+		attributes = append(attributes, apstra.QEEAttribute{Key: "interconnect_esi_mac", Value: apstra.QEStringVal(mac.String())})
 	}
 
 	if !o.RouteTarget.IsNull() {
