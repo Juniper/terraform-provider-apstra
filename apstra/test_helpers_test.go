@@ -173,7 +173,7 @@ func stringSliceOrNull[S ~string](in []S) string {
 	return "[ " + sb.String() + " ]"
 }
 
-// randomHardwareAddre returns a net.HardwareAddr. The set and unset arguments
+// randomHardwareAddr returns a net.HardwareAddr. The set and unset arguments
 // allow the caller to specify certain bits which must be set or must be unset
 // in the result.
 // For example, to get a random mac with only the LAA bit set, you'd invoke the
