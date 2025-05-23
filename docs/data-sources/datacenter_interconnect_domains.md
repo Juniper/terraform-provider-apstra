@@ -48,7 +48,7 @@ output "interconnect_domain_ids" { value = data.apstra_datacenter_interconnect_d
 
 ### Read-Only
 
-- `graph_queries` (List of String) The graph datastore query based on `filter` used to perform the lookup.
+- `graph_queries` (List of String) The graph datastore queries based on `filters` which were used to perform the lookup.
 - `ids` (Set of String) IDs of matching `evpn_interconnect_group` Graph DB nodes.
 
 <a id="nestedatt--filters"></a>

@@ -67,7 +67,7 @@ func (o *dataSourceDatacenterInterconnectDomains) Schema(_ context.Context, _ da
 				ElementType:         types.StringType,
 			},
 			"graph_queries": schema.ListAttribute{
-				MarkdownDescription: "The graph datastore query based on `filter` used to perform the lookup.",
+				MarkdownDescription: "The graph datastore queries based on `filters` which were used to perform the lookup.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
