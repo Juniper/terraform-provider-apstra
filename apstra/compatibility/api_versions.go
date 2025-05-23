@@ -19,6 +19,8 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra500,
 		apiversions.Apstra501,
 		apiversions.Apstra510,
+		//apiversions.Apstra600,
+		//apiversions.Apstra610, todo: check/update resourceDatacenterDciInterconnectDomain.Schema() - are multiple domains permitted yet?
 	}
 
 	sdkVersions := compatibility.SupportedApiVersions()
