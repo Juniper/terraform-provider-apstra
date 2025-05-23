@@ -1044,8 +1044,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/google/go-cmp/cmp
 
 * Name: github.com/google/go-cmp/cmp
-* Version: v0.6.0
-* License: [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.6.0/LICENSE)
+* Version: v0.7.0
+* License: [BSD-3-Clause](https://github.com/google/go-cmp/blob/v0.7.0/LICENSE)
 
 ```
 Copyright (c) 2017 The Go Authors. All rights reserved.
@@ -2642,8 +2642,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/go-plugin
 
 * Name: github.com/hashicorp/go-plugin
-* Version: v1.6.2
-* License: [MPL-2.0](https://github.com/hashicorp/go-plugin/blob/v1.6.2/LICENSE)
+* Version: v1.6.3
+* License: [MPL-2.0](https://github.com/hashicorp/go-plugin/blob/v1.6.3/LICENSE)
 
 ```
 Copyright (c) 2016 HashiCorp, Inc.
@@ -6007,8 +6007,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.14.1
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.14.1/LICENSE)
+* Version: v1.15.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.15.0/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -6758,8 +6758,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-plugin-framework-nettypes
 
 * Name: github.com/hashicorp/terraform-plugin-framework-nettypes
-* Version: v0.1.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework-nettypes/blob/v0.1.0/LICENSE)
+* Version: v0.0.0-20250523050038-2aff98d8307d
+* License: [MPL-2.0](https://github.com/chrismarget/terraform-plugin-framework-nettypes/blob/2aff98d8307d/LICENSE)
 
 ```
 Copyright (c) 2023 HashiCorp, Inc.
@@ -7509,8 +7509,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.26.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.26.0/LICENSE)
+* Version: v0.27.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.27.0/LICENSE)
 
 ```
 Copyright (c) 2020 HashiCorp, Inc.
@@ -8992,8 +8992,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-registry-address
 
 * Name: github.com/hashicorp/terraform-registry-address
-* Version: v0.2.4
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-registry-address/blob/v0.2.4/LICENSE)
+* Version: v0.2.5
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-registry-address/blob/v0.2.5/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -10961,8 +10961,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20241015192408-796eee8c2d53
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/796eee8c2d53/googleapis/rpc/LICENSE)
+* Version: v0.0.0-20250218202821-56aae31c358a
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/56aae31c358a/googleapis/rpc/LICENSE)
 
 ```
 
@@ -11173,8 +11173,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.69.4
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.69.4/LICENSE)
+* Version: v1.72.1
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.72.1/LICENSE)
 
 ```
 
@@ -11385,8 +11385,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.36.3
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.3/LICENSE)
+* Version: v1.36.6
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.6/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.
