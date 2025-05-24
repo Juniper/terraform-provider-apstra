@@ -27,7 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type DatacenterExternalGateway struct {
+type RemoteGateway struct {
 	Id                types.String        `tfsdk:"id"`
 	BlueprintId       types.String        `tfsdk:"blueprint_id"`
 	Name              types.String        `tfsdk:"name"`
@@ -41,7 +41,7 @@ type DatacenterExternalGateway struct {
 	Password          types.String        `tfsdk:"password"`
 }
 
-func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o RemoteGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID.",
@@ -114,7 +114,7 @@ func (o DatacenterExternalGateway) ResourceAttributes() map[string]resourceSchem
 	}
 }
 
-func (o DatacenterExternalGateway) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o RemoteGateway) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID.",
@@ -177,7 +177,7 @@ func (o DatacenterExternalGateway) DataSourceAttributes() map[string]dataSourceS
 	}
 }
 
-func (o DatacenterExternalGateway) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
+func (o RemoteGateway) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID.",
@@ -233,7 +233,7 @@ func (o DatacenterExternalGateway) DataSourceAttributesAsFilter() map[string]dat
 	}
 }
 
-func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.TwoStageL3ClosRemoteGatewayData {
+func (o *RemoteGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.TwoStageL3ClosRemoteGatewayData {
 	routeTypes := enum.RemoteGatewayRouteTypes.Parse(o.EvpnRouteTypes.ValueString())
 	// skipping nil check because input validation should make that impossible
 
@@ -282,7 +282,7 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 	}
 }
 
-func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
+func (o *RemoteGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
 	var err error
 	var api *apstra.TwoStageL3ClosRemoteGateway
 
@@ -312,7 +312,7 @@ func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStag
 	return nil
 }
 
-func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *RemoteGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetClient(bp.Client()).
 		SetBlueprintId(bp.Id()).
@@ -385,7 +385,7 @@ func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp
 	o.Password = types.StringValue(password)
 }
 
-func (o *DatacenterExternalGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosRemoteGatewayData, _ *diag.Diagnostics) {
+func (o *RemoteGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosRemoteGatewayData, _ *diag.Diagnostics) {
 	ttl := types.Int64Null()
 	if in.Ttl != nil {
 		ttl = types.Int64Value(int64(*in.Ttl))
@@ -416,7 +416,7 @@ func (o *DatacenterExternalGateway) LoadApiData(_ context.Context, in *apstra.Tw
 	o.LocalGatewayNodes = types.SetValueMust(types.StringType, localGatewayNodes)
 }
 
-func (o *DatacenterExternalGateway) FilterMatch(_ context.Context, in *DatacenterExternalGateway, _ *diag.Diagnostics) bool {
+func (o *RemoteGateway) FilterMatch(_ context.Context, in *RemoteGateway, _ *diag.Diagnostics) bool {
 	if !o.Id.IsNull() && !o.Id.Equal(in.Id) {
 		return false
 	}

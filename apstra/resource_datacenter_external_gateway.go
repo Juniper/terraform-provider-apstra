@@ -34,7 +34,7 @@ func (o *resourceDatacenterExternalGateway) Schema(_ context.Context, _ resource
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a DCI External Gateway within a Blueprint. " +
 			"Prior to Apstra 4.2 these were called \"Remote EVPN Gateways\"",
-		Attributes: blueprint.DatacenterExternalGateway{}.ResourceAttributes(),
+		Attributes: blueprint.RemoteGateway{}.ResourceAttributes(),
 	}
 }
 
@@ -62,7 +62,7 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 	}
 
 	// create a state object preloaded with the critical details we need in advance
-	state := blueprint.DatacenterExternalGateway{
+	state := blueprint.RemoteGateway{
 		BlueprintId: types.StringValue(importId.BlueprintId),
 		Id:          types.StringValue(importId.Id),
 	}
@@ -98,7 +98,7 @@ func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req
 
 func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterExternalGateway
+	var plan blueprint.RemoteGateway
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -149,7 +149,7 @@ func (o *resourceDatacenterExternalGateway) Create(ctx context.Context, req reso
 
 func (o *resourceDatacenterExternalGateway) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
-	var state blueprint.DatacenterExternalGateway
+	var state blueprint.RemoteGateway
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -183,7 +183,7 @@ func (o *resourceDatacenterExternalGateway) Read(ctx context.Context, req resour
 
 func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.DatacenterExternalGateway
+	var plan blueprint.RemoteGateway
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -229,7 +229,7 @@ func (o *resourceDatacenterExternalGateway) Update(ctx context.Context, req reso
 
 func (o *resourceDatacenterExternalGateway) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
-	var state blueprint.DatacenterExternalGateway
+	var state blueprint.RemoteGateway
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return

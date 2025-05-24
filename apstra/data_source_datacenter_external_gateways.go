@@ -52,7 +52,7 @@ func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datas
 				Optional:   true,
 				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: blueprint.DatacenterExternalGateway{}.DataSourceAttributesAsFilter(),
+					Attributes: blueprint.RemoteGateway{}.DataSourceAttributesAsFilter(),
 					Validators: []validator.Object{
 						apstravalidator.AtLeastNAttributes(
 							1,
@@ -86,7 +86,7 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract filters from the config
-	var filters []blueprint.DatacenterExternalGateway
+	var filters []blueprint.RemoteGateway
 	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -126,9 +126,9 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract the API response items so that they can be filtered
-	candidates := make([]blueprint.DatacenterExternalGateway, len(apiResponse))
+	candidates := make([]blueprint.RemoteGateway, len(apiResponse))
 	for i := range apiResponse {
-		externalGateway := blueprint.DatacenterExternalGateway{Id: types.StringValue(apiResponse[i].Id.String())}
+		externalGateway := blueprint.RemoteGateway{Id: types.StringValue(apiResponse[i].Id.String())}
 		externalGateway.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
 		externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
 		candidates[i] = externalGateway
