@@ -12,6 +12,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -77,7 +78,7 @@ func stringOrNull[S ~string](in S) string {
 }
 
 func stringerOrNull(in fmt.Stringer) string {
-	if in == nil {
+	if in == nil || reflect.ValueOf(in).IsNil() {
 		return "null"
 	}
 
