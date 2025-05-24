@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"net"
+	"net/netip"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -233,7 +233,7 @@ func (o DatacenterExternalGateway) DataSourceAttributesAsFilter() map[string]dat
 	}
 }
 
-func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.RemoteGatewayData {
+func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.TwoStageL3ClosRemoteGatewayData {
 	routeTypes := enum.RemoteGatewayRouteTypes.Parse(o.EvpnRouteTypes.ValueString())
 	// skipping nil check because input validation should make that impossible
 
@@ -267,12 +267,14 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 		password = &t
 	}
 
-	return &apstra.RemoteGatewayData{
-		RouteTypes:     *routeTypes,
+	gwIp, _ := netip.ParseAddr(o.IpAddress.ValueString()) // ignoring error; address already validated
+
+	return &apstra.TwoStageL3ClosRemoteGatewayData{
+		RouteTypes:     routeTypes,
 		LocalGwNodes:   localGwNodes,
 		GwAsn:          uint32(o.Asn.ValueInt64()),
-		GwIp:           net.ParseIP(o.IpAddress.ValueString()), // skipping nil check because input
-		GwName:         o.Name.ValueString(),                   // validation should make that impossible
+		GwIp:           gwIp,
+		Label:          o.Name.ValueString(),
 		Ttl:            ttl,
 		KeepaliveTimer: keepaliveTimer,
 		HoldtimeTimer:  holdtimeTimer,
@@ -282,7 +284,7 @@ func (o *DatacenterExternalGateway) Request(ctx context.Context, diags *diag.Dia
 
 func (o *DatacenterExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
 	var err error
-	var api *apstra.RemoteGateway
+	var api *apstra.TwoStageL3ClosRemoteGateway
 
 	if o.Id.IsNull() {
 		api, err = bp.GetRemoteGatewayByName(ctx, o.Name.ValueString())
@@ -383,7 +385,7 @@ func (o *DatacenterExternalGateway) ReadProtocolPassword(ctx context.Context, bp
 	o.Password = types.StringValue(password)
 }
 
-func (o *DatacenterExternalGateway) LoadApiData(_ context.Context, in *apstra.RemoteGatewayData, _ *diag.Diagnostics) {
+func (o *DatacenterExternalGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosRemoteGatewayData, _ *diag.Diagnostics) {
 	ttl := types.Int64Null()
 	if in.Ttl != nil {
 		ttl = types.Int64Value(int64(*in.Ttl))
@@ -404,7 +406,7 @@ func (o *DatacenterExternalGateway) LoadApiData(_ context.Context, in *apstra.Re
 		localGatewayNodes[i] = types.StringValue(localGatewayNode.String())
 	}
 
-	o.Name = types.StringValue(in.GwName)
+	o.Name = types.StringValue(in.Label)
 	o.IpAddress = iptypes.NewIPv4AddressValue(in.GwIp.String())
 	o.Asn = types.Int64Value(int64(in.GwAsn))
 	o.Ttl = ttl
