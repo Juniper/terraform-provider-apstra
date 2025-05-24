@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,10 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterExternalGateway{}
-var _ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterExternalGateway{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterExternalGateway{}
+var (
+	_ resource.ResourceWithConfigure   = &resourceDatacenterExternalGateway{}
+	_ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
+	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterExternalGateway{}
+	_ resourceWithSetBpLockFunc        = &resourceDatacenterExternalGateway{}
+)
 
 type resourceDatacenterExternalGateway struct {
 	lockFunc        func(context.Context, string) error
