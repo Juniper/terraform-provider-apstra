@@ -28,7 +28,13 @@ data "apstra_datacenter_systems" "leaf_1" {
 # Discover IDs of local Interconnect Domain Gateways peering with Leaf 1
 data "apstra_datacenter_interconnect_domain_gateways" "with_leaf_1" {
   blueprint_id = "eb5bf749-3610-4c23-ade1-50a6cc200abf"
-  filters      = [{ local_gateway_nodes = [one(data.apstra_datacenter_systems.leaf_1.ids)] }]
+  filters = [
+    {
+      local_gateway_nodes = [
+        one(data.apstra_datacenter_systems.leaf_1.ids),
+      ]
+    }
+  ]
 }
 
 # Discover details (we need the name) of all local Interconnect Domain
