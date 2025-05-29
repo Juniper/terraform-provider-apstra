@@ -116,6 +116,10 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		// collect the IDs into config.Ids
 		ids := make([]attr.Value, 0, len(remoteGateways))
 		for _, remoteGateway := range remoteGateways {
+			if remoteGateway.Data.EvpnInterconnectGroupId != nil {
+				continue // this is an interconnect domain gateway, not an external gateway
+			}
+
 			ids = append(ids, types.StringValue(remoteGateway.Id.String()))
 		}
 		config.Ids = types.SetValueMust(types.StringType, ids)
@@ -123,6 +127,15 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		// set the state
 		resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 		return
+	}
+
+	// determine whether we need to extract protocol passwords from the graph
+	filterOnProtocolPassword := false
+	for _, filter := range filters {
+		if !filter.Password.IsNull() {
+			filterOnProtocolPassword = true // we need to extract protocol passwords from the graph
+			break
+		}
 	}
 
 	// extract the API response items so that they can be filtered
@@ -134,7 +147,9 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 
 		externalGateway := blueprint.ExternalGateway{Id: types.StringValue(remoteGateway.Id.String())}
 		externalGateway.LoadApiData(ctx, remoteGateway.Data, &resp.Diagnostics)
-		externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
+		if filterOnProtocolPassword {
+			externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
+		}
 		candidates = append(candidates, externalGateway)
 	}
 	if resp.Diagnostics.HasError() {
