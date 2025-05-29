@@ -455,14 +455,14 @@ func (o ExternalGateway) FilterMatch(_ context.Context, in *ExternalGateway, _ *
 
 	if !o.LocalGatewayNodes.IsNull() {
 		// extract the candidate localGatewayNodes as a map for quick lookups
-		candidateItems := make(map[string]bool, len(in.LocalGatewayNodes.Elements()))
+		actualLGWs := make(map[string]bool, len(in.LocalGatewayNodes.Elements()))
 		for _, item := range in.LocalGatewayNodes.Elements() {
-			candidateItems[item.(types.String).ValueString()] = true
+			actualLGWs[item.(types.String).ValueString()] = true
 		}
 
 		// fail if any required item is missing from candidate items
-		for _, requiredItem := range o.LocalGatewayNodes.Elements() {
-			if !candidateItems[requiredItem.(types.String).ValueString()] {
+		for _, requiredLGW := range o.LocalGatewayNodes.Elements() {
+			if !actualLGWs[requiredLGW.(types.String).ValueString()] {
 				return false
 			}
 		}

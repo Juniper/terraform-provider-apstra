@@ -103,24 +103,28 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		return
 	}
 
-	// collect all external gateways in the blueprint
+	// collect all remote gateways in the blueprint
 	remoteGateways, err := bp.GetAllRemoteGateways(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to fetch external gateways", err.Error())
 		return
 	}
 
+	// eliminate remote gateways which belong to an interconnect group
+	for i := len(remoteGateways) - 1; i >= 0; i-- { // loop backwards
+		if remoteGateways[i].Data.EvpnInterconnectGroupId != nil {
+			remoteGateways[i] = remoteGateways[len(remoteGateways)-1] // copy last item to position i
+			remoteGateways = remoteGateways[:len(remoteGateways)-1]   // delete last item
+		}
+	}
+
 	// Did the user send any filters?
 	if len(filters) == 0 { // no filter shortcut! return all IDs without inspection
 
 		// collect the IDs into config.Ids
-		ids := make([]attr.Value, 0, len(remoteGateways))
-		for _, remoteGateway := range remoteGateways {
-			if remoteGateway.Data.EvpnInterconnectGroupId != nil {
-				continue // this is an interconnect domain gateway, not an external gateway
-			}
-
-			ids = append(ids, types.StringValue(remoteGateway.Id.String()))
+		ids := make([]attr.Value, len(remoteGateways))
+		for i, remoteGateway := range remoteGateways {
+			ids[i] = types.StringValue(remoteGateway.Id.String())
 		}
 		config.Ids = types.SetValueMust(types.StringType, ids)
 
@@ -139,12 +143,8 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract the API response items so that they can be filtered
-	candidates := make([]blueprint.ExternalGateway, 0, len(remoteGateways))
+	var candidates []blueprint.ExternalGateway
 	for _, remoteGateway := range remoteGateways {
-		if remoteGateway.Data.EvpnInterconnectGroupId != nil {
-			continue // this is an interconnect domain gateway, not an external gateway
-		}
-
 		externalGateway := blueprint.ExternalGateway{Id: types.StringValue(remoteGateway.Id.String())}
 		externalGateway.LoadApiData(ctx, remoteGateway.Data, &resp.Diagnostics)
 		if filterOnProtocolPassword {
@@ -162,7 +162,7 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		for _, filter := range filters { // loop over filters
 			if filter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
 				ids = append(ids, candidate.Id)
-				break
+				break // we found a match - don't need to check remaining filters
 			}
 		}
 	}
