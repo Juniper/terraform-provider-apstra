@@ -5,13 +5,13 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
 	"net"
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
