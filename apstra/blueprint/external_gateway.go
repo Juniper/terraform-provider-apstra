@@ -372,14 +372,14 @@ func (o *ExternalGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.T
 	case 1: // expected case (only one password found) handled below
 	default:
 		diags.AddError("multiple protocol passwords found",
-			fmt.Sprintf("external gateway node %s sessions use mismatched passwords", o.Id))
+			fmt.Sprintf("remote gateway node %s sessions use mismatched passwords", o.Id))
 		return
 	}
 
 	// if we got here, only one password is in use. That's good, but is it in use on *every* protocol session?
 	if len(queryResponse.Items) > pwUsageCounts[password] {
 		diags.AddError("protocol password not used uniformly",
-			fmt.Sprintf("external gateway node %s has %d protocol sessions, but only %d of them use a password",
+			fmt.Sprintf("remote gateway node %s has %d protocol sessions, but only %d of them use a password",
 				o.Id, len(queryResponse.Items), pwUsageCounts[password]))
 		return
 	}
