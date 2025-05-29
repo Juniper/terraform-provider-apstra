@@ -27,7 +27,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type RemoteGateway struct {
+type ExternalGateway struct {
 	Id                types.String        `tfsdk:"id"`
 	BlueprintId       types.String        `tfsdk:"blueprint_id"`
 	Name              types.String        `tfsdk:"name"`
@@ -41,7 +41,7 @@ type RemoteGateway struct {
 	Password          types.String        `tfsdk:"password"`
 }
 
-func (o RemoteGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o ExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID.",
@@ -114,7 +114,7 @@ func (o RemoteGateway) ResourceAttributes() map[string]resourceSchema.Attribute 
 	}
 }
 
-func (o RemoteGateway) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o ExternalGateway) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID.",
@@ -177,7 +177,7 @@ func (o RemoteGateway) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 	}
 }
 
-func (o RemoteGateway) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
+func (o ExternalGateway) DataSourceAttributesAsFilter() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Object ID.",
@@ -233,7 +233,7 @@ func (o RemoteGateway) DataSourceAttributesAsFilter() map[string]dataSourceSchem
 	}
 }
 
-func (o *RemoteGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.TwoStageL3ClosRemoteGatewayData {
+func (o *ExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.TwoStageL3ClosRemoteGatewayData {
 	routeTypes := enum.RemoteGatewayRouteTypes.Parse(o.EvpnRouteTypes.ValueString())
 	// skipping nil check because input validation should make that impossible
 
@@ -282,7 +282,7 @@ func (o *RemoteGateway) Request(ctx context.Context, diags *diag.Diagnostics) *a
 	}
 }
 
-func (o *RemoteGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
+func (o *ExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
 	var err error
 	var api *apstra.TwoStageL3ClosRemoteGateway
 
@@ -312,7 +312,7 @@ func (o *RemoteGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClien
 	return nil
 }
 
-func (o *RemoteGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func (o *ExternalGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	query := new(apstra.PathQuery).
 		SetClient(bp.Client()).
 		SetBlueprintId(bp.Id()).
@@ -385,7 +385,7 @@ func (o *RemoteGateway) ReadProtocolPassword(ctx context.Context, bp *apstra.Two
 	o.Password = types.StringValue(password)
 }
 
-func (o *RemoteGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosRemoteGatewayData, _ *diag.Diagnostics) {
+func (o *ExternalGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3ClosRemoteGatewayData, _ *diag.Diagnostics) {
 	ttl := types.Int64Null()
 	if in.Ttl != nil {
 		ttl = types.Int64Value(int64(*in.Ttl))
@@ -416,7 +416,7 @@ func (o *RemoteGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3Clos
 	o.LocalGatewayNodes = types.SetValueMust(types.StringType, localGatewayNodes)
 }
 
-func (o *RemoteGateway) FilterMatch(_ context.Context, in *RemoteGateway, _ *diag.Diagnostics) bool {
+func (o ExternalGateway) FilterMatch(_ context.Context, in *ExternalGateway, _ *diag.Diagnostics) bool {
 	if !o.Id.IsNull() && !o.Id.Equal(in.Id) {
 		return false
 	}

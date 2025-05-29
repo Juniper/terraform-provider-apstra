@@ -33,13 +33,13 @@ func (o *dataSourceDatacenterExternalGateway) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a DCI External Gateway within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.RemoteGateway{}.DataSourceAttributes(),
+		Attributes: blueprint.ExternalGateway{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceDatacenterExternalGateway) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values from config.
-	var config blueprint.RemoteGateway
+	var config blueprint.ExternalGateway
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return

@@ -52,7 +52,7 @@ func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datas
 				Optional:   true,
 				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: blueprint.RemoteGateway{}.DataSourceAttributesAsFilter(),
+					Attributes: blueprint.ExternalGateway{}.DataSourceAttributesAsFilter(),
 					Validators: []validator.Object{
 						apstravalidator.AtLeastNAttributes(
 							1,
@@ -86,7 +86,7 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract filters from the config
-	var filters []blueprint.RemoteGateway
+	var filters []blueprint.ExternalGateway
 	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -104,7 +104,7 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// collect all external gateways in the blueprint
-	apiResponse, err := bp.GetAllRemoteGateways(ctx)
+	remoteGateways, err := bp.GetAllRemoteGateways(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to fetch external gateways", err.Error())
 		return
@@ -114,9 +114,9 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	if len(filters) == 0 { // no filter shortcut! return all IDs without inspection
 
 		// collect the IDs into config.Ids
-		ids := make([]attr.Value, len(apiResponse))
-		for i, remoteGateway := range apiResponse {
-			ids[i] = types.StringValue(remoteGateway.Id.String())
+		ids := make([]attr.Value, 0, len(remoteGateways))
+		for _, remoteGateway := range remoteGateways {
+			ids = append(ids, types.StringValue(remoteGateway.Id.String()))
 		}
 		config.Ids = types.SetValueMust(types.StringType, ids)
 
@@ -126,12 +126,16 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract the API response items so that they can be filtered
-	candidates := make([]blueprint.RemoteGateway, len(apiResponse))
-	for i := range apiResponse {
-		externalGateway := blueprint.RemoteGateway{Id: types.StringValue(apiResponse[i].Id.String())}
-		externalGateway.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
+	candidates := make([]blueprint.ExternalGateway, 0, len(remoteGateways))
+	for _, remoteGateway := range remoteGateways {
+		if remoteGateway.Data.EvpnInterconnectGroupId != nil {
+			continue // this is an interconnect domain gateway, not an external gateway
+		}
+
+		externalGateway := blueprint.ExternalGateway{Id: types.StringValue(remoteGateway.Id.String())}
+		externalGateway.LoadApiData(ctx, remoteGateway.Data, &resp.Diagnostics)
 		externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
-		candidates[i] = externalGateway
+		candidates = append(candidates, externalGateway)
 	}
 	if resp.Diagnostics.HasError() {
 		return
