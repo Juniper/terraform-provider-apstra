@@ -291,11 +291,19 @@ func (o *ExternalGateway) Read(ctx context.Context, bp *apstra.TwoStageL3ClosCli
 		if err != nil {
 			return err
 		}
+		if api.Data.EvpnInterconnectGroupId != nil {
+			diags.AddError("object has wrong type", fmt.Sprintf("remote gateway %q is an Interconnect Domain Gateway, not an External Gateway", o.Name.ValueString()))
+			return nil
+		}
 		o.Id = types.StringValue(api.Id.String())
 	} else {
 		api, err = bp.GetRemoteGateway(ctx, apstra.ObjectId(o.Id.ValueString()))
 		if err != nil {
 			return err
+		}
+		if api.Data.EvpnInterconnectGroupId != nil {
+			diags.AddError("object has wrong type", fmt.Sprintf("remote gateway %q is an Interconnect Domain Gateway, not an External Gateway", o.Id.ValueString()))
+			return nil
 		}
 	}
 
