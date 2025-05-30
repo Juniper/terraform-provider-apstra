@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,8 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateway{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterExternalGateway{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterExternalGateway{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterExternalGateway{}
+)
 
 type dataSourceDatacenterExternalGateway struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -30,13 +33,13 @@ func (o *dataSourceDatacenterExternalGateway) Schema(_ context.Context, _ dataso
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a DCI External Gateway within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: blueprint.DatacenterExternalGateway{}.DataSourceAttributes(),
+		Attributes: blueprint.ExternalGateway{}.DataSourceAttributes(),
 	}
 }
 
 func (o *dataSourceDatacenterExternalGateway) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values from config.
-	var config blueprint.DatacenterExternalGateway
+	var config blueprint.ExternalGateway
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
