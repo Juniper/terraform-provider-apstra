@@ -24,6 +24,7 @@ var (
 	ResourceDatacenterExternalGateway                      = resourceDatacenterExternalGateway{}
 	ResourceDatacenterGenericSystem                        = resourceDatacenterGenericSystem{}
 	ResourceDatacenterInterconnectDomain                   = resourceDatacenterInterconnectDomain{}
+	ResourceDatacenterInterconnectDomainGateway            = resourceDatacenterInterconnectDomainGateway{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRack                                 = resourceDatacenterRack{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
