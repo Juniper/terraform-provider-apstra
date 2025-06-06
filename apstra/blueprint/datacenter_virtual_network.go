@@ -369,7 +369,6 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 					path.MatchRelative().AtParent().AtName("type"),
 				),
 			},
-			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
