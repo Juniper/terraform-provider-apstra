@@ -99,7 +99,7 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 }
 
 func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// No state means there couldn't have been a previous config.
+	// No state means we're doing Create().
 	// No plan means we're doing Delete().
 	// Both cases are un-interesting to this plan modifier.
 	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
