@@ -99,7 +99,44 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 }
 
 func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// This plan modifier solves the same problem for two different
+	// No state means there couldn't have been a previous config.
+	// No plan means we're doing Delete().
+	// Both cases are un-interesting to this plan modifier.
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Retrieve values from config
+	var config blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from plan
+	var plan blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Updating the routing_zone_id attribute is only permitted with Apstra >= 5.0.0
+	if !plan.RoutingZoneId.Equal(state.RoutingZoneId) {
+		// routing_zone_id attribute has been changed
+		if o.client != nil && compatibility.ChangeVnRzIdForbidden.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+			resp.RequiresReplace.Append(path.Root("routing_zone_id"))
+			return
+		}
+	}
+
+	// The rest of this plan modifier solves the same problem for two different
 	// `Optional` + `Computed` attributes:
 	//   - VlanId
 	//   - Vni
@@ -126,34 +163,6 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	// element is `null`, we conclude that the attribute been removed from the
 	// configuration and set the attribute to `unknown` to achieve modification
 	// and record a new choice made by the API.
-
-	// No state means there couldn't have been a previous config.
-	// No plan means we're doing Delete().
-	// Both are un-interesting to this plan modifier.
-	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
-		return
-	}
-
-	// Retrieve values from config
-	var config blueprint.DatacenterVirtualNetwork
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve values from plan
-	var plan blueprint.DatacenterVirtualNetwork
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve values from state
-	var state blueprint.DatacenterVirtualNetwork
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	// null config with prior configured value means vni was removed
 	if config.Vni.IsNull() && state.HadPriorVniConfig.ValueBool() {

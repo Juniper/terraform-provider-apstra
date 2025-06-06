@@ -13,7 +13,9 @@ const (
 	Apstra510  = "5.1.0"
 
 	GeApstra421 = ">" + Apstra421
-
 	GeApstra500 = ">=" + Apstra500
+
+	LeApstra422 = "<=" + Apstra422
+
 	LtApstra500 = "<" + Apstra500
 )

@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/require"
 )
 
@@ -173,6 +174,15 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
+	// The action taken when RZ ID is changed depends on the Apstra version.
+	// Prior to 5.0.0 the VN would need to be recreated.
+	var rzChangeResourceActionType plancheck.ResourceActionType
+	if apiVersion.LessThan(version.Must(version.NewVersion("5.0.0"))) {
+		rzChangeResourceActionType = plancheck.ResourceActionDestroyBeforeCreate
+	} else {
+		rzChangeResourceActionType = plancheck.ResourceActionUpdate
+	}
+
 	// Create blueprint and routing zone
 	bp := testutils.BlueprintC(t, ctx)
 	szId := testutils.SecurityZoneA(t, ctx, bp, true)
@@ -208,8 +218,9 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	}
 
 	type testStep struct {
-		config      resourceDatacenterVirtualNetworkTemplate
-		expectError *regexp.Regexp
+		config                     resourceDatacenterVirtualNetworkTemplate
+		expectError                *regexp.Regexp
+		preApplyResourceActionType plancheck.ResourceActionType
 	}
 
 	type testCase struct {
@@ -787,6 +798,37 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
+		"change_rz_id": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVlan.String(),
+						routingZoneId: szId,
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_one_access_001_leaf1"],
+							},
+						},
+					},
+				},
+				{
+					preApplyResourceActionType: rzChangeResourceActionType, // either "Update" or "DestroyBeforeCreate" depending on Apstra version
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVlan.String(),
+						routingZoneId: testutils.SecurityZoneA(t, ctx, bp, true), // new routing zone
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{
+								leafId: nodesByLabel["l2_one_access_001_leaf1"],
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterVirtualNetwork)
@@ -815,6 +857,14 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 					Check:       resource.ComposeAggregateTestCheckFunc(checks.checks...),
 					ExpectError: step.expectError,
 				}
+
+				if step.preApplyResourceActionType != "" {
+					steps[i].ConfigPlanChecks = resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(resourceType+"."+tName, step.preApplyResourceActionType),
+						},
+					}
+				}
 			}
 
 			resource.Test(t, resource.TestCase{
@@ -823,62 +873,4 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			})
 		})
 	}
-
-	type bindingParams struct {
-		leafId    string
-		vlanId    string
-		accessIds []string
-	}
-	type vnParams struct {
-		name          string
-		blueprintId   string
-		vnType        string
-		vni           string
-		routingZoneId string
-		bindings      []bindingParams
-		l3Mtu         *int
-	}
-
-	params := []vnParams{
-		{
-			name:          acctest.RandString(10),
-			blueprintId:   bp.Id().String(),
-			vnType:        enum.VnTypeVlan.String(),
-			vni:           "null",
-			routingZoneId: szId.String(),
-			bindings: []bindingParams{
-				{
-					leafId: nodesByLabel["l2_one_access_001_leaf1"],
-					vlanId: "null",
-				},
-			},
-		},
-		{
-			name:          acctest.RandString(10),
-			blueprintId:   bp.Id().String(),
-			vnType:        enum.VnTypeVlan.String(),
-			vni:           "null",
-			routingZoneId: szId.String(),
-			bindings: []bindingParams{
-				{
-					leafId: nodesByLabel["l2_one_access_001_leaf1"],
-					vlanId: "7",
-				},
-			},
-		},
-		{
-			name:          acctest.RandString(10),
-			blueprintId:   bp.Id().String(),
-			vnType:        enum.VnTypeVxlan.String(),
-			vni:           "null",
-			routingZoneId: szId.String(),
-			bindings: []bindingParams{
-				{
-					leafId: nodesByLabel["l2_one_access_001_leaf1"],
-					vlanId: "null",
-				},
-			},
-		},
-	}
-	_ = params
 }
