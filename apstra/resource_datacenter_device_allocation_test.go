@@ -12,7 +12,9 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -40,6 +42,27 @@ resource "apstra_datacenter_device_allocation" "test" {
 
 func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 	ctx := context.Background()
+
+	unspecifiedDeployModeByVersion := func(bpClient *apstra.TwoStageL3ClosClient) string {
+		t.Helper()
+
+		apiVersion, err := version.NewVersion(bpClient.Client().ApiVersion())
+		require.NoError(t, err)
+
+		unspecifiedAsNone := version.MustConstraints(version.NewConstraint("<6.0.0"))
+		unspecifiedAsUndeploy := version.MustConstraints(version.NewConstraint(">=6.0.0"))
+
+		switch {
+		case unspecifiedAsNone.Check(apiVersion):
+			t.Logf("case unspecifiedAsNone: returning %s for version %s", utils.StringersToFriendlyString(enum.DeployModeNone), apiVersion)
+			return utils.StringersToFriendlyString(enum.DeployModeNone)
+		case unspecifiedAsUndeploy.Check(apiVersion):
+			t.Logf("case unspecifiedAsUndeploy: returning %s for version %s", utils.StringersToFriendlyString(enum.DeployModeNone), apiVersion)
+			return utils.StringersToFriendlyString(enum.DeployModeUndeploy)
+		default:
+			panic("unable to determine behavior for unspecified deploy mode")
+		}
+	}
 
 	bpClient := testutils.BlueprintC(t, ctx)
 
@@ -133,8 +156,8 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", "not_set"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", "not_set"),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", unspecifiedDeployModeByVersion(bpClient)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", unspecifiedDeployModeByVersion(bpClient)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "spine1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "spine1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn"),
@@ -220,8 +243,8 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", unspecifiedDeployModeByVersion(bpClient)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", unspecifiedDeployModeByVersion(bpClient)),
 					},
 				},
 				{
@@ -374,8 +397,8 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", unspecifiedDeployModeByVersion(bpClient)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", unspecifiedDeployModeByVersion(bpClient)),
 					},
 				},
 				{
