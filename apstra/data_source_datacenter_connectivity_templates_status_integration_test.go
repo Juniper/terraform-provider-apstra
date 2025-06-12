@@ -5,6 +5,10 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
@@ -13,9 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"math/rand"
-	"strconv"
-	"testing"
 )
 
 const datasourceDatacneterConnectivityTemplatesStatus = `
