@@ -64,7 +64,7 @@ func (o *dataSourceDatacenterInterconnectDomainGateways) Schema(_ context.Contex
 				},
 			},
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "IDs of matching `routing_policy` Graph DB nodes.",
+				MarkdownDescription: "IDs of matching `interconnect_domain_gateway` Graph DB nodes.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},

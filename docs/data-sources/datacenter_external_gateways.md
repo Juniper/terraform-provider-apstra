@@ -64,7 +64,7 @@ data "apstra_datacenter_external_gateways" "leaf_peers_and_spine_peers_with_all_
 
 ### Read-Only
 
-- `ids` (Set of String) IDs of matching `routing_policy` Graph DB nodes.
+- `ids` (Set of String) IDs of matching `external_gateway` Graph DB nodes.
 
 <a id="nestedatt--filters"></a>
 ### Nested Schema for `filters`
