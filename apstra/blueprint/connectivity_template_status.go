@@ -15,22 +15,22 @@ import (
 )
 
 type ConnectivityTemplateStatus struct {
-	Id                    types.String `tfsdk:"id"`
-	Name                  types.String `tfsdk:"name"`
-	Description           types.String `tfsdk:"description"`
-	Status                types.String `tfsdk:"status"`
-	ApplicationPointCount types.Int64  `tfsdk:"application_point_count"`
-	Tags                  types.Set    `tfsdk:"tags"`
+	Id              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
+	Description     types.String `tfsdk:"description"`
+	Status          types.String `tfsdk:"status"`
+	AssignmentCount types.Int64  `tfsdk:"assignment_count"`
+	Tags            types.Set    `tfsdk:"tags"`
 }
 
 func (o ConnectivityTemplateStatus) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"id":                      types.StringType,
-		"name":                    types.StringType,
-		"description":             types.StringType,
-		"status":                  types.StringType,
-		"application_point_count": types.Int64Type,
-		"tags":                    types.SetType{ElemType: types.StringType},
+		"id":               types.StringType,
+		"name":             types.StringType,
+		"description":      types.StringType,
+		"status":           types.StringType,
+		"assignment_count": types.Int64Type,
+		"tags":             types.SetType{ElemType: types.StringType},
 	}
 }
 
@@ -55,7 +55,7 @@ func (o ConnectivityTemplateStatus) DataSourceAttributes() map[string]schema.Att
 			),
 			Computed: true,
 		},
-		"application_point_count": schema.Int64Attribute{
+		"assignment_count": schema.Int64Attribute{
 			MarkdownDescription: "Count of Application Points to which Connectivity Template has been assigned",
 			Computed:            true,
 		},
@@ -72,6 +72,6 @@ func (o *ConnectivityTemplateStatus) LoadApiData(ctx context.Context, in apstra.
 	o.Name = types.StringValue(in.Label)
 	o.Description = types.StringValue(in.Description)
 	o.Status = types.StringValue(in.Status.String())
-	o.ApplicationPointCount = types.Int64Value(int64(in.AppPointsCount))
+	o.AssignmentCount = types.Int64Value(int64(in.AppPointsCount))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
 }
