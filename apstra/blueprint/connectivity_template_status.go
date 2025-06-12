@@ -56,11 +56,11 @@ func (o ConnectivityTemplateStatus) DataSourceAttributes() map[string]schema.Att
 			Computed: true,
 		},
 		"assignment_count": schema.Int64Attribute{
-			MarkdownDescription: "Count of Application Points to which Connectivity Template has been assigned",
+			MarkdownDescription: "Count of Application Points to which the Connectivity Template has been assigned",
 			Computed:            true,
 		},
 		"tags": schema.SetAttribute{
-			MarkdownDescription: "Tags associated with this Connectivity Template",
+			MarkdownDescription: "Tags associated with the Connectivity Template",
 			ElementType:         types.StringType,
 			Computed:            true,
 		},

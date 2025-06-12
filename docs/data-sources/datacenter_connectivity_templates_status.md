@@ -63,9 +63,9 @@ output "ct_status" { value = data.apstra_datacenter_connectivity_templates_statu
 
 Read-Only:
 
-- `assignment_count` (Number) Count of Application Points to which Connectivity Template has been assigned
+- `assignment_count` (Number) Count of Application Points to which the Connectivity Template has been assigned
 - `description` (String) Description of the Connectivity Template, as displayed in the web UI
 - `id` (String) Graph node ID of the Connectivity Template
 - `name` (String) Name of the Connectivity Template, as displayed in the web UI
 - `status` (String) Status of the Connectivity Template - One of: [`assigned`, `incomplete`, `ready`]
-- `tags` (Set of String) Tags associated with this Connectivity Template
+- `tags` (Set of String) Tags associated with the Connectivity Template
