@@ -12,7 +12,7 @@ It covers day 0 and day 1 operations (design and deployment), and a growing list
 
 Use the navigation tree on the left to read about the available resources and data sources.
 
-This release has been tested with Apstra versions 4.2.0, 4.2.1, 4.2.1.1, 4.2.2, 5.0.0, 5.0.1, and 5.1.0.
+This release has been tested with Apstra versions 4.2.0, 4.2.1, 4.2.1.1, 4.2.2, 5.0.0, 5.0.1, 5.1.0, and 6.0.0.
 
 Some example projects which make use of this provider can be found [here](https://github.com/Juniper/terraform-apstra-examples).
 
