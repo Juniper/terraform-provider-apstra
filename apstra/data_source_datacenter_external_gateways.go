@@ -64,7 +64,7 @@ func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datas
 				},
 			},
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "IDs of matching `routing_policy` Graph DB nodes.",
+				MarkdownDescription: "IDs of matching `external_gateway` Graph DB nodes.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},

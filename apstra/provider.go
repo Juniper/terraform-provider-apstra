@@ -52,7 +52,7 @@ configured with a trusted certificate, you might consider setting...
 https://registry.terraform.io/providers/Juniper/apstra/%s/docs#tls_validation_disabled`
 )
 
-var commit, tag string // populated by goreleaser
+var gitCommit, gitTag string // populated by goreleaser
 
 var (
 	_ provider.Provider                       = (*Provider)(nil)
@@ -61,21 +61,21 @@ var (
 
 // NewProvider instantiates the provider in main
 func NewProvider() provider.Provider {
-	l := len(commit)
+	l := len(gitCommit)
 	switch {
 	case l == 0:
-		commit = defaultCommit
+		gitCommit = defaultCommit
 	case l > 7:
-		commit = commit[:8]
+		gitCommit = gitCommit[:8]
 	}
 
-	if len(tag) == 0 {
-		tag = defaultTag
+	if len(gitTag) == 0 {
+		gitTag = defaultTag
 	}
 
 	return &Provider{
-		Version: tag,
-		Commit:  commit,
+		Version: gitTag,
+		Commit:  gitCommit,
 	}
 }
 
@@ -562,6 +562,8 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterSystemNode{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSystemNodes{} },
 		func() datasource.DataSource { return &dataSourceDatacenterSvis{} },
+		func() datasource.DataSource { return &dataSourceDatacenterTag{} },
+		func() datasource.DataSource { return &dataSourceDatacenterTags{} },
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetwork{} },
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetworks{} },
 		func() datasource.DataSource { return &dataSourceDeviceConfig{} },
@@ -634,6 +636,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterInterconnectDomain{} },
 		func() resource.Resource { return &resourceDatacenterInterconnectDomainGateway{} },
+		func() resource.Resource { return &resourceDatacenterIpLinkAddressing{} },
 		func() resource.Resource { return &resourceDatacenterPropertySet{} },
 		func() resource.Resource { return &resourceDatacenterRack{} },
 		func() resource.Resource { return &resourceDatacenterRoutingZone{} },
@@ -641,7 +644,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterRoutingZoneLoopbackAddresses{} },
 		func() resource.Resource { return &resourceDatacenterRoutingPolicy{} },
 		func() resource.Resource { return &resourceDatacenterSecurityPolicy{} },
-		func() resource.Resource { return &resourceDatacenterIpLinkAddressing{} },
+		func() resource.Resource { return &resourceDatacenterTag{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceFreeformAllocGroup{} },

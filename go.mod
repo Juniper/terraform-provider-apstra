@@ -7,7 +7,7 @@ replace github.com/hashicorp/terraform-plugin-framework-nettypes => github.com/c
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20250612183812-fa6e4079bd9a
+	github.com/Juniper/apstra-go-sdk v0.0.0-20250612212135-890449ff8fab
 	github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4
 	github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820
 	github.com/google/go-cmp v0.7.0

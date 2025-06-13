@@ -76,7 +76,7 @@ output "interconnect_domain_gateway_names" {
 
 ### Read-Only
 
-- `ids` (Set of String) IDs of matching `routing_policy` Graph DB nodes.
+- `ids` (Set of String) IDs of matching `interconnect_domain_gateway` Graph DB nodes.
 
 <a id="nestedatt--filters"></a>
 ### Nested Schema for `filters`
