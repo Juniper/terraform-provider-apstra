@@ -531,6 +531,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterBlueprint{} },
 		func() datasource.DataSource { return &dataSourceDatacenterConfiglet{} },
 		func() datasource.DataSource { return &dataSourceDatacenterConfiglets{} },
+		func() datasource.DataSource { return &dataSourceDatacenterConnectivityTemplatesStatus{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtBgpPeeringGenericSystem{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtBgpPeeringIpEndpoint{} },
 		func() datasource.DataSource { return &dataSourceDatacenterCtCustomStaticRoute{} },
