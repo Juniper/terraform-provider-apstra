@@ -44,10 +44,16 @@ const (
 	resourcePoolTypeIpv4 = "ipv4"
 )
 
-func StringersToFriendlyStrings(in []fmt.Stringer) []string {
+// StringersToFriendlyStrings accepts stringers (probably apstra-go-sdk
+// string-able iota or enum types) and returns []string that better reflects
+// terminology used by the Apstra web UI. This function is different from
+// StringersToFriendlyString() in that here, each input fmt.Stringer represents
+// an element in the output, where StringersToFriendlyString() uses all input
+// elements to produce a single output element.
+func StringersToFriendlyStrings[A fmt.Stringer](in []A) []string {
 	result := make([]string, len(in))
 	for i, s := range in {
-		result[i] = s.String()
+		result[i] = StringersToFriendlyString(s)
 	}
 	return result
 }
@@ -63,6 +69,9 @@ type StringerWithFromString interface {
 //
 // For example, the API uses "distinct" where the web UI uses "unique".
 // This function turns apstra.AsnAllocationSchemeDistinct into "unique".
+//
+// In most cases, only a single input element is required, but some stringers
+// require extra context.
 func StringersToFriendlyString(in ...fmt.Stringer) string {
 	if len(in) == 0 {
 		return ""
