@@ -66,14 +66,23 @@ func (o *resourceDatacenterTag) Create(ctx context.Context, req resource.CreateR
 		return
 	}
 
+	// prepare a request
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	_, err = bp.CreateTag(ctx, request)
+	// create the tag
+	id, err := bp.CreateTag(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to create tag", err.Error())
+		return
+	}
+
+	// save the ID (not exposed to the user) in private state
+	p := private.ResourceDatacenterTag{Id: id}
+	p.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -123,9 +132,7 @@ func (o *resourceDatacenterTag) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// save the ID (not exposed to the user) in private state
-	p := private.ResourceDatacenterTag{
-		Id: tag.Id,
-	}
+	p := private.ResourceDatacenterTag{Id: tag.Id}
 	p.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
@@ -208,6 +215,7 @@ func (o *resourceDatacenterTag) Delete(ctx context.Context, req resource.DeleteR
 		return
 	}
 
+	// delete the tag
 	err = bp.DeleteTag(ctx, p.Id)
 	if err != nil {
 		if utils.IsApstra404(err) {

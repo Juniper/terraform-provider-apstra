@@ -19,7 +19,7 @@ type Tag struct {
 	Description types.String `tfsdk:"description"`
 }
 
-func (o Tag) AttrTypes(ctx context.Context, diags *diag.Diagnostic) map[string]attr.Type {
+func (o Tag) AttrTypes(_ context.Context, _ *diag.Diagnostic) map[string]attr.Type {
 	return map[string]attr.Type{
 		"blueprint_id": types.StringType,
 		"name":         types.StringType,
@@ -87,7 +87,10 @@ func (o Tag) Request(_ context.Context, _ *diag.Diagnostics) apstra.TwoStageL3Cl
 	}
 }
 
-func (o *Tag) LoadApiData(ctx context.Context, data *apstra.TwoStageL3ClosTagData, diagnostics *diag.Diagnostics) {
+func (o *Tag) LoadApiData(_ context.Context, data *apstra.TwoStageL3ClosTagData, _ *diag.Diagnostics) {
 	o.Name = types.StringValue(data.Label)
-	o.Description = types.StringValue(data.Description)
+	o.Description = types.StringNull()
+	if data.Description != "" {
+		o.Description = types.StringValue(data.Description)
+	}
 }
