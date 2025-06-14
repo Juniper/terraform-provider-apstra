@@ -1,13 +1,16 @@
+//go:build integration
+
 package blueprint
 
 import (
 	"context"
+	"sort"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/stretchr/testify/require"
-	"sort"
-	"testing"
 )
 
 func TestAccessSwitchIdsToParentLeafIds(t *testing.T) {
