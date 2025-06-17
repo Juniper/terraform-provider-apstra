@@ -102,6 +102,13 @@ func (o *resourceDatacenterTag) ImportState(ctx context.Context, req resource.Im
 		return
 	}
 
+	// save the ID (not exposed to the user) in private state
+	p := private.ResourceDatacenterTag{Id: tag.Id}
+	p.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
