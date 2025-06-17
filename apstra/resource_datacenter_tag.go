@@ -2,8 +2,10 @@ package tfapstra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
@@ -13,9 +15,10 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceDatacenterTag{}
-	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterTag{}
-	_ resourceWithSetBpLockFunc      = &resourceDatacenterTag{}
+	_ resource.ResourceWithConfigure   = &resourceDatacenterTag{}
+	_ resource.ResourceWithImportState = &resourceDatacenterTag{}
+	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterTag{}
+	_ resourceWithSetBpLockFunc        = &resourceDatacenterTag{}
 )
 
 type resourceDatacenterTag struct {
@@ -36,6 +39,70 @@ func (o *resourceDatacenterTag) Schema(_ context.Context, _ resource.SchemaReque
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Tag within a Datacenter Blueprint.",
 		Attributes:          blueprint.Tag{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterTag) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var importId struct {
+		BlueprintId string `json:"blueprint_id"`
+		Id          string `json:"id"`
+		Name        string `json:"name"`
+	}
+
+	// parse the user-supplied import ID string JSON
+	err := json.Unmarshal([]byte(req.ID), &importId)
+	if err != nil {
+		resp.Diagnostics.AddError("failed parsing import id JSON string", err.Error())
+		return
+	}
+
+	if importId.BlueprintId == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'blueprint_id' element of import ID string is required")
+	}
+	if importId.Id == "" && importId.Name == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "One of 'id' and 'name' element of import ID string is required")
+	}
+	if importId.Id != "" && importId.Name != "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'id' and 'name' elements of import ID string cannot both be set")
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// create a state object preloaded with details we have now
+	state := blueprint.Tag{
+		BlueprintId: types.StringValue(importId.BlueprintId),
+	}
+
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintId.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, state.BlueprintId), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, state.BlueprintId), err.Error())
+		return
+	}
+
+	// read the tag from the API
+	var tag apstra.TwoStageL3ClosTag
+	switch {
+	case importId.Name != "":
+		tag, err = bp.GetTagByLabel(ctx, importId.Name)
+	case importId.Id != "":
+		tag, err = bp.GetTag(ctx, apstra.ObjectId(importId.Id))
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("failed to fetch tag", err.Error())
+		return
+	}
+
+	state.LoadApiData(ctx, tag.Data, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceDatacenterTag) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

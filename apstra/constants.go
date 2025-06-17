@@ -15,6 +15,7 @@ const (
 	errTemplateTypeInvalidElement             = "template '%s' has type '%s' which never permits '%s' to be set"
 	errDataSourceReadFail                     = "Data Source Read() failure'"
 	errResourceReadFail                       = "Resource Read() failure'"
+	errImportJsonConflictingFields            = "Import ID JSON has conflicting fields"
 	errImportJsonMissingRequiredField         = "Import ID JSON missing required field"
 	errBpClientCreateSummary                  = "Failed to create client for Blueprint %s"
 	errBpNotFoundSummary                      = "Blueprint %s not found"
