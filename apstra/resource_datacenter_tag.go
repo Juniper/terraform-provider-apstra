@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
