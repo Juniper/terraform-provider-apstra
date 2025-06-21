@@ -6,21 +6,15 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
-var (
-	_ basetypes.StringValuable                   = (*StringWithAltValues)(nil)
-	_ basetypes.StringValuableWithSemanticEquals = (*StringWithAltValues)(nil)
-)
+var _ basetypes.StringValuableWithSemanticEquals = (*StringWithAltValues)(nil)
 
 type StringWithAltValues struct {
 	basetypes.StringValue
-	altValues []attr.Value
-}
-
-func (v StringWithAltValues) Type(_ context.Context) attr.Type {
-	return StringWithAltValuesType{}
+	altValues []basetypes.StringValue
 }
 
 func (v StringWithAltValues) Equal(o attr.Value) bool {
@@ -57,20 +51,24 @@ func (v StringWithAltValues) StringSemanticEquals(_ context.Context, newValuable
 	}
 
 	// check new value against our "alt" values
-	for _, a := range v.altValues {
-		if a.Equal(newValue) {
+	for _, altValue := range v.altValues {
+		if altValue.Equal(newValue.StringValue) {
 			return true, diags
 		}
 	}
 
-	// check old value against new "alt" values
-	for _, a := range newValue.altValues {
-		if a.Equal(v) {
+	// check our value against new "alt" values
+	for _, altValue := range newValue.altValues {
+		if altValue.Equal(v.StringValue) {
 			return true, diags
 		}
 	}
 
 	return false, diags
+}
+
+func (v StringWithAltValues) Type(_ context.Context) attr.Type {
+	return StringWithAltValuesType{}
 }
 
 func NewStringWithAltValuesNull() StringWithAltValues {
@@ -86,9 +84,9 @@ func NewStringWithAltValuesUnknown() StringWithAltValues {
 }
 
 func NewStringWithAltValuesValue(value string, alt ...string) StringWithAltValues {
-	altValues := make([]attr.Value, len(alt))
+	altValues := make([]types.String, len(alt))
 	for i, a := range alt {
-		altValues[i] = StringWithAltValues{StringValue: basetypes.NewStringValue(a)}
+		altValues[i] = types.StringValue(a)
 	}
 
 	return StringWithAltValues{
