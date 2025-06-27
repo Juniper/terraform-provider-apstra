@@ -109,11 +109,24 @@ func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req re
 		return
 	}
 
-	// extract links from plan and state
+	// if possible, extract links from plan and state
+	if plan.Links.IsUnknown() {
+		return
+	}
 	planLinks := plan.GetLinks(ctx, &resp.Diagnostics)
 	stateLinks := state.GetLinks(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// ensure that each planned link has known values for the attributes we'll be inspecting
+	for _, link := range planLinks {
+		if link.TargetSwitchId.IsUnknown() ||
+			link.TargetSwitchIfName.IsUnknown() ||
+			link.TargetSwitchIfTransformId.IsUnknown() ||
+			link.LagMode.IsUnknown() {
+			return
+		}
 	}
 
 	// digests uniquely identify an endpoint. Make a map for quick lookup by digest
