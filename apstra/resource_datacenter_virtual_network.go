@@ -293,6 +293,11 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		state.ReserveVlan = plan.ReserveVlan
 	}
 
+	// #1114 - VN with no bindings cannot retain `dhcp_service` attribute, so copy planned value to state.
+	if len(plan.Bindings.Elements()) == 0 && plan.DhcpServiceEnabled.ValueBool() {
+		state.DhcpServiceEnabled = plan.DhcpServiceEnabled
+	}
+
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
