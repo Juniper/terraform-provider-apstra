@@ -135,9 +135,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
-	if o.dhcpEnabled == nil {
-		result.append(t, "TestCheckResourceAttr", "dhcp_service_enabled", strconv.FormatBool(false))
-	} else {
+	if o.dhcpEnabled != nil {
 		result.append(t, "TestCheckResourceAttr", "dhcp_service_enabled", strconv.FormatBool(*o.dhcpEnabled))
 	}
 

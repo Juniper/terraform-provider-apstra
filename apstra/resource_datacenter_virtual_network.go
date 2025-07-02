@@ -293,8 +293,10 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		state.ReserveVlan = plan.ReserveVlan
 	}
 
-	// #1114 - VN with no bindings cannot retain `dhcp_service` attribute, so copy planned value to state.
-	if len(plan.Bindings.Elements()) == 0 && plan.DhcpServiceEnabled.ValueBool() {
+	// Due to #1114, the discovered DhcpServiceEnabled value might be false even if we set it true.
+	// Further, a value will exist (false) if none was configured.
+	// Overwrite the discovered value if one was supplied by the plan.
+	if !plan.DhcpServiceEnabled.IsUnknown() {
 		state.DhcpServiceEnabled = plan.DhcpServiceEnabled
 	}
 
@@ -451,6 +453,13 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 	if !plan.ReserveVlan.IsUnknown() {
 		stateOut.ReserveVlan = plan.ReserveVlan
+	}
+
+	// Due to #1114, the discovered DhcpServiceEnabled value might be false even if we set it true.
+	// Further, a value will exist (false) if none was configured.
+	// Overwrite the discovered value if one was supplied by the plan.
+	if !plan.DhcpServiceEnabled.IsUnknown() {
+		state.DhcpServiceEnabled = plan.DhcpServiceEnabled
 	}
 
 	// if the plan modifier didn't take action...

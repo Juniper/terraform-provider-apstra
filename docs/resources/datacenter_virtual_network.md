@@ -57,7 +57,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 
 - `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with no bindings can be created by omitting (or setting `null`) this attribute. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
 - `description` (String) Virtual Network Description
-- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent. Note that setting this value when no `bindings` are configured may lead to state churn because a VN with no bindings cannot retain this setting.
+- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent. Note that enabling this feature when no `bindings` are configured may lead to state churn because a VN with no bindings cannot retain the *enabled* state.
 - `export_route_targets` (Set of String) Export RTs for this Virtual Network.
 - `import_route_targets` (Set of String) Import RTs for this Virtual Network.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network. Default: true

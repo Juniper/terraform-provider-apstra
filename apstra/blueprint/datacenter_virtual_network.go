@@ -443,11 +443,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"dhcp_service_enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables a DHCP relay agent. Note that setting this value when no `bindings` are " +
-				"configured may lead to state churn because a VN with no bindings cannot retain this setting.",
+			MarkdownDescription: "Enables a DHCP relay agent. Note that enabling this feature when no `bindings` are " +
+				"configured may lead to state churn because a VN with no bindings cannot retain the *enabled* state.",
 			Optional: true,
 			Computed: true,
-			Default:  booldefault.StaticBool(false),
 		},
 		"ipv4_connectivity_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
