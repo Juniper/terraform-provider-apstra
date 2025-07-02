@@ -128,7 +128,7 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	}
 
 	// Updating the routing_zone_id attribute is only permitted with Apstra >= 5.0.0
-	if !plan.RoutingZoneId.Equal(state.RoutingZoneId) {
+	if !plan.RoutingZoneId.IsUnknown() && !plan.RoutingZoneId.Equal(state.RoutingZoneId) {
 		// routing_zone_id attribute has been changed
 		if o.client != nil && compatibility.ChangeVnRzIdForbidden.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
 			resp.RequiresReplace.Append(path.Root("routing_zone_id"))
