@@ -294,7 +294,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	}
 
 	// Due to #1114, the discovered DhcpServiceEnabled value might be false even if we set it true.
-	// Further, a value will exist (false) if none was configured.
+	// Further, a value (false) will exist if none was sent to the API.
 	// Overwrite the discovered value if one was supplied by the plan.
 	if !plan.DhcpServiceEnabled.IsUnknown() {
 		state.DhcpServiceEnabled = plan.DhcpServiceEnabled
@@ -456,7 +456,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 
 	// Due to #1114, the discovered DhcpServiceEnabled value might be false even if we set it true.
-	// Further, a value will exist (false) if none was configured.
+	// Further, a value (false) will exist if none was sent to the API.
 	// Overwrite the discovered value if one was supplied by the plan.
 	if !plan.DhcpServiceEnabled.IsUnknown() {
 		state.DhcpServiceEnabled = plan.DhcpServiceEnabled
