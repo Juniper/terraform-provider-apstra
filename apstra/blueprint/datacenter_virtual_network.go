@@ -447,6 +447,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				"configured may lead to state churn because a VN with no bindings cannot retain the *enabled* state.",
 			Optional: true,
 			Computed: true,
+			Default:  booldefault.StaticBool(false),
 		},
 		"ipv4_connectivity_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
