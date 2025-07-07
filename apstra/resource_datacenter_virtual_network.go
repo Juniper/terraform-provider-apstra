@@ -293,7 +293,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		state.ReserveVlan = plan.ReserveVlan
 	}
 
-	// Due to #1114, the discovered DhcpServiceEnabled value might be false even if we set it true.
+	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
 	// Overwrite the discovered value with the planned value.
 	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
 
@@ -452,7 +452,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		stateOut.ReserveVlan = plan.ReserveVlan
 	}
 
-	// Due to #1114, the discovered DhcpServiceEnabled value might be false even if we set it true.
+	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
 	// Overwrite the discovered value with the planned value.
 	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
 
