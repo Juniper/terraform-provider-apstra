@@ -829,6 +829,20 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
+		"issue_1114_dhcp_with_zero_bindings": {
+			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVlan.String(),
+						routingZoneId: szId,
+						dhcpEnabled:   utils.ToPtr(true),
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterVirtualNetwork)

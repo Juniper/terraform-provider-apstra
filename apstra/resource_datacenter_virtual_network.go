@@ -293,6 +293,10 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		state.ReserveVlan = plan.ReserveVlan
 	}
 
+	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
+	// Overwrite the discovered value with the planned value.
+	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
+
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
@@ -447,6 +451,10 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	if !plan.ReserveVlan.IsUnknown() {
 		stateOut.ReserveVlan = plan.ReserveVlan
 	}
+
+	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
+	// Overwrite the discovered value with the planned value.
+	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
 
 	// if the plan modifier didn't take action...
 	if plan.HadPriorVniConfig.IsUnknown() {
