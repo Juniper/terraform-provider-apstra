@@ -1,6 +1,4 @@
-// Copyright (c) Juniper Networks, Inc., 2022. All rights reserved.
-
-package blueprint
+package tfapstra
 
 import (
 	"context"
@@ -9,11 +7,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/apstra/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -21,68 +16,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// SviIp represents the secondary virtual interface IPs for switches in a virtual network
 type SviIp struct {
-	SystemId    types.String `tfsdk:"system_id"`
+	SystemId   types.String `tfsdk:"system_id"`
 	IPv4Address types.String `tfsdk:"ipv4_address"`
-	IPv4Mode    types.String `tfsdk:"ipv4_mode"`
+	IPv4Mode   types.String `tfsdk:"ipv4_mode"`
 	IPv6Address types.String `tfsdk:"ipv6_address"`
-	IPv6Mode    types.String `tfsdk:"ipv6_mode"`
+	IPv6Mode   types.String `tfsdk:"ipv6_mode"`
 }
 
-// AttrTypes returns the attribute types for the SVI IP struct
 func (o SviIp) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"system_id":     types.StringType,
-		"ipv4_address":  types.StringType,
-		"ipv4_mode":     types.StringType,
-		"ipv6_address":  types.StringType,
-		"ipv6_mode":     types.StringType,
+		"system_id":    types.StringType,
+		"ipv4_address": types.StringType,
+		"ipv4_mode":    types.StringType,
+		"ipv6_address": types.StringType,
+		"ipv6_mode":    types.StringType,
 	}
 }
 
-// DataSourceAttributes returns the data source schema attributes for SVI IP
-func (o SviIp) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
-	return map[string]dataSourceSchema.Attribute{
-		"system_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Graph DB node ID of the system for this SVI IP assignment.",
-			Computed:            true,
-		},
-		"ipv4_address": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "IPv4 address in CIDR format for the SVI interface.",
-			Computed:            true,
-		},
-		"ipv4_mode": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "IPv4 mode for the SVI interface. Options are `disabled`, `enabled`, or `forced`.",
-			Computed:            true,
-		},
-		"ipv6_address": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "IPv6 address in CIDR format for the SVI interface.",
-			Computed:            true,
-		},
-		"ipv6_mode": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "IPv6 mode for the SVI interface. Options are `disabled`, `enabled`, `forced`, or `link_local`.",
-			Computed:            true,
-		},
-	}
-}
-
-// ResourceAttributes returns the resource schema attributes for SVI IP
 func (o SviIp) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "System ID of the switch for this SVI IP assignment",
 			Required:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthAtLeast(1),
-			},
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address with CIDR notation (e.g., '192.0.2.2/24')",
 			Optional:            true,
-			Validators: []validator.String{
-				apstravalidator.ParseCidr(true, false),
-			},
 		},
 		"ipv4_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "SVI IPv4 mode: 'disabled', 'enabled', or 'forced'",
@@ -90,19 +50,12 @@ func (o SviIp) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 			Default:             stringdefault.StaticString("enabled"),
 			Validators: []validator.String{
-				stringvalidator.OneOf(
-					enum.SviIpv4ModeDisabled.String(),
-					enum.SviIpv4ModeEnabled.String(),
-					enum.SviIpv4ModeForced.String(),
-				),
+				stringvalidator.OneOf("disabled", "enabled", "forced"),
 			},
 		},
 		"ipv6_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address with CIDR notation (e.g., '2001:db8::2/64')",
 			Optional:            true,
-			Validators: []validator.String{
-				apstravalidator.ParseCidr(false, true),
-			},
 		},
 		"ipv6_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: "SVI IPv6 mode: 'disabled', 'enabled', 'forced', or 'link_local'",
@@ -110,18 +63,12 @@ func (o SviIp) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Computed:            true,
 			Default:             stringdefault.StaticString("disabled"),
 			Validators: []validator.String{
-				stringvalidator.OneOf(
-					enum.SviIpv6ModeDisabled.String(),
-					enum.SviIpv6ModeEnabled.String(),
-					enum.SviIpv6ModeForced.String(),
-					enum.SviIpv6ModeLinkLocal.String(),
-				),
+				stringvalidator.OneOf("disabled", "enabled", "forced", "link_local"),
 			},
 		},
 	}
 }
 
-// Request converts a Terraform SviIp to an Apstra SDK SviIp
 func (o SviIp) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.SviIp {
 	var ipv4Mode enum.SviIpv4Mode
 	var ipv6Mode enum.SviIpv6Mode
@@ -149,7 +96,7 @@ func (o SviIp) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.Svi
 	}
 
 	// Parse IPv4 address if provided
-	if utils.HasValue(o.IPv4Address) {
+	if !o.IPv4Address.IsNull() && o.IPv4Address.ValueString() != "" {
 		var ip net.IP
 		ip, result.Ipv4Addr, err = net.ParseCIDR(o.IPv4Address.ValueString())
 		if err != nil {
@@ -162,7 +109,7 @@ func (o SviIp) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.Svi
 	}
 
 	// Parse IPv6 address if provided
-	if utils.HasValue(o.IPv6Address) {
+	if !o.IPv6Address.IsNull() && o.IPv6Address.ValueString() != "" {
 		var ip net.IP
 		ip, result.Ipv6Addr, err = net.ParseCIDR(o.IPv6Address.ValueString())
 		if err != nil {
@@ -177,8 +124,7 @@ func (o SviIp) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.Svi
 	return result
 }
 
-// LoadApiData loads data from the Apstra SDK SviIp into a Terraform SviIp
-func (o *SviIp) LoadApiData(_ context.Context, in apstra.SviIp, diags *diag.Diagnostics) {
+func (o *SviIp) LoadApiData(ctx context.Context, in apstra.SviIp, diags *diag.Diagnostics) {
 	o.SystemId = types.StringValue(string(in.SystemId))
 	o.IPv4Mode = types.StringValue(in.Ipv4Mode.String())
 	o.IPv6Mode = types.StringValue(in.Ipv6Mode.String())
@@ -194,33 +140,4 @@ func (o *SviIp) LoadApiData(_ context.Context, in apstra.SviIp, diags *diag.Diag
 	} else {
 		o.IPv6Address = types.StringNull()
 	}
-}
-
-// loadApiSviIps loads a slice of Apstra SviIp objects into a Terraform Set
-func loadApiSviIps(ctx context.Context, in []apstra.SviIp, diags *diag.Diagnostics) types.Set {
-	if len(in) == 0 {
-		return types.SetNull(types.ObjectType{AttrTypes: SviIp{}.AttrTypes()})
-	}
-	
-	elemValues := make([]attr.Value, len(in))
-	for i := range in {
-		var sviIp SviIp
-		sviIp.LoadApiData(ctx, in[i], diags)
-		if diags.HasError() {
-			return types.SetNull(types.ObjectType{AttrTypes: SviIp{}.AttrTypes()})
-		}
-		
-		elemValues[i] = types.ObjectValueMust(
-			SviIp{}.AttrTypes(),
-			map[string]attr.Value{
-				"system_id":     sviIp.SystemId,
-				"ipv4_address":  sviIp.IPv4Address,
-				"ipv4_mode":     sviIp.IPv4Mode,
-				"ipv6_address":  sviIp.IPv6Address,
-				"ipv6_mode":     sviIp.IPv6Mode,
-			},
-		)
-	}
-	
-	return types.SetValueMust(types.ObjectType{AttrTypes: SviIp{}.AttrTypes()}, elemValues)
 }
