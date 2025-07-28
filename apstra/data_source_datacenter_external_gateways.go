@@ -52,7 +52,7 @@ func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datas
 				Optional:   true,
 				Validators: []validator.List{listvalidator.SizeAtLeast(1)},
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: blueprint.DatacenterExternalGateway{}.DataSourceAttributesAsFilter(),
+					Attributes: blueprint.ExternalGateway{}.DataSourceAttributesAsFilter(),
 					Validators: []validator.Object{
 						apstravalidator.AtLeastNAttributes(
 							1,
@@ -64,7 +64,7 @@ func (o *dataSourceDatacenterExternalGateways) Schema(_ context.Context, _ datas
 				},
 			},
 			"ids": schema.SetAttribute{
-				MarkdownDescription: "IDs of matching `routing_policy` Graph DB nodes.",
+				MarkdownDescription: "IDs of matching `external_gateway` Graph DB nodes.",
 				Computed:            true,
 				ElementType:         types.StringType,
 			},
@@ -86,7 +86,7 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 	}
 
 	// extract filters from the config
-	var filters []blueprint.DatacenterExternalGateway
+	var filters []blueprint.ExternalGateway
 	resp.Diagnostics.Append(config.Filters.ElementsAs(ctx, &filters, false)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -103,19 +103,27 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		return
 	}
 
-	// collect all external gateways in the blueprint
-	apiResponse, err := bp.GetAllRemoteGateways(ctx)
+	// collect all remote gateways in the blueprint
+	remoteGateways, err := bp.GetAllRemoteGateways(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to fetch external gateways", err.Error())
 		return
+	}
+
+	// eliminate remote gateways which belong to an interconnect group
+	for i := len(remoteGateways) - 1; i >= 0; i-- { // loop backwards
+		if remoteGateways[i].Data.EvpnInterconnectGroupId != nil {
+			remoteGateways[i] = remoteGateways[len(remoteGateways)-1] // copy last item to position i
+			remoteGateways = remoteGateways[:len(remoteGateways)-1]   // delete last item
+		}
 	}
 
 	// Did the user send any filters?
 	if len(filters) == 0 { // no filter shortcut! return all IDs without inspection
 
 		// collect the IDs into config.Ids
-		ids := make([]attr.Value, len(apiResponse))
-		for i, remoteGateway := range apiResponse {
+		ids := make([]attr.Value, len(remoteGateways))
+		for i, remoteGateway := range remoteGateways {
 			ids[i] = types.StringValue(remoteGateway.Id.String())
 		}
 		config.Ids = types.SetValueMust(types.StringType, ids)
@@ -125,13 +133,24 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		return
 	}
 
+	// determine whether we need to extract protocol passwords from the graph
+	filterOnProtocolPassword := false
+	for _, filter := range filters {
+		if !filter.Password.IsNull() {
+			filterOnProtocolPassword = true // we need to extract protocol passwords from the graph
+			break
+		}
+	}
+
 	// extract the API response items so that they can be filtered
-	candidates := make([]blueprint.DatacenterExternalGateway, len(apiResponse))
-	for i := range apiResponse {
-		externalGateway := blueprint.DatacenterExternalGateway{Id: types.StringValue(apiResponse[i].Id.String())}
-		externalGateway.LoadApiData(ctx, apiResponse[i].Data, &resp.Diagnostics)
-		externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
-		candidates[i] = externalGateway
+	var candidates []blueprint.ExternalGateway
+	for _, remoteGateway := range remoteGateways {
+		externalGateway := blueprint.ExternalGateway{Id: types.StringValue(remoteGateway.Id.String())}
+		externalGateway.LoadApiData(ctx, remoteGateway.Data, &resp.Diagnostics)
+		if filterOnProtocolPassword {
+			externalGateway.ReadProtocolPassword(ctx, bp, &resp.Diagnostics)
+		}
+		candidates = append(candidates, externalGateway)
 	}
 	if resp.Diagnostics.HasError() {
 		return
@@ -143,7 +162,7 @@ func (o *dataSourceDatacenterExternalGateways) Read(ctx context.Context, req dat
 		for _, filter := range filters { // loop over filters
 			if filter.FilterMatch(ctx, &candidate, &resp.Diagnostics) {
 				ids = append(ids, candidate.Id)
-				break
+				break // we found a match - don't need to check remaining filters
 			}
 		}
 	}

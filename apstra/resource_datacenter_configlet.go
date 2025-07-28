@@ -188,8 +188,7 @@ func (o *resourceDatacenterConfiglet) Read(ctx context.Context, req resource.Rea
 			resp.State.RemoveResource(ctx)
 			return
 		}
-		resp.Diagnostics.AddAttributeError(path.Root("name"),
-			fmt.Sprintf("Failed to read imported Configlet %s", state.Id), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("Failed to read imported Configlet %s", state.Id), err.Error())
 		return
 	}
 
@@ -268,14 +267,14 @@ func (o *resourceDatacenterConfiglet) Delete(ctx context.Context, req resource.D
 		return
 	}
 
-	// Delete Property Set by calling API
+	// Delete Configlet by calling API
 	err = bp.DeleteConfiglet(ctx, apstra.ObjectId(state.Id.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
 		resp.Diagnostics.AddError(
-			fmt.Sprintf("unable to delete Property Set %s from Blueprint %s", state.Id, state.BlueprintId),
+			fmt.Sprintf("unable to delete Configlet %s from Blueprint %s", state.Id, state.BlueprintId),
 			err.Error())
 	}
 }

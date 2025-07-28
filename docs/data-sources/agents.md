@@ -29,7 +29,8 @@ data "apstra_agents" "agents" {
 
 ### Optional
 
-- `filter` (Attributes) Agent attributes used as a filter (see [below for nested schema](#nestedatt--filter))
+- `filter` (Attributes, Deprecated) Agent attributes used as a filter (see [below for nested schema](#nestedatt--filter))
+- `filters` (Attributes List) Agent attributes used as a filters (see [below for nested schema](#nestedatt--filters))
 
 ### Read-Only
 
@@ -37,6 +38,20 @@ data "apstra_agents" "agents" {
 
 <a id="nestedatt--filter"></a>
 ### Nested Schema for `filter`
+
+Optional:
+
+- `agent_id` (String) Apstra ID for the Managed Device Agent.
+- `agent_profile_id` (String) ID of the Agent Profile associated with the Agent.
+- `device_key` (String) Key which uniquely identifies a System asset, probably a serial number.
+- `location` (String) Device `location` field.
+- `management_ip` (String) Management IP address of the System.
+- `off_box` (Boolean) Indicates whether the agent runs on the switch (true) or on an Apstra node (false).
+- `system_id` (String) Apstra ID for the System onboarded by the Managed Device Agent.
+
+
+<a id="nestedatt--filters"></a>
+### Nested Schema for `filters`
 
 Optional:
 

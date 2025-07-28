@@ -34,6 +34,7 @@ type testConfig struct {
 	Url                   string `hcl:"url,optional"`
 	Username              string `hcl:"username,optional"`
 	Password              string `hcl:"password,optional"`
+	ApiOpsDcId            string `hcl:"api_ops_dc_id,optional"`
 	TlsValidationDisabled bool   `hcl:"tls_validation_disabled,optional"`
 }
 
@@ -100,6 +101,12 @@ func TestCfgFileToEnv(t testing.TB) {
 
 	if testCfg.Password != "" {
 		t.Setenv(constants.EnvPassword, testCfg.Password)
+	}
+
+	if testCfg.ApiOpsDcId != "" {
+		t.Setenv(constants.EnvUsername, "bogus_user")     // set a bogus username when relying on api-ops proxy
+		t.Setenv(constants.EnvPassword, "bogus_password") // set a bogus password when relying on api-ops proxy
+		t.Setenv("API_OPS_DATACENTER_EDGE_ID", testCfg.ApiOpsDcId)
 	}
 
 	t.Setenv(constants.EnvTlsNoVerify, strconv.FormatBool(testCfg.TlsValidationDisabled))

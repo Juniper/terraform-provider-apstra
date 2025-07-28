@@ -58,6 +58,7 @@ type DatacenterVirtualNetwork struct {
 	ImportRouteTargets      types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets      types.Set    `tfsdk:"export_route_targets"`
 	SviIps                  types.Set    `tfsdk:"svi_ips"`
+	Tags                    types.Set    `tfsdk:"tags"`
 }
 
 func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -181,6 +182,11 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed:            true,
 			ElementType:         types.StringType,
 		},
+		"tags": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Tags for this Virtual Network.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 	}
 }
 
@@ -299,6 +305,13 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			ElementType:         types.StringType,
 			Validators:          []validator.Set{setvalidator.ValueStringsAre(apstravalidator.ParseRT())},
 		},
+		"tags": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Tags. All tags supplied here are used to match the Virtual Network, " +
+				"but a matching Virtual Network may have additional tags not enumerated in this set.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
+		},
 	}
 }
 
@@ -357,7 +370,6 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 					path.MatchRelative().AtParent().AtName("type"),
 				),
 			},
-			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
@@ -432,18 +444,12 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"dhcp_service_enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables a DHCP relay agent.",
-			Optional:            true,
-			Computed:            true,
-			Default:             booldefault.StaticBool(false),
-			Validators: []validator.Bool{
-				apstravalidator.WhenValueIsBool(types.BoolValue(true),
-					apstravalidator.AlsoRequiresNOf(1,
-						path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"),
-						path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"),
-					),
-				),
-			},
+			MarkdownDescription: "Enables a DHCP relay agent. Note that configuring this feature without configuring " +
+				"any `bindings` may lead to state churn because a VN with no bindings does not retain the " +
+				"`dhcp_service_enabled` state.",
+			Optional: true,
+			Computed: true,
+			Default:  booldefault.StaticBool(false),
 		},
 		"ipv4_connectivity_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
@@ -577,6 +583,18 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(apstravalidator.ParseRT()),
 			},
+		},
+		"tags": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of tags for this Virtual Network",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+		},
+		"svi_ips": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of SVI IP addresses for this Virtual Network",
+			Optional:            true,
+			ElementType:         types.StringType,
+			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 	}
 }
@@ -742,6 +760,8 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 		o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ImportRTs, diags)
 		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ExportRTs, diags)
 	}
+
+	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
 }
 
 func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
@@ -882,7 +902,8 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(resultName)},
-			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeRouteTargetPolicy.QEEAttribute()}).
+			}).
+			Out([]apstra.QEEAttribute{apstra.RelationshipTypeRouteTargetPolicy.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeRouteTargetPolicy.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(nodeName)},
@@ -901,6 +922,21 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		}
 
 		vnQuery.Match(rtQuery)
+	}
+
+	for _, tag := range o.Tags.Elements() {
+		tagQuery := new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
+			}).
+			In([]apstra.QEEAttribute{apstra.RelationshipTypeTag.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeTag.QEEAttribute(),
+				{Key: "label", Value: apstra.QEStringVal(tag.(types.String).ValueString())},
+			})
+
+		vnQuery.Match(tagQuery)
 	}
 
 	return vnQuery
@@ -1006,5 +1042,12 @@ func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConst
 		)
 	}
 
+	if utils.HasValue(o.Tags) {
+		response.AddAttributeConstraints(
+			compatibility.AttributeConstraint{
+				Path:        path.Root("tags"),
+				Constraints: compatibility.VnTagsOk,
+			})
+	}
 	return response
 }

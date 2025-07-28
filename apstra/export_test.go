@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	DataSourceBlueprintNodeConfig   = dataSourceBlueprintNodeConfig{}
-	DataSourceDatacenterSystemNodes = dataSourceDatacenterSystemNodes{}
+	DataSourceBlueprintNodeConfig                   = dataSourceBlueprintNodeConfig{}
+	DataSourceDatacenterSystemNodes                 = dataSourceDatacenterSystemNodes{}
+	DataSourceDatacenterConnectivityTemplatesStatus = dataSourceDatacenterConnectivityTemplatesStatus{}
 
 	ResourceAgentProfile                                   = resourceAgentProfile{}
 	ResourceAsnPool                                        = resourceAsnPool{}
@@ -21,11 +22,16 @@ var (
 	ResourceDatacenterConnectivityTemplateProtocolEndpoint = resourceDatacenterConnectivityTemplateProtocolEndpoint{}
 	ResourceDatacenterConnectivityTemplateSvi              = resourceDatacenterConnectivityTemplateSvi{}
 	ResourceDatacenterConnectivityTemplateSystem           = resourceDatacenterConnectivityTemplateSystem{}
+	ResourceDatacenterExternalGateway                      = resourceDatacenterExternalGateway{}
 	ResourceDatacenterGenericSystem                        = resourceDatacenterGenericSystem{}
+	ResourceDatacenterInterconnectDomain                   = resourceDatacenterInterconnectDomain{}
+	ResourceDatacenterInterconnectDomainGateway            = resourceDatacenterInterconnectDomainGateway{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
+	ResourceDatacenterRack                                 = resourceDatacenterRack{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
 	ResourceDatacenterRoutingZoneConstraint                = resourceDatacenterRoutingZoneConstraint{}
 	ResourceDatacenterRoutingZoneLoopbackAddresses         = resourceDatacenterRoutingZoneLoopbackAddresses{}
+	ResourceDatacenterTag                                  = resourceDatacenterTag{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}
 	ResourceFreeformBlueprint                              = resourceFreeformBlueprint{}

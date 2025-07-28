@@ -34,20 +34,22 @@ import (
 )
 
 type DatacenterGenericSystem struct {
-	Id                types.String         `tfsdk:"id"`
-	BlueprintId       types.String         `tfsdk:"blueprint_id"`
-	Name              types.String         `tfsdk:"name"`
-	Hostname          types.String         `tfsdk:"hostname"`
-	Tags              types.Set            `tfsdk:"tags"`
-	Links             types.Set            `tfsdk:"links"`
-	Asn               types.Int64          `tfsdk:"asn"`
-	LoopbackIpv4      cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
-	LoopbackIpv6      cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
-	PortChannelIdMin  types.Int64          `tfsdk:"port_channel_id_min"`
-	PortChannelIdMax  types.Int64          `tfsdk:"port_channel_id_max"`
-	External          types.Bool           `tfsdk:"external"`
-	DeployMode        types.String         `tfsdk:"deploy_mode"`
-	ClearCtsOnDestroy types.Bool           `tfsdk:"clear_cts_on_destroy"`
+	Id                    types.String         `tfsdk:"id"`
+	BlueprintId           types.String         `tfsdk:"blueprint_id"`
+	Name                  types.String         `tfsdk:"name"`
+	Hostname              types.String         `tfsdk:"hostname"`
+	Tags                  types.Set            `tfsdk:"tags"`
+	Links                 types.Set            `tfsdk:"links"`
+	Asn                   types.Int64          `tfsdk:"asn"`
+	LoopbackIpv4          cidrtypes.IPv4Prefix `tfsdk:"loopback_ipv4"`
+	LoopbackIpv6          cidrtypes.IPv6Prefix `tfsdk:"loopback_ipv6"`
+	PortChannelIdMin      types.Int64          `tfsdk:"port_channel_id_min"`
+	PortChannelIdMax      types.Int64          `tfsdk:"port_channel_id_max"`
+	External              types.Bool           `tfsdk:"external"`
+	DeployMode            types.String         `tfsdk:"deploy_mode"`
+	ClearCtsOnDestroy     types.Bool           `tfsdk:"clear_cts_on_destroy"`
+	AppPointsByGroupLabel types.Map            `tfsdk:"link_application_point_ids_by_group_label"`
+	AppPointsByTag        types.Map            `tfsdk:"link_application_point_ids_by_tag"`
 }
 
 func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -163,6 +165,20 @@ func (o DatacenterGenericSystem) ResourceAttributes() map[string]resourceSchema.
 				"  - Orphaning a LAG interface by reassigning all of its member links to new roles by changing their " +
 				"`group_label` attribute\n",
 			Optional: true,
+		},
+		"link_application_point_ids_by_group_label": resourceSchema.MapAttribute{
+			MarkdownDescription: "Map of application point ids keyed by `group_label`. The value at each key is a string " +
+				"representing the physical or logical (for LAG interfaces) switch port where the server is connected.",
+			ElementType: types.StringType,
+			Computed:    true,
+		},
+		"link_application_point_ids_by_tag": resourceSchema.MapAttribute{
+			MarkdownDescription: "Map of application point ids keyed by `tag`. The value at each key is a set of strings " +
+				"representing the physical or logical (for LAG interfaces) switch ports where server links tagged with " +
+				"the map key are connected. Note that some link tag related config drift may not be reflected in this " +
+				"attribute until after an `apply` has corrected the drift.",
+			ElementType: types.SetType{ElemType: types.StringType},
+			Computed:    true,
 		},
 	}
 }
@@ -735,6 +751,44 @@ func (o *DatacenterGenericSystem) updateLinkParams(ctx context.Context, planLink
 	}
 }
 
+// LinkGroupLabels returns a sorted []string representing the group labels
+// assigned to all of the links belonging to the DatacenterGenericSystem
+func (o DatacenterGenericSystem) LinkGroupLabels(ctx context.Context, diags *diag.Diagnostics) []string {
+	var links []DatacenterGenericSystemLink
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	groupLabelMap := make(map[string]struct{}, len(links))
+	for _, link := range links {
+		groupLabelMap[link.GroupLabel.ValueString()] = struct{}{}
+	}
+
+	return utils.MapKeysSorted(groupLabelMap)
+}
+
+// LinkTags returns a sorted []string representing all of the tags
+// assigned to all of the links belonging to the DatacenterGenericSystem
+func (o DatacenterGenericSystem) LinkTags(ctx context.Context, diags *diag.Diagnostics) []string {
+	var links []DatacenterGenericSystemLink
+	diags.Append(o.Links.ElementsAs(ctx, &links, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	tagMap := make(map[string]struct{})
+	for _, link := range links {
+		var tags []string
+		diags.Append(link.Tags.ElementsAs(ctx, &tags, false)...)
+		for _, tag := range tags {
+			tagMap[tag] = struct{}{}
+		}
+	}
+
+	return utils.MapKeysSorted(tagMap)
+}
+
 func lagLinkIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3ClosClient, gsId apstra.ObjectId, groupLabel string) (apstra.ObjectId, error) {
 	query := new(apstra.PathQuery).SetBlueprintId(bp.Id()).SetClient(bp.Client()).
 		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(gsId.String())}}).
@@ -1215,4 +1269,160 @@ func (o *DatacenterGenericSystem) ClearConnectivityTemplatesFromLinks(ctx contex
 			err.Error())
 		return
 	}
+}
+
+func (o *DatacenterGenericSystem) ReadSwitchInterfaceApplicationPoints(ctx context.Context, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	nodeName := "n_system"
+	physicalLinkName := "n_physical_link"
+	physicalLinkTag := "n_physical_link_tag"
+	physicalIntfName := "n_physical_intf"
+	localLagIntfName := "n_local_lag_intf"
+	sharedLagIntfName := "n_shared_lag_intf"
+
+	// Graph traversal: server >---> physical link
+	physicalLinkQuery := new(apstra.PathQuery).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "id", Value: apstra.QEStringVal(o.Id.ValueString())},
+			{Key: "name", Value: apstra.QEStringVal(nodeName)},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("ethernet")},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeLink.QEEAttribute(),
+			{Key: "link_type", Value: apstra.QEStringVal("ethernet")},
+			{Key: "name", Value: apstra.QEStringVal(physicalLinkName)},
+		})
+
+	// Graph traversal: physical link >---> switch
+	physicalIntfQuery := new(apstra.PathQuery).
+		Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal(physicalLinkName)}}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("ethernet")},
+			{Key: "name", Value: apstra.QEStringVal(physicalIntfName)},
+		}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "system_type", Value: apstra.QEStringVal("switch")},
+		})
+
+	// Graph traversal: physical link >---> tag
+	linkTagQuery := new(apstra.PathQuery).
+		Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal(physicalLinkName)}}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeTag.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeTag.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal(physicalLinkTag)},
+		})
+
+	// Graph traversal: physical switch interface >---> local lag interface
+	localLagQuery := new(apstra.PathQuery).
+		Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal(physicalIntfName)}}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeComposedOf.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
+			{Key: "po_control_protocol", Value: apstra.QENone(true)},
+			{Key: "name", Value: apstra.QEStringVal(localLagIntfName)},
+		})
+
+	// Graph traversal: local lag interface >---> shared (esi/mlag) lag interface
+	redundantLagQuery := new(apstra.PathQuery).
+		Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal(localLagIntfName)}}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeComposedOf.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterface.QEEAttribute(),
+			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
+			{Key: "po_control_protocol", Value: apstra.QENone(false)},
+			{Key: "name", Value: apstra.QEStringVal(sharedLagIntfName)},
+		})
+
+	query := new(apstra.MatchQuery).
+		SetClient(client.Client()).
+		SetBlueprintId(client.Id()).
+		Match(physicalLinkQuery).
+		Match(new(apstra.MatchQuery).
+			Match(physicalIntfQuery).
+			Optional(linkTagQuery)).
+		Optional(new(apstra.MatchQuery).
+			Match(localLagQuery).
+			Optional(redundantLagQuery))
+
+	var queryResult struct {
+		Items []struct {
+			PhysicalLink struct {
+				Id         apstra.ObjectId `json:"id"`
+				GroupLabel string          `json:"group_label"`
+			} `json:"n_physical_link"`
+			PhysicalIntf struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_physical_intf"`
+			LocalLagIntf *struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_local_lag_intf"`
+			SharedLagIntf *struct {
+				Id apstra.ObjectId `json:"id"`
+			} `json:"n_shared_lag_intf"`
+			PhysicalLinkTag *struct {
+				Label string `json:"label"`
+			} `json:"n_physical_link_tag"`
+		} `json:"items"`
+	}
+
+	err := query.Do(ctx, &queryResult)
+	if err != nil {
+		diags.AddError(
+			"Error while executing query for application point IDs",
+			fmt.Sprintf("Graph Query: %q\n\nError: %s", query.String(), err.Error()),
+		)
+		return
+	}
+
+	groupLabelToIntf := make(map[string]apstra.ObjectId)
+	tagToIntfMap := make(map[string]map[apstra.ObjectId]struct{})
+	for _, item := range queryResult.Items {
+		switch {
+		case item.SharedLagIntf != nil: // link is part of an esi or mlag aggregate
+			groupLabelToIntf[item.PhysicalLink.GroupLabel] = item.SharedLagIntf.Id
+			if item.PhysicalLinkTag != nil {
+				if _, ok := tagToIntfMap[item.PhysicalLinkTag.Label]; !ok {
+					tagToIntfMap[item.PhysicalLinkTag.Label] = make(map[apstra.ObjectId]struct{})
+				}
+				tagToIntfMap[item.PhysicalLinkTag.Label][item.SharedLagIntf.Id] = struct{}{}
+			}
+		case item.LocalLagIntf != nil: // link is part of a lag without esi or mlag
+			groupLabelToIntf[item.PhysicalLink.GroupLabel] = item.LocalLagIntf.Id
+			if item.PhysicalLinkTag != nil {
+				if _, ok := tagToIntfMap[item.PhysicalLinkTag.Label]; !ok {
+					tagToIntfMap[item.PhysicalLinkTag.Label] = make(map[apstra.ObjectId]struct{})
+				}
+				tagToIntfMap[item.PhysicalLinkTag.Label][item.LocalLagIntf.Id] = struct{}{}
+			}
+		default: // link is a standalone physical link
+			groupLabelToIntf[item.PhysicalLink.GroupLabel] = item.PhysicalIntf.Id
+			if item.PhysicalLinkTag != nil {
+				if _, ok := tagToIntfMap[item.PhysicalLinkTag.Label]; !ok {
+					tagToIntfMap[item.PhysicalLinkTag.Label] = make(map[apstra.ObjectId]struct{})
+				}
+				tagToIntfMap[item.PhysicalLinkTag.Label][item.PhysicalIntf.Id] = struct{}{}
+			}
+		}
+	}
+
+	o.AppPointsByGroupLabel = utils.MapValueOrNull(ctx, types.StringType, groupLabelToIntf, diags)
+
+	tagToIntfSlice := make(map[string][]apstra.ObjectId)
+	for tag, intfMap := range tagToIntfMap {
+		for intf := range intfMap {
+			tagToIntfSlice[tag] = append(tagToIntfSlice[tag], intf)
+		}
+	}
+	o.AppPointsByTag = utils.MapValueOrNull(ctx, types.SetType{ElemType: types.StringType}, tagToIntfSlice, diags)
 }

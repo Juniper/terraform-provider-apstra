@@ -64,7 +64,7 @@ resource "apstra_rack_type" "example" {
 
 ### Required
 
-- `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed'.
+- `fabric_connectivity_design` (String) Must be one of 'l3clos', 'l3collapsed', 'rail_collapsed'.
 - `leaf_switches` (Attributes Map) Each Rack Type is required to have at least one Leaf Switch. (see [below for nested schema](#nestedatt--leaf_switches))
 - `name` (String) Rack Type name, displayed in the Apstra web UI.
 

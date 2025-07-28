@@ -57,7 +57,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 
 - `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with no bindings can be created by omitting (or setting `null`) this attribute. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
 - `description` (String) Virtual Network Description
-- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent. Note that configuring this feature without configuring any `bindings` may lead to state churn because a VN with no bindings does not retain the `dhcp_service_enabled` state.
 - `export_route_targets` (Set of String) Export RTs for this Virtual Network.
 - `import_route_targets` (Set of String) Import RTs for this Virtual Network.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network. Default: true
@@ -73,6 +73,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `reserved_vlan_id` (Number) Used to specify the reserved VLAN ID without specifying any *bindings*.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`
 - `svi_ips` (Block Set) SVI IP assignments for switches in the virtual network. This allows explicit control over the secondary virtual interface IPs assigned to switches, preventing overlaps when identical virtual networks are created in multiple blueprints. (see [below for nested schema](#nestedatt--svi_ips))
+- `tags` (Set of String) Set of tags for this Virtual Network
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated](../resources/datacenter_resource_pool_allocation) to role `vni_virtual_network_ids`.
 

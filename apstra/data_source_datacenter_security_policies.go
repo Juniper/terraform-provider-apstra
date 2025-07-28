@@ -77,14 +77,13 @@ func (o *dataSourceDatacenterSecurityPolicies) Schema(_ context.Context, _ datas
 }
 
 func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	type virtualNetworks struct {
+	var config struct {
 		BlueprintId types.String `tfsdk:"blueprint_id"`
 		IDs         types.Set    `tfsdk:"ids"`
 		Filters     types.List   `tfsdk:"filters"`
 		Queries     types.List   `tfsdk:"graph_queries"`
 	}
 
-	var config virtualNetworks
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -102,8 +101,8 @@ func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req dat
 	}
 
 	if config.Filters.IsNull() {
-		// just pull the VN IDs via API when no filter is specified
-		ids := o.getAllSpIds(ctx, bp, &resp.Diagnostics)
+		// just pull the IDs via API when no filter is specified
+		ids := o.getAllIds(ctx, bp, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -122,7 +121,7 @@ func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req dat
 		return
 	}
 
-	ids, queries := o.getSpIdsWithFilters(ctx, bp, filters, &resp.Diagnostics)
+	ids, queries := o.getIdsWithFilters(ctx, bp, filters, &resp.Diagnostics)
 	config.IDs = types.SetValueMust(types.StringType, ids)
 	config.Queries = types.ListValueMust(types.StringType, queries)
 
@@ -130,27 +129,27 @@ func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req dat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getAllSpIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {
-	policies, err := bp.GetAllPolicies(ctx)
+func (o *dataSourceDatacenterSecurityPolicies) getAllIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {
+	all, err := bp.GetAllPolicies(ctx)
 	if err != nil {
 		diags.AddError(
-			fmt.Sprintf("failed to retrieve security policies in blueprint %s", bp.Id()), err.Error())
+			fmt.Sprintf("failed to retrieve Security Policies in Blueprint %s", bp.Id()), err.Error())
 		return nil
 	}
 
-	result := make([]attr.Value, len(policies))
-	for i, policy := range policies {
-		result[i] = types.StringValue(policy.Id.String())
+	result := make([]attr.Value, len(all))
+	for i, each := range all {
+		result[i] = types.StringValue(each.Id.String())
 	}
 
 	return result
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getSpIdsWithFilters(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filters []blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
+func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilters(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filters []blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
 	queries := make([]attr.Value, len(filters))
 	resultMap := make(map[string]bool)
 	for i, filter := range filters {
-		ids, query := o.getSpIdsWithFilter(ctx, bp, filter, diags)
+		ids, query := o.getIdsWithFilter(ctx, bp, filter, diags)
 		if diags.HasError() {
 			return nil, nil
 		}
@@ -171,7 +170,7 @@ func (o *dataSourceDatacenterSecurityPolicies) getSpIdsWithFilters(ctx context.C
 	return ids, queries
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getSpIdsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
 	query := filter.Query("n_security_policy")
 	queryResponse := new(struct {
 		Items []struct {

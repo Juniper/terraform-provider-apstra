@@ -60,6 +60,7 @@ locals {
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
 - `reserved_vlan_id` (Number) Reserved VLAN ID, if any.
 - `routing_zone_id` (String) Routing Zone ID (only applies when `type == vxlan`
+- `tags` (Set of String) Tags for this Virtual Network.
 - `type` (String) Virtual Network Type
 - `vni` (Number) EVPN Virtual Network ID to be associated with this Virtual Network.
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -17,7 +17,7 @@ import (
 var _ validator.String = RackFabricConnectivityDesignMustBeWhenValueValidator{}
 
 type RackFabricConnectivityDesignMustBeWhenValueValidator struct {
-	fcd   apstra.FabricConnectivityDesign
+	fcd   enum.FabricConnectivityDesign
 	value string
 }
 
@@ -79,7 +79,7 @@ func (o RackFabricConnectivityDesignMustBeWhenValueValidator) ValidateString(ctx
 	resp.Diagnostics.Append(validateResp.Diagnostics...)
 }
 
-func StringFabricConnectivityDesignMustBeWhenValue(fcd apstra.FabricConnectivityDesign, value string) validator.String {
+func StringFabricConnectivityDesignMustBeWhenValue(fcd enum.FabricConnectivityDesign, value string) validator.String {
 	return RackFabricConnectivityDesignMustBeWhenValueValidator{
 		fcd:   fcd,
 		value: value,

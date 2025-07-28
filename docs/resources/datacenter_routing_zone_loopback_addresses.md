@@ -60,6 +60,10 @@ resource "apstra_datacenter_routing_zone_loopback_addresses" "example" {
 - `loopbacks` (Attributes Map) Map of Loopback IPv4 and IPv6 addresses, keyed by System (switch) Node ID. (see [below for nested schema](#nestedatt--loopbacks))
 - `routing_zone_id` (String) Routing Zone ID.
 
+### Read-Only
+
+- `loopback_ids` (Map of String) Map of Loopback interface Node IDs configured by this resource, keyed by System (switch) Node ID.
+
 <a id="nestedatt--loopbacks"></a>
 ### Nested Schema for `loopbacks`
 

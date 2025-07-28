@@ -2,10 +2,12 @@ package testutils
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/apstra/enum"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // RackTypeA has:
@@ -19,7 +21,7 @@ func RackTypeA(t testing.TB, ctx context.Context) *apstra.RackType {
 	leafLabel := "rack type A leaf"
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-A-" + acctest.RandString(10),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:             leafLabel,
@@ -66,7 +68,7 @@ func RackTypeB(t testing.TB, ctx context.Context) *apstra.RackType {
 	leafLabel := "rack type B leaf"
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-B-" + acctest.RandString(10),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:              leafLabel,
@@ -128,7 +130,7 @@ func RackTypeC(t testing.TB, ctx context.Context) *apstra.RackType {
 	leafLabel := "rack type C leaf"
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-C-" + acctest.RandString(10),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:              leafLabel,
@@ -178,7 +180,7 @@ func RackTypeD(t testing.TB, ctx context.Context) *apstra.RackType {
 	leafLabel := "rack type D leaf"
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-D-" + acctest.RandString(10),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:              leafLabel,
@@ -265,7 +267,7 @@ func RackTypeE(t testing.TB, ctx context.Context) *apstra.RackType {
 	leafLabel := "rack type E leaf"
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "aaa-E-" + acctest.RandString(10),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:              leafLabel,
@@ -347,7 +349,7 @@ func RackTypeF(t testing.TB, ctx context.Context) *apstra.RackType {
 
 	id, err := client.CreateRackType(ctx, &apstra.RackTypeRequest{
 		DisplayName:              "type F - " + acctest.RandString(5),
-		FabricConnectivityDesign: apstra.FabricConnectivityDesignL3Clos,
+		FabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
 		LeafSwitches: []apstra.RackElementLeafSwitchRequest{
 			{
 				Label:             "rack type F leaf",

@@ -121,7 +121,7 @@ Optional:
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
 - `neighbor_asn` (Number) Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.
-- `password` (String) Password used to secure the BGP session.
+- `password` (String, Sensitive) Password used to secure the BGP session.
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--bgp_peering_ip_endpoints--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 
@@ -161,7 +161,7 @@ Optional:
 - `ipv6_peer_prefix` (String) IPv6 Subnet for BGP Prefix Dynamic Neighbors. Leave blank to derive subnet from application point.
 - `keepalive_time` (Number) BGP keepalive time (seconds).
 - `local_asn` (Number) This feature is configured on a per-peer basis. It allows a router to appear to be a member of a second autonomous system (AS) by prepending a local-as AS number, in addition to its real AS number, announced to its eBGP peer, resulting in an AS path length of two.
-- `password` (String) Password used to secure the BGP session.
+- `password` (String, Sensitive) Password used to secure the BGP session.
 - `routing_policies` (Attributes Map) Map of Routing Policy Primitives to be used with this *Protocol Endpoint*. (see [below for nested schema](#nestedatt--dynamic_bgp_peerings--routing_policies))
 - `ttl` (Number) BGP Time To Live. Omit to use device defaults.
 

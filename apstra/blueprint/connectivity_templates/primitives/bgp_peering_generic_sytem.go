@@ -93,6 +93,7 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 		"password": resourceSchema.StringAttribute{
 			MarkdownDescription: "Password used to secure the BGP session.",
 			Optional:            true,
+			Sensitive:           true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"keepalive_time": resourceSchema.Int64Attribute{

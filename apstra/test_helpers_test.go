@@ -12,6 +12,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -74,6 +75,19 @@ func stringOrNull[S ~string](in S) string {
 		return "null"
 	}
 	return fmt.Sprintf("%q", in)
+}
+
+func stringerOrNull(in fmt.Stringer) string {
+	if in == nil || reflect.ValueOf(in).IsNil() {
+		return "null"
+	}
+
+	s := in.String()
+	if s == "" {
+		return "null"
+	}
+
+	return fmt.Sprintf("%q", s)
 }
 
 func ipOrNull(in net.IP) string {
@@ -158,6 +172,36 @@ func stringSliceOrNull[S ~string](in []S) string {
 		}
 	}
 	return "[ " + sb.String() + " ]"
+}
+
+// randomHardwareAddr returns a net.HardwareAddr. The set and unset arguments
+// allow the caller to specify certain bits which must be set or must be unset
+// in the result.
+// For example, to get a random mac with only the LAA bit set, you'd invoke the
+// function with arguments indicating that LAA must be set and all other bits
+// in the first byte must be unset:
+//
+//	set:   []byte{2},
+//	unset: []byte{253},
+func randomHardwareAddr(set []byte, unset []byte) net.HardwareAddr {
+	result := net.HardwareAddr{
+		byte(rand.Intn(math.MaxUint8 + 1)),
+		byte(rand.Intn(math.MaxUint8 + 1)),
+		byte(rand.Intn(math.MaxUint8 + 1)),
+		byte(rand.Intn(math.MaxUint8 + 1)),
+		byte(rand.Intn(math.MaxUint8 + 1)),
+		byte(rand.Intn(math.MaxUint8 + 1)),
+	}
+
+	for i := range min(len(set), len(result)) {
+		result[i] = result[i] | set[i]
+	}
+
+	for i := range min(len(unset), len(result)) {
+		result[i] = result[i] & ^unset[i]
+	}
+
+	return result
 }
 
 func randIpNetMust(t testing.TB, cidrBlock string) *net.IPNet {

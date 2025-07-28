@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -17,10 +18,11 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure  = &resourceDatacenterGenericSystem{}
-	_ resource.ResourceWithModifyPlan = &resourceDatacenterGenericSystem{}
-	_ resourceWithSetDcBpClientFunc   = &resourceDatacenterGenericSystem{}
-	_ resourceWithSetBpLockFunc       = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithModifyPlan     = &resourceDatacenterGenericSystem{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterGenericSystem{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterGenericSystem{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterGenericSystem{}
 )
 
 type resourceDatacenterGenericSystem struct {
@@ -43,6 +45,53 @@ func (o *resourceDatacenterGenericSystem) Schema(_ context.Context, _ resource.S
 	}
 }
 
+func (o *resourceDatacenterGenericSystem) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.DatacenterGenericSystem
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if config.Links.IsUnknown() {
+		return // cannot validate unknown links
+	}
+
+	// unpack link set as []attr.Value for use in surfacing errors
+	linkVals := config.Links.Elements()
+
+	// unpack link set as []blueprint.DatacenterGenericSystemLink
+	var links []blueprint.DatacenterGenericSystemLink
+	resp.Diagnostics.Append(config.Links.ElementsAs(ctx, &links, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// iterate over links, error on duplicate link digests (switchId:port)
+	linkDigestMap := make(map[string]struct{})
+	for i, link := range links {
+		if linkVals[i].IsUnknown() {
+			continue // cannot evaluate unknown link
+		}
+
+		if link.TargetSwitchId.IsUnknown() || link.TargetSwitchIfName.IsUnknown() {
+			continue // cannot calculate digest of link with unknown fields
+		}
+
+		digest := link.Digest()
+		if _, ok := linkDigestMap[digest]; ok {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("links").AtSetValue(linkVals[i]),
+				"Multiple links use same switch and port",
+				fmt.Sprintf("Switch ID %s interface %s is used by multiple links", link.TargetSwitchId, link.TargetSwitchIfName),
+			)
+			continue
+		}
+
+		linkDigestMap[digest] = struct{}{}
+	}
+}
+
 func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
 	if req.Plan.Raw.IsNull() {
 		return // we must be about to call Delete()
@@ -60,11 +109,24 @@ func (o *resourceDatacenterGenericSystem) ModifyPlan(ctx context.Context, req re
 		return
 	}
 
-	// extract links from plan and state
+	// if possible, extract links from plan and state
+	if plan.Links.IsUnknown() {
+		return
+	}
 	planLinks := plan.GetLinks(ctx, &resp.Diagnostics)
 	stateLinks := state.GetLinks(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// ensure that each planned link has known values for the attributes we'll be inspecting
+	for _, link := range planLinks {
+		if link.TargetSwitchId.IsUnknown() ||
+			link.TargetSwitchIfName.IsUnknown() ||
+			link.TargetSwitchIfTransformId.IsUnknown() ||
+			link.LagMode.IsUnknown() {
+			return
+		}
 	}
 
 	// digests uniquely identify an endpoint. Make a map for quick lookup by digest
@@ -181,6 +243,8 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		// don't return here - still want to set the state
 	}
 
+	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics) // don't return here - still want to set the state
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -227,6 +291,22 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 	state.ReadLinks(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// collect application point map keys from just-read link data
+	currentLinkGroupLabels := state.LinkGroupLabels(ctx, &resp.Diagnostics)
+	currentLinkTags := state.LinkTags(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// collect application point map keys from state
+	stateLinkGroupLabels := utils.MapKeysSorted(state.AppPointsByGroupLabel.Elements())
+	stateLinkTags := utils.MapKeysSorted(state.AppPointsByTag.Elements())
+
+	// update application point maps if necessary
+	if !reflect.DeepEqual(stateLinkGroupLabels, currentLinkGroupLabels) || !reflect.DeepEqual(stateLinkTags, currentLinkTags) {
+		state.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics)
 	}
 
 	// set state
@@ -281,6 +361,11 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	}
 
 	plan.UpdateLinkSet(ctx, &state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

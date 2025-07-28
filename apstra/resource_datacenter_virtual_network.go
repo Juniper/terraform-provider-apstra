@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -63,6 +64,15 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 		return
 	}
 
+	// enabling DHCP requires enabling IPv4 or IPv6
+	if config.DhcpServiceEnabled.ValueBool() &&
+		!config.IPv4ConnectivityEnabled.ValueBool() &&
+		!config.IPv6ConnectivityEnabled.ValueBool() {
+		resp.Diagnostics.AddAttributeError(path.Root("dhcp_service_enabled"), errInvalidConfig,
+			"When `dhcp_service_enabled` is set, at least one of `ipv4_connectivity_enabled` or `ipv6_connectivity_enabled` must also be set.",
+		)
+	}
+
 	// config + api version validation begins here
 
 	// cannot proceed to config + api version validation if the provider has not been configured
@@ -89,7 +99,44 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 }
 
 func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
-	// This plan modifier solves the same problem for two different
+	// No state means we're doing Create().
+	// No plan means we're doing Delete().
+	// Both cases are un-interesting to this plan modifier.
+	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
+		return
+	}
+
+	// Retrieve values from config
+	var config blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from plan
+	var plan blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve values from state
+	var state blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Updating the routing_zone_id attribute is only permitted with Apstra >= 5.0.0
+	if !plan.RoutingZoneId.IsUnknown() && !plan.RoutingZoneId.Equal(state.RoutingZoneId) {
+		// routing_zone_id attribute has been changed
+		if o.client != nil && compatibility.ChangeVnRzIdForbidden.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
+			resp.RequiresReplace.Append(path.Root("routing_zone_id"))
+			return
+		}
+	}
+
+	// The rest of this plan modifier solves the same problem for two different
 	// `Optional` + `Computed` attributes:
 	//   - VlanId
 	//   - Vni
@@ -116,34 +163,6 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	// element is `null`, we conclude that the attribute been removed from the
 	// configuration and set the attribute to `unknown` to achieve modification
 	// and record a new choice made by the API.
-
-	// No state means there couldn't have been a previous config.
-	// No plan means we're doing Delete().
-	// Both are un-interesting to this plan modifier.
-	if req.State.Raw.IsNull() || req.Plan.Raw.IsNull() {
-		return
-	}
-
-	// Retrieve values from config
-	var config blueprint.DatacenterVirtualNetwork
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve values from plan
-	var plan blueprint.DatacenterVirtualNetwork
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Retrieve values from state
-	var state blueprint.DatacenterVirtualNetwork
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
 
 	// null config with prior configured value means vni was removed
 	if config.Vni.IsNull() && state.HadPriorVniConfig.ValueBool() {
@@ -193,6 +212,21 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	if err != nil {
 		resp.Diagnostics.AddError("error creating virtual network", err.Error())
 		return
+	}
+
+	// set tags, if any
+	if !plan.Tags.IsNull() {
+		var tags []string
+		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err = bp.SetNodeTags(ctx, id, tags)
+		if err != nil {
+			resp.Diagnostics.AddError("error setting tags", err.Error())
+			return
+		}
 	}
 
 	// update the plan with the received ObjectId and set the partial state in
@@ -259,6 +293,10 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		state.ReserveVlan = plan.ReserveVlan
 	}
 
+	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
+	// Overwrite the discovered value with the planned value.
+	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
+
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
@@ -307,9 +345,11 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 }
 
 func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan.
+	// Retrieve values from plan and state.
 	var plan blueprint.DatacenterVirtualNetwork
+	var state blueprint.DatacenterVirtualNetwork
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -336,10 +376,44 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		return
 	}
 
-	// update the virtual network according to the plan
-	err = bp.UpdateVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
-	if err != nil {
-		resp.Diagnostics.AddError("error updating virtual network", err.Error())
+	// update the virtual network according to the plan, if necessary
+	if !plan.Name.Equal(state.Name) ||
+		!plan.Description.Equal(state.Description) ||
+		!plan.Vni.Equal(state.Vni) ||
+		!plan.ReserveVlan.Equal(state.ReserveVlan) ||
+		!plan.ReservedVlanId.Equal(state.ReservedVlanId) ||
+		!plan.Bindings.Equal(state.Bindings) ||
+		!plan.DhcpServiceEnabled.Equal(state.DhcpServiceEnabled) ||
+		!plan.IPv4ConnectivityEnabled.Equal(state.IPv4ConnectivityEnabled) ||
+		!plan.IPv6ConnectivityEnabled.Equal(state.IPv6ConnectivityEnabled) ||
+		!plan.IPv4Subnet.Equal(state.IPv4Subnet) ||
+		!plan.IPv6Subnet.Equal(state.IPv6Subnet) ||
+		!plan.IPv4GatewayEnabled.Equal(state.IPv4GatewayEnabled) ||
+		!plan.IPv6GatewayEnabled.Equal(state.IPv6GatewayEnabled) ||
+		!plan.IPv4Gateway.Equal(state.IPv4Gateway) ||
+		!plan.IPv6Gateway.Equal(state.IPv6Gateway) ||
+		!plan.L3Mtu.Equal(state.L3Mtu) ||
+		!plan.ImportRouteTargets.Equal(state.ImportRouteTargets) ||
+		!plan.ExportRouteTargets.Equal(state.ExportRouteTargets) {
+
+		err = bp.UpdateVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating virtual network", err.Error())
+		}
+	}
+
+	// update tags, if necessary
+	if !plan.Tags.Equal(state.Tags) {
+		var tags []string
+		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+
+		err = bp.SetNodeTags(ctx, apstra.ObjectId(plan.Id.ValueString()), tags)
+		if err != nil {
+			resp.Diagnostics.AddError("error updating virtual network tags", err.Error())
+		}
 	}
 
 	// fetch the virtual network to learn apstra-assigned VLAN assignments
@@ -354,39 +428,43 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	// Create a new state object and load the current state from the API. We're
 	// instantiating a new object here because #170 (a creation race condition
 	// in the API) means we can't completely rely on the API response.
-	var state blueprint.DatacenterVirtualNetwork
-	state.Id = plan.Id
-	state.BlueprintId = plan.BlueprintId
-	state.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	var stateOut blueprint.DatacenterVirtualNetwork
+	stateOut.Id = plan.Id
+	stateOut.BlueprintId = plan.BlueprintId
+	stateOut.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+	stateOut.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 
 	// Don't rely on the API response for these values (#170). If the config
 	// supplied a value, use that when setting state.
 	if !plan.IPv4Subnet.IsUnknown() {
-		state.IPv4Subnet = plan.IPv4Subnet
+		stateOut.IPv4Subnet = plan.IPv4Subnet
 	}
 	if !plan.IPv6Subnet.IsUnknown() {
-		state.IPv6Subnet = plan.IPv6Subnet
+		stateOut.IPv6Subnet = plan.IPv6Subnet
 	}
 	if !plan.IPv4Gateway.IsUnknown() {
-		state.IPv4Gateway = plan.IPv4Gateway
+		stateOut.IPv4Gateway = plan.IPv4Gateway
 	}
 	if !plan.IPv6Gateway.IsUnknown() {
-		state.IPv6Gateway = plan.IPv6Gateway
+		stateOut.IPv6Gateway = plan.IPv6Gateway
 	}
 	if !plan.ReserveVlan.IsUnknown() {
-		state.ReserveVlan = plan.ReserveVlan
+		stateOut.ReserveVlan = plan.ReserveVlan
 	}
+
+	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
+	// Overwrite the discovered value with the planned value.
+	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
 
 	// if the plan modifier didn't take action...
 	if plan.HadPriorVniConfig.IsUnknown() {
 		// ...then the trigger value is set according to whether a VNI value is known.
-		state.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+		stateOut.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 	} else {
-		state.HadPriorVniConfig = plan.HadPriorVniConfig
+		stateOut.HadPriorVniConfig = plan.HadPriorVniConfig
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, stateOut)...)
 }
 
 func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
