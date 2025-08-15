@@ -179,11 +179,47 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Update(ctx context.C
 		return
 	}
 
-	err = bp.SetApplicationPointsConnectivityTemplates(ctx, request)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed while assigning Connectivity Template %s to Application Points %s", plan.ConnectivityTemplateId, plan.ApplicationPointIds),
-			err.Error())
+	// send request until we find a reason to stop
+	for {
+		if len(request) == 0 {
+			break // the request is empty
+		}
+
+		// send the request
+		err = bp.SetApplicationPointsConnectivityTemplates(ctx, request)
+		if err == nil {
+			break // success!
+		}
+
+		// err is not nil
+		var ace apstra.ClientErr
+		if !errors.As(err, &ace) {
+			resp.Diagnostics.AddError(
+				"Failed setting Connectivity Template assignments and cannot parse error",
+				err.Error(),
+			)
+			break
+		}
+
+		if ace.Type() != apstra.ErrCtAssignmentFailed {
+			// cannot handle this error
+			resp.Diagnostics.AddError(
+				"Failed setting Connectivity Template assignments",
+				err.Error(),
+			)
+			break
+		}
+
+		// error is type ErrCtAssignmentFailed
+		errDetail := ace.Detail().(*apstra.ErrCtAssignmentFailedDetail)
+		if blueprint.TrimSetApplicationPointsConnectivityTemplatesRequestBasedOnError(request, errDetail) == 0 {
+			// cannot further trim the request
+			resp.Diagnostics.AddError(
+				"failed updating connectivity template assignments and cannot trim request",
+				err.Error(),
+			)
+			break
+		}
 	}
 
 	// Fetch IP link IDs
@@ -236,15 +272,51 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Delete(ctx context.C
 		request[applicationPointId] = map[apstra.ObjectId]bool{apstra.ObjectId(state.ConnectivityTemplateId.ValueString()): false}
 	}
 
-	// send the request
-	err = bp.SetApplicationPointsConnectivityTemplates(ctx, request)
-	if err != nil {
-		var ace apstra.ClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			return // 404 is okay
+	// send the request until we find a reason to stop
+	for {
+		if len(request) == 0 {
+			break // the request is empty
 		}
-		resp.Diagnostics.AddError("failed clearing connectivity template from application points", err.Error())
-		return
+
+		// send the request
+		err = bp.SetApplicationPointsConnectivityTemplates(ctx, request)
+		if err == nil {
+			break // success!
+		}
+
+		// err is not nil
+		var ace apstra.ClientErr
+		if !errors.As(err, &ace) {
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Template assignments and cannot parse error",
+				err.Error(),
+			)
+			break
+		}
+
+		if ace.Type() == apstra.ErrNotfound {
+			break // 404 is okay
+		}
+
+		if ace.Type() != apstra.ErrCtAssignmentFailed {
+			// cannot handle this error
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Template assignments",
+				err.Error(),
+			)
+			break
+		}
+
+		// error is type ErrCtAssignmentFailed
+		errDetail := ace.Detail().(*apstra.ErrCtAssignmentFailedDetail)
+		if blueprint.TrimSetApplicationPointsConnectivityTemplatesRequestBasedOnError(request, errDetail) == 0 {
+			// cannot further trim the request
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Template assignments and cannot trim request",
+				err.Error(),
+			)
+			break
+		}
 	}
 }
 

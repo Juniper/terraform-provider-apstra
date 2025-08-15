@@ -245,3 +245,53 @@ func (o *ConnectivityTemplateAssignments) GetIpLinkIds(ctx context.Context, bp *
 	o.IpLinkIds, d = types.MapValueFrom(ctx, types.MapType{ElemType: types.StringType}, result)
 	diags.Append(d...)
 }
+
+// TrimSetApplicationPointsConnectivityTemplatesRequestBasedOnError examines ace and trims
+// un-assignments related to objects which do not exist. This should be safe, because you
+// can't "un-check" a box which doesn't exist.
+// - invalid CTs are removed from inner maps where the task is un-assign (bool: false)
+// - invalid APs are removed from the outer maps so long as all CT assignment tasks are un-assign (bool: false)
+// The returned int indicates the total number of items which were deleted from both layers of the
+// nested request. A return value of 0 indicates that nothing was removed from the request.
+func TrimSetApplicationPointsConnectivityTemplatesRequestBasedOnError(request map[apstra.ObjectId]map[apstra.ObjectId]bool, afd *apstra.ErrCtAssignmentFailedDetail) int {
+	if afd == nil {
+		return 0
+	}
+
+	trimmed := 0
+
+	// remove all invalid CT IDs from the request the task is NOT assignment
+	for apId, ctRequests := range request {
+		for _, invalidCtId := range afd.InvalidConnectivityTemplateIds {
+			assignment, ok := ctRequests[invalidCtId]
+			if !ok {
+				continue // request does not contain the invalid CT ID
+			}
+			if assignment {
+				continue // request contains the invalid CT ID, but it is an assign operation - cannot delete
+			}
+
+			delete(request[apId], invalidCtId)
+			trimmed++
+		}
+	}
+
+	// remove all invalid AP IDs from the request, so long as all CT tasks are removals/un-assignments
+	for _, invalidApId := range afd.InvalidApplicationPointIds { // loop over invalid AP IDs from error detail
+		// clear all CTs which we want un-assigned from the invalid AP
+		for ctId, assign := range request[invalidApId] {
+			if !assign {
+				delete(request[invalidApId], ctId)
+				trimmed++
+			}
+		}
+
+		// remove the invalid AP if it's now empty
+		if len(request[invalidApId]) == 0 {
+			delete(request, invalidApId)
+			trimmed++
+		}
+	}
+
+	return trimmed
+}
