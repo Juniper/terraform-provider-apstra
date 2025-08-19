@@ -3,11 +3,11 @@ package testutils
 import (
 	"context"
 	"encoding/json"
+	"testing"
+
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
-	"testing"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
