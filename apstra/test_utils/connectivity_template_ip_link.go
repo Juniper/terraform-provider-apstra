@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
-	"github.com/Juniper/apstra-go-sdk/apstra"
 )
 
 func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, szId apstra.ObjectId, tag int) apstra.ObjectId {
