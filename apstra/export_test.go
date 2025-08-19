@@ -17,6 +17,7 @@ var (
 	ResourceAsnPool                                        = resourceAsnPool{}
 	ResourceConfiglet                                      = resourceConfiglet{}
 	ResourceDatacenterConfiglet                            = resourceDatacenterConfiglet{}
+	ResourceDatacenterConnectivityTemplateAssignments      = resourceDatacenterConnectivityTemplateAssignments{}
 	ResourceDatacenterConnectivityTemplateInterface        = resourceDatacenterConnectivityTemplateInterface{}
 	ResourceDatacenterConnectivityTemplateLoopback         = resourceDatacenterConnectivityTemplateLoopback{}
 	ResourceDatacenterConnectivityTemplateProtocolEndpoint = resourceDatacenterConnectivityTemplateProtocolEndpoint{}
