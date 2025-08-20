@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/exp/slices"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -195,6 +195,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 	}
 
 	// clear any undesired CTs -- and keep trying until we find a reason to stop
+REQUEST:
 	for {
 		if len(delCtIds) == 0 {
 			break // nothing to do
@@ -232,7 +233,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 		case 0: // do nothing because the error doesn't mention AP IDs
 		case 1:
 			if errDetail.InvalidApplicationPointIds[0] == apId {
-				break // our AP doesn't exist. Can't un-check boxes which don't exist, so we're done.
+				break REQUEST // our AP doesn't exist. Can't un-check boxes which don't exist, so we're done.
 			} else {
 				resp.Diagnostics.AddError( // weird. the error was about a *different* AP?
 					errApiError,
@@ -241,7 +242,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 						errDetail.InvalidApplicationPointIds[0],
 					),
 				)
-				break
+				break REQUEST
 			}
 		default:
 			resp.Diagnostics.AddError( // weird. the error was about *multiple* APs?
@@ -251,7 +252,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 					errDetail.InvalidApplicationPointIds,
 				),
 			)
-			break
+			break REQUEST
 		}
 
 		var ctListIsModified bool // we'll try again if this comes up true
@@ -263,13 +264,11 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 			}
 		}
 
-		if ctListIsModified {
-			continue // we removed an invalid CT from the list, so try the request again
+		if !ctListIsModified {
+			// we haven't removed any CTs from the request, so no sense in trying again
+			resp.Diagnostics.AddError("failed clearing connectivity templates assignment", err.Error())
+			break
 		}
-
-		resp.Diagnostics.AddError("failed clearing connectivity templates assignment", err.Error())
-		break
-
 	}
 
 	// Fetch IP link IDs
@@ -317,6 +316,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 	apId := apstra.ObjectId(state.ApplicationPointId.ValueString())
 
 	// attempt to clear CTs from the AP until we find a reason to stop
+REQUEST:
 	for {
 		if len(delIds) == 0 {
 			break // the request is empty
@@ -358,7 +358,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 		case 0: // do nothing because the error doesn't mention AP IDs
 		case 1:
 			if errDetail.InvalidApplicationPointIds[0] == apId {
-				break // our AP doesn't exist. Can't un-check boxes which don't exist, so we're done.
+				break REQUEST // our AP doesn't exist. Can't un-check boxes which don't exist, so we're done.
 			} else {
 				resp.Diagnostics.AddError( // weird. the error was about a *different* AP?
 					errApiError,
@@ -367,7 +367,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 						errDetail.InvalidApplicationPointIds[0],
 					),
 				)
-				break
+				break REQUEST
 			}
 		default:
 			resp.Diagnostics.AddError( // weird. the error was about *multiple* APs?
@@ -377,7 +377,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 					errDetail.InvalidApplicationPointIds,
 				),
 			)
-			break
+			break REQUEST
 		}
 
 		var ctListIsModified bool // we'll try again if this comes up true
@@ -389,12 +389,11 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 			}
 		}
 
-		if ctListIsModified {
-			continue // we removed an invalid CT from the list, so try the request again
+		if !ctListIsModified {
+			// we haven't removed any CTs from the request, so no sense in trying again
+			resp.Diagnostics.AddError("failed clearing connectivity templates assignment", err.Error())
+			break
 		}
-
-		resp.Diagnostics.AddError("failed clearing connectivity templates assignment", err.Error())
-		break
 	}
 }
 
