@@ -284,7 +284,7 @@ func (o *resourceDatacenterConnectivityTemplateAssignments) Delete(ctx context.C
 			break // success!
 		}
 
-		// err is not nil
+		// err is not nil -- can we parse it?
 		var ace apstra.ClientErr
 		if !errors.As(err, &ace) {
 			resp.Diagnostics.AddError(

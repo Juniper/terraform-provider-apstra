@@ -23,6 +23,7 @@ var (
 	ResourceDatacenterConnectivityTemplateProtocolEndpoint = resourceDatacenterConnectivityTemplateProtocolEndpoint{}
 	ResourceDatacenterConnectivityTemplateSvi              = resourceDatacenterConnectivityTemplateSvi{}
 	ResourceDatacenterConnectivityTemplateSystem           = resourceDatacenterConnectivityTemplateSystem{}
+	ResourceDatacenterConnectivityTemplatesAssignment      = resourceDatacenterConnectivityTemplatesAssignment{}
 	ResourceDatacenterExternalGateway                      = resourceDatacenterExternalGateway{}
 	ResourceDatacenterGenericSystem                        = resourceDatacenterGenericSystem{}
 	ResourceDatacenterInterconnectDomain                   = resourceDatacenterInterconnectDomain{}

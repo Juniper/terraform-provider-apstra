@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -10,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -173,26 +175,100 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Update(ctx context.C
 	}
 
 	// calculate the add/del sets
-	addIds, delIds := plan.AddDelRequest(ctx, &state, &resp.Diagnostics)
+	addCtIds, delCtIds := plan.AddDelRequest(ctx, &state, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	apId := apstra.ObjectId(plan.ApplicationPointId.ValueString())
+
 	// add any required CTs
-	err = bp.SetApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), addIds)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("failed while assigning Connectivity Templates %s to Application Point %s", plan.ConnectivityTemplateIds, plan.ApplicationPointId),
-			err.Error(),
-		)
-		return
+	if len(addCtIds) > 0 {
+		err = bp.SetApplicationPointConnectivityTemplates(ctx, apId, addCtIds)
+		if err != nil {
+			resp.Diagnostics.AddError(
+				fmt.Sprintf("failed while assigning Connectivity Templates %s to Application Point %s", plan.ConnectivityTemplateIds, plan.ApplicationPointId),
+				err.Error(),
+			)
+			return
+		}
 	}
 
-	// clear any undesired CTs
-	err = bp.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(plan.ApplicationPointId.ValueString()), delIds)
-	if err != nil {
-		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())
-		return
+	// clear any undesired CTs -- and keep trying until we find a reason to stop
+REQUEST:
+	for {
+		if len(delCtIds) == 0 {
+			break // nothing to do
+		}
+
+		err = bp.DelApplicationPointConnectivityTemplates(ctx, apId, delCtIds)
+		if err == nil {
+			break // success!
+		}
+
+		// the error is not nil -- can we parse it?
+		var ace apstra.ClientErr
+		if !errors.As(err, &ace) {
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Templates assignment and cannot parse error",
+				err.Error(),
+			)
+			break
+		}
+
+		if ace.Type() != apstra.ErrCtAssignmentFailed {
+			// cannot handle this error
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Templates assignment",
+				err.Error(),
+			)
+			break
+		}
+
+		// error is type ErrCtAssignmentFailed
+		errDetail := ace.Detail().(*apstra.ErrCtAssignmentFailedDetail)
+
+		// perhaps the error is complaining about invalid AP IDs?
+		switch len(errDetail.InvalidApplicationPointIds) {
+		case 0: // do nothing because the error doesn't mention AP IDs
+		case 1:
+			if errDetail.InvalidApplicationPointIds[0] == apId {
+				break REQUEST // our AP doesn't exist. Can't un-check boxes which don't exist, so we're done.
+			} else {
+				resp.Diagnostics.AddError( // weird. the error was about a *different* AP?
+					errApiError,
+					fmt.Sprintf("attempt to delete CTs from node %q elicited an error about node %q",
+						apId,
+						errDetail.InvalidApplicationPointIds[0],
+					),
+				)
+				break REQUEST
+			}
+		default:
+			resp.Diagnostics.AddError( // weird. the error was about *multiple* APs?
+				errApiError,
+				fmt.Sprintf("attempt to delete CTs from node %q elicited an error about multiple nodes %s",
+					apId,
+					errDetail.InvalidApplicationPointIds,
+				),
+			)
+			break REQUEST
+		}
+
+		var ctListIsModified bool // we'll try again if this comes up true
+		for _, invalidCtId := range errDetail.InvalidConnectivityTemplateIds {
+			if slices.Contains(delCtIds, invalidCtId) {
+				idx := slices.Index(delCtIds, invalidCtId)
+				delCtIds = slices.Delete(delCtIds, idx, idx+1)
+				ctListIsModified = true
+			}
+		}
+
+		if !ctListIsModified {
+			// we haven't removed any CTs from the request, so no sense in trying again
+			resp.Diagnostics.AddError("failed clearing connectivity templates assignment", err.Error())
+			break
+		}
 	}
 
 	// Fetch IP link IDs
@@ -237,13 +313,87 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Delete(ctx context.C
 		return
 	}
 
-	err = bp.DelApplicationPointConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()), delIds)
-	if err != nil {
-		if utils.IsApstra404(err) {
-			return // 404 is okay
+	apId := apstra.ObjectId(state.ApplicationPointId.ValueString())
+
+	// attempt to clear CTs from the AP until we find a reason to stop
+REQUEST:
+	for {
+		if len(delIds) == 0 {
+			break // the request is empty
 		}
-		resp.Diagnostics.AddError("failed clearing connectivity template assignments", err.Error())
-		return
+
+		err = bp.DelApplicationPointConnectivityTemplates(ctx, apId, delIds)
+		if err == nil {
+			break // success!
+		}
+
+		// the error is not nil -- can we parse it?
+		var ace apstra.ClientErr
+		if !errors.As(err, &ace) {
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Templates assignment and cannot parse error",
+				err.Error(),
+			)
+			break
+		}
+
+		if ace.Type() == apstra.ErrNotfound {
+			break // 404 is okay in this context - the blueprint doesn't exist, so there's nothing to do
+		}
+
+		if ace.Type() != apstra.ErrCtAssignmentFailed {
+			// cannot handle this error
+			resp.Diagnostics.AddError(
+				"Failed clearing Connectivity Templates assignment",
+				err.Error(),
+			)
+			break
+		}
+
+		// error is type ErrCtAssignmentFailed
+		errDetail := ace.Detail().(*apstra.ErrCtAssignmentFailedDetail)
+
+		// perhaps the error is complaining about invalid AP IDs?
+		switch len(errDetail.InvalidApplicationPointIds) {
+		case 0: // do nothing because the error doesn't mention AP IDs
+		case 1:
+			if errDetail.InvalidApplicationPointIds[0] == apId {
+				break REQUEST // our AP doesn't exist. Can't un-check boxes which don't exist, so we're done.
+			} else {
+				resp.Diagnostics.AddError( // weird. the error was about a *different* AP?
+					errApiError,
+					fmt.Sprintf("attempt to delete CTs from node %q elicited an error about node %q",
+						apId,
+						errDetail.InvalidApplicationPointIds[0],
+					),
+				)
+				break REQUEST
+			}
+		default:
+			resp.Diagnostics.AddError( // weird. the error was about *multiple* APs?
+				errApiError,
+				fmt.Sprintf("attempt to delete CTs from node %q elicited an error about multiple nodes %s",
+					apId,
+					errDetail.InvalidApplicationPointIds,
+				),
+			)
+			break REQUEST
+		}
+
+		var ctListIsModified bool // we'll try again if this comes up true
+		for _, invalidCtId := range errDetail.InvalidConnectivityTemplateIds {
+			if slices.Contains(delIds, invalidCtId) {
+				idx := slices.Index(delIds, invalidCtId)
+				delIds = slices.Delete(delIds, idx, idx+1)
+				ctListIsModified = true
+			}
+		}
+
+		if !ctListIsModified {
+			// we haven't removed any CTs from the request, so no sense in trying again
+			resp.Diagnostics.AddError("failed clearing connectivity templates assignment", err.Error())
+			break
+		}
 	}
 }
 
