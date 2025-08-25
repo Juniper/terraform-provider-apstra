@@ -28,18 +28,20 @@ import (
 const (
 	resourceDatacenterVirtualNetworkTemplateHCL = `
 resource %q %q {
-  blueprint_id         = %q
-  name                 = %q
-  description          = %s
-  type                 = %s
-  vni                  = %s
-  routing_zone_id      = %s
-  l3_mtu               = %s
-  bindings             = %s
-  reserve_vlan         = %s
-  reserved_vlan_id     = %s
-  tags                 = %s
-  dhcp_service_enabled = %s
+  blueprint_id              = %q
+  name                      = %q
+  description               = %s
+  type                      = %s
+  vni                       = %s
+  routing_zone_id           = %s
+  l3_mtu                    = %s
+  bindings                  = %s
+  reserve_vlan              = %s
+  reserved_vlan_id          = %s
+  tags                      = %s
+  dhcp_service_enabled      = %s
+  ipv4_connectivity_enabled = %s
+  ipv6_connectivity_enabled = %s
 }
 `
 	resourceDatacenterVirtualNetworkTemplateBindingHCL = `
@@ -51,18 +53,20 @@ resource %q %q {
 )
 
 type resourceDatacenterVirtualNetworkTemplate struct {
-	blueprintId    apstra.ObjectId
-	name           string
-	description    string
-	vnType         string
-	vni            *int
-	routingZoneId  apstra.ObjectId
-	l3Mtu          *int
-	bindings       []resourceDatacenterVirtualNetworkTemplateBinding
-	reserveVlan    *bool
-	reservedVlanId *int
-	tags           []string
-	dhcpEnabled    *bool
+	blueprintId             apstra.ObjectId
+	name                    string
+	description             string
+	vnType                  string
+	vni                     *int
+	routingZoneId           apstra.ObjectId
+	l3Mtu                   *int
+	bindings                []resourceDatacenterVirtualNetworkTemplateBinding
+	reserveVlan             *bool
+	reservedVlanId          *int
+	tags                    []string
+	dhcpEnabled             *bool
+	ipv4ConnectivityEnabled *bool
+	ipv6ConnectivityEnabled *bool
 }
 
 func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) string {
@@ -92,6 +96,8 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		intPtrOrNull(o.reservedVlanId),
 		stringSliceOrNull(o.tags),
 		boolPtrOrNull(o.dhcpEnabled),
+		boolPtrOrNull(o.ipv4ConnectivityEnabled),
+		boolPtrOrNull(o.ipv6ConnectivityEnabled),
 	)
 }
 
@@ -139,6 +145,26 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 		result.append(t, "TestCheckResourceAttr", "dhcp_service_enabled", strconv.FormatBool(false))
 	} else {
 		result.append(t, "TestCheckResourceAttr", "dhcp_service_enabled", strconv.FormatBool(*o.dhcpEnabled))
+	}
+
+	if o.ipv4ConnectivityEnabled == nil {
+		result.append(t, "TestCheckResourceAttr", "ipv4_connectivity_enabled", strconv.FormatBool(true))
+	} else {
+		if *o.ipv4ConnectivityEnabled {
+			result.append(t, "TestCheckResourceAttr", "ipv4_connectivity_enabled", strconv.FormatBool(true))
+		} else {
+			result.append(t, "TestCheckResourceAttr", "ipv4_connectivity_enabled", strconv.FormatBool(false))
+		}
+	}
+
+	if o.ipv6ConnectivityEnabled == nil {
+		result.append(t, "TestCheckResourceAttr", "ipv6_connectivity_enabled", strconv.FormatBool(false))
+	} else {
+		if *o.ipv6ConnectivityEnabled {
+			result.append(t, "TestCheckResourceAttr", "ipv6_connectivity_enabled", strconv.FormatBool(true))
+		} else {
+			result.append(t, "TestCheckResourceAttr", "ipv6_connectivity_enabled", strconv.FormatBool(false))
+		}
 	}
 
 	return result
@@ -220,6 +246,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	type testStep struct {
 		config                     resourceDatacenterVirtualNetworkTemplate
 		expectError                *regexp.Regexp
+		expectNonEmptyPlan         bool
 		preApplyResourceActionType plancheck.ResourceActionType
 	}
 
@@ -834,12 +861,14 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
-						blueprintId:   bp.Id(),
-						name:          acctest.RandString(6),
-						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
-						dhcpEnabled:   utils.ToPtr(true),
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVlan.String(),
+						routingZoneId:           szId,
+						dhcpEnabled:             utils.ToPtr(true),
+						ipv4ConnectivityEnabled: utils.ToPtr(true),
 					},
+					expectNonEmptyPlan: true,
 				},
 			},
 		},
@@ -867,9 +896,10 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
 
 				steps[i] = resource.TestStep{
-					Config:      insecureProviderConfigHCL + config,
-					Check:       resource.ComposeAggregateTestCheckFunc(checks.checks...),
-					ExpectError: step.expectError,
+					Config:             insecureProviderConfigHCL + config,
+					Check:              resource.ComposeAggregateTestCheckFunc(checks.checks...),
+					ExpectError:        step.expectError,
+					ExpectNonEmptyPlan: step.expectNonEmptyPlan,
 				}
 
 				if step.preApplyResourceActionType != "" {
