@@ -63,8 +63,6 @@ github.com/bmatcuk/doublestar/v4 v4.7.1/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTS
 github.com/bufbuild/protocompile v0.4.0 h1:LbFKd2XowZvQ/kajzguUp2DC9UEIQhIq77fZZlaQsNA=
 github.com/bufbuild/protocompile v0.4.0/go.mod h1:3v93+mbWn/v3xzN+31nwkJfrEpAUwp+BagBSZWx+TP8=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
-github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4 h1:nFogSDBo0cmCwO2JX2gl+2onPk4Fw63VreG+HX9U5n0=
-github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4/go.mod h1:RxJksUf3IJIwpKhrrGOUOVD7qQQj1tlJtXYhmsyLVlE=
 github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820 h1:ca2TIBMAj9Czul/4WUN0sLWqn1Wmicm81Ke0m6HR8+s=
 github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820/go.mod h1:lD9yQKzccrnkg2Xx/9kKzrlW9OWP61bRRLjec0l4Wok=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
@@ -130,6 +128,8 @@ github.com/google/go-cmp v0.5.3/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
 github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
+github.com/google/go-licenses/v2 v2.0.0-alpha.1 h1:2EMzW/1PWYvgOxBXsWl7b350vI0c/kf5Fh7z4AR1skM=
+github.com/google/go-licenses/v2 v2.0.0-alpha.1/go.mod h1:HlMUpsa+mbs8EqdlY0BDfCn0ZK7Y7NQoRCGYhNoox64=
 github.com/google/go-replayers/httpreplay v1.2.0 h1:VM1wEyyjaoU53BwrOnaf9VhAyQQEEioJvFYxYcLRKzk=
 github.com/google/go-replayers/httpreplay v1.2.0/go.mod h1:WahEFFZZ7a1P4VM1qEeHy+tME4bwyqPcwWbNlUI1Mcg=
 github.com/google/licenseclassifier/v2 v2.0.0 h1:1Y57HHILNf4m0ABuMVb6xk4vAJYEUO0gDxNpog0pyeA=

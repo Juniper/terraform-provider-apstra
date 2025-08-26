@@ -7,7 +7,7 @@ import (
 	_ "github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs"
 
 	// license compliance
-	_ "github.com/chrismarget-j/go-licenses"
+	_ "github.com/google/go-licenses/v2"
 
 	// staticcheck
 	_ "honnef.co/go/tools/cmd/staticcheck"
