@@ -884,8 +884,8 @@ written authorization of the copyright holder.
 ## github.com/cloudflare/circl
 
 * Name: github.com/cloudflare/circl
-* Version: v1.6.0
-* License: [BSD-3-Clause](https://github.com/cloudflare/circl/blob/v1.6.0/LICENSE)
+* Version: v1.6.1
+* License: [BSD-3-Clause](https://github.com/cloudflare/circl/blob/v1.6.1/LICENSE)
 
 ```
 Copyright (c) 2019 Cloudflare. All rights reserved.
@@ -8607,8 +8607,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-testing
 
 * Name: github.com/hashicorp/terraform-plugin-testing
-* Version: v1.11.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-testing/blob/v1.11.0/LICENSE)
+* Version: v1.13.3
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-testing/blob/v1.13.3/LICENSE)
 
 ```
 Copyright (c) 2014 HashiCorp, Inc.
