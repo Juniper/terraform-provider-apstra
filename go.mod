@@ -10,6 +10,7 @@ require (
 	github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4
 	github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820
 	github.com/google/go-cmp v0.7.0
+	github.com/google/go-licenses/v2 v2.0.0-alpha.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/hashicorp/terraform-plugin-docs v0.20.1
@@ -118,3 +119,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
 )
+
+tool github.com/google/go-licenses/v2
