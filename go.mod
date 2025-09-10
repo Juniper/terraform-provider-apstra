@@ -1,12 +1,13 @@
 module github.com/Juniper/terraform-provider-apstra
 
-go 1.24.3
+go 1.24.6
 
 //replace github.com/Juniper/apstra-go-sdk => ../apstra-go-sdk
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20250819171901-813475f05355
+	github.com/Juniper/apstra-go-sdk v0.0.0-20250826132330-334465c4f8cb
+	github.com/chrismarget-j/go-licenses v0.0.0-20240224210557-f22f3e06d3d4
 	github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-licenses/v2 v2.0.0-alpha.1
@@ -18,7 +19,7 @@ require (
 	github.com/hashicorp/terraform-plugin-framework-nettypes v0.3.0
 	github.com/hashicorp/terraform-plugin-framework-validators v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.28.0
-	github.com/hashicorp/terraform-plugin-testing v1.11.0
+	github.com/hashicorp/terraform-plugin-testing v1.13.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
@@ -41,7 +42,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.28.2 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect
-	github.com/cloudflare/circl v1.6.0 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
