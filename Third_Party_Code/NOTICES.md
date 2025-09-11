@@ -672,8 +672,8 @@ written authorization of the copyright holder.
 ## github.com/chrismarget-j/version-constraints
 
 * Name: github.com/chrismarget-j/version-constraints
-* Version: v0.0.0-20240925155624-26771a0a6820
-* License: [Apache-2.0](https://github.com/chrismarget-j/version-constraints/blob/26771a0a6820/LICENSE)
+* Version: v0.0.0-20250911132047-1122a37b27ae
+* License: [Apache-2.0](https://github.com/chrismarget-j/version-constraints/blob/1122a37b27ae/LICENSE)
 
 ```
 
