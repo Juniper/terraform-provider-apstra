@@ -120,7 +120,7 @@ func TestResourceDatacenterInterconnectDomainGateway(t *testing.T) {
 	interconnectDomainIds := make([]apstra.ObjectId, 2)
 	for i := range interconnectDomainIds {
 		id, err := bp.CreateEvpnInterconnectGroup(ctx, &apstra.EvpnInterconnectGroupData{
-			Label:       acctest.RandString(6),
+			Label:       acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 			RouteTarget: randomRT(t),
 		})
 		require.NoError(t, err)
