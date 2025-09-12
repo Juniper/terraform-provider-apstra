@@ -1,3 +1,4 @@
+Third_Party_Code.zip
 dist/
 test/terraform.tfstate*
 .testconfig.hcl

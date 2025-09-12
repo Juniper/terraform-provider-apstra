@@ -5,6 +5,9 @@ before:
   hooks:
     - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo must be on branch main; false)"
     - sh -c "[ \"$(env -u GIT_SSH_COMMAND git pull)\" = \"Already up to date.\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo not in sync with origin; false)"
+    - make compliance-with-source
+    - rm -f Third_Party_Code.zip
+    - zip -r Third_Party_Code.zip Third_Party_Code
     - make compliance
     - make docs
     - git update-index --refresh && git diff-index --quiet HEAD --
@@ -39,7 +42,7 @@ archives:
   files:
     - LICENSE
     - README.md
-    - Third_Party_Code/NOTICES.md
+    - Third_Party_Code
 checksum:
   extra_files:
     - glob: 'terraform-registry-manifest.json'
@@ -60,6 +63,8 @@ signs:
       - "${artifact}"
 release:
   extra_files:
+    - glob: 'Third_Party_Code.zip'
+      name_template: '{{ .ProjectName }}_{{ .Version }}_Third_Party_Code.zip'
     - glob: 'terraform-registry-manifest.json'
       name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
   # Setting `true` below allows us to manually examine the release before making it live.
