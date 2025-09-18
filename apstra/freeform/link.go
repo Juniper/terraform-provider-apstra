@@ -3,7 +3,9 @@ package freeform
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -58,10 +60,9 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"speed": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Speed of the Link " +
-				"200G | 5G | 1G | 100G | 150g | 40g | 2500M | 25G | 25g | 10G | 50G | 800G " +
-				"| 10M | 100m | 2500m | 50g | 400g | 400G | 200g | 5g | 800g | 100M | 10g " +
-				"| 150G | 10m | 100g | 1g | 40G",
+			MarkdownDescription: fmt.Sprintf("Speed of the Link: `[" +
+				strings.Join(utils.StringersToStrings(enum.LinkSpeeds.Members()), "|") +
+				"]`"),
 			Computed: true,
 		},
 		"aggregate_link_id": dataSourceSchema.StringAttribute{
@@ -104,8 +105,10 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"speed": resourceSchema.StringAttribute{
-			MarkdownDescription: "Speed of the Freeform Link.",
-			Computed:            true,
+			MarkdownDescription: fmt.Sprintf("Speed of the Link: `[" +
+				strings.Join(utils.StringersToStrings(enum.LinkSpeeds.Members()), "|") +
+				"]`"),
+			Computed: true,
 		},
 		"aggregate_link_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "This field always `null` in resource context. Ignore. " +
@@ -174,7 +177,11 @@ func (o *Link) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, dia
 		interfaceIds[i] = endpoint.Interface.Id.String()
 	}
 
-	o.Speed = types.StringValue(string(in.Speed))
+	o.Speed = types.StringNull()
+	if in.Speed != nil {
+		o.Speed = types.StringValue(in.Speed.String())
+	}
+
 	o.Name = types.StringValue(in.Label)
 	o.Endpoints = newFreeformEndpointMap(ctx, in.Endpoints, diags) // safe to ignore diagnostic here
 	o.AggregateLinkId = types.StringPointerValue((*string)(in.AggregateLinkId))

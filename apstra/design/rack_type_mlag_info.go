@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -183,9 +184,9 @@ func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *apstra.L
 		return nil
 	}
 
-	var leafLeafLinkSpeed apstra.LogicalDevicePortSpeed
+	var leafLeafLinkSpeed speed.Speed
 	if !o.PeerLinkSpeed.IsNull() {
-		leafLeafLinkSpeed = apstra.LogicalDevicePortSpeed(o.PeerLinkSpeed.ValueString())
+		leafLeafLinkSpeed = speed.Speed(o.PeerLinkSpeed.ValueString())
 	} else {
 		diags.AddError(errProviderBug, "attempt to generated LeafMlagInfo with null PeerLinkSpeed")
 		return nil
@@ -216,9 +217,9 @@ func (o *MlagInfo) Request(_ context.Context, diags *diag.Diagnostics) *apstra.L
 		leafLeafL3LinkPortChannelId = int(o.L3PeerLinkPortChannelId.ValueInt64())
 	}
 
-	var leafLeafL3LinkSpeed apstra.LogicalDevicePortSpeed
+	var leafLeafL3LinkSpeed speed.Speed
 	if !o.L3PeerLinkSpeed.IsNull() {
-		leafLeafL3LinkSpeed = apstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString())
+		leafLeafL3LinkSpeed = speed.Speed(o.L3PeerLinkSpeed.ValueString())
 	}
 
 	return &apstra.LeafMlagInfo{

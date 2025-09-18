@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -125,7 +126,7 @@ func (o *Spine) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.Te
 
 	return &apstra.TemplateElementSpineRequest{
 		Count:                  int(o.Count.ValueInt64()),
-		LinkPerSuperspineSpeed: apstra.LogicalDevicePortSpeed(o.SuperSpineLinkSpeed.ValueString()),
+		LinkPerSuperspineSpeed: speed.Speed(o.SuperSpineLinkSpeed.ValueString()),
 		LogicalDevice:          apstra.ObjectId(o.LogicalDeviceId.ValueString()),
 		LinkPerSuperspineCount: int(o.SuperSpineLinkCount.ValueInt64()),
 		Tags:                   tagIds,

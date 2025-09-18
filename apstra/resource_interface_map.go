@@ -11,6 +11,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -759,7 +760,7 @@ func ldPanelAndPortFromString(in string, diags *diag.Diagnostics) (int, int) {
 }
 
 type ldPortInfo struct {
-	Speed apstra.LogicalDevicePortSpeed
+	Speed speed.Speed
 	Roles apstra.LogicalDevicePortRoles
 }
 
@@ -789,7 +790,7 @@ func getLogicalDevicePortInfo(ld *apstra.LogicalDevice) map[string]ldPortInfo {
 // port ID and a map of "active" transformations keyed by transformtion ID.
 // Only transformations matching the specified physical interface name and speed
 // are returned.
-func getPortIdAndTransformations(dp *apstra.DeviceProfile, speed apstra.LogicalDevicePortSpeed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]apstra.Transformation) {
+func getPortIdAndTransformations(dp *apstra.DeviceProfile, speed speed.Speed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]apstra.Transformation) {
 	// find the device profile "port info" by physical port name (expecting exactly one match from DP)
 	dpPort, err := dp.Data.PortByInterfaceName(phyIntfName)
 	if err != nil {
