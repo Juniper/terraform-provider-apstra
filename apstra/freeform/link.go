@@ -60,9 +60,8 @@ func (o Link) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"speed": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Speed of the Link: `[" +
-				strings.Join(utils.StringersToStrings(enum.LinkSpeeds.Members()), "|") +
-				"]`"),
+			MarkdownDescription: fmt.Sprintf("Speed of the Link: `[%s]`",
+				strings.Join(utils.StringersToStrings(enum.LinkSpeeds.Members()), "|")),
 			Computed: true,
 		},
 		"aggregate_link_id": dataSourceSchema.StringAttribute{
@@ -105,9 +104,8 @@ func (o Link) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"speed": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Speed of the Link: `[" +
-				strings.Join(utils.StringersToStrings(enum.LinkSpeeds.Members()), "|") +
-				"]`"),
+			MarkdownDescription: fmt.Sprintf("Speed of the Link: `[%s]`",
+				strings.Join(utils.StringersToStrings(enum.LinkSpeeds.Members()), "|")),
 			Computed: true,
 		},
 		"aggregate_link_id": resourceSchema.StringAttribute{
