@@ -71,7 +71,7 @@ output "test_Link_out" { value = data.apstra_freeform_link.test }
 
 - `aggregate_link_id` (String) ID of Aggregate Link node to which this Link belongs, if any.
 - `endpoints` (Attributes Map) Endpoints of the  Link, a Map keyed by System ID. (see [below for nested schema](#nestedatt--endpoints))
-- `speed` (String) Speed of the Link 200G | 5G | 1G | 100G | 150g | 40g | 2500M | 25G | 25g | 10G | 50G | 800G | 10M | 100m | 2500m | 50g | 400g | 400G | 200g | 5g | 800g | 100M | 10g | 150G | 10m | 100g | 1g | 40G
+- `speed` (String) Speed of the Link: `[10M|10m|100M|100m|1G|1g|2500M|2500m|5G|5g|10G|10g|25G|25g|40G|40g|50G|50g|100G|100g|150G|150g|200G|200g|400G|400g|800G|800g]`
 - `tags` (Set of String) Set of unique case-insensitive tag labels
 
 <a id="nestedatt--endpoints"></a>
