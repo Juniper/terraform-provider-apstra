@@ -14,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceTemplateCollapsed{}
-var _ resourceWithSetClient = &resourceTemplateCollapsed{}
+var (
+	_ resource.ResourceWithConfigure = &resourceTemplateCollapsed{}
+	_ resourceWithSetClient          = &resourceTemplateCollapsed{}
+)
 
 type resourceTemplateCollapsed struct {
 	client *apstra.Client
