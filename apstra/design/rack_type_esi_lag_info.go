@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -67,7 +68,7 @@ func (o *EsiLagInfo) Request(_ context.Context, diags *diag.Diagnostics) *apstra
 	if !o.L3PeerLinkSpeed.IsNull() && !o.L3PeerLinkCount.IsNull() {
 		return &apstra.EsiLagInfo{
 			AccessAccessLinkCount: int(o.L3PeerLinkCount.ValueInt64()),
-			AccessAccessLinkSpeed: apstra.LogicalDevicePortSpeed(o.L3PeerLinkSpeed.ValueString()),
+			AccessAccessLinkSpeed: speed.Speed(o.L3PeerLinkSpeed.ValueString()),
 		}
 	}
 

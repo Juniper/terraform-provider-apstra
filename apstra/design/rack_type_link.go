@@ -3,7 +3,9 @@ package design
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -219,7 +221,7 @@ func (o *RackLink) Request(ctx context.Context, path path.Path, rack *RackType, 
 	return &apstra.RackLinkRequest{
 		Tags:               tagIds,
 		LinkPerSwitchCount: linksPerSwitch,
-		LinkSpeed:          apstra.LogicalDevicePortSpeed(o.Speed.ValueString()),
+		LinkSpeed:          speed.Speed(o.Speed.ValueString()),
 		TargetSwitchLabel:  o.TargetSwitchName.ValueString(),
 		AttachmentType:     o.LinkAttachmentType(upstreamRedundancyProtocol, diags),
 		LagMode:            lagMode,

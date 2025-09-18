@@ -52,7 +52,7 @@ resource "apstra_freeform_link" "test" {
 
 - `aggregate_link_id` (String) This field always `null` in resource context. Ignore. This information can be learned by invoking the complimentary data source.
 - `id` (String) ID of the Freeform Link.
-- `speed` (String) Speed of the Freeform Link.
+- `speed` (String) Speed of the Link: `[10M|10m|100M|100m|1G|1g|2500M|2500m|5G|5g|10G|10g|25G|25g|40G|40g|50G|50g|100G|100g|150G|150g|200G|200g|400G|400g|800G|800g]`
 
 <a id="nestedatt--endpoints"></a>
 ### Nested Schema for `endpoints`

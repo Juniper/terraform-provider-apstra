@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -120,7 +121,7 @@ func (o *TemplateCollapsed) Request(_ context.Context, _ *diag.Diagnostics) *aps
 		RackTypeIds:          []apstra.ObjectId{apstra.ObjectId(o.RackTypeId.ValueString())},
 		RackTypeCounts:       []apstra.RackTypeCount{{RackTypeId: apstra.ObjectId(o.RackTypeId.ValueString()), Count: 1}},
 		MeshLinkCount:        int(o.MeshLinkCount.ValueInt64()),
-		MeshLinkSpeed:        apstra.LogicalDevicePortSpeed(o.MeshLinkSpeed.ValueString()),
+		MeshLinkSpeed:        speed.Speed(o.MeshLinkSpeed.ValueString()),
 		DhcpServiceIntent:    apstra.DhcpServiceIntent{Active: true},
 		VirtualNetworkPolicy: apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
 	}

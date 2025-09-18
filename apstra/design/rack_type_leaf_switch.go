@@ -7,6 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -230,9 +231,9 @@ func (o *LeafSwitch) Request(ctx context.Context, path path.Path, fcd enum.Fabri
 		linkPerSpineCount = int(o.SpineLinkCount.ValueInt64())
 	}
 
-	var linkPerSpineSpeed apstra.LogicalDevicePortSpeed
+	var linkPerSpineSpeed speed.Speed
 	if !o.SpineLinkSpeed.IsNull() {
-		linkPerSpineSpeed = apstra.LogicalDevicePortSpeed(o.SpineLinkSpeed.ValueString())
+		linkPerSpineSpeed = speed.Speed(o.SpineLinkSpeed.ValueString())
 	}
 
 	redundancyProtocol := apstra.LeafRedundancyProtocolNone

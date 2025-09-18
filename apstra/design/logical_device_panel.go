@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/speed"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
@@ -142,7 +143,7 @@ func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostic
 		}
 		reqPortGroups[i] = apstra.LogicalDevicePortGroup{
 			Count: int(pg.PortCount.ValueInt64()),
-			Speed: apstra.LogicalDevicePortSpeed(pg.PortSpeed.ValueString()),
+			Speed: speed.Speed(pg.PortSpeed.ValueString()),
 			Roles: reqRoles,
 		}
 	}
