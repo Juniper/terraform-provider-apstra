@@ -3,8 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/apstra/compatibility"
+	"github.com/Juniper/apstra-go-sdk/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/go-version"
@@ -13,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceTemplateCollapsed{}
-var _ resourceWithSetClient = &resourceTemplateCollapsed{}
+var (
+	_ resource.ResourceWithConfigure = &resourceTemplateCollapsed{}
+	_ resourceWithSetClient          = &resourceTemplateCollapsed{}
+)
 
 type resourceTemplateCollapsed struct {
 	client *apstra.Client
