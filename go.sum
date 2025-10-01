@@ -63,8 +63,8 @@ github.com/bmatcuk/doublestar/v4 v4.7.1/go.mod h1:xBQ8jztBU6kakFMg+8WGxn0c6z1fTS
 github.com/bufbuild/protocompile v0.4.0 h1:LbFKd2XowZvQ/kajzguUp2DC9UEIQhIq77fZZlaQsNA=
 github.com/bufbuild/protocompile v0.4.0/go.mod h1:3v93+mbWn/v3xzN+31nwkJfrEpAUwp+BagBSZWx+TP8=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
-github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae h1:g/jzomHur4mcZvVcmN9V2fB3BcIUTgqzVdp002U4/3M=
-github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae/go.mod h1:OZjTEcYJxi2393c5zsfMTXM+2ymDt9ju0n1X0jZoFPI=
+github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820 h1:ca2TIBMAj9Czul/4WUN0sLWqn1Wmicm81Ke0m6HR8+s=
+github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820/go.mod h1:lD9yQKzccrnkg2Xx/9kKzrlW9OWP61bRRLjec0l4Wok=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/circl v1.6.1 h1:zqIqSPIndyBh1bjLVVDHMPpVKqp8Su/V+6MeDzzQBQ0=
 github.com/cloudflare/circl v1.6.1/go.mod h1:uddAzsPgqdMAYatqJ0lsjX1oECcQLIlRpzZh3pJrofs=
