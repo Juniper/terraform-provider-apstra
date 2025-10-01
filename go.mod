@@ -7,9 +7,9 @@ go 1.24.6
 require (
 	github.com/IBM/netaddr v1.5.0
 	github.com/Juniper/apstra-go-sdk v0.0.0-20250918010829-a5dcbd72e98f
-	github.com/chrismarget-j/version-constraints v0.0.0-20240925155624-26771a0a6820
+	github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae
 	github.com/google/go-cmp v0.7.0
-	github.com/google/go-licenses/v2 v2.0.0-alpha.1
+	github.com/google/go-licenses/v2 v2.0.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/hashicorp/terraform-plugin-docs v0.20.1

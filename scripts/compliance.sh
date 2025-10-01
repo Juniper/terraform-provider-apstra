@@ -3,6 +3,23 @@ set -euo pipefail
 
 TPC=Third_Party_Code
 
+# Default values
+minimal_mode=false
+
+# Loop over all arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --minimal)
+            minimal_mode=true
+            ;;
+        *)
+            echo "Unknown argument: $1" >&2
+            exit 1
+            ;;
+    esac
+    shift
+done
+
 IGNORE=()
 IGNORE+=(--ignore)
 IGNORE+=(github.com/Juniper) # don't bother with Juniper licenses
@@ -59,10 +76,12 @@ go run github.com/google/go-licenses/v2 report ${IGNORE[@]} --template .notices.
 # It's true that some licenses require us to "make available" the upstream source code, but I'm not sure
 # that doing so as *part of this repository* is appropriate.
 # 1. The go package system makes it perfectly clear what we're using and where we got it.
-# 2. If somebody wants to really push the issue, we'll find a way to deliver the source independent of this repository.
-#
-# The line below deletes "saved" files other than those beginning with "LICENSE" and "NOTICE"
-find "$TPC" -type f ! -name 'LICENSE*' ! -name 'NOTICE*' -print0 | xargs -0 rm --
+# 2. We can deliver those libraries as part of our release .zip files
+if [[ "$minimal_mode" == true ]]; then
+    echo "Removing third party source files."
+    # The line below deletes "saved" files other than those beginning with "LICENSE" and "NOTICE"
+    find "$TPC" -type f ! -name 'LICENSE*' ! -name 'NOTICE*' -print0 | xargs -0 rm --
 
-# We now likely have some empty directories. Get rid of 'em.
-find "$TPC" -depth -type d -empty -exec rmdir -- "{}" \;
+    # We now likely have some empty directories. Get rid of 'em.
+    find "$TPC" -depth -type d -empty -exec rmdir -- "{}" \;
+fi
