@@ -10609,8 +10609,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/stretchr/testify
 
 * Name: github.com/stretchr/testify
-* Version: v1.9.0
-* License: [MIT](https://github.com/stretchr/testify/blob/v1.9.0/LICENSE)
+* Version: v1.11.1
+* License: [MIT](https://github.com/stretchr/testify/blob/v1.11.1/LICENSE)
 
 ```
 MIT License
