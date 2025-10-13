@@ -299,7 +299,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	if err != nil {
 		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
-				fmt.Sprintf("logical device %q not found", o.LogicalDeviceId))
+				fmt.Sprintf("logical device %s not found", o.LogicalDeviceId))
 		} else {
 			diags.AddError("failed to fetch logical device", err.Error())
 		}
@@ -310,7 +310,7 @@ func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra
 	if err != nil {
 		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
-				fmt.Sprintf("device profile %q not found", o.DeviceProfileId))
+				fmt.Sprintf("device profile %s not found", o.DeviceProfileId))
 		} else {
 			diags.AddError("failed to fetch device profile", err.Error())
 		}
@@ -461,7 +461,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 					diags.AddError("error marshaling transformation candidates", err.Error())
 				}
 				diags.AddAttributeError(path.Root("interfaces").AtListIndex(i),
-					"selected physical port supports multiple transformations - indicate selection with 'transform_id'",
+					"selected physical port supports multiple transformations - indicate selection with 'transformation_id'",
 					"\n"+string(dump))
 				return nil
 			}
