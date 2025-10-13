@@ -812,6 +812,7 @@ func getPortIdAndTransformations(dp *device.Profile, speed speed.Speed, phyIntfN
 		return 0, nil
 	}
 
+	//lint:ignore SA1019 - we'll use the new function eventually
 	transformations := dpPort.TransformationCandidates(phyIntfName, speed)
 	if len(transformations) == 0 {
 		var dpid string
