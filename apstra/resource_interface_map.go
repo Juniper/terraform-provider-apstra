@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/device"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/apstra-go-sdk/speed"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -292,30 +293,30 @@ type rInterfaceMap struct {
 	UnusedInterfaces types.Set    `tfsdk:"unused_interfaces"`
 }
 
-func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) (*apstra.LogicalDevice, *apstra.DeviceProfile) {
+func (o *rInterfaceMap) fetchEmbeddedObjects(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) (*apstra.LogicalDevice, *device.Profile) {
 	// fetch the logical device
 	ld, err := client.GetLogicalDevice(ctx, apstra.ObjectId(o.LogicalDeviceId.ValueString()))
 	if err != nil {
 		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("logical_device_id"), errInvalidConfig,
-				fmt.Sprintf("logical device %q not found", o.LogicalDeviceId))
+				fmt.Sprintf("logical device %s not found", o.LogicalDeviceId))
 		} else {
 			diags.AddError("failed to fetch logical device", err.Error())
 		}
 	}
 
 	// fetch the device profile specified by the user
-	dp, err := client.GetDeviceProfile(ctx, apstra.ObjectId(o.DeviceProfileId.ValueString()))
+	dp, err := client.GetDeviceProfile(ctx, o.DeviceProfileId.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			diags.AddAttributeError(path.Root("device_profile_id"), errInvalidConfig,
-				fmt.Sprintf("device profile %q not found", o.DeviceProfileId))
+				fmt.Sprintf("device profile %s not found", o.DeviceProfileId))
 		} else {
 			diags.AddError("failed to fetch device profile", err.Error())
 		}
 	}
 
-	return ld, dp
+	return ld, &dp
 }
 
 func (o *rInterfaceMap) interfaces(ctx context.Context, diags *diag.Diagnostics) []rInterfaceMapInterface {
@@ -391,7 +392,7 @@ func (o *rInterfaceMap) validatePortSelections(ctx context.Context, ld *apstra.L
 // unused) belonging to the same transformation as any allocated interfaces.
 // This satisfies Apstra's requirement that all interfaces belonging to a
 // transformation be mapped together.
-func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDevice, dp *apstra.DeviceProfile, diags *diag.Diagnostics) []apstra.InterfaceMapInterface {
+func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDevice, dp *device.Profile, diags *diag.Diagnostics) []apstra.InterfaceMapInterface {
 	// extract interface list from plan
 	var planInterfaces []rInterfaceMapInterface
 	diags.Append(o.Interfaces.ElementsAs(ctx, &planInterfaces, true)...)
@@ -460,13 +461,13 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 					diags.AddError("error marshaling transformation candidates", err.Error())
 				}
 				diags.AddAttributeError(path.Root("interfaces").AtListIndex(i),
-					"selected physical port supports multiple transformations - indicate selection with 'transform_id'",
+					"selected physical port supports multiple transformations - indicate selection with 'transformation_id'",
 					"\n"+string(dump))
 				return nil
 			}
 		} else { // plan includes a transform id
 			if transformation, ok := transformations[int(planInterface.TransformationId.ValueInt64())]; ok {
-				transformId = transformation.TransformationId
+				transformId = transformation.ID
 			} else {
 				diags.AddError(errInvalidConfig,
 					fmt.Sprintf("planned transform %d for logical device"+
@@ -519,7 +520,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 		if transformInterfacesUnused, found := portIdToUnusedInterfaces[portId]; found {
 			// we've already been tracking this port+transform interfaces
 			// remove this interface ID from the per-transform list of unused interfaces
-			unused, _ := sliceWithoutElement(transformInterfacesUnused.interfaces, transformInterface.InterfaceId)
+			unused, _ := sliceWithoutElement(transformInterfacesUnused.interfaces, transformInterface.ID)
 			portIdToUnusedInterfaces[portId] = unusedInterfaces{
 				transformId: transformId,
 				interfaces:  unused,
@@ -528,29 +529,31 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 		} else {
 			// New port+transform.
 			// Add it to the tracking map with this interface ID removed from the list
-			unused, _ := sliceWithoutElement(transformation.InterfaceIds(), transformInterface.InterfaceId)
+			unused, _ := sliceWithoutElement(transformation.InterfaceIDs(), transformInterface.ID)
 			portIdToUnusedInterfaces[portId] = unusedInterfaces{
 				transformId: transformId,
 				interfaces:  unused,
 			}
 		}
 
+		var setting apstra.InterfaceMapInterfaceSetting
+		if transformation.Interfaces[interfaceIdx].Setting != nil {
+			setting.Param = *transformation.Interfaces[interfaceIdx].Setting
+		}
 		result[i] = apstra.InterfaceMapInterface{
 			Name:  planInterface.PhysicalInterfaceName.ValueString(),
 			Roles: ldpiMap[planInterface.LogicalDevicePort.ValueString()].Roles,
 			Mapping: apstra.InterfaceMapMapping{
 				DPPortId:      portId,
-				DPTransformId: transformation.TransformationId,
-				DPInterfaceId: transformInterface.InterfaceId,
+				DPTransformId: transformation.ID,
+				DPInterfaceId: transformInterface.ID,
 				LDPanel:       ldPanel,
 				LDPort:        ldPort,
 			},
-			ActiveState: transformInterface.State == "active",
+			ActiveState: transformInterface.State == enum.InterfaceStateActive,
 			Position:    portId,
 			Speed:       transformInterface.Speed,
-			Setting: apstra.InterfaceMapInterfaceSetting{
-				Param: transformation.Interfaces[interfaceIdx].Setting,
-			},
+			Setting:     setting,
 		}
 	}
 
@@ -560,7 +563,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 	positionIdx := len(planInterfaces) + 1
 	for portId, unused := range portIdToUnusedInterfaces {
 		for _, unusedInterfaceId := range unused.interfaces {
-			portInfo, err := dp.Data.PortById(portId)
+			portInfo, err := dp.PortByID(portId)
 			if err != nil {
 				diags.AddError("error getting unused port by ID", err.Error())
 				return nil
@@ -575,6 +578,10 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 				diags.AddError("error getting transformation interface by ID", err.Error())
 				return nil
 			}
+			var setting apstra.InterfaceMapInterfaceSetting
+			if intf.Setting != nil {
+				setting.Param = *intf.Setting
+			}
 			result = append(result, apstra.InterfaceMapInterface{
 				Name:  intf.Name,
 				Roles: apstra.LogicalDevicePortRoles{enum.PortRoleUnused},
@@ -588,9 +595,7 @@ func (o *rInterfaceMap) iMapInterfaces(ctx context.Context, ld *apstra.LogicalDe
 				ActiveState: true,
 				Position:    positionIdx,
 				Speed:       intf.Speed,
-				Setting: apstra.InterfaceMapInterfaceSetting{
-					Param: intf.Setting,
-				},
+				Setting:     setting,
 			})
 			positionIdx++
 		}
@@ -603,7 +608,7 @@ type unusedInterfaces struct {
 	interfaces  []int
 }
 
-func (o *rInterfaceMap) request(ctx context.Context, ld *apstra.LogicalDevice, dp *apstra.DeviceProfile, diags *diag.Diagnostics) *apstra.InterfaceMapData {
+func (o *rInterfaceMap) request(ctx context.Context, ld *apstra.LogicalDevice, dp *device.Profile, diags *diag.Diagnostics) *apstra.InterfaceMapData {
 	allocatedInterfaces := o.iMapInterfaces(ctx, ld, dp, diags)
 	if diags.HasError() {
 		return nil
@@ -614,9 +619,14 @@ func (o *rInterfaceMap) request(ctx context.Context, ld *apstra.LogicalDevice, d
 		return nil
 	}
 
+	var dpID apstra.ObjectId
+	if dp.ID() != nil {
+		id := dp.ID()
+		dpID = apstra.ObjectId(*id)
+	}
 	return &apstra.InterfaceMapData{
 		LogicalDeviceId: ld.Id,
-		DeviceProfileId: dp.Id,
+		DeviceProfileId: dpID,
 		Label:           o.Name.ValueString(),
 		Interfaces:      append(allocatedInterfaces, unallocatedInterfaces...),
 	}
@@ -790,32 +800,38 @@ func getLogicalDevicePortInfo(ld *apstra.LogicalDevice) map[string]ldPortInfo {
 // port ID and a map of "active" transformations keyed by transformtion ID.
 // Only transformations matching the specified physical interface name and speed
 // are returned.
-func getPortIdAndTransformations(dp *apstra.DeviceProfile, speed speed.Speed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]apstra.Transformation) {
+func getPortIdAndTransformations(dp *device.Profile, speed speed.Speed, phyIntfName string, diags *diag.Diagnostics) (int, map[int]device.Transformation) {
 	// find the device profile "port info" by physical port name (expecting exactly one match from DP)
-	dpPort, err := dp.Data.PortByInterfaceName(phyIntfName)
+	dpPort, err := dp.PortByInterfaceName(phyIntfName)
 	if err != nil {
-		diags.AddError(errInvalidConfig,
-			fmt.Sprintf("device profile '%s' has no ports which use name '%s'",
-				dp.Id, phyIntfName))
+		var dpid string
+		if dp.ID() != nil {
+			dpid = *dp.ID()
+		}
+		diags.AddError(errInvalidConfig, fmt.Sprintf("device profile %q has no ports which use name %q", dpid, phyIntfName))
 		return 0, nil
 	}
 
+	//lint:ignore SA1019 - we'll use the new function eventually
 	transformations := dpPort.TransformationCandidates(phyIntfName, speed)
 	if len(transformations) == 0 {
-		diags.AddError(errInvalidConfig,
-			fmt.Sprintf("no active port in device profile '%s' matches interface name '%s' with the logical "+
-				"device port speed '%s'", dp.Id,
-				phyIntfName, speed))
+		var dpid string
+		if dp.ID() != nil {
+			dpid = *dp.ID()
+		}
+		diags.AddError(
+			errInvalidConfig,
+			fmt.Sprintf("no active port in device profile %q matches interface name %q with the logical device port speed %q", dpid, phyIntfName, speed))
 		return 0, nil
 	}
-	return dpPort.PortId, transformations
+	return dpPort.ID, transformations
 }
 
 // iMapUnallocatedInterfaces takes []apstra.InterfaceMapInterface and
-// *apstra.DeviceProfile, returns []apstra.InterfaceMapInterface
-// representing all interfaces from the *apstra.DeviceProfile which did
+// *device.Profile, returns []apstra.InterfaceMapInterface
+// representing all interfaces from the *device.Profile which did
 // not appear in the supplied slice.
-func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp *apstra.DeviceProfile, diags *diag.Diagnostics) []apstra.InterfaceMapInterface {
+func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp *device.Profile, diags *diag.Diagnostics) []apstra.InterfaceMapInterface {
 	// make a map[portId]struct{} so we can quickly determine whether
 	// a port ID has been previously allocated.
 	allocatedPortCount := len(allocatedPorts)
@@ -824,35 +840,39 @@ func iMapUnallocaedInterfaces(allocatedPorts []apstra.InterfaceMapInterface, dp 
 		allocatedPortIds[ap.Mapping.DPPortId] = struct{}{}
 	}
 
-	missingAllocationCount := len(dp.Data.Ports) - len(allocatedPortIds) // device profile ports - used port IDs (ignore breakout ports)
+	missingAllocationCount := len(dp.Ports) - len(allocatedPortIds) // device profile ports - used port IDs (ignore breakout ports)
 
 	result := make([]apstra.InterfaceMapInterface, missingAllocationCount)
 	var i int
-	for _, dpPort := range dp.Data.Ports {
-		if _, ok := allocatedPortIds[dpPort.PortId]; ok {
+	for _, dpPort := range dp.Ports {
+		if _, ok := allocatedPortIds[dpPort.ID]; ok {
 			continue
 		}
 
-		transformation := dpPort.DefaultTransform()
-		if transformation == nil {
-			diags.AddError(errProviderBug, "port has no default transformation")
+		transformation, err := dpPort.DefaultTransform()
+		if err != nil {
+			diags.AddError("could not determine default transformation", err.Error())
 			return nil
 		}
 
+		var setting apstra.InterfaceMapInterfaceSetting
+		if transformation.Interfaces[0].Setting != nil {
+			setting.Param = *transformation.Interfaces[0].Setting
+		}
 		result[i] = apstra.InterfaceMapInterface{
 			Name:  transformation.Interfaces[0].Name,
 			Roles: apstra.LogicalDevicePortRoles{enum.PortRoleUnused},
 			Mapping: apstra.InterfaceMapMapping{
-				DPPortId:      dpPort.PortId,
-				DPTransformId: transformation.TransformationId,
-				DPInterfaceId: transformation.Interfaces[0].InterfaceId, // blindly use the first interface - UI seems to do this and testing shows there's always at least 1
+				DPPortId:      dpPort.ID,
+				DPTransformId: transformation.ID,
+				DPInterfaceId: transformation.Interfaces[0].ID, // blindly use the first interface - UI seems to do this and testing shows there's always at least 1
 				LDPanel:       -1,
 				LDPort:        -1,
 			},
 			ActiveState: true, // unclear what this is, UI sets "active"
-			Position:    dpPort.PortId,
+			Position:    dpPort.ID,
 			Speed:       transformation.Interfaces[0].Speed,
-			Setting:     apstra.InterfaceMapInterfaceSetting{Param: transformation.Interfaces[0].Setting},
+			Setting:     setting,
 		}
 
 		i++

@@ -6,7 +6,7 @@ go 1.24.6
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20250918010829-a5dcbd72e98f
+	github.com/Juniper/apstra-go-sdk v0.0.0-20251011014908-566e629cfca8
 	github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-licenses/v2 v2.0.1
@@ -20,7 +20,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.28.0
 	github.com/hashicorp/terraform-plugin-testing v1.13.3
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
 	honnef.co/go/tools v0.6.1
 	mvdan.cc/gofumpt v0.6.0
