@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -504,4 +505,25 @@ func (o *DatacenterRoutingPolicy) FilterMatch(ctx context.Context, in *Datacente
 	}
 
 	return true
+}
+
+func (o DatacenterRoutingPolicy) VersionConstraints(ctx context.Context, diags *diag.Diagnostics) compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
+
+	if !o.ExportPolicy.IsUnknown() {
+		exportPolicy := datacenterRoutingPolicyExport{}
+		diags.Append(o.ExportPolicy.As(ctx, &exportPolicy, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return response
+		}
+
+		if exportPolicy.L3Edge.ValueBool() {
+			response.AddAttributeConstraints(compatibility.AttributeConstraint{
+				Path:        path.Root("export_policy").AtName("export_l3_edge_server_links"),
+				Constraints: compatibility.RoutingPolicyExportL3EdgeServerOK,
+			})
+		}
+	}
+
+	return response
 }

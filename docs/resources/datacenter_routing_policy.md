@@ -154,7 +154,7 @@ resource "apstra_datacenter_routing_policy" "just_pull_every_available_lever" {
 Optional:
 
 - `export_l2_edge_subnets` (Boolean) Exports all virtual networks (VLANs) that have L3 addresses within a routing zone (VRF).
-- `export_l3_edge_server_links` (Boolean) Exports all leaf to L3 server links within a routing zone (VRF). This will be an empty list on a layer2 based blueprint
+- `export_l3_edge_server_links` (Boolean) Exports all leaf to L3 server links within a routing zone (VRF). This will be an empty list on a layer2 based blueprint. Valid only with Apstra 4.2.2 and earlier.
 - `export_loopbacks` (Boolean) Exports all loopbacks within a routing zone (VRF) across spine, leaf, and L3 servers.
 - `export_spine_leaf_links` (Boolean) Exports all spine-supersine (fabric) links within the default routing zone (VRF)
 - `export_spine_superspine_links` (Boolean) Exports all spine-leaf (fabric) links within a VRF. EVPN routing zones do not have spine-leaf addressing, so this generated list may be empty. For routing zones of type Virtual L3 Fabric, subinterfaces between spine-leaf will be included.
