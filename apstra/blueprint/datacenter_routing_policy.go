@@ -69,12 +69,11 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"import_policy": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
-			Computed:   true,
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllDcRoutingPolicyImportPolicy()...)},
-			Default:    stringdefault.StaticString(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String()),
+			MarkdownDescription: fmt.Sprintf("One of: `%s`.", strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "`, `")),
+			Computed:            true,
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllDcRoutingPolicyImportPolicy()...)},
+			Default:             stringdefault.StaticString(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String()),
 		},
 		"export_policy": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",
@@ -86,14 +85,14 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 		},
 		"expect_default_ipv4": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv4 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.",
+				"policy. Used for rendering route expectations. Default: `true`.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
 		},
 		"expect_default_ipv6": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv6 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.",
+				"policy. Used for rendering route expectations. Default: `true`.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
@@ -171,9 +170,8 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 			Required:            true,
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
-			Computed: true,
+			MarkdownDescription: fmt.Sprintf("One of: `%s`.", strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "`, `")),
+			Computed:            true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",
@@ -243,9 +241,8 @@ func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataS
 			Computed:            true,
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
-			Optional: true,
+			MarkdownDescription: fmt.Sprintf("One of: `%s`.", strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "`, `")),
+			Optional:            true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",

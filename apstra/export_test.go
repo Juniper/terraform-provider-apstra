@@ -30,6 +30,7 @@ var (
 	ResourceDatacenterInterconnectDomainGateway            = resourceDatacenterInterconnectDomainGateway{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRack                                 = resourceDatacenterRack{}
+	ResourceDatacenterRoutingPolicy                        = resourceDatacenterRoutingPolicy{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
 	ResourceDatacenterRoutingZoneConstraint                = resourceDatacenterRoutingZoneConstraint{}
 	ResourceDatacenterRoutingZoneLoopbackAddresses         = resourceDatacenterRoutingZoneLoopbackAddresses{}
