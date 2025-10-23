@@ -1,6 +1,8 @@
 package utils
 
-import "github.com/Juniper/apstra-go-sdk/apstra"
+import (
+	"github.com/Juniper/apstra-go-sdk/apstra"
+)
 
 func AllValidPrefixFilterActions() []string {
 	actions := apstra.AllPrefixFilterActions()
@@ -22,5 +24,14 @@ func AllDcRoutingPolicyImportPolicy() []string {
 	for i := range policies {
 		result[i] = policies[i].String()
 	}
+
+	// remove empty string if present
+	for i := len(result) - 1; i >= 0; i-- {
+		if result[i] == "" {
+			result[i] = result[len(result)-1]
+			result = result[:len(result)-1]
+		}
+	}
+
 	return result
 }
