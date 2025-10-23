@@ -303,7 +303,7 @@ func (o *DatacenterRoutingPolicy) Request(ctx context.Context, diags *diag.Diagn
 		return nil
 	}
 
-	exportPolicy := datacenterRoutingPolicyExport{}
+	var exportPolicy datacenterRoutingPolicyExport
 	diags.Append(o.ExportPolicy.As(ctx, &exportPolicy, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return nil
@@ -510,8 +510,8 @@ func (o *DatacenterRoutingPolicy) FilterMatch(ctx context.Context, in *Datacente
 func (o DatacenterRoutingPolicy) VersionConstraints(ctx context.Context, diags *diag.Diagnostics) compatibility.ConfigConstraints {
 	var response compatibility.ConfigConstraints
 
-	if !o.ExportPolicy.IsUnknown() {
-		exportPolicy := datacenterRoutingPolicyExport{}
+	if !o.ExportPolicy.IsUnknown() && !o.ExportPolicy.IsNull() {
+		var exportPolicy datacenterRoutingPolicyExport
 		diags.Append(o.ExportPolicy.As(ctx, &exportPolicy, basetypes.ObjectAsOptions{})...)
 		if diags.HasError() {
 			return response
