@@ -313,14 +313,14 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 			},
 		},
 		"l3_edge_not_okay": {
-			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LeApstra422)),
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.GtApstra422)),
 			steps: []testStep{
 				{
 					config: resourceDatacenterRoutingPolicy{
 						name:         acctest.RandString(6),
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{L3EdgeServerLinks: utils.ToPtr(true)},
 					},
-					expectError: regexp.MustCompile("foo"),
+					expectError: regexp.MustCompile("This configuration requires Apstra <=4.2.2"),
 				},
 			},
 		},
