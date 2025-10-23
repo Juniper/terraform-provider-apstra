@@ -3,9 +3,9 @@
 package tfapstra_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -43,7 +43,7 @@ type resourceDatacenterRoutingPolicy struct {
 	extraImports      []resourceDatacenterRoutingPolicyExtraImportExport
 	extraExports      []resourceDatacenterRoutingPolicyExtraImportExport
 	exportPolicy      *resourceDatacenterRoutingPolicyExportPolicy
-	aggregatePrefixes []net.IPNet
+	aggregatePrefixes []fmt.Stringer
 	expectDefaultIPv4 *bool
 	expectDefaultIPv6 *bool
 }
@@ -302,7 +302,23 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 		versionConstraints version.Constraints
 	}
 
+	type stringer struct {
+		string
+	}
+
 	testCases := map[string]testCase{
+		"semantic_equality": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterRoutingPolicy{
+						name:              acctest.RandString(6),
+						aggregatePrefixes: []fmt.Stringer{bytes.NewBufferString("3fff:1:0:0::/56")},
+						extraImports:      []resourceDatacenterRoutingPolicyExtraImportExport{{prefix: "3fff:2:0:0::/56"}},
+						extraExports:      []resourceDatacenterRoutingPolicyExtraImportExport{{prefix: "3fff:3:0:0::/56"}},
+					},
+				},
+			},
+		},
 		"l3_edge_okay": {
 			versionConstraints: compatibility.RoutingPolicyExportL3EdgeServerOK.Constraints,
 			steps: []testStep{
@@ -341,10 +357,18 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						extraImports: []resourceDatacenterRoutingPolicyExtraImportExport{
 							{prefix: "11.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
 							{prefix: "12.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "13.2.3.0/24", geMask: nil, leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "14.2.4.0/24", geMask: utils.ToPtr(25), leMask: nil, action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "15.2.4.0/24", geMask: nil, leMask: nil, action: nil},
+							{prefix: "3fff:1::/56", geMask: nil, leMask: utils.ToPtr(64), action: utils.ToPtr(apstra.PrefixFilterActionPermit)},
 						},
 						extraExports: []resourceDatacenterRoutingPolicyExtraImportExport{
 							{prefix: "21.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
 							{prefix: "22.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "23.2.3.0/24", geMask: nil, leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "24.2.4.0/24", geMask: utils.ToPtr(25), leMask: nil, action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "25.2.4.0/24", geMask: nil, leMask: nil, action: nil},
+							{prefix: "3fff:2::/56", geMask: nil, leMask: utils.ToPtr(64), action: utils.ToPtr(apstra.PrefixFilterActionPermit)},
 						},
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{
 							SpineLeafLinks:       utils.ToPtr(true),
@@ -353,6 +377,10 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 							L2EdgeSubnets:        utils.ToPtr(true),
 							Loopbacks:            utils.ToPtr(false),
 							StaticRoutes:         nil,
+						},
+						aggregatePrefixes: []fmt.Stringer{
+							utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 28)),
+							utils.ToPtr(randomPrefix(t, "3fff::/20", 48)),
 						},
 						expectDefaultIPv4: utils.ToPtr(true),
 						expectDefaultIPv6: utils.ToPtr(false),
@@ -375,10 +403,18 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						extraImports: []resourceDatacenterRoutingPolicyExtraImportExport{
 							{prefix: "11.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
 							{prefix: "12.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "13.2.3.0/24", geMask: nil, leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "14.2.4.0/24", geMask: utils.ToPtr(25), leMask: nil, action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "15.2.4.0/24", geMask: nil, leMask: nil, action: nil},
+							{prefix: "3fff:1::/56", geMask: nil, leMask: utils.ToPtr(64), action: utils.ToPtr(apstra.PrefixFilterActionPermit)},
 						},
 						extraExports: []resourceDatacenterRoutingPolicyExtraImportExport{
 							{prefix: "21.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
 							{prefix: "22.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "23.2.3.0/24", geMask: nil, leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "24.2.4.0/24", geMask: utils.ToPtr(25), leMask: nil, action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "25.2.4.0/24", geMask: nil, leMask: nil, action: nil},
+							{prefix: "3fff:2::/56", geMask: nil, leMask: utils.ToPtr(64), action: utils.ToPtr(apstra.PrefixFilterActionPermit)},
 						},
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{
 							SpineLeafLinks:       utils.ToPtr(true),
@@ -405,10 +441,18 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						extraImports: []resourceDatacenterRoutingPolicyExtraImportExport{
 							{prefix: "31.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
 							{prefix: "32.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "33.2.3.0/24", geMask: nil, leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "34.2.4.0/24", geMask: utils.ToPtr(25), leMask: nil, action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "35.2.4.0/24", geMask: nil, leMask: nil, action: nil},
+							{prefix: "3fff:3::/56", geMask: nil, leMask: utils.ToPtr(64), action: utils.ToPtr(apstra.PrefixFilterActionPermit)},
 						},
 						extraExports: []resourceDatacenterRoutingPolicyExtraImportExport{
 							{prefix: "41.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
 							{prefix: "42.2.3.0/24", geMask: utils.ToPtr(25), leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "43.2.3.0/24", geMask: nil, leMask: utils.ToPtr(30), action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "44.2.4.0/24", geMask: utils.ToPtr(25), leMask: nil, action: utils.ToPtr(apstra.PrefixFilterActionDeny)},
+							{prefix: "45.2.4.0/24", geMask: nil, leMask: nil, action: nil},
+							{prefix: "3fff:4::/56", geMask: nil, leMask: utils.ToPtr(64), action: utils.ToPtr(apstra.PrefixFilterActionPermit)},
 						},
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{
 							SpineLeafLinks:       utils.ToPtr(false),

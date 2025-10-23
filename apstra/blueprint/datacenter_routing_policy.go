@@ -103,7 +103,7 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 				"be set on per-connectivity point policies. The aggregated routes are sent to all external router " +
 				"peers in a SZ (VRF).",
 			Optional:    true,
-			ElementType: types.StringType,
+			ElementType: cidrtypes.IPPrefixType{},
 			Validators: []validator.List{
 				listvalidator.SizeAtLeast(1),
 				listvalidator.ValueStringsAre(apstravalidator.ParseCidr(false, false)),
@@ -194,7 +194,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 				"be set on per-connectivity point policies. The aggregated routes are sent to all external router " +
 				"peers in a SZ (VRF).",
 			Computed:    true,
-			ElementType: types.StringType,
+			ElementType: cidrtypes.IPPrefixType{},
 		},
 		"extra_imports": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("User defined import routes will be used in addition to any "+
@@ -264,7 +264,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataS
 				"but the list need not be an *exact match*. That is, a policy containting `10.1.0.0/16` and " +
 				"`10.2.0.0/16` will match a filter which specifies only `10.1.0.0/16`",
 			Optional:    true,
-			ElementType: types.StringType,
+			ElementType: cidrtypes.IPPrefixType{},
 		},
 		"extra_imports": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: "All `extra_imports` specified here are required for the filter to match, " +
