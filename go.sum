@@ -6,8 +6,8 @@ github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/IBM/netaddr v1.5.0 h1:IJlFZe1+nFs09TeMB/HOP4+xBnX2iM/xgiDOgZgTJq0=
 github.com/IBM/netaddr v1.5.0/go.mod h1:DDBPeYgbFzoXHjSz9Jwk7K8wmWV4+a/Kv0LqRnb8we4=
-github.com/Juniper/apstra-go-sdk v0.0.0-20251011014908-566e629cfca8 h1:cYUL7Pu85/cvX31Nyhu4JU8WHEZM5RFr3rcH8TKjn2U=
-github.com/Juniper/apstra-go-sdk v0.0.0-20251011014908-566e629cfca8/go.mod h1:pmN+R5dS01SeoK6Rel2SSQ4CPvZJSfy58cztBvHFHPs=
+github.com/Juniper/apstra-go-sdk v0.0.0-20251014202225-000608b65c09 h1:NX31ziAnvL68nkMQqVBOtUatH/1xtEKOc0HvflIRCqs=
+github.com/Juniper/apstra-go-sdk v0.0.0-20251014202225-000608b65c09/go.mod h1:pmN+R5dS01SeoK6Rel2SSQ4CPvZJSfy58cztBvHFHPs=
 github.com/Kunde21/markdownfmt/v3 v3.1.0 h1:KiZu9LKs+wFFBQKhrZJrFZwtLnCCWJahL+S+E/3VnM0=
 github.com/Kunde21/markdownfmt/v3 v3.1.0/go.mod h1:tPXN1RTyOzJwhfHoon9wUr4HGYmWgVxSQN6VBJDkrVc=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=

@@ -2,7 +2,10 @@ package blueprint
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -43,8 +46,8 @@ func (o datacenterRoutingPolicyExport) resourceAttributes() map[string]resourceS
 			Default:             booldefault.StaticBool(false),
 		},
 		"export_l3_edge_server_links": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Exports all leaf to L3 server links within a routing zone (VRF). This will be an " +
-				"empty list on a layer2 based blueprint",
+			MarkdownDescription: fmt.Sprintf("Exports all leaf to L3 server links within a routing zone (VRF). "+
+				"This will be an empty list on a layer2 based blueprint. Valid only with Apstra %s and earlier.", apiversions.Apstra422),
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(false),

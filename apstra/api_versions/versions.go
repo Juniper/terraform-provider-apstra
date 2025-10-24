@@ -16,6 +16,8 @@ const (
 	GeApstra421 = ">=" + Apstra421
 	GeApstra500 = ">=" + Apstra500
 
+	GtApstra422 = ">" + Apstra422
+
 	LeApstra422 = "<=" + Apstra422
 
 	LtApstra500 = "<" + Apstra500

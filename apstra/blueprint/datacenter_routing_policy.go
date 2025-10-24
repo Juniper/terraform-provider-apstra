@@ -7,10 +7,12 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -68,12 +70,11 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"import_policy": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
-			Computed:   true,
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllDcRoutingPolicyImportPolicy()...)},
-			Default:    stringdefault.StaticString(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String()),
+			MarkdownDescription: fmt.Sprintf("One of: `%s`.", strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "`, `")),
+			Computed:            true,
+			Optional:            true,
+			Validators:          []validator.String{stringvalidator.OneOf(utils.AllDcRoutingPolicyImportPolicy()...)},
+			Default:             stringdefault.StaticString(apstra.DcRoutingPolicyImportPolicyDefaultOnly.String()),
 		},
 		"export_policy": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",
@@ -85,14 +86,14 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 		},
 		"expect_default_ipv4": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv4 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.",
+				"policy. Used for rendering route expectations. Default: `true`.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
 		},
 		"expect_default_ipv6": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Default IPv6 route is expected to be imported via protocol session using this " +
-				"policy. Used for rendering route expectations.",
+				"policy. Used for rendering route expectations. Default: `true`.",
 			Computed: true,
 			Optional: true,
 			Default:  booldefault.StaticBool(true),
@@ -103,7 +104,7 @@ func (o DatacenterRoutingPolicy) ResourceAttributes() map[string]resourceSchema.
 				"be set on per-connectivity point policies. The aggregated routes are sent to all external router " +
 				"peers in a SZ (VRF).",
 			Optional:    true,
-			ElementType: types.StringType,
+			ElementType: cidrtypes.IPPrefixType{},
 			Validators: []validator.List{
 				listvalidator.SizeAtLeast(1),
 				listvalidator.ValueStringsAre(apstravalidator.ParseCidr(false, false)),
@@ -170,9 +171,8 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 			Required:            true,
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
-			Computed: true,
+			MarkdownDescription: fmt.Sprintf("One of: `%s`.", strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "`, `")),
+			Computed:            true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",
@@ -195,7 +195,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributes() map[string]dataSourceSch
 				"be set on per-connectivity point policies. The aggregated routes are sent to all external router " +
 				"peers in a SZ (VRF).",
 			Computed:    true,
-			ElementType: types.StringType,
+			ElementType: cidrtypes.IPPrefixType{},
 		},
 		"extra_imports": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("User defined import routes will be used in addition to any "+
@@ -242,9 +242,8 @@ func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataS
 			Computed:            true,
 		},
 		"import_policy": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("One of '%s'",
-				strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "', '")),
-			Optional: true,
+			MarkdownDescription: fmt.Sprintf("One of: `%s`.", strings.Join(utils.AllDcRoutingPolicyImportPolicy(), "`, `")),
+			Optional:            true,
 		},
 		"export_policy": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "The export policy controls export of various types of fabric prefixes.",
@@ -266,7 +265,7 @@ func (o DatacenterRoutingPolicy) DataSourceAttributesAsFilter() map[string]dataS
 				"but the list need not be an *exact match*. That is, a policy containting `10.1.0.0/16` and " +
 				"`10.2.0.0/16` will match a filter which specifies only `10.1.0.0/16`",
 			Optional:    true,
-			ElementType: types.StringType,
+			ElementType: cidrtypes.IPPrefixType{},
 		},
 		"extra_imports": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: "All `extra_imports` specified here are required for the filter to match, " +
@@ -302,7 +301,7 @@ func (o *DatacenterRoutingPolicy) Request(ctx context.Context, diags *diag.Diagn
 		return nil
 	}
 
-	exportPolicy := datacenterRoutingPolicyExport{}
+	var exportPolicy datacenterRoutingPolicyExport
 	diags.Append(o.ExportPolicy.As(ctx, &exportPolicy, basetypes.ObjectAsOptions{})...)
 	if diags.HasError() {
 		return nil
@@ -504,4 +503,25 @@ func (o *DatacenterRoutingPolicy) FilterMatch(ctx context.Context, in *Datacente
 	}
 
 	return true
+}
+
+func (o DatacenterRoutingPolicy) VersionConstraints(ctx context.Context, diags *diag.Diagnostics) compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
+
+	if !o.ExportPolicy.IsUnknown() && !o.ExportPolicy.IsNull() {
+		var exportPolicy datacenterRoutingPolicyExport
+		diags.Append(o.ExportPolicy.As(ctx, &exportPolicy, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return response
+		}
+
+		if exportPolicy.L3Edge.ValueBool() {
+			response.AddAttributeConstraints(compatibility.AttributeConstraint{
+				Path:        path.Root("export_policy").AtName("export_l3_edge_server_links"),
+				Constraints: compatibility.RoutingPolicyExportL3EdgeServerOK,
+			})
+		}
+	}
+
+	return response
 }

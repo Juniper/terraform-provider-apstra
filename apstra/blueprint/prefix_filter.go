@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -20,16 +21,17 @@ import (
 )
 
 type prefixFilter struct {
-	Prefix types.String `tfsdk:"prefix"`
-	GeMask types.Int64  `tfsdk:"ge_mask"`
-	LeMask types.Int64  `tfsdk:"le_mask"`
-	Action types.String `tfsdk:"action"`
+	Prefix cidrtypes.IPPrefix `tfsdk:"prefix"`
+	GeMask types.Int64        `tfsdk:"ge_mask"`
+	LeMask types.Int64        `tfsdk:"le_mask"`
+	Action types.String       `tfsdk:"action"`
 }
 
 func (o prefixFilter) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"prefix": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 or IPv6 network address specified in the form of network/prefixlen.",
+			CustomType:          cidrtypes.IPPrefixType{},
 			Required:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(false, false)},
 		},
@@ -68,6 +70,7 @@ func (o prefixFilter) dataSourceAttributes() map[string]dataSourceSchema.Attribu
 	return map[string]dataSourceSchema.Attribute{
 		"prefix": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 or IPv6 network address specified in the form of network/prefixlen.",
+			CustomType:          cidrtypes.IPPrefixType{},
 			Computed:            true,
 		},
 		"ge_mask": dataSourceSchema.Int64Attribute{
@@ -100,6 +103,7 @@ func (o prefixFilter) dataSourceAttributesAsFilter() map[string]dataSourceSchema
 	return map[string]dataSourceSchema.Attribute{
 		"prefix": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 or IPv6 network address specified in the form of network/prefixlen.",
+			CustomType:          cidrtypes.IPPrefixType{},
 			Optional:            true,
 			Validators:          []validator.String{apstravalidator.ParseCidr(false, false)},
 		},
@@ -131,7 +135,7 @@ func (o prefixFilter) dataSourceAttributesAsFilter() map[string]dataSourceSchema
 
 func (o prefixFilter) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"prefix":  types.StringType,
+		"prefix":  cidrtypes.IPPrefixType{},
 		"ge_mask": types.Int64Type,
 		"le_mask": types.Int64Type,
 		"action":  types.StringType,
@@ -139,7 +143,7 @@ func (o prefixFilter) attrTypes() map[string]attr.Type {
 }
 
 func (o *prefixFilter) loadApiData(ctx context.Context, in *apstra.PrefixFilter, diags *diag.Diagnostics) {
-	o.Prefix = types.StringValue(in.Prefix.String())
+	o.Prefix = cidrtypes.NewIPPrefixValue(in.Prefix.String())
 	o.GeMask = utils.Int64ValueOrNull(ctx, in.GeMask, diags)
 	o.LeMask = utils.Int64ValueOrNull(ctx, in.LeMask, diags)
 	o.Action = types.StringValue(in.Action.String())
