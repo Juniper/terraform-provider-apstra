@@ -2,8 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"golang.org/x/exp/constraints"
-	"sort"
 )
 
 func ItemInSlice[A comparable](item A, slice []A) bool {
@@ -142,16 +140,6 @@ func SliceIntersectionOfAB[T comparable](a, b []T) []T {
 	}
 
 	return result
-}
-
-func Sort[A constraints.Ordered](in []A) {
-	if in == nil {
-		return
-	}
-
-	sort.Slice(in, func(i, j int) bool {
-		return in[i] < in[j]
-	})
 }
 
 func SlicesAreEqualSets[A comparable](a, b []A) bool {
