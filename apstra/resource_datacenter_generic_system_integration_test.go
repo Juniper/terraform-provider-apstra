@@ -5,9 +5,11 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math/rand/v2"
 	"net"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,7 +26,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 )
 
 const resourceDataCenterGenericSystemLinkHCL = `
@@ -245,7 +246,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 
 	// get leaf switch IDs, sorted as in web UI
 	leafNameToId := testutils.GetSystemIds(t, ctx, bp, "leaf")
-	leafNames := maps.Keys(leafNameToId)
+	leafNames := slices.Collect(maps.Keys(leafNameToId))
 	sort.Strings(leafNames)
 	leafSwitchIds := make([]apstra.ObjectId, len(leafNames))
 	for i, leafName := range leafNames {
