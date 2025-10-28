@@ -121,7 +121,7 @@ func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.Conne
 	}
 
 	// loop over element indexes common to both oPrimitives an inPrimitives
-	for i := 0; i < utils.Min(len(inPrimitives), len(oPrimitives)); i++ {
+	for i := 0; i < min(len(inPrimitives), len(oPrimitives)); i++ {
 		// overwrite the state primitive when they're not semantically equal
 		if !utils.JSONEqual(inPrimitives[i].(types.String), oPrimitives[i].(types.String), diags) {
 			oPrimitives[i] = inPrimitives[i]
