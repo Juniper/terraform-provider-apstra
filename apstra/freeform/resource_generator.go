@@ -195,5 +195,5 @@ func (o *ResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformRe
 		o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	}
 	o.ContainerId = types.StringValue(string(in.ContainerId))
-	o.SubnetPrefixLen = utils.Int64AttrValueFromPtr(in.SubnetPrefixLen)
+	o.SubnetPrefixLen = utils.Int64PointerValue(in.SubnetPrefixLen)
 }

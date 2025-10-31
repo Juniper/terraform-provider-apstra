@@ -193,11 +193,3 @@ func Ipv6PrefixPointerValue(v *net.IPNet) cidrtypes.IPv6Prefix {
 
 	return cidrtypes.NewIPv6PrefixValue(v.String())
 }
-
-func Int64AttrValueFromPtr[A constraints.Integer](a *A) types.Int64 {
-	if a == nil {
-		return types.Int64Null()
-	}
-
-	return types.Int64Value(int64(*a))
-}
