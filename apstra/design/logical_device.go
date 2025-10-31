@@ -76,12 +76,12 @@ func (o LogicalDevice) DataSourceAttributesNested() map[string]dataSourceSchema.
 func (o LogicalDevice) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra ID number of the resource pool",
+			MarkdownDescription: "Apstra ID number of the Logical Device",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Pool name displayed in the Apstra web UI",
+			MarkdownDescription: "Logical Device name displayed in the Apstra web UI",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
