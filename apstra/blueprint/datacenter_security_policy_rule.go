@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -70,8 +71,8 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 		"source_ports": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. A `null` "+
 				"set matches any port. Applies only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
@@ -81,8 +82,8 @@ func (o DatacenterSecurityPolicyRule) DataSourceAttributes() map[string]dataSour
 		"destination_ports": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. A `null` "+
 				"set matches any port. Applies only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Computed: true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
@@ -178,8 +179,8 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 		"source_ports": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP source ports matched by this rule. A `null` "+
 				"set matches any port. Valid only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Optional: true,
 			Validators: []validator.Set{
@@ -193,8 +194,8 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 		"destination_ports": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Set of TCP/UDP destination ports matched by this rule. A `null` "+
 				"set matches any port. Valid only when `protocol` is `%s` or `%s`.",
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
-				utils.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolTcp),
+				rosetta.StringersToFriendlyString(enum.PolicyRuleProtocolUdp),
 			),
 			Optional: true,
 			Validators: []validator.Set{
@@ -237,7 +238,7 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 
 	o.Name = types.StringValue(in.Label)
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
-	o.Protocol = types.StringValue(utils.StringersToFriendlyString(in.Protocol))
+	o.Protocol = types.StringValue(rosetta.StringersToFriendlyString(in.Protocol))
 	o.Action = types.StringValue(in.Action.Value)
 	o.SrcPorts = newDatacenterPolicyRulePortRangeSet(ctx, in.SrcPort, diags)
 	o.DstPorts = newDatacenterPolicyRulePortRangeSet(ctx, in.DstPort, diags)
@@ -246,7 +247,7 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 
 func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.PolicyRuleData {
 	var protocol enum.PolicyRuleProtocol
-	err := utils.ApiStringerFromFriendlyString(&protocol, o.Protocol.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&protocol, o.Protocol.ValueString())
 	if err != nil {
 		diags.AddAttributeError(path, fmt.Sprintf("failed to parse policy rule protocol %s", o.Protocol), err.Error())
 		return nil

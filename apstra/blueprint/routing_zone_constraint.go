@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -64,9 +65,9 @@ func (o DatacenterRoutingZoneConstraint) DataSourceAttributes() map[string]dataS
 			MarkdownDescription: fmt.Sprintf(
 				"Routing Zone constraint mode. One of: %s.", strings.Join(
 					[]string{
-						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow) + "`",
-						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny) + "`",
-						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone) + "`",
+						"`" + rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow) + "`",
+						"`" + rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny) + "`",
+						"`" + rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone) + "`",
 					}, ", "),
 			),
 			Computed: true,
@@ -75,7 +76,7 @@ func (o DatacenterRoutingZoneConstraint) DataSourceAttributes() map[string]dataS
 			MarkdownDescription: fmt.Sprintf("When `%s` instance constraint mode is chosen, only VNs from selected "+
 				"Routing Zones are allowed to have endpoints on the interface(s) the policy is applied to. The permitted "+
 				"Routing Zones may be specified directly or indirectly (via Routing Zone Groups)",
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
 			),
 			Computed:    true,
 			ElementType: types.StringType,
@@ -105,16 +106,16 @@ func (o DatacenterRoutingZoneConstraint) DataSourceFilterAttributes() map[string
 			MarkdownDescription: fmt.Sprintf(
 				"Routing Zone constraint mode. One of: %s.", strings.Join(
 					[]string{
-						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow) + "`",
-						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny) + "`",
-						"`" + utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone) + "`",
+						"`" + rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow) + "`",
+						"`" + rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny) + "`",
+						"`" + rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone) + "`",
 					}, ", "),
 			),
 			Optional: true,
 			Validators: []validator.String{stringvalidator.OneOf( // validated b/c this runs through rosetta
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
 			)},
 		},
 		"constraints": dataSourceSchema.SetAttribute{
@@ -156,29 +157,29 @@ func (o DatacenterRoutingZoneConstraint) ResourceAttributes() map[string]resourc
 				"- `%s` - only allow the specified routing zones (add specific routing zones to allow)\n"+
 				"- `%s` - denies allocation of specified routing zones (add specific routing zones to deny)\n"+
 				"- `%s` - no additional constraints on routing zones (any routing zones)",
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
 			),
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeDeny),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone),
 			)},
 		},
 		"constraints": resourceSchema.SetAttribute{
 			MarkdownDescription: fmt.Sprintf("When `%s` instance constraint mode is chosen, only VNs from selected "+
 				"Routing Zones are allowed to have endpoints on the interface(s) the policy is applied to. The permitted "+
 				"Routing Zones may be specified directly or indirectly (via Routing Zone Groups)",
-				utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
+				rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeAllow),
 			),
 			Optional:    true,
 			ElementType: types.StringType,
 			Validators: []validator.Set{
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRoot("routing_zones_list_constraint"),
-					types.StringValue(utils.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.RoutingZoneConstraintModeNone)),
 				),
 			},
 		},
@@ -191,7 +192,7 @@ func (o DatacenterRoutingZoneConstraint) Request(ctx context.Context, diags *dia
 	}
 
 	// set result.Mode
-	err := utils.ApiStringerFromFriendlyString(&result.Mode, o.RoutingZonesListConstraint.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&result.Mode, o.RoutingZonesListConstraint.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed converting %s to API type", o.RoutingZonesListConstraint), err.Error())
 		return nil
@@ -236,7 +237,7 @@ func (o DatacenterRoutingZoneConstraint) Query(ctx context.Context, rzcResultNam
 	// add the mode to the match, if any
 	if !o.RoutingZonesListConstraint.IsNull() {
 		var rzcm enum.RoutingZoneConstraintMode
-		err := utils.ApiStringerFromFriendlyString(&rzcm, o.RoutingZonesListConstraint.ValueString())
+		err := rosetta.ApiStringerFromFriendlyString(&rzcm, o.RoutingZonesListConstraint.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("failed converting %s to API type", o.RoutingZonesListConstraint), err.Error())
 			return nil

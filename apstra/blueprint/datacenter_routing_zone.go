@@ -12,6 +12,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -309,7 +310,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		diags.AddAttributeError(
 			path.Root("blueprint_id"),
 			constants.ErrInvalidConfig,
-			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", utils.StringersToFriendlyString(ocp)))
+			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", rosetta.StringersToFriendlyString(ocp)))
 	}
 
 	var importRTs, exportRTs []string

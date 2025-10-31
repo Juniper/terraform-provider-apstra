@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Juniper/apstra-go-sdk/enum"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -73,11 +73,11 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 			Required:            true,
 		},
 		"storage_schema_path": resourceSchema.StringAttribute{
-			MarkdownDescription: "Storage Schema Path. Must be one of:\n  - " + strings.Join([]string{utils.StringersToFriendlyString(enum.StorageSchemaPathIbaStringData), utils.StringersToFriendlyString(enum.StorageSchemaPathIbaIntegerData)}, "\n  - ") + "\n",
+			MarkdownDescription: "Storage Schema Path. Must be one of:\n  - " + strings.Join([]string{rosetta.StringersToFriendlyString(enum.StorageSchemaPathIbaStringData), rosetta.StringersToFriendlyString(enum.StorageSchemaPathIbaIntegerData)}, "\n  - ") + "\n",
 			Required:            true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				stringvalidator.OneOf(utils.StringersToFriendlyString(enum.StorageSchemaPathIbaStringData), utils.StringersToFriendlyString(enum.StorageSchemaPathIbaIntegerData)),
+				stringvalidator.OneOf(rosetta.StringersToFriendlyString(enum.StorageSchemaPathIbaStringData), rosetta.StringersToFriendlyString(enum.StorageSchemaPathIbaIntegerData)),
 			},
 		},
 		"description": resourceSchema.StringAttribute{
@@ -102,12 +102,12 @@ func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *aps
 	o.Description = utils.StringValueOrNull(ctx, in.Description, diag)
 	o.Builtin = types.BoolValue(in.Builtin)
 	o.ApplicationSchema = jsontypes.NewNormalizedValue(string(in.ApplicationSchema))
-	o.StorageSchemaPath = types.StringValue(utils.StringersToFriendlyString(in.StorageSchemaPath))
+	o.StorageSchemaPath = types.StringValue(rosetta.StringersToFriendlyString(in.StorageSchemaPath))
 }
 
 func (o *TelemetryServiceRegistryEntry) Request(_ context.Context, diags *diag.Diagnostics) *apstra.TelemetryServiceRegistryEntry {
 	var storageSchemaPath enum.StorageSchemaPath
-	err := utils.ApiStringerFromFriendlyString(&storageSchemaPath, o.StorageSchemaPath.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&storageSchemaPath, o.StorageSchemaPath.ValueString())
 	if err != nil {
 		diags.AddError("Failed to Parse Storage Schema Path", err.Error())
 		return nil

@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -71,7 +72,7 @@ func (o *resourceDatacenterConfiglet) ValidateConfig(ctx context.Context, req re
 
 		// parse the config style
 		var configletStyle enum.ConfigletStyle
-		err := utils.ApiStringerFromFriendlyString(&configletStyle, generator.ConfigStyle.ValueString())
+		err := rosetta.ApiStringerFromFriendlyString(&configletStyle, generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("generators").AtListIndex(i),
@@ -81,7 +82,7 @@ func (o *resourceDatacenterConfiglet) ValidateConfig(ctx context.Context, req re
 
 		// parse the config section
 		var configletSection enum.ConfigletSection
-		err = utils.ApiStringerFromFriendlyString(&configletSection, generator.Section.ValueString(), generator.ConfigStyle.ValueString())
+		err = rosetta.ApiStringerFromFriendlyString(&configletSection, generator.Section.ValueString(), generator.ConfigStyle.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("generators").AtListIndex(i),

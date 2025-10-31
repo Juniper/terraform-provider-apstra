@@ -4,13 +4,14 @@ import (
 	"sort"
 
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 )
 
 func AllStorageSchemaPaths() []string {
 	members := enum.StorageSchemaPaths.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
+		result[i] = rosetta.StringersToFriendlyString(member)
 	}
 	sort.Strings(result)
 	return result

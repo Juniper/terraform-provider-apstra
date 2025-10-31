@@ -5,13 +5,14 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 )
 
 func AllNodeDeployModes() []string {
 	members := enum.DeployModes.Members()
 	result := make([]string, len(members))
 	for i, member := range members {
-		result[i] = StringersToFriendlyString(member)
+		result[i] = rosetta.StringersToFriendlyString(member)
 	}
 
 	return result
@@ -34,12 +35,12 @@ func GetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient,
 		return "", err
 	}
 
-	return StringersToFriendlyString(deployMode), nil
+	return rosetta.StringersToFriendlyString(deployMode), nil
 }
 
 func SetNodeDeployMode(ctx context.Context, client *apstra.TwoStageL3ClosClient, nodeId string, modeString string) error {
 	var modeIota enum.DeployMode
-	err := ApiStringerFromFriendlyString(&modeIota, modeString)
+	err := rosetta.ApiStringerFromFriendlyString(&modeIota, modeString)
 	if err != nil {
 		return err
 	}

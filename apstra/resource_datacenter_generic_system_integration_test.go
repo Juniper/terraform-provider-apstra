@@ -21,6 +21,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -69,7 +70,7 @@ func (o *resourceDataCenterGenericSystemLink) addTestChecks(t testing.TB, testCh
 		// todo - each tag, somehow? not critical, the extra plan stage will catch it
 	}
 	if o.lagMode != apstra.RackLinkLagModeNone {
-		m["lag_mode"] = utils.StringersToFriendlyString(o.lagMode)
+		m["lag_mode"] = rosetta.StringersToFriendlyString(o.lagMode)
 	}
 	if o.groupLabel != "" {
 		m["group_label"] = o.groupLabel
@@ -175,7 +176,7 @@ func (o resourceDataCenterGenericSystem) testChecks(t testing.TB, bpId apstra.Ob
 		result.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 	if o.deployMode == nil {
-		result.append(t, "TestCheckResourceAttr", "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDeploy))
+		result.append(t, "TestCheckResourceAttr", "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDeploy))
 	} else {
 		result.append(t, "TestCheckResourceAttr", "deploy_mode", *o.deployMode)
 	}
@@ -982,7 +983,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				{ // check for deploy_mode = not_set
 					preApplyResourceActionType: plancheck.ResourceActionUpdate,
 					config: resourceDataCenterGenericSystem{
-						deployMode: utils.ToPtr(utils.StringersToFriendlyString(enum.DeployModeNone)),
+						deployMode: utils.ToPtr(rosetta.StringersToFriendlyString(enum.DeployModeNone)),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[1],

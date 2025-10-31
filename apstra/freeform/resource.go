@@ -11,6 +11,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -76,12 +77,12 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 			MarkdownDescription: fmt.Sprintf("Value used by integer type resources (`%s`, `%s`, `%s`, `%s`). "+
 				"Also used by IP prefix resources (`%s` and `%s`) to indicate the required prefix size for automatic "+
 				"allocations from another object or a resource pool.",
-				utils.StringersToFriendlyString(enum.FFResourceTypeAsn),
-				utils.StringersToFriendlyString(enum.FFResourceTypeInt),
-				utils.StringersToFriendlyString(enum.FFResourceTypeVlan),
-				utils.StringersToFriendlyString(enum.FFResourceTypeVni),
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv4),
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeAsn),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeInt),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeVlan),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeVni),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv6),
 			),
 			Computed: true,
 		},
@@ -93,16 +94,16 @@ func (o Resource) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		},
 		"ipv4_value": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`.",
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv4),
-				utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv4),
 			),
 			Computed:   true,
 			CustomType: cidrtypes.IPv4PrefixType{},
 		},
 		"ipv6_value": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`.",
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv6),
-				utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv6),
 			),
 			Computed:   true,
 			CustomType: cidrtypes.IPv6PrefixType{},
@@ -155,48 +156,48 @@ func (o Resource) ResourceAttributes() map[string]resourceSchema.Attribute {
 			MarkdownDescription: fmt.Sprintf("Value used by integer type resources (`%s`, `%s`, `%s`, `%s`). "+
 				"Also used by IP prefix resources (`%s` and `%s`) to indicate the required prefix size for automatic "+
 				"allocations from another object or a resource pool.",
-				utils.StringersToFriendlyString(enum.FFResourceTypeAsn),
-				utils.StringersToFriendlyString(enum.FFResourceTypeInt),
-				utils.StringersToFriendlyString(enum.FFResourceTypeVlan),
-				utils.StringersToFriendlyString(enum.FFResourceTypeVni),
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv4),
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeAsn),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeInt),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeVlan),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeVni),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv6),
 			),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv4))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv6))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv4))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv6))),
 			},
 		},
 		"ipv4_value": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`. Must be CIDR notation.",
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv4),
-				utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv4),
 			),
 			Optional:   true,
 			Computed:   true,
 			CustomType: cidrtypes.IPv4PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeAsn))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeInt))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeVlan))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeVni))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeAsn))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeInt))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeVlan))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeVni))),
 			},
 		},
 		"ipv6_value": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Value used by resources with type `%s` or `%s`. Must be CIDR notation.",
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv6),
-				utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv6),
 			),
 			Optional:   true,
 			Computed:   true,
 			CustomType: cidrtypes.IPv6PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeAsn))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeInt))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeVlan))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeVni))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeAsn))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeInt))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeVlan))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeVni))),
 			},
 		},
 		"allocated_from": resourceSchema.StringAttribute{
@@ -222,7 +223,7 @@ func (o Resource) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o *Resource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformRaResourceData {
 	var resourceType enum.FFResourceType
-	err := utils.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
 	}
@@ -258,7 +259,7 @@ func (o *Resource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.F
 func (o *Resource) LoadApiData(_ context.Context, in *apstra.FreeformRaResourceData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.GroupId = types.StringValue(string(in.GroupId))
-	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
+	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.ResourceType))
 	o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	o.IntValue = types.Int64Null()
 	o.Ipv4Value = cidrtypes.NewIPv4PrefixNull()
