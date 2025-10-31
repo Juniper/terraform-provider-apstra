@@ -43,12 +43,12 @@ resource "apstra_logical_device" "example" {
 
 ### Required
 
-- `name` (String) Pool name displayed in the Apstra web UI
+- `name` (String) Logical Device name displayed in the Apstra web UI
 - `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--panels))
 
 ### Read-Only
 
-- `id` (String) Apstra ID number of the resource pool
+- `id` (String) Apstra ID number of the Logical Device
 
 <a id="nestedatt--panels"></a>
 ### Nested Schema for `panels`
