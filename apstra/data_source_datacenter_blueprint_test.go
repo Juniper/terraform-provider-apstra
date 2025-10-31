@@ -13,7 +13,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -68,20 +68,20 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 					Mode:                     apstra.AntiAffinityModeEnabledStrict,
 				},
 				// DefaultSviL3Mtu:                       nil,
-				EsiMacMsb:                   utils.ToPtr(uint8(4)),
+				EsiMacMsb:                   pointer.To(uint8(4)),
 				EvpnGenerateType5HostRoutes: &enum.FeatureSwitchEnabled,
-				ExternalRouterMtu:           utils.ToPtr(uint16(9002)),
+				ExternalRouterMtu:           pointer.To(uint16(9002)),
 				// FabricL3Mtu:                 nil,
-				Ipv6Enabled: utils.ToPtr(false),
+				Ipv6Enabled: pointer.To(false),
 				// JunosEvpnDuplicateMacRecoveryTime:     nil,
 				// JunosEvpnMaxNexthopAndInterfaceNumber: nil,
 				// JunosEvpnRoutingInstanceVlanAware:     nil,
 				// JunosExOverlayEcmp:                    nil,
 				// JunosGracefulRestart:                  nil,
-				MaxEvpnRoutes:     utils.ToPtr(uint32(10001)),
-				MaxExternalRoutes: utils.ToPtr(uint32(10002)),
-				MaxFabricRoutes:   utils.ToPtr(uint32(10003)),
-				MaxMlagRoutes:     utils.ToPtr(uint32(10004)),
+				MaxEvpnRoutes:     pointer.To(uint32(10001)),
+				MaxExternalRoutes: pointer.To(uint32(10002)),
+				MaxFabricRoutes:   pointer.To(uint32(10003)),
+				MaxMlagRoutes:     pointer.To(uint32(10004)),
 				// OptimiseSzFootprint:                   nil,
 				// OverlayControlProtocol:                nil,
 				// SpineLeafLinks:                        nil,
@@ -136,20 +136,20 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 					Mode:                     apstra.AntiAffinityModeEnabledStrict,
 				},
 				// DefaultSviL3Mtu:                       nil,
-				EsiMacMsb:                   utils.ToPtr(uint8(4)),
+				EsiMacMsb:                   pointer.To(uint8(4)),
 				EvpnGenerateType5HostRoutes: &enum.FeatureSwitchEnabled,
-				ExternalRouterMtu:           utils.ToPtr(uint16(9002)),
+				ExternalRouterMtu:           pointer.To(uint16(9002)),
 				// FabricL3Mtu:                 nil,
-				Ipv6Enabled: utils.ToPtr(false),
+				Ipv6Enabled: pointer.To(false),
 				// JunosEvpnDuplicateMacRecoveryTime:     nil,
 				// JunosEvpnMaxNexthopAndInterfaceNumber: nil,
 				// JunosEvpnRoutingInstanceVlanAware:     nil,
 				// JunosExOverlayEcmp:                    nil,
 				// JunosGracefulRestart:                  nil,
-				MaxEvpnRoutes:     utils.ToPtr(uint32(10001)),
-				MaxExternalRoutes: utils.ToPtr(uint32(10002)),
-				MaxFabricRoutes:   utils.ToPtr(uint32(10003)),
-				MaxMlagRoutes:     utils.ToPtr(uint32(10004)),
+				MaxEvpnRoutes:     pointer.To(uint32(10001)),
+				MaxExternalRoutes: pointer.To(uint32(10002)),
+				MaxFabricRoutes:   pointer.To(uint32(10003)),
+				MaxMlagRoutes:     pointer.To(uint32(10004)),
 				// OptimiseSzFootprint:                   nil,
 				// OverlayControlProtocol:                nil,
 				// SpineLeafLinks:                        nil,
@@ -223,7 +223,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 				fs, err := bpClient.GetFabricSettings(ctx)
 				require.NoError(t, err)
 
-				fs.Ipv6Enabled = utils.ToPtr(true)
+				fs.Ipv6Enabled = pointer.To(true)
 				err = bpClient.SetFabricSettings(ctx, fs)
 				require.NoError(t, err)
 			}
@@ -237,7 +237,7 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 
 				// force IPv6 lever as specified by the test case (it may need to be on)
 				if tCase.ipv6 {
-					tCase.fabricSettings.Ipv6Enabled = utils.ToPtr(true)
+					tCase.fabricSettings.Ipv6Enabled = pointer.To(true)
 				}
 
 				err = bpClient.SetFabricSettings(ctx, &tCase.fabricSettings)

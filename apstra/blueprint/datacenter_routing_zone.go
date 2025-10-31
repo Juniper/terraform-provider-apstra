@@ -12,6 +12,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -290,12 +291,12 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) *apstra.SecurityZoneData {
 	var vlan *apstra.Vlan
 	if !o.VlanId.IsNull() && !o.VlanId.IsUnknown() {
-		vlan = utils.ToPtr(apstra.Vlan(o.VlanId.ValueInt64()))
+		vlan = pointer.To(apstra.Vlan(o.VlanId.ValueInt64()))
 	}
 
 	var vni *int
 	if !o.Vni.IsNull() && !o.Vni.IsUnknown() {
-		vni = utils.ToPtr(int(o.Vni.ValueInt64()))
+		vni = pointer.To(int(o.Vni.ValueInt64()))
 	}
 
 	ocp, err := client.BlueprintOverlayControlProtocol(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))

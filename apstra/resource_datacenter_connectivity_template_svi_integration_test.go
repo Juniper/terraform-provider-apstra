@@ -13,7 +13,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -118,7 +118,7 @@ func TestResourceDatacenteConnectivityTemplateSvi(t *testing.T) {
 	// Enable IPv6
 	fs, err := bp.GetFabricSettings(ctx)
 	require.NoError(t, err)
-	fs.Ipv6Enabled = utils.ToPtr(true)
+	fs.Ipv6Enabled = pointer.To(true)
 	err = bp.SetFabricSettings(ctx, fs)
 	require.NoError(t, err)
 

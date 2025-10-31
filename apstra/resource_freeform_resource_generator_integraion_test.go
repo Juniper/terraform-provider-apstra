@@ -14,6 +14,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -110,7 +111,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			Type:    enum.ResourcePoolTypeIpv4,
 			PoolIds: []apstra.ObjectId{ipv4poolId},
 		}
-		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
+		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
 		require.NoError(t, err)
 		return allocGroup
 	}
@@ -136,7 +137,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			Type:    enum.ResourcePoolTypeIpv6,
 			PoolIds: []apstra.ObjectId{ipv6poolId},
 		}
-		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
+		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
 		require.NoError(t, err)
 		return allocGroup
 	}
@@ -161,7 +162,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			Type:    enum.ResourcePoolTypeVni,
 			PoolIds: []apstra.ObjectId{vniPoolId},
 		}
-		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
+		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
 		require.NoError(t, err)
 		return allocGroup
 	}
@@ -186,7 +187,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			Type:    enum.ResourcePoolTypeAsn,
 			PoolIds: []apstra.ObjectId{asnPoolId},
 		}
-		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
+		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
 		require.NoError(t, err)
 		return allocGroup
 	}
@@ -211,7 +212,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 			Type:    enum.ResourcePoolTypeInt,
 			PoolIds: []apstra.ObjectId{intPoolId},
 		}
-		allocGroup, err := bp.CreateAllocGroup(ctx, utils.ToPtr(allocGroupCfg))
+		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
 		require.NoError(t, err)
 		return allocGroup
 	}
@@ -296,7 +297,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						containerId:     string(groupId),
 						resourceType:    enum.FFResourceTypeIpv4,
 						allocatedFrom:   string(newIpv4AllocationGroup(t)),
-						subnetPrefixLen: utils.ToPtr(27),
+						subnetPrefixLen: pointer.To(27),
 					},
 				},
 				{
@@ -307,7 +308,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						containerId:     string(groupId),
 						resourceType:    enum.FFResourceTypeIpv4,
 						allocatedFrom:   string(newIpv4AllocationGroup(t)),
-						subnetPrefixLen: utils.ToPtr(28),
+						subnetPrefixLen: pointer.To(28),
 					},
 				},
 			},
@@ -322,7 +323,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						containerId:     string(groupId),
 						resourceType:    enum.FFResourceTypeIpv6,
 						allocatedFrom:   string(newIpv6AllocationGroup(t)),
-						subnetPrefixLen: utils.ToPtr(127),
+						subnetPrefixLen: pointer.To(127),
 					},
 				},
 				{
@@ -333,7 +334,7 @@ func TestResourceFreeformResourceGenerator(t *testing.T) {
 						containerId:     string(groupId),
 						resourceType:    enum.FFResourceTypeIpv6,
 						allocatedFrom:   string(newIpv6AllocationGroup(t)),
-						subnetPrefixLen: utils.ToPtr(126),
+						subnetPrefixLen: pointer.To(126),
 					},
 				},
 			},

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +25,7 @@ func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apst
 					Label:              acctest.RandString(10),
 					SecurityZone:       &szId,
 					Tagged:             true,
-					Vlan:               utils.ToPtr(apstra.Vlan(tag)),
+					Vlan:               pointer.To(apstra.Vlan(tag)),
 					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,
 				},
 			},

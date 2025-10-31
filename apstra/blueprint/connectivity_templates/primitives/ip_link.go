@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -158,7 +159,7 @@ func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink {
 	var vlan *apstra.Vlan
 	if !o.VlanId.IsNull() {
-		vlan = utils.ToPtr(apstra.Vlan(o.VlanId.ValueInt64()))
+		vlan = pointer.To(apstra.Vlan(o.VlanId.ValueInt64()))
 	}
 
 	var err error
@@ -179,7 +180,7 @@ func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.C
 
 	var l3Mtu *uint16
 	if !o.L3Mtu.IsNull() {
-		l3Mtu = utils.ToPtr(uint16(o.L3Mtu.ValueInt64()))
+		l3Mtu = pointer.To(uint16(o.L3Mtu.ValueInt64()))
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{

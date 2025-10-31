@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -199,7 +200,7 @@ func (o DatacenterRoutingZoneConstraint) Request(ctx context.Context, diags *dia
 
 	// set result.MaxRoutingZones
 	if !o.MaxCountConstraint.IsNull() {
-		result.MaxRoutingZones = utils.ToPtr(int(o.MaxCountConstraint.ValueInt64()))
+		result.MaxRoutingZones = pointer.To(int(o.MaxCountConstraint.ValueInt64()))
 	}
 
 	// set result.RoutingZoneIds

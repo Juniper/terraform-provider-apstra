@@ -13,7 +13,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -77,7 +77,7 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 
 		var vlanId *apstra.Vlan
 		if vlan > 0 { // with vlan 0 we send nil pointer to create an invalid CT
-			vlanId = utils.ToPtr(apstra.Vlan(vlan))
+			vlanId = pointer.To(apstra.Vlan(vlan))
 		}
 
 		// create a security zone unique for each CT

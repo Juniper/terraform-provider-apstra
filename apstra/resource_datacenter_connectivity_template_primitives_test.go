@@ -17,6 +17,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -244,9 +245,9 @@ func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, cou
 	for range count {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
-			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
+			keepaliveTime = pointer.To(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
 			holdMin := *keepaliveTime * 3
-			holdTime = utils.ToPtr(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
+			holdTime = pointer.To(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
 		}
 
 		var ipv4Address, ipv6Address net.IP
@@ -257,13 +258,13 @@ func randomBgpPeeringIpEndpointPrimitives(t testing.TB, ctx context.Context, cou
 		}
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringIpEndpoint{
-			neighborAsn:     oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
-			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
+			neighborAsn:     oneOf(pointer.To(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
+			ttl:             pointer.To(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
 			keepaliveTime:   keepaliveTime,
 			holdTime:        holdTime,
-			localAsn:        oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
+			localAsn:        oneOf(pointer.To(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ipv4Address:     ipv4Address,
 			ipv6Address:     ipv6Address,
 			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), client, cleanup),
@@ -385,9 +386,9 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 	for range count {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
-			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
+			keepaliveTime = pointer.To(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
 			holdMin := *keepaliveTime * 3
-			holdTime = utils.ToPtr(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
+			holdTime = pointer.To(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
 		}
 
 		var ipv4Enabled, ipv6Enabled bool
@@ -410,14 +411,14 @@ func randomDynamicBgpPeeringPrimitives(t testing.TB, ctx context.Context, count 
 		}
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveDynamicBgpPeering{
-			ttl:             utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
+			ttl:             pointer.To(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:      oneOf(true, false),
 			password:        oneOf(acctest.RandString(6), ""),
 			keepaliveTime:   keepaliveTime,
 			holdTime:        holdTime,
 			ipv4Enabled:     ipv4Enabled,
 			ipv6Enabled:     ipv6Enabled,
-			localAsn:        oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
+			localAsn:        oneOf(pointer.To(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			ipv4PeerPrefix:  ipv4PeerPrefix,
 			ipv6PeerPrefix:  ipv6PeerPrefix,
 			routingPolicies: randomRoutingPolicies(t, ctx, rand.IntN(count), client, cleanup),
@@ -535,9 +536,9 @@ func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, 
 	for range count {
 		var holdTime, keepaliveTime *int
 		if rand.Int()%2 == 0 {
-			keepaliveTime = utils.ToPtr(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
+			keepaliveTime = pointer.To(rand.IntN(constants.KeepaliveTimeMax-constants.KeepaliveTimeMin) + constants.KeepaliveTimeMin)
 			holdMin := *keepaliveTime * 3
-			holdTime = utils.ToPtr(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
+			holdTime = pointer.To(rand.IntN(constants.HoldTimeMax-holdMin) + holdMin)
 		}
 
 		var ipv4Addressing apstra.CtPrimitiveIPv4ProtocolSessionAddressing
@@ -571,14 +572,14 @@ func randomBgpPeeringGenericSystemPrimitives(t testing.TB, ctx context.Context, 
 		}
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem{
-			ttl:                utils.ToPtr(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
+			ttl:                pointer.To(rand.IntN(constants.TtlMax-constants.TtlMin) + constants.TtlMin),
 			bfdEnabled:         oneOf(true, false),
 			password:           oneOf(acctest.RandString(6), ""),
 			keepaliveTime:      keepaliveTime,
 			holdTime:           holdTime,
 			ipv4Addressing:     ipv4Addressing,
 			ipv6Addressing:     ipv6Addressing,
-			localAsn:           oneOf(utils.ToPtr(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
+			localAsn:           oneOf(pointer.To(rand.IntN(constants.AsnMax+constants.AsnMin)), (*int)(nil)),
 			neighborAsnDynamic: oneOf(true, false),
 			peerFromLoopback:   peerFromLoopback,
 			peerTo:             peerTo,
@@ -822,7 +823,7 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 		policyId, err := client.CreateRoutingZoneConstraint(ctx, &apstra.RoutingZoneConstraintData{
 			Label:           acctest.RandString(6),
 			Mode:            oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny, enum.RoutingZoneConstraintModeNone),
-			MaxRoutingZones: oneOf(nil, utils.ToPtr(0), utils.ToPtr(1), utils.ToPtr(2)),
+			MaxRoutingZones: oneOf(nil, pointer.To(0), pointer.To(1), pointer.To(2)),
 			RoutingZoneIds:  nil,
 		})
 		require.NoError(t, err)
@@ -972,8 +973,8 @@ func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
 			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup).String(),
-			vlanId:                   oneOf(nil, utils.ToPtr(rand.IntN(4000)+100)),
-			l3Mtu:                    oneOf(nil, utils.ToPtr((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),
+			vlanId:                   oneOf(nil, pointer.To(rand.IntN(4000)+100)),
+			l3Mtu:                    oneOf(nil, pointer.To((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),
 			ipv4AddressingType:       ipv4AddressingType,
 			ipv6AddressingType:       ipv6AddressingType,
 			bgpPeeringGenericSystems: randomBgpPeeringGenericSystemPrimitives(t, ctx, rand.IntN(3), client, cleanup),

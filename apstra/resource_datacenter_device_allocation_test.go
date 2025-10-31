@@ -12,6 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -172,7 +173,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						systemAttributes: &systemAttributes{
 							name:     "SPINE1",
 							hostname: "spine1.test",
-							asn:      utils.ToPtr(1),
+							asn:      pointer.To(1),
 							loopbackIpv4: &net.IPNet{
 								IP:   net.IP{1, 1, 1, 1},
 								Mask: net.CIDRMask(32, 32),
@@ -203,7 +204,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						systemAttributes: &systemAttributes{
 							name:     "SPINE2",
 							hostname: "spine2.test",
-							asn:      utils.ToPtr(2),
+							asn:      pointer.To(2),
 							loopbackIpv4: &net.IPNet{
 								IP:   net.IP{2, 2, 2, 2},
 								Mask: net.CIDRMask(32, 32),
@@ -255,7 +256,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						systemAttributes: &systemAttributes{
 							name:         "leaf_start_minimal_name",
 							hostname:     "leafstartminimalhostname.com",
-							asn:          utils.ToPtr(1),
+							asn:          pointer.To(1),
 							loopbackIpv4: &net.IPNet{IP: net.IP{1, 1, 1, 1}, Mask: net.CIDRMask(32, 32)},
 							deployMode:   utils.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:         []string{"one", "1"},
@@ -324,7 +325,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						systemAttributes: &systemAttributes{
 							name:         "leaf_start_maximal_name",
 							hostname:     "leafstartmaximalhostname.com",
-							asn:          utils.ToPtr(1),
+							asn:          pointer.To(1),
 							loopbackIpv4: &net.IPNet{IP: net.IP{1, 1, 1, 1}, Mask: net.CIDRMask(32, 32)},
 							deployMode:   utils.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:         []string{"one", "1"},

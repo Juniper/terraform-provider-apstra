@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -151,12 +152,12 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 func (o BgpPeeringIpEndpoint) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt {
 	var neighborAsn *uint32
 	if !o.NeighborAsn.IsNull() {
-		neighborAsn = utils.ToPtr(uint32(o.NeighborAsn.ValueInt64()))
+		neighborAsn = pointer.To(uint32(o.NeighborAsn.ValueInt64()))
 	}
 
 	var holdTime *uint16
 	if !o.HoldTime.IsNull() {
-		holdTime = utils.ToPtr(uint16(o.HoldTime.ValueInt64()))
+		holdTime = pointer.To(uint16(o.HoldTime.ValueInt64()))
 	}
 
 	var ipv4Addr net.IP
@@ -171,12 +172,12 @@ func (o BgpPeeringIpEndpoint) attributes(_ context.Context, _ *diag.Diagnostics)
 
 	var keepaliveTime *uint16
 	if !o.KeepaliveTime.IsNull() {
-		keepaliveTime = utils.ToPtr(uint16(o.KeepaliveTime.ValueInt64()))
+		keepaliveTime = pointer.To(uint16(o.KeepaliveTime.ValueInt64()))
 	}
 
 	var localAsn *uint32
 	if !o.LocalAsn.IsNull() {
-		localAsn = utils.ToPtr(uint32(o.LocalAsn.ValueInt64()))
+		localAsn = pointer.To(uint32(o.LocalAsn.ValueInt64()))
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachIpEndpointWithBgpNsxt{

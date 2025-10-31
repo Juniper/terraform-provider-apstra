@@ -12,6 +12,7 @@ import (
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -716,13 +717,13 @@ func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 
 	if utils.HasValue(o.FabricAddressing) {
 		result.FabricSettings.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
-			utils.ToPtr(path.Root("fabric_addressing")), diags)
+			pointer.To(path.Root("fabric_addressing")), diags)
 		if diags.HasError() {
 			return nil
 		}
 
 		result.FabricSettings.SpineSuperspineLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
-			utils.ToPtr(path.Root("fabric_addressing")), diags)
+			pointer.To(path.Root("fabric_addressing")), diags)
 		if diags.HasError() {
 			return nil
 		}
@@ -770,11 +771,11 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	if utils.HasValue(o.DefaultSviL3Mtu) {
-		result.DefaultSviL3Mtu = utils.ToPtr(uint16(o.DefaultSviL3Mtu.ValueInt64()))
+		result.DefaultSviL3Mtu = pointer.To(uint16(o.DefaultSviL3Mtu.ValueInt64()))
 	}
 
 	if utils.HasValue(o.EsiMacMsb) {
-		result.EsiMacMsb = utils.ToPtr(uint8(o.EsiMacMsb.ValueInt64()))
+		result.EsiMacMsb = pointer.To(uint8(o.EsiMacMsb.ValueInt64()))
 	}
 
 	if utils.HasValue(o.EvpnType5Routes) {
@@ -785,15 +786,15 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	if utils.HasValue(o.DefaultIpLinksToGenericMtu) {
-		result.ExternalRouterMtu = utils.ToPtr(uint16(o.DefaultIpLinksToGenericMtu.ValueInt64()))
+		result.ExternalRouterMtu = pointer.To(uint16(o.DefaultIpLinksToGenericMtu.ValueInt64()))
 	}
 
 	if utils.HasValue(o.FabricMtu) {
-		result.FabricL3Mtu = utils.ToPtr(uint16(o.FabricMtu.ValueInt64()))
+		result.FabricL3Mtu = pointer.To(uint16(o.FabricMtu.ValueInt64()))
 	}
 
 	if utils.HasValue(o.Ipv6Applications) {
-		result.Ipv6Enabled = utils.ToPtr(o.Ipv6Applications.ValueBool())
+		result.Ipv6Enabled = pointer.To(o.Ipv6Applications.ValueBool())
 	}
 
 	if utils.HasValue(o.JunosEvpnMaxNexthopAndInterfaceNumber) {
@@ -825,19 +826,19 @@ func (o *Blueprint) FabricSettings(ctx context.Context, diags *diag.Diagnostics)
 	}
 
 	if utils.HasValue(o.MaxEvpnRoutesCount) {
-		result.MaxEvpnRoutes = utils.ToPtr(uint32(o.MaxEvpnRoutesCount.ValueInt64()))
+		result.MaxEvpnRoutes = pointer.To(uint32(o.MaxEvpnRoutesCount.ValueInt64()))
 	}
 
 	if utils.HasValue(o.MaxExternalRoutesCount) {
-		result.MaxExternalRoutes = utils.ToPtr(uint32(o.MaxExternalRoutesCount.ValueInt64()))
+		result.MaxExternalRoutes = pointer.To(uint32(o.MaxExternalRoutesCount.ValueInt64()))
 	}
 
 	if utils.HasValue(o.MaxFabricRoutesCount) {
-		result.MaxFabricRoutes = utils.ToPtr(uint32(o.MaxFabricRoutesCount.ValueInt64()))
+		result.MaxFabricRoutes = pointer.To(uint32(o.MaxFabricRoutesCount.ValueInt64()))
 	}
 
 	if utils.HasValue(o.MaxMlagRoutesCount) {
-		result.MaxMlagRoutes = utils.ToPtr(uint32(o.MaxMlagRoutesCount.ValueInt64()))
+		result.MaxMlagRoutes = pointer.To(uint32(o.MaxMlagRoutesCount.ValueInt64()))
 	}
 
 	if utils.HasValue(o.OptimizeRoutingZoneFootprint) {

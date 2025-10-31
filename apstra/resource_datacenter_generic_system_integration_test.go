@@ -19,6 +19,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -262,7 +263,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 		Subpolicies: []*apstra.ConnectivityTemplatePrimitive{
 			{
 				Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-					SecurityZone:       utils.ToPtr(sz.Id),
+					SecurityZone:       pointer.To(sz.Id),
 					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,
 					IPv6AddressingType: apstra.CtPrimitiveIPv6AddressingTypeNone,
 				},
@@ -368,14 +369,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -415,14 +416,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -458,14 +459,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -506,7 +507,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						attachCtToSingleLink(t, leafSwitchIds[1], "xe-0/0/2") // 2 avoids conflict with other test cases
 					},
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[1],
@@ -559,7 +560,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 			steps: []testStep{
 				{
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[0],
@@ -581,7 +582,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						attachCtToSingleLink(t, leafSwitchIds[1], "ge-0/0/4") // 4 avoids conflict with other test cases
 					},
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[0],
@@ -624,7 +625,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						}
 					},
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[0],
@@ -647,14 +648,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((5 * 100) + rand.IntN(50) + 1),  // 5 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((5 * 100) + rand.IntN(50) + 51), // 5 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((5 * 100) + rand.IntN(50) + 1),  // 5 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((5 * 100) + rand.IntN(50) + 51), // 5 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -696,14 +697,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((5 * 100) + rand.IntN(50) + 1),  // 5 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((5 * 100) + rand.IntN(50) + 51), // 5 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((5 * 100) + rand.IntN(50) + 1),  // 5 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((5 * 100) + rand.IntN(50) + 51), // 5 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -748,14 +749,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((6 * 100) + rand.IntN(50) + 1),  // 6 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((6 * 100) + rand.IntN(50) + 51), // 6 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((6 * 100) + rand.IntN(50) + 1),  // 6 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((6 * 100) + rand.IntN(50) + 51), // 6 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -781,14 +782,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((6 * 100) + rand.IntN(50) + 1),  // 6 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((6 * 100) + rand.IntN(50) + 51), // 6 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((6 * 100) + rand.IntN(50) + 1),  // 6 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((6 * 100) + rand.IntN(50) + 51), // 6 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -817,14 +818,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((7 * 100) + rand.IntN(50) + 1),  // 7 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((8 * 100) + rand.IntN(50) + 51), // 8 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((7 * 100) + rand.IntN(50) + 1),  // 7 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((8 * 100) + rand.IntN(50) + 51), // 8 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -858,14 +859,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((7 * 100) + rand.IntN(50) + 1),  // 7 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((8 * 100) + rand.IntN(50) + 51), // 8 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((7 * 100) + rand.IntN(50) + 1),  // 7 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((8 * 100) + rand.IntN(50) + 51), // 8 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -902,14 +903,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((9 * 100) + rand.IntN(50) + 1),  // 9 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((9 * 100) + rand.IntN(50) + 51), // 9 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((9 * 100) + rand.IntN(50) + 1),  // 9 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((9 * 100) + rand.IntN(50) + 51), // 9 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -935,14 +936,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((9 * 100) + rand.IntN(50) + 1),  // 9 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((9 * 100) + rand.IntN(50) + 51), // 9 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((9 * 100) + rand.IntN(50) + 1),  // 9 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((9 * 100) + rand.IntN(50) + 51), // 9 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -981,7 +982,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				{ // check for deploy_mode = not_set
 					preApplyResourceActionType: plancheck.ResourceActionUpdate,
 					config: resourceDataCenterGenericSystem{
-						deployMode: utils.ToPtr(utils.StringersToFriendlyString(enum.DeployModeNone)),
+						deployMode: pointer.To(utils.StringersToFriendlyString(enum.DeployModeNone)),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[1],
@@ -1009,7 +1010,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 			steps: []testStep{
 				{
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[0],
@@ -1038,7 +1039,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						attachCtToLag(t, leafSwitchIds[0], "bar") // 2 avoids conflict with other test cases
 					},
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[0],
@@ -1085,7 +1086,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				{
 					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
 					config: resourceDataCenterGenericSystem{
-						clearCtsOnDestroy: utils.ToPtr(true),
+						clearCtsOnDestroy: pointer.To(true),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[0],
@@ -1108,14 +1109,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
@@ -1167,14 +1168,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						name:              acctest.RandString(6),
 						hostname:          acctest.RandString(6),
-						asn:               utils.ToPtr(10),
-						loopback4:         utils.ToPtr(randomPrefix(t, "192.0.2.0/24", 32)),
-						loopback6:         utils.ToPtr(randomPrefix(t, "3fff::/20", 128)),
+						asn:               pointer.To(10),
+						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
+						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
 						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        utils.ToPtr(oneOf(utils.AllNodeDeployModes()...)),
-						portChannelIdMin:  utils.ToPtr((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
-						portChannelIdMax:  utils.ToPtr((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(utils.ToPtr(true), utils.ToPtr(true), nil),
+						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						portChannelIdMin:  pointer.To((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
+						portChannelIdMax:  pointer.To((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
+						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),

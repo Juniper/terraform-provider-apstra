@@ -12,7 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -96,7 +96,7 @@ func TestResourceDatacenteConnectivityTemplateProtocolEndpoint(t *testing.T) {
 	// enable ipv6
 	settings, err := bp.GetFabricSettings(ctx)
 	require.NoError(t, err)
-	settings.Ipv6Enabled = utils.ToPtr(true)
+	settings.Ipv6Enabled = pointer.To(true)
 	require.NoError(t, bp.SetFabricSettings(ctx, settings))
 
 	type testStep struct {

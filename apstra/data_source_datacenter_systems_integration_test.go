@@ -12,7 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -136,11 +136,11 @@ func TestAccDataSourceDatacenterSystems(t *testing.T) {
 			config: dataSourceDataCenterSystems{
 				blueprintId: bp.Id(),
 				filters: []dataSourceDataCenterSystemsFilter{
-					{role: utils.ToPtr(apstra.SystemRoleSuperSpine)},
-					{role: utils.ToPtr(apstra.SystemRoleSpine)},
-					{role: utils.ToPtr(apstra.SystemRoleLeaf)},
-					{role: utils.ToPtr(apstra.SystemRoleAccess)},
-					{role: utils.ToPtr(apstra.SystemRoleGeneric)},
+					{role: pointer.To(apstra.SystemRoleSuperSpine)},
+					{role: pointer.To(apstra.SystemRoleSpine)},
+					{role: pointer.To(apstra.SystemRoleLeaf)},
+					{role: pointer.To(apstra.SystemRoleAccess)},
+					{role: pointer.To(apstra.SystemRoleGeneric)},
 				},
 			},
 			checks: []resource.TestCheckFunc{
@@ -153,8 +153,8 @@ func TestAccDataSourceDatacenterSystems(t *testing.T) {
 				blueprintId: bp.Id(),
 				filters: []dataSourceDataCenterSystemsFilter{
 					{
-						systemType: utils.ToPtr(apstra.SystemTypeSwitch),
-						role:       utils.ToPtr(apstra.SystemRoleSpine),
+						systemType: pointer.To(apstra.SystemTypeSwitch),
+						role:       pointer.To(apstra.SystemRoleSpine),
 					},
 				},
 			},
@@ -168,12 +168,12 @@ func TestAccDataSourceDatacenterSystems(t *testing.T) {
 				blueprintId: bp.Id(),
 				filters: []dataSourceDataCenterSystemsFilter{
 					{
-						systemType: utils.ToPtr(apstra.SystemTypeSwitch),
-						role:       utils.ToPtr(apstra.SystemRoleSpine),
+						systemType: pointer.To(apstra.SystemTypeSwitch),
+						role:       pointer.To(apstra.SystemRoleSpine),
 					},
 					{
-						systemType: utils.ToPtr(apstra.SystemTypeSwitch),
-						role:       utils.ToPtr(apstra.SystemRoleSpine),
+						systemType: pointer.To(apstra.SystemTypeSwitch),
+						role:       pointer.To(apstra.SystemRoleSpine),
 					},
 				},
 			},

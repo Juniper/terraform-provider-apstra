@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -167,7 +168,7 @@ func (o DynamicBgpPeering) ValidateConfig(_ context.Context, path path.Path, dia
 func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface {
 	var holdTime *uint16
 	if !o.HoldTime.IsNull() {
-		holdTime = utils.ToPtr(uint16(o.HoldTime.ValueInt64()))
+		holdTime = pointer.To(uint16(o.HoldTime.ValueInt64()))
 	}
 
 	var ipv4PeerPrefix *net.IPNet
@@ -182,12 +183,12 @@ func (o DynamicBgpPeering) attributes(_ context.Context, _ *diag.Diagnostics) *a
 
 	var keepaliveTime *uint16
 	if !o.KeepaliveTime.IsNull() {
-		keepaliveTime = utils.ToPtr(uint16(o.KeepaliveTime.ValueInt64()))
+		keepaliveTime = pointer.To(uint16(o.KeepaliveTime.ValueInt64()))
 	}
 
 	var localAsn *uint32
 	if !o.LocalAsn.IsNull() {
-		localAsn = utils.ToPtr(uint32(o.LocalAsn.ValueInt64()))
+		localAsn = pointer.To(uint32(o.LocalAsn.ValueInt64()))
 	}
 
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpWithPrefixPeeringForSviOrSubinterface{

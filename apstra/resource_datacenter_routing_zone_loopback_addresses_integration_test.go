@@ -14,7 +14,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -110,7 +110,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 	// enable ipv6
 	settings, err := bp.GetFabricSettings(ctx)
 	require.NoError(t, err)
-	settings.Ipv6Enabled = utils.ToPtr(true)
+	settings.Ipv6Enabled = pointer.To(true)
 	require.NoError(t, bp.SetFabricSettings(ctx, settings))
 
 	// create a routing zone
@@ -175,8 +175,8 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[0].String(): {
-							iPv4Addr: utils.ToPtr(randomPrefix(t, "10.1.0.0/16", 32)).String(),
-							iPv6Addr: utils.ToPtr(randomPrefix(t, "3fff:1::/32", 128)).String(),
+							iPv4Addr: pointer.To(randomPrefix(t, "10.1.0.0/16", 32)).String(),
+							iPv6Addr: pointer.To(randomPrefix(t, "3fff:1::/32", 128)).String(),
 						},
 					},
 				}},
@@ -199,8 +199,8 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[1].String(): {
-							iPv4Addr: utils.ToPtr(randomPrefix(t, "10.2.0.0/16", 32)).String(),
-							iPv6Addr: utils.ToPtr(randomPrefix(t, "3fff:2::/32", 128)).String(),
+							iPv4Addr: pointer.To(randomPrefix(t, "10.2.0.0/16", 32)).String(),
+							iPv6Addr: pointer.To(randomPrefix(t, "3fff:2::/32", 128)).String(),
 						},
 					},
 				}},
@@ -219,8 +219,8 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[1].String(): {
-							iPv4Addr: utils.ToPtr(randomPrefix(t, "10.2.0.0/16", 32)).String(),
-							iPv6Addr: utils.ToPtr(randomPrefix(t, "3fff:2::/32", 128)).String(),
+							iPv4Addr: pointer.To(randomPrefix(t, "10.2.0.0/16", 32)).String(),
+							iPv6Addr: pointer.To(randomPrefix(t, "3fff:2::/32", 128)).String(),
 						},
 					},
 				}},
@@ -233,12 +233,12 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[2].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
 						leafIds[3].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
 					},
 				}},
@@ -247,12 +247,12 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[2].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
 						leafIds[3].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
 					},
 				}},
@@ -261,12 +261,12 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[2].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
 						leafIds[3].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
 					},
 				}},
@@ -275,12 +275,12 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[2].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
 						leafIds[3].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
 					},
 				}},
@@ -289,12 +289,12 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[2].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
 						leafIds[3].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
 					},
 				}},
@@ -303,12 +303,12 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					routingZoneID: rzId.String(),
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
 						leafIds[2].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
 						leafIds[3].String(): {
-							iPv4Addr: oneOf(utils.ToPtr(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
-							iPv6Addr: oneOf(utils.ToPtr(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
+							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
+							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
 					},
 				}},

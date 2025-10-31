@@ -16,7 +16,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	versionconstraints "github.com/chrismarget-j/version-constraints"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -263,7 +263,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						routingZoneId: szId,
-						dhcpEnabled:   utils.ToPtr(true),
+						dhcpEnabled:   pointer.To(true),
 						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{{leafId: nodesByLabel["l2_one_access_001_leaf1"]}},
 					},
 					expectError: regexp.MustCompile("When `dhcp_service_enabled` is set, at least one"),
@@ -287,7 +287,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8800),
+						l3Mtu:         pointer.To(8800),
 					},
 				},
 				{
@@ -309,7 +309,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8800),
+						l3Mtu:         pointer.To(8800),
 					},
 				},
 				{
@@ -326,7 +326,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8900),
+						l3Mtu:         pointer.To(8900),
 					},
 				},
 			},
@@ -347,9 +347,9 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						vni:           utils.ToPtr(rand.IntN(10000) + 5000),
+						vni:           pointer.To(rand.IntN(10000) + 5000),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8800),
+						l3Mtu:         pointer.To(8800),
 					},
 				},
 				{
@@ -370,9 +370,9 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						vni:           utils.ToPtr(rand.IntN(10000) + 5000),
+						vni:           pointer.To(rand.IntN(10000) + 5000),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8800),
+						l3Mtu:         pointer.To(8800),
 					},
 				},
 				{
@@ -388,9 +388,9 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						vni:           utils.ToPtr(rand.IntN(10000) + 5000),
+						vni:           pointer.To(rand.IntN(10000) + 5000),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8900),
+						l3Mtu:         pointer.To(8900),
 					},
 				},
 			},
@@ -416,11 +416,11 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8900),
+						l3Mtu:         pointer.To(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
-								vlanId:    utils.ToPtr(51),
+								vlanId:    pointer.To(51),
 								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
 							},
 						},
@@ -449,11 +449,11 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8800),
+						l3Mtu:         pointer.To(8800),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    nodesByLabel["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(61),
+								vlanId:    pointer.To(61),
 								accessIds: []string{nodesByLabel["l2_one_access_001_access1"]},
 							},
 						},
@@ -478,11 +478,11 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
 						routingZoneId: szId,
-						l3Mtu:         utils.ToPtr(8900),
+						l3Mtu:         pointer.To(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
-								vlanId:    utils.ToPtr(63),
+								vlanId:    pointer.To(63),
 								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
 							},
 						},
@@ -516,17 +516,17 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
-								vlanId:    utils.ToPtr(721),
+								vlanId:    pointer.To(721),
 								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
 							},
 							{
 								leafId:    nodesByLabel["l2_one_access_003_leaf1"],
-								vlanId:    utils.ToPtr(722),
+								vlanId:    pointer.To(722),
 								accessIds: []string{nodesByLabel["l2_one_access_003_access1"]},
 							},
 							{
 								leafId:    nodesByLabel["l2_esi_acs_dual_001_leaf_pair1"],
-								vlanId:    utils.ToPtr(723),
+								vlanId:    pointer.To(723),
 								accessIds: []string{nodesByLabel["l2_esi_acs_dual_001_access_pair1"]},
 							},
 						},
@@ -560,17 +560,17 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    nodesByLabel["l2_one_access_002_leaf1"],
-								vlanId:    utils.ToPtr(711),
+								vlanId:    pointer.To(711),
 								accessIds: []string{nodesByLabel["l2_one_access_002_access1"]},
 							},
 							{
 								leafId:    nodesByLabel["l2_one_access_003_leaf1"],
-								vlanId:    utils.ToPtr(712),
+								vlanId:    pointer.To(712),
 								accessIds: []string{nodesByLabel["l2_one_access_003_access1"]},
 							},
 							{
 								leafId:    nodesByLabel["l2_esi_acs_dual_001_leaf_pair1"],
-								vlanId:    utils.ToPtr(713),
+								vlanId:    pointer.To(713),
 								accessIds: []string{nodesByLabel["l2_esi_acs_dual_001_access_pair1"]},
 							},
 						},
@@ -600,12 +600,12 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId:    nodesByLabel["l2_one_access_001_leaf1"],
-								vlanId:    utils.ToPtr(731),
+								vlanId:    pointer.To(731),
 								accessIds: []string{nodesByLabel["l2_one_access_001_access1"]},
 							},
 							{
 								leafId:    nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
-								vlanId:    utils.ToPtr(733),
+								vlanId:    pointer.To(733),
 								accessIds: []string{nodesByLabel["l2_esi_acs_dual_002_access_pair1"]},
 							},
 						},
@@ -683,8 +683,8 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:           acctest.RandString(6),
 						vnType:         enum.VnTypeVxlan.String(),
 						routingZoneId:  szId,
-						reserveVlan:    utils.ToPtr(true),
-						reservedVlanId: utils.ToPtr(1100),
+						reserveVlan:    pointer.To(true),
+						reservedVlanId: pointer.To(1100),
 					},
 				},
 				{
@@ -693,8 +693,8 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:           acctest.RandString(6),
 						vnType:         enum.VnTypeVxlan.String(),
 						routingZoneId:  szId,
-						reserveVlan:    utils.ToPtr(true),
-						reservedVlanId: utils.ToPtr(1101),
+						reserveVlan:    pointer.To(true),
+						reservedVlanId: pointer.To(1101),
 					},
 				},
 			},
@@ -707,11 +707,11 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						routingZoneId: szId,
-						reserveVlan:   utils.ToPtr(true),
+						reserveVlan:   pointer.To(true),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
-								vlanId: utils.ToPtr(1101),
+								vlanId: pointer.To(1101),
 							},
 						},
 					},
@@ -865,8 +865,8 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:                    acctest.RandString(6),
 						vnType:                  enum.VnTypeVlan.String(),
 						routingZoneId:           szId,
-						dhcpEnabled:             utils.ToPtr(true),
-						ipv4ConnectivityEnabled: utils.ToPtr(true),
+						dhcpEnabled:             pointer.To(true),
+						ipv4ConnectivityEnabled: pointer.To(true),
 					},
 					expectNonEmptyPlan: true,
 				},
