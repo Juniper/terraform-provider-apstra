@@ -2,9 +2,10 @@ package tfapstra
 
 import (
 	"fmt"
-	"golang.org/x/exp/constraints"
 	"math/rand"
 	"unsafe"
+
+	"golang.org/x/exp/constraints"
 )
 
 // sliceWithoutElement returns a copy of in with all occurrences of e removed.

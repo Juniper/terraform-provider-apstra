@@ -17,6 +17,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -375,7 +376,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
 				"Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated]"+
 				"(../resources/datacenter_resource_pool_allocation) to role `%s`.",
-				utils.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
+				rosetta.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{

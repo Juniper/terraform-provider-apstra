@@ -8,6 +8,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -120,24 +121,24 @@ func (o System) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Type of the System. Must be one of `%s` or `%s`",
-				utils.StringersToFriendlyString(apstra.SystemTypeInternal),
-				utils.StringersToFriendlyString(apstra.SystemTypeExternal),
+				rosetta.StringersToFriendlyString(apstra.SystemTypeInternal),
+				rosetta.StringersToFriendlyString(apstra.SystemTypeExternal),
 			),
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators: []validator.String{stringvalidator.OneOf(
-				utils.StringersToFriendlyString(apstra.SystemTypeInternal),
-				utils.StringersToFriendlyString(apstra.SystemTypeExternal),
+				rosetta.StringersToFriendlyString(apstra.SystemTypeInternal),
+				rosetta.StringersToFriendlyString(apstra.SystemTypeExternal),
 			)},
 		},
 		"device_profile_id": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Device profile ID of the System. Required when `type` is %q.",
-				utils.StringersToFriendlyString(apstra.SystemTypeInternal)),
+				rosetta.StringersToFriendlyString(apstra.SystemTypeInternal)),
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeExternal))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(apstra.SystemTypeInternal))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(apstra.SystemTypeExternal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(apstra.SystemTypeInternal))),
 			},
 		},
 		"system_id": resourceSchema.StringAttribute{
@@ -163,9 +164,9 @@ func (o *System) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.F
 
 	var systemType apstra.SystemType
 	switch o.Type.ValueString() {
-	case utils.StringersToFriendlyString(apstra.SystemTypeExternal):
+	case rosetta.StringersToFriendlyString(apstra.SystemTypeExternal):
 		systemType = apstra.SystemTypeExternal
-	case utils.StringersToFriendlyString(apstra.SystemTypeInternal):
+	case rosetta.StringersToFriendlyString(apstra.SystemTypeInternal):
 		systemType = apstra.SystemTypeInternal
 	default:
 		diags.AddError("unexpected system type", "got: "+o.Type.ValueString())
@@ -184,7 +185,7 @@ func (o *System) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.F
 func (o *System) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Hostname = types.StringValue(in.Hostname)
-	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))
+	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.Type))
 	o.DeviceProfileId = types.StringPointerValue((*string)(in.DeviceProfileId))
 	o.SystemId = types.StringPointerValue((*string)(in.SystemId))
 	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here

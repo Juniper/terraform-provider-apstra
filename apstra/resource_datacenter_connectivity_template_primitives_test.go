@@ -18,6 +18,7 @@ import (
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -482,7 +483,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem) 
 			intPtrOrNull(o.localAsn),
 			strconv.FormatBool(o.neighborAsnDynamic),
 			strconv.FormatBool(o.peerFromLoopback),
-			utils.StringersToFriendlyString(o.peerTo),
+			rosetta.StringersToFriendlyString(o.peerTo),
 			routingPolicies,
 		),
 	)
@@ -908,8 +909,8 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveIpLink) render(indent int
 			o.routingZoneId,
 			intPtrOrNull(o.vlanId),
 			intPtrOrNull(o.l3Mtu),
-			utils.StringersToFriendlyString(o.ipv4AddressingType),
-			utils.StringersToFriendlyString(o.ipv6AddressingType),
+			rosetta.StringersToFriendlyString(o.ipv4AddressingType),
+			rosetta.StringersToFriendlyString(o.ipv6AddressingType),
 			bgpPeeringGenericSystems,
 			bgpPeeringIpEndpoints,
 			dynamicBgpPeerings,

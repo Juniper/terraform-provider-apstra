@@ -16,6 +16,7 @@ import (
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -56,7 +57,7 @@ func (o resourceFreeformResource) render(rType, rName string) string {
 		o.blueprintId,
 		o.name,
 		o.groupId,
-		utils.StringersToFriendlyString(o.resourceType),
+		rosetta.StringersToFriendlyString(o.resourceType),
 		intPtrOrNull(o.integerValue),
 		ipNetOrNull(o.ipv4Value),
 		ipNetOrNull(o.ipv6Value),
@@ -73,7 +74,7 @@ func (o resourceFreeformResource) testChecks(t testing.TB, rType, rName string) 
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId)
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
 	result.append(t, "TestCheckResourceAttr", "group_id", o.groupId.String())
-	result.append(t, "TestCheckResourceAttr", "type", utils.StringersToFriendlyString(o.resourceType))
+	result.append(t, "TestCheckResourceAttr", "type", rosetta.StringersToFriendlyString(o.resourceType))
 	if o.integerValue != nil {
 		result.append(t, "TestCheckResourceAttr", "integer_value", strconv.Itoa(*o.integerValue))
 	} else {

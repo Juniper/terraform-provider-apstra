@@ -5,7 +5,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -44,7 +44,7 @@ func (o *dataSourceBlueprints) Schema(_ context.Context, _ datasource.SchemaRequ
 				MarkdownDescription: "Optional filter to select only Blueprints matching the specified Reference Design.",
 				Optional:            true,
 				Validators: []validator.String{stringvalidator.OneOf(
-					utils.StringersToFriendlyString(enum.RefDesignDatacenter),
+					rosetta.StringersToFriendlyString(enum.RefDesignDatacenter),
 					enum.RefDesignFreeform.String(),
 				)},
 			},
@@ -78,7 +78,7 @@ func (o *dataSourceBlueprints) Read(ctx context.Context, req datasource.ReadRequ
 		}
 
 		for _, bpStatus := range bpStatuses {
-			if utils.StringersToFriendlyString(bpStatus.Design) == config.RefDesign.ValueString() {
+			if rosetta.StringersToFriendlyString(bpStatus.Design) == config.RefDesign.ValueString() {
 				ids = append(ids, bpStatus.Id)
 			}
 		}

@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -57,7 +58,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone)),
+			Default:             stringdefault.StaticString(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv4Types()...)},
 		},
 		"switch_ipv4_address": resourceSchema.StringAttribute{
@@ -65,8 +66,8 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv4PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv4_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone))),
 				stringvalidator.AlsoRequires(path.MatchRoot("switch_ipv4_address_type")),
 			},
 		},
@@ -74,7 +75,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv6Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone)),
+			Default:             stringdefault.StaticString(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv6Types()...)},
 		},
 		"switch_ipv6_address": resourceSchema.StringAttribute{
@@ -82,9 +83,9 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeLinkLocal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("switch_ipv6_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeLinkLocal))),
 				stringvalidator.AlsoRequires(path.MatchRoot("switch_ipv6_address_type")),
 			},
 		},
@@ -92,7 +93,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv4Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone)),
+			Default:             stringdefault.StaticString(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv4Types()...)},
 		},
 		"generic_ipv4_address": resourceSchema.StringAttribute{
@@ -100,8 +101,8 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv4PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv4_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone))),
 				stringvalidator.AlsoRequires(path.MatchRoot("generic_ipv4_address_type")),
 			},
 		},
@@ -109,7 +110,7 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			MarkdownDescription: fmt.Sprintf("Allowed values: [`%s`]", strings.Join(utils.AllInterfaceNumberingIpv6Types(), "`,`")),
 			Optional:            true,
 			Computed:            true,
-			Default:             stringdefault.StaticString(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone)),
+			Default:             stringdefault.StaticString(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone)),
 			Validators:          []validator.String{stringvalidator.OneOf(utils.AllInterfaceNumberingIpv6Types()...)},
 		},
 		"generic_ipv6_address": resourceSchema.StringAttribute{
@@ -117,9 +118,9 @@ func (o IpLinkAddressing) ResourceAttributes() map[string]resourceSchema.Attribu
 			Optional:            true,
 			CustomType:          cidrtypes.IPv6PrefixType{},
 			Validators: []validator.String{
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNumbered))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeLinkLocal))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNumbered))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("generic_ipv6_address_type"), types.StringValue(rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeLinkLocal))),
 				stringvalidator.AlsoRequires(path.MatchRoot("generic_ipv6_address_type")),
 			},
 		},
@@ -130,14 +131,14 @@ func requestEndpoint(v4type, v6type types.String, v4addr cidrtypes.IPv4Prefix, v
 	var result apstra.TwoStageL3ClosSubinterface
 
 	if !v4type.IsNull() {
-		err := utils.ApiStringerFromFriendlyString(&result.Ipv4AddrType, v4type.ValueString())
+		err := rosetta.ApiStringerFromFriendlyString(&result.Ipv4AddrType, v4type.ValueString())
 		if err != nil {
 			diags.AddAttributeError(path.Root(attrPrefix+"_ipv4_address_type"), "Cannot parse ipv4 address type", err.Error())
 		}
 	}
 
 	if !v6type.IsNull() {
-		err := utils.ApiStringerFromFriendlyString(&result.Ipv6AddrType, v6type.ValueString())
+		err := rosetta.ApiStringerFromFriendlyString(&result.Ipv6AddrType, v6type.ValueString())
 		if err != nil {
 			diags.AddAttributeError(path.Root(attrPrefix+"_ipv6_address_type"), "Cannot parse ipv6 address type", err.Error())
 		}
@@ -230,23 +231,23 @@ func (o *IpLinkAddressing) LoadApiData(_ context.Context, in *apstra.TwoStageL3C
 	}
 
 	// load the API data from each endpoint
-	o.SwitchIpv4Type = types.StringValue(utils.StringersToFriendlyString(switchEp.Subinterface.Ipv4AddrType))
+	o.SwitchIpv4Type = types.StringValue(rosetta.StringersToFriendlyString(switchEp.Subinterface.Ipv4AddrType))
 	o.SwitchIpv4Addr = cidrtypes.NewIPv4PrefixNull()
 	if switchEp.Subinterface.Ipv4Addr != nil {
 		o.SwitchIpv4Addr = cidrtypes.NewIPv4PrefixValue(switchEp.Subinterface.Ipv4Addr.String())
 	}
-	o.SwitchIpv6Type = types.StringValue(utils.StringersToFriendlyString(switchEp.Subinterface.Ipv6AddrType))
+	o.SwitchIpv6Type = types.StringValue(rosetta.StringersToFriendlyString(switchEp.Subinterface.Ipv6AddrType))
 	o.SwitchIpv6Addr = cidrtypes.NewIPv6PrefixNull()
 	if switchEp.Subinterface.Ipv6Addr != nil {
 		o.SwitchIpv6Addr = cidrtypes.NewIPv6PrefixValue(switchEp.Subinterface.Ipv6Addr.String())
 	}
 
-	o.GenericIpv4Type = types.StringValue(utils.StringersToFriendlyString(genericEp.Subinterface.Ipv4AddrType))
+	o.GenericIpv4Type = types.StringValue(rosetta.StringersToFriendlyString(genericEp.Subinterface.Ipv4AddrType))
 	o.GenericIpv4Addr = cidrtypes.NewIPv4PrefixNull()
 	if genericEp.Subinterface.Ipv4Addr != nil {
 		o.GenericIpv4Addr = cidrtypes.NewIPv4PrefixValue(genericEp.Subinterface.Ipv4Addr.String())
 	}
-	o.GenericIpv6Type = types.StringValue(utils.StringersToFriendlyString(genericEp.Subinterface.Ipv6AddrType))
+	o.GenericIpv6Type = types.StringValue(rosetta.StringersToFriendlyString(genericEp.Subinterface.Ipv6AddrType))
 	o.GenericIpv6Addr = cidrtypes.NewIPv6PrefixNull()
 	if genericEp.Subinterface.Ipv6Addr != nil {
 		o.GenericIpv6Addr = cidrtypes.NewIPv6PrefixValue(genericEp.Subinterface.Ipv6Addr.String())

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -77,7 +77,7 @@ func (o VnMultiple) Marshal(ctx context.Context, diags *diag.Diagnostics) string
 		taggedVnIds = []apstra.ObjectId{}
 	}
 
-	utils.Sort(taggedVnIds)
+	slices.Sort(taggedVnIds)
 
 	obj := vnMultiplePrototype{
 		UntaggedVnId: untaggedVnId,

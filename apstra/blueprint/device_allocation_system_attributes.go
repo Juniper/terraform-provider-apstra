@@ -17,6 +17,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -310,7 +311,7 @@ func (o *DeviceAllocationSystemAttributes) getProperties(ctx context.Context, bp
 	}
 
 	if !utils.HasValue(o.DeployMode) {
-		o.DeployMode = types.StringValue(utils.StringersToFriendlyString(deployMode))
+		o.DeployMode = types.StringValue(rosetta.StringersToFriendlyString(deployMode))
 	}
 	if !utils.HasValue(o.Hostname) {
 		o.Hostname = types.StringValue(node.Hostname)
@@ -512,7 +513,7 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 
 	if utils.HasValue(o.DeployMode) {
 		var deployMode enum.DeployMode
-		err := utils.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
+		err := rosetta.ApiStringerFromFriendlyString(&deployMode, o.DeployMode.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error in rosetta function with deploy_mode = %s", o.DeployMode), err.Error())
 			return

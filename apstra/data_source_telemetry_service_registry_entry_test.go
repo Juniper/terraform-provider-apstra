@@ -9,6 +9,7 @@ import (
 
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -53,7 +54,7 @@ func TestAccDataSourceTelemetryServiceRegistryEntry(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify data source/resource fields match
 					resource.TestCheckResourceAttr("data.apstra_telemetry_service_registry_entry.test", "name", ts.ServiceName),
-					resource.TestCheckResourceAttr("data.apstra_telemetry_service_registry_entry.test", "storage_schema_path", utils.StringersToFriendlyString(ts.StorageSchemaPath)),
+					resource.TestCheckResourceAttr("data.apstra_telemetry_service_registry_entry.test", "storage_schema_path", rosetta.StringersToFriendlyString(ts.StorageSchemaPath)),
 					resource.TestCheckResourceAttrWith("data.apstra_telemetry_service_registry_entry.test", "application_schema", TestAppSchema),
 				),
 			},

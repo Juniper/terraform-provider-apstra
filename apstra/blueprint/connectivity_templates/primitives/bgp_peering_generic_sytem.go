@@ -13,6 +13,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -116,26 +117,26 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 		},
 		"ipv4_addressing_type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Must be one of: \n  - %s\n", strings.Join([]string{
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed),
 			}, "\n  - ")),
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingNone),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4ProtocolSessionAddressingAddressed),
 			)},
 		},
 		"ipv6_addressing_type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Must be one of: \n  - %s\n", strings.Join([]string{
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal),
 			}, "\n  - ")),
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingNone),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingAddressed),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6ProtocolSessionAddressingLinkLocal),
 			)},
 		},
 		"local_asn": resourceSchema.Int64Attribute{
@@ -189,21 +190,21 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 	var err error
 
 	var peerTo apstra.CtPrimitiveBgpPeerTo
-	err = utils.ApiStringerFromFriendlyString(&peerTo, o.PeerTo.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&peerTo, o.PeerTo.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse peer_to value %s", o.PeerTo), err.Error())
 		return nil
 	}
 
 	var sessionAddressingIpv4 apstra.CtPrimitiveIPv4ProtocolSessionAddressing
-	err = utils.ApiStringerFromFriendlyString(&sessionAddressingIpv4, o.Ipv4AddressingType.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&sessionAddressingIpv4, o.Ipv4AddressingType.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse peer_to value %s", o.Ipv4AddressingType), err.Error())
 		return nil
 	}
 
 	var sessionAddressingIpv6 apstra.CtPrimitiveIPv6ProtocolSessionAddressing
-	err = utils.ApiStringerFromFriendlyString(&sessionAddressingIpv6, o.Ipv6AddressingType.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&sessionAddressingIpv6, o.Ipv6AddressingType.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse peer_to value %s", o.Ipv6AddressingType), err.Error())
 		return nil
@@ -212,8 +213,8 @@ func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagn
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi{
 		Bfd:                   o.BfdEnabled.ValueBool(),
 		Holdtime:              holdTime,
-		Ipv4Safi:              o.Ipv4AddressingType.ValueString() != utils.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone),
-		Ipv6Safi:              o.Ipv6AddressingType.ValueString() != utils.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone),
+		Ipv4Safi:              o.Ipv4AddressingType.ValueString() != rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv4TypeNone),
+		Ipv6Safi:              o.Ipv6AddressingType.ValueString() != rosetta.StringersToFriendlyString(enum.InterfaceNumberingIpv6TypeNone),
 		Keepalive:             keepaliveTime,
 		LocalAsn:              localAsn,
 		NeighborAsnDynamic:    o.NeighborAsnDynamic.ValueBool(),
@@ -273,12 +274,12 @@ func newBgpPeeringGenericSystem(_ context.Context, in *apstra.ConnectivityTempla
 		Password:           types.StringPointerValue(in.Password),
 		KeepaliveTime:      utils.Int64PointerValue(in.Keepalive),
 		HoldTime:           utils.Int64PointerValue(in.Holdtime),
-		Ipv4AddressingType: types.StringValue(utils.StringersToFriendlyString(in.SessionAddressingIpv4)),
-		Ipv6AddressingType: types.StringValue(utils.StringersToFriendlyString(in.SessionAddressingIpv6)),
+		Ipv4AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.SessionAddressingIpv4)),
+		Ipv6AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.SessionAddressingIpv6)),
 		// LocalAsn:        // handled below
 		NeighborAsnDynamic: types.BoolValue(in.NeighborAsnDynamic),
 		PeerFromLoopback:   types.BoolValue(in.PeerFromLoopback),
-		PeerTo:             types.StringValue(utils.StringersToFriendlyString(in.PeerTo)),
+		PeerTo:             types.StringValue(rosetta.StringersToFriendlyString(in.PeerTo)),
 		// RoutingPolicies: handled by caller
 	}
 

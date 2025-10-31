@@ -1,12 +1,13 @@
 package blueprint_test
 
 import (
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
 )
 
 func TestTrimSetApplicationPointsConnectivityTemplatesRequestBasedOnError(t *testing.T) {
@@ -14,13 +15,13 @@ func TestTrimSetApplicationPointsConnectivityTemplatesRequestBasedOnError(t *tes
 		t.Helper()
 
 		require.Equal(t, len(a), len(b))
-		keysA := maps.Keys(a)
-		keysB := maps.Keys(b)
+		keysA := slices.Collect(maps.Keys(a))
+		keysB := slices.Collect(maps.Keys(b))
 		for _, k := range keysA {
 			require.Contains(t, keysB, k)
 			require.Equal(t, len(a[k]), len(b[k]))
-			keysKA := maps.Keys(a[k])
-			keysKB := maps.Keys(b[k])
+			keysKA := slices.Collect(maps.Keys(a[k]))
+			keysKB := slices.Collect(maps.Keys(b[k]))
 			for _, ka := range keysKA {
 				require.Contains(t, keysKB, ka)
 				require.Equal(t, a[k][ka], b[k][ka])

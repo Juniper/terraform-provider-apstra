@@ -682,11 +682,11 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 		}
 	}
 
-	o.DefaultIpLinksToGenericMtu = utils.Int64AttrValueFromPtr(settings.ExternalRouterMtu)
-	o.DefaultSviL3Mtu = utils.Int64AttrValueFromPtr(settings.DefaultSviL3Mtu)
-	o.EsiMacMsb = utils.Int64AttrValueFromPtr(settings.EsiMacMsb)
+	o.DefaultIpLinksToGenericMtu = utils.Int64PointerValue(settings.ExternalRouterMtu)
+	o.DefaultSviL3Mtu = utils.Int64PointerValue(settings.DefaultSviL3Mtu)
+	o.EsiMacMsb = utils.Int64PointerValue(settings.EsiMacMsb)
 	o.EvpnType5Routes = boolAttrValueFromFeatureswitchEnumPtr(settings.EvpnGenerateType5HostRoutes)
-	o.FabricMtu = utils.Int64AttrValueFromPtr(settings.FabricL3Mtu)
+	o.FabricMtu = utils.Int64PointerValue(settings.FabricL3Mtu)
 	o.Ipv6Applications = boolAttrValueFromBoolPtr(settings.Ipv6Enabled)
 	o.JunosEvpnMaxNexthopAndInterfaceNumber = boolAttrValueFromFeatureswitchEnumPtr(settings.JunosEvpnMaxNexthopAndInterfaceNumber)
 	o.JunosEvpnRoutingInstanceModeMacVrf = boolAttrValueFromFeatureswitchEnumPtr(settings.JunosEvpnRoutingInstanceVlanAware)

@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -87,35 +88,35 @@ func (o ConfigletGenerator) ResourceAttributesNested() map[string]resourceSchema
 				// incompatible with sections other than file
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionInterface)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFrr)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionFrr)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionOspf)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionOspf)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystem)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
 				),
 			},
 		},
@@ -134,7 +135,7 @@ func (o ConfigletGenerator) AttrTypes() map[string]attr.Type {
 
 func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *apstra.ConfigletGenerator, diags *diag.Diagnostics) {
 	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
-	o.Section = types.StringValue(utils.StringersToFriendlyString(in.Section, in.ConfigStyle))
+	o.Section = types.StringValue(rosetta.StringersToFriendlyString(in.Section, in.ConfigStyle))
 	o.TemplateText = types.StringValue(in.TemplateText)
 	o.NegationTemplateText = utils.StringValueOrNull(ctx, in.NegationTemplateText, diags)
 	o.FileName = utils.StringValueOrNull(ctx, in.Filename, diags)
@@ -150,7 +151,7 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 	}
 
 	var section enum.ConfigletSection
-	err = utils.ApiStringerFromFriendlyString(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
 	}

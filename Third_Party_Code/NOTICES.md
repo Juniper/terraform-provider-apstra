@@ -10541,8 +10541,8 @@ THE SOFTWARE.
 ## github.com/orsinium-labs/enum
 
 * Name: github.com/orsinium-labs/enum
-* Version: v1.3.0
-* License: [MIT](https://github.com/orsinium-labs/enum/blob/v1.3.0/LICENSE)
+* Version: v1.5.0
+* License: [MIT](https://github.com/orsinium-labs/enum/blob/v1.5.0/LICENSE)
 
 ```
 MIT License
@@ -10745,8 +10745,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/zclconf/go-cty/cty
 
 * Name: github.com/zclconf/go-cty/cty
-* Version: v1.16.3
-* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.16.3/LICENSE)
+* Version: v1.17.0
+* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.17.0/LICENSE)
 
 ```
 MIT License
@@ -10776,8 +10776,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.41.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.41.0:LICENSE)
+* Version: v0.43.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.43.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10810,14 +10810,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ```
 
-## golang.org/x/exp
+## golang.org/x/exp/constraints
 
-* Name: golang.org/x/exp
-* Version: v0.0.0-20240707233637-46b078467d37
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/46b07846:LICENSE)
+* Name: golang.org/x/exp/constraints
+* Version: v0.0.0-20251023183803-a4bb9ffd2546
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/exp/+/a4bb9ffd:LICENSE)
 
 ```
-Copyright (c) 2009 The Go Authors. All rights reserved.
+Copyright 2009 The Go Authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -10829,7 +10829,7 @@ notice, this list of conditions and the following disclaimer.
 copyright notice, this list of conditions and the following disclaimer
 in the documentation and/or other materials provided with the
 distribution.
-   * Neither the name of Google Inc. nor the names of its
+   * Neither the name of Google LLC nor the names of its
 contributors may be used to endorse or promote products derived from
 this software without specific prior written permission.
 
@@ -10850,8 +10850,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/mod
 
 * Name: golang.org/x/mod
-* Version: v0.27.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.27.0:LICENSE)
+* Version: v0.29.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.29.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10887,8 +10887,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.43.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.43.0:LICENSE)
+* Version: v0.46.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.46.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10924,8 +10924,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.28.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.28.0:LICENSE)
+* Version: v0.30.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.30.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.

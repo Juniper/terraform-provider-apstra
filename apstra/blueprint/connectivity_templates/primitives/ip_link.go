@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -98,29 +99,29 @@ func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"ipv4_addressing_type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of `%s`",
 				strings.Join([]string{
-					utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNone),
-					utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNumbered),
+					rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNone),
+					rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNumbered),
 				}, "`, `"),
 			),
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNone),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNumbered),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNone),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv4AddressingTypeNumbered),
 			)},
 		},
 		"ipv6_addressing_type": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("One of `%s`",
 				strings.Join([]string{
-					utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNone),
-					utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal),
-					utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNumbered),
+					rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNone),
+					rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal),
+					rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNumbered),
 				}, "`, `"),
 			),
 			Required: true,
 			Validators: []validator.String{stringvalidator.OneOf(
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNone),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal),
-				utils.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNumbered),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNone),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeLinkLocal),
+				rosetta.StringersToFriendlyString(apstra.CtPrimitiveIPv6AddressingTypeNumbered),
 			)},
 		},
 		"bgp_peering_generic_systems": resourceSchema.MapNestedAttribute{
@@ -165,14 +166,14 @@ func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.C
 	var err error
 
 	var ipv4AddressingType apstra.CtPrimitiveIPv4AddressingType
-	err = utils.ApiStringerFromFriendlyString(&ipv4AddressingType, o.Ipv4AddressingType.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&ipv4AddressingType, o.Ipv4AddressingType.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse ipv4_addressing_type value %s", o.Ipv4AddressingType), err.Error())
 		return nil
 	}
 
 	var ipv6AddressingType apstra.CtPrimitiveIPv6AddressingType
-	err = utils.ApiStringerFromFriendlyString(&ipv6AddressingType, o.Ipv6AddressingType.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&ipv6AddressingType, o.Ipv6AddressingType.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to parse ipv6_addressing_type value %s", o.Ipv6AddressingType), err.Error())
 		return nil
@@ -241,8 +242,8 @@ func newIpLink(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttrib
 		RoutingZoneId: types.StringPointerValue((*string)(in.SecurityZone)),
 		// VlanId:      // handled below
 		// L3Mtu:       // handled below
-		Ipv4AddressingType: types.StringValue(utils.StringersToFriendlyString(in.IPv4AddressingType)),
-		Ipv6AddressingType: types.StringValue(utils.StringersToFriendlyString(in.IPv6AddressingType)),
+		Ipv4AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.IPv4AddressingType)),
+		Ipv6AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.IPv6AddressingType)),
 		// StaticRoutes:             handled by caller
 		// BgpPeeringGenericSystems: handled by caller
 		// BgpPeeringIpEndpoints:    handled by caller

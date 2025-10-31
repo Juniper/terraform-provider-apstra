@@ -12,7 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -42,7 +42,7 @@ func (o resourceAllocGroup) render(rType, rName string) string {
 		rType, rName,
 		o.blueprintId,
 		o.name,
-		utils.StringersToFriendlyString(o.groupType),
+		rosetta.StringersToFriendlyString(o.groupType),
 		stringSliceOrNull(o.poolIds),
 	)
 }
@@ -54,7 +54,7 @@ func (o resourceAllocGroup) testChecks(t testing.TB, rType, rName string) testCh
 	result.append(t, "TestCheckResourceAttrSet", "id")
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId)
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
-	result.append(t, "testCheckResourceAttr", "type", utils.StringersToFriendlyString(o.groupType))
+	result.append(t, "testCheckResourceAttr", "type", rosetta.StringersToFriendlyString(o.groupType))
 	return result
 }
 

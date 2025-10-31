@@ -10,6 +10,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -134,20 +135,20 @@ func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attrib
 		"subnet_prefix_len": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("Length of the subnet for the generated Resources. "+
 				"Only applicable when `type` is `%s` or `%s`",
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv4),
-				utils.StringersToFriendlyString(enum.FFResourceTypeIpv6),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv4),
+				rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv6),
 			),
 			Optional: true,
 			Validators: []validator.Int64{
 				int64validator.Between(1, 127),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeAsn))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv4))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeHostIpv6))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeInt))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeVlan))),
-				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeVni))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeIpv4))),
-				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(utils.StringersToFriendlyString(enum.FFResourceTypeIpv6))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeAsn))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv4))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv6))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeInt))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeVlan))),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeVni))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv4))),
+				apstravalidator.RequiredWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeIpv6))),
 			},
 		},
 	}
@@ -155,7 +156,7 @@ func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attrib
 
 func (o *ResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.FreeformResourceGeneratorData {
 	var resourceType enum.FFResourceType
-	err := utils.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&resourceType, o.Type.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
 	}
@@ -188,12 +189,12 @@ func (o *ResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) 
 func (o *ResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Scope = types.StringValue(in.Scope)
-	o.Type = types.StringValue(utils.StringersToFriendlyString(in.ResourceType))
+	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.ResourceType))
 	if in.ResourceType == enum.FFResourceTypeVlan {
 		o.AllocatedFrom = types.StringPointerValue(in.ScopeNodePoolLabel)
 	} else {
 		o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	}
 	o.ContainerId = types.StringValue(string(in.ContainerId))
-	o.SubnetPrefixLen = utils.Int64AttrValueFromPtr(in.SubnetPrefixLen)
+	o.SubnetPrefixLen = utils.Int64PointerValue(in.SubnetPrefixLen)
 }
