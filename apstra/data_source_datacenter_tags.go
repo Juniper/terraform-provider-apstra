@@ -3,6 +3,8 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
@@ -15,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"golang.org/x/exp/maps"
 )
 
 var (
@@ -115,7 +116,7 @@ func (o *dataSourceDatacenterTags) Read(ctx context.Context, req datasource.Read
 	var names []attr.Value
 
 	if len(filters) == 0 { // quick exit if user wants all tags
-		config.Ids = utils.SetValueOrNull(ctx, types.StringType, maps.Keys(tags), &resp.Diagnostics)
+		config.Ids = utils.SetValueOrNull(ctx, types.StringType, slices.Collect(maps.Keys(tags)), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
