@@ -6,7 +6,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
@@ -49,7 +49,7 @@ func friendlyPolicyRuleProtocols() []string {
 	friendlyStrings := make([]string, len(enums))
 
 	for i, enum := range enums {
-		friendlyStrings[i] = utils.StringersToFriendlyString(enum)
+		friendlyStrings[i] = rosetta.StringersToFriendlyString(enum)
 	}
 
 	return friendlyStrings

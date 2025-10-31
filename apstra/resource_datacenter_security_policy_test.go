@@ -12,7 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -89,7 +89,7 @@ func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) strin
 			rule.Data.Label,
 			stringOrNull(rule.Data.Description),
 			rule.Data.Action.Value,
-			utils.StringersToFriendlyString(rule.Data.Protocol),
+			rosetta.StringersToFriendlyString(rule.Data.Protocol),
 			renderPorts(rule.Data.SrcPort),
 			renderPorts(rule.Data.DstPort),
 			renderEstablished(rule.Data.TcpStateQualifier),

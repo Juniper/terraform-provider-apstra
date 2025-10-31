@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -61,7 +62,7 @@ func (o *resourceFreeformResource) ValidateConfig(ctx context.Context, req resou
 	}
 
 	var resourceType enum.FFResourceType
-	err := utils.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&resourceType, config.Type.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddAttributeError(path.Root("type"), "failed to parse 'type' attribute", err.Error())
 		return

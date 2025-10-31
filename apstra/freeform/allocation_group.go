@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -108,7 +109,7 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 func (o *AllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformAllocGroupData {
 	// unpack
 	var allocGroupType enum.ResourcePoolType
-	err := utils.ApiStringerFromFriendlyString(&allocGroupType, o.Type.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&allocGroupType, o.Type.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())
 	}
@@ -129,6 +130,6 @@ func (o *AllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apst
 func (o *AllocGroup) LoadApiData(ctx context.Context, in *apstra.FreeformAllocGroupData, diags *diag.Diagnostics) {
 	// pack
 	o.Name = types.StringValue(in.Name)
-	o.Type = types.StringValue(utils.StringersToFriendlyString(in.Type))
+	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.Type))
 	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
 }

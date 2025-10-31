@@ -12,6 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -54,11 +55,11 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 
 		switch {
 		case unspecifiedAsNone.Check(apiVersion):
-			t.Logf("case unspecifiedAsNone: returning %s for version %s", utils.StringersToFriendlyString(enum.DeployModeNone), apiVersion)
-			return utils.StringersToFriendlyString(enum.DeployModeNone)
+			t.Logf("case unspecifiedAsNone: returning %s for version %s", rosetta.StringersToFriendlyString(enum.DeployModeNone), apiVersion)
+			return rosetta.StringersToFriendlyString(enum.DeployModeNone)
 		case unspecifiedAsUndeploy.Check(apiVersion):
-			t.Logf("case unspecifiedAsUndeploy: returning %s for version %s", utils.StringersToFriendlyString(enum.DeployModeNone), apiVersion)
-			return utils.StringersToFriendlyString(enum.DeployModeUndeploy)
+			t.Logf("case unspecifiedAsUndeploy: returning %s for version %s", rosetta.StringersToFriendlyString(enum.DeployModeNone), apiVersion)
+			return rosetta.StringersToFriendlyString(enum.DeployModeUndeploy)
 		default:
 			panic("unable to determine behavior for unspecified deploy mode")
 		}
@@ -177,7 +178,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 								IP:   net.IP{1, 1, 1, 1},
 								Mask: net.CIDRMask(32, 32),
 							},
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeReady),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeReady),
 							tags:       []string{"one"},
 						},
 					},
@@ -185,12 +186,12 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "SPINE1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "spine1.test"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "1"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
 					},
@@ -208,7 +209,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 								IP:   net.IP{2, 2, 2, 2},
 								Mask: net.CIDRMask(32, 32),
 							},
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeDrain),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:       []string{"two", "2"},
 						},
 					},
@@ -216,12 +217,12 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "SPINE2"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "spine2.test"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "2"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "2.2.2.2/32"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "two"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "2"),
@@ -257,7 +258,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 							hostname:     "leafstartminimalhostname.com",
 							asn:          utils.ToPtr(1),
 							loopbackIpv4: &net.IPNet{IP: net.IP{1, 1, 1, 1}, Mask: net.CIDRMask(32, 32)},
-							deployMode:   utils.StringersToFriendlyString(enum.DeployModeDrain),
+							deployMode:   rosetta.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:         []string{"one", "1"},
 						},
 					},
@@ -267,12 +268,12 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_minimal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartminimalhostname.com"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
@@ -290,12 +291,12 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_minimal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartminimalhostname.com"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 					},
 				},
 				{
@@ -326,7 +327,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 							hostname:     "leafstartmaximalhostname.com",
 							asn:          utils.ToPtr(1),
 							loopbackIpv4: &net.IPNet{IP: net.IP{1, 1, 1, 1}, Mask: net.CIDRMask(32, 32)},
-							deployMode:   utils.StringersToFriendlyString(enum.DeployModeDrain),
+							deployMode:   rosetta.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:         []string{"one", "1"},
 						},
 					},
@@ -336,12 +337,12 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_maximal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartmaximalhostname.com"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
@@ -359,12 +360,12 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-7x10-Leaf"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "leaf_start_maximal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "leafstartmaximalhostname.com"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.asn", "1"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.loopback_ipv4", "1.1.1.1/32"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 					},
 				},
 				{
@@ -409,7 +410,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						systemAttributes: &systemAttributes{
 							name:       "access_start_minimal_name",
 							hostname:   "accessstartminimalhostname.com",
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeDrain),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:       []string{"one", "1"},
 						},
 					},
@@ -419,10 +420,10 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_minimal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartminimalhostname.com"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
@@ -440,10 +441,10 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_minimal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartminimalhostname.com"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 					},
 				},
 				{
@@ -472,7 +473,7 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						systemAttributes: &systemAttributes{
 							name:       "access_start_maximal_name",
 							hostname:   "accessstartmaximalhostname.com",
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeDrain),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeDrain),
 							tags:       []string{"one", "1"},
 						},
 					},
@@ -482,10 +483,10 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_maximal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartmaximalhostname.com"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.#", "2"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "one"),
 						resource.TestCheckTypeSetElemAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.tags.*", "1"),
@@ -503,10 +504,10 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "interface_map_name", "Juniper_vQFX__AOS-8x10-1"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "node_id"),
 						resource.TestCheckResourceAttrSet(resourceDataCenterDeviceAllocationRefName, "device_profile_node_id"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.name", "access_start_maximal_name"),
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.hostname", "accessstartmaximalhostname.com"),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 					},
 				},
 				{
@@ -533,13 +534,13 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						nodeName:              "l2_one_access_002_leaf1",
 						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
 						systemAttributes: &systemAttributes{
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeNone),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeNone),
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeNone)),
 					},
 				},
 				{
@@ -548,13 +549,13 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						nodeName:              "l2_one_access_002_leaf1",
 						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
 						systemAttributes: &systemAttributes{
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeDrain),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeDrain),
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeDrain)),
 					},
 				},
 			},
@@ -582,13 +583,13 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						nodeName:              "l2_esi_acs_dual_001_leaf2",
 						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
 						systemAttributes: &systemAttributes{
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeReady),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeReady),
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
 					},
 				},
 				{
@@ -597,13 +598,13 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						nodeName:              "l2_esi_acs_dual_001_leaf2",
 						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
 						systemAttributes: &systemAttributes{
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeNone),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeNone),
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeNone)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeNone)),
 					},
 				},
 				{
@@ -612,13 +613,13 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 						nodeName:              "l2_esi_acs_dual_001_leaf2",
 						initialInterfaceMapId: "Juniper_vQFX__AOS-7x10-Leaf",
 						systemAttributes: &systemAttributes{
-							deployMode: utils.StringersToFriendlyString(enum.DeployModeReady),
+							deployMode: rosetta.StringersToFriendlyString(enum.DeployModeReady),
 						},
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
 					},
 				},
 				{
@@ -629,8 +630,8 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 					},
 					checks: []resource.TestCheckFunc{
 						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "blueprint_id", bpClient.Id().String()),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
-						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", utils.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
+						resource.TestCheckResourceAttr(resourceDataCenterDeviceAllocationRefName, "system_attributes.deploy_mode", rosetta.StringersToFriendlyString(enum.DeployModeReady)),
 					},
 				},
 			},

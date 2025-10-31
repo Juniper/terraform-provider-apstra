@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -77,36 +78,36 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 				"e.g. `role in [\"spine_leaf\"]`. Only applies to configlets for sections `%s`, `%s` and `%s`. See "+
 				"references to *Advanced Condition Editor* in the [Apstra User Guide]"+
 				"(https://www.juniper.net/documentation/us/en/software/apstra5.0/apstra-user-guide/topics/task/configlet-import-blueprint.html).",
-				utils.StringersToFriendlyString(enum.ConfigletSectionInterface),
-				utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface),
-				utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface),
+				rosetta.StringersToFriendlyString(enum.ConfigletSectionInterface),
+				rosetta.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface),
+				rosetta.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface),
 			),
 			Optional: true,
 			Validators: []validator.String{
 				stringvalidator.LengthAtLeast(1),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFile)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionFile)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFrr)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionFrr)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionOspf)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionOspf)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystem)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
 				),
 			},
 		},
@@ -130,41 +131,41 @@ func (o ConfigletGenerator) ResourceAttributes() map[string]resourceSchema.Attri
 				// required by section file
 				apstravalidator.RequiredWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFile)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionFile)),
 				),
 
 				// incompatible with sections other than file
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionDeleteBasedInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionInterface)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionFrr)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionFrr)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionOspf)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionOspf)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSetBasedInterface)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSetBasedSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystem)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSystem)),
 				),
 				apstravalidator.ForbiddenWhenValueIs(
 					path.MatchRelative().AtParent().AtName("section"),
-					types.StringValue(utils.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
+					types.StringValue(rosetta.StringersToFriendlyString(enum.ConfigletSectionSystemTop)),
 				),
 			},
 		},
@@ -183,8 +184,8 @@ func (o ConfigletGenerator) AttrTypes() map[string]attr.Type {
 }
 
 func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *apstra.ConfigletGenerator, diags *diag.Diagnostics) {
-	o.ConfigStyle = types.StringValue(utils.StringersToFriendlyString(in.ConfigStyle))
-	o.Section = types.StringValue(utils.StringersToFriendlyString(in.Section, in.ConfigStyle))
+	o.ConfigStyle = types.StringValue(rosetta.StringersToFriendlyString(in.ConfigStyle))
+	o.Section = types.StringValue(rosetta.StringersToFriendlyString(in.Section, in.ConfigStyle))
 	o.SectionCondition = utils.StringValueOrNull(ctx, in.SectionCondition, diags)
 	o.TemplateText = types.StringValue(in.TemplateText)
 	o.NegationTemplateText = utils.StringValueOrNull(ctx, in.NegationTemplateText, diags)
@@ -201,7 +202,7 @@ func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics)
 	}
 
 	var section enum.ConfigletSection
-	err = utils.ApiStringerFromFriendlyString(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&section, o.Section.ValueString(), o.ConfigStyle.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing configlet section %q", o.Section.ValueString()), err.Error())
 	}

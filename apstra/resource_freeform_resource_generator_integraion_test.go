@@ -14,6 +14,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -49,7 +50,7 @@ func (o resourceFreeformResourceGenerator) render(rType, rName string) string {
 		rType, rName,
 		o.blueprintId,
 		o.name,
-		utils.StringersToFriendlyString(o.resourceType),
+		rosetta.StringersToFriendlyString(o.resourceType),
 		o.scope,
 		stringOrNull(o.allocatedFrom),
 		o.containerId,
@@ -66,7 +67,7 @@ func (o resourceFreeformResourceGenerator) testChecks(t testing.TB, rType, rName
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
 	result.append(t, "TestCheckResourceAttr", "scope", o.scope)
 	result.append(t, "TestCheckResourceAttr", "container_id", o.containerId)
-	result.append(t, "TestCheckResourceAttr", "type", utils.StringersToFriendlyString(o.resourceType))
+	result.append(t, "TestCheckResourceAttr", "type", rosetta.StringersToFriendlyString(o.resourceType))
 	if o.allocatedFrom == "" {
 		result.append(t, "TestCheckNoResourceAttr", "allocated_from")
 	} else {

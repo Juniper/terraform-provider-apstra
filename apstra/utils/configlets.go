@@ -7,6 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 )
 
 func ConfigletSupportsPlatforms(configletdata *apstra.ConfigletData, platforms []enum.ConfigletStyle) bool {
@@ -47,7 +48,7 @@ func AllConfigletSectionNames() []string {
 func ConfigletSectionNamesByStyle(style enum.ConfigletStyle) []string {
 	var result []string
 	for _, v := range apstra.ValidConfigletSections(style) {
-		result = append(result, StringersToFriendlyString(v, style))
+		result = append(result, rosetta.StringersToFriendlyString(v, style))
 	}
 	return result
 }

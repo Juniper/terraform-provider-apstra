@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 )
 
 func AllResourceGroupNameStrings() []string {
@@ -13,7 +14,7 @@ func AllResourceGroupNameStrings() []string {
 		if rgn == apstra.ResourceGroupNameNone {
 			continue
 		}
-		result = append(result, StringersToFriendlyString(rgn))
+		result = append(result, rosetta.StringersToFriendlyString(rgn))
 	}
 
 	sort.Strings(result)

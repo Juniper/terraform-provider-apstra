@@ -6,6 +6,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -222,7 +223,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var spineAsnScheme apstra.AsnAllocationScheme
-	err = utils.ApiStringerFromFriendlyString(&spineAsnScheme, o.AsnAllocation.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&spineAsnScheme, o.AsnAllocation.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing ASN allocation scheme %q - %s",
@@ -233,7 +234,7 @@ func (o *TemplateRackBased) Request(ctx context.Context, diags *diag.Diagnostics
 	}
 
 	var overlayControlProtocol apstra.OverlayControlProtocol
-	err = utils.ApiStringerFromFriendlyString(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
+	err = rosetta.ApiStringerFromFriendlyString(&overlayControlProtocol, o.OverlayControlProtocol.ValueString())
 	if err != nil {
 		diags.AddError(errProviderBug,
 			fmt.Sprintf("error parsing overlay control protocol %q - %s",
@@ -264,8 +265,8 @@ func (o *TemplateRackBased) LoadApiData(ctx context.Context, in *apstra.Template
 
 	o.Name = types.StringValue(in.DisplayName)
 	o.Spine = NewDesignTemplateSpineObject(ctx, &in.Spine, diags)
-	o.AsnAllocation = types.StringValue(utils.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
-	o.OverlayControlProtocol = types.StringValue(utils.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
+	o.AsnAllocation = types.StringValue(rosetta.StringersToFriendlyString(in.AsnAllocationPolicy.SpineAsnScheme))
+	o.OverlayControlProtocol = types.StringValue(rosetta.StringersToFriendlyString(in.VirtualNetworkPolicy.OverlayControlProtocol))
 	o.RackInfos = NewRackInfoMap(ctx, in, diags)
 }
 

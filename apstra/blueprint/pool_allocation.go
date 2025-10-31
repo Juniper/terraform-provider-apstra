@@ -7,6 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -44,7 +45,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 		// use two strategies when parsing the state value to apstra.ResourceGroupName
 		err = state.FromString(req.StateValue.ValueString())
 		if err != nil {
-			err = utils.ApiStringerFromFriendlyString(&state, req.StateValue.ValueString())
+			err = rosetta.ApiStringerFromFriendlyString(&state, req.StateValue.ValueString())
 			if err != nil {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to parse state value %q", req.StateValue.ValueString()), err.Error())
 				return
@@ -54,7 +55,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 		// use two strategies when parsing the plan value to apstra.ResourceGroupName
 		err = plan.FromString(req.PlanValue.ValueString())
 		if err != nil {
-			err = utils.ApiStringerFromFriendlyString(&plan, req.PlanValue.ValueString())
+			err = rosetta.ApiStringerFromFriendlyString(&plan, req.PlanValue.ValueString())
 			if err != nil {
 				resp.Diagnostics.AddError(fmt.Sprintf("failed to parse plan value %q", req.PlanValue.ValueString()), err.Error())
 				return
@@ -129,7 +130,7 @@ func (o *PoolAllocation) LoadApiData(ctx context.Context, in *apstra.ResourceGro
 func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ResourceGroupAllocation {
 	// Parse 'role' into a ResourceGroupName
 	var rgName apstra.ResourceGroupName
-	err := utils.ApiStringerFromFriendlyString(&rgName, o.Role.ValueString())
+	err := rosetta.ApiStringerFromFriendlyString(&rgName, o.Role.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()), err.Error())
 		return nil
