@@ -2,11 +2,12 @@ package value
 
 import (
 	"context"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"log"
 	"math/rand"
 	"testing"
 	"unsafe"
+
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 func TestInt64ValueOrNull(t *testing.T) {
