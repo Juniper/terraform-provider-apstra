@@ -12,7 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -191,8 +191,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name:          acctest.RandString(6),
-						vlan:          utils.ToPtr(10),
-						vni:           utils.ToPtr(10010),
+						vlan:          pointer.To(10),
+						vni:           pointer.To(10010),
 						dhcpServers:   randomIPs(t, rand.Intn(3)+2, "10.0.0.0/8", "2001:db8::/65"),
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
@@ -202,8 +202,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name:          acctest.RandString(6),
-						vlan:          utils.ToPtr(20),
-						vni:           utils.ToPtr(10020),
+						vlan:          pointer.To(20),
+						vni:           pointer.To(10020),
 						dhcpServers:   randomIPs(t, rand.Intn(3)+2, "10.0.0.0/8", "2001:db8::/65"),
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
@@ -222,8 +222,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name:          acctest.RandString(6),
-						vlan:          utils.ToPtr(30),
-						vni:           utils.ToPtr(10030),
+						vlan:          pointer.To(30),
+						vni:           pointer.To(10030),
 						dhcpServers:   randomIPs(t, rand.Intn(3)+2, "10.0.0.0/8", "2001:db8::/65"),
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
@@ -244,8 +244,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name:          acctest.RandString(6),
-						vlan:          utils.ToPtr(30),
-						vni:           utils.ToPtr(10030),
+						vlan:          pointer.To(30),
+						vni:           pointer.To(10030),
 						dhcpServers:   randomIPs(t, rand.Intn(3)+2, "10.0.0.0/8", "2001:db8::/65"),
 						routingPolicy: policyIds[rand.Intn(len(policyIds))].String(),
 						importRTs:     randomRTs(t, 1, 3),
@@ -287,8 +287,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name: acctest.RandString(6),
-						vlan: utils.ToPtr(rand.Intn(100) + 100),
-						vni:  utils.ToPtr(rand.Intn(100) + 6200),
+						vlan: pointer.To(rand.Intn(100) + 100),
+						vni:  pointer.To(rand.Intn(100) + 6200),
 					},
 					extraChecks: []extraCheck{
 						{
@@ -339,8 +339,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name: acctest.RandString(6),
-						vlan: utils.ToPtr(rand.Intn(100) + 300),
-						vni:  utils.ToPtr(rand.Intn(100) + 6300),
+						vlan: pointer.To(rand.Intn(100) + 300),
+						vni:  pointer.To(rand.Intn(100) + 6300),
 					},
 					extraChecks: []extraCheck{
 						{
@@ -392,8 +392,8 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				{
 					config: testRoutingZone{
 						name: acctest.RandString(6),
-						vlan: utils.ToPtr(rand.Intn(100) + 500),
-						vni:  utils.ToPtr(rand.Intn(100) + 6500),
+						vlan: pointer.To(rand.Intn(100) + 500),
+						vni:  pointer.To(rand.Intn(100) + 6500),
 					},
 					extraChecks: []extraCheck{
 						{

@@ -11,7 +11,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -115,7 +115,7 @@ func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 					blueprintId:             bp.Id(),
 					connectivityTemplateIds: ctIds,
 					applicationPointId:      applicationPointIds[0],
-					fetchIpLinkIds:          utils.ToPtr(true),
+					fetchIpLinkIds:          pointer.To(true),
 				},
 			},
 		},

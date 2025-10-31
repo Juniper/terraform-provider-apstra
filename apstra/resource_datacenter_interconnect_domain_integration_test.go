@@ -12,7 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -75,7 +75,7 @@ func TestResourceDatacenterInterconnectDomain(t *testing.T) {
 	// set the ESI MAC MSB
 	fs, err := bp.GetFabricSettings(ctx)
 	require.NoError(t, err)
-	fs.EsiMacMsb = utils.ToPtr(uint8((rand.Int() & 254) | 2))
+	fs.EsiMacMsb = pointer.To(uint8((rand.Int() & 254) | 2))
 	err = bp.SetFabricSettings(ctx, fs)
 	require.NoError(t, err)
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -137,7 +138,7 @@ func (o *LinkEndpoint) request(ctx context.Context, systemId string, diags *diag
 
 	var transformationId *int
 	if !o.TransformationId.IsNull() {
-		transformationId = utils.ToPtr(int(o.TransformationId.ValueInt64()))
+		transformationId = pointer.To(int(o.TransformationId.ValueInt64()))
 	}
 
 	return &apstra.FreeformEthernetEndpoint{
@@ -165,7 +166,7 @@ func (o *LinkEndpoint) loadApiData(ctx context.Context, in apstra.FreeformEthern
 
 	var transformationId *int64
 	if in.Interface.Data.TransformationId != nil {
-		transformationId = utils.ToPtr(int64(*in.Interface.Data.TransformationId))
+		transformationId = pointer.To(int64(*in.Interface.Data.TransformationId))
 	}
 
 	o.InterfaceName = types.StringPointerValue(in.Interface.Data.IfName)

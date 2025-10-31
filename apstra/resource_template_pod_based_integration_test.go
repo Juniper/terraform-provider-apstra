@@ -11,7 +11,7 @@ import (
 
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -112,7 +112,7 @@ func TestResourceTemplatePodBased(t *testing.T) {
 						name:          acctest.RandString(6),
 						ssLd:          "AOS-24x10-2",
 						perPlaneCount: 4,
-						planeCount:    utils.ToPtr(2),
+						planeCount:    pointer.To(2),
 						podInfo: map[string]int{
 							"pod_single": 2,
 							"pod_mlag":   2,

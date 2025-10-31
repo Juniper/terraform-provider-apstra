@@ -16,6 +16,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -637,7 +638,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	var reservedVlanId *apstra.Vlan
 	if o.ReserveVlan.ValueBool() {
 		if utils.HasValue(o.ReservedVlanId) {
-			reservedVlanId = utils.ToPtr(apstra.Vlan(o.ReservedVlanId.ValueInt64()))
+			reservedVlanId = pointer.To(apstra.Vlan(o.ReservedVlanId.ValueInt64()))
 		} else {
 			reservedVlanId = vnBindings[0].VlanId
 		}

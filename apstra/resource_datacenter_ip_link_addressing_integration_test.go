@@ -11,7 +11,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -118,7 +118,7 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	// enable ipv6
 	fs, err := bp.GetFabricSettings(ctx)
 	require.NoError(t, err)
-	fs.Ipv6Enabled = utils.ToPtr(true)
+	fs.Ipv6Enabled = pointer.To(true)
 	require.NoError(t, bp.SetFabricSettings(ctx, fs))
 
 	// create routing zones
@@ -168,9 +168,9 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	for i, rzId := range rzIds {
 		subpolicies[i] = &apstra.ConnectivityTemplatePrimitive{
 			Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-				SecurityZone: utils.ToPtr(rzId),
+				SecurityZone: pointer.To(rzId),
 				Tagged:       true,
-				Vlan:         utils.ToPtr(apstra.Vlan(101 + i)),
+				Vlan:         pointer.To(apstra.Vlan(101 + i)),
 			},
 		}
 	}

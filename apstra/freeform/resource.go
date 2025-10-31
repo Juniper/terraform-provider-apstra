@@ -11,6 +11,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -233,7 +234,7 @@ func (o *Resource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.F
 
 	var subnetPrefixLen *int
 	if (typeIpv4 || typeIpv6) && utils.HasValue(o.IntValue) {
-		subnetPrefixLen = utils.ToPtr(int(o.IntValue.ValueInt64()))
+		subnetPrefixLen = pointer.To(int(o.IntValue.ValueInt64()))
 	}
 
 	var value *string
@@ -243,7 +244,7 @@ func (o *Resource) Request(_ context.Context, diags *diag.Diagnostics) *apstra.F
 	case utils.HasValue(o.Ipv6Value):
 		value = o.Ipv6Value.ValueStringPointer()
 	case utils.HasValue(o.IntValue) && !typeIpv4 && !typeIpv6:
-		value = utils.ToPtr(strconv.FormatInt(o.IntValue.ValueInt64(), 10))
+		value = pointer.To(strconv.FormatInt(o.IntValue.ValueInt64(), 10))
 	}
 
 	return &apstra.FreeformRaResourceData{

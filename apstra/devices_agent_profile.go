@@ -5,6 +5,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -117,7 +118,7 @@ func (o agentProfile) resourceAttributes() map[string]resourceSchema.Attribute {
 func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *apstra.AgentProfileConfig {
 	platform := o.Platform.ValueStringPointer()
 	if platform == nil {
-		platform = utils.ToPtr("") // pointer to empty string clears the platform value
+		platform = pointer.To("") // pointer to empty string clears the platform value
 	}
 
 	packages := make(apstra.AgentPackages)

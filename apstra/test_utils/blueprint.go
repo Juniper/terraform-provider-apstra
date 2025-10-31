@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
@@ -61,8 +62,8 @@ func BlueprintA(t testing.TB, ctx context.Context, name ...string) *apstra.TwoSt
 		Label:      bpname,
 		TemplateId: "L2_Virtual_EVPN",
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -85,8 +86,8 @@ func BlueprintB(t testing.TB, ctx context.Context) (*apstra.TwoStageL3ClosClient
 		Label:      name,
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -109,8 +110,8 @@ func BlueprintC(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		Label:      name,
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -131,8 +132,8 @@ func BlueprintD(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		Label:      name,
 		TemplateId: template.Id,
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -257,8 +258,8 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		Label:      acctest.RandString(10),
 		TemplateId: templateId,
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)
@@ -279,7 +280,7 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	// enable IPv6
 	settings, err := bpClient.GetFabricSettings(ctx)
 	require.NoError(t, err)
-	settings.Ipv6Enabled = utils.ToPtr(true)
+	settings.Ipv6Enabled = pointer.To(true)
 	err = bpClient.SetFabricSettings(ctx, settings)
 	require.NoError(t, err)
 
@@ -296,8 +297,8 @@ func BlueprintG(t testing.TB, ctx context.Context, cleanup bool) *apstra.TwoStag
 		Label:      acctest.RandString(8),
 		TemplateId: "L2_Virtual_EVPN",
 		FabricSettings: &apstra.FabricSettings{
-			SpineSuperspineLinks: utils.ToPtr(apstra.AddressingSchemeIp4),
-			SpineLeafLinks:       utils.ToPtr(apstra.AddressingSchemeIp4),
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp4),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp4),
 		},
 	})
 	require.NoError(t, err)

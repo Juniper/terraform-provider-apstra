@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -373,7 +374,7 @@ func (o *DeviceAllocation) SetInterfaceMap(ctx context.Context, bp *apstra.TwoSt
 func (o *DeviceAllocation) SetNodeSystemId(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) {
 	var deviceKeyPtr *string
 	if !o.DeviceKey.IsNull() {
-		deviceKeyPtr = utils.ToPtr(o.DeviceKey.ValueString())
+		deviceKeyPtr = pointer.To(o.DeviceKey.ValueString())
 	}
 
 	patch := &struct {

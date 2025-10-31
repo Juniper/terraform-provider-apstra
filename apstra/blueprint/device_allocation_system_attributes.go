@@ -16,6 +16,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
@@ -487,10 +488,10 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 	// Use new() here to ensure we have invalid non-nil prefix pointers. These will remove values from the API.
 	ipv4Addr, ipv6Addr := new(netip.Prefix), new(netip.Prefix)
 	if utils.HasValue(o.LoopbackIpv4) {
-		ipv4Addr = utils.ToPtr(netip.MustParsePrefix(o.LoopbackIpv4.ValueString()))
+		ipv4Addr = pointer.To(netip.MustParsePrefix(o.LoopbackIpv4.ValueString()))
 	}
 	if utils.HasValue(o.LoopbackIpv6) {
-		ipv6Addr = utils.ToPtr(netip.MustParsePrefix(o.LoopbackIpv6.ValueString()))
+		ipv6Addr = pointer.To(netip.MustParsePrefix(o.LoopbackIpv6.ValueString()))
 	}
 
 	err := bp.SetSecurityZoneLoopbacks(ctx, securityZoneId, map[apstra.ObjectId]apstra.SecurityZoneLoopback{
@@ -520,7 +521,7 @@ func (o *DeviceAllocationSystemAttributes) setProperties(ctx context.Context, bp
 
 		var deployModePayload *string
 		if deployMode != enum.DeployModeNone {
-			deployModePayload = utils.ToPtr(deployMode.String())
+			deployModePayload = pointer.To(deployMode.String())
 		}
 
 		patch := struct {

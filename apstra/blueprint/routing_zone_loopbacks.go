@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -103,7 +104,7 @@ func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL
 		}
 
 		if !loopback.Ipv4Addr.IsNull() {
-			szl.IPv4Addr = utils.ToPtr(netip.MustParsePrefix(loopback.Ipv4Addr.ValueString()))
+			szl.IPv4Addr = pointer.To(netip.MustParsePrefix(loopback.Ipv4Addr.ValueString()))
 			p.HasIpv4 = true
 		} else {
 			if previousLoopbackMap[sysId].HasIpv4 {
@@ -112,7 +113,7 @@ func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL
 		}
 
 		if !loopback.Ipv6Addr.IsNull() {
-			szl.IPv6Addr = utils.ToPtr(netip.MustParsePrefix(loopback.Ipv6Addr.ValueString()))
+			szl.IPv6Addr = pointer.To(netip.MustParsePrefix(loopback.Ipv6Addr.ValueString()))
 			p.HasIpv6 = true
 		} else {
 			if previousLoopbackMap[sysId].HasIpv6 {

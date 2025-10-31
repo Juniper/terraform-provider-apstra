@@ -12,6 +12,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -173,17 +174,17 @@ func (o BgpPeeringGenericSystem) ResourceAttributes() map[string]resourceSchema.
 func (o BgpPeeringGenericSystem) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachBgpOverSubinterfacesOrSvi {
 	var holdTime *uint16
 	if !o.HoldTime.IsNull() {
-		holdTime = utils.ToPtr(uint16(o.HoldTime.ValueInt64()))
+		holdTime = pointer.To(uint16(o.HoldTime.ValueInt64()))
 	}
 
 	var keepaliveTime *uint16
 	if !o.KeepaliveTime.IsNull() {
-		keepaliveTime = utils.ToPtr(uint16(o.KeepaliveTime.ValueInt64()))
+		keepaliveTime = pointer.To(uint16(o.KeepaliveTime.ValueInt64()))
 	}
 
 	var localAsn *uint32
 	if !o.LocalAsn.IsNull() {
-		localAsn = utils.ToPtr(uint32(o.LocalAsn.ValueInt64()))
+		localAsn = pointer.To(uint32(o.LocalAsn.ValueInt64()))
 	}
 
 	var err error
