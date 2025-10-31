@@ -5,8 +5,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/numbers"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -96,8 +96,8 @@ func (o Ipv4PoolSubnet) AttrTypes() map[string]attr.Type {
 func (o *Ipv4PoolSubnet) LoadApiData(_ context.Context, in *apstra.IpSubnet, _ *diag.Diagnostics) {
 	o.Status = types.StringValue(in.Status)
 	o.Network = cidrtypes.NewIPv4PrefixValue(in.Network.String())
-	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))
-	o.Used = types.NumberValue(utils.BigIntToBigFloat(&in.Used))
+	o.Total = types.NumberValue(numbers.BigIntToBigFloat(&in.Total))
+	o.Used = types.NumberValue(numbers.BigIntToBigFloat(&in.Used))
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 }
 
