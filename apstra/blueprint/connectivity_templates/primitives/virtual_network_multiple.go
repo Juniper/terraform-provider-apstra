@@ -7,7 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -115,7 +115,7 @@ func newVirtualNetworkMultiple(ctx context.Context, in *apstra.ConnectivityTempl
 	return VirtualNetworkMultiple{
 		// Name: // handled by caller
 		UntaggedVnId: types.StringPointerValue((*string)(in.UntaggedVnNodeId)),
-		TaggedVnIds:  utils.SetValueOrNull(ctx, types.StringType, in.TaggedVnNodeIds, diags),
+		TaggedVnIds:  value.SetOrNull(ctx, types.StringType, in.TaggedVnNodeIds, diags),
 	}
 }
 
@@ -147,7 +147,7 @@ func VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx context.Context, subpol
 		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoVirtualNetworkMultipleMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -169,5 +169,5 @@ func LoadIDsIntoVirtualNetworkMultipleMap(ctx context.Context, subpolicies []*ap
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkMultiple{}.AttrTypes()}, result, diags)
 }

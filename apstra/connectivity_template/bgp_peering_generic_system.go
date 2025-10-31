@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -256,7 +256,7 @@ func (o *BgpPeeringGenericSystem) loadSdkPrimitive(ctx context.Context, in apstr
 	o.NeighborAsnDynamic = types.BoolValue(attributes.NeighborAsnDynamic)
 	o.PeerFromLoopback = types.BoolValue(attributes.PeerFromLoopback)
 	o.PeerTo = types.StringValue(attributes.PeerTo.String())
-	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.ChildPrimitives = value.SetOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 	o.Name = types.StringValue(in.Label)
 }
 

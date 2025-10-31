@@ -1,4 +1,4 @@
-package utils
+package value
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func TestInt64ValueOrNull(t *testing.T) {
 		(*uint64)(unsafe.Pointer(&r)),
 	}
 	for _, tc := range testCases {
-		attrVal := Int64ValueOrNull(ctx, tc, &diags)
+		attrVal := Int64OrNull(ctx, tc, &diags)
 		if attrVal.ValueInt64() != int64(r) {
 			t.Fatal()
 		}
@@ -62,7 +62,7 @@ func TestInt64ValueOrNull(t *testing.T) {
 		uint64PtrNil,
 	}
 	for _, tc := range nilCases {
-		attrVal := Int64ValueOrNull(ctx, tc, &diags)
+		attrVal := Int64OrNull(ctx, tc, &diags)
 		if !attrVal.IsNull() {
 			t.Fatal()
 		}
@@ -71,7 +71,7 @@ func TestInt64ValueOrNull(t *testing.T) {
 		}
 	}
 
-	attrVal := Int64ValueOrNull(ctx, nil, &diags)
+	attrVal := Int64OrNull(ctx, nil, &diags)
 	if !attrVal.IsNull() {
 		t.Fatal()
 	}
@@ -80,7 +80,7 @@ func TestInt64ValueOrNull(t *testing.T) {
 
 	for _, tc := range failCases {
 		failDiags := diag.Diagnostics{}
-		attrVal := Int64ValueOrNull(ctx, tc, &failDiags)
+		attrVal := Int64OrNull(ctx, tc, &failDiags)
 		if !attrVal.IsNull() {
 			t.Fatalf("%s", tc)
 		}

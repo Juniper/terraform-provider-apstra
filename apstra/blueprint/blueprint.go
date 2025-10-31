@@ -13,6 +13,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -682,11 +683,11 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 		}
 	}
 
-	o.DefaultIpLinksToGenericMtu = utils.Int64PointerValue(settings.ExternalRouterMtu)
-	o.DefaultSviL3Mtu = utils.Int64PointerValue(settings.DefaultSviL3Mtu)
-	o.EsiMacMsb = utils.Int64PointerValue(settings.EsiMacMsb)
+	o.DefaultIpLinksToGenericMtu = value.Int64FromPointer(settings.ExternalRouterMtu)
+	o.DefaultSviL3Mtu = value.Int64FromPointer(settings.DefaultSviL3Mtu)
+	o.EsiMacMsb = value.Int64FromPointer(settings.EsiMacMsb)
 	o.EvpnType5Routes = boolAttrValueFromFeatureswitchEnumPtr(settings.EvpnGenerateType5HostRoutes)
-	o.FabricMtu = utils.Int64PointerValue(settings.FabricL3Mtu)
+	o.FabricMtu = value.Int64FromPointer(settings.FabricL3Mtu)
 	o.Ipv6Applications = boolAttrValueFromBoolPtr(settings.Ipv6Enabled)
 	o.JunosEvpnMaxNexthopAndInterfaceNumber = boolAttrValueFromFeatureswitchEnumPtr(settings.JunosEvpnMaxNexthopAndInterfaceNumber)
 	o.JunosEvpnRoutingInstanceModeMacVrf = boolAttrValueFromFeatureswitchEnumPtr(settings.JunosEvpnRoutingInstanceVlanAware)

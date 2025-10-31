@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -134,7 +134,7 @@ func (o *ConfigTemplate) Request(ctx context.Context, diags *diag.Diagnostics) *
 func (o *ConfigTemplate) LoadApiData(ctx context.Context, in *apstra.ConfigTemplateData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Text = types.StringValue(in.Text)
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }
 
 func (o ConfigTemplate) NeedsUpdate(state ConfigTemplate) bool {

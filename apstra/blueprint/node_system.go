@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -139,12 +139,12 @@ func (o *NodeTypeSystem) AttributesFromApi(ctx context.Context, client *apstra.C
 	}
 
 	o.Attributes = types.ObjectValueMust(NodeTypeSystemAttributes{}.AttrTypes(), map[string]attr.Value{
-		"id":          utils.StringValueOrNull(ctx, desiredNode.Id, diags),
-		"hostname":    utils.StringValueOrNull(ctx, desiredNode.Hostname, diags),
-		"label":       utils.StringValueOrNull(ctx, desiredNode.Label, diags),
-		"role":        utils.StringValueOrNull(ctx, desiredNode.Role, diags),
-		"system_id":   utils.StringValueOrNull(ctx, desiredNode.SystemId, diags),
-		"system_type": utils.StringValueOrNull(ctx, desiredNode.SystemType, diags),
-		"tag_ids":     utils.SetValueOrNull(ctx, types.StringType, tags, diags),
+		"id":          value.StringOrNull(ctx, desiredNode.Id, diags),
+		"hostname":    value.StringOrNull(ctx, desiredNode.Hostname, diags),
+		"label":       value.StringOrNull(ctx, desiredNode.Label, diags),
+		"role":        value.StringOrNull(ctx, desiredNode.Role, diags),
+		"system_id":   value.StringOrNull(ctx, desiredNode.SystemId, diags),
+		"system_type": value.StringOrNull(ctx, desiredNode.SystemType, diags),
+		"tag_ids":     value.SetOrNull(ctx, types.StringType, tags, diags),
 	})
 }

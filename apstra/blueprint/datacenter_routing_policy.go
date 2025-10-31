@@ -12,6 +12,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -405,14 +406,14 @@ func (o *DatacenterRoutingPolicy) LoadApiData(ctx context.Context, policyData *a
 	}
 
 	o.Name = types.StringValue(policyData.Label)
-	o.Description = utils.StringValueOrNull(ctx, policyData.Description, diags)
+	o.Description = value.StringOrNull(ctx, policyData.Description, diags)
 	o.ImportPolicy = types.StringValue(policyData.ImportPolicy.String())
 	o.ExportPolicy = exportPolicyObj
 	o.ExpectV4Default = types.BoolValue(policyData.ExpectDefaultIpv4Route)
 	o.ExpectV6Default = types.BoolValue(policyData.ExpectDefaultIpv6Route)
-	o.AggregatePrefixes = utils.ListValueOrNull(ctx, types.StringType, aggregatePrefixStrings, diags)
-	o.ExtraImports = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: prefixFilter{}.attrTypes()}, extraImports, diags)
-	o.ExtraExports = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: prefixFilter{}.attrTypes()}, extraExports, diags)
+	o.AggregatePrefixes = value.ListOrNull(ctx, types.StringType, aggregatePrefixStrings, diags)
+	o.ExtraImports = value.ListOrNull(ctx, types.ObjectType{AttrTypes: prefixFilter{}.attrTypes()}, extraImports, diags)
+	o.ExtraExports = value.ListOrNull(ctx, types.ObjectType{AttrTypes: prefixFilter{}.attrTypes()}, extraExports, diags)
 }
 
 // FilterMatch returns true if 'in' has values which match those in 'o'

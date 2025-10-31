@@ -2,8 +2,9 @@ package iba
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -82,5 +83,5 @@ func (o *Probe) LoadApiData(ctx context.Context, in *apstra.IbaProbe, diag *diag
 	for i, j := range in.Stages {
 		s[i] = j["name"].(string)
 	}
-	o.Stages = utils.SetValueOrNull(ctx, types.StringType, s, diag)
+	o.Stages = value.SetOrNull(ctx, types.StringType, s, diag)
 }

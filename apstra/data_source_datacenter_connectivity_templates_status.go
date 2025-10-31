@@ -7,6 +7,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -84,7 +85,7 @@ func (o *dataSourceDatacenterConnectivityTemplatesStatus) Read(ctx context.Conte
 		ctStatus.LoadApiData(ctx, v, &resp.Diagnostics)
 		ctStatusMap[k.String()] = ctStatus
 	}
-	config.ConnectivityTemplates = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: ctStatus.AttrTypes()}, ctStatusMap, &resp.Diagnostics)
+	config.ConnectivityTemplates = value.MapOrNull(ctx, types.ObjectType{AttrTypes: ctStatus.AttrTypes()}, ctStatusMap, &resp.Diagnostics)
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

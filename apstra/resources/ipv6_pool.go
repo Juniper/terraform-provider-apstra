@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -133,7 +134,7 @@ func (o *Ipv6Pool) LoadApiData(ctx context.Context, in *apstra.IpPool, diags *di
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 	o.Used = types.NumberValue(utils.BigIntToBigFloat(&in.Used))
 	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))
-	o.Subnets = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: Ipv6PoolSubnet{}.AttrTypes()}, subnets, diags)
+	o.Subnets = value.SetOrNull(ctx, types.ObjectType{AttrTypes: Ipv6PoolSubnet{}.AttrTypes()}, subnets, diags)
 }
 
 func (o *Ipv6Pool) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.NewIpPoolRequest {
@@ -172,5 +173,5 @@ func (o *Ipv6Pool) SetMutablesToNull(ctx context.Context, diags *diag.Diagnostic
 		subnets[i].setMutablesToNull()
 	}
 
-	o.Subnets = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: Ipv6PoolSubnet{}.AttrTypes()}, subnets, diags)
+	o.Subnets = value.SetOrNull(ctx, types.ObjectType{AttrTypes: Ipv6PoolSubnet{}.AttrTypes()}, subnets, diags)
 }

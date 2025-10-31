@@ -9,7 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -138,7 +138,7 @@ func StaticRoutePrimitivesFromSubpolicies(ctx context.Context, subpolicies []*ap
 		return types.MapNull(types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoStaticRouteMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -160,5 +160,5 @@ func LoadIDsIntoStaticRouteMap(ctx context.Context, subpolicies []*apstra.Connec
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}, result, diags)
 }

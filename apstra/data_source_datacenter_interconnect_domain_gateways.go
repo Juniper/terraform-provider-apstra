@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -168,7 +169,7 @@ func (o *dataSourceDatacenterInterconnectDomainGateways) Read(ctx context.Contex
 	}
 
 	// pack the IDs into config.Ids
-	config.Ids = utils.SetValueOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
+	config.Ids = value.SetOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

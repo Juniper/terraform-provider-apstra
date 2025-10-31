@@ -7,7 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	systemAgents "github.com/Juniper/terraform-provider-apstra/apstra/system_agents"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -88,7 +88,7 @@ func (o *dataSourceAgents) Read(ctx context.Context, req datasource.ReadRequest,
 		}
 
 		// store the result before committing it to the state
-		config.IDs = utils.SetValueOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
+		config.IDs = value.SetOrNull(ctx, types.StringType, ids, &resp.Diagnostics)
 
 		// set state
 		resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

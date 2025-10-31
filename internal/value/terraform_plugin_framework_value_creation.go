@@ -1,4 +1,4 @@
-package utils
+package value
 
 import (
 	"context"
@@ -15,9 +15,9 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-// StringValueOrNull returns a types.String based on the supplied string. If the
+// StringOrNull returns a types.String based on the supplied string. If the
 // supplied string is empty, the returned types.String will be flagged as null.
-func StringValueOrNull(_ context.Context, in string, _ *diag.Diagnostics) types.String {
+func StringOrNull(_ context.Context, in string, _ *diag.Diagnostics) types.String {
 	if in == "" {
 		return types.StringNull()
 	}
@@ -25,19 +25,19 @@ func StringValueOrNull(_ context.Context, in string, _ *diag.Diagnostics) types.
 	return types.StringValue(in)
 }
 
-// StringValueWithNull returns a types.String based on the supplied inStr. If
+// StringWithNull returns a types.String based on the supplied inStr. If
 // inStr matches nullStr or is empty, the returned types.String will be flagged
 // as null.
-func StringValueWithNull(ctx context.Context, inStr string, nullStr string, diags *diag.Diagnostics) types.String {
+func StringWithNull(ctx context.Context, inStr string, nullStr string, diags *diag.Diagnostics) types.String {
 	if inStr == nullStr {
 		return types.StringNull()
 	}
-	return StringValueOrNull(ctx, inStr, diags)
+	return StringOrNull(ctx, inStr, diags)
 }
 
-// MapValueOrNull returns a types.Map based on the supplied elements. If the
+// MapOrNull returns a types.Map based on the supplied elements. If the
 // supplied elements is empty, the returned types.Map will be flagged as null.
-func MapValueOrNull[T any](ctx context.Context, elementType attr.Type, elements map[string]T, diags *diag.Diagnostics) types.Map {
+func MapOrNull[T any](ctx context.Context, elementType attr.Type, elements map[string]T, diags *diag.Diagnostics) types.Map {
 	if len(elements) == 0 {
 		return types.MapNull(elementType)
 	}
@@ -47,9 +47,9 @@ func MapValueOrNull[T any](ctx context.Context, elementType attr.Type, elements 
 	return result
 }
 
-// ListValueOrNull returns a types.List based on the supplied elements. If the
+// ListOrNull returns a types.List based on the supplied elements. If the
 // supplied elements is empty, the returned types.List will be flagged as null.
-func ListValueOrNull[T any](ctx context.Context, elementType attr.Type, elements []T, diags *diag.Diagnostics) types.List {
+func ListOrNull[T any](ctx context.Context, elementType attr.Type, elements []T, diags *diag.Diagnostics) types.List {
 	if len(elements) == 0 {
 		return types.ListNull(elementType)
 	}
@@ -59,9 +59,9 @@ func ListValueOrNull[T any](ctx context.Context, elementType attr.Type, elements
 	return result
 }
 
-// SetValueOrNull returns a types.Set based on the supplied elements. If the
+// SetOrNull returns a types.Set based on the supplied elements. If the
 // supplied elements is empty, the returned types.Set will be flagged as null.
-func SetValueOrNull[T any](ctx context.Context, elementType attr.Type, elements []T, diags *diag.Diagnostics) types.Set {
+func SetOrNull[T any](ctx context.Context, elementType attr.Type, elements []T, diags *diag.Diagnostics) types.Set {
 	if len(elements) == 0 {
 		return types.SetNull(elementType)
 	}
@@ -71,9 +71,9 @@ func SetValueOrNull[T any](ctx context.Context, elementType attr.Type, elements 
 	return result
 }
 
-// ObjectValueOrNull returns a types.Object based on the supplied attributes. If the
+// ObjectOrNull returns a types.Object based on the supplied attributes. If the
 // supplied attributes is nil, the returned types.Object will be flagged as null.
-func ObjectValueOrNull(ctx context.Context, attrTypes map[string]attr.Type, attributes any, diags *diag.Diagnostics) types.Object {
+func ObjectOrNull(ctx context.Context, attrTypes map[string]attr.Type, attributes any, diags *diag.Diagnostics) types.Object {
 	if attributes == nil {
 		return types.ObjectNull(attrTypes)
 	}
@@ -83,7 +83,7 @@ func ObjectValueOrNull(ctx context.Context, attrTypes map[string]attr.Type, attr
 	return result
 }
 
-func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64 {
+func Int64OrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64 {
 	// when in is nil, return a null attr.Value
 	if in == nil {
 		return types.Int64Null()
@@ -152,9 +152,9 @@ func Int64ValueOrNull(_ context.Context, in any, diags *diag.Diagnostics) types.
 	return types.Int64Null()
 }
 
-// Int64PointerValue returns a types.Int64 based on a pointer to any signed or
+// Int64FromPointer returns a types.Int64 based on a pointer to any signed or
 // unsigned integer.
-func Int64PointerValue[T constraints.Integer](v *T) types.Int64 {
+func Int64FromPointer[T constraints.Integer](v *T) types.Int64 {
 	if v == nil {
 		return types.Int64Null()
 	}
@@ -162,7 +162,7 @@ func Int64PointerValue[T constraints.Integer](v *T) types.Int64 {
 	return types.Int64Value(int64(*v))
 }
 
-func Ipv4AddrValue(v net.IP) iptypes.IPv4Address {
+func Ipv4Addr(v net.IP) iptypes.IPv4Address {
 	if v == nil || v.String() == "<nil>" {
 		return iptypes.NewIPv4AddressNull()
 	}
@@ -170,7 +170,7 @@ func Ipv4AddrValue(v net.IP) iptypes.IPv4Address {
 	return iptypes.NewIPv4AddressValue(v.String())
 }
 
-func Ipv6AddrValue(v net.IP) iptypes.IPv6Address {
+func Ipv6Addr(v net.IP) iptypes.IPv6Address {
 	if v == nil || v.String() == "<nil>" {
 		return iptypes.NewIPv6AddressNull()
 	}
@@ -178,7 +178,7 @@ func Ipv6AddrValue(v net.IP) iptypes.IPv6Address {
 	return iptypes.NewIPv6AddressValue(v.String())
 }
 
-func Ipv4PrefixPointerValue(v *net.IPNet) cidrtypes.IPv4Prefix {
+func Ipv4PrefixPointer(v *net.IPNet) cidrtypes.IPv4Prefix {
 	if v == nil || v.String() == "<nil>" {
 		return cidrtypes.NewIPv4PrefixNull()
 	}
@@ -186,7 +186,7 @@ func Ipv4PrefixPointerValue(v *net.IPNet) cidrtypes.IPv4Prefix {
 	return cidrtypes.NewIPv4PrefixValue(v.String())
 }
 
-func Ipv6PrefixPointerValue(v *net.IPNet) cidrtypes.IPv6Prefix {
+func Ipv6PrefixPointer(v *net.IPNet) cidrtypes.IPv6Prefix {
 	if v == nil || v.String() == "<nil>" {
 		return cidrtypes.NewIPv6PrefixNull()
 	}

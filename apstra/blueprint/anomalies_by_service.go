@@ -2,8 +2,9 @@ package blueprint
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -56,5 +57,5 @@ func newAnomalyServiceSummarySet(ctx context.Context, in []apstra.BlueprintServi
 		return types.SetNull(types.ObjectType{AttrTypes: anomalyServiceSummary{}.attrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: anomalyServiceSummary{}.attrTypes()}, serviceSummaries, diags)
+	return value.SetOrNull(ctx, types.ObjectType{AttrTypes: anomalyServiceSummary{}.attrTypes()}, serviceSummaries, diags)
 }

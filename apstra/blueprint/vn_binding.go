@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -100,7 +101,7 @@ func (o *VnBinding) LoadApiData(ctx context.Context, in apstra.VnBinding, diags 
 		return
 	}
 
-	o.VlanId = utils.Int64ValueOrNull(ctx, in.VlanId, diags)
+	o.VlanId = value.Int64OrNull(ctx, in.VlanId, diags)
 	o.AccessIds = accessIds
 }
 

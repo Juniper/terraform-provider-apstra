@@ -8,10 +8,10 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -294,7 +294,7 @@ func IpLinkPrimitivesFromSubpolicies(ctx context.Context, subpolicies []*apstra.
 		return types.MapNull(types.ObjectType{AttrTypes: IpLink{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoIpLinkMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -321,7 +321,7 @@ func LoadIDsIntoIpLinkMap(ctx context.Context, subpolicies []*apstra.Connectivit
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: IpLink{}.AttrTypes()}, result, diags)
 }
 
 var _ planmodifier.String = (*ipLinkBatchIdPlanModifier)(nil)

@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -144,8 +145,8 @@ func (o prefixFilter) attrTypes() map[string]attr.Type {
 
 func (o *prefixFilter) loadApiData(ctx context.Context, in *apstra.PrefixFilter, diags *diag.Diagnostics) {
 	o.Prefix = cidrtypes.NewIPPrefixValue(in.Prefix.String())
-	o.GeMask = utils.Int64ValueOrNull(ctx, in.GeMask, diags)
-	o.LeMask = utils.Int64ValueOrNull(ctx, in.LeMask, diags)
+	o.GeMask = value.Int64OrNull(ctx, in.GeMask, diags)
+	o.LeMask = value.Int64OrNull(ctx, in.LeMask, diags)
 	o.Action = types.StringValue(in.Action.String())
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -180,7 +181,7 @@ func (o *LinkEndpoint) loadApiData(ctx context.Context, in apstra.FreeformEthern
 	if strings.Contains(o.Ipv6Address.ValueString(), "nil") {
 		o.Ipv6Address = cidrtypes.NewIPv6PrefixNull()
 	}
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Interface.Data.Tags, diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Interface.Data.Tags, diags)
 }
 
 func newFreeformEndpointMap(ctx context.Context, in [2]apstra.FreeformEthernetEndpoint, diags *diag.Diagnostics) types.Map {
@@ -194,5 +195,5 @@ func newFreeformEndpointMap(ctx context.Context, in [2]apstra.FreeformEthernetEn
 		return types.MapNull(types.ObjectType{AttrTypes: LinkEndpoint{}.attrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LinkEndpoint{}.attrTypes()}, endpoints, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: LinkEndpoint{}.attrTypes()}, endpoints, diags)
 }

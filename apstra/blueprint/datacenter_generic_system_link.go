@@ -7,6 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -118,8 +119,8 @@ func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstr
 	o.TargetSwitchId = types.StringValue(switchEndpoint.System.Id.String())
 	o.TargetSwitchIfName = types.StringPointerValue(switchEndpoint.Interface.IfName)
 	o.GroupLabel = types.StringValue(in.GroupLabel)
-	o.LagMode = utils.StringValueOrNull(ctx, switchEndpoint.Interface.LagMode.String(), diags)
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.TagLabels, diags)
+	o.LagMode = value.StringOrNull(ctx, switchEndpoint.Interface.LagMode.String(), diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.TagLabels, diags)
 }
 
 func (o *DatacenterGenericSystemLink) getTransformId(ctx context.Context, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {

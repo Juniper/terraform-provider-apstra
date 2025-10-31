@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -166,5 +167,5 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 	}
 
 	o.Ids = types.SetValueMust(types.StringType, ids)
-	o.QueryStrings = utils.ListValueOrNull(ctx, types.StringType, queryStrings, diags)
+	o.QueryStrings = value.ListOrNull(ctx, types.StringType, queryStrings, diags)
 }

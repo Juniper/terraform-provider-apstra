@@ -9,9 +9,9 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -239,14 +239,14 @@ func newBgpPeeringIpEndpoint(_ context.Context, in *apstra.ConnectivityTemplateP
 	result := BgpPeeringIpEndpoint{
 		// Name:       // handled by caller
 		// Ttl:        // handled below due to 0 = null logic
-		NeighborAsn:   utils.Int64PointerValue(in.Asn),
+		NeighborAsn:   value.Int64FromPointer(in.Asn),
 		BfdEnabled:    types.BoolValue(in.Bfd),
 		Password:      types.StringPointerValue(in.Password),
-		KeepaliveTime: utils.Int64PointerValue(in.Keepalive),
-		HoldTime:      utils.Int64PointerValue(in.Holdtime),
-		LocalAsn:      utils.Int64PointerValue(in.LocalAsn),
-		Ipv4Address:   utils.Ipv4AddrValue(in.Ipv4Addr),
-		Ipv6Address:   utils.Ipv6AddrValue(in.Ipv6Addr),
+		KeepaliveTime: value.Int64FromPointer(in.Keepalive),
+		HoldTime:      value.Int64FromPointer(in.Holdtime),
+		LocalAsn:      value.Int64FromPointer(in.LocalAsn),
+		Ipv4Address:   value.Ipv4Addr(in.Ipv4Addr),
+		Ipv6Address:   value.Ipv6Addr(in.Ipv6Addr),
 		// RoutingPolicies: handled by caller
 	}
 
@@ -287,7 +287,7 @@ func BgpPeeringIpEndpointPrimitivesFromSubpolicies(ctx context.Context, subpolic
 		return types.MapNull(types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoBgpPeeringIpEndpointMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -312,7 +312,7 @@ func LoadIDsIntoBgpPeeringIpEndpointMap(ctx context.Context, subpolicies []*apst
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringIpEndpoint{}.AttrTypes()}, result, diags)
 }
 
 var _ planmodifier.String = (*bgpPeeringIpEndpointBatchIdPlanModifier)(nil)

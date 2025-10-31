@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -196,5 +197,5 @@ func (o *ResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformRe
 		o.AllocatedFrom = types.StringPointerValue((*string)(in.AllocatedFrom))
 	}
 	o.ContainerId = types.StringValue(string(in.ContainerId))
-	o.SubnetPrefixLen = utils.Int64PointerValue(in.SubnetPrefixLen)
+	o.SubnetPrefixLen = value.Int64FromPointer(in.SubnetPrefixLen)
 }

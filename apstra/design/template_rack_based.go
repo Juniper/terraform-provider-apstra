@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -289,7 +289,7 @@ func (o *TemplateRackBased) CopyWriteOnlyElements(ctx context.Context, src *Temp
 	dstSpine.CopyWriteOnlyElements(ctx, srcSpine, diags)
 
 	// repackage the destination Spine in o
-	o.Spine = utils.ObjectValueOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
+	o.Spine = value.ObjectOrNull(ctx, Spine{}.AttrTypes(), dstSpine, diags)
 }
 
 func NewTemplateRackBasedObject(ctx context.Context, in *apstra.TemplateRackBasedData, diags *diag.Diagnostics) types.Object {

@@ -14,6 +14,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -272,8 +273,8 @@ func newBgpPeeringGenericSystem(_ context.Context, in *apstra.ConnectivityTempla
 		// Ttl:             // handled below due to 0 = null logic
 		BfdEnabled:         types.BoolValue(in.Bfd),
 		Password:           types.StringPointerValue(in.Password),
-		KeepaliveTime:      utils.Int64PointerValue(in.Keepalive),
-		HoldTime:           utils.Int64PointerValue(in.Holdtime),
+		KeepaliveTime:      value.Int64FromPointer(in.Keepalive),
+		HoldTime:           value.Int64FromPointer(in.Holdtime),
 		Ipv4AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.SessionAddressingIpv4)),
 		Ipv6AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.SessionAddressingIpv6)),
 		// LocalAsn:        // handled below
@@ -324,7 +325,7 @@ func BgpPeeringGenericSystemPrimitivesFromSubpolicies(ctx context.Context, subpo
 		return types.MapNull(types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoBgpPeeringGenericSystemMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -348,7 +349,7 @@ func LoadIDsIntoBgpPeeringGenericSystemMap(ctx context.Context, subpolicies []*a
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}, result, diags)
 }
 
 var _ planmodifier.String = (*bgpPeeringGenericSystemBatchIdPlanModifier)(nil)

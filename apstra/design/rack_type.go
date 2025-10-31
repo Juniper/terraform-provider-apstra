@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -248,7 +249,7 @@ func (o *RackType) LoadApiData(ctx context.Context, in *apstra.RackTypeData, dia
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
+	o.Description = value.StringOrNull(ctx, in.Description, diags)
 	o.FabricConnectivityDesign = types.StringValue(in.FabricConnectivityDesign.String())
 	o.LeafSwitches = NewLeafSwitchMap(ctx, in.LeafSwitches, in.FabricConnectivityDesign, diags)
 	o.AccessSwitches = NewAccessSwitchMap(ctx, in.AccessSwitches, diags)
@@ -532,9 +533,9 @@ func (o *RackType) CopyWriteOnlyElements(ctx context.Context, src *RackType, dia
 	}
 
 	// transform the native go objects (with copied object IDs) back to TF set
-	leafSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, dstLeafSwitches, diags)
-	accessSwitchMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}, dstAccessSwitches, diags)
-	genericSystemMap := utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}, dstGenericSystems, diags)
+	leafSwitchMap := value.MapOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, dstLeafSwitches, diags)
+	accessSwitchMap := value.MapOrNull(ctx, types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}, dstAccessSwitches, diags)
+	genericSystemMap := value.MapOrNull(ctx, types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}, dstGenericSystems, diags)
 	if diags.HasError() {
 		return
 	}

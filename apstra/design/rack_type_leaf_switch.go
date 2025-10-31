@@ -8,8 +8,8 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/apstra-go-sdk/speed"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -307,7 +307,7 @@ func (o *LeafSwitch) CopyWriteOnlyElements(ctx context.Context, src *LeafSwitch,
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = value.SetOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fcd enum.FabricConnectivityDesign, diags *diag.Diagnostics) types.Map {
@@ -321,7 +321,7 @@ func NewLeafSwitchMap(ctx context.Context, in []apstra.RackElementLeafSwitch, fc
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, leafSwitches, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: LeafSwitch{}.AttrTypes()}, leafSwitches, diags)
 }
 
 // LeafRedundancyModes returns permitted fabric_connectivity_design mode strings

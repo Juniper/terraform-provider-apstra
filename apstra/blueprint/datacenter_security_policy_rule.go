@@ -8,9 +8,9 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -237,7 +237,7 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 	}
 
 	o.Name = types.StringValue(in.Label)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
+	o.Description = value.StringOrNull(ctx, in.Description, diags)
 	o.Protocol = types.StringValue(rosetta.StringersToFriendlyString(in.Protocol))
 	o.Action = types.StringValue(in.Action.Value)
 	o.SrcPorts = newDatacenterPolicyRulePortRangeSet(ctx, in.SrcPort, diags)

@@ -7,8 +7,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -73,7 +73,7 @@ func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL
 			loopbackIds[memberInterface.HostingSystem.Id.String()] = loopback.Id
 		}
 	}
-	o.LoopbackIds = utils.MapValueOrNull(ctx, types.StringType, loopbackIds, diags)
+	o.LoopbackIds = value.MapOrNull(ctx, types.StringType, loopbackIds, diags)
 
 	// extract the planned loopbacks
 	var planLoopbackMap map[string]RoutingZoneLoopback
@@ -194,5 +194,5 @@ func (o *RoutingZoneLoopbacks) LoadApiData(ctx context.Context, info *apstra.Two
 		}
 	}
 
-	o.Loopbacks = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RoutingZoneLoopback{}.AttrTypes()}, loopbacks, diags)
+	o.Loopbacks = value.MapOrNull(ctx, types.ObjectType{AttrTypes: RoutingZoneLoopback{}.AttrTypes()}, loopbacks, diags)
 }

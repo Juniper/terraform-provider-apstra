@@ -3,16 +3,20 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceInterfacesByLinkTag{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceInterfacesByLinkTag{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceInterfacesByLinkTag{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceInterfacesByLinkTag{}
+)
 
 type dataSourceInterfacesByLinkTag struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -60,7 +64,7 @@ func (o *dataSourceInterfacesByLinkTag) Read(ctx context.Context, req datasource
 
 	// fill the required values
 	config.GraphQuery = types.StringValue(query.String())
-	config.Ids = utils.SetValueOrNull(ctx, types.StringType, interfaces, &resp.Diagnostics)
+	config.Ids = value.SetOrNull(ctx, types.StringType, interfaces, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

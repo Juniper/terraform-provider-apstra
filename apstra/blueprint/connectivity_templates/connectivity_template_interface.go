@@ -5,7 +5,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint/connectivity_templates/primitives"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -138,8 +138,8 @@ func (o ConnectivityTemplateInterface) Request(ctx context.Context, diags *diag.
 func (o *ConnectivityTemplateInterface) LoadApiData(ctx context.Context, in *apstra.ConnectivityTemplate, diags *diag.Diagnostics) {
 	o.Id = types.StringPointerValue((*string)(in.Id))
 	o.Name = types.StringValue(in.Label)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
+	o.Description = value.StringOrNull(ctx, in.Description, diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 	o.IpLinks = primitives.IpLinkPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 	o.RoutingZoneConstraints = primitives.RoutingZoneConstraintPrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
 	o.VirtualNetworkMultiples = primitives.VirtualNetworkMultiplePrimitivesFromSubpolicies(ctx, in.Subpolicies, diags)
