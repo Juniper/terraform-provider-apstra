@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 	"slices"
 	"strconv"
 	"testing"
+
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func TestItemInSlice(t *testing.T) {
