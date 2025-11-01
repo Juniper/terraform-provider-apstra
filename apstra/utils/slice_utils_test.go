@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"slices"
 	"strconv"
 	"testing"
 )
@@ -85,7 +86,7 @@ func TestUniq(t *testing.T) {
 
 	for i, tc := range testCases {
 		r := Uniq(tc.t)
-		if !SlicesMatch(r, tc.e) {
+		if !slices.Equal(r, tc.e) {
 			t.Fatalf("test case %d, expected %v, got %v", i, tc.e, r)
 		}
 	}
@@ -133,7 +134,7 @@ func TestElementsFromANotInB(t *testing.T) {
 
 	for i, tc := range testCases {
 		r := UniqueElementsFromA(tc.a, tc.b)
-		if !SlicesMatch(tc.e, r) {
+		if !slices.Equal(tc.e, r) {
 			t.Fatalf("test case %d, expectd %v, got %v", i, tc.e, r)
 		}
 	}
@@ -209,7 +210,7 @@ func TestSwap(t *testing.T) {
 
 	for i, tc := range testCases {
 		Swap(tc.swap[0], tc.swap[1], tc.t)
-		if !SlicesMatch(tc.t, tc.e) {
+		if !slices.Equal(tc.t, tc.e) {
 			t.Fatalf("test case %d, expected %v got %v", i, tc.e, tc.t)
 		}
 	}
@@ -242,7 +243,7 @@ func TestRevers(t *testing.T) {
 
 	for i, tc := range testCases {
 		Reverse(tc.t)
-		if !SlicesMatch(tc.t, tc.e) {
+		if !slices.Equal(tc.t, tc.e) {
 			t.Fatalf("test case %d, expected %v got %v", i, tc.e, tc.t)
 		}
 	}
@@ -275,7 +276,7 @@ func TestSliceDelete(t *testing.T) {
 
 	for i, tc := range testCases {
 		SliceDeleteUnOrdered(tc.i, &tc.s)
-		if !SlicesMatch(tc.e, tc.s) {
+		if !slices.Equal(tc.e, tc.s) {
 			t.Fatalf("test case %d, expected %v, got %v", i, tc.e, tc.s)
 		}
 	}

@@ -1,10 +1,10 @@
 package tfapstra
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"golang.org/x/exp/constraints"
 )
 
@@ -77,7 +77,7 @@ func TestSliceWithoutElement(t *testing.T) {
 	for i := range testCases {
 		if tc, ok := testCases[i].(intTestCase); ok {
 			result, removed := sliceWithoutElement(tc.in, tc.e)
-			if !utils.SlicesMatch(tc.expectedSlice, result) {
+			if !slices.Equal(tc.expectedSlice, result) {
 				t.Fatalf("expected: %v\ngot:      %v", tc.expectedSlice, result)
 			}
 			if tc.expectedRemoved != removed {
@@ -87,7 +87,7 @@ func TestSliceWithoutElement(t *testing.T) {
 		}
 		if tc, ok := testCases[i].(stringTestCase); ok {
 			result, removed := sliceWithoutElement(tc.in, tc.e)
-			if !utils.SlicesMatch(tc.expectedSlice, result) {
+			if !slices.Equal(tc.expectedSlice, result) {
 				t.Fatalf("expected: %v\ngot:      %v", tc.expectedSlice, result)
 			}
 			if tc.expectedRemoved != removed {

@@ -1,10 +1,10 @@
 package compatibility
 
 import (
+	"slices"
 	"testing"
 
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 )
 
 func TestSupportedApiVersions(t *testing.T) {
@@ -21,7 +21,7 @@ func TestSupportedApiVersions(t *testing.T) {
 
 	result := SupportedApiVersions()
 
-	if !utils.SlicesMatch(expected, result) {
+	if !slices.Equal(expected, result) {
 		t.Fatalf("expected %v, got %v", expected, result)
 	}
 }
