@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -436,7 +437,7 @@ func (o *DeviceAllocation) GetDeviceKey(ctx context.Context, client *apstra.Clie
 		o.DeviceKey = types.StringNull()
 	case 1:
 		// expected result
-		o.DeviceKey = utils.StringValueOrNull(ctx, result.Items[0].System.SystemId, diags)
+		o.DeviceKey = value.StringOrNull(ctx, result.Items[0].System.SystemId, diags)
 	default:
 		ids := make([]string, len(result.Items))
 		for i := range result.Items {

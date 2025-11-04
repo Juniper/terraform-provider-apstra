@@ -11,8 +11,8 @@ import (
 	"sort"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -228,7 +228,7 @@ func (o *BgpPeeringIpEndpoint) loadSdkPrimitive(ctx context.Context, in apstra.C
 		o.Ipv6Address = types.StringValue(attributes.Ipv6Addr.String())
 	}
 
-	o.ChildPrimitives = utils.SetValueOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
+	o.ChildPrimitives = value.SetOrNull(ctx, types.StringType, SdkPrimitivesToJsonStrings(ctx, in.Subpolicies, diags), diags)
 	o.Name = types.StringValue(in.Label)
 }
 

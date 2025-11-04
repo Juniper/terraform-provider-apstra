@@ -6,8 +6,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -99,7 +99,7 @@ func (o TelemetryServiceRegistryEntry) ResourceAttributes() map[string]resourceS
 func (o *TelemetryServiceRegistryEntry) LoadApiData(ctx context.Context, in *apstra.TelemetryServiceRegistryEntry, diag *diag.Diagnostics) {
 	o.Name = types.StringValue(in.ServiceName)
 	o.Version = types.StringValue(in.Version)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diag)
+	o.Description = value.StringOrNull(ctx, in.Description, diag)
 	o.Builtin = types.BoolValue(in.Builtin)
 	o.ApplicationSchema = jsontypes.NewNormalizedValue(string(in.ApplicationSchema))
 	o.StorageSchemaPath = types.StringValue(rosetta.StringersToFriendlyString(in.StorageSchemaPath))

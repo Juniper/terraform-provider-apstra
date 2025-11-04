@@ -14,6 +14,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -382,7 +383,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		if data.RtPolicy == nil || data.RtPolicy.ImportRTs == nil {
 			o.ImportRouteTargets = types.SetNull(types.StringType)
 		} else {
-			o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, data.RtPolicy.ImportRTs, diags)
+			o.ImportRouteTargets = value.SetOrNull(ctx, types.StringType, data.RtPolicy.ImportRTs, diags)
 		}
 	}
 
@@ -390,7 +391,7 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.Sec
 		if data.RtPolicy == nil || data.RtPolicy.ExportRTs == nil {
 			o.ExportRouteTargets = types.SetNull(types.StringType)
 		} else {
-			o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, data.RtPolicy.ExportRTs, diags)
+			o.ExportRouteTargets = value.SetOrNull(ctx, types.StringType, data.RtPolicy.ExportRTs, diags)
 		}
 	}
 
@@ -408,7 +409,7 @@ func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []ne
 	for i, ip := range IPs {
 		dhcpServers[i] = ip.String()
 	}
-	o.DhcpServers = utils.SetValueOrNull(ctx, types.StringType, dhcpServers, diags)
+	o.DhcpServers = value.SetOrNull(ctx, types.StringType, dhcpServers, diags)
 }
 
 func (o *DatacenterRoutingZone) Query(szResultName string) *apstra.MatchQuery {

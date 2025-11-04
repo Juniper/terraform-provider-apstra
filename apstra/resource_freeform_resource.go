@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -323,7 +324,7 @@ func (o *resourceFreeformResource) Read(ctx context.Context, req resource.ReadRe
 		return
 	}
 
-	state.AssignedTo = utils.SetValueOrNull(ctx, types.StringType, assignedTo, &resp.Diagnostics)
+	state.AssignedTo = value.SetOrNull(ctx, types.StringType, assignedTo, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

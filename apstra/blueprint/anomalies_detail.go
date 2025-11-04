@@ -2,8 +2,9 @@ package blueprint
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -80,11 +81,11 @@ func (o *anomalyDetail) loadApiData(ctx context.Context, in *apstra.BlueprintAno
 	o.AnomalyId = types.StringValue(in.Id.String())
 	o.Severity = types.StringValue(in.Severity)
 	o.AnomalyType = types.StringValue(in.AnomalyType)
-	o.Expected = utils.StringValueOrNull(ctx, string(in.Expected), diags)
-	o.Actual = utils.StringValueOrNull(ctx, string(in.Actual), diags)
-	o.Identity = utils.StringValueOrNull(ctx, string(in.Identity), diags)
-	o.Role = utils.StringValueOrNull(ctx, role, diags)
-	o.Anomalous = utils.StringValueOrNull(ctx, string(in.Anomalous), diags)
+	o.Expected = value.StringOrNull(ctx, string(in.Expected), diags)
+	o.Actual = value.StringOrNull(ctx, string(in.Actual), diags)
+	o.Identity = value.StringOrNull(ctx, string(in.Identity), diags)
+	o.Role = value.StringOrNull(ctx, role, diags)
+	o.Anomalous = value.StringOrNull(ctx, string(in.Anomalous), diags)
 }
 
 func newAnomalyDetailSet(ctx context.Context, in []apstra.BlueprintAnomaly, diags *diag.Diagnostics) types.Set {
@@ -96,5 +97,5 @@ func newAnomalyDetailSet(ctx context.Context, in []apstra.BlueprintAnomaly, diag
 		return types.SetNull(types.ObjectType{AttrTypes: anomalyDetail{}.attrTypes()})
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: anomalyDetail{}.attrTypes()}, anomalyDetails, diags)
+	return value.SetOrNull(ctx, types.ObjectType{AttrTypes: anomalyDetail{}.attrTypes()}, anomalyDetails, diags)
 }

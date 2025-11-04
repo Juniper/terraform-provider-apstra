@@ -3,8 +3,9 @@ package design
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -263,7 +264,7 @@ func (o *AccessSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementAc
 	o.LogicalDeviceId = types.StringNull()
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, in.LogicalDevice, diags)
 	o.EsiLagInfo = NewEsiLagInfo(ctx, in.EsiLagInfo, diags)
-	o.RedundancyProtocol = utils.StringValueWithNull(ctx, in.RedundancyProtocol.String(), apstra.AccessRedundancyProtocolNone.String(), diags)
+	o.RedundancyProtocol = value.StringWithNull(ctx, in.RedundancyProtocol.String(), apstra.AccessRedundancyProtocolNone.String(), diags)
 	o.Count = types.Int64Value(int64(in.InstanceCount))
 	o.Links = NewLinkMap(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
@@ -292,7 +293,7 @@ func (o *AccessSwitch) CopyWriteOnlyElements(ctx context.Context, src *AccessSwi
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = value.SetOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
 	var d diag.Diagnostics
 
@@ -317,7 +318,7 @@ func (o *AccessSwitch) CopyWriteOnlyElements(ctx context.Context, src *AccessSwi
 		}
 	}
 
-	o.Links = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, dstLinks, diags)
+	o.Links = value.MapOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, dstLinks, diags)
 	if diags.HasError() {
 		return
 	}
@@ -334,5 +335,5 @@ func NewAccessSwitchMap(ctx context.Context, in []apstra.RackElementAccessSwitch
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}, accessSwitches, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: AccessSwitch{}.AttrTypes()}, accessSwitches, diags)
 }

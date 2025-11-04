@@ -5,7 +5,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -133,7 +133,7 @@ func (o *IntegerPool) LoadApiData(ctx context.Context, in *apstra.IntPool, diags
 	o.Used = types.Int64Value(int64(in.Used))
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
 	o.Total = types.Int64Value(int64(in.Total))
-	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: IntegerPoolRange{}.AttrTypes()}, ranges, diags)
+	o.Ranges = value.SetOrNull(ctx, types.ObjectType{AttrTypes: IntegerPoolRange{}.AttrTypes()}, ranges, diags)
 }
 
 func (o *IntegerPool) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.IntPoolRequest {
@@ -172,5 +172,5 @@ func (o *IntegerPool) SetMutablesToNull(ctx context.Context, diags *diag.Diagnos
 		ranges[i].setMutablesToNull()
 	}
 
-	o.Ranges = utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: IntegerPoolRange{}.AttrTypes()}, ranges, diags)
+	o.Ranges = value.SetOrNull(ctx, types.ObjectType{AttrTypes: IntegerPoolRange{}.AttrTypes()}, ranges, diags)
 }

@@ -7,10 +7,10 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -218,7 +218,7 @@ func (o *DatacenterRoutingZoneConstraint) LoadApiData(ctx context.Context, in ap
 		o.MaxCountConstraint = types.Int64Value(int64(*in.MaxRoutingZones))
 	}
 	o.RoutingZonesListConstraint = types.StringValue(in.Mode.String())
-	o.Constraints = utils.SetValueOrNull(ctx, types.StringType, in.RoutingZoneIds, diags)
+	o.Constraints = value.SetOrNull(ctx, types.StringType, in.RoutingZoneIds, diags)
 }
 
 func (o DatacenterRoutingZoneConstraint) Query(ctx context.Context, rzcResultName string, diags *diag.Diagnostics) *apstra.MatchQuery {

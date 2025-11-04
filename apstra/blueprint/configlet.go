@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -141,7 +141,7 @@ func (o *DatacenterConfiglet) LoadApiData(ctx context.Context, in *apstra.TwoSta
 
 	o.Condition = types.StringValue(in.Condition)
 	o.Name = types.StringValue(in.Label)
-	o.Generators = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: ConfigletGenerator{}.AttrTypes()}, generators, diags)
+	o.Generators = value.ListOrNull(ctx, types.ObjectType{AttrTypes: ConfigletGenerator{}.AttrTypes()}, generators, diags)
 }
 
 func (o *DatacenterConfiglet) LoadCatalogConfigletData(ctx context.Context, in *apstra.ConfigletData, diags *diag.Diagnostics) {
@@ -157,7 +157,7 @@ func (o *DatacenterConfiglet) LoadCatalogConfigletData(ctx context.Context, in *
 		return
 	}
 
-	o.Generators = utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: ConfigletGenerator{}.AttrTypes()}, generators, diags)
+	o.Generators = value.ListOrNull(ctx, types.ObjectType{AttrTypes: ConfigletGenerator{}.AttrTypes()}, generators, diags)
 	if diags.HasError() {
 		return
 	}

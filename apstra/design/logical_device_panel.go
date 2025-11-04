@@ -7,7 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/speed"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -216,5 +216,5 @@ func NewLogicalDevicePanelList(ctx context.Context, in []apstra.LogicalDevicePan
 		}
 	}
 
-	return utils.ListValueOrNull(ctx, types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()}, panels, diags)
+	return value.ListOrNull(ctx, types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()}, panels, diags)
 }

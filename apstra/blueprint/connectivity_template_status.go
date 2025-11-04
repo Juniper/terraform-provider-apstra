@@ -7,8 +7,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -74,5 +74,5 @@ func (o *ConnectivityTemplateStatus) LoadApiData(ctx context.Context, in apstra.
 	o.Description = types.StringValue(in.Description)
 	o.Status = types.StringValue(in.Status.String())
 	o.AssignmentCount = types.Int64Value(int64(in.AppPointsCount))
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -128,7 +129,7 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Read(ctx context.Con
 
 	// remainingCtIds are the previously assigned IDs (state) which are still assigned (current)
 	remainingCtIds := utils.SliceIntersectionOfAB(currentCtIds, stateCtIds)
-	state.ConnectivityTemplateIds = utils.SetValueOrNull(ctx, types.StringType, remainingCtIds, &resp.Diagnostics)
+	state.ConnectivityTemplateIds = value.SetOrNull(ctx, types.StringType, remainingCtIds, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

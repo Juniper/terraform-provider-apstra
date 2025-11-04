@@ -10,6 +10,7 @@ import (
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -131,5 +132,5 @@ func (o *AllocGroup) LoadApiData(ctx context.Context, in *apstra.FreeformAllocGr
 	// pack
 	o.Name = types.StringValue(in.Name)
 	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.Type))
-	o.PoolIds = utils.SetValueOrNull(ctx, types.StringType, in.PoolIds, diags)
+	o.PoolIds = value.SetOrNull(ctx, types.StringType, in.PoolIds, diags)
 }

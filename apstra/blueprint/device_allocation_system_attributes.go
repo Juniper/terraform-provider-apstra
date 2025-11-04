@@ -18,6 +18,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -160,7 +161,7 @@ func (o *DeviceAllocationSystemAttributes) Get(ctx context.Context, bp *apstra.T
 			diags.AddError(fmt.Sprintf("failed to readtags from node %s", nodeId), err.Error())
 			return
 		}
-		o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)
+		o.Tags = value.SetOrNull(ctx, types.StringType, tags, diags)
 	}
 }
 

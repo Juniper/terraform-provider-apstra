@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -137,8 +138,8 @@ func (o *ConfigletGenerator) LoadApiData(ctx context.Context, in *apstra.Configl
 	o.ConfigStyle = types.StringValue(in.ConfigStyle.String())
 	o.Section = types.StringValue(rosetta.StringersToFriendlyString(in.Section, in.ConfigStyle))
 	o.TemplateText = types.StringValue(in.TemplateText)
-	o.NegationTemplateText = utils.StringValueOrNull(ctx, in.NegationTemplateText, diags)
-	o.FileName = utils.StringValueOrNull(ctx, in.Filename, diags)
+	o.NegationTemplateText = value.StringOrNull(ctx, in.NegationTemplateText, diags)
+	o.FileName = value.StringOrNull(ctx, in.Filename, diags)
 }
 
 func (o *ConfigletGenerator) Request(_ context.Context, diags *diag.Diagnostics) *apstra.ConfigletGenerator {

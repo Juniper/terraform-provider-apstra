@@ -5,8 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"text/template"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -16,9 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"os"
-	"strings"
-	"text/template"
 )
 
 type Deploy struct {
@@ -109,7 +110,6 @@ func (o *Deploy) Deploy(ctx context.Context, commentTemplate *CommentTemplate, c
 	if status.BuildWarningsCount > 0 {
 		diags.AddWarning("Blueprint has build warnings",
 			fmt.Sprintf("Blueprint %s has %d build warnings, but deployment may proceed", o.BlueprintId, status.BuildWarningsCount))
-
 	}
 
 	if !status.HasUncommittedChanges {
@@ -185,7 +185,6 @@ func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Di
 	if status.BuildWarningsCount > 0 {
 		diags.AddWarning("Blueprint has build warnings",
 			fmt.Sprintf("%d build warnings must be resolved", status.BuildWarningsCount))
-
 	}
 
 	o.HasUncommittedChanges = types.BoolValue(status.HasUncommittedChanges)
@@ -206,7 +205,7 @@ func (o *Deploy) Read(ctx context.Context, client *apstra.Client, diags *diag.Di
 		revision = &apstra.BlueprintRevision{}
 	}
 
-	o.Comment = utils.StringValueOrNull(ctx, revision.Description, diags)
+	o.Comment = value.StringOrNull(ctx, revision.Description, diags)
 	o.ActiveRevision = types.Int64Value(int64(revision.RevisionId))
 	o.StagedRevision = types.Int64Value(int64(status.Version))
 }

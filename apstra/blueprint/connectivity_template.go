@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	connectivitytemplate "github.com/Juniper/terraform-provider-apstra/apstra/connectivity_template"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -143,7 +144,7 @@ func (o *ConnectivityTemplate) LoadApiData(ctx context.Context, in *apstra.Conne
 
 	o.Id = types.StringValue(in.Id.String())
 	o.Name = types.StringValue(in.Label)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)            // safe to ignore diagnostic here
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)           // safe to ignore diagnostic here
-	o.Primitives = utils.SetValueOrNull(ctx, types.StringType, oPrimitives, diags) // safe to ignore diagnostic here
+	o.Description = value.StringOrNull(ctx, in.Description, diags)            // safe to ignore diagnostic here
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)           // safe to ignore diagnostic here
+	o.Primitives = value.SetOrNull(ctx, types.StringType, oPrimitives, diags) // safe to ignore diagnostic here
 }

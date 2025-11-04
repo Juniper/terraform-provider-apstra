@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -139,7 +139,7 @@ func (o *SuperSpine) CopyWriteOnlyElements(ctx context.Context, src *SuperSpine,
 		return
 	}
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = value.SetOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func NewDesignTemplateSuperSpineObject(ctx context.Context, in *apstra.Superspine, diags *diag.Diagnostics) types.Object {

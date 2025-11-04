@@ -3,8 +3,9 @@ package design
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -283,7 +284,7 @@ func (o *GenericSystem) CopyWriteOnlyElements(ctx context.Context, src *GenericS
 	}
 
 	o.LogicalDeviceId = types.StringValue(src.LogicalDeviceId.ValueString())
-	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = value.SetOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 
 	var d diag.Diagnostics
 
@@ -308,11 +309,10 @@ func (o *GenericSystem) CopyWriteOnlyElements(ctx context.Context, src *GenericS
 		}
 	}
 
-	o.Links = utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, dstLinks, diags)
+	o.Links = value.MapOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, dstLinks, diags)
 	if diags.HasError() {
 		return
 	}
-
 }
 
 func NewGenericSystemMap(ctx context.Context, in []apstra.RackElementGenericSystem, diags *diag.Diagnostics) types.Map {
@@ -326,5 +326,5 @@ func NewGenericSystemMap(ctx context.Context, in []apstra.RackElementGenericSyst
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}, genericSystems, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: GenericSystem{}.AttrTypes()}, genericSystems, diags)
 }

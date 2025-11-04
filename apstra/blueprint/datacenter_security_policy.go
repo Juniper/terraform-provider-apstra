@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -216,19 +216,19 @@ func (o *DatacenterSecurityPolicy) Read(ctx context.Context, bp *apstra.TwoStage
 func (o *DatacenterSecurityPolicy) loadApiData(ctx context.Context, data *apstra.PolicyData, diags *diag.Diagnostics) {
 	var srcAppPointId, dstAppPointId types.String
 	if data.SrcApplicationPoint != nil {
-		srcAppPointId = utils.StringValueOrNull(ctx, data.SrcApplicationPoint.Id.String(), diags)
+		srcAppPointId = value.StringOrNull(ctx, data.SrcApplicationPoint.Id.String(), diags)
 	}
 	if data.DstApplicationPoint != nil {
-		dstAppPointId = utils.StringValueOrNull(ctx, data.DstApplicationPoint.Id.String(), diags)
+		dstAppPointId = value.StringOrNull(ctx, data.DstApplicationPoint.Id.String(), diags)
 	}
 
 	o.Name = types.StringValue(data.Label)
-	o.Description = utils.StringValueOrNull(ctx, data.Description, diags)
+	o.Description = value.StringOrNull(ctx, data.Description, diags)
 	o.Enabled = types.BoolValue(data.Enabled)
 	o.SrcAppPointId = srcAppPointId
 	o.DstAppPointId = dstAppPointId
 	o.Rules = newPolicyRuleList(ctx, data.Rules, diags)
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, data.Tags, diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, data.Tags, diags)
 }
 
 func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {

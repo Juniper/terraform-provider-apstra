@@ -2,8 +2,9 @@ package design
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -117,7 +118,7 @@ func (o Tag) AttrTypes() map[string]attr.Type {
 
 func (o *Tag) LoadApiData(ctx context.Context, in *apstra.DesignTagData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
+	o.Description = value.StringOrNull(ctx, in.Description, diags)
 }
 
 func (o *Tag) Request(_ context.Context, _ *diag.Diagnostics) *apstra.DesignTagRequest {
@@ -138,5 +139,5 @@ func NewTagSet(ctx context.Context, in []apstra.DesignTagData, diags *diag.Diagn
 		tags[i].LoadApiData(ctx, &t, diags)
 	}
 
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: Tag{}.AttrTypes()}, tags, diags)
+	return value.SetOrNull(ctx, types.ObjectType{AttrTypes: Tag{}.AttrTypes()}, tags, diags)
 }

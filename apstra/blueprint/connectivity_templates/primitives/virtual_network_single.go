@@ -7,7 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -170,7 +170,7 @@ func VirtualNetworkSinglePrimitivesFromSubpolicies(ctx context.Context, subpolic
 		return types.MapNull(types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoVirtualNetworkSingleMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -195,7 +195,7 @@ func LoadIDsIntoVirtualNetworkSingleMap(ctx context.Context, subpolicies []*apst
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: VirtualNetworkSingle{}.AttrTypes()}, result, diags)
 }
 
 var _ planmodifier.String = (*virtualNetworkSingleBatchIdPlanModifier)(nil)

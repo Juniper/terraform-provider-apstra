@@ -18,6 +18,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
@@ -718,11 +719,11 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	}
 
 	o.Name = types.StringValue(in.Label)
-	o.Description = utils.StringValueOrNull(ctx, in.Description, diags)
+	o.Description = value.StringOrNull(ctx, in.Description, diags)
 	o.Type = types.StringValue(in.VnType.String())
 	o.RoutingZoneId = types.StringValue(in.SecurityZoneId.String())
 	o.Bindings = newBindingMap(ctx, in.VnBindings, diags)
-	o.Vni = utils.Int64ValueOrNull(ctx, in.VnId, diags)
+	o.Vni = value.Int64OrNull(ctx, in.VnId, diags)
 	o.DhcpServiceEnabled = types.BoolValue(bool(in.DhcpService))
 	o.IPv4ConnectivityEnabled = types.BoolValue(in.Ipv4Enabled)
 	o.IPv6ConnectivityEnabled = types.BoolValue(in.Ipv6Enabled)
@@ -744,19 +745,19 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.V
 	}
 	o.IPv4GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv4Enabled)
 	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv6Enabled)
-	o.IPv4Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv4, diags)
-	o.IPv6Gateway = utils.StringValueOrNull(ctx, virtualGatewayIpv6, diags)
-	o.L3Mtu = utils.Int64ValueOrNull(ctx, in.L3Mtu, diags)
+	o.IPv4Gateway = value.StringOrNull(ctx, virtualGatewayIpv4, diags)
+	o.IPv6Gateway = value.StringOrNull(ctx, virtualGatewayIpv6, diags)
+	o.L3Mtu = value.Int64OrNull(ctx, in.L3Mtu, diags)
 
 	if in.RtPolicy == nil {
 		o.ImportRouteTargets = types.SetNull(types.StringType)
 		o.ExportRouteTargets = types.SetNull(types.StringType)
 	} else {
-		o.ImportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ImportRTs, diags)
-		o.ExportRouteTargets = utils.SetValueOrNull(ctx, types.StringType, in.RtPolicy.ExportRTs, diags)
+		o.ImportRouteTargets = value.SetOrNull(ctx, types.StringType, in.RtPolicy.ImportRTs, diags)
+		o.ExportRouteTargets = value.SetOrNull(ctx, types.StringType, in.RtPolicy.ExportRTs, diags)
 	}
 
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 }
 
 func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {

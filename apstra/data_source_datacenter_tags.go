@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -116,7 +117,7 @@ func (o *dataSourceDatacenterTags) Read(ctx context.Context, req datasource.Read
 	var names []attr.Value
 
 	if len(filters) == 0 { // quick exit if user wants all tags
-		config.Ids = utils.SetValueOrNull(ctx, types.StringType, slices.Collect(maps.Keys(tags)), &resp.Diagnostics)
+		config.Ids = value.SetOrNull(ctx, types.StringType, slices.Collect(maps.Keys(tags)), &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}

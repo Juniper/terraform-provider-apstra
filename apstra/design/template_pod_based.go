@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -160,7 +160,7 @@ func (o *TemplatePodBased) CopyWriteOnlyElements(ctx context.Context, src *Templ
 	dstSuperSpine.CopyWriteOnlyElements(ctx, srcSuperSpine, diags)
 
 	// repackage the destination SuperSpine in o
-	o.SuperSpine = utils.ObjectValueOrNull(ctx, SuperSpine{}.AttrTypes(), dstSuperSpine, diags)
+	o.SuperSpine = value.ObjectOrNull(ctx, SuperSpine{}.AttrTypes(), dstSuperSpine, diags)
 	//
 	//dstPodInfoMap := make(map[string]TemplatePodInfo)
 	//diags.Append(o.PodInfos.ElementsAs(ctx, &dstPodInfoMap, false)...)

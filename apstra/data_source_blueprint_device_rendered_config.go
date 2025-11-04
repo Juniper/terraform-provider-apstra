@@ -8,7 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -102,13 +102,13 @@ func (o *dataSourceBlueprintNodeConfig) Read(ctx context.Context, req datasource
 	}
 
 	if diff != nil {
-		config.Incremental = utils.StringValueOrNull(ctx, diff.Config, &resp.Diagnostics)
+		config.Incremental = value.StringOrNull(ctx, diff.Config, &resp.Diagnostics)
 	} else {
 		config.Incremental = types.StringNull()
 	}
 
-	config.DeployedCfg = utils.StringValueOrNull(ctx, deployed, &resp.Diagnostics)
-	config.StagedCfg = utils.StringValueOrNull(ctx, staged, &resp.Diagnostics)
+	config.DeployedCfg = value.StringOrNull(ctx, deployed, &resp.Diagnostics)
+	config.StagedCfg = value.StringOrNull(ctx, staged, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

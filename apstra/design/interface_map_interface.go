@@ -2,8 +2,9 @@ package design
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -72,7 +73,7 @@ func (o *InterfaceMapInterface) LoadApiData(ctx context.Context, in *apstra.Inte
 	mapping.LoadApiData(ctx, &in.Mapping, diags)
 
 	o.Name = types.StringValue(in.Name)
-	o.Roles = utils.SetValueOrNull(ctx, types.StringType, in.Roles.Strings(), diags)
+	o.Roles = value.SetOrNull(ctx, types.StringType, in.Roles.Strings(), diags)
 	o.Mapping = NewInterfaceMapMappingObject(ctx, &in.Mapping, diags)
 	o.Active = types.BoolValue(bool(in.ActiveState))
 	o.Position = types.Int64Value(int64(in.Position))
@@ -88,5 +89,5 @@ func NewInterfaceMapInterfaceSet(ctx context.Context, in []apstra.InterfaceMapIn
 			return types.SetNull(types.ObjectType{AttrTypes: InterfaceMapInterface{}.AttrTypes()})
 		}
 	}
-	return utils.SetValueOrNull(ctx, types.ObjectType{AttrTypes: InterfaceMapInterface{}.AttrTypes()}, interfaces, diags)
+	return value.SetOrNull(ctx, types.ObjectType{AttrTypes: InterfaceMapInterface{}.AttrTypes()}, interfaces, diags)
 }

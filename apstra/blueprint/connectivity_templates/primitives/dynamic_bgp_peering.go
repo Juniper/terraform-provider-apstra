@@ -9,9 +9,9 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -252,13 +252,13 @@ func newDynamicBgpPeering(_ context.Context, in *apstra.ConnectivityTemplatePrim
 		// Ttl:         // handled below due to 0 = null logic
 		BfdEnabled:     types.BoolValue(in.Bfd),
 		Password:       types.StringPointerValue(in.Password),
-		KeepaliveTime:  utils.Int64PointerValue(in.Keepalive),
-		HoldTime:       utils.Int64PointerValue(in.Holdtime),
+		KeepaliveTime:  value.Int64FromPointer(in.Keepalive),
+		HoldTime:       value.Int64FromPointer(in.Holdtime),
 		Ipv4Enabled:    types.BoolValue(in.SessionAddressingIpv4),
 		Ipv6Enabled:    types.BoolValue(in.SessionAddressingIpv6),
-		LocalAsn:       utils.Int64PointerValue(in.LocalAsn),
-		Ipv4PeerPrefix: utils.Ipv4PrefixPointerValue(in.PrefixNeighborIpv4),
-		Ipv6PeerPrefix: utils.Ipv6PrefixPointerValue(in.PrefixNeighborIpv6),
+		LocalAsn:       value.Int64FromPointer(in.LocalAsn),
+		Ipv4PeerPrefix: value.Ipv4PrefixPointer(in.PrefixNeighborIpv4),
+		Ipv6PeerPrefix: value.Ipv6PrefixPointer(in.PrefixNeighborIpv6),
 		// RoutingPolicies: types.Set{}, // set after this function is invoked
 	}
 
@@ -299,7 +299,7 @@ func DynamicBgpPeeringPrimitivesFromSubpolicies(ctx context.Context, subpolicies
 		return types.MapNull(types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()})
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
 }
 
 func LoadIDsIntoDynamicBgpPeeringMap(ctx context.Context, subpolicies []*apstra.ConnectivityTemplatePrimitive, inMap types.Map, diags *diag.Diagnostics) types.Map {
@@ -323,7 +323,7 @@ func LoadIDsIntoDynamicBgpPeeringMap(ctx context.Context, subpolicies []*apstra.
 		}
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: DynamicBgpPeering{}.AttrTypes()}, result, diags)
 }
 
 var _ planmodifier.String = (*dynamicBgpPeeringBatchIdPlanModifier)(nil)

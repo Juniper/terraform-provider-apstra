@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -183,5 +184,5 @@ func (o *Link) LoadApiData(ctx context.Context, in *apstra.FreeformLinkData, dia
 	o.Name = types.StringValue(in.Label)
 	o.Endpoints = newFreeformEndpointMap(ctx, in.Endpoints, diags) // safe to ignore diagnostic here
 	o.AggregateLinkId = types.StringPointerValue((*string)(in.AggregateLinkId))
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }

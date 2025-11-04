@@ -14,6 +14,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -250,7 +251,7 @@ func (o *DatacenterGenericSystem) ReadTags(ctx context.Context, bp *apstra.TwoSt
 		return
 	}
 
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, tags, diags)
+	o.Tags = value.SetOrNull(ctx, types.StringType, tags, diags)
 }
 
 func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
@@ -1416,7 +1417,7 @@ func (o *DatacenterGenericSystem) ReadSwitchInterfaceApplicationPoints(ctx conte
 		}
 	}
 
-	o.AppPointsByGroupLabel = utils.MapValueOrNull(ctx, types.StringType, groupLabelToIntf, diags)
+	o.AppPointsByGroupLabel = value.MapOrNull(ctx, types.StringType, groupLabelToIntf, diags)
 
 	tagToIntfSlice := make(map[string][]apstra.ObjectId)
 	for tag, intfMap := range tagToIntfMap {
@@ -1424,5 +1425,5 @@ func (o *DatacenterGenericSystem) ReadSwitchInterfaceApplicationPoints(ctx conte
 			tagToIntfSlice[tag] = append(tagToIntfSlice[tag], intf)
 		}
 	}
-	o.AppPointsByTag = utils.MapValueOrNull(ctx, types.SetType{ElemType: types.StringType}, tagToIntfSlice, diags)
+	o.AppPointsByTag = value.MapOrNull(ctx, types.SetType{ElemType: types.StringType}, tagToIntfSlice, diags)
 }

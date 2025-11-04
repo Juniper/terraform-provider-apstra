@@ -7,6 +7,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -99,7 +100,7 @@ func (o *dataSourceFreeformResource) Read(ctx context.Context, req datasource.Re
 		return
 	}
 
-	config.AssignedTo = utils.SetValueOrNull(ctx, types.StringType, assignedTo, &resp.Diagnostics)
+	config.AssignedTo = value.SetOrNull(ctx, types.StringType, assignedTo, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

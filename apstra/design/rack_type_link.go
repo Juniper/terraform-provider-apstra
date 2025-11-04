@@ -6,7 +6,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/speed"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -233,8 +233,8 @@ func (o *RackLink) LoadApiData(ctx context.Context, in *apstra.RackLink, diags *
 	o.TargetSwitchName = types.StringValue(in.TargetSwitchLabel)
 	o.LinksPerSwitch = types.Int64Value(int64(in.LinkPerSwitchCount))
 	o.Speed = types.StringValue(string(in.LinkSpeed))
-	o.LagMode = utils.StringValueWithNull(ctx, in.LagMode.String(), apstra.RackLinkLagModeNone.String(), diags)
-	o.SwitchPeer = utils.StringValueWithNull(ctx, in.SwitchPeer.String(), apstra.RackLinkSwitchPeerNone.String(), diags)
+	o.LagMode = value.StringWithNull(ctx, in.LagMode.String(), apstra.RackLinkLagModeNone.String(), diags)
+	o.SwitchPeer = value.StringWithNull(ctx, in.SwitchPeer.String(), apstra.RackLinkSwitchPeerNone.String(), diags)
 	o.TagIds = types.SetNull(types.StringType)
 	o.Tags = NewTagSet(ctx, in.Tags, diags)
 }
@@ -244,7 +244,7 @@ func (o *RackLink) CopyWriteOnlyElements(ctx context.Context, src *RackLink, dia
 		diags.AddError(errProviderBug, "RackLink.CopyWriteOnlyElements: attempt to copy from nil source")
 		return
 	}
-	o.TagIds = utils.SetValueOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
+	o.TagIds = value.SetOrNull(ctx, types.StringType, src.TagIds.Elements(), diags)
 }
 
 func (o *RackLink) LinkAttachmentType(upstreamRedundancyMode fmt.Stringer, _ *diag.Diagnostics) apstra.RackLinkAttachmentType {
@@ -285,5 +285,5 @@ func NewLinkMap(ctx context.Context, in []apstra.RackLink, diags *diag.Diagnosti
 		links[link.Label] = l
 	}
 
-	return utils.MapValueOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, links, diags)
+	return value.MapOrNull(ctx, types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}, links, diags)
 }

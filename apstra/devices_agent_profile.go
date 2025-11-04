@@ -6,6 +6,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -144,9 +145,9 @@ func (o *agentProfile) request(ctx context.Context, diags *diag.Diagnostics) *ap
 func (o *agentProfile) loadApiData(ctx context.Context, in *apstra.AgentProfile, diags *diag.Diagnostics) {
 	o.Id = types.StringValue(string(in.Id))
 	o.Name = types.StringValue(in.Label)
-	o.Platform = utils.StringValueOrNull(ctx, in.Platform, diags)
+	o.Platform = value.StringOrNull(ctx, in.Platform, diags)
 	o.HasUsername = types.BoolValue(in.HasUsername)
 	o.HasPassword = types.BoolValue(in.HasPassword)
-	o.Packages = utils.MapValueOrNull(ctx, types.StringType, in.Packages, diags)
-	o.OpenOptions = utils.MapValueOrNull(ctx, types.StringType, in.OpenOptions, diags)
+	o.Packages = value.MapOrNull(ctx, types.StringType, in.Packages, diags)
+	o.OpenOptions = value.MapOrNull(ctx, types.StringType, in.OpenOptions, diags)
 }

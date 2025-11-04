@@ -9,6 +9,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -188,5 +189,5 @@ func (o *System) LoadApiData(ctx context.Context, in *apstra.FreeformSystemData,
 	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.Type))
 	o.DeviceProfileId = types.StringPointerValue((*string)(in.DeviceProfileId))
 	o.SystemId = types.StringPointerValue((*string)(in.SystemId))
-	o.Tags = utils.SetValueOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
+	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags) // safe to ignore diagnostic here
 }
