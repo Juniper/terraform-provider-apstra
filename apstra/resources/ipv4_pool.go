@@ -5,7 +5,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/numbers"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -132,8 +132,8 @@ func (o *Ipv4Pool) LoadApiData(ctx context.Context, in *apstra.IpPool, diags *di
 	o.Name = types.StringValue(in.DisplayName)
 	o.Status = types.StringValue(in.Status.String())
 	o.UsedPercentage = types.Float64Value(float64(in.UsedPercentage))
-	o.Used = types.NumberValue(utils.BigIntToBigFloat(&in.Used))
-	o.Total = types.NumberValue(utils.BigIntToBigFloat(&in.Total))
+	o.Used = types.NumberValue(numbers.BigIntToBigFloat(&in.Used))
+	o.Total = types.NumberValue(numbers.BigIntToBigFloat(&in.Total))
 	o.Subnets = value.SetOrNull(ctx, types.ObjectType{AttrTypes: Ipv4PoolSubnet{}.AttrTypes()}, subnets, diags)
 }
 
