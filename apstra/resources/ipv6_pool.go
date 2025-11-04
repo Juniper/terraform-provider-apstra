@@ -5,9 +5,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/Juniper/terraform-provider-apstra/internal/numbers"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
