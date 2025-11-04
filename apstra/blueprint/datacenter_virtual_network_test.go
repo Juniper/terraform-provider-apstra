@@ -4,6 +4,7 @@ package blueprint
 
 import (
 	"context"
+	"slices"
 	"sort"
 	"testing"
 
@@ -97,11 +98,11 @@ func TestRedunancyGroupIdToRedundancyGroupInfo(t *testing.T) {
 		sort.Strings(rg.memberIds)
 		switch rg.role {
 		case "access":
-			if !utils.SlicesMatch(accessNodes, rg.memberIds) {
+			if !slices.Equal(accessNodes, rg.memberIds) {
 				t.Fatalf("access nodes: expected %v, got %v", accessNodes, rg.memberIds)
 			}
 		case "leaf":
-			if !utils.SlicesMatch(leafNodes, rg.memberIds) {
+			if !slices.Equal(leafNodes, rg.memberIds) {
 				t.Fatalf("leaf nodes: expected %v, got %v", leafNodes, rg.memberIds)
 			}
 		}

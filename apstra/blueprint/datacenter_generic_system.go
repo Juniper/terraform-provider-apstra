@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"slices"
 	"sort"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -431,7 +432,7 @@ func (o *DatacenterGenericSystem) UpdateTags(ctx context.Context, bp *apstra.Two
 	sort.Strings(planTags)
 	sort.Strings(stateTags)
 
-	if utils.SlicesMatch(planTags, stateTags) {
+	if slices.Equal(planTags, stateTags) {
 		// no planned changes to tag set
 		return
 	}
