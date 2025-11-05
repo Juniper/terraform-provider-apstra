@@ -16,7 +16,6 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -974,7 +973,7 @@ func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
 			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup).String(),
-			vlanId:                   oneOf(nil, pointer.To(rand.IntN(4000)+100)),
+			vlanId:                   oneOf(nil, pointer.To(rand.IntN(3995)+100)),
 			l3Mtu:                    oneOf(nil, pointer.To((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),
 			ipv4AddressingType:       ipv4AddressingType,
 			ipv6AddressingType:       ipv6AddressingType,

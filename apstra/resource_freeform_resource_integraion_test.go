@@ -14,7 +14,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/hashicorp/go-version"
