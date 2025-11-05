@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"math"
 	"net"
 	"slices"
@@ -767,7 +768,9 @@ func (o DatacenterGenericSystem) LinkGroupLabels(ctx context.Context, diags *dia
 		groupLabelMap[link.GroupLabel.ValueString()] = struct{}{}
 	}
 
-	return utils.MapKeysSorted(groupLabelMap)
+	result := slices.Collect(maps.Keys(groupLabelMap))
+	slices.Sort(result)
+	return result
 }
 
 // LinkTags returns a sorted []string representing all of the tags
@@ -788,7 +791,9 @@ func (o DatacenterGenericSystem) LinkTags(ctx context.Context, diags *diag.Diagn
 		}
 	}
 
-	return utils.MapKeysSorted(tagMap)
+	result := slices.Collect(maps.Keys(tagMap))
+	slices.Sort(result)
+	return result
 }
 
 func lagLinkIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3ClosClient, gsId apstra.ObjectId, groupLabel string) (apstra.ObjectId, error) {
