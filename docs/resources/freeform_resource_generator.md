@@ -77,8 +77,6 @@ output "test_resource_generator_out" {
 - `blueprint_id` (String) Apstra Blueprint ID.
 - `container_id` (String) ID of the group where Resources are generated.
 - `name` (String) Freeform Resource Generator name as shown in the Web UI.
-- `scope` (String) Scope is a graph query which selects target nodes for which Resources should be generated.
-Example: `node('system', name='target', label=aeq('*prod*'))`
 - `type` (String) type of the Resource Generator, must be one of :
   - `asn`
   - `host_ipv4`
@@ -91,6 +89,9 @@ Example: `node('system', name='target', label=aeq('*prod*'))`
 
 ### Optional
 
+- `scope` (String) Scope is a graph query which selects target nodes for which Resources should be generated.
+Example: `node('system', name='target', label=aeq('*prod*'))`
+Required when `container_id` references a `apstra_freeform_resource_group` object. Must be `null` when `container_id` references a `apstra_freeform_resource_group` object. `scope` will be inherited in that case.
 - `subnet_prefix_len` (Number) Length of the subnet for the generated Resources. Only applicable when `type` is `ipv4` or `ipv6`
 
 ### Read-Only

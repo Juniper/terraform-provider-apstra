@@ -116,8 +116,10 @@ func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attrib
 		},
 		"scope": resourceSchema.StringAttribute{
 			MarkdownDescription: "Scope is a graph query which selects target nodes for which Resources should be generated.\n" +
-				"Example: `node('system', name='target', label=aeq('*prod*'))`",
-			Required:   true,
+				"Example: `node('system', name='target', label=aeq('*prod*'))`\n" +
+				"Required when `container_id` references a `apstra_freeform_resource_group` object. Must be `null` when " +
+				"`container_id` references a `apstra_freeform_resource_group` object. `scope` will be inherited in that case.",
+			Optional:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"allocated_from": resourceSchema.StringAttribute{
@@ -189,7 +191,11 @@ func (o *ResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) 
 
 func (o *ResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
-	o.Scope = types.StringValue(in.Scope)
+	if in.Scope == "" {
+		o.Scope = types.StringNull()
+	} else {
+		o.Scope = types.StringValue(in.Scope)
+	}
 	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.ResourceType))
 	if in.ResourceType == enum.FFResourceTypeVlan {
 		o.AllocatedFrom = types.StringPointerValue(in.ScopeNodePoolLabel)
