@@ -189,13 +189,9 @@ func (o *ResourceGenerator) Request(_ context.Context, diags *diag.Diagnostics) 
 	}
 }
 
-func (o *ResourceGenerator) LoadApiData(_ context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
+func (o *ResourceGenerator) LoadApiData(ctx context.Context, in *apstra.FreeformResourceGeneratorData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
-	if in.Scope == "" {
-		o.Scope = types.StringNull()
-	} else {
-		o.Scope = types.StringValue(in.Scope)
-	}
+	o.Scope = value.StringOrNull(ctx, in.Scope, diags)
 	o.Type = types.StringValue(rosetta.StringersToFriendlyString(in.ResourceType))
 	if in.ResourceType == enum.FFResourceTypeVlan {
 		o.AllocatedFrom = types.StringPointerValue(in.ScopeNodePoolLabel)
