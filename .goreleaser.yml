@@ -4,8 +4,8 @@
 version: 2
 before:
   hooks:
-#    - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo must be on branch main; false)"
-#    - sh -c "[ \"$(env -u GIT_SSH_COMMAND git pull)\" = \"Already up to date.\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo not in sync with origin; false)"
+    - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo must be on branch main; false)"
+    - sh -c "[ \"$(env -u GIT_SSH_COMMAND git pull)\" = \"Already up to date.\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo not in sync with origin; false)"
     - make compliance-with-source
     - rm -f Third_Party_Code.zip
     - zip -r Third_Party_Code.zip Third_Party_Code
