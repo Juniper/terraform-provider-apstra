@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -301,11 +302,13 @@ func (o *resourceDatacenterGenericSystem) Read(ctx context.Context, req resource
 	}
 
 	// collect application point map keys from state
-	stateLinkGroupLabels := utils.MapKeysSorted(state.AppPointsByGroupLabel.Elements())
-	stateLinkTags := utils.MapKeysSorted(state.AppPointsByTag.Elements())
+	stateLinkGroupLabels := slices.Collect(maps.Keys(state.AppPointsByGroupLabel.Elements()))
+	slices.Sort(stateLinkGroupLabels)
+	stateLinkTags := slices.Collect(maps.Keys(state.AppPointsByTag.Elements()))
+	slices.Sort(stateLinkTags)
 
 	// update application point maps if necessary
-	if !reflect.DeepEqual(stateLinkGroupLabels, currentLinkGroupLabels) || !reflect.DeepEqual(stateLinkTags, currentLinkTags) {
+	if !slices.Equal(stateLinkGroupLabels, currentLinkGroupLabels) || !slices.Equal(stateLinkTags, currentLinkTags) {
 		state.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics)
 	}
 
