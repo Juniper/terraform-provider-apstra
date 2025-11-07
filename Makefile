@@ -12,7 +12,7 @@ compliance-with-source:
 compliance-check: compliance check-repo-clean
 
 docs:
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	go tool tfplugindocs
 
 docs-check:
 	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh"
@@ -33,15 +33,15 @@ device-integration-tests:
 	go test -tags device-integration -v ./...
 
 staticcheck:
-	go run honnef.co/go/tools/cmd/staticcheck ./...
+	go tool staticcheck ./...
 
 release:
 	printenv GITHUB_TOKEN > /dev/null || (echo "GITHUB_TOKEN not found in environment"; false)
-	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go run github.com/goreleaser/goreleaser/v2 release --clean
+	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go tool goreleaser release --clean
 	git clean -fd Third_Party_Code/
 
 release-dry-run:
-	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go run github.com/goreleaser/goreleaser/v2 release --clean --skip-publish
+	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go tool goreleaser release --clean --skip-publish
 	git clean -fd Third_Party_Code/
 
 gofumpt:

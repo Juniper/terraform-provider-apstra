@@ -66,8 +66,8 @@ IGNORE+=(golang.org/x/sys) # explained below
     #OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-go run github.com/google/go-licenses/v2 save   ${IGNORE[@]} --save_path "${TPC}" --force ./...
-go run github.com/google/go-licenses/v2 report ${IGNORE[@]} --template .notices.tpl ./... > "${TPC}/NOTICES.md"
+go tool go-licenses save   ${IGNORE[@]} --save_path "${TPC}" --force ./...
+go tool go-licenses report ${IGNORE[@]} --template .notices.tpl ./... > "${TPC}/NOTICES.md"
 
 # The `save` command above collects only license and notice files from packages with licenses identified as
 # `RestrictionsShareLicense` and collects the entire source tree when the license is identified as

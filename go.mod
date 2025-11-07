@@ -9,11 +9,8 @@ require (
 	github.com/Juniper/apstra-go-sdk v0.0.0-20251105154054-acda0ee324d8
 	github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae
 	github.com/google/go-cmp v0.7.0
-	github.com/google/go-licenses/v2 v2.0.1
-	github.com/goreleaser/goreleaser/v2 v2.12.7
 	github.com/hashicorp/go-version v1.7.0
 	github.com/hashicorp/hcl/v2 v2.24.0
-	github.com/hashicorp/terraform-plugin-docs v0.20.1
 	github.com/hashicorp/terraform-plugin-framework v1.15.0
 	github.com/hashicorp/terraform-plugin-framework-jsontypes v0.1.0
 	github.com/hashicorp/terraform-plugin-framework-nettypes v0.3.0
@@ -23,8 +20,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546
-	honnef.co/go/tools v0.6.1
-	mvdan.cc/gofumpt v0.9.2
 )
 
 require (
@@ -203,6 +198,7 @@ require (
 	github.com/google/certificate-transparency-go v1.3.1 // indirect
 	github.com/google/go-containerregistry v0.20.6 // indirect
 	github.com/google/go-github/v74 v74.0.0 // indirect
+	github.com/google/go-licenses/v2 v2.0.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/jsonschema-go v0.3.0 // indirect
 	github.com/google/ko v0.18.0 // indirect
@@ -216,6 +212,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/goreleaser/chglog v0.7.3 // indirect
 	github.com/goreleaser/fileglob v1.4.0 // indirect
+	github.com/goreleaser/goreleaser/v2 v2.12.7 // indirect
 	github.com/goreleaser/nfpm/v2 v2.43.4 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/hashicorp/cli v1.1.7 // indirect
@@ -233,6 +230,7 @@ require (
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-exec v0.23.0 // indirect
 	github.com/hashicorp/terraform-json v0.25.0 // indirect
+	github.com/hashicorp/terraform-plugin-docs v0.20.1 // indirect
 	github.com/hashicorp/terraform-plugin-log v0.9.0 // indirect
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.37.0 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.5 // indirect
@@ -404,11 +402,19 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	honnef.co/go/tools v0.6.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
+	mvdan.cc/gofumpt v0.9.2 // indirect
 	sigs.k8s.io/kind v0.27.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 	software.sslmate.com/src/go-pkcs12 v0.5.0 // indirect
 )
 
-tool github.com/google/go-licenses/v2
+tool (
+	github.com/google/go-licenses/v2
+	github.com/goreleaser/goreleaser/v2
+	github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	honnef.co/go/tools/cmd/staticcheck
+	mvdan.cc/gofumpt
+)

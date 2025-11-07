@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs || exit 1
+go tool tfplugindocs || exit 1
 
 grep -E '^subcategory: ""$' docs/data-sources/* && echo "missing subcategory" && exit 1
 
