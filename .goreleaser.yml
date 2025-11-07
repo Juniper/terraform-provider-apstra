@@ -1,6 +1,7 @@
 # Usage notes:
 #   see `release_process.md`
 #
+version: 2
 before:
   hooks:
 #    - sh -c "[ \"$(git branch --show-current)\" = \"main\" ] || [ \"$RELEASE_TEST\" = \"1\" ] || (echo must be on branch main; false)"
@@ -37,7 +38,7 @@ builds:
 #      goarch: '386'
   binary: '{{ .ProjectName }}_v{{ .Version }}'
 archives:
-- format: zip
+- formats: [ 'zip' ]
   name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
   files:
     - LICENSE
