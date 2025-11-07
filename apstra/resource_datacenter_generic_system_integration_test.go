@@ -984,7 +984,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				{ // check for deploy_mode = not_set
 					preApplyResourceActionType: plancheck.ResourceActionUpdate,
 					config: resourceDataCenterGenericSystem{
-						deployMode: pointer.To(utils.StringersToFriendlyString(enum.DeployModeNone)),
+						deployMode: pointer.To(rosetta.StringersToFriendlyString(enum.DeployModeNone)),
 						links: []resourceDataCenterGenericSystemLink{
 							{
 								targetSwitchId: leafSwitchIds[1],
