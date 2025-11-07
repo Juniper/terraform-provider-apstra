@@ -214,8 +214,8 @@
 ## github.com/ProtonMail/go-crypto
 
 * Name: github.com/ProtonMail/go-crypto
-* Version: v1.1.6
-* License: [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.1.6/LICENSE)
+* Version: v1.3.0
+* License: [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.3.0/LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -3007,8 +3007,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/go-retryablehttp
 
 * Name: github.com/hashicorp/go-retryablehttp
-* Version: v0.7.7
-* License: [MPL-2.0](https://github.com/hashicorp/go-retryablehttp/blob/v0.7.7/LICENSE)
+* Version: v0.7.8
+* License: [MPL-2.0](https://github.com/hashicorp/go-retryablehttp/blob/v0.7.8/LICENSE)
 
 ```
 Copyright (c) 2015 HashiCorp, Inc.
@@ -10268,8 +10268,8 @@ THE SOFTWARE.
 ## github.com/mitchellh/mapstructure
 
 * Name: github.com/mitchellh/mapstructure
-* Version: v1.5.0
-* License: [MIT](https://github.com/mitchellh/mapstructure/blob/v1.5.0/LICENSE)
+* Version: v1.5.1-0.20231216201459-8508981c8b6c
+* License: [MIT](https://github.com/mitchellh/mapstructure/blob/8508981c8b6c/LICENSE)
 
 ```
 The MIT License (MIT)
@@ -10961,8 +10961,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20250218202821-56aae31c358a
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/56aae31c358a/googleapis/rpc/LICENSE)
+* Version: v0.0.0-20251103181224-f26f9409b101
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/f26f9409b101/googleapis/rpc/LICENSE)
 
 ```
 
@@ -11173,8 +11173,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.72.1
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.72.1/LICENSE)
+* Version: v1.76.0
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.76.0/LICENSE)
 
 ```
 
@@ -11385,8 +11385,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.36.7
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.7/LICENSE)
+* Version: v1.36.10
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.10/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.
