@@ -13,7 +13,7 @@ import (
 	_ "honnef.co/go/tools/cmd/staticcheck"
 
 	// release
-	//_ "github.com/goreleaser/goreleaser"
+	_ "github.com/goreleaser/goreleaser"
 
 	// gofumpt does strict formatting
 	_ "mvdan.cc/gofumpt"
