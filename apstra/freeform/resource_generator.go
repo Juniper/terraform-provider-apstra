@@ -143,7 +143,7 @@ func (o ResourceGenerator) ResourceAttributes() map[string]resourceSchema.Attrib
 			),
 			Optional: true,
 			Validators: []validator.Int64{
-				int64validator.Between(1, 127),
+				int64validator.Between(1, 128),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeAsn))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv4))),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("type"), types.StringValue(rosetta.StringersToFriendlyString(enum.FFResourceTypeHostIpv6))),
