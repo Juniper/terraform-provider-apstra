@@ -73,4 +73,4 @@ release:
   # The final step then is to click buttons in the releases area of the GitHub web UI.
   draft: true
 changelog:
-  skip: true
+  disable: true
