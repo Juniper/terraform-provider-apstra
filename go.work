@@ -1,0 +1,11 @@
+go 1.25.4
+
+use (
+	.
+	./tools/go-licenses
+	./tools/gofumpt
+	./tools/goreleaser
+	./tools/staticcheck
+	./tools/syft
+	./tools/tfplugindocs
+)
