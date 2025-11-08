@@ -6,6 +6,5 @@ use (
 	./tools/gofumpt
 	./tools/goreleaser
 	./tools/staticcheck
-	./tools/syft
 	./tools/tfplugindocs
 )
