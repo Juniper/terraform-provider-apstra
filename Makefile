@@ -1,6 +1,7 @@
 all: compliance-check docs-check gofmt govet unit-tests integration-tests device-integration-tests
 
 check-repo-clean:
+	git diff
 	git update-index --refresh && git diff-index --quiet HEAD --
 
 compliance:

@@ -5237,8 +5237,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-exec
 
 * Name: github.com/hashicorp/terraform-exec
-* Version: v0.23.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-exec/blob/v0.23.0/LICENSE)
+* Version: v0.24.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-exec/blob/v0.24.0/LICENSE)
 
 ```
 Copyright (c) 2020 HashiCorp, Inc.
@@ -5622,8 +5622,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-json
 
 * Name: github.com/hashicorp/terraform-json
-* Version: v0.25.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-json/blob/v0.25.0/LICENSE)
+* Version: v0.27.2
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-json/blob/v0.27.2/LICENSE)
 
 ```
 Copyright (c) 2019 HashiCorp, Inc.
