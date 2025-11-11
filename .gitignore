@@ -3,4 +3,5 @@ tools/goreleaser/LICENSE
 tools/goreleaser/README.md
 tools/goreleaser/Third_Party_Code/
 tools/goreleaser/Third_Party_Code.zip
+tools/goreleaser/dist/
 tools/goreleaser/terraform-registry-manifest.json
