@@ -42,7 +42,6 @@ mkdir -p "$GOBIN"
 # determine the version string and binary-with-version file path
 VER=$(cd tools/go-licenses && go list -m github.com/google/go-licenses/v2 | awk '{print $2}')
 BIN="$GOBIN/go-licenses-$VER"
-echo "go-licenses is $BIN"
 
 # build the binary if we don't have it
 if [ ! -x "$BIN" ]; then
@@ -52,14 +51,8 @@ if [ ! -x "$BIN" ]; then
   rm -rf "$TMPDIR"
 fi
 
-echo ""
-echo $BIN save   ${IGNORE[@]} --save_path "${TPC}" --force ./...
 $BIN save   ${IGNORE[@]} --save_path "${TPC}" --force ./...
-echo ""
-echo $BIN report ${IGNORE[@]} --template .notices.tpl ./... > "${TPC}/NOTICES.md"
 $BIN report ${IGNORE[@]} --template .notices.tpl ./... > "${TPC}/NOTICES.md"
-echo ""
-echo $BIN report ${IGNORE[@]} --template <(printf "{{ range . }}{{ .LicenseName }}\n{{ end }}") ./... | sort -u > "${TPC}/all_licenses.txt"
 $BIN report ${IGNORE[@]} --template <(printf "{{ range . }}{{ .LicenseName }}\n{{ end }}") ./... | sort -u > "${TPC}/all_licenses.txt"
 
 
