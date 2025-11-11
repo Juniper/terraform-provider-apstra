@@ -1,5 +1,5 @@
 # Usage notes:
-#   see `release_process.md`
+#   see `kb/release_process.md`
 #
 version: 2
 before:
