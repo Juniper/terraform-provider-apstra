@@ -42,6 +42,7 @@ mkdir -p "$GOBIN"
 # determine the version string and binary-with-version file path
 VER=$(cd tools/go-licenses && go list -m github.com/google/go-licenses/v2 | awk '{print $2}')
 BIN="$GOBIN/go-licenses-$VER"
+echo "go-licenses is $BIN"
 
 # build the binary if we don't have it
 if [ ! -x "$BIN" ]; then
