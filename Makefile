@@ -37,12 +37,10 @@ staticcheck:
 
 release:
 	printenv GITHUB_TOKEN > /dev/null || (echo "GITHUB_TOKEN not found in environment"; false)
-	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go run github.com/goreleaser/goreleaser@v1.26.2 release --clean
-	git clean -fd Third_Party_Code/
+	(cd tools/goreleaser && GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go tool goreleaser release --clean)
 
 release-dry-run:
-	GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go run github.com/goreleaser/goreleaser@v1.26.2 release --clean --skip-publish
-	git clean -fd Third_Party_Code/
+	(cd tools/goreleaser && GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go tool goreleaser release --clean --skip-publish)
 
 gofumpt:
 	@sh -c "$(CURDIR)/scripts/gofumptcheck.sh"
