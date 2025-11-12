@@ -52,8 +52,14 @@ if [ ! -x "$BIN" ]; then
   rm -rf "$TMPDIR"
 fi
 
+echo ""
+echo $BIN save   ${IGNORE[@]} --save_path "${TPC}" --force ./...
 $BIN save   ${IGNORE[@]} --save_path "${TPC}" --force ./...
+echo ""
+echo $BIN report ${IGNORE[@]} --template .notices.tpl ./... > "${TPC}/NOTICES.md"
 $BIN report ${IGNORE[@]} --template .notices.tpl ./... > "${TPC}/NOTICES.md"
+echo ""
+echo $BIN report ${IGNORE[@]} --template <(printf "{{ range . }}{{ .LicenseName }}\n{{ end }}") ./... | sort -u > "${TPC}/all_licenses.txt"
 $BIN report ${IGNORE[@]} --template <(printf "{{ range . }}{{ .LicenseName }}\n{{ end }}") ./... | sort -u > "${TPC}/all_licenses.txt"
 
 
