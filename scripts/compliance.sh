@@ -26,14 +26,15 @@ IGNORE+=(github.com/Juniper) # don't bother with Juniper licenses
 
 # determine GOBIN and create it if necessary
 if [ "${GOBIN:-}" == "" ]; then
-  GOBIN="${GOPATH:-}/bin"
-fi
-if [ "${GOBIN:-}" == "" ]; then
-  GOBIN="${HOME:-}/go/bin"
-fi
-if [ "${GOBIN:-}" == "" ]; then
-  echo "failed to set GOBIN"
-  exit 1
+  if [ "${GOPATH:-}" == "" ]; then
+    if [ "${HOME:-}" == "" ]; then
+      GOBIN="$(mktmp -d)"
+    else
+      GOBIN="${HOME}/go/bin"
+    fi
+  else
+    GOBIN="${GOPATH}/bin"
+  fi
 fi
 export GOBIN
 mkdir -p "$GOBIN"
