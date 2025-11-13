@@ -29,7 +29,7 @@ then
 
   for f in "${needs_update[@]}"
   do
-     echo "  go run mvdan.cc/gofumpt -w '$f'"
+     echo "  (cd tools/gofumpt && go tool gofumpt -w '../../$f')"
   done
 
   echo ""

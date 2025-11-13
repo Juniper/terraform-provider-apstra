@@ -38,4 +38,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//test comment which gofumpt will complain about
 }
