@@ -646,6 +646,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterSecurityPolicy{} },
 		func() resource.Resource { return &resourceDatacenterTag{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
+		func() resource.Resource { return &resourceDatacenterVirtualNetworkBindings{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
 		func() resource.Resource { return &resourceFreeformAllocGroup{} },
 		func() resource.Resource { return &resourceFreeformBlueprint{} },
