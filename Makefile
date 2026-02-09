@@ -12,10 +12,10 @@ compliance-with-source:
 compliance-check: compliance check-repo-clean
 
 docs:
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
+	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh"
 
 docs-check:
-	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh"
+	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh --check"
 
 gofmt:
 	@sh -c "$(CURDIR)/scripts/gofmtcheck.sh"
