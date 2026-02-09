@@ -1,4 +1,7 @@
-Third_Party_Code.zip
-dist/
-test/terraform.tfstate*
 .testconfig.hcl
+tools/goreleaser/LICENSE
+tools/goreleaser/README.md
+tools/goreleaser/Third_Party_Code/
+tools/goreleaser/Third_Party_Code.zip
+tools/goreleaser/dist/
+tools/goreleaser/terraform-registry-manifest.json
