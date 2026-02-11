@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,10 +12,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
-var _ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRoutingZone{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingZone{}
+var (
+	_ resource.ResourceWithConfigure  = &resourceDatacenterRoutingZone{}
+	_ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetDcBpClientFunc   = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetBpLockFunc       = &resourceDatacenterRoutingZone{}
+)
 
 type resourceDatacenterRoutingZone struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -79,7 +82,7 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 		return
 	}
 
-	//Retrieve values from plan
+	// Retrieve values from plan
 	var plan blueprint.DatacenterRoutingZone
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
