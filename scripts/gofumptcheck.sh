@@ -13,7 +13,7 @@ do
   [ ! -f "$file" ] && continue
 
   # skip over non-Go files
-  [[ "$file" = *.go ]] && OUT=$(go run mvdan.cc/gofumpt -l "$file")
+  [[ "$file" = *.go ]] && OUT=$(cd tools/gofumpt && go tool gofumpt -l "../../$file")
 
   if [ -n "$OUT" ]
   then
@@ -29,7 +29,7 @@ then
 
   for f in "${needs_update[@]}"
   do
-     echo "  go run mvdan.cc/gofumpt -w '$f'"
+     echo "  (cd tools/gofumpt && go tool gofumpt -w '$f')"
   done
 
   echo ""
