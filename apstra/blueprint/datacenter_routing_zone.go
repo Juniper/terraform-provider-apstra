@@ -284,28 +284,29 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"networks with large amounts of VLANs.",
 			Optional:   true,
 			Computed:   true,
-			Validators: []validator.String{stringvalidator.OneOf(enum.JunosEvpnIrbModes.Values()...)},
-			Default:    stringdefault.StaticString(enum.JunosEvpnIrbModeAsymmetric.String()),
+			Validators: []validator.String{stringvalidator.OneOf(enum.JunosEVPNIRBModes.Values()...)},
+			Default:    stringdefault.StaticString(enum.JunosEVPNIRBModeAsymmetric.String()),
 		},
 	}
 }
 
-func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) *apstra.SecurityZoneData {
-	var vlan *apstra.Vlan
+func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) apstra.SecurityZone {
+	var result apstra.SecurityZone
+	result.SetID(o.Id.ValueString()) // will set empty string if null or unknown -- this is fine
+
 	if !o.VlanId.IsNull() && !o.VlanId.IsUnknown() {
-		vlan = pointer.To(apstra.Vlan(o.VlanId.ValueInt64()))
+		result.VLAN = pointer.To(apstra.VLAN(o.VlanId.ValueInt64()))
 	}
 
-	var vni *int
 	if !o.Vni.IsNull() && !o.Vni.IsUnknown() {
-		vni = pointer.To(int(o.Vni.ValueInt64()))
+		result.VNI = pointer.To(int(o.Vni.ValueInt64()))
 	}
 
 	ocp, err := client.BlueprintOverlayControlProtocol(ctx, apstra.ObjectId(o.BlueprintId.ValueString()))
 	if err != nil {
 		diags.AddError(fmt.Sprintf("API error querying for blueprint %q Overlay Control Protocol",
 			o.BlueprintId.ValueString()), err.Error())
-		return nil
+		return result
 	}
 
 	if ocp != apstra.OverlayControlProtocolEvpn {
@@ -313,28 +314,22 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 			path.Root("blueprint_id"),
 			constants.ErrInvalidConfig,
 			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", rosetta.StringersToFriendlyString(ocp)))
+		return result
 	}
 
-	var importRTs, exportRTs []string
-	diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &importRTs, false)...)
-	diags.Append(o.ExportRouteTargets.ElementsAs(ctx, &exportRTs, false)...)
+	diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &result.RTPolicy.ImportRTs, false)...)
+	diags.Append(o.ExportRouteTargets.ElementsAs(ctx, &result.RTPolicy.ExportRTs, false)...)
 	if diags.HasError() {
-		return nil
+		return apstra.SecurityZone{}
 	}
 
-	return &apstra.SecurityZoneData{
-		SzType:           apstra.SecurityZoneTypeEVPN,
-		VrfName:          o.VrfName.ValueString(),
-		Label:            o.Name.ValueString(),
-		RoutingPolicyId:  apstra.ObjectId(o.RoutingPolicyId.ValueString()),
-		VlanId:           vlan,
-		VniId:            vni,
-		JunosEvpnIrbMode: enum.JunosEvpnIrbModes.Parse(o.JunosEvpnIrbMode.ValueString()),
-		RtPolicy: &apstra.RtPolicy{
-			ImportRTs: importRTs,
-			ExportRTs: exportRTs,
-		},
-	}
+	result.Type = enum.SecurityZoneTypeEVPN
+	result.VRFName = o.VrfName.ValueString()
+	result.Label = o.Name.ValueString()
+	result.RoutingPolicyID = o.RoutingPolicyId.ValueString()
+	result.JunosEVPNIRBMode = enum.JunosEVPNIRBModes.Parse(o.JunosEvpnIrbMode.ValueString())
+
+	return result
 }
 
 func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Diagnostics) []net.IP {
@@ -346,60 +341,60 @@ func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Dia
 	return request
 }
 
-func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, data apstra.SecurityZoneData, diags *diag.Diagnostics) {
+func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz apstra.SecurityZone, diags *diag.Diagnostics) {
 	if !utils.HasValue(o.Name) { // required attribute
-		o.Name = types.StringValue(data.Label)
+		o.Name = types.StringValue(sz.Label)
 	}
 
 	if !utils.HasValue(o.VrfName) { // computed attribute
-		o.VrfName = types.StringValue(data.VrfName)
+		o.VrfName = types.StringValue(sz.VRFName)
 	}
 
 	if !utils.HasValue(o.VlanId) { // optional + computed attribute
-		if data.VlanId == nil {
+		if sz.VLAN == nil {
 			o.VlanId = types.Int64Null()
 		} else {
-			o.VlanId = types.Int64Value(int64(*data.VlanId))
+			o.VlanId = types.Int64Value(int64(*sz.VLAN))
 		}
 	}
 
 	if !utils.HasValue(o.RoutingPolicyId) { // optional + computed attribute
-		if data.RoutingPolicyId == "" {
+		if sz.RoutingPolicyID == "" {
 			o.RoutingPolicyId = types.StringNull()
 		} else {
-			o.RoutingPolicyId = types.StringValue(data.RoutingPolicyId.String())
+			o.RoutingPolicyId = types.StringValue(sz.RoutingPolicyID)
 		}
 	}
 
 	if !utils.HasValue(o.Vni) {
-		if data.VniId == nil {
+		if sz.VNI == nil {
 			o.Vni = types.Int64Null()
 		} else {
-			o.Vni = types.Int64Value(int64(*data.VniId))
+			o.Vni = types.Int64Value(int64(*sz.VNI))
 		}
 	}
 
 	if !utils.HasValue(o.ImportRouteTargets) {
-		if data.RtPolicy == nil || data.RtPolicy.ImportRTs == nil {
+		if sz.RTPolicy == nil || sz.RTPolicy.ImportRTs == nil {
 			o.ImportRouteTargets = types.SetNull(types.StringType)
 		} else {
-			o.ImportRouteTargets = value.SetOrNull(ctx, types.StringType, data.RtPolicy.ImportRTs, diags)
+			o.ImportRouteTargets = value.SetOrNull(ctx, types.StringType, sz.RTPolicy.ImportRTs, diags)
 		}
 	}
 
 	if !utils.HasValue(o.ExportRouteTargets) {
-		if data.RtPolicy == nil || data.RtPolicy.ExportRTs == nil {
+		if sz.RTPolicy == nil || sz.RTPolicy.ExportRTs == nil {
 			o.ExportRouteTargets = types.SetNull(types.StringType)
 		} else {
-			o.ExportRouteTargets = value.SetOrNull(ctx, types.StringType, data.RtPolicy.ExportRTs, diags)
+			o.ExportRouteTargets = value.SetOrNull(ctx, types.StringType, sz.RTPolicy.ExportRTs, diags)
 		}
 	}
 
 	if !utils.HasValue(o.JunosEvpnIrbMode) {
-		if data.JunosEvpnIrbMode == nil {
+		if sz.JunosEVPNIRBMode == nil {
 			o.JunosEvpnIrbMode = types.StringNull()
 		} else {
-			o.JunosEvpnIrbMode = types.StringValue(data.JunosEvpnIrbMode.Value)
+			o.JunosEvpnIrbMode = types.StringValue(sz.JunosEVPNIRBMode.Value)
 		}
 	}
 }
@@ -557,7 +552,7 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 
 	o.BlueprintId = types.StringValue(bp.Id().String())
 
-	sz, err := bp.GetSecurityZone(ctx, apstra.ObjectId(o.Id.ValueString()))
+	sz, err := bp.GetSecurityZone(ctx, o.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return err
@@ -566,15 +561,13 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 		return nil
 	}
 
-	if sz.Data == nil {
-		diags.AddError("failed while reading routing zone from API", "security zone data is missing")
+	o.LoadApiData(ctx, sz, diags)
+	if diags.HasError() {
 		return nil
 	}
 
-	o.LoadApiData(ctx, *sz.Data, diags)
-
 	if !utils.HasValue(o.DhcpServers) {
-		dhcpServerIPs, err := bp.GetSecurityZoneDhcpServers(ctx, apstra.ObjectId(o.Id.ValueString()))
+		dhcpServerIPs, err := bp.GetSecurityZoneDhcpServers(ctx, o.Id.ValueString())
 		if err != nil {
 			diags.AddError("failed retrieving security zone DCHP servers", err.Error())
 			return nil

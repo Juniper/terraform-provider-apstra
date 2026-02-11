@@ -97,7 +97,7 @@ func Int64OrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64
 	switch in := in.(type) {
 	case *apstra.VNI:
 		return types.Int64Value(int64(*in))
-	case *apstra.Vlan:
+	case *apstra.VLAN:
 		return types.Int64Value(int64(*in))
 	case *int:
 		return types.Int64Value(int64(*in))
@@ -121,7 +121,7 @@ func Int64OrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64
 		return types.Int64Value(int64(*in))
 	case apstra.VNI:
 		return types.Int64Value(int64(in))
-	case apstra.Vlan:
+	case apstra.VLAN:
 		return types.Int64Value(int64(in))
 	case int:
 		return types.Int64Value(int64(in))

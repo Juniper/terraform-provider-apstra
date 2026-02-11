@@ -75,18 +75,18 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 	newCt := func(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, tags []string, vlan int, typeName string, assignmentCount int) (apstra.ObjectId, [][]string) {
 		t.Helper()
 
-		var vlanId *apstra.Vlan
+		var vlanId *apstra.VLAN
 		if vlan > 0 { // with vlan 0 we send nil pointer to create an invalid CT
-			vlanId = pointer.To(apstra.Vlan(vlan))
+			vlanId = pointer.To(apstra.VLAN(vlan))
 		}
 
 		// create a security zone unique for each CT
 		szName := acctest.RandString(6)
-		szId, err := bp.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
+		szId, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
 			Label:   szName,
-			SzType:  apstra.SecurityZoneTypeEVPN,
-			VrfName: szName,
-			VlanId:  vlanId,
+			Type:    enum.SecurityZoneTypeEVPN,
+			VRFName: szName,
+			VLAN:    vlanId,
 		})
 		require.NoError(t, err)
 
@@ -98,7 +98,7 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 			Subpolicies: []*apstra.ConnectivityTemplatePrimitive{
 				{
 					Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-						SecurityZone: &szId,
+						SecurityZone: (*apstra.ObjectId)(&szId),
 						Tagged:       true,
 						Vlan:         vlanId,
 					},
