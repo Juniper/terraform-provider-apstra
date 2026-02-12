@@ -64,12 +64,14 @@ output "routing_zone" {
 ### Read-Only
 
 - `dhcp_servers` (Set of String) Set of DHCP server IPv4 or IPv6 addresses of DHCP servers.
+- `disable_ipv4` (Boolean) Only valid with `ip_addressing_type = "ipv6"`. When this is set `true`, pure ipv6 routing zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related configuration will be removed. User-defined IPv4 resources will not be permitted in the Routing Zone. An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it will not participate in routing.
 - `export_route_targets` (Set of String) Used to export routes from the EVPN VRF.
 - `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration in managed resource context, this attribute will always be `null` and should be ignored in data source context.
 - `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration in managed resource context, this attribute will always be `null` and should be ignored in data source context.
 - `import_route_targets` (Set of String) Used to import routes into the EVPN VRF.
+- `ip_addressing_type` (String) Defines if the according Routing Zone addresses resources with ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the Routing Zone and that resource violates this addressing support value. Note that ipv4 is still permitted in an ipv6-only network, in which case `disable_ipv4` can be used to disallow ipv4 completely.
 - `junos_evpn_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
-- `vni` (Number) VxLAN VNI associated with the routing zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.
+- `vni` (Number) VxLAN VNI associated with the Routing Zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.
 - `vrf_name` (String) VRF name.
