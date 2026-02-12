@@ -636,10 +636,10 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		}
 	}
 
-	var reservedVlanId *apstra.Vlan
+	var reservedVlanId *apstra.VLAN
 	if o.ReserveVlan.ValueBool() {
 		if utils.HasValue(o.ReservedVlanId) {
-			reservedVlanId = pointer.To(apstra.Vlan(o.ReservedVlanId.ValueInt64()))
+			reservedVlanId = pointer.To(apstra.VLAN(o.ReservedVlanId.ValueInt64()))
 		} else {
 			reservedVlanId = vnBindings[0].VlanId
 		}
@@ -673,9 +673,9 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		l3Mtu = &i
 	}
 
-	var rtPolicy *apstra.RtPolicy
+	var rtPolicy *apstra.RTPolicy
 	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
-		rtPolicy = new(apstra.RtPolicy)
+		rtPolicy = new(apstra.RTPolicy)
 		if !o.ImportRouteTargets.IsNull() {
 			diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &rtPolicy.ImportRTs, false)...)
 		}

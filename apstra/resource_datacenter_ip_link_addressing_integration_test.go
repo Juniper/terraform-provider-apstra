@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
@@ -123,13 +124,13 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 
 	// create routing zones
 	rzCount := 2
-	rzIds := make([]apstra.ObjectId, rzCount)
+	rzIds := make([]string, rzCount)
 	for i := range rzIds {
 		name := acctest.RandString(6)
-		rzIds[i], err = bp.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
+		rzIds[i], err = bp.CreateSecurityZone(ctx, apstra.SecurityZone{
 			Label:   name,
-			VrfName: name,
-			SzType:  apstra.SecurityZoneTypeEVPN,
+			VRFName: name,
+			Type:    enum.SecurityZoneTypeEVPN,
 		})
 		require.NoError(t, err)
 	}
@@ -149,7 +150,7 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 			ResourceGroup: apstra.ResourceGroup{
 				Type:           apstra.ResourceTypeIp4Pool,
 				Name:           apstra.ResourceGroupNameToGenericLinkIpv4,
-				SecurityZoneId: &rzId,
+				SecurityZoneId: (*apstra.ObjectId)(&rzId),
 			},
 			PoolIds: ip4PoolIds,
 		}))
@@ -157,7 +158,7 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 			ResourceGroup: apstra.ResourceGroup{
 				Type:           apstra.ResourceTypeIp6Pool,
 				Name:           apstra.ResourceGroupNameToGenericLinkIpv6,
-				SecurityZoneId: &rzId,
+				SecurityZoneId: (*apstra.ObjectId)(&rzId),
 			},
 			PoolIds: ip6PoolIds,
 		}))
@@ -168,9 +169,9 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	for i, rzId := range rzIds {
 		subpolicies[i] = &apstra.ConnectivityTemplatePrimitive{
 			Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-				SecurityZone: pointer.To(rzId),
+				SecurityZone: (*apstra.ObjectId)(&rzId),
 				Tagged:       true,
-				Vlan:         pointer.To(apstra.Vlan(101 + i)),
+				Vlan:         pointer.To(apstra.VLAN(101 + i)),
 			},
 		}
 	}

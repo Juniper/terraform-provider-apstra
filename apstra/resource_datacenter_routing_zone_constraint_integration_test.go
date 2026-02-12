@@ -92,13 +92,13 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 	routingZoneIds := make([]string, acctest.RandIntRange(5, 10))
 	for i := range routingZoneIds {
 		label := acctest.RandString(6)
-		id, err := bp.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
+		id, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
 			Label:   label,
-			SzType:  apstra.SecurityZoneTypeEVPN,
-			VrfName: label,
+			Type:    enum.SecurityZoneTypeEVPN,
+			VRFName: label,
 		})
 		require.NoError(t, err)
-		routingZoneIds[i] = id.String()
+		routingZoneIds[i] = id
 	}
 
 	type testStep struct {

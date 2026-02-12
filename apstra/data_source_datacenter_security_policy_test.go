@@ -34,13 +34,14 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 
 	bp := testutils.BlueprintC(t, ctx)
 
-	szs, err := bp.GetAllSecurityZones(ctx)
+	szs, err := bp.GetSecurityZones(ctx)
 	require.NoError(t, err)
 	if len(szs) != 1 {
 		t.Fatalf("expected one security zone, got %d", len(szs))
 	}
 
-	szId := szs[0].Id
+	szID := szs[0].ID()
+	require.NotNil(t, szID)
 
 	testCases := map[string]struct {
 		id         string
@@ -83,29 +84,29 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 		"with_src_app_point": {
 			policyData: apstra.PolicyData{
 				Label:               "with_src_app_point",
-				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: szId},
+				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(*szID)},
 			},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "id", "bogus placeholder fixed in loop below. this check must be first"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "name", "with_src_app_point"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "source_application_point_id", szId.String()),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "source_application_point_id", *szID),
 			},
 		},
 		"with_dst_app_point": {
 			policyData: apstra.PolicyData{
 				Label:               "with_dst_app_point",
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: szId},
+				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(*szID)},
 			},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "id", "bogus placeholder fixed in loop below. this check must be first"),
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "name", "with_dst_app_point"),
-				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "destination_application_point_id", szId.String()),
+				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "destination_application_point_id", *szID),
 			},
 		},
 		"with_tags": {
 			policyData: apstra.PolicyData{
 				Label:               "with_tags",
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: szId},
+				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(*szID)},
 				Tags:                []string{"foo", "bar"},
 			},
 			checks: []resource.TestCheckFunc{

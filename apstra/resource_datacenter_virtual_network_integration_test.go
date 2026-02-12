@@ -58,7 +58,7 @@ type resourceDatacenterVirtualNetworkTemplate struct {
 	description             string
 	vnType                  string
 	vni                     *int
-	routingZoneId           apstra.ObjectId
+	routingZoneId           string
 	l3Mtu                   *int
 	bindings                []resourceDatacenterVirtualNetworkTemplateBinding
 	reserveVlan             *bool
@@ -89,7 +89,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		stringOrNull(o.description),
 		stringOrNull(o.vnType),
 		intPtrOrNull(o.vni),
-		stringOrNull(o.routingZoneId.String()),
+		stringOrNull(o.routingZoneId),
 		intPtrOrNull(o.l3Mtu),
 		bindings.String(),
 		boolPtrOrNull(o.reserveVlan),
@@ -120,7 +120,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 	}
 
 	if o.routingZoneId != "" {
-		result.append(t, "TestCheckResourceAttr", "routing_zone_id", o.routingZoneId.String())
+		result.append(t, "TestCheckResourceAttr", "routing_zone_id", o.routingZoneId)
 	}
 
 	if o.l3Mtu != nil {
@@ -211,7 +211,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 
 	// Create blueprint and routing zone
 	bp := testutils.BlueprintC(t, ctx)
-	szId := testutils.SecurityZoneA(t, ctx, bp, true)
+	szID := testutils.SecurityZoneA(t, ctx, bp, true)
 
 	// struct used for both system nodes and redundancy group nodes
 	type node struct {
@@ -262,7 +262,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						dhcpEnabled:   pointer.To(true),
 						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{{leafId: nodesByLabel["l2_one_access_001_leaf1"]}},
 					},
@@ -278,7 +278,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -286,7 +286,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -295,7 +295,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 			},
@@ -308,7 +308,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -317,7 +317,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -325,7 +325,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8900),
 					},
 				},
@@ -339,7 +339,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -348,7 +348,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           pointer.To(rand.IntN(10000) + 5000),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -357,7 +357,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 			},
@@ -371,7 +371,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           pointer.To(rand.IntN(10000) + 5000),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -380,7 +380,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -389,7 +389,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           pointer.To(rand.IntN(10000) + 5000),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8900),
 					},
 				},
@@ -402,7 +402,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -415,7 +415,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -431,7 +431,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_003_leaf1"],
@@ -448,7 +448,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8800),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -464,7 +464,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -477,7 +477,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         pointer.To(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -497,7 +497,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -511,7 +511,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           nil,
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -537,7 +537,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
@@ -555,7 +555,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           nil,
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -581,7 +581,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
@@ -595,7 +595,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           nil,
-						routingZoneId: szId,
+						routingZoneId: szID,
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -621,7 +621,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -630,7 +630,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -638,7 +638,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 			},
@@ -652,7 +652,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -660,7 +660,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -669,7 +669,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 			},
@@ -682,7 +682,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:    bp.Id(),
 						name:           acctest.RandString(6),
 						vnType:         enum.VnTypeVxlan.String(),
-						routingZoneId:  szId,
+						routingZoneId:  szID,
 						reserveVlan:    pointer.To(true),
 						reservedVlanId: pointer.To(1100),
 					},
@@ -692,7 +692,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:    bp.Id(),
 						name:           acctest.RandString(6),
 						vnType:         enum.VnTypeVxlan.String(),
-						routingZoneId:  szId,
+						routingZoneId:  szID,
 						reserveVlan:    pointer.To(true),
 						reservedVlanId: pointer.To(1101),
 					},
@@ -706,7 +706,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						reserveVlan:   pointer.To(true),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -726,7 +726,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -735,7 +735,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -743,7 +743,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -757,7 +757,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 				{
@@ -765,7 +765,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -774,7 +774,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 					},
 				},
 			},
@@ -787,7 +787,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          "change_tags_only",
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -796,7 +796,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          "change_tags_only",
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -810,7 +810,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          []string{"fixed tag one", "fixed tag two"},
 					},
 				},
@@ -819,7 +819,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						tags:          []string{"fixed tag one", "fixed tag two"},
 					},
 				},
@@ -832,7 +832,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szId,
+						routingZoneId: szID,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -864,7 +864,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:             bp.Id(),
 						name:                    acctest.RandString(6),
 						vnType:                  enum.VnTypeVlan.String(),
-						routingZoneId:           szId,
+						routingZoneId:           szID,
 						dhcpEnabled:             pointer.To(true),
 						ipv4ConnectivityEnabled: pointer.To(true),
 					},

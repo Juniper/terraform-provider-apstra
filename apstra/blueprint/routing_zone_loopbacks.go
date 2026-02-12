@@ -57,7 +57,7 @@ func (o RoutingZoneLoopbacks) ResourceAttributes() map[string]resourceSchema.Att
 	}
 }
 
-func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses, diags *diag.Diagnostics) (map[apstra.ObjectId]apstra.SecurityZoneLoopback, *private.ResourceDatacenterRoutingZoneLoopbackAddresses) {
+func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, previousLoopbackMap private.ResourceDatacenterRoutingZoneLoopbackAddresses, diags *diag.Diagnostics) (map[string]apstra.SecurityZoneLoopback, *private.ResourceDatacenterRoutingZoneLoopbackAddresses) {
 	// API response will allow us to determine interface IDs from system IDs
 	szInfo, err := bp.GetSecurityZoneInfo(ctx, apstra.ObjectId(o.RoutingZoneId.ValueString()))
 	if err != nil {
@@ -66,11 +66,11 @@ func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL
 	}
 
 	// convert API response to map (switchId -> loopbackId) for easy lookups
-	loopbackIds := make(map[string]apstra.ObjectId)
+	loopbackIds := make(map[string]string)
 	for _, memberInterface := range szInfo.MemberInterfaces {
 		for _, loopback := range memberInterface.Loopbacks {
 			// this is a loop, but only one element should exist. See: https://apstra-eng.slack.com/archives/CQBUYMZ39/p1738920079268339
-			loopbackIds[memberInterface.HostingSystem.Id.String()] = loopback.Id
+			loopbackIds[memberInterface.HostingSystem.Id.String()] = string(loopback.Id)
 		}
 	}
 	o.LoopbackIds = value.MapOrNull(ctx, types.StringType, loopbackIds, diags)
@@ -83,7 +83,7 @@ func (o *RoutingZoneLoopbacks) Request(ctx context.Context, bp *apstra.TwoStageL
 	}
 
 	// we return these two maps
-	resultMap := make(map[apstra.ObjectId]apstra.SecurityZoneLoopback, len(planLoopbackMap))
+	resultMap := make(map[string]apstra.SecurityZoneLoopback, len(planLoopbackMap))
 	resultPrivate := make(private.ResourceDatacenterRoutingZoneLoopbackAddresses, len(planLoopbackMap))
 
 	for sysId, loopback := range planLoopbackMap {

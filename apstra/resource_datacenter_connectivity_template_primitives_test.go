@@ -60,17 +60,17 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute, ipv4Count+ipv6Count)
 
 	rzName := acctest.RandString(6)
-	rzId, err := client.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
+	rzID, err := client.CreateSecurityZone(ctx, apstra.SecurityZone{
 		Label:   rzName,
-		SzType:  apstra.SecurityZoneTypeEVPN,
-		VrfName: rzName,
+		Type:    enum.SecurityZoneTypeEVPN,
+		VRFName: rzName,
 	})
 	require.NoError(t, err)
 
 	// add IPv4 routes
 	for range ipv4Count {
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute{
-			routingZoneId: rzId.String(),
+			routingZoneId: rzID,
 			network:       randomSlash31(t, "10.0.0.0/8"),
 			nextHop:       randIpvAddressMust(t, "10.0.0.0/8"),
 		}
@@ -79,7 +79,7 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 	// add IPv6 routes
 	for range ipv6Count {
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute{
-			routingZoneId: rzId.String(),
+			routingZoneId: rzID,
 			network:       randomSlash127(t, "2001:db8::/32"),
 			nextHop:       randIpvAddressMust(t, "2001:db8::/32"),
 		}
@@ -806,13 +806,13 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint) te
 func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveRoutingZoneConstraint {
 	t.Helper()
 
-	var routingZoneIds []apstra.ObjectId
+	var routingZoneIds []string
 	for i := range rand.IntN(4) {
 		switch i {
 		case 0: // first loop does nothing, so routingZoneIds stays nil
 			continue
 		case 1: // second loop changes routingZoneIds nil -> {}
-			routingZoneIds = []apstra.ObjectId{}
+			routingZoneIds = []string{}
 		default: // third and subsequent loops add routing zones
 			routingZoneIds = append(routingZoneIds, testutils.SecurityZoneA(t, ctx, client, cleanup))
 		}
@@ -972,7 +972,7 @@ func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.
 		}
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
-			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup).String(),
+			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup),
 			vlanId:                   oneOf(nil, pointer.To(rand.IntN(3995)+100)),
 			l3Mtu:                    oneOf(nil, pointer.To((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),
 			ipv4AddressingType:       ipv4AddressingType,

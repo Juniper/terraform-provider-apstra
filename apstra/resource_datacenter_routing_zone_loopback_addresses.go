@@ -110,7 +110,7 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Create(ctx context.Cont
 	}
 
 	// set loopback addresses
-	err = bp.SetSecurityZoneLoopbacks(ctx, apstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	err = bp.SetSecurityZoneLoopbacks(ctx, plan.RoutingZoneId.ValueString(), request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to set loopback addresses", err.Error())
 		return
@@ -202,7 +202,7 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Update(ctx context.Cont
 	}
 
 	// set loopback addresses
-	err = bp.SetSecurityZoneLoopbacks(ctx, apstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	err = bp.SetSecurityZoneLoopbacks(ctx, plan.RoutingZoneId.ValueString(), request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to set loopback addresses", err.Error())
 		return
@@ -258,7 +258,7 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Delete(ctx context.Cont
 	}
 
 	// clear loopback addresses
-	err = bp.SetSecurityZoneLoopbacks(ctx, apstra.ObjectId(plan.RoutingZoneId.ValueString()), request)
+	err = bp.SetSecurityZoneLoopbacks(ctx, plan.RoutingZoneId.ValueString(), request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed to set loopback addresses", err.Error())
 		return

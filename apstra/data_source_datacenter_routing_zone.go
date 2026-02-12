@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZone{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterRoutingZone{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterRoutingZone{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterRoutingZone{}
+)
 
 type dataSourceDatacenterRoutingZone struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -54,10 +57,10 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		return
 	}
 
-	var api *apstra.SecurityZone
+	var api apstra.SecurityZone
 	switch {
 	case !config.Id.IsNull():
-		api, err = bp.GetSecurityZone(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetSecurityZone(ctx, config.Id.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -66,7 +69,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 			return
 		}
 	case !config.Name.IsNull():
-		api, err = bp.GetSecurityZoneByVrfName(ctx, config.Name.ValueString())
+		api, err = bp.GetSecurityZoneByVRFName(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -79,20 +82,19 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		resp.Diagnostics.AddError("failed reading Routing Zone", err.Error())
 		return
 	}
-	if api.Data == nil {
-		resp.Diagnostics.AddError("failed reading Routing Zone", "api response has no payload")
-		return
+	if api.ID() == nil {
+		resp.Diagnostics.AddError("failed reading Routing Zone", "Zone ID does not exist")
 	}
 
-	config.Id = types.StringValue(api.Id.String())
-	config.LoadApiData(ctx, *api.Data, &resp.Diagnostics)
+	config.Id = types.StringValue(*api.ID())
+	config.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, api.Id)
+	dhcpServers, err := bp.GetSecurityZoneDhcpServers(ctx, *api.ID())
 	if err != nil {
-		resp.Diagnostics.AddError("error retrieving security zone", err.Error())
+		resp.Diagnostics.AddError("error retrieving Routing Zone DHCP Servers", err.Error())
 		return
 	}
 

@@ -256,7 +256,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 	}
 
 	// determine routing zone ID so we can create a CT
-	sz, err := bp.GetSecurityZoneByVrfName(ctx, "default")
+	sz, err := bp.GetSecurityZoneByVRFName(ctx, "default")
 	require.NoError(t, err)
 
 	// create the CT
@@ -265,7 +265,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 		Subpolicies: []*apstra.ConnectivityTemplatePrimitive{
 			{
 				Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
-					SecurityZone:       pointer.To(sz.Id),
+					SecurityZone:       (*apstra.ObjectId)(sz.ID()),
 					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,
 					IPv6AddressingType: apstra.CtPrimitiveIPv6AddressingTypeNone,
 				},

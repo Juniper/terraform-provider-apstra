@@ -125,16 +125,20 @@ func (o *dataSourceDatacenterRoutingZones) Read(ctx context.Context, req datasou
 
 	// If no filters supplied, we can just fetch IDs via the API
 	if config.Filter.IsNull() && config.Filters.IsNull() {
-		securityZones, err := bp.GetAllSecurityZones(ctx)
+		securityZones, err := bp.GetSecurityZones(ctx)
 		if err != nil {
-			resp.Diagnostics.AddError("failed to fetch security zones", err.Error())
+			resp.Diagnostics.AddError("failed to fetch Routing Zones", err.Error())
 			return
 		}
 
 		// collect the IDs
 		ids := make([]attr.Value, len(securityZones))
 		for i, securityZone := range securityZones {
-			ids[i] = types.StringValue(securityZone.Id.String())
+			if securityZone.ID() == nil {
+				resp.Diagnostics.AddError("failed fetching Routing Zones", fmt.Sprintf("Routing Zone at index %d has no ID", i))
+				return
+			}
+			ids[i] = types.StringValue(*securityZone.ID())
 		}
 
 		// set the state

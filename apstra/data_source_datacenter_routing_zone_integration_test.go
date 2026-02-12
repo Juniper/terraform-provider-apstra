@@ -28,19 +28,19 @@ func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 	// BlueprintB returns a bpClient and the template from which the blueprint was created
 	bpClient := testutils.BlueprintA(t, ctx)
 
-	szId := testutils.SecurityZoneA(t, ctx, bpClient, true)
+	szID := testutils.SecurityZoneA(t, ctx, bpClient, true)
 
-	sz, err := bpClient.GetSecurityZone(ctx, szId)
+	sz, err := bpClient.GetSecurityZone(ctx, szID)
 	require.NoError(t, err)
 
-	err = bpClient.SetSecurityZoneDhcpServers(ctx, sz.Id, []net.IP{net.ParseIP("1.1.1.1"), net.ParseIP("2.2.2.2")})
+	err = bpClient.SetSecurityZoneDhcpServers(ctx, szID, []net.IP{net.ParseIP("1.1.1.1"), net.ParseIP("2.2.2.2")})
 	require.NoError(t, err)
 
 	rp, err := bpClient.GetDefaultRoutingPolicy(ctx)
 	require.NoError(t, err)
 
 	// generate the terraform config
-	dataSourceHCL := fmt.Sprintf(dataSourceDataCenterRoutingZoneHCL, bpClient.Id(), szId)
+	dataSourceHCL := fmt.Sprintf(dataSourceDataCenterRoutingZoneHCL, bpClient.Id(), szID)
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -49,10 +49,10 @@ func TestDataSourceDatacenterRoutingZone_A(t *testing.T) {
 				Config: insecureProviderConfigHCL + dataSourceHCL,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					[]resource.TestCheckFunc{
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "id", szId.String()),
+						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "id", szID),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "blueprint_id", bpClient.Id().String()),
 
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "name", sz.Data.Label),
+						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "name", sz.Label),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "routing_policy_id", rp.Id.String()),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_zone.test", "dhcp_servers.#", "2"),
 						resource.TestCheckTypeSetElemAttr("data.apstra_datacenter_routing_zone.test", "dhcp_servers.*", "1.1.1.1"),

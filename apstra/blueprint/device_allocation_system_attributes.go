@@ -387,7 +387,7 @@ func (o *DeviceAllocationSystemAttributes) setAsn(ctx context.Context, bp *apstr
 	}
 }
 
-func getLoopbackNodeAndSecurityZoneIDs(ctx context.Context, bp *apstra.TwoStageL3ClosClient, systemNodeId apstra.ObjectId, loopIdx int, diags *diag.Diagnostics) (apstra.ObjectId, apstra.ObjectId) {
+func getLoopbackNodeAndSecurityZoneIDs(ctx context.Context, bp *apstra.TwoStageL3ClosClient, systemNodeId apstra.ObjectId, loopIdx int, diags *diag.Diagnostics) (string, string) {
 	query := new(apstra.PathQuery).
 		SetBlueprintId(bp.Id()).
 		SetClient(bp.Client()).
@@ -413,10 +413,10 @@ func getLoopbackNodeAndSecurityZoneIDs(ctx context.Context, bp *apstra.TwoStageL
 	var queryResponse struct {
 		Items []struct {
 			Interface struct {
-				Id apstra.ObjectId `json:"id"`
+				Id string `json:"id"`
 			} `json:"n_interface"`
 			SecurityZone struct {
-				Id apstra.ObjectId `json:"id"`
+				Id string `json:"id"`
 			} `json:"n_security_zone"`
 		} `json:"items"`
 	}
@@ -452,7 +452,7 @@ func getLoopbackNodeAndSecurityZoneIDs(ctx context.Context, bp *apstra.TwoStageL
 	return ifId, szId
 }
 
-func (o *DeviceAllocationSystemAttributes) legacySetLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
+func (o *DeviceAllocationSystemAttributes) legacySetLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId string, diags *diag.Diagnostics) {
 	patch := &struct {
 		IPv4Addr string `json:"ipv4_addr,omitempty"`
 		IPv6Addr string `json:"ipv6_addr,omitempty"`
@@ -461,7 +461,7 @@ func (o *DeviceAllocationSystemAttributes) legacySetLoopbacks(ctx context.Contex
 		IPv6Addr: o.LoopbackIpv6.ValueString(),
 	}
 
-	err := bp.PatchNode(ctx, nodeId, &patch, nil)
+	err := bp.PatchNode(ctx, apstra.ObjectId(nodeId), &patch, nil)
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed setting loopback addresses to interface node %q", nodeId), err.Error())
 		return
@@ -495,7 +495,7 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 		ipv6Addr = pointer.To(netip.MustParsePrefix(o.LoopbackIpv6.ValueString()))
 	}
 
-	err := bp.SetSecurityZoneLoopbacks(ctx, securityZoneId, map[apstra.ObjectId]apstra.SecurityZoneLoopback{
+	err := bp.SetSecurityZoneLoopbacks(ctx, securityZoneId, map[string]apstra.SecurityZoneLoopback{
 		loopbackNodeId: {
 			IPv4Addr: ipv4Addr,
 			IPv6Addr: ipv6Addr,
