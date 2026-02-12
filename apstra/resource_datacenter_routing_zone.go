@@ -6,20 +6,25 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure  = &resourceDatacenterRoutingZone{}
-	_ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
-	_ resourceWithSetDcBpClientFunc   = &resourceDatacenterRoutingZone{}
-	_ resourceWithSetBpLockFunc       = &resourceDatacenterRoutingZone{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterRoutingZone{}
+	_ resource.ResourceWithModifyPlan     = &resourceDatacenterRoutingZone{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetClient               = &resourceDatacenterRoutingZone{}
 )
 
 type resourceDatacenterRoutingZone struct {
+	client          *apstra.Client
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
@@ -37,6 +42,46 @@ func (o *resourceDatacenterRoutingZone) Schema(_ context.Context, _ resource.Sch
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Routing Zone within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterRoutingZone{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterRoutingZone) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.DatacenterRoutingZone
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// config-only validation begins here
+
+	// config + api version validation begins here
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
+	// validate the configuration
+	constraints := config.VersionConstraints(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(
+		compatibility.ValidateConfigConstraints(
+			ctx,
+			compatibility.ValidateConfigConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: constraints,
+			},
+		)...,
+	)
 }
 
 func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
@@ -205,7 +250,7 @@ func (o *resourceDatacenterRoutingZone) Read(ctx context.Context, req resource.R
 		return
 	}
 
-	// Create "newState" with unknown values to ensure that the Read() method doesn't short circuit.
+	// Create "newState" with zero values (null) to ensure that the Read() method doesn't short circuit.
 	var newState blueprint.DatacenterRoutingZone
 	newState.Id = state.Id
 	newState.HadPriorVlanIdConfig = state.HadPriorVlanIdConfig
@@ -348,4 +393,8 @@ func (o *resourceDatacenterRoutingZone) setBpClientFunc(f func(context.Context, 
 
 func (o *resourceDatacenterRoutingZone) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDatacenterRoutingZone) setClient(client *apstra.Client) {
+	o.client = client
 }

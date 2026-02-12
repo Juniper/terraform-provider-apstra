@@ -11,6 +11,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
@@ -30,19 +31,23 @@ const (
   import_route_targets = %s
   export_route_targets = %s
   junos_evpn_irb_mode  = %s
+  ip_addressing_type   = %s
+  disable_ipv4         = %s
 }
 `
 )
 
 type testRoutingZone struct {
-	name          string
-	vlan          *int
-	vni           *int
-	dhcpServers   []string
-	routingPolicy string
-	importRTs     []string
-	exportRTs     []string
-	irbMode       string
+	name             string
+	vlan             *int
+	vni              *int
+	dhcpServers      []string
+	routingPolicy    string
+	importRTs        []string
+	exportRTs        []string
+	irbMode          string
+	ipAddressingType string
+	disableIPv4      *bool
 }
 
 func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) string {
@@ -58,6 +63,8 @@ func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) strin
 		stringSliceOrNull(o.importRTs),
 		stringSliceOrNull(o.exportRTs),
 		stringOrNull(o.irbMode),
+		stringOrNull(o.ipAddressingType),
+		boolPtrOrNull(o.disableIPv4),
 	)
 }
 
@@ -114,6 +121,14 @@ func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, r
 
 	if o.irbMode != "" {
 		result.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
+	}
+
+	if o.ipAddressingType != "" {
+		result.append(t, "TestCheckResourceAttr", "ip_addressing_type", o.ipAddressingType)
+	}
+
+	if o.disableIPv4 != nil {
+		result.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
 	}
 
 	return result
@@ -412,6 +427,180 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 							testFuncName: "TestCheckResourceInt64AttrBetween",
 							testFuncArgs: []string{"vni", strconv.Itoa(6500), strconv.Itoa(6599)},
 						},
+					},
+				},
+			},
+		},
+		"ipv4_to_ipv6_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+					},
+				},
+			},
+		},
+		"ipv6_to_ipv46_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4_ipv6",
+					},
+				},
+			},
+		},
+		"ipv46_to_ipv4_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4_ipv6",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4",
+					},
+				},
+			},
+		},
+		"ipv6_to_ipv4_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4",
+					},
+				},
+			},
+		},
+		"ipv46_to_ipv6_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4_ipv6",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+					},
+				},
+			},
+		},
+		"ipv4_to_ipv46_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4_ipv6",
+					},
+				},
+			},
+		},
+		"ipv4_to_ipv6_only_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+						disableIPv4:      pointer.To(true),
+					},
+				},
+			},
+		},
+		"ipv6_only_to_ipv46_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+						disableIPv4:      pointer.To(true),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4_ipv6",
+					},
+				},
+			},
+		},
+		"ipv6_only_to_ipv4_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+						disableIPv4:      pointer.To(true),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4",
+					},
+				},
+			},
+		},
+		"ipv46_to_ipv6_only_with_apstra610_or_later": {
+			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv4_ipv6",
+					},
+				},
+				{
+					config: testRoutingZone{
+						name:             acctest.RandString(6),
+						ipAddressingType: "ipv6",
+						disableIPv4:      pointer.To(true),
 					},
 				},
 			},

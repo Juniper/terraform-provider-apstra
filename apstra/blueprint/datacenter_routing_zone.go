@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
@@ -15,6 +17,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
+	"github.com/hashicorp/terraform-plugin-framework-validators/boolvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -43,6 +46,8 @@ type DatacenterRoutingZone struct {
 	ImportRouteTargets   types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets   types.Set    `tfsdk:"export_route_targets"`
 	JunosEvpnIrbMode     types.String `tfsdk:"junos_evpn_irb_mode"`
+	IPAddressingType     types.String `tfsdk:"ip_addressing_type"`
+	DisableIPv4          types.Bool   `tfsdk:"disable_ipv4"`
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -126,6 +131,20 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 				"networks with large amounts of VLANs.",
 			Computed: true,
 		},
+		"ip_addressing_type": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Defines if the according routing zone addresses resources with ipv4, ipv4+ipv6, or " +
+				"ipv6-only. Errors are raised if resources are created within the routing zone and that resource violates " +
+				"this addressing support value. Note that ipv4 is still permitted in an ipv6-only network, in which " +
+				"case disable_ipv4 can be set to True to disallow ipv4 completely.",
+			Computed: true,
+		},
+		"disable_ipv4": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Only valid for `ip_addressing_type=ipv6`. When this is set `true`, pure ipv6 routing " +
+				"zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related configuration will be removed. " +
+				"User-defined IPv4 resources will not be permitted in the blueprint. An IPv4 loopback is still required " +
+				"in order to derive BGP Router IDs and Route Distinguishers and it will not participate in routing.",
+			Computed: true,
+		},
 	}
 }
 
@@ -188,6 +207,24 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			MarkdownDescription: "Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for " +
 				"inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for " +
 				"networks with large amounts of VLANs.",
+			Optional: true,
+		},
+		"ip_addressing_type": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Defines if the according routing zone addresses resources with "+
+				"ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the routing zone "+
+				"and that resource violates this addressing support value. Note that ipv4 is still permitted in an "+
+				"ipv6-only network, in which case disable_ipv4 can be set to True to disallow ipv4 completely.\n"+
+				"Must be one of `['%s']`.\n"+
+				"Requires Apstra version %s",
+				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.RoutingZoneAddressingTypeOK),
+			Optional: true,
+		},
+		"disable_ipv4": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: fmt.Sprintf("Only valid for `ip_addressing_type=ipv6`. When this is set "+
+				"`true`, pure ipv6 routing zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
+				"configuration will be removed. User-defined IPv4 resources will not be permitted in the blueprint. "+
+				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
+				"will not participate in routing. Requires Apstra version %s", compatibility.RoutingZoneAddressingTypeOK),
 			Optional: true,
 		},
 	}
@@ -287,6 +324,32 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators: []validator.String{stringvalidator.OneOf(enum.JunosEVPNIRBModes.Values()...)},
 			Default:    stringdefault.StaticString(enum.JunosEVPNIRBModeAsymmetric.String()),
 		},
+		"ip_addressing_type": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Defines if the according routing zone addresses resources with "+
+				"ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the routing zone "+
+				"and that resource violates this addressing support value. Note that ipv4 is still permitted in an "+
+				"ipv6-only network, in which case disable_ipv4 can be set to True to disallow ipv4 completely.\n"+
+				"Must be one of `['%s']`.\n"+
+				"Requires Apstra version %s",
+				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.RoutingZoneAddressingTypeOK),
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.OneOf(enum.AddressingSchemes.Values()...)},
+		},
+		"disable_ipv4": resourceSchema.BoolAttribute{
+			MarkdownDescription: fmt.Sprintf("Only valid for `ip_addressing_type=ipv6`. When this is set "+
+				"`true`, pure ipv6 routing zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
+				"configuration will be removed. User-defined IPv4 resources will not be permitted in the blueprint. "+
+				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
+				"will not participate in routing. Requires Apstra version %s", compatibility.RoutingZoneAddressingTypeOK),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Bool{
+				boolvalidator.AlsoRequires(path.MatchRoot("ip_addressing_type")),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ip_addressing_type"), types.StringValue(enum.AddressingSchemeIPv4.String())),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ip_addressing_type"), types.StringValue(enum.AddressingSchemeIPv46.String())),
+			},
+		},
 	}
 }
 
@@ -329,6 +392,20 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	result.Label = o.Name.ValueString()
 	result.RoutingPolicyID = o.RoutingPolicyId.ValueString()
 	result.JunosEVPNIRBMode = enum.JunosEVPNIRBModes.Parse(o.JunosEvpnIrbMode.ValueString())
+
+	if utils.HasValue(o.IPAddressingType) {
+		var as enum.AddressingScheme
+		err = as.FromString(o.IPAddressingType.ValueString())
+		if err != nil {
+			diags.AddAttributeError(path.Root("ip_addressing_type"), constants.ErrInvalidConfig, err.Error())
+		}
+
+		result.AddressingSupport = &as
+	}
+
+	if utils.HasValue(o.DisableIPv4) {
+		result.DisableIPv4 = o.DisableIPv4.ValueBoolPointer()
+	}
 
 	return result
 }
@@ -396,6 +473,23 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz apstra.Secur
 			o.JunosEvpnIrbMode = types.StringNull()
 		} else {
 			o.JunosEvpnIrbMode = types.StringValue(sz.JunosEVPNIRBMode.Value)
+		}
+	}
+
+	if !utils.HasValue(o.IPAddressingType) {
+		if sz.AddressingSupport != nil {
+			o.IPAddressingType = types.StringValue(sz.AddressingSupport.Value)
+		} else {
+			o.IPAddressingType = types.StringNull()
+		}
+	}
+
+	if !utils.HasValue(o.DisableIPv4) {
+		// only read "disable_ipv4" value when addressing scheme is ipv6
+		if o.IPAddressingType.ValueString() == enum.AddressingSchemeIPv6.String() {
+			o.DisableIPv4 = types.BoolPointerValue(sz.DisableIPv4)
+		} else {
+			o.DisableIPv4 = types.BoolNull()
 		}
 	}
 }
@@ -537,6 +631,14 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 		result = append(result, apstra.QEEAttribute{Key: "junos_evpn_irb_mode", Value: apstra.QEStringVal(o.JunosEvpnIrbMode.ValueString())})
 	}
 
+	if utils.HasValue(o.IPAddressingType) {
+		result = append(result, apstra.QEEAttribute{Key: "addressing_support", Value: apstra.QEStringVal(o.IPAddressingType.ValueString())})
+	}
+
+	if utils.HasValue(o.DisableIPv4) {
+		result = append(result, apstra.QEEAttribute{Key: "disable_ipv4", Value: apstra.QEBoolVal(o.DisableIPv4.ValueBool())})
+	}
+
 	return result
 }
 
@@ -547,7 +649,9 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 		utils.HasValue(o.RoutingPolicyId) &&
 		utils.HasValue(o.ImportRouteTargets) &&
 		utils.HasValue(o.ExportRouteTargets) &&
-		utils.HasValue(o.JunosEvpnIrbMode) {
+		utils.HasValue(o.JunosEvpnIrbMode) &&
+		utils.HasValue(o.IPAddressingType) &&
+		utils.HasValue(o.DisableIPv4) {
 		return nil // we are in Create() or Update() and have no need for an API call
 	}
 
@@ -581,4 +685,24 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 	}
 
 	return nil
+}
+
+func (o DatacenterRoutingZone) VersionConstraints(_ context.Context, _ *diag.Diagnostics) compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
+
+	if !o.IPAddressingType.IsUnknown() && !o.IPAddressingType.IsNull() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("ip_addressing_type"),
+			Constraints: compatibility.RoutingZoneAddressingTypeOK,
+		})
+	}
+
+	if !o.DisableIPv4.IsUnknown() && !o.DisableIPv4.IsNull() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("disable_ipv4"),
+			Constraints: compatibility.RoutingZoneAddressingTypeOK,
+		})
+	}
+
+	return response
 }
