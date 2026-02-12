@@ -79,7 +79,7 @@ func TestAccDatacenterConnectivityTemplateAssignments(t *testing.T) {
 	ctIds := make([]apstra.ObjectId, ctCount)
 	for i := range ctIds {
 		szId := testutils.SecurityZoneA(t, ctx, bp, true)
-		ctId := testutils.DatacenterConnectivityTemplateA(t, ctx, bp, szId, 101+i)
+		ctId := testutils.DatacenterConnectivityTemplateIPLink(t, ctx, bp, szId, 101+i)
 		ctIds[i] = ctId
 	}
 
