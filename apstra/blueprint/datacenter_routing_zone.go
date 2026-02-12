@@ -95,7 +95,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Computed: true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
+			MarkdownDescription: "VxLAN VNI associated with the Routing Zone. Leave this field blank to have it " +
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
 			Computed: true,
 		},
@@ -132,16 +132,16 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Computed: true,
 		},
 		"ip_addressing_type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Defines if the according routing zone addresses resources with ipv4, ipv4+ipv6, or " +
-				"ipv6-only. Errors are raised if resources are created within the routing zone and that resource violates " +
+			MarkdownDescription: "Defines if the according Routing Zone addresses resources with ipv4, ipv4+ipv6, or " +
+				"ipv6-only. Errors are raised if resources are created within the Routing Zone and that resource violates " +
 				"this addressing support value. Note that ipv4 is still permitted in an ipv6-only network, in which " +
-				"case disable_ipv4 can be set to True to disallow ipv4 completely.",
+				"case `disable_ipv4` can be used to disallow ipv4 completely.",
 			Computed: true,
 		},
 		"disable_ipv4": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Only valid for `ip_addressing_type=ipv6`. When this is set `true`, pure ipv6 routing " +
+			MarkdownDescription: "Only valid with `ip_addressing_type = \"ipv6\"`. When this is set `true`, pure ipv6 routing " +
 				"zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related configuration will be removed. " +
-				"User-defined IPv4 resources will not be permitted in the blueprint. An IPv4 loopback is still required " +
+				"User-defined IPv4 resources will not be permitted in the Routing Zone. An IPv4 loopback is still required " +
 				"in order to derive BGP Router IDs and Route Distinguishers and it will not participate in routing.",
 			Computed: true,
 		},
@@ -175,7 +175,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "VxLAN VNI associated with the routing zone.",
+			MarkdownDescription: "VxLAN VNI associated with the Routing Zone.",
 			Optional:            true,
 		},
 		"had_prior_vni_config": dataSourceSchema.BoolAttribute{
@@ -210,19 +210,19 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Optional: true,
 		},
 		"ip_addressing_type": dataSourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Defines if the according routing zone addresses resources with "+
-				"ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the routing zone "+
+			MarkdownDescription: fmt.Sprintf("Defines if the according Routing Zone addresses resources with "+
+				"ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the Routing Zone "+
 				"and that resource violates this addressing support value. Note that ipv4 is still permitted in an "+
-				"ipv6-only network, in which case disable_ipv4 can be set to True to disallow ipv4 completely.\n"+
+				"ipv6-only network, in which case `disable_ipv4` can be used to disallow ipv4 completely.\n"+
 				"Must be one of `['%s']`.\n"+
 				"Requires Apstra version %s",
 				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.RoutingZoneAddressingTypeOK),
 			Optional: true,
 		},
 		"disable_ipv4": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("Only valid for `ip_addressing_type=ipv6`. When this is set "+
-				"`true`, pure ipv6 routing zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
-				"configuration will be removed. User-defined IPv4 resources will not be permitted in the blueprint. "+
+			MarkdownDescription: fmt.Sprintf("Only valid with `ip_addressing_type = \"ipv6\"`. When this is set "+
+				"`true`, pure ipv6 Routing Zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
+				"configuration will be removed. User-defined IPv4 resources will not be permitted in the Routing Zone. "+
 				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
 				"will not participate in routing. Requires Apstra version %s", compatibility.RoutingZoneAddressingTypeOK),
 			Optional: true,
@@ -270,7 +270,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Computed: true,
 		},
 		"vni": resourceSchema.Int64Attribute{
-			MarkdownDescription: "VxLAN VNI associated with the routing zone. Leave this field blank to have it " +
+			MarkdownDescription: "VxLAN VNI associated with the Routing Zone. Leave this field blank to have it " +
 				"automatically assigned from an allocated resource pool, or enter a specific value.",
 			Optional:   true,
 			Computed:   true,
@@ -325,10 +325,10 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Default:    stringdefault.StaticString(enum.JunosEVPNIRBModeAsymmetric.String()),
 		},
 		"ip_addressing_type": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("Defines if the according routing zone addresses resources with "+
-				"ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the routing zone "+
+			MarkdownDescription: fmt.Sprintf("Defines if the according Routing Zone addresses resources with "+
+				"ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the Routing Zone "+
 				"and that resource violates this addressing support value. Note that ipv4 is still permitted in an "+
-				"ipv6-only network, in which case disable_ipv4 can be set to True to disallow ipv4 completely.\n"+
+				"ipv6-only network, in which case `disable_ipv4` can be used to disallow ipv4 completely.\n"+
 				"Must be one of `['%s']`.\n"+
 				"Requires Apstra version %s",
 				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.RoutingZoneAddressingTypeOK),
@@ -337,9 +337,9 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators: []validator.String{stringvalidator.OneOf(enum.AddressingSchemes.Values()...)},
 		},
 		"disable_ipv4": resourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("Only valid for `ip_addressing_type=ipv6`. When this is set "+
-				"`true`, pure ipv6 routing zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
-				"configuration will be removed. User-defined IPv4 resources will not be permitted in the blueprint. "+
+			MarkdownDescription: fmt.Sprintf("Only valid with `ip_addressing_type = \"ipv6\"`. When this is set "+
+				"`true`, pure ipv6 Routing Zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
+				"configuration will be removed. User-defined IPv4 resources will not be permitted in the Routing Zone. "+
 				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
 				"will not participate in routing. Requires Apstra version %s", compatibility.RoutingZoneAddressingTypeOK),
 			Optional: true,
@@ -376,7 +376,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		diags.AddAttributeError(
 			path.Root("blueprint_id"),
 			constants.ErrInvalidConfig,
-			fmt.Sprintf("cannot create routing zone in blueprints with overlay control protocol %q", rosetta.StringersToFriendlyString(ocp)))
+			fmt.Sprintf("cannot create Routing Zone in blueprints with overlay control protocol %q", rosetta.StringersToFriendlyString(ocp)))
 		return result
 	}
 
@@ -662,7 +662,7 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 		if utils.IsApstra404(err) {
 			return err
 		}
-		diags.AddError("failed while reading routing zone from API", err.Error())
+		diags.AddError("failed while reading Routing Zone from API", err.Error())
 		return nil
 	}
 
