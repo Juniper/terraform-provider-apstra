@@ -138,9 +138,6 @@ func (o *NodesTypeSystem) ReadFromApi(ctx context.Context, client *apstra.Client
 			SetClient(client).
 			SetBlueprintId(apstra.ObjectId(o.BlueprintId.ValueString())).
 			SetBlueprintType(apstra.BlueprintTypeStaging)
-		if diags.HasError() {
-			return
-		}
 
 		// run the query
 		err := query.Do(ctx, &queryResponse)
