@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, szId apstra.ObjectId, tag int) apstra.ObjectId {
+func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, szID string, tag int) apstra.ObjectId {
 	t.Helper()
 
 	ct := apstra.ConnectivityTemplate{
@@ -23,7 +23,7 @@ func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apst
 				Label: acctest.RandString(10),
 				Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
 					Label:              acctest.RandString(10),
-					SecurityZone:       &szId,
+					SecurityZone:       (*apstra.ObjectId)(&szID),
 					Tagged:             true,
 					Vlan:               pointer.To(apstra.VLAN(tag)),
 					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,

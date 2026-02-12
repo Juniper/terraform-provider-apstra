@@ -38,9 +38,9 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 
 	// create a security zone within the blueprint
 	name := acctest.RandString(5)
-	zoneId, err := bp.CreateSecurityZone(ctx, &apstra.SecurityZoneData{
-		SzType:  apstra.SecurityZoneTypeEVPN,
-		VrfName: name,
+	zoneId, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
+		Type:    enum.SecurityZoneTypeEVPN,
+		VRFName: name,
 		Label:   name,
 	})
 	if err != nil {
@@ -61,7 +61,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 				Ipv4Enabled:    true,
 				Ipv4Subnet:     randIpNetMust(t, "10.0.0.0/16"),
 				Label:          acctest.RandString(5),
-				SecurityZoneId: zoneId,
+				SecurityZoneId: apstra.ObjectId(zoneId),
 				VnType:         enum.VnTypeVxlan,
 				VnBindings:     vnBindings,
 			},
@@ -71,7 +71,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 				Ipv4Enabled:    true,
 				Ipv4Subnet:     randIpNetMust(t, "10.1.0.0/16"),
 				Label:          acctest.RandString(5),
-				SecurityZoneId: zoneId,
+				SecurityZoneId: apstra.ObjectId(zoneId),
 				VnType:         enum.VnTypeVlan,
 				VnBindings:     []apstra.VnBinding{{SystemId: apstra.ObjectId(leafIdStrings[0])}},
 			},

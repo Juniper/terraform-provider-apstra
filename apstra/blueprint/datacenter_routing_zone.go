@@ -317,6 +317,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		return result
 	}
 
+	result.RTPolicy = new(apstra.RTPolicy)
 	diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &result.RTPolicy.ImportRTs, false)...)
 	diags.Append(o.ExportRouteTargets.ElementsAs(ctx, &result.RTPolicy.ExportRTs, false)...)
 	if diags.HasError() {
