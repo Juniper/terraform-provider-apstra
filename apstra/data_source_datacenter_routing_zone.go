@@ -69,7 +69,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 			return
 		}
 	case !config.Name.IsNull():
-		api, err = bp.GetSecurityZoneByVRFName(ctx, config.Name.ValueString())
+		api, err = bp.GetSecurityZoneByLabel(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
