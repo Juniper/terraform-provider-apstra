@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"testing"
 
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
