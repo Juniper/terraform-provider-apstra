@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	testConfigFile = "../.testconfig.hcl"
+	testConfigFile = ".testconfig.hcl"
 	timeout        = 60 * time.Second // probably should be added to env vars and to test hcl file
 )
 
@@ -76,13 +76,23 @@ func TestCfgFileToEnv(t testing.TB) {
 	if testCfg == nil {
 		testCfg = new(testConfig)
 
-		absPath, err := filepath.Abs(testConfigFile)
+		rr, err := repoRoot()
 		if err != nil {
-			t.Fatalf("while expanding config file path %s - %s", testConfigFile, err)
+			t.Fatal(err)
+		}
+
+		cfgFilePath := filepath.Join(rr, testConfigFile)
+
+		absPath, err := filepath.Abs(cfgFilePath)
+		if err != nil {
+			t.Fatalf("while expanding config file path %s: %v", cfgFilePath, err)
 		}
 
 		if _, err = os.Stat(absPath); errors.Is(err, os.ErrNotExist) {
 			return
+		}
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		err = hclsimple.DecodeFile(absPath, nil, testCfg)
@@ -143,4 +153,23 @@ func GetSystemIds(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosCl
 	}
 
 	return result
+}
+
+func repoRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", errors.New("failed finding go.mod")
+		}
+		dir = parent
+	}
 }
