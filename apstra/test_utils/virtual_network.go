@@ -21,7 +21,7 @@ func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoSt
 	id, err := client.CreateVirtualNetwork(ctx, &apstra.VirtualNetworkData{
 		Ipv4Enabled:    true,
 		Label:          acctest.RandString(6),
-		SecurityZoneId: SecurityZoneA(t, ctx, client, cleanup),
+		SecurityZoneId: apstra.ObjectId(SecurityZoneA(t, ctx, client, cleanup)),
 		VnBindings:     vnBindings,
 		VnType:         enum.VnTypeVxlan,
 	})

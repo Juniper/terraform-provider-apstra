@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,10 +12,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterRoutingZone{}
-var _ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterRoutingZone{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterRoutingZone{}
+var (
+	_ resource.ResourceWithConfigure  = &resourceDatacenterRoutingZone{}
+	_ resource.ResourceWithModifyPlan = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetDcBpClientFunc   = &resourceDatacenterRoutingZone{}
+	_ resourceWithSetBpLockFunc       = &resourceDatacenterRoutingZone{}
+)
 
 type resourceDatacenterRoutingZone struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -79,7 +82,7 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 		return
 	}
 
-	//Retrieve values from plan
+	// Retrieve values from plan
 	var plan blueprint.DatacenterRoutingZone
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -151,7 +154,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	}
 
 	// record the new security zone ID
-	plan.Id = types.StringValue(id.String())
+	plan.Id = types.StringValue(id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
 	if !plan.DhcpServers.IsNull() {
@@ -270,7 +273,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	plan.HadPriorVniConfig = types.BoolValue(utils.HasValue(plan.Vni))
 
 	// send the update
-	err = bp.UpdateSecurityZone(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdateSecurityZone(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating security zone", err.Error())
 		return
@@ -283,7 +286,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 			return
 		}
 
-		err = bp.SetSecurityZoneDhcpServers(ctx, apstra.ObjectId(plan.Id.ValueString()), dhcpRequest)
+		err = bp.SetSecurityZoneDhcpServers(ctx, plan.Id.ValueString(), dhcpRequest)
 		if err != nil {
 			resp.Diagnostics.AddError("error updating security zone dhcp servers", err.Error())
 			return
@@ -330,7 +333,7 @@ func (o *resourceDatacenterRoutingZone) Delete(ctx context.Context, req resource
 	}
 
 	// Delete the routing zone
-	err = bp.DeleteSecurityZone(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteSecurityZone(ctx, state.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
