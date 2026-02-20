@@ -8,6 +8,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	apstraplanmodifier "github.com/Juniper/terraform-provider-apstra/apstra/plan_modifier"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -223,10 +224,11 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			Computed:            true,
 		},
 		"ipv6_applications": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
-				"connectivity points. This adds resource requirements and device configurations, " +
-				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
-				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links.",
+			MarkdownDescription: fmt.Sprintf("Enables support for IPv6 virtual networks and IPv6 external "+
+				"connectivity points. This adds resource requirements and device configurations, "+
+				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses "+
+				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. Supported with Apstra %s only.",
+				compatibility.BlueprintIPv6ApplicationsOK),
 			Computed: true,
 		},
 		"junos_evpn_max_nexthop_and_interface_number": dataSourceSchema.BoolAttribute{
@@ -475,11 +477,12 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 			},
 		},
 		"ipv6_applications": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables support for IPv6 virtual networks and IPv6 external " +
-				"connectivity points. This adds resource requirements and device configurations, " +
-				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses " +
-				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot " +
-				"be disabled without re-creating the Blueprint. Applies only to EVPN blueprints.",
+			MarkdownDescription: fmt.Sprintf("Enables support for IPv6 virtual networks and IPv6 external "+
+				"connectivity points. This adds resource requirements and device configurations, "+
+				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses "+
+				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled "+
+				"without re-creating the Blueprint. Applies only to EVPN blueprints. Supported with Apstra %s only.",
+				compatibility.BlueprintIPv6ApplicationsOK),
 			Optional: true,
 			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
@@ -902,4 +905,17 @@ func boolAttrValueFromFeatureswitchEnumPtr(fs *enum.FeatureSwitch) types.Bool {
 	}
 
 	return types.BoolValue(fs.Value == enum.FeatureSwitchEnabled.Value)
+}
+
+func (o Blueprint) VersionConstraints(_ context.Context, _ *diag.Diagnostics) compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
+
+	if !o.Ipv6Applications.IsNull() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("ipv6_applications"),
+			Constraints: compatibility.BlueprintIPv6ApplicationsOK,
+		})
+	}
+
+	return response
 }
