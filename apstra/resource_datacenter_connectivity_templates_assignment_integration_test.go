@@ -5,6 +5,8 @@ package tfapstra_test
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -72,69 +74,89 @@ func (o resourceDatacenterConnectivityTemplatesAssignment) testChecks(t testing.
 func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 	ctx := context.Background()
 
-	ctCount := 5
+	ifCTCount := 5
+	systemCTCount := 4 // 4 leaf switches
 
 	// Create blueprint, routing zones and connectivity templates
 	bp := testutils.BlueprintA(t, ctx)
-	ctIds := make([]apstra.ObjectId, ctCount)
-	for i := range ctIds {
+	interfaceCTs := make([]apstra.ObjectId, ifCTCount)
+	for i := range interfaceCTs {
 		szId := testutils.SecurityZoneA(t, ctx, bp, true)
-		ctId := testutils.DatacenterConnectivityTemplateA(t, ctx, bp, szId, 101+i)
-		ctIds[i] = ctId
+		ctId := testutils.DatacenterConnectivityTemplateIPLink(t, ctx, bp, szId, 101+i)
+		interfaceCTs[i] = ctId
+	}
+	systemCTs := make([]apstra.ObjectId, systemCTCount)
+	for i := range systemCTs {
+		szId := testutils.SecurityZoneA(t, ctx, bp, true)
+		ctid := testutils.DatacenterConnectivityTemplateCustomStaticRoute(t, ctx, bp, szId)
+		systemCTs[i] = ctid
 	}
 
-	applicationPointIds := testutils.LeafSwitchGenericSystemInterfaces(t, ctx, bp)
-	require.Equal(t, 8, len(applicationPointIds)) // BlueprintA should have 8 single-homed generic systems
+	interfaceAPIDs := testutils.LeafSwitchGenericSystemInterfaces(t, ctx, bp)
+	require.Equal(t, 8, len(interfaceAPIDs)) // BlueprintA should have 8 single-homed generic systems
+
+	systemAPIDmap := testutils.GetSystemIds(t, ctx, bp, "leaf")
+	systemAPIDs := slices.Collect(maps.Values(systemAPIDmap))
+	require.Equal(t, 4, len(systemAPIDs))
 
 	type testCase struct {
 		steps []resourceDatacenterConnectivityTemplatesAssignment
 	}
 
 	testCases := map[string]testCase{
-		"single_one_step": {
+		"single_csr_one_step": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
 					blueprintId:             bp.Id(),
-					connectivityTemplateIds: []apstra.ObjectId{ctIds[0]},
-					applicationPointId:      applicationPointIds[0],
+					applicationPointId:      systemAPIDs[0],
+					connectivityTemplateIds: []apstra.ObjectId{systemCTs[0]},
 				},
 			},
 		},
-		"multiple_one_step": {
+		"single_if_one_step": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
 					blueprintId:             bp.Id(),
-					connectivityTemplateIds: ctIds,
-					applicationPointId:      applicationPointIds[0],
+					connectivityTemplateIds: []apstra.ObjectId{interfaceCTs[0]},
+					applicationPointId:      interfaceAPIDs[0],
 				},
 			},
 		},
-		"single_with_fetch": {
+		"multiple_if_one_step": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
 					blueprintId:             bp.Id(),
-					connectivityTemplateIds: ctIds,
-					applicationPointId:      applicationPointIds[0],
+					connectivityTemplateIds: interfaceCTs,
+					applicationPointId:      interfaceAPIDs[0],
+				},
+			},
+		},
+		"single_if_with_fetch": {
+			steps: []resourceDatacenterConnectivityTemplatesAssignment{
+				{
+					blueprintId:             bp.Id(),
+					connectivityTemplateIds: interfaceCTs,
+					applicationPointId:      interfaceAPIDs[0],
 					fetchIpLinkIds:          pointer.To(true),
 				},
 			},
 		},
-		"simple": {
+		"simple_if": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
 					blueprintId:             bp.Id(),
-					connectivityTemplateIds: ctIds[0:1],
-					applicationPointId:      applicationPointIds[1],
+					connectivityTemplateIds: interfaceCTs[0:1],
+					applicationPointId:      interfaceAPIDs[1],
 				},
 				{
 					blueprintId:             bp.Id(),
-					connectivityTemplateIds: ctIds[1:3],
-					applicationPointId:      applicationPointIds[1],
+					connectivityTemplateIds: interfaceCTs[1:3],
+					applicationPointId:      interfaceAPIDs[1],
 				},
 				{
 					blueprintId:             bp.Id(),
-					connectivityTemplateIds: ctIds[3:4],
-					applicationPointId:      applicationPointIds[1],
+					connectivityTemplateIds: interfaceCTs[3:4],
+					applicationPointId:      interfaceAPIDs[1],
 				},
 			},
 		},

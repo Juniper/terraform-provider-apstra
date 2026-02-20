@@ -109,8 +109,9 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Read(ctx context.Con
 		return
 	}
 
-	// currentCtIds come from the API, may include CTs unrelated to this resource
-	currentCtIds, err := bp.GetInterfaceConnectivityTemplates(ctx, apstra.ObjectId(state.ApplicationPointId.ValueString()))
+	// determine currentCTIDs for our AP ID by querying the API. Note that some CTs
+	// may be bound to our AP by configurations applied independent of this resource.
+	apIDsToCTs, err := bp.GetConnectivityTemplatesByApplicationPoints(ctx, []apstra.ObjectId{apstra.ObjectId(state.ApplicationPointId.ValueString())})
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -119,17 +120,23 @@ func (o *resourceDatacenterConnectivityTemplatesAssignment) Read(ctx context.Con
 		resp.Diagnostics.AddError("failed reading Connectivity Template assignments", err.Error())
 		return
 	}
+	var currentCTIDs []apstra.ObjectId
+	for ctID, used := range apIDsToCTs[apstra.ObjectId(state.ApplicationPointId.ValueString())] {
+		if used {
+			currentCTIDs = append(currentCTIDs, ctID)
+		}
+	}
 
-	// stateCtIds come from the history of this resource. What CTs have been previously assigned?
-	var stateCtIds []apstra.ObjectId
-	resp.Diagnostics.Append(state.ConnectivityTemplateIds.ElementsAs(ctx, &stateCtIds, false)...)
+	// stateCTIDs come from the history of this resource. What CTs have we previously assigned?
+	var stateCTIDs []apstra.ObjectId
+	resp.Diagnostics.Append(state.ConnectivityTemplateIds.ElementsAs(ctx, &stateCTIDs, false)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// remainingCtIds are the previously assigned IDs (state) which are still assigned (current)
-	remainingCtIds := utils.SliceIntersectionOfAB(currentCtIds, stateCtIds)
-	state.ConnectivityTemplateIds = value.SetOrNull(ctx, types.StringType, remainingCtIds, &resp.Diagnostics)
+	// remainingCTIDs are the previously assigned IDs (those from state) which are still assigned (current)
+	remainingCTIDs := utils.SliceIntersectionOfAB(currentCTIDs, stateCTIDs)
+	state.ConnectivityTemplateIds = value.SetOrNull(ctx, types.StringType, remainingCTIDs, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

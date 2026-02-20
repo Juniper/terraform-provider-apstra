@@ -3,6 +3,8 @@ package testutils
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
+	"net"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -27,6 +29,31 @@ func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apst
 					Tagged:             true,
 					Vlan:               pointer.To(apstra.VLAN(tag)),
 					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,
+				},
+			},
+		},
+	}
+
+	require.NoError(t, ct.SetIds())
+	require.NoError(t, ct.SetUserData())
+	require.NoError(t, bp.CreateConnectivityTemplate(ctx, &ct))
+
+	return *ct.Id
+}
+
+func DatacenterConnectivityTemplateCustomStaticRoute(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, szID apstra.ObjectId) apstra.ObjectId {
+	ct := apstra.ConnectivityTemplate{
+		Id:          nil,
+		Label:       acctest.RandString(10),
+		Description: acctest.RandString(10),
+		Subpolicies: []*apstra.ConnectivityTemplatePrimitive{
+			{
+				Label: acctest.RandString(10),
+				Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachCustomStaticRoute{
+					Label:        acctest.RandString(10),
+					Network:      pointer.To(randomIpv4Net(24)),
+					NextHop:      net.IP{uint8(rand.Intn(224)), uint8(rand.Intn(256)), uint8(rand.Intn(256)), uint8(rand.Intn(256))},
+					SecurityZone: &szID,
 				},
 			},
 		},
