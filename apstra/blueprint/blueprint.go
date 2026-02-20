@@ -228,7 +228,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				"connectivity points. This adds resource requirements and device configurations, "+
 				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses "+
 				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. Supported with Apstra %s only.",
-				compatibility.BlueprintIPv6ApplicationsOK),
+				compatibility.IPv6PerRZForbidden),
 			Computed: true,
 		},
 		"junos_evpn_max_nexthop_and_interface_number": dataSourceSchema.BoolAttribute{
@@ -482,7 +482,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses "+
 				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled "+
 				"without re-creating the Blueprint. Applies only to EVPN blueprints. Supported with Apstra %s only.",
-				compatibility.BlueprintIPv6ApplicationsOK),
+				compatibility.IPv6PerRZForbidden),
 			Optional: true,
 			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
@@ -913,7 +913,7 @@ func (o Blueprint) VersionConstraints(_ context.Context, _ *diag.Diagnostics) co
 	if !o.Ipv6Applications.IsNull() {
 		response.AddAttributeConstraints(compatibility.AttributeConstraint{
 			Path:        path.Root("ipv6_applications"),
-			Constraints: compatibility.BlueprintIPv6ApplicationsOK,
+			Constraints: compatibility.IPv6PerRZForbidden,
 		})
 	}
 

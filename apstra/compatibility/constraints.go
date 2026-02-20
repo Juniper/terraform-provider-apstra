@@ -10,7 +10,7 @@ var (
 	BpIbaDashboardOk                   = versionconstraints.New(apiversions.LtApstra500)
 	BpIbaProbeOk                       = versionconstraints.New(apiversions.LtApstra500)
 	BpIbaWidgetOk                      = versionconstraints.New(apiversions.LtApstra500)
-	BlueprintIPv6ApplicationsOK        = versionconstraints.New(apiversions.LtApstra610)
+	IPv6PerRZForbidden                 = versionconstraints.New(apiversions.LtApstra610)
 	ChangeVnRzIdForbidden              = versionconstraints.New(apiversions.LeApstra422)
 	FabricSettingsSetInCreate          = versionconstraints.New(apiversions.GeApstra421)
 	RoutingPolicyExportL3EdgeServerOK  = versionconstraints.New(apiversions.LeApstra422)
