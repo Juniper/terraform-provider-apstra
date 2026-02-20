@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"testing"
 
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
@@ -55,9 +56,10 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"evpn_all_versions_ipv4": {
-			label:      acctest.RandString(5),
-			templateId: "L2_Virtual_EVPN",
+		"evpn_ipv4_through_600": {
+			apiVersionConstrants: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
+			label:                acctest.RandString(5),
+			templateId:           "L2_Virtual_EVPN",
 			fabricSettings: apstra.FabricSettings{
 				AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 					Algorithm:                apstra.AlgorithmHeuristic,
@@ -122,10 +124,77 @@ func TestDatasourceDatacenterBlueprint(t *testing.T) {
 				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "optimize_routing_zone_footprint", "true"),
 			},
 		},
-		"evpn_all_versions_ipv6": {
-			ipv6:       true,
-			label:      acctest.RandString(5),
-			templateId: "L2_Virtual_EVPN",
+		"evpn_ipv4_610_and_later": {
+			apiVersionConstrants: version.MustConstraints(version.NewConstraint(apiversions.GeApstra610)),
+			label:                acctest.RandString(5),
+			templateId:           "L2_Virtual_EVPN",
+			fabricSettings: apstra.FabricSettings{
+				AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
+					Algorithm:                apstra.AlgorithmHeuristic,
+					MaxLinksPerPort:          4,
+					MaxLinksPerSlot:          8,
+					MaxPerSystemLinksPerPort: 2,
+					MaxPerSystemLinksPerSlot: 4,
+					Mode:                     apstra.AntiAffinityModeEnabledStrict,
+				},
+				// DefaultSviL3Mtu:                       nil,
+				EsiMacMsb:                   pointer.To(uint8(4)),
+				EvpnGenerateType5HostRoutes: &enum.FeatureSwitchEnabled,
+				ExternalRouterMtu:           pointer.To(uint16(9002)),
+				// FabricL3Mtu:                 nil,
+				// JunosEvpnDuplicateMacRecoveryTime:     nil,
+				// JunosEvpnMaxNexthopAndInterfaceNumber: nil,
+				// JunosEvpnRoutingInstanceVlanAware:     nil,
+				// JunosExOverlayEcmp:                    nil,
+				// JunosGracefulRestart:                  nil,
+				MaxEvpnRoutes:     pointer.To(uint32(10001)),
+				MaxExternalRoutes: pointer.To(uint32(10002)),
+				MaxFabricRoutes:   pointer.To(uint32(10003)),
+				MaxMlagRoutes:     pointer.To(uint32(10004)),
+				// OptimiseSzFootprint:                   nil,
+				// OverlayControlProtocol:                nil,
+				// SpineLeafLinks:                        nil,
+				// SpineSuperspineLinks:                  nil,
+			},
+			checks: []resource.TestCheckFunc{
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "status", "created"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "superspine_switch_count", "0"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "spine_switch_count", "2"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "leaf_switch_count", "4"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "access_switch_count", "0"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "generic_system_count", "8"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "external_router_count", "0"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "has_uncommitted_changes", "true"),
+				resource.TestCheckResourceAttrWith("data.apstra_datacenter_blueprint.test", "version", testCheckIntGE1),
+				resource.TestCheckResourceAttrWith("data.apstra_datacenter_blueprint.test", "build_errors_count", atleast50),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "build_warnings_count", "0"),
+
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_mode", apstra.AntiAffinityModeEnabledStrict.String()),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_slot", "8"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_system_per_slot", "4"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_port", "4"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "anti_affinity_policy.max_links_count_per_system_per_port", "2"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "default_ip_links_to_generic_mtu", "9002"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "default_svi_l3_mtu", "9000"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "esi_mac_msb", "4"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "evpn_type_5_routes", "true"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "fabric_mtu", "9170"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "junos_evpn_max_nexthop_and_interface_number", "true"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "junos_evpn_routing_instance_mode_mac_vrf", "true"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "junos_ex_overlay_ecmp", "true"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "junos_graceful_restart", "true"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "max_evpn_routes_count", "10001"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "max_external_routes_count", "10002"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "max_fabric_routes_count", "10003"),
+				resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "max_mlag_routes_count", "10004"),
+				// resource.TestCheckResourceAttr("data.apstra_datacenter_blueprint.test", "optimize_routing_zone_footprint", "true"),
+			},
+		},
+		"evpn_ipv6_through_600": {
+			apiVersionConstrants: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
+			ipv6:                 true,
+			label:                acctest.RandString(5),
+			templateId:           "L2_Virtual_EVPN",
 			fabricSettings: apstra.FabricSettings{
 				AntiAffinityPolicy: &apstra.AntiAffinityPolicy{
 					Algorithm:                apstra.AlgorithmHeuristic,
