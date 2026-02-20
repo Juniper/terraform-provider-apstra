@@ -15,11 +15,12 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceDatacenterBlueprint{}
-	_ resourceWithSetClient          = &resourceDatacenterBlueprint{}
-	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterBlueprint{}
-	_ resourceWithSetBpLockFunc      = &resourceDatacenterBlueprint{}
-	_ resourceWithSetBpUnlockFunc    = &resourceDatacenterBlueprint{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterBlueprint{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterBlueprint{}
+	_ resourceWithSetClient               = &resourceDatacenterBlueprint{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterBlueprint{}
+	_ resourceWithSetBpUnlockFunc         = &resourceDatacenterBlueprint{}
 )
 
 type resourceDatacenterBlueprint struct {
@@ -42,6 +43,46 @@ func (o *resourceDatacenterBlueprint) Schema(_ context.Context, _ resource.Schem
 		MarkdownDescription: docCategoryDatacenter + "This resource instantiates a Datacenter Blueprint from a template.",
 		Attributes:          blueprint.Blueprint{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterBlueprint) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.Blueprint
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// config-only validation begins here
+
+	// config + api version validation begins here
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
+	// validate the configuration
+	constraints := config.VersionConstraints(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(
+		compatibility.ValidateConfigConstraints(
+			ctx,
+			compatibility.ValidateConfigConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: constraints,
+			},
+		)...,
+	)
 }
 
 func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {

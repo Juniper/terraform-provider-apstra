@@ -82,13 +82,13 @@ func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 	interfaceCTs := make([]apstra.ObjectId, ifCTCount)
 	for i := range interfaceCTs {
 		szId := testutils.SecurityZoneA(t, ctx, bp, true)
-		ctId := testutils.DatacenterConnectivityTemplateIPLink(t, ctx, bp, szId, 101+i)
+		ctId := testutils.DatacenterConnectivityTemplateA(t, ctx, bp, szId, 101+i)
 		interfaceCTs[i] = ctId
 	}
 	systemCTs := make([]apstra.ObjectId, systemCTCount)
 	for i := range systemCTs {
 		szId := testutils.SecurityZoneA(t, ctx, bp, true)
-		ctid := testutils.DatacenterConnectivityTemplateCustomStaticRoute(t, ctx, bp, szId)
+		ctid := testutils.DatacenterConnectivityTemplateCustomStaticRoute(t, ctx, bp, apstra.ObjectId(szId))
 		systemCTs[i] = ctid
 	}
 
