@@ -100,7 +100,7 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 	}
 
 	// Create the blueprint.
-	id, err := o.client.CreateBlueprintFromTemplate(ctx, request)
+	id, err := o.client.CreateBlueprintFromTemplate(ctx, &request)
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf("failed creating Blueprint from Template %s", request.TemplateId), err.Error())
 		return
@@ -157,6 +157,12 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	// Read default RZ parameters (Apstra 6.1.0+ only)
+	plan.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// Set state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -197,6 +203,11 @@ func (o *resourceDatacenterBlueprint) Read(ctx context.Context, req resource.Rea
 
 	// Retrieve and load the fabric settings
 	state.GetFabricSettings(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	state.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -262,6 +273,18 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 
 	// Retrieve and load the fabric settings
 	plan.GetFabricSettings(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update default RZ parameters if necessary
+	plan.SetDefaultRZParams(ctx, state, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Retrieve any un-set RZ parameters
+	plan.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
