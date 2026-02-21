@@ -432,7 +432,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv4_to_ipv6_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -449,7 +449,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv6_to_ipv46_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -466,7 +466,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv46_to_ipv4_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -483,7 +483,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv6_to_ipv4_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -500,7 +500,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv46_to_ipv6_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -517,7 +517,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv4_to_ipv46_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -534,7 +534,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv4_to_ipv6_only_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -552,7 +552,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv6_only_to_ipv46_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -570,7 +570,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv6_only_to_ipv4_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -588,7 +588,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"ipv46_to_ipv6_only_with_apstra610_or_later": {
-			versionConstraints: compatibility.RoutingZoneAddressingTypeOK.Constraints,
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{

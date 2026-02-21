@@ -216,7 +216,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 				"ipv6-only network, in which case `disable_ipv4` can be used to disallow ipv4 completely.\n"+
 				"Must be one of `['%s']`.\n"+
 				"Requires Apstra version %s",
-				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.RoutingZoneAddressingTypeOK),
+				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.BPDefaultRoutingZoneAddressingOK),
 			Optional: true,
 		},
 		"disable_ipv4": dataSourceSchema.BoolAttribute{
@@ -224,7 +224,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 				"`true`, pure ipv6 Routing Zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
 				"configuration will be removed. User-defined IPv4 resources will not be permitted in the Routing Zone. "+
 				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
-				"will not participate in routing. Requires Apstra version %s", compatibility.RoutingZoneAddressingTypeOK),
+				"will not participate in routing. Requires Apstra version %s", compatibility.BPDefaultRoutingZoneAddressingOK),
 			Optional: true,
 		},
 	}
@@ -331,7 +331,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"ipv6-only network, in which case `disable_ipv4` can be used to disallow ipv4 completely.\n"+
 				"Must be one of `['%s']`.\n"+
 				"Requires Apstra version %s",
-				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.RoutingZoneAddressingTypeOK),
+				strings.Join(enum.AddressingSchemes.Values(), "','"), compatibility.BPDefaultRoutingZoneAddressingOK),
 			Optional:   true,
 			Computed:   true,
 			Validators: []validator.String{stringvalidator.OneOf(enum.AddressingSchemes.Values()...)},
@@ -341,7 +341,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				"`true`, pure ipv6 Routing Zones will not render IPv4 SAFIs and other ipv4-over-ipv6/RFC5549 related "+
 				"configuration will be removed. User-defined IPv4 resources will not be permitted in the Routing Zone. "+
 				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
-				"will not participate in routing. Requires Apstra version %s", compatibility.RoutingZoneAddressingTypeOK),
+				"will not participate in routing. Requires Apstra version %s", compatibility.BPDefaultRoutingZoneAddressingOK),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Bool{
@@ -693,14 +693,14 @@ func (o DatacenterRoutingZone) VersionConstraints(_ context.Context, _ *diag.Dia
 	if !o.IPAddressingType.IsUnknown() && !o.IPAddressingType.IsNull() {
 		response.AddAttributeConstraints(compatibility.AttributeConstraint{
 			Path:        path.Root("ip_addressing_type"),
-			Constraints: compatibility.RoutingZoneAddressingTypeOK,
+			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
 		})
 	}
 
 	if !o.DisableIPv4.IsUnknown() && !o.DisableIPv4.IsNull() {
 		response.AddAttributeConstraints(compatibility.AttributeConstraint{
 			Path:        path.Root("disable_ipv4"),
-			Constraints: compatibility.RoutingZoneAddressingTypeOK,
+			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
 		})
 	}
 

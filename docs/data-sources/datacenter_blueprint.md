@@ -62,6 +62,7 @@ resource "apstra_blueprint_deployment" "as_needed" {
 - `build_warnings_count` (Number) Number of build warnings.
 - `default_ip_links_to_generic_mtu` (Number) Default L3 MTU for IP links to generic systems.
 - `default_svi_l3_mtu` (Number) Default L3 MTU for SVI interfaces.
+- `disable_ipv4` (Boolean) Only valid with `addressing_support = "ipv6"`. When `true`, pure IPv6 routing zones will not render IPv4 SAFIs and other IPv4-over-IPv6/RFC5549 related configuration will be removed. User-defined IPv4 resources will not be permitted in the Blueprint. An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers but it will not participate in routing. Requires Apstra 6.1.0 or later.
 - `esi_mac_msb` (Number) ESI MAC address most significant byte.
 - `evpn_type_5_routes` (Boolean) When enabled, all EVPN VTEPs in the fabric will redistribute ARP/IPV6 ND (when possible on NOS type) as EVPN type 5 /32 routes in the routing table.
 - `external_router_count` (Number) The count of external routers in the topology.
@@ -83,7 +84,9 @@ resource "apstra_blueprint_deployment" "as_needed" {
 - `status` (String) Deployment status of the Blueprint
 - `superspine_switch_count` (Number) The count of superspine switches in the topology.
 - `template_id` (String) This attribute is always `null` in data source context. Ignore.
+- `underlay_addressing` (String) Controls whether the default Routing Zone addresses resources with `ipv4`, `ipv4_ipv6`, or `ipv6` values. Note that `ipv4` is still permitted in an `ipv6` network, unless `disable_ipv4` is used to disallow `ipv4` completely.
 - `version` (Number) Currently active blueprint version
+- `vtep_addressing` (String) Indicates the desired next-hop interface addressing for VXLAN VTEPs and BGP EVPN overlay peers. The `ipv6` option is only supported if the underlay supports `ipv4_ipv6` or `ipv6` routing based on `underlay_addressing` configuraiton. Spine and leaf loopbacks must also have `ipv4` or `ipv4_ipv6` support. This option is only valid for the default routing zone. Requires Apstra 6.1.0 or later.
 
 <a id="nestedatt--anti_affinity_policy"></a>
 ### Nested Schema for `anti_affinity_policy`
