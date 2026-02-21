@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"strconv"
 	"testing"
 
+	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -111,6 +111,7 @@ func (o resourceDatacenterBlueprint) testChecks(t testing.TB, rType, rName strin
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
 	result.append(t, "TestCheckResourceAttr", "template_id", o.templateID)
 
+	// optional+comptued attributes
 	if o.fabricAddressing != nil {
 		result.append(t, "TestCheckResourceAttr", "fabric_addressing", o.fabricAddressing.String())
 	}
@@ -221,6 +222,19 @@ func (o resourceDatacenterBlueprint) testChecks(t testing.TB, rType, rName strin
 		result.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
 	}
 
+	// computed-only attributes
+	result.append(t, "TestCheckResourceAttrSet", "status")
+	result.append(t, "TestCheckResourceAttrSet", "superspine_switch_count")
+	result.append(t, "TestCheckResourceAttrSet", "spine_switch_count")
+	result.append(t, "TestCheckResourceAttrSet", "leaf_switch_count")
+	result.append(t, "TestCheckResourceAttrSet", "access_switch_count")
+	result.append(t, "TestCheckResourceAttrSet", "generic_system_count")
+	result.append(t, "TestCheckResourceAttrSet", "external_router_count")
+	result.append(t, "TestCheckResourceAttrSet", "has_uncommitted_changes")
+	result.append(t, "TestCheckResourceAttrSet", "version")
+	result.append(t, "TestCheckResourceAttrSet", "build_errors_count")
+	result.append(t, "TestCheckResourceAttrSet", "build_warnings_count")
+
 	return result
 }
 
@@ -236,7 +250,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
-		"start_minimal_before_apstra_610": {
+		"simple_test_all_versions": {
 			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
 			steps: []resourceDatacenterBlueprint{
 				{
