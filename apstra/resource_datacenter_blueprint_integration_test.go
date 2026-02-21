@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 const resourceDatacenterBlueprintHCL = `resource %q %q {
@@ -356,60 +357,95 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	clientVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
+	type testStep struct {
+		config                     resourceDatacenterBlueprint
+		preApplyResourceActionType plancheck.ResourceActionType
+	}
+
 	type testCase struct {
-		steps              []resourceDatacenterBlueprint
+		steps              []testStep
 		versionConstraints version.Constraints
 	}
 
 	testCases := map[string]testCase{
-		"simple_test_all_versions": {
+		"disable_ipv6_requires_replace_version_before_610": {
 			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
-			steps: []resourceDatacenterBlueprint{
+			steps: []testStep{
 				{
-					name:       acctest.RandString(6),
-					templateID: "L2_Virtual_EVPN",
+					config: resourceDatacenterBlueprint{
+						name:             acctest.RandString(6),
+						templateID:       "L2_Virtual_EVPN",
+						ipv6Applications: pointer.To(true),
+					},
 				},
 				{
-					name:       acctest.RandString(6),
-					templateID: "L2_Virtual_EVPN",
+					config: resourceDatacenterBlueprint{
+						name:             acctest.RandString(6),
+						templateID:       "L2_Virtual_EVPN",
+						ipv6Applications: pointer.To(false),
+					},
+					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
+				},
+			},
+		},
+		"simple_test_all_versions": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
 				},
 			},
 		},
 		"start_minimal_all_versions": {
 			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
-			steps: []resourceDatacenterBlueprint{
+			steps: []testStep{
 				{
-					name:       acctest.RandString(6),
-					templateID: "L2_Virtual_EVPN",
-				},
-				{
-					name:             acctest.RandString(6),
-					templateID:       "L2_Virtual_EVPN",
-					antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
-					antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
-						maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
-						maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
-						maxLinksPerSystemPerSlot: pointer.To(32 + rand.Intn(32)),   //  32  - 63
-						maxLinksPerSystemPerPort: pointer.To(16 + rand.Intn(16)),   //  16  - 31
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
 					},
-					defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
-					defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
-					esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
-					evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
-					fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
-					junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
-					junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
-					junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
-					junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
-					maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-					maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-					maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-					maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-					optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
 				},
 				{
-					name:       acctest.RandString(6),
-					templateID: "L2_Virtual_EVPN",
+					config: resourceDatacenterBlueprint{
+						name:             acctest.RandString(6),
+						templateID:       "L2_Virtual_EVPN",
+						antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
+						antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
+							maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
+							maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
+							maxLinksPerSystemPerSlot: pointer.To(32 + rand.Intn(32)),   //  32  - 63
+							maxLinksPerSystemPerPort: pointer.To(16 + rand.Intn(16)),   //  16  - 31
+						},
+						defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
+						defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
+						esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
+						evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
+						fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
+						junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
+						junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
+						junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
+						maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
 				},
 			},
 		},
@@ -427,8 +463,8 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 
 			steps := make([]resource.TestStep, len(tCase.steps))
 			for i, step := range tCase.steps {
-				config := step.render(resourceType, tName)
-				checks := step.testChecks(t, resourceType, tName)
+				config := step.config.render(resourceType, tName)
+				checks := step.config.testChecks(t, resourceType, tName)
 
 				var checkLog string
 				var checkFuncs []resource.TestCheckFunc
@@ -445,6 +481,11 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				steps[i] = resource.TestStep{
 					Config: insecureProviderConfigHCL + config,
 					Check:  resource.ComposeAggregateTestCheckFunc(checkFuncs...),
+				}
+
+				// add expected per-step resource action, if any
+				if step.preApplyResourceActionType != "" {
+					steps[i].ConfigPlanChecks.PreApply = append(steps[i].ConfigPlanChecks.PreApply, plancheck.ExpectResourceAction(resourceType+"."+tName, step.preApplyResourceActionType))
 				}
 			}
 
