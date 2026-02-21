@@ -786,11 +786,6 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 }
 
 func (o *Blueprint) GetDefaultRZParams(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	// start by blanking the values
-	o.UnderlayAddressing = types.StringNull()
-	o.VTEPAddressing = types.StringNull()
-	o.DisableIPv4 = types.BoolNull()
-
 	// determine API version
 	apiVersion, err := version.NewVersion(bp.Client().ApiVersion())
 	if err != nil {
@@ -800,6 +795,9 @@ func (o *Blueprint) GetDefaultRZParams(ctx context.Context, bp *apstra.TwoStageL
 
 	// only read default routing zone details from Apstra 6.1.0+
 	if !compatibility.BPDefaultRoutingZoneAddressingOK.Check(apiVersion) {
+		o.UnderlayAddressing = types.StringNull()
+		o.VTEPAddressing = types.StringNull()
+		o.DisableIPv4 = types.BoolNull()
 		return
 	}
 
@@ -822,9 +820,12 @@ func (o *Blueprint) GetDefaultRZParams(ctx context.Context, bp *apstra.TwoStageL
 }
 
 func (o Blueprint) SetDefaultRZParams(ctx context.Context, state Blueprint, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	if o.UnderlayAddressing.Equal(state.UnderlayAddressing) &&
-		o.VTEPAddressing.Equal(state.VTEPAddressing) &&
-		o.DisableIPv4.Equal(state.DisableIPv4) {
+	// For each attribute we look for a user-supplied value which doesn't match state.
+	// If all attributes area acceptable (user doesn't care or value matches state) we
+	// have nothing to do.
+	if (o.UnderlayAddressing.IsUnknown() || o.UnderlayAddressing.Equal(state.UnderlayAddressing)) &&
+		(o.VTEPAddressing.IsUnknown() || o.VTEPAddressing.Equal(state.VTEPAddressing)) &&
+		(o.DisableIPv4.IsUnknown() || o.DisableIPv4.Equal(state.DisableIPv4)) {
 		return // nothing to do
 	}
 

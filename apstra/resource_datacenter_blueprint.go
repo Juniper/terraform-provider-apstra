@@ -157,10 +157,12 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
-	// Read default RZ parameters (Apstra 6.1.0+ only)
-	plan.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	// Retrieve any un-set RZ parameters
+	if plan.UnderlayAddressing.IsUnknown() || plan.VTEPAddressing.IsUnknown() || plan.DisableIPv4.IsUnknown() {
+		plan.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// Set state.
@@ -284,9 +286,11 @@ func (o *resourceDatacenterBlueprint) Update(ctx context.Context, req resource.U
 	}
 
 	// Retrieve any un-set RZ parameters
-	plan.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
+	if plan.UnderlayAddressing.IsUnknown() || plan.VTEPAddressing.IsUnknown() || plan.DisableIPv4.IsUnknown() {
+		plan.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
 	}
 
 	// Set state
