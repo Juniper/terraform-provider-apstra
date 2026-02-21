@@ -111,6 +111,11 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 		state.MaxMlagRoutesCount = types.Int64Null()
 	}
 
+	state.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
