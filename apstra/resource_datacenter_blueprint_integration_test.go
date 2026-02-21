@@ -4,18 +4,17 @@ package tfapstra_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"math/rand"
 	"strconv"
 	"testing"
 
-	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -518,18 +517,18 @@ func (o *resourceDatacenterBlueprintAntiAffinityPolicy) testChecks(t testing.TB,
 	}
 }
 
-func testCheckIntGE1(s string) error {
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return err
-	}
-
-	if !(i >= 1) {
-		return errors.New("expected value >= 1, got " + s)
-	}
-
-	return nil
-}
+//func testCheckIntGE1(s string) error {
+//	i, err := strconv.Atoi(s)
+//	if err != nil {
+//		return err
+//	}
+//
+//	if !(i >= 1) {
+//		return errors.New("expected value >= 1, got " + s)
+//	}
+//
+//	return nil
+//}
 
 //func TestResourceDatacenterBlueprint(t *testing.T) {
 //	ctx := context.Background()
