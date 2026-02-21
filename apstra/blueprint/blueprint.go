@@ -263,7 +263,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used.",
 		},
@@ -272,7 +272,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of routes to accept from external routers. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used.",
 		},
@@ -281,7 +281,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of underlay routes permitted between fabric nodes. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used." +
 				"Setting this option may be required in the event of leaking EVPN routes from a Security Zone " +
@@ -294,7 +294,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of routes to accept between MLAG peers. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used.",
 			Optional: true,
