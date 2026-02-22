@@ -440,12 +440,12 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					},
 				},
 				{
+					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
 					config: resourceDatacenterBlueprint{
 						name:             acctest.RandString(6),
 						templateID:       "L2_Virtual_EVPN",
 						ipv6Applications: pointer.To(false),
 					},
-					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
 				},
 			},
 		},
@@ -653,6 +653,77 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					config: resourceDatacenterBlueprint{
 						name:               acctest.RandString(6),
 						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv46),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+					},
+				},
+			},
+		},
+		"template_forces_blueprint_replacement": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
+				},
+				{
+					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_Dual_2x_Links",
+					},
+				},
+				{
+					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
+				},
+			},
+		},
+		"ip_fabric_610_and_later": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.GeApstra610)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_Dual_2x_Links",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv6),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+						disableIPv4:        pointer.To(true),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_Dual_2x_Links",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv46),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv4),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_Dual_2x_Links",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv6),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+						disableIPv4:        pointer.To(true),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_Dual_2x_Links",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv4),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv4),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_Dual_2x_Links",
 						underlayAddressing: pointer.To(enum.AddressingSchemeIPv46),
 						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
 					},
