@@ -814,8 +814,10 @@ func (o *Blueprint) GetDefaultRZParams(ctx context.Context, bp *apstra.TwoStageL
 	if sz.VTEPAddressing != nil {
 		o.VTEPAddressing = types.StringValue(sz.VTEPAddressing.String())
 	}
-	if sz.DisableIPv4 != nil && sz.AddressingSupport != nil && *sz.AddressingSupport == enum.AddressingSchemeIPv6 {
-		o.DisableIPv4 = types.BoolPointerValue(sz.DisableIPv4) // disable IPv4 only makes sense when addressing_scheme is IPv6
+	if sz.AddressingSupport != nil && *sz.AddressingSupport == enum.AddressingSchemeIPv6 {
+		o.DisableIPv4 = types.BoolPointerValue(sz.DisableIPv4)
+	} else {
+		o.DisableIPv4 = types.BoolNull() // disable IPv4 only makes sense when addressing_scheme is IPv6
 	}
 }
 
@@ -849,6 +851,10 @@ func (o Blueprint) SetDefaultRZParams(ctx context.Context, state Blueprint, bp *
 	}
 	if !o.DisableIPv4.IsNull() && !o.DisableIPv4.IsUnknown() {
 		rz.DisableIPv4 = o.DisableIPv4.ValueBoolPointer()
+	} else {
+		if rz.AddressingSupport != nil && *rz.AddressingSupport != enum.AddressingSchemeIPv6 {
+			rz.DisableIPv4 = pointer.To(false)
+		}
 	}
 
 	if err = bp.UpdateSecurityZone(ctx, rz); err != nil {
@@ -889,11 +895,13 @@ func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) apstra
 	if !o.UnderlayAddressing.IsUnknown() || !o.VTEPAddressing.IsUnknown() || !o.DisableIPv4.IsUnknown() {
 		result.AddressingPolicy = new(apstra.AddressingPolicy)
 		if !o.UnderlayAddressing.IsUnknown() {
+			result.AddressingPolicy.AddressingSupport = new(enum.AddressingScheme)
 			if err := result.AddressingPolicy.AddressingSupport.FromString(o.UnderlayAddressing.ValueString()); err != nil {
 				diags.AddAttributeError(path.Root("underlay_addressing"), constants.ErrInvalidConfig, err.Error())
 			}
 		}
 		if !o.VTEPAddressing.IsUnknown() {
+			result.AddressingPolicy.VTEPAddressing = new(enum.AddressingScheme)
 			if err := result.AddressingPolicy.VTEPAddressing.FromString(o.VTEPAddressing.ValueString()); err != nil {
 				diags.AddAttributeError(path.Root("vtep_addressing"), constants.ErrInvalidConfig, err.Error())
 			}
