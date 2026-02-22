@@ -593,7 +593,60 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						templateID:         "L2_Virtual_EVPN",
 						underlayAddressing: pointer.To(enum.AddressingSchemeIPv4),
 						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv4),
-						//disableIPv4:        pointer.To(false),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv46),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+					},
+				},
+			},
+		},
+		"introduce_default_vrf_params_610_and_later": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.GeApstra610)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv6),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+						disableIPv4:        pointer.To(true),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
+				},
+			},
+		},
+		"withdraw_default_vrf_params_610_and_later": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.GeApstra610)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv6),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+						disableIPv4:        pointer.To(true),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
 					},
 				},
 				{
