@@ -351,6 +351,67 @@ func (o resourceDatacenterBlueprint) testChecks(t testing.TB, rType, rName strin
 	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks}
 }
 
+const resourceDatacenterBlueprintAntiAffinityPolicyHCL = `{
+    max_links_count_per_slot            = %s
+	max_links_count_per_system_per_slot = %s
+	max_links_count_per_port            = %s
+	max_links_count_per_system_per_port = %s
+  }`
+
+type resourceDatacenterBlueprintAntiAffinityPolicy struct {
+	maxLinksPerSlot          *int
+	maxLinksPerSystemPerSlot *int
+	maxLinksPerPort          *int
+	maxLinksPerSystemPerPort *int
+}
+
+func (o *resourceDatacenterBlueprintAntiAffinityPolicy) render() string {
+	if o == nil {
+		return "null"
+	}
+
+	return fmt.Sprintf(resourceDatacenterBlueprintAntiAffinityPolicyHCL,
+		intPtrOrNull(o.maxLinksPerSlot),
+		intPtrOrNull(o.maxLinksPerSystemPerSlot),
+		intPtrOrNull(o.maxLinksPerPort),
+		intPtrOrNull(o.maxLinksPerSystemPerPort),
+	)
+}
+
+func (o *resourceDatacenterBlueprintAntiAffinityPolicy) testChecks(t testing.TB, testChecks *testChecks) {
+	if o == nil {
+		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_slot")
+		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_system_per_slot")
+		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_port")
+		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_system_per_port")
+		return
+	}
+
+	if o.maxLinksPerSlot != nil {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_slot", strconv.Itoa(*o.maxLinksPerSlot))
+	} else {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_slot", "0")
+	}
+
+	if o.maxLinksPerSystemPerSlot != nil {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_slot", strconv.Itoa(*o.maxLinksPerSystemPerSlot))
+	} else {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_slot", "0")
+	}
+
+	if o.maxLinksPerPort != nil {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_port", strconv.Itoa(*o.maxLinksPerPort))
+	} else {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_port", "0")
+	}
+
+	if o.maxLinksPerSystemPerPort != nil {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_port", strconv.Itoa(*o.maxLinksPerSystemPerPort))
+	} else {
+		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_port", "0")
+	}
+}
+
 func TestResourceDatacenterBlueprint(t *testing.T) {
 	ctx := context.Background()
 
@@ -449,6 +510,102 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				},
 			},
 		},
+		"start_maximal_all_versions": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LeApstra600)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:             acctest.RandString(6),
+						templateID:       "L2_Virtual_EVPN",
+						antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
+						antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
+							maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
+							maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
+							maxLinksPerSystemPerSlot: pointer.To(32 + rand.Intn(32)),   //  32  - 63
+							maxLinksPerSystemPerPort: pointer.To(16 + rand.Intn(16)),   //  16  - 31
+						},
+						defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
+						defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
+						esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
+						evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
+						fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
+						junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
+						junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
+						junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
+						maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_EVPN",
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:             acctest.RandString(6),
+						templateID:       "L2_Virtual_EVPN",
+						antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
+						antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
+							maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
+							maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
+							maxLinksPerSystemPerSlot: pointer.To(32 + rand.Intn(32)),   //  32  - 63
+							maxLinksPerSystemPerPort: pointer.To(16 + rand.Intn(16)),   //  16  - 31
+						},
+						defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
+						defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
+						esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
+						evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
+						fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
+						junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
+						junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
+						junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
+						maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
+					},
+				},
+			},
+		},
+		"default_vrf_610_and_later": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.GeApstra610)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv6),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+						disableIPv4:        pointer.To(true),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv4),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv4),
+						//disableIPv4:        pointer.To(false),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:               acctest.RandString(6),
+						templateID:         "L2_Virtual_EVPN",
+						underlayAddressing: pointer.To(enum.AddressingSchemeIPv46),
+						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterBlueprint)
@@ -494,67 +651,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 				Steps:                    steps,
 			})
 		})
-	}
-}
-
-const resourceDatacenterBlueprintAntiAffinityPolicyHCL = `{
-    max_links_count_per_slot            = %s
-	max_links_count_per_system_per_slot = %s
-	max_links_count_per_port            = %s
-	max_links_count_per_system_per_port = %s
-  }`
-
-type resourceDatacenterBlueprintAntiAffinityPolicy struct {
-	maxLinksPerSlot          *int
-	maxLinksPerSystemPerSlot *int
-	maxLinksPerPort          *int
-	maxLinksPerSystemPerPort *int
-}
-
-func (o *resourceDatacenterBlueprintAntiAffinityPolicy) render() string {
-	if o == nil {
-		return "null"
-	}
-
-	return fmt.Sprintf(resourceDatacenterBlueprintAntiAffinityPolicyHCL,
-		intPtrOrNull(o.maxLinksPerSlot),
-		intPtrOrNull(o.maxLinksPerSystemPerSlot),
-		intPtrOrNull(o.maxLinksPerPort),
-		intPtrOrNull(o.maxLinksPerSystemPerPort),
-	)
-}
-
-func (o *resourceDatacenterBlueprintAntiAffinityPolicy) testChecks(t testing.TB, testChecks *testChecks) {
-	if o == nil {
-		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_slot")
-		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_system_per_slot")
-		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_port")
-		testChecks.append(t, "TestCheckResourceAttrSet", "anti_affinity_policy.max_links_count_per_system_per_port")
-		return
-	}
-
-	if o.maxLinksPerSlot != nil {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_slot", strconv.Itoa(*o.maxLinksPerSlot))
-	} else {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_slot", "0")
-	}
-
-	if o.maxLinksPerSystemPerSlot != nil {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_slot", strconv.Itoa(*o.maxLinksPerSystemPerSlot))
-	} else {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_slot", "0")
-	}
-
-	if o.maxLinksPerPort != nil {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_port", strconv.Itoa(*o.maxLinksPerPort))
-	} else {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_port", "0")
-	}
-
-	if o.maxLinksPerSystemPerPort != nil {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_port", strconv.Itoa(*o.maxLinksPerSystemPerPort))
-	} else {
-		testChecks.append(t, "TestCheckResourceAttr", "anti_affinity_policy.max_links_count_per_system_per_port", "0")
 	}
 }
 
