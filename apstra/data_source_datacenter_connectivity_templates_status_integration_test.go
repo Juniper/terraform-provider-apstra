@@ -12,8 +12,10 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -82,11 +84,16 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 
 		// create a security zone unique for each CT
 		szName := acctest.RandString(6)
+		var as *enum.AddressingScheme
+		if compatibility.BPDefaultRoutingZoneAddressingOK.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+			as = &enum.AddressingSchemeIPv6
+		}
 		szId, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
-			Label:   szName,
-			Type:    enum.SecurityZoneTypeEVPN,
-			VRFName: szName,
-			VLAN:    vlanId,
+			Label:             szName,
+			Type:              enum.SecurityZoneTypeEVPN,
+			VRFName:           szName,
+			VLAN:              vlanId,
+			AddressingSupport: as,
 		})
 		require.NoError(t, err)
 
