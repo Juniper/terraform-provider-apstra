@@ -9,13 +9,10 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
-	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -126,19 +123,8 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	// create routing zones
 	rzCount := 2
 	rzIds := make([]string, rzCount)
-	var as *enum.AddressingScheme
-	if compatibility.BPDefaultRoutingZoneAddressingOK.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
-		as = &enum.AddressingSchemeIPv46
-	}
 	for i := range rzIds {
-		name := acctest.RandString(6)
-		rzIds[i], err = bp.CreateSecurityZone(ctx, apstra.SecurityZone{
-			Label:             name,
-			VRFName:           name,
-			Type:              enum.SecurityZoneTypeEVPN,
-			AddressingSupport: as,
-		})
-		require.NoError(t, err)
+		rzIds[i] = testutils.SecurityZoneB(t, ctx, bp, false)
 	}
 
 	// discover IPv4 and IPv6 pools
