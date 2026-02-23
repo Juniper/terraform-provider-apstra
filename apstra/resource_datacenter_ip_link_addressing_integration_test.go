@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
@@ -125,12 +126,17 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	// create routing zones
 	rzCount := 2
 	rzIds := make([]string, rzCount)
+	var as *enum.AddressingScheme
+	if compatibility.BPDefaultRoutingZoneAddressingOK.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		as = &enum.AddressingSchemeIPv46
+	}
 	for i := range rzIds {
 		name := acctest.RandString(6)
 		rzIds[i], err = bp.CreateSecurityZone(ctx, apstra.SecurityZone{
-			Label:   name,
-			VRFName: name,
-			Type:    enum.SecurityZoneTypeEVPN,
+			Label:             name,
+			VRFName:           name,
+			Type:              enum.SecurityZoneTypeEVPN,
+			AddressingSupport: as,
 		})
 		require.NoError(t, err)
 	}
