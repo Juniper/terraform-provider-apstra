@@ -114,13 +114,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 	require.NoError(t, bp.SetFabricSettings(ctx, settings))
 
 	// create a routing zone
-	rzLabel := acctest.RandString(6)
-	rzID, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
-		Label:   rzLabel,
-		Type:    enum.SecurityZoneTypeEVPN,
-		VRFName: rzLabel,
-	})
-	require.NoError(t, err)
+	rzID := testutils.SecurityZoneB(t, ctx, bp, false)
 
 	// discover leaf switch IDs
 	leafs := testutils.GetSystemIds(t, ctx, bp, "leaf")

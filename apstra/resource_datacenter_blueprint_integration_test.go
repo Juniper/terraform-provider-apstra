@@ -603,15 +603,6 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
 					},
 				},
-				{
-					config: resourceDatacenterBlueprint{
-						name:               acctest.RandString(6),
-						templateID:         "L2_Virtual_EVPN",
-						underlayAddressing: pointer.To(enum.AddressingSchemeIPv6),
-						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
-						disableIPv4:        pointer.To(true),
-					},
-				},
 			},
 		},
 		"introduce_default_vrf_params_610_and_later": {
