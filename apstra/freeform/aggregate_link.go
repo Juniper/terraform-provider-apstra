@@ -131,6 +131,10 @@ func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) ap
 	diags.Append(o.EndpointGroups.ElementsAs(ctx, &result.EndpointGroups, false)...)
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
 
+	if !o.ID.IsNull() && !o.ID.IsUnknown() {
+		result.SetID(o.ID.ValueString())
+	}
+
 	return result
 }
 
