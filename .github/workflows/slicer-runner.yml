@@ -69,7 +69,7 @@ jobs:
     - name: Run Go Integration Tests
       if: success()
       env:
-        APSTRA_URL: ${{ steps.get_aos_ip.outputs.aos_ip }}
+        APSTRA_URL: https://${{ steps.get_aos_ip.outputs.aos_ip }}
         APSTRA_USER: admin
         APSTRA_PASS: admin
         APSTRA_TLS_VALIDATION_DISABLED: "true"
