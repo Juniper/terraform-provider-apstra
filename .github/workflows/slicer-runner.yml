@@ -73,8 +73,10 @@ jobs:
         APSTRA_USERNAME: admin
         APSTRA_PASSWORD: admin
         APSTRA_TLS_VALIDATION_DISABLED: "true"
+        GOTMPDIR: /home/runner/_work/_tmp
       run: |
         # Run integration tests with the deployed AOS instance
+        mkdir -p "$GOTMPDIR"
         go test -tags integration -v -timeout 30m ./... 2>&1 | tee test_results.log
       continue-on-error: true
 
@@ -88,14 +90,14 @@ jobs:
         echo "" >> test_report.md
         
         if [ -f test_results.log ]; then
-          PASS_COUNT=$(grep -c "^--- PASS:" test_results.log || echo 0)
-          FAIL_COUNT=$(grep -c "^--- FAIL:" test_results.log || echo 0)
+          PASS_COUNT=$(grep -c "^--- PASS:" test_results.log 2>/dev/null || true)
+          FAIL_COUNT=$(grep -c "^--- FAIL:" test_results.log 2>/dev/null || true)
           
           echo "- **Passed**: $PASS_COUNT" >> test_report.md
           echo "- **Failed**: $FAIL_COUNT" >> test_report.md
           echo "" >> test_report.md
           
-          if [ $FAIL_COUNT -gt 0 ]; then
+          if [ "$FAIL_COUNT" -gt 0 ]; then
             echo "## Failed Tests" >> test_report.md
             echo "" >> test_report.md
             grep "^--- FAIL:" test_results.log >> test_report.md || true
@@ -205,3 +207,17 @@ jobs:
             sys.exit(1)
         EOF
       continue-on-error: true
+
+    - name: Fail workflow if tests failed
+      if: always()
+      run: |
+        if [ ! -f test_results.log ]; then
+          echo "test_results.log not found; skipping failure check."
+          exit 0
+        fi
+        FAIL_COUNT=$(grep -c "^--- FAIL:" test_results.log 2>/dev/null || true)
+        if [ "$FAIL_COUNT" -gt 0 ]; then
+          echo "Go integration tests failed: $FAIL_COUNT"
+          exit 1
+        fi
+        echo "Go integration tests passed."
