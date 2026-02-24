@@ -81,7 +81,7 @@ func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 	bp := testutils.BlueprintA(t, ctx)
 	interfaceCTs := make([]apstra.ObjectId, ifCTCount)
 	for i := range interfaceCTs {
-		szId := testutils.SecurityZoneA(t, ctx, bp, true)
+		szId := testutils.SecurityZoneB(t, ctx, bp, true)
 		ctId := testutils.DatacenterConnectivityTemplateA(t, ctx, bp, szId, 101+i)
 		interfaceCTs[i] = ctId
 	}

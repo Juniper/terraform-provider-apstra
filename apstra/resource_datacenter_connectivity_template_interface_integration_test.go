@@ -146,7 +146,7 @@ func (o resourceDataCenterConnectivityTemplateInterface) testChecks(t testing.TB
 	return result
 }
 
-func TestResourceDatacenteConnectivityTemplateInterface(t *testing.T) {
+func TestResourceDatacenterConnectivityTemplateInterface(t *testing.T) {
 	ctx := context.Background()
 	cleanup := true
 

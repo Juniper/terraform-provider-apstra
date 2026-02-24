@@ -3757,11 +3757,11 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/go-version
 
 * Name: github.com/hashicorp/go-version
-* Version: v1.7.0
-* License: [MPL-2.0](https://github.com/hashicorp/go-version/blob/v1.7.0/LICENSE)
+* Version: v1.8.0
+* License: [MPL-2.0](https://github.com/hashicorp/go-version/blob/v1.8.0/LICENSE)
 
 ```
-Copyright (c) 2014 HashiCorp, Inc.
+Copyright IBM Corp. 2014, 2025
 
 Mozilla Public License, version 2.0
 
@@ -10776,8 +10776,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.43.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.43.0:LICENSE)
+* Version: v0.48.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.48.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10850,8 +10850,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/mod
 
 * Name: golang.org/x/mod
-* Version: v0.29.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.29.0:LICENSE)
+* Version: v0.33.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.33.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10887,8 +10887,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.46.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.46.0:LICENSE)
+* Version: v0.50.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.50.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10924,8 +10924,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys
 
 * Name: golang.org/x/sys
-* Version: v0.37.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.37.0:LICENSE)
+* Version: v0.41.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.41.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10961,8 +10961,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.30.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.30.0:LICENSE)
+* Version: v0.34.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.34.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -11422,8 +11422,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/protobuf
 
 * Name: google.golang.org/protobuf
-* Version: v1.36.7
-* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.7/LICENSE)
+* Version: v1.36.11
+* License: [BSD-3-Clause](https://github.com/protocolbuffers/protobuf-go/blob/v1.36.11/LICENSE)
 
 ```
 Copyright (c) 2018 The Go Authors. All rights reserved.
