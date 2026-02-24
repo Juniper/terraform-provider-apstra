@@ -1,6 +1,9 @@
 name: Slicer local Runner Workflow
 
 on:
+  push:
+    branches:
+      - hk_demo_slicer_local_runner
   workflow_dispatch:
 
 jobs:
