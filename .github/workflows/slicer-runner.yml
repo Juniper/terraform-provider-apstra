@@ -31,4 +31,4 @@ jobs:
     - name: Run topology deployment script
       run: |
         source venv/bin/activate
-        python run_test_locally.py
+        python apstra/test_utils/test_slicer_topology.py
