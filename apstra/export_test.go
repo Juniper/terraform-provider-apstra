@@ -16,6 +16,7 @@ var (
 	ResourceAgentProfile                                   = resourceAgentProfile{}
 	ResourceAsnPool                                        = resourceAsnPool{}
 	ResourceConfiglet                                      = resourceConfiglet{}
+	ResourceDatacenterBlueprint                            = resourceDatacenterBlueprint{}
 	ResourceDatacenterConfiglet                            = resourceDatacenterConfiglet{}
 	ResourceDatacenterConnectivityTemplateAssignments      = resourceDatacenterConnectivityTemplateAssignments{}
 	ResourceDatacenterConnectivityTemplateInterface        = resourceDatacenterConnectivityTemplateInterface{}

@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -109,6 +108,11 @@ func (o *dataSourceDatacenterBlueprint) Read(ctx context.Context, req datasource
 	}
 	if state.MaxMlagRoutesCount.ValueInt64() < 0 {
 		state.MaxMlagRoutesCount = types.Int64Null()
+	}
+
+	state.GetDefaultRZParams(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
 	// set state

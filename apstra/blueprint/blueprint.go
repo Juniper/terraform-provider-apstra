@@ -15,6 +15,7 @@ import (
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -67,6 +68,11 @@ type Blueprint struct {
 	MaxFabricRoutesCount                  types.Int64  `tfsdk:"max_fabric_routes_count"`
 	MaxMlagRoutesCount                    types.Int64  `tfsdk:"max_mlag_routes_count"`
 	OptimizeRoutingZoneFootprint          types.Bool   `tfsdk:"optimize_routing_zone_footprint"`
+
+	// Apstra 6.1.0 default Routing Zone settings
+	UnderlayAddressing types.String `tfsdk:"underlay_addressing"`
+	VTEPAddressing     types.String `tfsdk:"vtep_addressing"`
+	DisableIPv4        types.Bool   `tfsdk:"disable_ipv4"`
 }
 
 //func (o Blueprint) attrTypes() map[string]attr.Type {
@@ -228,7 +234,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				"connectivity points. This adds resource requirements and device configurations, "+
 				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses "+
 				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. Supported with Apstra %s only.",
-				compatibility.IPv6PerRZForbidden),
+				compatibility.BlueprintIPv6ApplicationsOK),
 			Computed: true,
 		},
 		"junos_evpn_max_nexthop_and_interface_number": dataSourceSchema.BoolAttribute{
@@ -257,7 +263,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of EVPN routes to accept on Leaf Switches. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used.",
 		},
@@ -266,7 +272,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of routes to accept from external routers. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used.",
 		},
@@ -275,7 +281,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of underlay routes permitted between fabric nodes. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used." +
 				"Setting this option may be required in the event of leaking EVPN routes from a Security Zone " +
@@ -288,7 +294,7 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 			MarkdownDescription: "Maximum number of routes to accept between MLAG peers. " +
 				"A positive integer value indicates the route limit being rendered into to the device BGP " +
 				"configuration as a maximum limit. A zero indicates that a `0` is being rendered into the same line of " +
-				"configuration, resulting in platform-specific behavior: Eitehr *unlimited routes* are permitted, or " +
+				"configuration, resulting in platform-specific behavior: Either *unlimited routes* are permitted, or " +
 				"*no routes* are permitted, depending on the NOS in use. When `null`, Apstra is rendering no maximum " +
 				"value into the configuration, so NOS default is being used.",
 			Optional: true,
@@ -302,6 +308,31 @@ func (o Blueprint) DataSourceAttributes() map[string]dataSourceSchema.Attribute 
 				"which results in less resource consumption. Routing zone will only be rendered for systems which have " +
 				"other structures configured on top of routing zone, such as virtual networks, protocol sessions, " +
 				"static routes, sub-interfaces, etc.",
+			Computed: true,
+		},
+		"underlay_addressing": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Controls whether the default Routing Zone addresses resources "+
+				"with `%s`, `%s`, or `%s` values. Note that `%s` is still permitted in an `%s` network, unless "+
+				"`disable_ipv4` is used to disallow `%s` completely.",
+				enum.AddressingSchemeIPv4, enum.AddressingSchemeIPv46, enum.AddressingSchemeIPv6,
+				enum.AddressingSchemeIPv4, enum.AddressingSchemeIPv6, enum.AddressingSchemeIPv4),
+			Computed: true,
+		},
+		"vtep_addressing": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Indicates the desired next-hop interface addressing for VXLAN "+
+				"VTEPs and BGP EVPN overlay peers. The `%s` option is only supported if the underlay supports `%s` or "+
+				"`%s` routing based on `underlay_addressing` configuraiton. Spine and leaf loopbacks must also have "+
+				"`%s` or `%s` support. This option is only valid for the default routing zone. Requires Apstra 6.1.0 or later.",
+				enum.AddressingSchemeIPv6, enum.AddressingSchemeIPv46, enum.AddressingSchemeIPv6,
+				enum.AddressingSchemeIPv4, enum.AddressingSchemeIPv46),
+			Computed: true,
+		},
+		"disable_ipv4": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Only valid with `addressing_support = \"ipv6\"`. When `true`, pure IPv6 routing " +
+				"zones will not render IPv4 SAFIs and other IPv4-over-IPv6/RFC5549 related configuration will be " +
+				"removed. User-defined IPv4 resources will not be permitted in the Blueprint. An IPv4 loopback is " +
+				"still required in order to derive BGP Router IDs and Route Distinguishers but it will not " +
+				"participate in routing. Requires Apstra 6.1.0 or later.",
 			Computed: true,
 		},
 	}
@@ -482,7 +513,7 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"including IPv6 loopback addresses on leafs, spines and superspines, IPv6 addresses "+
 				"for MLAG SVI subnets and IPv6 addresses for leaf L3 peer links. This option cannot be disabled "+
 				"without re-creating the Blueprint. Applies only to EVPN blueprints. Supported with Apstra %s only.",
-				compatibility.IPv6PerRZForbidden),
+				compatibility.BlueprintIPv6ApplicationsOK),
 			Optional: true,
 			Computed: true,
 			PlanModifiers: []planmodifier.Bool{
@@ -577,6 +608,57 @@ func (o Blueprint) ResourceAttributes() map[string]resourceSchema.Attribute {
 				"they are not required, resulting in less resource consumption.",
 			Optional: true,
 			Computed: true,
+		},
+		"underlay_addressing": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Controls whether the default Routing Zone addresses resources "+
+				"with `%s`, `%s`, or `%s` values. Note that `%s` is still permitted in an `%s` network, unless "+
+				"`disable_ipv4` is used to disallow `%s` completely.",
+				enum.AddressingSchemeIPv4, enum.AddressingSchemeIPv46, enum.AddressingSchemeIPv6,
+				enum.AddressingSchemeIPv4, enum.AddressingSchemeIPv6, enum.AddressingSchemeIPv4),
+			Optional:   true,
+			Computed:   true,
+			Validators: []validator.String{stringvalidator.OneOf(enum.AddressingSchemes.Values()...)},
+		},
+		"vtep_addressing": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Indicates the desired next-hop interface addressing for VXLAN "+
+				"VTEPs and BGP EVPN overlay peers. The `%s` option is only supported if the underlay supports `%s` or "+
+				"`%s` routing based on `underlay_addressing` configuraiton. Spine and leaf loopbacks must also have "+
+				"`%s` or `%s` support. This option is only valid for the default routing zone. Requires Apstra 6.1.0 or later.",
+				enum.AddressingSchemeIPv6, enum.AddressingSchemeIPv46, enum.AddressingSchemeIPv6,
+				enum.AddressingSchemeIPv4, enum.AddressingSchemeIPv46),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.String{
+				// must be `ipv4` or `ipv6`
+				stringvalidator.OneOf(enum.AddressingSchemeIPv4.String(), enum.AddressingSchemeIPv6.String()),
+				// `ipv6` not permitted when `underlay_addressing = ipv4`
+				apstravalidator.WhenValueAtMustBeString(
+					path.MatchRoot("underlay_addressing"),
+					types.StringValue(enum.AddressingSchemeIPv4.String()),
+					stringvalidator.NoneOf(enum.AddressingSchemeIPv6.String()),
+				),
+				// `ipv4` not permitted when `disable_ipv4 = true`
+				apstravalidator.WhenValueAtMustBeString(
+					path.MatchRoot("disable_ipv4"),
+					types.StringValue(enum.AddressingSchemeIPv6.String()),
+					stringvalidator.NoneOf(enum.AddressingSchemeIPv4.String()),
+				),
+			},
+		},
+		"disable_ipv4": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Only valid with `addressing_support = \"ipv6\"`. When `true`, pure IPv6 routing " +
+				"zones will not render IPv4 SAFIs and other IPv4-over-IPv6/RFC5549 related configuration will be " +
+				"removed. User-defined IPv4 resources will not be permitted in the Blueprint. An IPv4 loopback is " +
+				"still required in order to derive BGP Router IDs and Route Distinguishers but it will not " +
+				"participate in routing. Requires Apstra 6.1.0 or later.",
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Bool{
+				// attribute is only valid when underlay_addressing = "ipv6"
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("underlay_addressing"), types.StringNull()),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("underlay_addressing"), types.StringValue(enum.AddressingSchemeIPv4.String())),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("underlay_addressing"), types.StringValue(enum.AddressingSchemeIPv46.String())),
+			},
 		},
 	}
 }
@@ -703,10 +785,88 @@ func (o *Blueprint) LoadFabricSettings(ctx context.Context, settings *apstra.Fab
 	o.OptimizeRoutingZoneFootprint = boolAttrValueFromFeatureswitchEnumPtr(settings.OptimiseSzFootprint)
 }
 
-func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateBlueprintFromTemplateRequest {
+func (o *Blueprint) GetDefaultRZParams(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	// determine API version
+	apiVersion, err := version.NewVersion(bp.Client().ApiVersion())
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to parse API version %q", bp.Client().ApiVersion()), err.Error())
+		return
+	}
+
+	// only read default routing zone details from Apstra 6.1.0+
+	if !compatibility.BPDefaultRoutingZoneAddressingOK.Check(apiVersion) {
+		o.UnderlayAddressing = types.StringNull()
+		o.VTEPAddressing = types.StringNull()
+		o.DisableIPv4 = types.BoolNull()
+		return
+	}
+
+	// read default security zone
+	sz, err := bp.GetSecurityZoneByVRFName(ctx, "default")
+	if err != nil {
+		diags.AddError("failed to retrieve default Routing Zone", err.Error())
+		return
+	}
+
+	if sz.AddressingSupport != nil {
+		o.UnderlayAddressing = types.StringValue(sz.AddressingSupport.String())
+	}
+	if sz.VTEPAddressing != nil {
+		o.VTEPAddressing = types.StringValue(sz.VTEPAddressing.String())
+	}
+	if sz.AddressingSupport != nil && *sz.AddressingSupport == enum.AddressingSchemeIPv6 {
+		o.DisableIPv4 = types.BoolPointerValue(sz.DisableIPv4)
+	} else {
+		o.DisableIPv4 = types.BoolNull() // disable IPv4 only makes sense when addressing_scheme is IPv6
+	}
+}
+
+func (o Blueprint) SetDefaultRZParams(ctx context.Context, state Blueprint, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	// For each attribute we look for a user-supplied value which doesn't match state.
+	// If all attributes area acceptable (user doesn't care or value matches state) we
+	// have nothing to do.
+	if (o.UnderlayAddressing.IsUnknown() || o.UnderlayAddressing.Equal(state.UnderlayAddressing)) &&
+		(o.VTEPAddressing.IsUnknown() || o.VTEPAddressing.Equal(state.VTEPAddressing)) &&
+		(o.DisableIPv4.IsUnknown() || o.DisableIPv4.Equal(state.DisableIPv4)) {
+		return // nothing to do
+	}
+
+	// begin by fetching the Routing Zone because our update function does PUT
+	rz, err := bp.GetSecurityZoneByVRFName(ctx, "default")
+	if err != nil {
+		diags.AddError("failed to retrieve default Routing Zone", err.Error())
+		return
+	}
+
+	// update RZ attributes with attributes from our plan
+	if !o.UnderlayAddressing.IsNull() && !o.UnderlayAddressing.IsUnknown() {
+		if err = rz.AddressingSupport.FromString(o.UnderlayAddressing.ValueString()); err != nil {
+			diags.AddError("failed to parse underlay_addressing", err.Error())
+		}
+	}
+	if !o.VTEPAddressing.IsNull() && !o.VTEPAddressing.IsUnknown() {
+		if err = rz.VTEPAddressing.FromString(o.VTEPAddressing.ValueString()); err != nil {
+			diags.AddError("failed to parse vtep_addressing", err.Error())
+		}
+	}
+	if !o.DisableIPv4.IsNull() && !o.DisableIPv4.IsUnknown() {
+		rz.DisableIPv4 = o.DisableIPv4.ValueBoolPointer()
+	} else {
+		if rz.AddressingSupport != nil && *rz.AddressingSupport != enum.AddressingSchemeIPv6 {
+			rz.DisableIPv4 = pointer.To(false)
+		}
+	}
+
+	if err = bp.UpdateSecurityZone(ctx, rz); err != nil {
+		diags.AddError("failed to update default Routing Zone", err.Error())
+		return
+	}
+}
+
+func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) apstra.CreateBlueprintFromTemplateRequest {
 	fabricSettings := o.FabricSettings(ctx, diags)
 	if diags.HasError() {
-		return nil
+		return apstra.CreateBlueprintFromTemplateRequest{}
 	}
 
 	// IPv6 cannot be enabled as part of blueprint creation
@@ -720,20 +880,38 @@ func (o *Blueprint) Request(ctx context.Context, diags *diag.Diagnostics) *apstr
 	}
 
 	if utils.HasValue(o.FabricAddressing) {
-		result.FabricSettings.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
-			pointer.To(path.Root("fabric_addressing")), diags)
+		result.FabricSettings.SpineLeafLinks = utils.FabricAddressing(ctx, o.FabricAddressing, pointer.To(path.Root("fabric_addressing")), diags)
 		if diags.HasError() {
-			return nil
+			return apstra.CreateBlueprintFromTemplateRequest{}
 		}
 
-		result.FabricSettings.SpineSuperspineLinks = utils.FabricAddressing(ctx, o.FabricAddressing,
-			pointer.To(path.Root("fabric_addressing")), diags)
+		result.FabricSettings.SpineSuperspineLinks = utils.FabricAddressing(ctx, o.FabricAddressing, pointer.To(path.Root("fabric_addressing")), diags)
 		if diags.HasError() {
-			return nil
+			return apstra.CreateBlueprintFromTemplateRequest{}
 		}
 	}
 
-	return &result
+	// fill addressing_policy portion of request if any of its values are set
+	if !o.UnderlayAddressing.IsUnknown() || !o.VTEPAddressing.IsUnknown() || !o.DisableIPv4.IsUnknown() {
+		result.AddressingPolicy = new(apstra.AddressingPolicy)
+		if !o.UnderlayAddressing.IsUnknown() {
+			result.AddressingPolicy.AddressingSupport = new(enum.AddressingScheme)
+			if err := result.AddressingPolicy.AddressingSupport.FromString(o.UnderlayAddressing.ValueString()); err != nil {
+				diags.AddAttributeError(path.Root("underlay_addressing"), constants.ErrInvalidConfig, err.Error())
+			}
+		}
+		if !o.VTEPAddressing.IsUnknown() {
+			result.AddressingPolicy.VTEPAddressing = new(enum.AddressingScheme)
+			if err := result.AddressingPolicy.VTEPAddressing.FromString(o.VTEPAddressing.ValueString()); err != nil {
+				diags.AddAttributeError(path.Root("vtep_addressing"), constants.ErrInvalidConfig, err.Error())
+			}
+		}
+		if !o.DisableIPv4.IsUnknown() {
+			result.AddressingPolicy.DisableIPv4 = o.DisableIPv4.ValueBoolPointer()
+		}
+	}
+
+	return result
 }
 
 func (o *Blueprint) LoadAntiAffninityPolicy(ctx context.Context, antiAffinitypolicy *apstra.AntiAffinityPolicy, diags *diag.Diagnostics) {
@@ -913,7 +1091,28 @@ func (o Blueprint) VersionConstraints(_ context.Context, _ *diag.Diagnostics) co
 	if !o.Ipv6Applications.IsNull() {
 		response.AddAttributeConstraints(compatibility.AttributeConstraint{
 			Path:        path.Root("ipv6_applications"),
-			Constraints: compatibility.IPv6PerRZForbidden,
+			Constraints: compatibility.BlueprintIPv6ApplicationsOK,
+		})
+	}
+
+	if !o.UnderlayAddressing.IsNull() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("underlay_addressing"),
+			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
+		})
+	}
+
+	if !o.VTEPAddressing.IsNull() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("vtep_addressing"),
+			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
+		})
+	}
+
+	if !o.DisableIPv4.IsNull() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("disable_ipv4"),
+			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
 		})
 	}
 

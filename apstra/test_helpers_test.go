@@ -438,7 +438,12 @@ func (o *lineNumberer) appendf(format string, a ...any) {
 	o.append(fmt.Sprintf(format, a...))
 }
 
-func (o *lineNumberer) string() string {
+func (o *lineNumberer) string(firstLineNum ...int) string {
+	offset := 0
+	if len(firstLineNum) != 0 {
+		offset = firstLineNum[0]
+	}
+
 	count := len(o.lines)
 	if count == 0 {
 		return ""
@@ -453,7 +458,7 @@ func (o *lineNumberer) string() string {
 
 	sb := new(strings.Builder)
 	for i, line := range o.lines {
-		sb.WriteString(fmt.Sprintf(formatStr, i+1) + " " + line + "\n")
+		sb.WriteString(fmt.Sprintf(formatStr, i+1+offset) + " " + line + "\n")
 	}
 
 	return sb.String()
@@ -732,8 +737,8 @@ func (o *testChecks) extractFromState(t testing.TB, path, id string, targetMap m
 	o.logLines.appendf("extractValueFromTerraformState(%s, %q)", path, id)
 }
 
-func (o *testChecks) string() string {
-	return o.logLines.string()
+func (o *testChecks) string(firstLineNum ...int) string {
+	return o.logLines.string(firstLineNum...)
 }
 
 func extractValueFromTerraformState(t testing.TB, name string, id string, targetMap map[string]string) resource.TestCheckFunc {

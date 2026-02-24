@@ -7,14 +7,14 @@ import (
 
 var (
 	ApiNotSupportsSetLoopbackIps       = versionconstraints.New(apiversions.LtApstra500)
+	BPDefaultRoutingZoneAddressingOK   = versionconstraints.New(apiversions.GeApstra610)
 	BpIbaDashboardOk                   = versionconstraints.New(apiversions.LtApstra500)
 	BpIbaProbeOk                       = versionconstraints.New(apiversions.LtApstra500)
 	BpIbaWidgetOk                      = versionconstraints.New(apiversions.LtApstra500)
-	IPv6PerRZForbidden                 = versionconstraints.New(apiversions.LtApstra610)
+	BlueprintIPv6ApplicationsOK        = versionconstraints.New(apiversions.LtApstra610)
 	ChangeVnRzIdForbidden              = versionconstraints.New(apiversions.LeApstra422)
 	FabricSettingsSetInCreate          = versionconstraints.New(apiversions.GeApstra421)
 	RoutingPolicyExportL3EdgeServerOK  = versionconstraints.New(apiversions.LeApstra422)
-	RoutingZoneAddressingTypeOK        = versionconstraints.New(apiversions.GeApstra610)
 	TemplateRequiresAntiAffinityPolicy = versionconstraints.New(apiversions.Apstra420)
 	VnDescriptionOk                    = versionconstraints.New(apiversions.GeApstra500)
 	VnEmptyBindingsOk                  = versionconstraints.New(apiversions.GeApstra500)
