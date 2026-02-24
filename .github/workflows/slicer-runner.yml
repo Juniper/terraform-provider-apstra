@@ -70,8 +70,8 @@ jobs:
       if: success()
       env:
         APSTRA_URL: ${{ steps.get_aos_ip.outputs.aos_ip }}
-        APSTRA_USERNAME: admin
-        APSTRA_PASSWORD: admin
+        APSTRA_USER: admin
+        APSTRA_PASS: admin
         APSTRA_TLS_VALIDATION_DISABLED: "true"
         GOTMPDIR: /home/runner/_work/_tmp
       run: |
