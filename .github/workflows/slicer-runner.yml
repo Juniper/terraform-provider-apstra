@@ -1,0 +1,37 @@
+name: Slicer local Runner Workflow
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  slicer-topology-deployment:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Create Python virtual environment
+      run: |
+        python -m venv venv
+
+    - name: Install systest3_tools package
+      run: |
+        source venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install https://jenkins.dc1.apstra.com/job/OB/job/Slicer_OB/lastSuccessfulBuild/artifact/dist/systest3_tools-0.2.0-py3-none-any.whl
+
+    - name: Run topology deployment script
+      run: |
+        source venv/bin/activate
+        python run_test_locally.py
