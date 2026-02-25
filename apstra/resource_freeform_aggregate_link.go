@@ -34,7 +34,7 @@ func (o *resourceFreeformAggregateLink) Configure(ctx context.Context, req resou
 func (o *resourceFreeformAggregateLink) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates an Aggregate Link in a Freeform Blueprint.",
-		Attributes:          (*freeform.AggregateLink)(nil).ResourceAttributes(),
+		Attributes:          freeform.AggregateLink{}.ResourceAttributes(),
 	}
 }
 

@@ -26,7 +26,7 @@ type AggregateLinkEndpointGroup struct {
 
 func (o AggregateLinkEndpointGroup) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"endpoints": types.SetType{ElemType: types.ObjectType{AttrTypes: (*AggregateLinkEndpoint)(nil).attrTypes()}},
+		"endpoints": types.SetType{ElemType: types.ObjectType{AttrTypes: AggregateLinkEndpoint{}.attrTypes()}},
 		"name":      types.StringType,
 		"tags":      types.SetType{ElemType: types.StringType},
 		"id":        types.StringType,
@@ -35,9 +35,9 @@ func (o AggregateLinkEndpointGroup) attrTypes() map[string]attr.Type {
 
 func (o AggregateLinkEndpointGroup) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"endpoints": dataSourceSchema.SetAttribute{
+		"endpoints": dataSourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Set of Aggregate Link Endpoints associated with this Aggregate Link Endpoint Group.",
-			ElementType:         types.ObjectType{AttrTypes: (*AggregateLinkEndpoint)(nil).attrTypes()},
+			NestedObject:        dataSourceSchema.NestedAttributeObject{Attributes: AggregateLinkEndpoint{}.dataSourceAttributes()},
 			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
@@ -57,15 +57,15 @@ func (o AggregateLinkEndpointGroup) dataSourceAttributes() map[string]dataSource
 
 func (o AggregateLinkEndpointGroup) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"endpoints": resourceSchema.SetAttribute{
+		"endpoints": resourceSchema.SetNestedAttribute{
 			MarkdownDescription: "Set of Aggregate Link Endpoints associated with this Aggregate Link Endpoint Group.",
-			ElementType:         types.ObjectType{AttrTypes: (*AggregateLinkEndpoint)(nil).attrTypes()},
+			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: AggregateLinkEndpoint{}.resourceAttributes()},
 			Required:            true,
 			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name of the Aggregate Link Endpoint Group.",
-			Optional:            true,
+			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"tags": resourceSchema.SetAttribute{
@@ -115,7 +115,7 @@ func (o *AggregateLinkEndpointGroup) LoadAPIData(ctx context.Context, in apstra.
 	for i, endpoint := range in.Endpoints {
 		endpoints[i].LoadAPIData(ctx, endpoint, diags)
 	}
-	o.Endpoints = value.SetOrNull(ctx, types.ObjectType{AttrTypes: (*AggregateLinkEndpoint)(nil).attrTypes()}, endpoints, diags)
+	o.Endpoints = value.SetOrNull(ctx, types.ObjectType{AttrTypes: AggregateLinkEndpoint{}.attrTypes()}, endpoints, diags)
 	o.Name = types.StringValue(in.Label)
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 	o.ID = types.StringPointerValue(in.ID())

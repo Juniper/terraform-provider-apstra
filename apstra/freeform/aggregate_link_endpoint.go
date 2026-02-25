@@ -46,7 +46,7 @@ func (o AggregateLinkEndpoint) attrTypes() map[string]attr.Type {
 	}
 }
 
-func (o AggregateLinkEndpoint) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o AggregateLinkEndpoint) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"system_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of a `system` node.",
@@ -58,10 +58,12 @@ func (o AggregateLinkEndpoint) DataSourceAttributes() map[string]dataSourceSchem
 		},
 		"ipv4_address": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address of the logical aggregate interface, if any.",
+			CustomType:          cidrtypes.IPv4PrefixType{},
 			Computed:            true,
 		},
 		"ipv6_address": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address of the logical aggregate interface, if any.",
+			CustomType:          cidrtypes.IPv6PrefixType{},
 			Computed:            true,
 		},
 		"port_channel_id": dataSourceSchema.Int64Attribute{
@@ -85,7 +87,7 @@ func (o AggregateLinkEndpoint) DataSourceAttributes() map[string]dataSourceSchem
 	}
 }
 
-func (o AggregateLinkEndpoint) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o AggregateLinkEndpoint) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of a `system` node.",
@@ -98,10 +100,12 @@ func (o AggregateLinkEndpoint) ResourceAttributes() map[string]resourceSchema.At
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv4 address of the logical aggregate interface, if any.",
+			CustomType:          cidrtypes.IPv4PrefixType{},
 			Optional:            true,
 		},
 		"ipv6_address": resourceSchema.StringAttribute{
 			MarkdownDescription: "IPv6 address of the logical aggregate interface, if any.",
+			CustomType:          cidrtypes.IPv6PrefixType{},
 			Optional:            true,
 		},
 		"port_channel_id": resourceSchema.Int64Attribute{
