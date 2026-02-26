@@ -5,6 +5,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -17,8 +18,8 @@ import (
 )
 
 type AggregateLinkEndpointGroup struct {
-	Endpoints types.Set    `tfsdk:"endpoints"`
-	Name      types.String `tfsdk:"name"`
+	Endpoints types.List   `tfsdk:"endpoints"`
+	Label     types.String `tfsdk:"label"`
 	Tags      types.Set    `tfsdk:"tags"`
 
 	ID types.String `tfsdk:"id"`
@@ -26,8 +27,8 @@ type AggregateLinkEndpointGroup struct {
 
 func (o AggregateLinkEndpointGroup) attrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"endpoints": types.SetType{ElemType: types.ObjectType{AttrTypes: AggregateLinkEndpoint{}.attrTypes()}},
-		"name":      types.StringType,
+		"endpoints": types.ListType{ElemType: types.ObjectType{AttrTypes: AggregateLinkEndpoint{}.attrTypes()}},
+		"label":     types.StringType,
 		"tags":      types.SetType{ElemType: types.StringType},
 		"id":        types.StringType,
 	}
@@ -35,13 +36,13 @@ func (o AggregateLinkEndpointGroup) attrTypes() map[string]attr.Type {
 
 func (o AggregateLinkEndpointGroup) dataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"endpoints": dataSourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Aggregate Link Endpoints associated with this Aggregate Link Endpoint Group.",
+		"endpoints": dataSourceSchema.ListNestedAttribute{
+			MarkdownDescription: "List of Aggregate Link Endpoints associated with this Aggregate Link Endpoint Group.",
 			NestedObject:        dataSourceSchema.NestedAttributeObject{Attributes: AggregateLinkEndpoint{}.dataSourceAttributes()},
 			Computed:            true,
 		},
-		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the Aggregate Link Endpoint Group.",
+		"label": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Endpoint Group Label as displayed in the web UI.",
 			Computed:            true,
 		},
 		"tags": dataSourceSchema.SetAttribute{
@@ -51,21 +52,22 @@ func (o AggregateLinkEndpointGroup) dataSourceAttributes() map[string]dataSource
 		},
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Aggregate Link Endpoint Group.",
+			Computed:            true,
 		},
 	}
 }
 
 func (o AggregateLinkEndpointGroup) resourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
-		"endpoints": resourceSchema.SetNestedAttribute{
-			MarkdownDescription: "Set of Aggregate Link Endpoints associated with this Aggregate Link Endpoint Group.",
+		"endpoints": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "List of Aggregate Link Endpoints associated with this Aggregate Link Endpoint Group.",
 			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: AggregateLinkEndpoint{}.resourceAttributes()},
 			Required:            true,
-			Validators:          []validator.Set{setvalidator.SizeAtLeast(1)},
+			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 		},
-		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Name of the Aggregate Link Endpoint Group.",
-			Required:            true,
+		"label": resourceSchema.StringAttribute{
+			MarkdownDescription: "Endpoint Group Label as displayed in the web UI.",
+			Optional:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"tags": resourceSchema.SetAttribute{
@@ -86,7 +88,7 @@ func (o AggregateLinkEndpointGroup) resourceAttributes() map[string]resourceSche
 
 func (o AggregateLinkEndpointGroup) Request(ctx context.Context, path path.Path, diags *diag.Diagnostics) apstra.FreeformAggregateLinkEndpointGroup {
 	result := apstra.FreeformAggregateLinkEndpointGroup{
-		Label: o.Name.ValueString(),
+		Label: o.Label.ValueStringPointer(),
 		// Tags:      nil, // see below
 		// Endpoints: nil, // see below
 	}
@@ -115,8 +117,8 @@ func (o *AggregateLinkEndpointGroup) LoadAPIData(ctx context.Context, in apstra.
 	for i, endpoint := range in.Endpoints {
 		endpoints[i].LoadAPIData(ctx, endpoint, diags)
 	}
-	o.Endpoints = value.SetOrNull(ctx, types.ObjectType{AttrTypes: AggregateLinkEndpoint{}.attrTypes()}, endpoints, diags)
-	o.Name = types.StringValue(in.Label)
+	o.Endpoints = value.ListOrNull(ctx, types.ObjectType{AttrTypes: AggregateLinkEndpoint{}.attrTypes()}, endpoints, diags)
+	o.Label = types.StringPointerValue(in.Label)
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 	o.ID = types.StringPointerValue(in.ID())
 }

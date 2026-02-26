@@ -149,7 +149,7 @@ func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, diag
 	var err error
 
 	if !o.IPv4Address.IsNull() {
-		*result.IPv4Addr, err = netip.ParsePrefix(o.IPv4Address.ValueString())
+		addr, err := netip.ParsePrefix(o.IPv4Address.ValueString())
 		if err != nil {
 			diags.AddAttributeError(
 				path.AtName("ipv4_address"),
@@ -158,10 +158,11 @@ func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, diag
 			)
 			return result
 		}
+		result.IPv4Addr = &addr
 	}
 
 	if !o.IPv6Address.IsNull() {
-		*result.IPv6Addr, err = netip.ParsePrefix(o.IPv6Address.ValueString())
+		addr, err := netip.ParsePrefix(o.IPv6Address.ValueString())
 		if err != nil {
 			diags.AddAttributeError(
 				path.AtName("ipv6_address"),
@@ -170,6 +171,7 @@ func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, diag
 			)
 			return result
 		}
+		result.IPv6Addr = &addr
 	}
 
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
@@ -188,18 +190,21 @@ func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, diag
 }
 
 func (o *AggregateLinkEndpoint) LoadAPIData(ctx context.Context, in apstra.FreeformAggregateLinkEndpoint, diags *diag.Diagnostics) {
-	var ipv4Addr, ipv6Addr *string
-	if in.IPv4Addr != nil && in.IPv4Addr.IsValid() {
-		*ipv4Addr = in.IPv4Addr.String()
-	}
-	if in.IPv6Addr != nil && in.IPv6Addr.IsValid() {
-		*ipv6Addr = in.IPv6Addr.String()
-	}
-
 	o.SystemID = types.StringValue(in.SystemID)
 	o.IfName = types.StringValue(in.IfName)
-	o.IPv4Address = cidrtypes.NewIPv4PrefixPointerValue(ipv4Addr)
-	o.IPv6Address = cidrtypes.NewIPv6PrefixPointerValue(ipv6Addr)
+
+	if in.IPv4Addr != nil && in.IPv4Addr.IsValid() {
+		o.IPv4Address = cidrtypes.NewIPv4PrefixValue(in.IPv4Addr.String())
+	} else {
+		o.IPv4Address = cidrtypes.NewIPv4PrefixNull()
+	}
+
+	if in.IPv6Addr != nil && in.IPv6Addr.IsValid() {
+		o.IPv6Address = cidrtypes.NewIPv6PrefixValue(in.IPv6Addr.String())
+	} else {
+		o.IPv6Address = cidrtypes.NewIPv6PrefixNull()
+	}
+
 	o.PortChannelID = types.Int64Value(int64(in.PortChannelID))
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 	o.LAGMode = types.StringValue(in.LAGMode.String())

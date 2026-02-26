@@ -2,39 +2,34 @@ package freeform
 
 import (
 	"context"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
+	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type AggregateLink struct {
-	BlueprintID    types.String `tfsdk:"blueprint_id"`
 	ID             types.String `tfsdk:"id"`
+	BlueprintID    types.String `tfsdk:"blueprint_id"`
 	Name           types.String `tfsdk:"name"`
-	EndpointGroups types.List   `tfsdk:"endpoint_groups"`
+	EndpointGroup1 types.Object `tfsdk:"endpoint_group_1"`
+	EndpointGroup2 types.Object `tfsdk:"endpoint_group_2"`
 	MemberLinkIDs  types.Set    `tfsdk:"member_link_ids"`
 	Tags           types.Set    `tfsdk:"tags"`
 }
 
 func (o AggregateLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
-		"blueprint_id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra Blueprint ID.",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
-		},
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up the Freeform Aggregate Link by ID. Required when `name` is omitted.",
 			Optional:            true,
@@ -47,17 +42,26 @@ func (o AggregateLink) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 				}...),
 			},
 		},
+		"blueprint_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Apstra Blueprint ID.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+		},
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Populate this field to look up the Freeform Aggregate Link by Name. Required when `id` is omitted.",
 			Optional:            true,
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"endpoint_groups": dataSourceSchema.ListNestedAttribute{
-			MarkdownDescription: "A list of endpoint objects, must be exactly two items. Each represents the " +
-				"system(s) on one end of the Aggregate Link.",
-			NestedObject: dataSourceSchema.NestedAttributeObject{Attributes: AggregateLinkEndpointGroup{}.dataSourceAttributes()},
-			Computed:     true,
+		"endpoint_group_1": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "An Endpoint Group represents the system(s) on one end of the Aggregate Link.",
+			Attributes:          AggregateLinkEndpointGroup{}.dataSourceAttributes(),
+			Computed:            true,
+		},
+		"endpoint_group_2": dataSourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "An Endpoint Group represents the system(s) on one end of the Aggregate Link.",
+			Attributes:          AggregateLinkEndpointGroup{}.dataSourceAttributes(),
+			Computed:            true,
 		},
 		"member_link_ids": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Link IDs used in the aggregation.",
@@ -74,16 +78,16 @@ func (o AggregateLink) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 
 func (o AggregateLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
+		"id": resourceSchema.StringAttribute{
+			MarkdownDescription: "Populate this field to look up the Freeform Aggregate Link by ID. Required when `name` is omitted.",
+			Computed:            true,
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+		},
 		"blueprint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra Blueprint ID.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
-		},
-		"id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Populate this field to look up the Freeform Aggregate Link by ID. Required when `name` is omitted.",
-			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Name of the Aggregate Link.",
@@ -91,12 +95,15 @@ func (o AggregateLink) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"endpoint_groups": resourceSchema.ListNestedAttribute{
-			MarkdownDescription: "A list of endpoint objects, must be exactly two items. Each group represents the " +
-				"system(s) on one end of the Aggregate Link.",
-			Required:     true,
-			NestedObject: resourceSchema.NestedAttributeObject{Attributes: AggregateLinkEndpointGroup{}.resourceAttributes()},
-			Validators:   []validator.List{listvalidator.SizeBetween(2, 2)},
+		"endpoint_group_1": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "An Endpoint Group represents the system(s) on one end of the Aggregate Link.",
+			Attributes:          AggregateLinkEndpointGroup{}.resourceAttributes(),
+			Required:            true,
+		},
+		"endpoint_group_2": resourceSchema.SingleNestedAttribute{
+			MarkdownDescription: "An Endpoint Group represents the system(s) on one end of the Aggregate Link.",
+			Attributes:          AggregateLinkEndpointGroup{}.resourceAttributes(),
+			Required:            true,
 		},
 		"member_link_ids": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of Link IDs to be used in the aggregation",
@@ -121,7 +128,7 @@ func (o AggregateLink) ResourceAttributes() map[string]resourceSchema.Attribute 
 
 func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) apstra.FreeformAggregateLink {
 	result := apstra.FreeformAggregateLink{
-		Label: o.Name.ValueString(),
+		Label: o.Name.ValueStringPointer(),
 		// MemberLinkIds:  nil,                                            // see below
 		// EndpointGroups: [2]apstra.FreeformAggregateLinkEndpointGroup{}, // see below
 		// Tags:           nil,                                            // see below
@@ -129,10 +136,17 @@ func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) ap
 
 	diags.Append(o.MemberLinkIDs.ElementsAs(ctx, &result.MemberLinkIds, false)...)
 
-	var endpointGroups []AggregateLinkEndpointGroup
-	diags.Append(o.EndpointGroups.ElementsAs(ctx, &endpointGroups, false)...)
-	for i, endpointGroup := range endpointGroups {
-		result.EndpointGroups[i] = endpointGroup.Request(ctx, path.Root("endpoint_groups").AtListIndex(i), diags)
+	var endpointGroup1, endpointGroup2 AggregateLinkEndpointGroup
+	diags.Append(o.EndpointGroup1.As(ctx, &endpointGroup1, basetypes.ObjectAsOptions{})...)
+	diags.Append(o.EndpointGroup2.As(ctx, &endpointGroup2, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return result
+	}
+
+	result.EndpointGroups[0] = endpointGroup1.Request(ctx, path.Root("endpoint_group_1"), diags)
+	result.EndpointGroups[1] = endpointGroup2.Request(ctx, path.Root("endpoint_group_2"), diags)
+	if diags.HasError() {
+		return result
 	}
 
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
@@ -146,14 +160,24 @@ func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) ap
 
 func (o *AggregateLink) LoadApiData(ctx context.Context, in apstra.FreeformAggregateLink, diags *diag.Diagnostics) {
 	o.ID = types.StringPointerValue(in.ID())
-	o.Name = types.StringValue(in.Label)
-	endpointGroups := make([]AggregateLinkEndpointGroup, 2)
-	endpointGroups[0].LoadAPIData(ctx, in.EndpointGroups[0], diags)
-	endpointGroups[1].LoadAPIData(ctx, in.EndpointGroups[1], diags)
+	o.Name = types.StringPointerValue(in.Label)
+
+	var endpointGroup1, endpointGroup2 AggregateLinkEndpointGroup
+	endpointGroup1.LoadAPIData(ctx, in.EndpointGroups[0], diags)
+	endpointGroup2.LoadAPIData(ctx, in.EndpointGroups[1], diags)
 	if diags.HasError() {
 		return
 	}
-	o.EndpointGroups = value.ListOrNull(ctx, types.ObjectType{AttrTypes: AggregateLinkEndpointGroup{}.attrTypes()}, endpointGroups, diags)
+
+	var d diag.Diagnostics
+	o.EndpointGroup1, d = types.ObjectValueFrom(ctx, endpointGroup1.attrTypes(), &endpointGroup1)
+	diags.Append(d...)
+	o.EndpointGroup2, d = types.ObjectValueFrom(ctx, endpointGroup2.attrTypes(), &endpointGroup2)
+	diags.Append(d...)
+	if diags.HasError() {
+		return
+	}
+
 	o.MemberLinkIDs = value.SetOrNull(ctx, types.StringType, in.MemberLinkIds, diags)
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
 }

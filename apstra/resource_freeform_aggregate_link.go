@@ -23,7 +23,7 @@ type resourceFreeformAggregateLink struct {
 	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourceFreeformAggregateLink) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o resourceFreeformAggregateLink) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_freeform_aggregate_link"
 }
 
@@ -31,14 +31,14 @@ func (o *resourceFreeformAggregateLink) Configure(ctx context.Context, req resou
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceFreeformAggregateLink) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o resourceFreeformAggregateLink) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFreeform + "This resource creates an Aggregate Link in a Freeform Blueprint.",
 		Attributes:          freeform.AggregateLink{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceFreeformAggregateLink) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o resourceFreeformAggregateLink) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan freeform.AggregateLink
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -94,7 +94,7 @@ func (o *resourceFreeformAggregateLink) Create(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceFreeformAggregateLink) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o resourceFreeformAggregateLink) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state freeform.AggregateLink
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -131,7 +131,7 @@ func (o *resourceFreeformAggregateLink) Read(ctx context.Context, req resource.R
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceFreeformAggregateLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o resourceFreeformAggregateLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
 	var plan freeform.AggregateLink
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -175,7 +175,7 @@ func (o *resourceFreeformAggregateLink) Update(ctx context.Context, req resource
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceFreeformAggregateLink) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o resourceFreeformAggregateLink) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state freeform.AggregateLink
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

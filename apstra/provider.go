@@ -567,6 +567,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetwork{} },
 		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetworks{} },
 		func() datasource.DataSource { return &dataSourceDeviceConfig{} },
+		func() datasource.DataSource { return &dataSourceFreeformAggregateLink{} },
 		func() datasource.DataSource { return &dataSourceFreeformAllocGroup{} },
 		func() datasource.DataSource { return &dataSourceFreeformBlueprint{} },
 		func() datasource.DataSource { return &dataSourceFreeformConfigTemplate{} },

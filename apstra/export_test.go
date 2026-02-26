@@ -38,6 +38,7 @@ var (
 	ResourceDatacenterTag                                  = resourceDatacenterTag{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}
+	ResourceFreeformAggregateLink                          = resourceFreeformAggregateLink{}
 	ResourceFreeformBlueprint                              = resourceFreeformBlueprint{}
 	ResourceFreeformConfigTemplate                         = resourceFreeformConfigTemplate{}
 	ResourceFreeformDeviceProfile                          = resourceFreeformDeviceProfile{}
