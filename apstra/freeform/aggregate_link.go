@@ -127,11 +127,10 @@ func (o AggregateLink) ResourceAttributes() map[string]resourceSchema.Attribute 
 }
 
 func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) apstra.FreeformAggregateLink {
-	result := apstra.FreeformAggregateLink{
-		Label: o.Name.ValueStringPointer(),
-		// MemberLinkIds:  nil,                                            // see below
-		// EndpointGroups: [2]apstra.FreeformAggregateLinkEndpointGroup{}, // see below
-		// Tags:           nil,                                            // see below
+	var result apstra.FreeformAggregateLink
+
+	if !o.Name.IsUnknown() || !o.Name.IsNull() { // leave nil when no value set
+		result.Label = o.Name.ValueStringPointer()
 	}
 
 	diags.Append(o.MemberLinkIDs.ElementsAs(ctx, &result.MemberLinkIds, false)...)

@@ -66,14 +66,22 @@ func TestBlueprintA(t testing.TB, ctx context.Context, client apstra.Client) aps
 func TestBlueprintB(t testing.TB, ctx context.Context, client apstra.Client, sysCount1, sysCount2, linkCount int) (apstra.FreeformClient, map[string][2]string) {
 	t.Helper()
 
-	dpToImport := "Juniper_vEX"
+	dpToImport := "Juniper_QFX5120-32C_Junos"
 	dp, err := client.GetDeviceProfile(ctx, dpToImport)
 	require.NoError(t, err)
 
-	if sysCount1*sysCount2*linkCount > len(dp.Ports) {
+	if max(sysCount1, sysCount2)*linkCount > len(dp.Ports) {
+		var a, b string
+		if sysCount2 > sysCount1 {
+			a = "group 1"
+			b = "group 2"
+		} else {
+			a = "group 2"
+			b = "group 1"
+		}
 		t.Fatalf(
-			"cannot link %d group 1 servers to %d group 2 servers %d times with device profile %s: %d ports requied of %d available",
-			sysCount1, sysCount2, linkCount, dpToImport, sysCount1*sysCount2*linkCount, len(dp.Ports),
+			"cannot link %s servers to %d %s servers %d times with device profile %s: %d ports requied of %d available",
+			a, max(sysCount1, sysCount2), b, linkCount, dpToImport, sysCount1*sysCount2*linkCount, len(dp.Ports),
 		)
 	}
 
@@ -133,14 +141,14 @@ func TestBlueprintB(t testing.TB, ctx context.Context, client apstra.Client, sys
 						{
 							SystemId: apstra.ObjectId(systemsGroup1[sysGroup1Idx]),
 							Interface: apstra.FreeformInterface{Data: &apstra.FreeformInterfaceData{
-								IfName:           pointer.To(fmt.Sprintf("ge-0/0/%d", sysGroup2Idx+(linkIdx*sysCount1))),
+								IfName:           pointer.To(fmt.Sprintf("et-0/0/%d", sysGroup2Idx+(linkIdx*sysCount2))),
 								TransformationId: pointer.To(1),
 							}},
 						},
 						{
 							SystemId: apstra.ObjectId(systemsGroup2[sysGroup2Idx]),
 							Interface: apstra.FreeformInterface{Data: &apstra.FreeformInterfaceData{
-								IfName:           pointer.To(fmt.Sprintf("ge-0/0/%d", sysGroup1Idx+(linkIdx*len(systemsGroup1)))),
+								IfName:           pointer.To(fmt.Sprintf("et-0/0/%d", sysGroup1Idx+(linkIdx*len(systemsGroup1)))),
 								TransformationId: pointer.To(1),
 							}},
 						},

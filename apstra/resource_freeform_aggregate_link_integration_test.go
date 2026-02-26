@@ -32,7 +32,7 @@ data %q %q {
 
 const resourceFreeformAggregateLinkHCL = `resource %q %q {
   blueprint_id    = %q
-  name            = %q
+  name            = %s
   member_link_ids = %s
   tags            = %s
   endpoint_group_1 = %s
@@ -62,6 +62,11 @@ func (o resourceFreeformAggregateLink) render(rType, rName string) string {
 	datasourceBlockByID := fmt.Sprintf(datasourceFreeformAggregateLinkHCL, rType, rName+"_by_id", o.blueprintID, fmt.Sprintf("%s.%s.id", rType, rName), "null")
 	datasourceBlockByName := fmt.Sprintf(datasourceFreeformAggregateLinkHCL, rType, rName+"_by_name", o.blueprintID, "null", fmt.Sprintf("%s.%s.name", rType, rName))
 
+	if o.name == "" {
+		// don't render data source lookup by name when there's no name!
+		return resourceBlock + datasourceBlockByID
+	}
+
 	return resourceBlock + datasourceBlockByID + datasourceBlockByName
 }
 
@@ -81,10 +86,6 @@ func (o resourceFreeformAggregateLink) testChecks(t testing.TB, rType, rName str
 		resourceChecks.append(t, "TestCheckResourceAttr", "name", o.name)
 		dataByIDChecks.append(t, "TestCheckResourceAttr", "name", o.name)
 		dataByNameChecks.append(t, "TestCheckResourceAttr", "name", o.name)
-	} else {
-		resourceChecks.append(t, "TestCheckResourceAttrSet", "name")
-		dataByIDChecks.append(t, "TestCheckResourceAttrSet", "name")
-		dataByNameChecks.append(t, "TestCheckResourceAttrSet", "name")
 	}
 
 	o.endpointGroup1.testChecks(t, "endpoint_group_1", &resourceChecks)
@@ -110,6 +111,11 @@ func (o resourceFreeformAggregateLink) testChecks(t testing.TB, rType, rName str
 		resourceChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 		dataByIDChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 		dataByNameChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
+	}
+
+	if o.name == "" {
+		// don't generate checks for datasource lookup by name when there's no name!
+		return []testChecks{resourceChecks, dataByIDChecks}
 	}
 
 	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks}
@@ -226,15 +232,13 @@ func (o *resourceFreeformAggregateLinkEndpoint) testChecks(t testing.TB, label s
 func TestResourceFreeformAggregateLink(t *testing.T) {
 	ctx := context.Background()
 	systemCountGroup0 := 2
-	systemCountGroup1 := 2
+	systemCountGroup1 := 4
 	meshLinkCount := 3
 
 	// create the blueprint
 	client := testutils.GetTestClient(t, ctx)
 	require.NotNil(t, client)
 	bp, linkIDToSysIDs := fftestobj.TestBlueprintB(t, ctx, *client, systemCountGroup0, systemCountGroup1, meshLinkCount)
-	_ = linkIDToSysIDs
-	_ = bp
 
 	type testCase struct {
 		steps []resourceFreeformAggregateLink
@@ -290,11 +294,11 @@ func TestResourceFreeformAggregateLink(t *testing.T) {
 			steps: []resourceFreeformAggregateLink{
 				{
 					blueprintID:   bp.Id().String(),
-					memberLinkIDs: []string{linkIDs[0]},
+					memberLinkIDs: []string{linkIDs[1]},
 					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
 						endpoints: []resourceFreeformAggregateLinkEndpoint{
 							{
-								systemID:      linkIDToSysIDs[linkIDs[0]][0],
+								systemID:      linkIDToSysIDs[linkIDs[1]][0],
 								portChannelID: 1 + rand.Intn(math.MaxInt8),
 								lagMode:       enum.LAGModeActiveLACP,
 							},
@@ -303,9 +307,165 @@ func TestResourceFreeformAggregateLink(t *testing.T) {
 					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
 						endpoints: []resourceFreeformAggregateLinkEndpoint{
 							{
-								systemID:      linkIDToSysIDs[linkIDs[0]][1],
+								systemID:      linkIDToSysIDs[linkIDs[1]][1],
 								portChannelID: 1 + rand.Intn(math.MaxInt8),
 								lagMode:       enum.LAGModePassiveLACP,
+							},
+						},
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[2]},
+					tags:          randomStrings(3, 6),
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						tags:  randomStrings(3, 6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[2]][0],
+								ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+								ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+								ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModeActiveLACP,
+								tags:          randomStrings(3, 6),
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						tags:  randomStrings(3, 6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[2]][1],
+								ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+								ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+								ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModePassiveLACP,
+								tags:          randomStrings(3, 6),
+							},
+						},
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					memberLinkIDs: []string{linkIDs[3]},
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[3]][0],
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModeActiveLACP,
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[3]][1],
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModePassiveLACP,
+							},
+						},
+					},
+				},
+			},
+		},
+		"one_link_start_maximal": {
+			steps: []resourceFreeformAggregateLink{
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[4]},
+					tags:          randomStrings(3, 6),
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						tags:  randomStrings(3, 6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[4]][0],
+								ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+								ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+								ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModeActiveLACP,
+								tags:          randomStrings(3, 6),
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						tags:  randomStrings(3, 6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[4]][1],
+								ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+								ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+								ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModePassiveLACP,
+								tags:          randomStrings(3, 6),
+							},
+						},
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					memberLinkIDs: []string{linkIDs[5]},
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[5]][0],
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModeActiveLACP,
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[5]][1],
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModePassiveLACP,
+							},
+						},
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[6]},
+					tags:          randomStrings(3, 6),
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						tags:  randomStrings(3, 6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[6]][0],
+								ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+								ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+								ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModeActiveLACP,
+								tags:          randomStrings(3, 6),
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						tags:  randomStrings(3, 6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[6]][1],
+								ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+								ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+								ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+								portChannelID: 1 + rand.Intn(math.MaxInt8),
+								lagMode:       enum.LAGModePassiveLACP,
+								tags:          randomStrings(3, 6),
 							},
 						},
 					},

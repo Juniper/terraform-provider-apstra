@@ -171,6 +171,13 @@ func (o resourceFreeformAggregateLink) Update(ctx context.Context, req resource.
 		return
 	}
 
+	// Read back the new LAG get per-endpoint-group and per-endpoint interface IDs
+	link, err := bp.GetAggregateLink(ctx, plan.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed reading Aggregate Link after update", err.Error())
+	}
+	plan.LoadApiData(ctx, link, &resp.Diagnostics)
+
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

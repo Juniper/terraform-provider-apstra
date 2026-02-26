@@ -68,6 +68,7 @@ func (o AggregateLinkEndpointGroup) resourceAttributes() map[string]resourceSche
 		"label": resourceSchema.StringAttribute{
 			MarkdownDescription: "Endpoint Group Label as displayed in the web UI.",
 			Optional:            true,
+			Computed:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"tags": resourceSchema.SetAttribute{
@@ -87,10 +88,10 @@ func (o AggregateLinkEndpointGroup) resourceAttributes() map[string]resourceSche
 }
 
 func (o AggregateLinkEndpointGroup) Request(ctx context.Context, path path.Path, diags *diag.Diagnostics) apstra.FreeformAggregateLinkEndpointGroup {
-	result := apstra.FreeformAggregateLinkEndpointGroup{
-		Label: o.Label.ValueStringPointer(),
-		// Tags:      nil, // see below
-		// Endpoints: nil, // see below
+	var result apstra.FreeformAggregateLinkEndpointGroup
+
+	if !o.Label.IsNull() || !o.Label.IsUnknown() { // leave nil when no value set
+		result.Label = o.Label.ValueStringPointer()
 	}
 
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
