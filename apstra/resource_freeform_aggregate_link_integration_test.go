@@ -1,3 +1,5 @@
+//go:build integration
+
 package tfapstra_test
 
 import (
@@ -249,6 +251,22 @@ func TestResourceFreeformAggregateLink(t *testing.T) {
 		linkIDs[i], linkIDs[j] = linkIDs[j], linkIDs[i]
 	})
 
+	endpointsFromLinkIDs := func(linkIDs []string, group int) []resourceFreeformAggregateLinkEndpoint {
+		resultMap := make(map[string]resourceFreeformAggregateLinkEndpoint)
+		for _, linkID := range linkIDs {
+			resultMap[linkIDToSysIDs[linkID][group]] = resourceFreeformAggregateLinkEndpoint{
+				systemID:      linkIDToSysIDs[linkID][group],
+				ifName:        fmt.Sprintf("ae%d", 1+rand.Intn(math.MaxInt8)),
+				ipv4Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "192.0.2.0/24").String() + "/24")),
+				ipv6Address:   pointer.To(netip.MustParsePrefix(randIpvAddressMust(t, "3fff::/64").String() + "/64")),
+				portChannelID: 1 + rand.Intn(math.MaxInt8),
+				lagMode:       enum.LAGModeActiveLACP,
+				tags:          randomStrings(3, 6),
+			}
+		}
+		return slices.Collect(maps.Values(resultMap))
+	}
+
 	testCases := map[string]testCase{
 		"one_link_one_step": {
 			steps: []resourceFreeformAggregateLink{
@@ -468,6 +486,52 @@ func TestResourceFreeformAggregateLink(t *testing.T) {
 								tags:          randomStrings(3, 6),
 							},
 						},
+					},
+				},
+			},
+		},
+		"multi-headed": {
+			steps: []resourceFreeformAggregateLink{
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[7], linkIDs[8], linkIDs[9], linkIDs[10]},
+					tags:          randomStrings(3, 6),
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label:     acctest.RandString(6),
+						tags:      randomStrings(3, 6),
+						endpoints: endpointsFromLinkIDs([]string{linkIDs[7], linkIDs[8], linkIDs[9], linkIDs[10]}, 0),
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label:     acctest.RandString(6),
+						tags:      randomStrings(3, 6),
+						endpoints: endpointsFromLinkIDs([]string{linkIDs[7], linkIDs[8], linkIDs[9], linkIDs[10]}, 1),
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					memberLinkIDs: []string{linkIDs[11]},
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						endpoints: endpointsFromLinkIDs([]string{linkIDs[11]}, 0),
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						endpoints: endpointsFromLinkIDs([]string{linkIDs[11]}, 1),
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[12], linkIDs[13], linkIDs[14], linkIDs[15]},
+					tags:          randomStrings(3, 6),
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label:     acctest.RandString(6),
+						tags:      randomStrings(3, 6),
+						endpoints: endpointsFromLinkIDs([]string{linkIDs[12], linkIDs[13], linkIDs[14], linkIDs[15]}, 0),
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label:     acctest.RandString(6),
+						tags:      randomStrings(3, 6),
+						endpoints: endpointsFromLinkIDs([]string{linkIDs[12], linkIDs[13], linkIDs[14], linkIDs[15]}, 1),
 					},
 				},
 			},
