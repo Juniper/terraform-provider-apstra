@@ -21,7 +21,7 @@ func SupportedApiVersions() []string {
 		apiversions.Apstra510,
 		apiversions.Apstra600,
 		apiversions.Apstra610,
-		// apiversions.Apstra611, soon
+		apiversions.Apstra611,
 		// apiversions.Apstra700, todo: check/update the MarkdownDescription strings in the following methods to see
 		//                         if multiple interconnect domains are supported when new versions become available:
 		//                           - resourceDatacenterInterconnectDomainGateway.Schema()
