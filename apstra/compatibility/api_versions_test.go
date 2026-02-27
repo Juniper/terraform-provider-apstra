@@ -35,11 +35,12 @@ func TestSupportedApiVersionsPretty(t *testing.T) {
 		apiversions.Apstra500 + ", " +
 		apiversions.Apstra501 + ", " +
 		apiversions.Apstra510 + ", " +
-		apiversions.Apstra600 + ", and " +
-		apiversions.Apstra610
+		apiversions.Apstra600 + ", " +
+		apiversions.Apstra610 + ", and " +
+		apiversions.Apstra611
 
 	result := SupportedApiVersionsPretty()
 	if expected != result {
-		t.Fatalf("expected %q; got %q", expected, result)
+		t.Fatalf("expected:\n%q\ngot:\n%q", expected, result)
 	}
 }
