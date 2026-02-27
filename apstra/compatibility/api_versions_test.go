@@ -18,6 +18,7 @@ func TestSupportedApiVersions(t *testing.T) {
 		apiversions.Apstra510,
 		apiversions.Apstra600,
 		apiversions.Apstra610,
+		apiversions.Apstra611,
 	}
 
 	result := SupportedApiVersions()
