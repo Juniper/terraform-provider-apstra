@@ -185,6 +185,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	}
 
 	// make a security zone request
+	// todo: consider making vrf name optional - only overwrite with name when unknown.
 	plan.VrfName = plan.Name // copy whatever the user set as name in to VrfName
 	request := plan.Request(ctx, bp.Client(), &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
