@@ -36,7 +36,7 @@ type DatacenterRoutingZone struct {
 	Id                   types.String `tfsdk:"id"`
 	BlueprintId          types.String `tfsdk:"blueprint_id"`
 	Name                 types.String `tfsdk:"name"`
-	VrfName              types.String `tfsdk:"vrf_name"`
+	VRFName              types.String `tfsdk:"vrf_name"`
 	VlanId               types.Int64  `tfsdk:"vlan_id"`
 	HadPriorVlanIdConfig types.Bool   `tfsdk:"had_prior_vlan_id_config"`
 	Vni                  types.Int64  `tfsdk:"vni"`
@@ -53,7 +53,7 @@ type DatacenterRoutingZone struct {
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Apstra graph node ID. Required when `name` is omitted.",
+			MarkdownDescription: "Apstra graph node ID. Required when `name` and `vrf_name` are omitted.",
 			Computed:            true,
 			Optional:            true,
 			Validators: []validator.String{
@@ -61,6 +61,7 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 				stringvalidator.ExactlyOneOf(path.Expressions{
 					path.MatchRelative(),
 					path.MatchRoot("name"),
+					path.MatchRoot("vrf_name"),
 				}...),
 			},
 		},
@@ -73,14 +74,16 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			MarkdownDescription: "Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the " +
 				"graph DB. It is not directly viewable in the web UI. The \"name\" value visible in the web UI is the " +
 				"`vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. " +
-				"Required when `id` is omitted.",
+				"Required when `id` and `vrf_name` are omitted.",
 			Computed:   true,
 			Optional:   true,
 			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"vrf_name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name.",
+			MarkdownDescription: "VRF name used on network devices and visible in the web UI. Required when `id` and `name` are omitted.",
+			Optional:            true,
 			Computed:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Used for VLAN tagged Layer 3 links on external connections. " +
@@ -166,7 +169,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Optional: true,
 		},
 		"vrf_name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name.",
+			MarkdownDescription: "VRF name used on network devices and visible in the web UI.",
 			Optional:            true,
 		},
 		"vlan_id": dataSourceSchema.Int64Attribute{
@@ -257,7 +260,7 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			},
 		},
 		"vrf_name": resourceSchema.StringAttribute{
-			MarkdownDescription: "VRF name. Copied from the `name` field on initial create.",
+			MarkdownDescription: "VRF name used on network devices and visible in the web UI. Copied from the `name` field on initial create.",
 			Computed:            true,
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 		},
@@ -393,7 +396,7 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 	}
 
 	result.Type = enum.SecurityZoneTypeEVPN
-	result.VRFName = o.VrfName.ValueString()
+	result.VRFName = o.VRFName.ValueString()
 	result.Label = o.Name.ValueString()
 	result.RoutingPolicyID = o.RoutingPolicyId.ValueString()
 	result.JunosEVPNIRBMode = enum.JunosEVPNIRBModes.Parse(o.JunosEvpnIrbMode.ValueString())
@@ -429,8 +432,8 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz apstra.Secur
 		o.Name = types.StringValue(sz.Label)
 	}
 
-	if !utils.HasValue(o.VrfName) { // computed attribute
-		o.VrfName = types.StringValue(sz.VRFName)
+	if !utils.HasValue(o.VRFName) { // computed attribute
+		o.VRFName = types.StringValue(sz.VRFName)
 	}
 
 	if !utils.HasValue(o.VlanId) { // optional + computed attribute
@@ -620,8 +623,8 @@ func (o *DatacenterRoutingZone) szNodeQueryAttributes(name string) []apstra.QEEA
 		result = append(result, apstra.QEEAttribute{Key: "label", Value: apstra.QEStringVal(o.Name.ValueString())})
 	}
 
-	if utils.HasValue(o.VrfName) {
-		result = append(result, apstra.QEEAttribute{Key: "vrf_name", Value: apstra.QEStringVal(o.VrfName.ValueString())})
+	if utils.HasValue(o.VRFName) {
+		result = append(result, apstra.QEEAttribute{Key: "vrf_name", Value: apstra.QEStringVal(o.VRFName.ValueString())})
 	}
 
 	if utils.HasValue(o.Vni) {

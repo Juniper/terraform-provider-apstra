@@ -35,6 +35,15 @@ const (
   disable_ipv4         = %s
 }
 `
+
+	datasourceDatacenterRoutingZoneHCL = `
+data %q %q {
+  blueprint_id = %q
+  id           = %s
+  name         = %s
+  vrf_name     = %s
+}
+`
 )
 
 type testRoutingZone struct {
@@ -51,7 +60,7 @@ type testRoutingZone struct {
 }
 
 func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) string {
-	return fmt.Sprintf(resourceDataCenterRoutingZoneHCL,
+	resource := fmt.Sprintf(resourceDataCenterRoutingZoneHCL,
 		rType, rName,
 		bpId,
 		o.name,
@@ -66,10 +75,19 @@ func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) strin
 		stringOrNull(o.ipAddressingType),
 		boolPtrOrNull(o.disableIPv4),
 	)
+
+	datasourceByID := fmt.Sprintf(datasourceDatacenterRoutingZoneHCL, rType, rName+"_by_id", bpId, fmt.Sprintf("%s.%s.id", rType, rName), "null", "null")
+	datasourceByName := fmt.Sprintf(datasourceDatacenterRoutingZoneHCL, rType, rName+"_by_name", bpId, "null", fmt.Sprintf("%s.%s.name", rType, rName), "null")
+	datasourceByVRFName := fmt.Sprintf(datasourceDatacenterRoutingZoneHCL, rType, rName+"_by_vrf_name", bpId, "null", "null", fmt.Sprintf("%s.%s.vrf_name", rType, rName))
+
+	return resource + datasourceByID + datasourceByName + datasourceByVRFName
 }
 
-func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, rName string, immutableAttributes map[string]string) testChecks {
-	result := newTestChecks(rType + "." + rName)
+func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, rName string, immutableAttributes map[string]string) []testChecks {
+	resourceChecks := newTestChecks(rType + "." + rName)
+	dataByIDChecks := newTestChecks("data." + rType + "." + rName + "_by_id")
+	dataByNameChecks := newTestChecks("data." + rType + "." + rName + "_by_name")
+	dataByVRFNameChecks := newTestChecks("data." + rType + "." + rName + "_by_vrf_name")
 
 	// stash immutable attributes in map for reuse
 	if _, ok := immutableAttributes["vrf_name"]; !ok {
@@ -77,61 +95,112 @@ func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, r
 	}
 
 	// required and computed attributes can always be checked
-	result.append(t, "TestCheckResourceAttrSet", "id")
-	result.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
-	result.append(t, "TestCheckResourceAttr", "name", o.name)
+	resourceChecks.append(t, "TestCheckResourceAttrSet", "id")
+	dataByIDChecks.append(t, "TestCheckResourceAttrSet", "id")
+	dataByNameChecks.append(t, "TestCheckResourceAttrSet", "id")
+	dataByVRFNameChecks.append(t, "TestCheckResourceAttrSet", "id")
+	resourceChecks.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
+	dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "blueprint_id", bpId.String())
+	resourceChecks.append(t, "TestCheckResourceAttr", "name", o.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", o.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "name", o.name)
+	dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "name", o.name)
 
 	// immutable attributes are checked using map values
-	result.append(t, "TestCheckResourceAttr", "vrf_name", immutableAttributes["vrf_name"])
+	resourceChecks.append(t, "TestCheckResourceAttr", "vrf_name", immutableAttributes["vrf_name"])
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "vrf_name", immutableAttributes["vrf_name"])
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "vrf_name", immutableAttributes["vrf_name"])
+	dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "vrf_name", immutableAttributes["vrf_name"])
 
 	if o.vlan != nil {
-		result.append(t, "TestCheckResourceAttr", "vlan_id", strconv.Itoa(*o.vlan))
+		resourceChecks.append(t, "TestCheckResourceAttr", "vlan_id", strconv.Itoa(*o.vlan))
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "vlan_id", strconv.Itoa(*o.vlan))
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "vlan_id", strconv.Itoa(*o.vlan))
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "vlan_id", strconv.Itoa(*o.vlan))
 	} else {
-		result.append(t, "TestCheckResourceAttrSet", "vlan_id")
+		resourceChecks.append(t, "TestCheckResourceAttrSet", "vlan_id")
+		dataByIDChecks.append(t, "TestCheckResourceAttrSet", "vlan_id")
+		dataByNameChecks.append(t, "TestCheckResourceAttrSet", "vlan_id")
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttrSet", "vlan_id")
 	}
 
 	if o.vni != nil {
-		result.append(t, "TestCheckResourceAttr", "vni", strconv.Itoa(*o.vni))
+		resourceChecks.append(t, "TestCheckResourceAttr", "vni", strconv.Itoa(*o.vni))
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "vni", strconv.Itoa(*o.vni))
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "vni", strconv.Itoa(*o.vni))
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "vni", strconv.Itoa(*o.vni))
 	}
 
 	if len(o.dhcpServers) > 0 {
-		result.append(t, "TestCheckResourceAttr", "dhcp_servers.#", strconv.Itoa(len(o.dhcpServers)))
+		resourceChecks.append(t, "TestCheckResourceAttr", "dhcp_servers.#", strconv.Itoa(len(o.dhcpServers)))
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "dhcp_servers.#", strconv.Itoa(len(o.dhcpServers)))
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "dhcp_servers.#", strconv.Itoa(len(o.dhcpServers)))
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "dhcp_servers.#", strconv.Itoa(len(o.dhcpServers)))
 		for _, dhcpServer := range o.dhcpServers {
-			result.append(t, "TestCheckTypeSetElemAttr", "dhcp_servers.*", dhcpServer)
+			resourceChecks.append(t, "TestCheckTypeSetElemAttr", "dhcp_servers.*", dhcpServer)
+			dataByIDChecks.append(t, "TestCheckTypeSetElemAttr", "dhcp_servers.*", dhcpServer)
+			dataByNameChecks.append(t, "TestCheckTypeSetElemAttr", "dhcp_servers.*", dhcpServer)
+			dataByVRFNameChecks.append(t, "TestCheckTypeSetElemAttr", "dhcp_servers.*", dhcpServer)
 		}
 	}
 
 	if o.routingPolicy != "" {
-		result.append(t, "TestCheckResourceAttr", "routing_policy_id", o.routingPolicy)
+		resourceChecks.append(t, "TestCheckResourceAttr", "routing_policy_id", o.routingPolicy)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "routing_policy_id", o.routingPolicy)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "routing_policy_id", o.routingPolicy)
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "routing_policy_id", o.routingPolicy)
 	}
 
 	if len(o.importRTs) > 0 {
-		result.append(t, "TestCheckResourceAttr", "import_route_targets.#", strconv.Itoa(len(o.importRTs)))
+		resourceChecks.append(t, "TestCheckResourceAttr", "import_route_targets.#", strconv.Itoa(len(o.importRTs)))
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "import_route_targets.#", strconv.Itoa(len(o.importRTs)))
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "import_route_targets.#", strconv.Itoa(len(o.importRTs)))
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "import_route_targets.#", strconv.Itoa(len(o.importRTs)))
 		for _, importRT := range o.importRTs {
-			result.append(t, "TestCheckTypeSetElemAttr", "import_route_targets.*", importRT)
+			resourceChecks.append(t, "TestCheckTypeSetElemAttr", "import_route_targets.*", importRT)
+			dataByIDChecks.append(t, "TestCheckTypeSetElemAttr", "import_route_targets.*", importRT)
+			dataByNameChecks.append(t, "TestCheckTypeSetElemAttr", "import_route_targets.*", importRT)
+			dataByVRFNameChecks.append(t, "TestCheckTypeSetElemAttr", "import_route_targets.*", importRT)
 		}
 	}
 
 	if len(o.exportRTs) > 0 {
-		result.append(t, "TestCheckResourceAttr", "export_route_targets.#", strconv.Itoa(len(o.exportRTs)))
+		resourceChecks.append(t, "TestCheckResourceAttr", "export_route_targets.#", strconv.Itoa(len(o.exportRTs)))
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "export_route_targets.#", strconv.Itoa(len(o.exportRTs)))
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "export_route_targets.#", strconv.Itoa(len(o.exportRTs)))
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "export_route_targets.#", strconv.Itoa(len(o.exportRTs)))
 		for _, exportRT := range o.exportRTs {
-			result.append(t, "TestCheckTypeSetElemAttr", "export_route_targets.*", exportRT)
+			resourceChecks.append(t, "TestCheckTypeSetElemAttr", "export_route_targets.*", exportRT)
+			dataByIDChecks.append(t, "TestCheckTypeSetElemAttr", "export_route_targets.*", exportRT)
+			dataByNameChecks.append(t, "TestCheckTypeSetElemAttr", "export_route_targets.*", exportRT)
+			dataByVRFNameChecks.append(t, "TestCheckTypeSetElemAttr", "export_route_targets.*", exportRT)
 		}
 	}
 
 	if o.irbMode != "" {
-		result.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
+		resourceChecks.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "junos_evpn_irb_mode", o.irbMode)
 	}
 
 	if o.ipAddressingType != "" {
-		result.append(t, "TestCheckResourceAttr", "ip_addressing_type", o.ipAddressingType)
+		resourceChecks.append(t, "TestCheckResourceAttr", "ip_addressing_type", o.ipAddressingType)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "ip_addressing_type", o.ipAddressingType)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "ip_addressing_type", o.ipAddressingType)
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "ip_addressing_type", o.ipAddressingType)
 	}
 
 	if o.disableIPv4 != nil {
-		result.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
+		resourceChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
+		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
 	}
 
-	return result
+	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks, dataByVRFNameChecks}
 }
 
 func TestResourceDatacenterRoutingZone(t *testing.T) {
@@ -624,16 +693,23 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				config := step.config.render(bpClient.Id(), resourceType, tName)
 				checks := step.config.testChecks(t, bpClient.Id(), resourceType, tName, immutableAttributes)
 
+				var checkLog string
+				var checkFuncs []resource.TestCheckFunc
+
 				// add extra checks
 				for _, ec := range step.extraChecks {
-					checks.append(t, ec.testFuncName, ec.testFuncArgs...)
+					checks[0].append(t, ec.testFuncName, ec.testFuncArgs...)
 				}
 
-				chkLog := checks.string()
+				for _, checkList := range checks {
+					checkLog = checkLog + checkList.string(len(checkFuncs))
+					checkFuncs = append(checkFuncs, checkList.checks...)
+				}
+
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
 
 				t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
-				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, chkLog, stepName)
+				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, checkLog, stepName)
 
 				var preconfig func()
 				if step.preConfig != nil {
@@ -646,7 +722,7 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 				steps[i] = resource.TestStep{
 					PreConfig: preconfig,
 					Config:    insecureProviderConfigHCL + config,
-					Check:     resource.ComposeAggregateTestCheckFunc(checks.checks...),
+					Check:     resource.ComposeAggregateTestCheckFunc(checkFuncs...),
 				}
 			}
 

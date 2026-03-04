@@ -67,7 +67,7 @@ Requires Apstra version >=6.1.0
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone.
-- `vrf_name` (String) VRF name.
+- `vrf_name` (String) VRF name used on network devices and visible in the web UI.
 
 Read-Only:
 
@@ -94,7 +94,7 @@ Requires Apstra version >=6.1.0
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone.
-- `vrf_name` (String) VRF name.
+- `vrf_name` (String) VRF name used on network devices and visible in the web UI.
 
 Read-Only:
 
