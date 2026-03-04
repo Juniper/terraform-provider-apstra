@@ -59,7 +59,7 @@ output "routing_zone" {
 ### Optional
 
 - `id` (String) Apstra graph node ID. Required when `name` is omitted.
-- `name` (String) Name displayed in the Apstra web UI. Required when `id` is omitted.
+- `name` (String) Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the graph DB. It is not directly viewable in the web UI. The "name" value visible in the web UI is the `vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. Required when `id` is omitted.
 
 ### Read-Only
 

@@ -63,7 +63,7 @@ Optional:
 Must be one of `['ipv4','ipv4_ipv6','ipv6']`.
 Requires Apstra version >=6.1.0
 - `junos_evpn_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
-- `name` (String) Name displayed in the Apstra web UI.
+- `name` (String) Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the graph DB. It is not directly viewable in the web UI. The "name" value visible in the web UI is the `vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. Required when `id` is omitted.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone.
@@ -90,7 +90,7 @@ Optional:
 Must be one of `['ipv4','ipv4_ipv6','ipv6']`.
 Requires Apstra version >=6.1.0
 - `junos_evpn_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
-- `name` (String) Name displayed in the Apstra web UI.
+- `name` (String) Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the graph DB. It is not directly viewable in the web UI. The "name" value visible in the web UI is the `vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. Required when `id` is omitted.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone.
