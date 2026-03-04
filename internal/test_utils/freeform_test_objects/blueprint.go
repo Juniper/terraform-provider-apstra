@@ -3,12 +3,12 @@ package fftestobj
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
-	testutils "github.com/Juniper/terraform-provider-apstra/internal/test_utils"
 	"testing"
 	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	testutils "github.com/Juniper/terraform-provider-apstra/internal/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
