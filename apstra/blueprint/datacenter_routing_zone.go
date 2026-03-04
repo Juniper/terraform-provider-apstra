@@ -70,13 +70,13 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name displayed in the Apstra web UI. Required when `id` is omitted.",
-			Computed:            true,
-			Optional:            true,
-			Validators: []validator.String{
-				stringvalidator.LengthBetween(1, 17),
-				stringvalidator.RegexMatches(apstraregexp.AlphaNumW2HLConstraint, apstraregexp.AlphaNumW2HLConstraintMsg),
-			},
+			MarkdownDescription: "Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the " +
+				"graph DB. It is not directly viewable in the web UI. The \"name\" value visible in the web UI is the " +
+				"`vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. " +
+				"Required when `id` is omitted.",
+			Computed:   true,
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"vrf_name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "VRF name.",
@@ -159,8 +159,11 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 			Computed:            true,
 		},
 		"name": dataSourceSchema.StringAttribute{
-			MarkdownDescription: "Name displayed in the Apstra web UI.",
-			Optional:            true,
+			MarkdownDescription: "Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the " +
+				"graph DB. It is not directly viewable in the web UI. The \"name\" value visible in the web UI is the " +
+				"`vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. " +
+				"Required when `id` is omitted.",
+			Optional: true,
 		},
 		"vrf_name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "VRF name.",
@@ -244,8 +247,10 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"name": resourceSchema.StringAttribute{
-			MarkdownDescription: "Name displayed in the Apstra web UI.",
-			Required:            true,
+			MarkdownDescription: "Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the " +
+				"graph DB. It is not directly viewable in the web UI. The \"name\" value visible in the web UI is the " +
+				"`vrf_name` attribute. Required when `id` is omitted.",
+			Required: true,
 			Validators: []validator.String{
 				stringvalidator.RegexMatches(apstraregexp.AlphaNumW2HLConstraint, apstraregexp.AlphaNumW2HLConstraintMsg),
 				stringvalidator.LengthBetween(1, 15),

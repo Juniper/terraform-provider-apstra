@@ -40,7 +40,7 @@ resource "apstra_datacenter_resource_pool_allocation" "blue_loopbacks" {
 ### Required
 
 - `blueprint_id` (String) Apstra Blueprint ID.
-- `name` (String) Name displayed in the Apstra web UI.
+- `name` (String) Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the graph DB. It is not directly viewable in the web UI. The "name" value visible in the web UI is the `vrf_name` attribute. Required when `id` is omitted.
 
 ### Optional
 
