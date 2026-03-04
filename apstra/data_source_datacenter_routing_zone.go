@@ -77,6 +77,15 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 				fmt.Sprintf("Routing Zone with Name %s not found", config.Name))
 			return
 		}
+	case !config.VRFName.IsNull():
+		api, err = bp.GetSecurityZoneByVRFName(ctx, config.VRFName.ValueString())
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddAttributeError(
+				path.Root("vrf_name"),
+				"Routing Zone not found",
+				fmt.Sprintf("Routing Zone with VRF Name %s not found", config.Name))
+			return
+		}
 	}
 	if err != nil {
 		resp.Diagnostics.AddError("failed reading Routing Zone", err.Error())

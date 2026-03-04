@@ -61,7 +61,7 @@ Requires Apstra version >=6.1.0
 - `had_prior_vlan_id_config` (Boolean) Used to trigger plan modification when `vlan_id` has been removed from the configuration, this attribute can be ignored.
 - `had_prior_vni_config` (Boolean) Used to trigger plan modification when `vni` has been removed from the configuration, this attribute can be ignored.
 - `id` (String) Apstra graph node ID.
-- `vrf_name` (String) VRF name. Copied from the `name` field on initial create.
+- `vrf_name` (String) VRF name used on network devices and visible in the web UI. Copied from the `name` field on initial create.
 
 
 

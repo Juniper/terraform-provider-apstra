@@ -58,8 +58,9 @@ output "routing_zone" {
 
 ### Optional
 
-- `id` (String) Apstra graph node ID. Required when `name` is omitted.
-- `name` (String) Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the graph DB. It is not directly viewable in the web UI. The "name" value visible in the web UI is the `vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. Required when `id` is omitted.
+- `id` (String) Apstra graph node ID. Required when `name` and `vrf_name` are omitted.
+- `name` (String) Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the graph DB. It is not directly viewable in the web UI. The "name" value visible in the web UI is the `vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. Required when `id` and `vrf_name` are omitted.
+- `vrf_name` (String) VRF name used on network devices and visible in the web UI. Required when `id` and `name` are omitted.
 
 ### Read-Only
 
@@ -74,4 +75,3 @@ output "routing_zone" {
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.
-- `vrf_name` (String) VRF name.
