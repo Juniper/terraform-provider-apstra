@@ -135,8 +135,8 @@ func (o resourceDatacenterBlueprint) testChecks(t testing.TB, rType, rName strin
 	// optional+computed attributes
 	if o.fabricAddressing != nil {
 		resourceChecks.append(t, "TestCheckResourceAttr", "fabric_addressing", o.fabricAddressing.String())
-		dataByIDChecks.append(t, "TestCheckResourceAttr", "fabric_addressing", o.fabricAddressing.String())
-		dataByNameChecks.append(t, "TestCheckResourceAttr", "fabric_addressing", o.fabricAddressing.String())
+		// dataByIDChecks.append(t, "TestCheckResourceAttr", "fabric_addressing", o.fabricAddressing.String()) // always null in data source
+		// dataByNameChecks.append(t, "TestCheckResourceAttr", "fabric_addressing", o.fabricAddressing.String()) // always null in data source
 	}
 
 	if o.antiAffinityMode != nil {
@@ -735,6 +735,24 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						templateID:         "L2_Virtual_Dual_2x_Links",
 						underlayAddressing: pointer.To(enum.AddressingSchemeIPv46),
 						vtepAddressing:     pointer.To(enum.AddressingSchemeIPv6),
+					},
+				},
+			},
+		},
+		"remove_fabric_addressing": {
+			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.LtApstra610)),
+			steps: []testStep{
+				{
+					config: resourceDatacenterBlueprint{
+						name:             acctest.RandString(6),
+						templateID:       "L2_Virtual_Dual_2x_Links",
+						fabricAddressing: pointer.To(enum.AddressingSchemeIPv46),
+					},
+				},
+				{
+					config: resourceDatacenterBlueprint{
+						name:       acctest.RandString(6),
+						templateID: "L2_Virtual_Dual_2x_Links",
 					},
 				},
 			},
