@@ -112,7 +112,7 @@ Read-Only:
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
 - `speed` (String) Speed of this Link.
-- `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
+- `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in nested contexts.
 - `tags` (Attributes Set) Set of Tags (Name + Description) applied to this Link (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--links--tags))
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
@@ -197,7 +197,7 @@ Read-Only:
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
 - `speed` (String) Speed of this Link.
-- `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
+- `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) IDs will always be `<null>` in nested contexts.
 - `tags` (Attributes Set) Set of Tags (Name + Description) applied to this Link (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems--links--tags))
 - `target_switch_name` (String) The `name` of the switch in this Rack Type to which this Link connects.
