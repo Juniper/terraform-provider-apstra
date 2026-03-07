@@ -1,4 +1,5 @@
 .testconfig.hcl
+.test_imperative_server_input.json
 tools/goreleaser/LICENSE
 tools/goreleaser/README.md
 tools/goreleaser/Third_Party_Code/
