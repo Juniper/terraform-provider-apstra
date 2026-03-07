@@ -2642,8 +2642,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/go-plugin
 
 * Name: github.com/hashicorp/go-plugin
-* Version: v1.6.3
-* License: [MPL-2.0](https://github.com/hashicorp/go-plugin/blob/v1.6.3/LICENSE)
+* Version: v1.7.0
+* License: [MPL-2.0](https://github.com/hashicorp/go-plugin/blob/v1.7.0/LICENSE)
 
 ```
 Copyright (c) 2016 HashiCorp, Inc.
@@ -6007,11 +6007,11 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.15.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.15.0/LICENSE)
+* Version: v1.18.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.18.0/LICENSE)
 
 ```
-Copyright (c) 2021 HashiCorp, Inc.
+Copyright IBM Corp. 2021, 2026
 
 Mozilla Public License, version 2.0
 
@@ -7509,11 +7509,11 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.28.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.28.0/LICENSE)
+* Version: v0.30.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.30.0/LICENSE)
 
 ```
-Copyright (c) 2020 HashiCorp, Inc.
+Copyright IBM Corp. 2020, 2026
 
 Mozilla Public License, version 2.0
 
@@ -7875,8 +7875,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-log
 
 * Name: github.com/hashicorp/terraform-plugin-log
-* Version: v0.9.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-log/blob/v0.9.0/LICENSE)
+* Version: v0.10.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-log/blob/v0.10.0/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -8992,8 +8992,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-registry-address
 
 * Name: github.com/hashicorp/terraform-registry-address
-* Version: v0.2.5
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-registry-address/blob/v0.2.5/LICENSE)
+* Version: v0.4.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-registry-address/blob/v0.4.0/LICENSE)
 
 ```
 Copyright (c) 2021 HashiCorp, Inc.
@@ -9723,10 +9723,12 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/yamux
 
 * Name: github.com/hashicorp/yamux
-* Version: v0.1.1
-* License: [MPL-2.0](https://github.com/hashicorp/yamux/blob/v0.1.1/LICENSE)
+* Version: v0.1.2
+* License: [MPL-2.0](https://github.com/hashicorp/yamux/blob/v0.1.2/LICENSE)
 
 ```
+Copyright (c) 2014 HashiCorp, Inc.
+
 Mozilla Public License, version 2.0
 
 1. Definitions
@@ -10998,8 +11000,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/genproto/googleapis/rpc/status
 
 * Name: google.golang.org/genproto/googleapis/rpc/status
-* Version: v0.0.0-20250218202821-56aae31c358a
-* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/56aae31c358a/googleapis/rpc/LICENSE)
+* Version: v0.0.0-20251202230838-ff82c1b0f217
+* License: [Apache-2.0](https://github.com/googleapis/go-genproto/blob/ff82c1b0f217/googleapis/rpc/LICENSE)
 
 ```
 
@@ -11210,8 +11212,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.72.1
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.72.1/LICENSE)
+* Version: v1.79.1
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.79.1/LICENSE)
 
 ```
 
