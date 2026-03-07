@@ -8,7 +8,7 @@ require (
 	github.com/IBM/netaddr v1.5.0
 	github.com/Juniper/apstra-go-sdk v0.0.0-20260227210643-a9513883785a
 	github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae
-	github.com/chrismarget/imperative-terraform v0.0.0-20260307011045-6c64210be4fb
+	github.com/chrismarget/imperative-terraform v0.0.0-20260307015228-33cc6dd147d9
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-version v1.8.0
 	github.com/hashicorp/hcl/v2 v2.24.0
