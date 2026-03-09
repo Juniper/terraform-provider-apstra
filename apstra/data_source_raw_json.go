@@ -14,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceRawJSON{}
-var _ datasourceWithSetClient = &dataSourceRawJSON{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceRawJSON{}
+	_ datasourceWithSetClient            = &dataSourceRawJSON{}
+)
 
 type dataSourceRawJSON struct {
 	client *apstra.Client
