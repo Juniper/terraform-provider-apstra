@@ -21,7 +21,7 @@ type RawJson struct {
 	Payload      jsontypes.Normalized `tfsdk:"payload"`
 }
 
-func (o *RawJson) ResourceAttributes() map[string]schema.Attribute {
+func (o RawJson) ResourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			MarkdownDescription: "The ID of the raw JSON object. We attempt to determine the ID from the API response. " +

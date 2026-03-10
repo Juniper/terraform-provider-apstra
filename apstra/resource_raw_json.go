@@ -42,7 +42,7 @@ func (o *resourceRawJson) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"respond with a payload containing the new object ID: `{\"id\": \"xxxxxxxx\"}`. Config drift detection is " +
 			"not implemented, but update-in-place should be possible.. The `Update()` and `Delete()` functions append " +
 			"the ID (`/xxxxxxxx`) to the URL.",
-		Attributes: (*raw.RawJson)(nil).ResourceAttributes(),
+		Attributes: raw.RawJson{}.ResourceAttributes(),
 	}
 }
 
