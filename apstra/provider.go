@@ -592,6 +592,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourcePropertySets{} },
 		func() datasource.DataSource { return &dataSourceRackType{} },
 		func() datasource.DataSource { return &dataSourceRackTypes{} },
+		func() datasource.DataSource { return &dataSourceRawJSON{} },
 		func() datasource.DataSource { return &dataSourceTag{} },
 		func() datasource.DataSource { return &dataSourceTelemetryServiceRegistryEntries{} },
 		func() datasource.DataSource { return &dataSourceTelemetryServiceRegistryEntry{} },
