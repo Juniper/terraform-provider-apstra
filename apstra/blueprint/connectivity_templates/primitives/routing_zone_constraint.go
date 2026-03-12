@@ -37,12 +37,12 @@ func (o RoutingZoneConstraint) ResourceAttributes() map[string]resourceSchema.At
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"routing_zone_constraint_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Zone Constraint ID to be applied",

@@ -205,7 +205,7 @@ func TestResourceDatacenterConnectivityTemplateInterface(t *testing.T) {
 						name:                    acctest.RandString(6),
 						description:             acctest.RandString(32),
 						tags:                    randomStrings(3, 6),
-						ipLinks:                 randomIpLinks(t, ctx, 1, bp, cleanup),
+						ipLinks:                 randomIpLinks(t, ctx, 3, bp, cleanup),
 						routingZoneConstraints:  randomRoutingZoneConstraints(t, ctx, 3, bp, cleanup),
 						virtualNetworkMultiples: randomVirtualNetworkMultiples(t, ctx, 3, bp, cleanup),
 						virtualNetworkSingles:   randomVirtualNetworkSingles(t, ctx, 3, bp, cleanup),
