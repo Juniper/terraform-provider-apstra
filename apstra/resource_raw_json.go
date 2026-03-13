@@ -16,23 +16,23 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceRawJson{}
-	_ resourceWithSetClient          = &resourceRawJson{}
+	_ resource.ResourceWithConfigure = &resourceRawJSON{}
+	_ resourceWithSetClient          = &resourceRawJSON{}
 )
 
-type resourceRawJson struct {
+type resourceRawJSON struct {
 	client *apstra.Client
 }
 
-func (o *resourceRawJson) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o *resourceRawJSON) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_raw_json"
 }
 
-func (o *resourceRawJson) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceRawJSON) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceRawJson) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceRawJSON) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryFootGun + "**!!! Warning !!!**\n" +
 			"This is resource is intended only to solve problems not addressed by the normal resources." +
@@ -42,12 +42,12 @@ func (o *resourceRawJson) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"respond with a payload containing the new object ID: `{\"id\": \"xxxxxxxx\"}`. Config drift detection is " +
 			"not implemented, but update-in-place should be possible.. The `Update()` and `Delete()` functions append " +
 			"the ID (`/xxxxxxxx`) to the URL.",
-		Attributes: (*raw.RawJson)(nil).ResourceAttributes(),
+		Attributes: raw.RawJSON{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceRawJson) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan raw.RawJson
+func (o *resourceRawJSON) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan raw.RawJSON
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -57,9 +57,9 @@ func (o *resourceRawJson) Create(ctx context.Context, req resource.CreateRequest
 		Id *string `json:"id"`
 	}
 
-	u, err := url.Parse(plan.Url.ValueString())
+	u, err := url.Parse(plan.URL.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", plan.Url.ValueString()), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", plan.URL.ValueString()), err.Error())
 		return
 	}
 
@@ -73,11 +73,11 @@ func (o *resourceRawJson) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	if plan.Id.IsUnknown() {
-		plan.Id = types.StringPointerValue(idResponse.Id)
+	if plan.ID.IsUnknown() {
+		plan.ID = types.StringPointerValue(idResponse.Id)
 	}
 
-	if plan.Id.IsNull() {
+	if plan.ID.IsNull() {
 		resp.Diagnostics.AddWarning(
 			"ID is null",
 			"creation did not produce an error, but no ID was specified in the configuration and we failed to find one in the API response",
@@ -87,21 +87,21 @@ func (o *resourceRawJson) Create(ctx context.Context, req resource.CreateRequest
 	resp.State.Set(ctx, &plan)
 }
 
-func (o *resourceRawJson) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state raw.RawJson
+func (o *resourceRawJSON) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state raw.RawJSON
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if state.Id.IsNull() {
+	if state.ID.IsNull() {
 		resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 		return
 	}
 
-	u, err := url.Parse(state.Url.ValueString())
+	u, err := url.Parse(state.URL.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", state.Url.ValueString()), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", state.URL.ValueString()), err.Error())
 		return
 	}
 
@@ -123,21 +123,21 @@ func (o *resourceRawJson) Read(ctx context.Context, req resource.ReadRequest, re
 	resp.State.Set(ctx, &state)
 }
 
-func (o *resourceRawJson) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan raw.RawJson
+func (o *resourceRawJSON) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan raw.RawJSON
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if plan.Id.IsNull() {
+	if plan.ID.IsNull() {
 		resp.Diagnostics.AddWarning("cannot update raw JSON object", "ID is null -- cannot update")
 		return
 	}
 
-	u, err := url.Parse(fmt.Sprintf("%s/%s", plan.Url.ValueString(), plan.Id.ValueString()))
+	u, err := url.Parse(fmt.Sprintf("%s/%s", plan.URL.ValueString(), plan.ID.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", plan.Url.ValueString()), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", plan.URL.ValueString()), err.Error())
 		return
 	}
 
@@ -154,21 +154,21 @@ func (o *resourceRawJson) Update(ctx context.Context, req resource.UpdateRequest
 	resp.State.Set(ctx, &plan)
 }
 
-func (o *resourceRawJson) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state raw.RawJson
+func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state raw.RawJSON
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	if state.Id.IsNull() {
+	if state.ID.IsNull() {
 		resp.Diagnostics.AddWarning("cannot delete raw JSON object", "ID is null -- cannot update")
 		return
 	}
 
-	u, err := url.Parse(fmt.Sprintf("%s/%s", state.Url.ValueString(), state.Id.ValueString()))
+	u, err := url.Parse(fmt.Sprintf("%s/%s", state.URL.ValueString(), state.ID.ValueString()))
 	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", state.Url.ValueString()), err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse URL %q", state.URL.ValueString()), err.Error())
 		return
 	}
 
@@ -187,6 +187,6 @@ func (o *resourceRawJson) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 }
 
-func (o *resourceRawJson) setClient(client *apstra.Client) {
+func (o *resourceRawJSON) setClient(client *apstra.Client) {
 	o.client = client
 }
