@@ -37,12 +37,12 @@ func (o RoutingPolicy) ResourceAttributes() map[string]resourceSchema.Attribute 
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"routing_policy_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Policy ID to be applied",

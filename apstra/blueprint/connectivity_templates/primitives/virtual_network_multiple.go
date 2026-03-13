@@ -39,12 +39,12 @@ func (o VirtualNetworkMultiple) ResourceAttributes() map[string]resourceSchema.A
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"untagged_vn_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of the Virtual Network which should be untagged on the link",

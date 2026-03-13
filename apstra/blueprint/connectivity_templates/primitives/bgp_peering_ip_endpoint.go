@@ -65,7 +65,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"batch_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's downstream collection",
@@ -75,7 +75,7 @@ func (o BgpPeeringIpEndpoint) ResourceAttributes() map[string]resourceSchema.Att
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"neighbor_asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Neighbor ASN. Omit for *Neighbor ASN Type Dynamic*.",

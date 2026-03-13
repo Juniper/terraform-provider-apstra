@@ -214,8 +214,8 @@
 ## github.com/ProtonMail/go-crypto
 
 * Name: github.com/ProtonMail/go-crypto
-* Version: v1.1.6
-* License: [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.1.6/LICENSE)
+* Version: v1.3.0
+* License: [BSD-3-Clause](https://github.com/ProtonMail/go-crypto/blob/v1.3.0/LICENSE)
 
 ```
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -3007,8 +3007,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/go-retryablehttp
 
 * Name: github.com/hashicorp/go-retryablehttp
-* Version: v0.7.7
-* License: [MPL-2.0](https://github.com/hashicorp/go-retryablehttp/blob/v0.7.7/LICENSE)
+* Version: v0.7.8
+* License: [MPL-2.0](https://github.com/hashicorp/go-retryablehttp/blob/v0.7.8/LICENSE)
 
 ```
 Copyright (c) 2015 HashiCorp, Inc.
@@ -4123,11 +4123,11 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/hc-install
 
 * Name: github.com/hashicorp/hc-install
-* Version: v0.9.2
-* License: [MPL-2.0](https://github.com/hashicorp/hc-install/blob/v0.9.2/LICENSE)
+* Version: v0.9.3
+* License: [MPL-2.0](https://github.com/hashicorp/hc-install/blob/v0.9.3/LICENSE)
 
 ```
-Copyright (c) 2020 HashiCorp, Inc.
+Copyright IBM Corp. 2020, 2026
 
 Mozilla Public License Version 2.0
 ==================================
@@ -5237,11 +5237,11 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-exec
 
 * Name: github.com/hashicorp/terraform-exec
-* Version: v0.23.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-exec/blob/v0.23.0/LICENSE)
+* Version: v0.25.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-exec/blob/v0.25.0/LICENSE)
 
 ```
-Copyright (c) 2020 HashiCorp, Inc.
+Copyright IBM Corp. 2020, 2026
 
 Mozilla Public License Version 2.0
 ==================================
@@ -5622,8 +5622,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-json
 
 * Name: github.com/hashicorp/terraform-json
-* Version: v0.25.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-json/blob/v0.25.0/LICENSE)
+* Version: v0.27.2
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-json/blob/v0.27.2/LICENSE)
 
 ```
 Copyright (c) 2019 HashiCorp, Inc.
@@ -6007,8 +6007,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/terraform-plugin-framework
 
 * Name: github.com/hashicorp/terraform-plugin-framework
-* Version: v1.18.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.18.0/LICENSE)
+* Version: v1.19.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-framework/blob/v1.19.0/LICENSE)
 
 ```
 Copyright IBM Corp. 2021, 2026
@@ -7509,8 +7509,8 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-go
 
 * Name: github.com/hashicorp/terraform-plugin-go
-* Version: v0.30.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.30.0/LICENSE)
+* Version: v0.31.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-go/blob/v0.31.0/LICENSE)
 
 ```
 Copyright IBM Corp. 2020, 2026
@@ -8241,11 +8241,11 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 ## github.com/hashicorp/terraform-plugin-sdk/v2
 
 * Name: github.com/hashicorp/terraform-plugin-sdk/v2
-* Version: v2.37.0
-* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-sdk/blob/v2.37.0/LICENSE)
+* Version: v2.40.0
+* License: [MPL-2.0](https://github.com/hashicorp/terraform-plugin-sdk/blob/v2.40.0/LICENSE)
 
 ```
-Copyright (c) 2019 HashiCorp, Inc.
+Copyright IBM Corp. 2019, 2026
 
 Mozilla Public License, version 2.0
 
@@ -11212,8 +11212,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## google.golang.org/grpc
 
 * Name: google.golang.org/grpc
-* Version: v1.79.1
-* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.79.1/LICENSE)
+* Version: v1.79.2
+* License: [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.79.2/LICENSE)
 
 ```
 

@@ -39,12 +39,12 @@ func (o StaticRoute) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive element",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"pipeline_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Unique identifier for this CT Primitive Element's upstream pipeline",
 			Computed:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseNonNullStateForUnknown()},
 		},
 		"network": resourceSchema.StringAttribute{
 			MarkdownDescription: "Destination network in CIDR notation",
