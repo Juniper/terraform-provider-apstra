@@ -113,13 +113,21 @@ func (o *DatacenterGenericSystemLink) Digest() string {
 	return o.TargetSwitchId.ValueString() + ":" + o.TargetSwitchIfName.ValueString()
 }
 
-func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstra.CablingMapLink, genericSystemId apstra.ObjectId, diags *diag.Diagnostics) {
-	switchEndpoint := in.OppositeEndpointBySystemId(genericSystemId)
+func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstra.CablingMapLink, genericSystemId string, diags *diag.Diagnostics) {
+	switchEndpoint := in.OppositeEndpointBySystemID(genericSystemId)
 
-	o.TargetSwitchId = types.StringValue(switchEndpoint.System.Id.String())
-	o.TargetSwitchIfName = types.StringPointerValue(switchEndpoint.Interface.IfName)
-	o.GroupLabel = types.StringValue(in.GroupLabel)
-	o.LagMode = value.StringOrNull(ctx, switchEndpoint.Interface.LagMode.String(), diags)
+	if switchEndpoint != nil {
+		if switchEndpoint.System != nil {
+			o.TargetSwitchId = types.StringValue(switchEndpoint.System.ID)
+		}
+		if switchEndpoint.Interface.IfName != nil {
+			o.TargetSwitchIfName = types.StringPointerValue(switchEndpoint.Interface.IfName)
+		}
+		if switchEndpoint.Interface.LAGMode != nil {
+			o.LagMode = value.StringOrNull(ctx, switchEndpoint.Interface.LAGMode.String(), diags)
+		}
+	}
+	o.GroupLabel = types.StringPointerValue(in.GroupLabel)
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.TagLabels, diags)
 }
 
