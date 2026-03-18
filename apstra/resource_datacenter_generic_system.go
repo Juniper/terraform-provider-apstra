@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -213,7 +214,7 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 	}
 
 	// use link IDs to learn the generic system ID
-	genericSystemId, err := bp.SystemNodeFromLinkIds(ctx, linkIds, apstra.SystemNodeRoleGeneric)
+	genericSystemID, err := bp.SystemNodeFromLinkIds(ctx, linkIds, &enum.SystemNodeRoleGeneric)
 	if err != nil {
 		sb := new(strings.Builder)
 		for i, linkId := range linkIds {
@@ -225,9 +226,11 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		}
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("failed to determine new generic system ID from returned link IDs: [%s]", sb.String()),
-			err.Error())
+			err.Error(),
+		)
+		return
 	}
-	plan.Id = types.StringValue(genericSystemId.String())
+	plan.Id = types.StringValue(genericSystemID.String())
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...) // provisional state in case of error below
 
 	// set generic system properties sending <nil> for prior state

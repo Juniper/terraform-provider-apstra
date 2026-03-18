@@ -274,13 +274,14 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	}
 
 	// get the list of links from the API and filter out non-Ethernet links
-	apiLinks, err := bp.GetCablingMapLinksBySystem(ctx, apstra.ObjectId(o.Id.ValueString()))
+	apiLinks, err := bp.GetCablingMapLinksBySystem(ctx, o.Id.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("failed to fetch generic system %s links", o.Id), err.Error())
 		return
 	}
 	for i := len(apiLinks) - 1; i >= 0; i-- { // loop backwards through the slice
-		if apiLinks[i].Type != apstra.LinkTypeEthernet { // target non-Ethernet links for deletion
+		// remove non-Ethernet links from the slice
+		if apiLinks[i].Type != nil && *apiLinks[i].Type != enum.LinkTypeEthernet {
 			apiLinks[i] = apiLinks[len(apiLinks)-1] // overwrite unwanted element with last element
 			apiLinks = apiLinks[:len(apiLinks)-1]   // shorten the slice to eliminate the newly dup'ed last item.
 		}
@@ -290,7 +291,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	for i, apiLink := range apiLinks {
 		var dcgsl DatacenterGenericSystemLink
 		// loadApiData handles every detail except for the transform ID
-		dcgsl.loadApiData(ctx, &apiLink, apstra.ObjectId(o.Id.ValueString()), diags)
+		dcgsl.loadApiData(ctx, &apiLink, o.Id.ValueString(), diags)
 		if diags.HasError() {
 			return
 		}
@@ -984,7 +985,7 @@ func IfIdFromSwIdAndIfName(ctx context.Context, bp *apstra.TwoStageL3ClosClient,
 		Node([]apstra.QEEAttribute{
 			apstra.NodeTypeInterface.QEEAttribute(),
 			{Key: "if_name", Value: apstra.QEStringVal(ifName)},
-			{Key: "if_type", Value: apstra.QEStringVal(apstra.InterfaceTypeEthernet.String())},
+			{Key: "if_type", Value: apstra.QEStringVal(enum.InterfaceTypeEthernet.String())},
 			{Key: "name", Value: apstra.QEStringVal("n_interface")},
 		})
 
