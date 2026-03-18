@@ -188,7 +188,7 @@ Optional:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
-- `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
+- `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) Set of Tag IDs to be applied to this Link
 
 Read-Only:
@@ -294,7 +294,7 @@ Optional:
 
 - `lag_mode` (String) LAG negotiation mode of the Link.
 - `links_per_switch` (Number) Number of Links to each switch.
-- `switch_peer` (String) For non-lAG connections to redundant switch pairs, this field selects the target switch.
+- `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) Set of Tag IDs to be applied to this Link
 
 Read-Only:

@@ -99,7 +99,7 @@ func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 			Required:            true,
 		},
 		"switch_peer": resourceSchema.StringAttribute{
-			MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+			MarkdownDescription: "For non-LAG connections to redundant switch pairs, this field selects the target switch.",
 			Optional:            true,
 			Computed:            true,
 			Validators: []validator.String{stringvalidator.OneOf(
@@ -142,7 +142,7 @@ func (o RackLink) ResourceAttributesNested() map[string]resourceSchema.Attribute
 			Computed:            true,
 		},
 		"switch_peer": resourceSchema.StringAttribute{
-			MarkdownDescription: "For non-lAG connections to redundant switch pairs, this field selects the target switch.",
+			MarkdownDescription: "For non-LAG connections to redundant switch pairs, this field selects the target switch.",
 			Computed:            true,
 		},
 		"tag_ids": resourceSchema.SetAttribute{
