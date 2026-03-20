@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/stretchr/testify/require"
 )
@@ -22,6 +23,11 @@ func TestStringWithEmptyEqualsNull_StringSemanticEquals(t *testing.T) {
 			givenValue:    customtypes.NewStringWithEmptyEqualsNullValue("foo"),
 			expectedMatch: true,
 		},
+		"equal values from pointer": {
+			currentValue:  customtypes.NewStringWithEmptyEqualsNullValue("foo"),
+			givenValue:    customtypes.NewStringWithEmptyEqualsNullPointerValue(pointer.To("foo")),
+			expectedMatch: true,
+		},
 		"semantically equal - null and empty": {
 			currentValue:  customtypes.NewStringWithEmptyEqualsNullNull(),
 			givenValue:    customtypes.NewStringWithEmptyEqualsNullValue(""),
@@ -30,6 +36,11 @@ func TestStringWithEmptyEqualsNull_StringSemanticEquals(t *testing.T) {
 		"semantically equal - empty and null": {
 			currentValue:  customtypes.NewStringWithEmptyEqualsNullValue(""),
 			givenValue:    customtypes.NewStringWithEmptyEqualsNullNull(),
+			expectedMatch: true,
+		},
+		"semantically equal - empty and nil pointer value": {
+			currentValue:  customtypes.NewStringWithEmptyEqualsNullValue(""),
+			givenValue:    customtypes.NewStringWithEmptyEqualsNullPointerValue(nil),
 			expectedMatch: true,
 		},
 		"not equal": {

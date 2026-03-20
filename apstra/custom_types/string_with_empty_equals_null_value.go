@@ -80,3 +80,13 @@ func NewStringWithEmptyEqualsNullValue(value string) StringWithEmptyEqualsNull {
 		StringValue: basetypes.NewStringValue(value),
 	}
 }
+
+// NewStringWithEmptyEqualsNullPointerValue creates a new StringWithEmptyEqualsNull from a *string.
+// If value is nil, the resulting StringWithEmptyEqualsNull will be Null.
+func NewStringWithEmptyEqualsNullPointerValue(value *string) StringWithEmptyEqualsNull {
+	if value == nil {
+		return NewStringWithEmptyEqualsNullNull()
+	}
+
+	return NewStringWithEmptyEqualsNullValue(*value)
+}

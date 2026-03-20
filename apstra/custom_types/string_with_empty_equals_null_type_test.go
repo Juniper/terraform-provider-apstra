@@ -30,6 +30,10 @@ func TestStringWithEmptyEqualsNullType_ValueFromTerraform(t *testing.T) {
 			in:          tftypes.NewValue(tftypes.String, nil),
 			expectation: customtypes.NewStringWithEmptyEqualsNullNull(),
 		},
+		"null from pointer": {
+			in:          tftypes.NewValue(tftypes.String, nil),
+			expectation: customtypes.NewStringWithEmptyEqualsNullPointerValue(nil),
+		},
 		"wrongType": {
 			in:          tftypes.NewValue(tftypes.Number, 123),
 			expectedErr: "can't unmarshal tftypes.Number into *string, expected string",
