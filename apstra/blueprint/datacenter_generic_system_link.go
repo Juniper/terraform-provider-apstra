@@ -50,10 +50,10 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			MarkdownDescription: "Name of the physical interface where the link connects. This attribute is " +
 				"reflected in the cabling map and is informational only. Apstra doesn't require it, but including a " +
 				"value here  may be useful for scoping Configlets or in other scenarios that rely on recording the " +
-				"server's interface name (for example, `enp5s0d1`). Note that populating this field will slow Generic " +
-				"Server creation.",
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+				"server's interface name (for example, `enp5s0d1`). An empty string signals that values should  be " +
+				"cleared from the interface name. Note that populating this field will slow Generic Server creation.",
+			Optional: true,
+			Computed: true,
 		},
 		"group_label": resourceSchema.StringAttribute{
 			MarkdownDescription: "This field is used to collect multiple links into aggregation " +
@@ -100,6 +100,10 @@ func (o DatacenterGenericSystemLink) attrTypes() map[string]attr.Type {
 	}
 }
 
+func (o DatacenterGenericSystemLink) attrType() attr.Type {
+	return types.ObjectType{AttrTypes: DatacenterGenericSystemLink{}.attrTypes()}
+}
+
 func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Diagnostics) *apstra.CreateLinkRequest {
 	result := apstra.CreateLinkRequest{
 		SwitchEndpoint: apstra.SwitchLinkEndpoint{
@@ -141,7 +145,9 @@ func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstr
 	}
 
 	serverEndpoint := in.EndpointBySystemID(genericSystemId)
-	if serverEndpoint != nil {
+	if serverEndpoint == nil || serverEndpoint.Interface.Name == nil {
+		o.GenericSystemIfName = types.StringValue("") // prefer empty string value over Null
+	} else {
 		o.GenericSystemIfName = types.StringPointerValue(serverEndpoint.Interface.Name)
 	}
 	o.GroupLabel = types.StringPointerValue(in.GroupLabel)
@@ -217,4 +223,20 @@ func (o *DatacenterGenericSystemLink) updateTransformId(ctx context.Context, sta
 			}
 		}
 	}
+}
+
+func linkSetToMapByDigest(ctx context.Context, in types.Set, diags *diag.Diagnostics) map[string]DatacenterGenericSystemLink {
+	var links []DatacenterGenericSystemLink
+	diags.Append(in.ElementsAs(ctx, &links, false)...)
+	if diags.HasError() {
+		return nil
+	}
+
+	// transform links into a map keyed by link digest (device:port)
+	result := make(map[string]DatacenterGenericSystemLink, len(links))
+	for _, link := range links {
+		result[link.Digest()] = link
+	}
+
+	return result
 }

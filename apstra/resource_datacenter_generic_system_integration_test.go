@@ -38,15 +38,17 @@ const resourceDataCenterGenericSystemLinkHCL = `
       target_switch_if_name         = %q
       target_switch_if_transform_id = %d
       group_label                   = %s
+      generic_system_if_name        = %s
     },`
 
 type resourceDataCenterGenericSystemLink struct {
-	tags           []string
-	lagMode        apstra.RackLinkLagMode
-	targetSwitchId apstra.ObjectId
-	targetSwitchIf string
-	targetSwitchTf int
-	groupLabel     string
+	tags                []string
+	lagMode             apstra.RackLinkLagMode
+	targetSwitchId      apstra.ObjectId
+	targetSwitchIf      string
+	targetSwitchTf      int
+	groupLabel          string
+	genericSystemIfName *string
 }
 
 func (o *resourceDataCenterGenericSystemLink) render() string {
@@ -57,6 +59,7 @@ func (o *resourceDataCenterGenericSystemLink) render() string {
 		o.targetSwitchIf,
 		o.targetSwitchTf,
 		stringOrNull(o.groupLabel),
+		stringPtrOrNull(o.genericSystemIfName),
 	)
 }
 
@@ -75,6 +78,9 @@ func (o *resourceDataCenterGenericSystemLink) addTestChecks(t testing.TB, testCh
 	}
 	if o.groupLabel != "" {
 		m["group_label"] = o.groupLabel
+	}
+	if o.genericSystemIfName != nil {
+		m["generic_system_if_name"] = *o.genericSystemIfName
 	}
 	testChecks.appendSetNestedCheck(t, "links.*", m)
 }
@@ -381,12 +387,13 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
-								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
-								targetSwitchId: leafSwitchIds[0],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
-								targetSwitchTf: 1,
-								groupLabel:     acctest.RandString(6),
+								tags:                oneOf(randomStrings(3, 3), nil),
+								lagMode:             apstra.RackLinkLagMode(rand.IntN(4)),
+								targetSwitchId:      leafSwitchIds[0],
+								targetSwitchIf:      "xe-0/0/0", // 0 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								groupLabel:          acctest.RandString(6),
+								genericSystemIfName: pointer.To(acctest.RandString(6)),
 							},
 							{
 								tags:           oneOf(randomStrings(3, 3), nil),
@@ -403,9 +410,10 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					config: resourceDataCenterGenericSystem{
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								targetSwitchId: leafSwitchIds[1],
-								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
-								targetSwitchTf: 1,
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/0", // 0 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To(""),
 							},
 						},
 					},

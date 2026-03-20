@@ -322,7 +322,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	}
 
 	// pack the result slice into o.Links
-	o.Links = types.SetValueMust(types.ObjectType{AttrTypes: DatacenterGenericSystemLink{}.attrTypes()}, oLinks)
+	o.Links = types.SetValueMust(DatacenterGenericSystemLink{}.attrType(), oLinks)
 }
 
 // ReadSystemProperties returns an error rather than appending to a
@@ -1394,23 +1394,12 @@ func (o *DatacenterGenericSystem) ReadSwitchInterfaceApplicationPoints(ctx conte
 }
 
 func (o *DatacenterGenericSystem) UpdateServerInterfaceNames(ctx context.Context, state *DatacenterGenericSystem, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	var planLinks, stateLinks []DatacenterGenericSystemLink
-	planLinks = o.GetLinks(ctx, diags)
-	if state != nil {
-		stateLinks = state.GetLinks(ctx, diags)
-	}
-	if diags.HasError() {
-		return
-	}
+	o.CopyGenericSystemInterfaceNamesFromStateWherePlanIsUnknown(ctx, state, diags)
 
-	// transform plan and state links into a map keyed by link digest (device:port)
-	planLinksMap := make(map[string]DatacenterGenericSystemLink, len(planLinks))
-	for i, link := range planLinks {
-		planLinksMap[link.Digest()] = planLinks[i]
-	}
-	stateLinksMap := make(map[string]DatacenterGenericSystemLink, len(stateLinks))
-	for i, link := range stateLinks {
-		stateLinksMap[link.Digest()] = stateLinks[i]
+	var planLinksMap, stateLinksMap map[string]DatacenterGenericSystemLink
+	planLinksMap = linkSetToMapByDigest(ctx, o.Links, diags)
+	if state != nil {
+		stateLinksMap = linkSetToMapByDigest(ctx, state.Links, diags)
 	}
 
 	// begin assembling a patch payload - we don't know the generic system interface IDs, so it's just a start
@@ -1507,4 +1496,29 @@ func (o *DatacenterGenericSystem) UpdateServerInterfaceNames(ctx context.Context
 	if err != nil {
 		diags.AddError("Failed to update generic system interface names", err.Error())
 	}
+}
+
+// CopyGenericSystemInterfaceNamesFromStateWherePlanIsUnknown updates any unknown GenericSystemIfName link attributes
+// with a known value: The value from state (if any) or an empty string (no state, or link not in state)
+func (o *DatacenterGenericSystem) CopyGenericSystemInterfaceNamesFromStateWherePlanIsUnknown(ctx context.Context, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
+	var planLinksMap, stateLinksMap map[string]DatacenterGenericSystemLink
+	planLinksMap = linkSetToMapByDigest(ctx, o.Links, diags)
+	if state != nil {
+		stateLinksMap = linkSetToMapByDigest(ctx, state.Links, diags)
+	}
+	if diags.HasError() {
+		return
+	}
+
+	// copy state value onto unknown plan values
+	// missing state values will produce empty strings, which is what we want
+	for key, planLink := range planLinksMap {
+		if planLink.GenericSystemIfName.IsUnknown() {
+			stateLink := stateLinksMap[key]
+			planLink.GenericSystemIfName = types.StringValue(stateLink.GenericSystemIfName.ValueString())
+			planLinksMap[key] = planLink
+		}
+	}
+
+	o.Links = value.SetOrNull(ctx, DatacenterGenericSystemLink{}.attrType(), slices.Collect(maps.Values(planLinksMap)), diags)
 }

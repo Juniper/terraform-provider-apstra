@@ -115,7 +115,7 @@ Required:
 
 Optional:
 
-- `generic_system_if_name` (String, Deprecated) Name of the physical interface where the link connects. This attribute is reflected in the cabling map and is informational only. Apstra doesn't require it, but including a value here  may be useful for scoping Configlets or in other scenarios that rely on recording the server's interface name (for example, `enp5s0d1`). Note that populating this field will slow Generic Server creation.
+- `generic_system_if_name` (String) Name of the physical interface where the link connects. This attribute is reflected in the cabling map and is informational only. Apstra doesn't require it, but including a value here  may be useful for scoping Configlets or in other scenarios that rely on recording the server's interface name (for example, `enp5s0d1`). An empty string signals that values should  be cleared from the interface name. Note that populating this field will slow Generic Server creation.
 - `group_label` (String) This field is used to collect multiple links into aggregation groups. For example, to create two LAG pairs from four physical links, you might use `group_label` value "bond0" on two links and "bond1" on the other two links. Apstra assigns a unique group ID to each link by default.
 - `lag_mode` (String) LAG negotiation mode of the Link. All links with the same `group_label` must use the value.
 - `tags` (Set of String) Names of Tag to be applied to this Link. If a Tag doesn't exist in the Blueprint it will be created automatically.
