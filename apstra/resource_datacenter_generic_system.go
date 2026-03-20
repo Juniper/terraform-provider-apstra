@@ -247,6 +247,8 @@ func (o *resourceDatacenterGenericSystem) Create(ctx context.Context, req resour
 		// don't return here - still want to set the state
 	}
 
+	plan.UpdateServerInterfaceNames(ctx, nil, bp, &resp.Diagnostics) // don't return here - still want to set the state
+
 	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics) // don't return here - still want to set the state
 
 	// set state
@@ -370,6 +372,8 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	plan.UpdateServerInterfaceNames(ctx, nil, bp, &resp.Diagnostics) // don't return here - still want to set the state
 
 	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {

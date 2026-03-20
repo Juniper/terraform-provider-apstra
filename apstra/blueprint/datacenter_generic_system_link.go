@@ -22,6 +22,7 @@ type DatacenterGenericSystemLink struct {
 	TargetSwitchId            types.String `tfsdk:"target_switch_id"`
 	TargetSwitchIfName        types.String `tfsdk:"target_switch_if_name"`
 	TargetSwitchIfTransformId types.Int64  `tfsdk:"target_switch_if_transform_id"`
+	GenericSystemIfName       types.String `tfsdk:"generic_system_if_name"`
 	GroupLabel                types.String `tfsdk:"group_label"`
 	LagMode                   types.String `tfsdk:"lag_mode"`
 	Tags                      types.Set    `tfsdk:"tags"`
@@ -44,6 +45,16 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			MarkdownDescription: "Transformation ID sets the operational mode of an interface.",
 			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
+		},
+		"generic_system_if_name": resourceSchema.StringAttribute{
+			DeprecationMessage: "This is an experimental feature, not fully supported in the current release - use at your own risk",
+			MarkdownDescription: "Name of the physical interface where the link connects. This attribute is " +
+				"reflected in the cabling map and is informational only. Apstra doesn't require it, but including a " +
+				"value here  may be useful for scoping Configlets or in other scenarios that rely on recording the " +
+				"server's interface name (for example, `enp5s0d1`). Note that populating this field will slow Generic " +
+				"Server creation.",
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"group_label": resourceSchema.StringAttribute{
 			MarkdownDescription: "This field is used to collect multiple links into aggregation " +
@@ -83,6 +94,7 @@ func (o DatacenterGenericSystemLink) attrTypes() map[string]attr.Type {
 		"target_switch_id":              types.StringType,
 		"target_switch_if_name":         types.StringType,
 		"target_switch_if_transform_id": types.Int64Type,
+		"generic_system_if_name":        types.StringType,
 		"group_label":                   types.StringType,
 		"lag_mode":                      types.StringType,
 		"tags":                          types.SetType{ElemType: types.StringType},
@@ -109,13 +121,14 @@ func (o DatacenterGenericSystemLink) request(ctx context.Context, diags *diag.Di
 	return &result
 }
 
+// Digest returns a string composed of the switch ID and Interface name joined by ':'.
+// For example: "scausZjtxhDFyRatlQ:xe-0/0/0"
 func (o *DatacenterGenericSystemLink) Digest() string {
 	return o.TargetSwitchId.ValueString() + ":" + o.TargetSwitchIfName.ValueString()
 }
 
 func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstra.CablingMapLink, genericSystemId string, diags *diag.Diagnostics) {
 	switchEndpoint := in.OppositeEndpointBySystemID(genericSystemId)
-
 	if switchEndpoint != nil {
 		if switchEndpoint.System != nil {
 			o.TargetSwitchId = types.StringValue(switchEndpoint.System.ID)
@@ -126,6 +139,11 @@ func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstr
 		if switchEndpoint.Interface.LAGMode != nil {
 			o.LagMode = value.StringOrNull(ctx, switchEndpoint.Interface.LAGMode.String(), diags)
 		}
+	}
+
+	serverEndpoint := in.EndpointBySystemID(genericSystemId)
+	if serverEndpoint != nil {
+		o.GenericSystemIfName = types.StringPointerValue(serverEndpoint.Interface.Name)
 	}
 	o.GroupLabel = types.StringPointerValue(in.GroupLabel)
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.TagLabels, diags)
