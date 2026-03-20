@@ -47,7 +47,6 @@ func (o DatacenterGenericSystemLink) ResourceAttributes() map[string]resourceSch
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
 		"generic_system_if_name": resourceSchema.StringAttribute{
-			DeprecationMessage: "This is an experimental feature, not fully supported in the current release - use at your own risk",
 			MarkdownDescription: "Name of the physical interface where the link connects. This attribute is " +
 				"reflected in the cabling map and is informational only. Apstra doesn't require it, but including a " +
 				"value here  may be useful for scoping Configlets or in other scenarios that rely on recording the " +
