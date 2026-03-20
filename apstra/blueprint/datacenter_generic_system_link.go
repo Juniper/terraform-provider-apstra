@@ -209,19 +209,23 @@ func (o *DatacenterGenericSystemLink) lagParams(ctx context.Context, id apstra.O
 }
 
 func (o *DatacenterGenericSystemLink) updateTransformId(ctx context.Context, state *DatacenterGenericSystemLink, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-	// set the transform ID if it has changed
-	if !o.TargetSwitchIfTransformId.Equal(state.TargetSwitchIfTransformId) {
-		err := client.SetTransformIdByIfName(ctx, apstra.ObjectId(o.TargetSwitchId.ValueString()),
-			o.TargetSwitchIfName.ValueString(), int(o.TargetSwitchIfTransformId.ValueInt64()))
-		if err != nil {
-			var ace apstra.ClientErr
-			if errors.As(err, &ace) && ace.Type() == apstra.ErrCannotChangeTransform {
-				diags.AddWarning("could not change interface transform", err.Error())
-			} else {
-				diags.AddError("failed to set interface transform", err.Error())
-				return
-			}
+	if o.TargetSwitchIfTransformId.Equal(state.TargetSwitchIfTransformId) {
+		return // nothing to do
+	}
+
+	// update the transform ID
+	targetSwitch := apstra.ObjectId(o.TargetSwitchId.ValueString())
+	ifName := o.TargetSwitchIfName.ValueString()
+	transformID := int(o.TargetSwitchIfTransformId.ValueInt64())
+	err := client.SetTransformIdByIfName(ctx, targetSwitch, ifName, transformID)
+	if err != nil {
+		var ace apstra.ClientErr
+		if errors.As(err, &ace) && ace.Type() == apstra.ErrCannotChangeTransform {
+			diags.AddWarning("could not change interface transform", err.Error())
+		} else {
+			diags.AddError("failed to set interface transform", err.Error())
 		}
+		return
 	}
 }
 

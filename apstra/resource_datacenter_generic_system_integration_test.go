@@ -1208,6 +1208,161 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				},
 			},
 		},
+		"exercise_gs_if_name": {
+			steps: []testStep{
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To("foo"),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To("bar"),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To(""),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To("baz"),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To(""),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To("qux"),
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId: leafSwitchIds[1],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+						},
+					},
+				},
+				{
+					config: resourceDataCenterGenericSystem{
+						links: []resourceDataCenterGenericSystemLink{
+							{
+								targetSwitchId: leafSwitchIds[0],
+								targetSwitchIf: "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf: 1,
+							},
+							{
+								targetSwitchId:      leafSwitchIds[1],
+								targetSwitchIf:      "xe-0/0/18", // 18 avoids conflict with other test cases
+								targetSwitchTf:      1,
+								genericSystemIfName: pointer.To("quux"),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterGenericSystem)

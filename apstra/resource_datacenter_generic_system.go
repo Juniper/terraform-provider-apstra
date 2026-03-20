@@ -373,7 +373,7 @@ func (o *resourceDatacenterGenericSystem) Update(ctx context.Context, req resour
 		return
 	}
 
-	plan.UpdateServerInterfaceNames(ctx, nil, bp, &resp.Diagnostics) // don't return here - still want to set the state
+	plan.UpdateServerInterfaceNames(ctx, &state, bp, &resp.Diagnostics) // don't return here - still want to set the state
 
 	plan.ReadSwitchInterfaceApplicationPoints(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {

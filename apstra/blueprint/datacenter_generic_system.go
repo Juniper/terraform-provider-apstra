@@ -1405,25 +1405,27 @@ func (o *DatacenterGenericSystem) UpdateServerInterfaceNames(ctx context.Context
 	// begin assembling a patch payload - we don't know the generic system interface IDs, so it's just a start
 	patchMap := make(map[string]apstra.CablingMapLink, len(planLinksMap))
 	for key, planLink := range planLinksMap {
-		stateLink := stateLinksMap[key]
-		if !planLink.GenericSystemIfName.Equal(stateLink.GenericSystemIfName) {
-			patchMap[key] = apstra.CablingMapLink{
-				Endpoints: [2]apstra.CablingMapLinkEndpoint{
-					{ // server endpoint
-						Interface: apstra.CablingMapLinkEndpointInterface{
-							// Name is the value we want to set, but API requires IF ID of both endpoints
-							Name: pointer.To(planLink.GenericSystemIfName.ValueString()), // potential pointer to empty string is deliberate
-							ID:   "",                                                     // zero value for code readability -- server end IF ID will be filled in below
-						},
-					},
-					{ // switch endpoint
-						Interface: apstra.CablingMapLinkEndpointInterface{
-							Name: pointer.To(planLink.TargetSwitchIfName.ValueString()), // Apstra will move liks around if we don't specify this value.
-							ID:   "",                                                    // zero value for code readability -- switch end IF ID will be filled in below
-						},
+		if planLink.GenericSystemIfName.Equal(stateLinksMap[key].GenericSystemIfName) {
+			continue // server if_name matches, so nothing to do
+		}
+
+		// add entry to our update payload
+		patchMap[key] = apstra.CablingMapLink{
+			Endpoints: [2]apstra.CablingMapLinkEndpoint{
+				{ // server endpoint
+					Interface: apstra.CablingMapLinkEndpointInterface{
+						// Name is the value we want to set, but API requires IF ID of both endpoints
+						Name: pointer.To(planLink.GenericSystemIfName.ValueString()), // potential pointer to empty string is deliberate
+						ID:   "",                                                     // zero value for code readability -- server end IF ID will be filled in below
 					},
 				},
-			}
+				{ // switch endpoint
+					Interface: apstra.CablingMapLinkEndpointInterface{
+						Name: pointer.To(planLink.TargetSwitchIfName.ValueString()), // Apstra will move liks around if we don't specify this value.
+						ID:   "",                                                    // zero value for code readability -- switch end IF ID will be filled in below
+					},
+				},
+			},
 		}
 	}
 
