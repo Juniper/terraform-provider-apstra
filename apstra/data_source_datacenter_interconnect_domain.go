@@ -56,10 +56,10 @@ func (o *dataSourceDatacenterInterconnectDomain) Read(ctx context.Context, req d
 		return
 	}
 
-	var api *apstra.EvpnInterconnectGroup
+	var api apstra.EVPNInterconnectGroup
 	switch {
 	case !config.Name.IsNull():
-		api, err = bp.GetEvpnInterconnectGroupByName(ctx, config.Name.ValueString())
+		api, err = bp.GetEVPNInterconnectGroupByName(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -68,7 +68,7 @@ func (o *dataSourceDatacenterInterconnectDomain) Read(ctx context.Context, req d
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = bp.GetEvpnInterconnectGroup(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetEVPNInterconnectGroup(ctx, config.Id.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -84,11 +84,11 @@ func (o *dataSourceDatacenterInterconnectDomain) Read(ctx context.Context, req d
 
 	// add ID value in case the caller passed us the name instead
 	if !utils.HasValue(config.Id) {
-		config.Id = types.StringValue(api.Id.String())
+		config.Id = types.StringPointerValue(api.ID())
 	}
 
 	// load the remaining details
-	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	config.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

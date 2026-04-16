@@ -120,8 +120,8 @@ func (o *DatacenterGenericSystemLink) loadApiData(ctx context.Context, in *apstr
 		if switchEndpoint.System != nil {
 			o.TargetSwitchId = types.StringValue(switchEndpoint.System.ID)
 		}
-		if switchEndpoint.Interface.IfName != nil {
-			o.TargetSwitchIfName = types.StringPointerValue(switchEndpoint.Interface.IfName)
+		if switchEndpoint.Interface.Name != nil {
+			o.TargetSwitchIfName = types.StringPointerValue(switchEndpoint.Interface.Name)
 		}
 		if switchEndpoint.Interface.LAGMode != nil {
 			o.LagMode = value.StringOrNull(ctx, switchEndpoint.Interface.LAGMode.String(), diags)
