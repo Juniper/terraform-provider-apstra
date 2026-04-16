@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"sort"
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -113,8 +114,14 @@ func (o AggregateLinkEndpoint) resourceAttributes() map[string]resourceSchema.At
 			Required:            true,
 		},
 		"lag_mode": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("LAG mode of the logical aggregate interface. Must be one of: `%s`.",
-				strings.Join(enum.LAGModes.Values(), "`, `")),
+			MarkdownDescription: fmt.Sprintf(
+				"LAG mode of the logical aggregate interface. Must be one of: `%s`.",
+				func() string {
+					vals := enum.LAGModes.Values()
+					sort.Strings(vals)
+					return strings.Join(vals, "`, `")
+				}(),
+			),
 			Required:   true,
 			Validators: []validator.String{stringvalidator.OneOf(enum.LAGModes.Values()...)},
 		},
