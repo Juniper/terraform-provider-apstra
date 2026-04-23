@@ -79,3 +79,7 @@ if [[ "$minimal_mode" == true ]]; then
     # We now likely have some empty directories. Get rid of 'em.
     find "$TPC" -depth -type d -empty -exec rmdir -- "{}" \;
 fi
+
+# Set permissions on the compliance directory because of https://github.com/Juniper/terraform-provider-apstra/issues/1183
+find "$TPC" -type f -print0 | xargs -0 chmod 644
+find "$TPC" -type d -print0 | xargs -0 chmod 755
