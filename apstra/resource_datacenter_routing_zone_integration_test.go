@@ -33,6 +33,7 @@ const (
   junos_evpn_irb_mode  = %s
   ip_addressing_type   = %s
   disable_ipv4         = %s
+  tags                 = %s
 }
 `
 
@@ -57,6 +58,7 @@ type testRoutingZone struct {
 	irbMode          string
 	ipAddressingType string
 	disableIPv4      *bool
+	tags             []string
 }
 
 func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) string {
@@ -74,6 +76,7 @@ func (o testRoutingZone) render(bpId apstra.ObjectId, rType, rName string) strin
 		stringOrNull(o.irbMode),
 		stringOrNull(o.ipAddressingType),
 		boolPtrOrNull(o.disableIPv4),
+		stringSliceOrNull(o.tags),
 	)
 
 	datasourceByID := fmt.Sprintf(datasourceDatacenterRoutingZoneHCL, rType, rName+"_by_id", bpId, fmt.Sprintf("%s.%s.id", rType, rName), "null", "null")
@@ -198,6 +201,17 @@ func (o testRoutingZone) testChecks(t testing.TB, bpId apstra.ObjectId, rType, r
 		dataByIDChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
 		dataByNameChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
 		dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "disable_ipv4", strconv.FormatBool(*o.disableIPv4))
+	}
+
+	resourceChecks.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	dataByVRFNameChecks.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
+	for _, tag := range o.tags {
+		resourceChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
+		dataByIDChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
+		dataByNameChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
+		dataByVRFNameChecks.append(t, "TestCheckTypeSetElemAttr", "tags.*", tag)
 	}
 
 	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks, dataByVRFNameChecks}
@@ -670,6 +684,55 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 						name:             acctest.RandString(6),
 						ipAddressingType: "ipv6",
 						disableIPv4:      pointer.To(true),
+					},
+				},
+			},
+		},
+		"tags_create_minimal": {
+			versionConstraints: compatibility.RoutingZoneTagsOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						tags: randomStrings(rand.Intn(5)+1, 6),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						tags: randomStrings(rand.Intn(5)+1, 6),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+					},
+				},
+			},
+		},
+		"tags_create_maximal": {
+			versionConstraints: compatibility.RoutingZoneTagsOK.Constraints,
+			steps: []testStep{
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						tags: randomStrings(rand.Intn(5)+1, 6),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+					},
+				},
+				{
+					config: testRoutingZone{
+						name: acctest.RandString(6),
+						tags: randomStrings(rand.Intn(5)+1, 6),
 					},
 				},
 			},

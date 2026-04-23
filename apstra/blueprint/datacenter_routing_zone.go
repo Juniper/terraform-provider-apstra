@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -48,6 +49,7 @@ type DatacenterRoutingZone struct {
 	JunosEvpnIrbMode     types.String `tfsdk:"junos_evpn_irb_mode"`
 	IPAddressingType     types.String `tfsdk:"ip_addressing_type"`
 	DisableIPv4          types.Bool   `tfsdk:"disable_ipv4"`
+	Tags                 types.Set    `tfsdk:"tags"`
 }
 
 func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
@@ -148,6 +150,11 @@ func (o DatacenterRoutingZone) DataSourceAttributes() map[string]dataSourceSchem
 				"in order to derive BGP Router IDs and Route Distinguishers and it will not participate in routing.",
 			Computed: true,
 		},
+		"tags": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Tags associated with the Rouing Zone.",
+			Computed:            true,
+			ElementType:         types.StringType,
+		},
 	}
 }
 
@@ -232,6 +239,13 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 				"An IPv4 loopback is still required in order to derive BGP Router IDs and Route Distinguishers and it "+
 				"will not participate in routing. Requires Apstra version %s", compatibility.BPDefaultRoutingZoneAddressingOK),
 			Optional: true,
+		},
+		"tags": dataSourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Tags. All tags supplied here are used to match the Routing Zone, " +
+				"but a matching Routing Zone may have additional tags not enumerated in this set.",
+			Optional:    true,
+			ElementType: types.StringType,
+			Validators:  []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 	}
 }
@@ -356,6 +370,16 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 				boolvalidator.AlsoRequires(path.MatchRoot("ip_addressing_type")),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ip_addressing_type"), types.StringValue(enum.AddressingSchemeIPv4.String())),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ip_addressing_type"), types.StringValue(enum.AddressingSchemeIPv46.String())),
+			},
+		},
+		"tags": resourceSchema.SetAttribute{
+			MarkdownDescription: "Set of Tags applied to the Routing Zone.",
+			Optional:            true,
+			Computed:            true,
+			ElementType:         types.StringType,
+			Default:             setdefault.StaticValue(types.SetValueMust(types.StringType, nil)),
+			Validators: []validator.Set{
+				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
 	}
@@ -500,6 +524,12 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz apstra.Secur
 			o.DisableIPv4 = types.BoolNull()
 		}
 	}
+
+	if !utils.HasValue(o.Tags) {
+		var d diag.Diagnostics
+		o.Tags, d = types.SetValueFrom(ctx, types.StringType, sz.Tags)
+		diags.Append(d...)
+	}
 }
 
 func (o *DatacenterRoutingZone) LoadApiDhcpServers(ctx context.Context, IPs []net.IP, diags *diag.Diagnostics) {
@@ -607,6 +637,21 @@ func (o *DatacenterRoutingZone) Query(szResultName string) *apstra.MatchQuery {
 		matchQuery.Match(q)
 	}
 
+	for _, tag := range o.Tags.Elements() {
+		tagQuery := new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeSecurityZone.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(szResultName)},
+			}).
+			In([]apstra.QEEAttribute{apstra.RelationshipTypeTag.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeTag.QEEAttribute(),
+				{Key: "label", Value: apstra.QEStringVal(tag.(types.String).ValueString())},
+			})
+
+		matchQuery.Match(tagQuery)
+	}
+
 	return matchQuery
 }
 
@@ -659,7 +704,8 @@ func (o *DatacenterRoutingZone) Read(ctx context.Context, bp *apstra.TwoStageL3C
 		utils.HasValue(o.ExportRouteTargets) &&
 		utils.HasValue(o.JunosEvpnIrbMode) &&
 		utils.HasValue(o.IPAddressingType) &&
-		utils.HasValue(o.DisableIPv4) {
+		utils.HasValue(o.DisableIPv4) &&
+		utils.HasValue(o.Tags) {
 		return nil // we are in Create() or Update() and have no need for an API call
 	}
 
@@ -709,6 +755,13 @@ func (o DatacenterRoutingZone) VersionConstraints(_ context.Context, _ *diag.Dia
 		response.AddAttributeConstraints(compatibility.AttributeConstraint{
 			Path:        path.Root("disable_ipv4"),
 			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
+		})
+	}
+
+	if !o.Tags.IsNull() && !o.Tags.IsUnknown() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("tags"),
+			Constraints: compatibility.RoutingZoneTagsOK,
 		})
 	}
 
