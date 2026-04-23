@@ -133,7 +133,7 @@ func (o *dataSourceDatacenterInterconnectDomains) setBpClientFunc(f func(context
 }
 
 func (o *dataSourceDatacenterInterconnectDomains) getAllIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {
-	all, err := bp.GetAllEvpnInterconnectGroups(ctx)
+	all, err := bp.GetAllEVPNInterconnectGroups(ctx)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf("failed to retrieve Interconnect Domains in Blueprint %s", bp.Id()), err.Error())
@@ -142,7 +142,7 @@ func (o *dataSourceDatacenterInterconnectDomains) getAllIds(ctx context.Context,
 
 	result := make([]attr.Value, len(all))
 	for i, each := range all {
-		result[i] = types.StringValue(each.Id.String())
+		result[i] = types.StringPointerValue(each.ID())
 	}
 
 	return result

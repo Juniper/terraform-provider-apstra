@@ -73,23 +73,23 @@ func (o *resourceDatacenterInterconnectDomain) Create(ctx context.Context, req r
 		return
 	}
 
-	id, err := bp.CreateEvpnInterconnectGroup(ctx, request)
+	id, err := bp.CreateEVPNInterconnectGroup(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("failed creating interconnect domain", err.Error())
 		return
 	}
 
-	plan.Id = types.StringValue(id.String())
+	plan.Id = types.StringValue(id)
 
 	if plan.EsiMac.IsUnknown() {
 		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...) // just in case we fail
-		api, err := bp.GetEvpnInterconnectGroup(ctx, id)
+		api, err := bp.GetEVPNInterconnectGroup(ctx, id)
 		if err != nil {
 			resp.Diagnostics.AddError("failed reading new Interconnect Domain ESI MAC", err.Error())
 			return
 		}
 
-		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+		plan.LoadApiData(ctx, api, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -117,7 +117,7 @@ func (o *resourceDatacenterInterconnectDomain) Read(ctx context.Context, req res
 		return
 	}
 
-	api, err := bp.GetEvpnInterconnectGroup(ctx, apstra.ObjectId(state.Id.ValueString()))
+	api, err := bp.GetEVPNInterconnectGroup(ctx, state.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -128,7 +128,7 @@ func (o *resourceDatacenterInterconnectDomain) Read(ctx context.Context, req res
 	}
 
 	// Set state
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -163,7 +163,7 @@ func (o *resourceDatacenterInterconnectDomain) Update(ctx context.Context, req r
 	}
 
 	// Update Interconnect Domain
-	err = bp.UpdateEvpnInterconnectGroup(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdateEVPNInterconnectGroup(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error updating Blueprint %s Interconnect Domain %s", plan.BlueprintId, plan.Id),
@@ -172,13 +172,13 @@ func (o *resourceDatacenterInterconnectDomain) Update(ctx context.Context, req r
 	}
 
 	if plan.EsiMac.IsUnknown() {
-		api, err := bp.GetEvpnInterconnectGroup(ctx, apstra.ObjectId(plan.Id.ValueString()))
+		api, err := bp.GetEVPNInterconnectGroup(ctx, plan.Id.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError("failed reading updated Interconnect Domain ESI MAC", err.Error())
 			return
 		}
 
-		plan.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+		plan.LoadApiData(ctx, api, &resp.Diagnostics)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -216,7 +216,7 @@ func (o *resourceDatacenterInterconnectDomain) Delete(ctx context.Context, req r
 	}
 
 	// Delete Interconnect Domain by calling API
-	err = bp.DeleteEvpnInterconnectGroup(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteEVPNInterconnectGroup(ctx, state.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

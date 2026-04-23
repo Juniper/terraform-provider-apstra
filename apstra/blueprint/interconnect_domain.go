@@ -135,28 +135,30 @@ func (o InterconnectDomain) ResourceAttributes() map[string]resourceSchema.Attri
 	}
 }
 
-func (o InterconnectDomain) Request(_ context.Context, diags *diag.Diagnostics) *apstra.EvpnInterconnectGroupData {
-	var esiMac net.HardwareAddr
+func (o InterconnectDomain) Request(_ context.Context, diags *diag.Diagnostics) apstra.EVPNInterconnectGroup {
+	var esiMAC net.HardwareAddr
 
 	if utils.HasValue(o.EsiMac) {
 		var err error
-		esiMac, err = net.ParseMAC(o.EsiMac.ValueString())
+		esiMAC, err = net.ParseMAC(o.EsiMac.ValueString())
 		if err != nil {
 			diags.AddError("failed to parse interconnect esi mac: "+o.EsiMac.ValueString(), err.Error())
 		}
 	}
 
-	return &apstra.EvpnInterconnectGroupData{
-		Label:       o.Name.ValueString(),
-		RouteTarget: o.RouteTarget.ValueString(),
-		EsiMac:      esiMac,
+	result := apstra.EVPNInterconnectGroup{
+		Label:       o.Name.ValueStringPointer(),
+		RouteTarget: o.RouteTarget.ValueStringPointer(),
+		ESIMAC:      esiMAC,
 	}
+	_ = result.SetID(o.Id.ValueString()) // this will not error
+	return result
 }
 
-func (o *InterconnectDomain) LoadApiData(_ context.Context, data *apstra.EvpnInterconnectGroupData, _ *diag.Diagnostics) {
-	o.EsiMac = hwtypes.NewMACAddressValue(data.EsiMac.String())
-	o.Name = types.StringValue(data.Label)
-	o.RouteTarget = types.StringValue(data.RouteTarget)
+func (o *InterconnectDomain) LoadApiData(_ context.Context, data apstra.EVPNInterconnectGroup, _ *diag.Diagnostics) {
+	o.EsiMac = hwtypes.NewMACAddressValue(data.ESIMAC.String())
+	o.Name = types.StringPointerValue(data.Label)
+	o.RouteTarget = types.StringPointerValue(data.RouteTarget)
 }
 
 func (o *InterconnectDomain) Query(resultName string) apstra.QEQuery {

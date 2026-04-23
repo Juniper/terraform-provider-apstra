@@ -43,7 +43,7 @@ type resourceDataCenterInterconnectDomainGateway struct {
 	name                 string
 	ipAddress            net.IP
 	asn                  uint32
-	interconnectDomainId apstra.ObjectId
+	interconnectDomainId string
 	nodes                []string
 	ttl                  *uint8
 	keepaliveTime        *uint16
@@ -78,7 +78,7 @@ func (o resourceDataCenterInterconnectDomainGateway) testChecks(t testing.TB, bp
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
 	result.append(t, "TestCheckResourceAttr", "ip_address", o.ipAddress.String())
 	result.append(t, "TestCheckResourceAttr", "asn", strconv.Itoa(int(o.asn)))
-	result.append(t, "TestCheckResourceAttr", "interconnect_domain_id", o.interconnectDomainId.String())
+	result.append(t, "TestCheckResourceAttr", "interconnect_domain_id", o.interconnectDomainId)
 
 	result.append(t, "TestCheckResourceAttr", "local_gateway_nodes.#", strconv.Itoa(len(o.nodes)))
 	for _, node := range o.nodes {
@@ -117,11 +117,11 @@ func TestResourceDatacenterInterconnectDomainGateway(t *testing.T) {
 
 	bp := testutils.BlueprintC(t, ctx)
 
-	interconnectDomainIds := make([]apstra.ObjectId, 2)
+	interconnectDomainIds := make([]string, 2)
 	for i := range interconnectDomainIds {
-		id, err := bp.CreateEvpnInterconnectGroup(ctx, &apstra.EvpnInterconnectGroupData{
-			Label:       acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
-			RouteTarget: randomRT(t),
+		id, err := bp.CreateEVPNInterconnectGroup(ctx, apstra.EVPNInterconnectGroup{
+			Label:       pointer.To(acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)),
+			RouteTarget: pointer.To(randomRT(t)),
 		})
 		require.NoError(t, err)
 		interconnectDomainIds[i] = id
