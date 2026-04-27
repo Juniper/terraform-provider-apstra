@@ -526,9 +526,11 @@ func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz apstra.Secur
 	}
 
 	if !utils.HasValue(o.Tags) {
-		var d diag.Diagnostics
-		o.Tags, d = types.SetValueFrom(ctx, types.StringType, sz.Tags)
-		diags.Append(d...)
+		if len(sz.Tags) > 0 {
+			o.Tags = value.SetOrNull(ctx, types.StringType, sz.Tags, diags)
+		} else {
+			o.Tags = types.SetValueMust(types.StringType, nil)
+		}
 	}
 }
 
@@ -758,7 +760,7 @@ func (o DatacenterRoutingZone) VersionConstraints(_ context.Context, _ *diag.Dia
 		})
 	}
 
-	if !o.Tags.IsNull() && !o.Tags.IsUnknown() {
+	if len(o.Tags.Elements()) > 0 { // some tags supplied, i.e. not null/unknown/empty
 		response.AddAttributeConstraints(compatibility.AttributeConstraint{
 			Path:        path.Root("tags"),
 			Constraints: compatibility.RoutingZoneTagsOK,
