@@ -15,6 +15,7 @@ var (
 	ChangeVnRzIdForbidden              = versionconstraints.New(apiversions.LeApstra422)
 	FabricSettingsSetInCreate          = versionconstraints.New(apiversions.GeApstra421)
 	RoutingPolicyExportL3EdgeServerOK  = versionconstraints.New(apiversions.LeApstra422)
+	RoutingZoneTagsOK                  = versionconstraints.New(apiversions.GeApstra500)
 	TemplateRequiresAntiAffinityPolicy = versionconstraints.New(apiversions.Apstra420)
 	VnDescriptionOk                    = versionconstraints.New(apiversions.GeApstra500)
 	VnEmptyBindingsOk                  = versionconstraints.New(apiversions.GeApstra500)

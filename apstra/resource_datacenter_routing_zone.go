@@ -184,7 +184,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		return
 	}
 
-	// make a security zone request
+	// make a routing zone request
 	// todo: consider making vrf name optional - only overwrite with name when unknown.
 	plan.VRFName = plan.Name // copy whatever the user set in `name` to `vrf_name`
 	request := plan.Request(ctx, bp.Client(), &resp.Diagnostics)
@@ -192,14 +192,14 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 		return
 	}
 
-	// create the security zone
+	// create the routing zone
 	id, err := bp.CreateSecurityZone(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error creating security zone", err.Error())
+		resp.Diagnostics.AddError("error creating routing zone", err.Error())
 		return
 	}
 
-	// record the new security zone ID
+	// record the new routing zone ID
 	plan.Id = types.StringValue(id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 
@@ -211,7 +211,7 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 
 		err = bp.SetSecurityZoneDhcpServers(ctx, id, dhcpServerRequest)
 		if err != nil {
-			resp.Diagnostics.AddError("error setting security zone dhcp servers", err.Error())
+			resp.Diagnostics.AddError("error setting routing zone dhcp servers", err.Error())
 			return
 		}
 	}
@@ -220,13 +220,19 @@ func (o *resourceDatacenterRoutingZone) Create(ctx context.Context, req resource
 	plan.HadPriorVlanIdConfig = types.BoolValue(!plan.VlanId.IsUnknown())
 	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
 
+	// Set tags, if any
+	if len(plan.Tags.Elements()) > 0 {
+		var tags []string
+		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
+		if err := bp.SetNodeTags(ctx, apstra.ObjectId(id), tags); err != nil {
+			resp.Diagnostics.AddError("failed to set tags on routing zone", err.Error())
+		}
+	}
+
 	// read any apstra-assigned values associated with the new routing zone
 	err = plan.Read(ctx, bp, &resp.Diagnostics)
 	if err != nil {
 		resp.Diagnostics.AddError("failed while fetching detail of just-created Routing Zone", err.Error())
-	}
-	if resp.Diagnostics.HasError() {
-		return
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -321,7 +327,7 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 	// send the update
 	err = bp.UpdateSecurityZone(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating security zone", err.Error())
+		resp.Diagnostics.AddError("error updating routing zone", err.Error())
 		return
 	}
 
@@ -334,8 +340,17 @@ func (o *resourceDatacenterRoutingZone) Update(ctx context.Context, req resource
 
 		err = bp.SetSecurityZoneDhcpServers(ctx, plan.Id.ValueString(), dhcpRequest)
 		if err != nil {
-			resp.Diagnostics.AddError("error updating security zone dhcp servers", err.Error())
+			resp.Diagnostics.AddError("error updating routing zone dhcp servers", err.Error())
 			return
+		}
+	}
+
+	// update the tags if necessary
+	if !plan.Tags.Equal(state.Tags) {
+		var tags []string
+		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
+		if err := bp.SetNodeTags(ctx, apstra.ObjectId(plan.Id.ValueString()), tags); err != nil {
+			resp.Diagnostics.AddError("error updating routing zone tags", err.Error())
 		}
 	}
 
