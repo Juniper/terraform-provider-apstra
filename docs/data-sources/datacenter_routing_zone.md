@@ -73,5 +73,6 @@ output "routing_zone" {
 - `ip_addressing_type` (String) Defines if the according Routing Zone addresses resources with ipv4, ipv4+ipv6, or ipv6-only. Errors are raised if resources are created within the Routing Zone and that resource violates this addressing support value. Note that ipv4 is still permitted in an ipv6-only network, in which case `disable_ipv4` can be used to disallow ipv4 completely.
 - `junos_evpn_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
+- `tags` (Set of String) Set of Tags associated with the Rouing Zone.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094), or enter a specific value.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.

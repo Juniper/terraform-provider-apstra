@@ -53,6 +53,7 @@ Must be one of `['ipv4','ipv4_ipv6','ipv6']`.
 Requires Apstra version >=6.1.0
 - `junos_evpn_irb_mode` (String) Symmetric IRB Routing for EVPN on Junos devices makes use of an L3 VNI for inter-subnet routing which is embedded into EVPN Type2-routes to support better scaling for networks with large amounts of VLANs.
 - `routing_policy_id` (String) Non-EVPN blueprints must use the default policy, so this field must be null. Set this attribute in an EVPN blueprint to use a non-default policy.
+- `tags` (Set of String) Set of Tags applied to the Routing Zone.
 - `vlan_id` (Number) Used for VLAN tagged Layer 3 links on external connections. Leave this field blank to have it automatically assigned from a static pool in the range of 2-4094, or enter a specific value.
 - `vni` (Number) VxLAN VNI associated with the Routing Zone. Leave this field blank to have it automatically assigned from an allocated resource pool, or enter a specific value.
 
