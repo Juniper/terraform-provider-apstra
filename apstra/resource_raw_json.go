@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
+	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/raw"
@@ -178,15 +180,74 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 	}, nil)
 	if err != nil {
 		var ace apstra.ClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			return // 404 is okay
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
+			resp.Diagnostics.AddError("error deleting raw JSON object", err.Error())
+			return
 		}
+	}
 
-		resp.Diagnostics.AddError("error deleting raw JSON object", err.Error())
-		return
+	// if we deleted a collector, we should poll in case the related service is being garbage collected
+	collectorPathRE := regexp.MustCompile("^/api/telemetry/collectors/([^/]+)$")
+	matches := collectorPathRE.FindStringSubmatch(u.Path)
+	if len(matches) > 1 {
+		err = waitForServiceGC(ctx, o.client, matches[1])
+		if err != nil {
+			resp.Diagnostics.AddWarning("failure while waiting for service to be garbage collected", err.Error())
+		}
 	}
 }
 
 func (o *resourceRawJSON) setClient(client *apstra.Client) {
 	o.client = client
+}
+
+func waitForServiceGC(ctx context.Context, client *apstra.Client, name string) error {
+	const (
+		pollInterval = 10 * time.Millisecond
+		gcWait       = 3 * time.Second
+	)
+
+	u, err := url.Parse(url.PathEscape(fmt.Sprintf("/api/telemetry/services/%s", name)))
+	if err != nil {
+		return fmt.Errorf("cannot parse service URL for %q: %w", name, err)
+	}
+
+	var reply struct {
+		Systems []any `json:"systems"`
+	}
+
+	request := apstra.RawJsonRequest{
+		Method: http.MethodGet,
+		Url:    u,
+	}
+
+	stopAt := time.Now().Add(gcWait)
+	var serviceCount int
+
+	for {
+		if err = client.DoRawJsonTransaction(ctx, request, &reply); err != nil {
+			var ace apstra.ClientErr
+			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+				return nil // good!
+			}
+
+			return fmt.Errorf("cannot get service status for %q: %w", name, err)
+		}
+
+		replySystemCount := len(reply.Systems)
+		if replySystemCount == 0 {
+			return nil // good!
+		}
+
+		if replySystemCount < serviceCount {
+			stopAt = time.Now().Add(gcWait) // count has decreased - extend the timer
+		}
+
+		if time.Now().After(stopAt) {
+			return fmt.Errorf("timed out waiting for service %q garbage collection", name)
+		}
+
+		serviceCount = replySystemCount // record the new value
+		time.Sleep(pollInterval)
+	}
 }
