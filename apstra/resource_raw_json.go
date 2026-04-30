@@ -195,9 +195,8 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 	// if we deleted a collector, we should poll the related service while it is being GC'ed
 	matches := collectorAPIRegex.FindStringSubmatch(u.Path)
 	if len(matches) > 1 {
-		err = waitForServiceGC(ctx, o.client, matches[1])
-		if err != nil {
-			resp.Diagnostics.AddWarning("failure while waiting for service to be garbage collected", err.Error())
+		if err = waitForServiceGC(ctx, o.client, matches[1]); err != nil {
+			resp.Diagnostics.AddWarning(fmt.Sprintf("failure while waiting for %q service to be garbage collected", matches[1]), err.Error())
 		}
 	}
 }
