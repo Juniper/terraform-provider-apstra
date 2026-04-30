@@ -9,6 +9,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
@@ -28,17 +29,17 @@ import (
 )
 
 type ExternalGateway struct {
-	Id                types.String        `tfsdk:"id"`
-	BlueprintId       types.String        `tfsdk:"blueprint_id"`
-	Name              types.String        `tfsdk:"name"`
-	IpAddress         iptypes.IPv4Address `tfsdk:"ip_address"`
-	Asn               types.Int64         `tfsdk:"asn"`
-	Ttl               types.Int64         `tfsdk:"ttl"`
-	KeepaliveTime     types.Int64         `tfsdk:"keepalive_time"`
-	HoldTime          types.Int64         `tfsdk:"hold_time"`
-	EvpnRouteTypes    types.String        `tfsdk:"evpn_route_types"`
-	LocalGatewayNodes types.Set           `tfsdk:"local_gateway_nodes"`
-	Password          types.String        `tfsdk:"password"`
+	Id                types.String      `tfsdk:"id"`
+	BlueprintId       types.String      `tfsdk:"blueprint_id"`
+	Name              types.String      `tfsdk:"name"`
+	IPAddress         iptypes.IPAddress `tfsdk:"ip_address"`
+	Asn               types.Int64       `tfsdk:"asn"`
+	Ttl               types.Int64       `tfsdk:"ttl"`
+	KeepaliveTime     types.Int64       `tfsdk:"keepalive_time"`
+	HoldTime          types.Int64       `tfsdk:"hold_time"`
+	EvpnRouteTypes    types.String      `tfsdk:"evpn_route_types"`
+	LocalGatewayNodes types.Set         `tfsdk:"local_gateway_nodes"`
+	Password          types.String      `tfsdk:"password"`
 }
 
 func (o ExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribute {
@@ -60,9 +61,9 @@ func (o ExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribut
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"ip_address": resourceSchema.StringAttribute{
-			MarkdownDescription: "External Gateway IP address",
+			MarkdownDescription: fmt.Sprintf("External Gateway IP address. IPv6 Addresses permitted only with Apstra %s.", compatibility.BlueprintIPv6ApplicationsOK),
 			Required:            true,
-			CustomType:          iptypes.IPv4AddressType{},
+			CustomType:          iptypes.IPAddressType{},
 		},
 		"asn": resourceSchema.Int64Attribute{
 			MarkdownDescription: "External Gateway AS Number",
@@ -140,7 +141,7 @@ func (o ExternalGateway) DataSourceAttributes() map[string]dataSourceSchema.Attr
 		"ip_address": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "External Gateway IP address",
 			Computed:            true,
-			CustomType:          iptypes.IPv4AddressType{},
+			CustomType:          iptypes.IPAddressType{},
 		},
 		"asn": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "External Gateway AS Number",
@@ -196,7 +197,7 @@ func (o ExternalGateway) DataSourceAttributesAsFilter() map[string]dataSourceSch
 		"ip_address": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "External Gateway IP address",
 			Optional:            true,
-			CustomType:          iptypes.IPv4AddressType{},
+			CustomType:          iptypes.IPAddressType{},
 		},
 		"asn": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "External Gateway AS Number",
@@ -267,13 +268,13 @@ func (o *ExternalGateway) Request(ctx context.Context, diags *diag.Diagnostics) 
 		password = &t
 	}
 
-	gwIp, _ := netip.ParseAddr(o.IpAddress.ValueString()) // ignoring error; address already validated
+	gwIP, _ := netip.ParseAddr(o.IPAddress.ValueString()) // ignoring error; address already validated
 
 	return &apstra.TwoStageL3ClosRemoteGatewayData{
 		RouteTypes:     routeTypes,
 		LocalGwNodes:   localGwNodes,
 		GwAsn:          uint32(o.Asn.ValueInt64()),
-		GwIp:           gwIp,
+		GwIp:           gwIP,
 		Label:          o.Name.ValueString(),
 		Ttl:            ttl,
 		KeepaliveTimer: keepaliveTimer,
@@ -415,7 +416,7 @@ func (o *ExternalGateway) LoadApiData(_ context.Context, in *apstra.TwoStageL3Cl
 	}
 
 	o.Name = types.StringValue(in.Label)
-	o.IpAddress = iptypes.NewIPv4AddressValue(in.GwIp.String())
+	o.IPAddress = iptypes.NewIPAddressValue(in.GwIp.String())
 	o.Asn = types.Int64Value(int64(in.GwAsn))
 	o.Ttl = ttl
 	o.KeepaliveTime = keepaliveTime
@@ -433,7 +434,7 @@ func (o ExternalGateway) FilterMatch(_ context.Context, in *ExternalGateway, _ *
 		return false
 	}
 
-	if !o.IpAddress.IsNull() && !o.IpAddress.Equal(in.IpAddress) {
+	if !o.IPAddress.IsNull() && !o.IPAddress.Equal(in.IPAddress) {
 		return false
 	}
 
@@ -477,4 +478,18 @@ func (o ExternalGateway) FilterMatch(_ context.Context, in *ExternalGateway, _ *
 	}
 
 	return true
+}
+
+func (o ExternalGateway) VersionConstraints(_ context.Context, _ *diag.Diagnostics) compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
+
+	addr, _ := netip.ParseAddr(o.IPAddress.ValueString()) // skipping error check b/c the addr string has already been validated
+	if addr.Is6() {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("ip_address"),
+			Constraints: compatibility.BPDefaultRoutingZoneAddressingOK,
+		})
+	}
+
+	return response
 }
