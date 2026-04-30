@@ -170,7 +170,7 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	if state.ID.IsNull() {
-		resp.Diagnostics.AddWarning("cannot delete raw JSON object", "ID is null -- cannot update")
+		resp.Diagnostics.AddWarning("cannot delete raw JSON object", "ID is null -- cannot delete")
 		return
 	}
 
