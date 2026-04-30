@@ -22,6 +22,12 @@ var (
 	_ resourceWithSetClient          = &resourceRawJSON{}
 )
 
+var collectorAPIRE *regexp.Regexp
+
+func init() {
+	collectorAPIRE = regexp.MustCompile("^/api/telemetry/collectors/([^/]+)$")
+}
+
 type resourceRawJSON struct {
 	client *apstra.Client
 }
@@ -187,8 +193,7 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	// if we deleted a collector, we should poll in case the related service is being garbage collected
-	collectorPathRE := regexp.MustCompile("^/api/telemetry/collectors/([^/]+)$")
-	matches := collectorPathRE.FindStringSubmatch(u.Path)
+	matches := collectorAPIRE.FindStringSubmatch(u.Path)
 	if len(matches) > 1 {
 		err = waitForServiceGC(ctx, o.client, matches[1])
 		if err != nil {
@@ -207,13 +212,13 @@ func waitForServiceGC(ctx context.Context, client *apstra.Client, name string) e
 		gcWait       = 3 * time.Second
 	)
 
-	u, err := url.Parse(url.PathEscape(fmt.Sprintf("/api/telemetry/services/%s", name)))
+	u, err := url.Parse(fmt.Sprintf("/api/telemetry/services/%s", url.PathEscape(name)))
 	if err != nil {
 		return fmt.Errorf("cannot parse service URL for %q: %w", name, err)
 	}
 
 	var reply struct {
-		Systems []any `json:"systems"`
+		Systems map[string]any `json:"systems"`
 	}
 
 	request := apstra.RawJsonRequest{
