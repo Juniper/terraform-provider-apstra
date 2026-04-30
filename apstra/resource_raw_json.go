@@ -22,10 +22,10 @@ var (
 	_ resourceWithSetClient          = &resourceRawJSON{}
 )
 
-var collectorAPIRE *regexp.Regexp
+var collectorAPIRegex *regexp.Regexp
 
 func init() {
-	collectorAPIRE = regexp.MustCompile("^/api/telemetry/collectors/([^/]+)$")
+	collectorAPIRegex = regexp.MustCompile("^/api/telemetry/collectors/([^/]+)$")
 }
 
 type resourceRawJSON struct {
@@ -192,8 +192,8 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 		}
 	}
 
-	// if we deleted a collector, we should poll in case the related service is being garbage collected
-	matches := collectorAPIRE.FindStringSubmatch(u.Path)
+	// if we deleted a collector, we should poll the related service while it is being GC'ed
+	matches := collectorAPIRegex.FindStringSubmatch(u.Path)
 	if len(matches) > 1 {
 		err = waitForServiceGC(ctx, o.client, matches[1])
 		if err != nil {
@@ -208,8 +208,8 @@ func (o *resourceRawJSON) setClient(client *apstra.Client) {
 
 func waitForServiceGC(ctx context.Context, client *apstra.Client, name string) error {
 	const (
-		pollInterval = 10 * time.Millisecond
-		gcWait       = 3 * time.Second
+		pollInterval = 100 * time.Millisecond
+		gcWait       = 5 * time.Second
 	)
 
 	u, err := url.Parse(fmt.Sprintf("/api/telemetry/services/%s", url.PathEscape(name)))
@@ -245,7 +245,8 @@ func waitForServiceGC(ctx context.Context, client *apstra.Client, name string) e
 		}
 
 		if replySystemCount < serviceCount {
-			stopAt = time.Now().Add(gcWait) // count has decreased - extend the timer
+			// system count has decreased. extend the timer to see if we can reach zero before giving up.
+			stopAt = time.Now().Add(gcWait)
 		}
 
 		if time.Now().After(stopAt) {
