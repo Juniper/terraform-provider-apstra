@@ -7,22 +7,27 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &resourceDatacenterExternalGateway{}
-	_ resource.ResourceWithImportState = &resourceDatacenterExternalGateway{}
-	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterExternalGateway{}
-	_ resourceWithSetBpLockFunc        = &resourceDatacenterExternalGateway{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterExternalGateway{}
+	_ resource.ResourceWithImportState    = &resourceDatacenterExternalGateway{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterExternalGateway{}
+	_ resourceWithSetClient               = &resourceDatacenterExternalGateway{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterExternalGateway{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterExternalGateway{}
 )
 
 type resourceDatacenterExternalGateway struct {
-	lockFunc        func(context.Context, string) error
+	client          *apstra.Client
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (o *resourceDatacenterExternalGateway) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -39,6 +44,46 @@ func (o *resourceDatacenterExternalGateway) Schema(_ context.Context, _ resource
 			"Prior to Apstra 4.2 these were called \"Remote EVPN Gateways\"",
 		Attributes: blueprint.ExternalGateway{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterExternalGateway) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.ExternalGateway
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// config-only validation begins here
+
+	// config + api version validation begins here
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
+	// validate the configuration
+	constraints := config.VersionConstraints(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(
+		compatibility.ValidateConfigConstraints(
+			ctx,
+			compatibility.ValidateConfigConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: constraints,
+			},
+		)...,
+	)
 }
 
 func (o *resourceDatacenterExternalGateway) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -273,4 +318,8 @@ func (o *resourceDatacenterExternalGateway) setBpClientFunc(f func(context.Conte
 
 func (o *resourceDatacenterExternalGateway) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDatacenterExternalGateway) setClient(client *apstra.Client) {
+	o.client = client
 }
