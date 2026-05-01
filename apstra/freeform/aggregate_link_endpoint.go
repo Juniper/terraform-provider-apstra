@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
+	"slices"
 	"sort"
 	"strings"
 
@@ -89,6 +90,14 @@ func (o AggregateLinkEndpoint) dataSourceAttributes() map[string]dataSourceSchem
 }
 
 func (o AggregateLinkEndpoint) resourceAttributes() map[string]resourceSchema.Attribute {
+	lag_modes := func() []string {
+		vals := slices.DeleteFunc(enum.LAGModes.Values(), func(s string) bool {
+			return s == enum.LAGModeNone.String()
+		})
+		sort.Strings(vals)
+		return vals
+	}()
+
 	return map[string]resourceSchema.Attribute{
 		"system_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID of a `system` node.",
@@ -116,14 +125,10 @@ func (o AggregateLinkEndpoint) resourceAttributes() map[string]resourceSchema.At
 		"lag_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(
 				"LAG mode of the logical aggregate interface. Must be one of: `%s`.",
-				func() string {
-					vals := enum.LAGModes.Values()
-					sort.Strings(vals)
-					return strings.Join(vals, "`, `")
-				}(),
+				strings.Join(lag_modes, "`, `"),
 			),
 			Required:   true,
-			Validators: []validator.String{stringvalidator.OneOf(enum.LAGModes.Values()...)},
+			Validators: []validator.String{stringvalidator.OneOf(lag_modes...)},
 		},
 		"tags": resourceSchema.SetAttribute{
 			MarkdownDescription: "Set of tags associated with this Aggregate Link Endpoint.",
