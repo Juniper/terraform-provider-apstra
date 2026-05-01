@@ -1,6 +1,6 @@
 module tools/go-licenses
 
-go 1.25.4
+go 1.25.9
 
 tool github.com/google/go-licenses/v2
 

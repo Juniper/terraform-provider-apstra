@@ -1,6 +1,6 @@
 module tools/goreleaser
 
-go 1.25.4
+go 1.25.9
 
 tool github.com/goreleaser/goreleaser/v2
 
