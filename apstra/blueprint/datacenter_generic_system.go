@@ -16,6 +16,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/helpers/validatordiag"
@@ -321,7 +322,7 @@ func (o *DatacenterGenericSystem) ReadLinks(ctx context.Context, bp *apstra.TwoS
 	}
 
 	// pack the result slice into o.Links
-	o.Links = types.SetValueMust(types.ObjectType{AttrTypes: DatacenterGenericSystemLink{}.attrTypes()}, oLinks)
+	o.Links = types.SetValueMust(DatacenterGenericSystemLink{}.attrType(), oLinks)
 }
 
 // ReadSystemProperties returns an error rather than appending to a
@@ -834,49 +835,6 @@ func lagLinkIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3Cl
 		return "", fmt.Errorf("query found multiple find LAG link IDs for system %q group label %q - %s", gsId, groupLabel, query.String())
 	}
 }
-
-//func switchLagIdFromGsIdAndGroupLabel(ctx context.Context, bp *apstra.TwoStageL3ClosClient, gsId apstra.ObjectId, groupLabel string) (apstra.ObjectId, error) {
-//	query := new(apstra.PathQuery).SetBlueprintId(bp.Id()).SetClient(bp.Client()).
-//		Node([]apstra.QEEAttribute{{Key: "id", Value: apstra.QEStringVal(gsId.String())}}).
-//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeHostedInterfaces.QEEAttribute()}).
-//		Node([]apstra.QEEAttribute{
-//			apstra.NodeTypeInterface.QEEAttribute(),
-//			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
-//		}).
-//		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
-//		Node([]apstra.QEEAttribute{
-//			apstra.NodeTypeLink.QEEAttribute(),
-//			{Key: "group_label", Value: apstra.QEStringVal(groupLabel)},
-//			{Key: "link_type", Value: apstra.QEStringVal("aggregate_link")},
-//		}).
-//		In([]apstra.QEEAttribute{apstra.RelationshipTypeLink.QEEAttribute()}).
-//		Node([]apstra.QEEAttribute{
-//			apstra.NodeTypeInterface.QEEAttribute(),
-//			{Key: "if_type", Value: apstra.QEStringVal("port_channel")},
-//			{Key: "name", Value: apstra.QEStringVal("n_application_point")},
-//		})
-//
-//	var result struct {
-//		Items []struct {
-//			ApplicationPoint struct {
-//				Id apstra.ObjectId `json:"id"`
-//			} `json:"n_application_point"`
-//		} `json:"items"`
-//	}
-//
-//	if err := query.Do(ctx, &result); err != nil {
-//		return "", err
-//	}
-//
-//	switch len(result.Items) {
-//	case 0:
-//		return "", fmt.Errorf("query failed to find upstream interface ID for system %q group label %q - %s", gsId, groupLabel, query.String())
-//	case 1:
-//		return result.Items[0].ApplicationPoint.Id, nil
-//	default:
-//		return "", fmt.Errorf("query found multiple find upstream interface IDs for system %q group label %q - %s", gsId, groupLabel, query.String())
-//	}
-//}
 
 // linkIds performs the graph queries necessary to return the link IDs which
 // connect this Generic System (o) to the systems+interfaces specified by links.
@@ -1433,4 +1391,136 @@ func (o *DatacenterGenericSystem) ReadSwitchInterfaceApplicationPoints(ctx conte
 		}
 	}
 	o.AppPointsByTag = value.MapOrNull(ctx, types.SetType{ElemType: types.StringType}, tagToIntfSlice, diags)
+}
+
+func (o *DatacenterGenericSystem) UpdateServerInterfaceNames(ctx context.Context, state *DatacenterGenericSystem, client *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+	o.CopyGenericSystemInterfaceNamesFromStateWherePlanIsUnknown(ctx, state, diags)
+
+	var planLinksMap, stateLinksMap map[string]DatacenterGenericSystemLink
+	planLinksMap = linkSetToMapByDigest(ctx, o.Links, diags)
+	if state != nil {
+		stateLinksMap = linkSetToMapByDigest(ctx, state.Links, diags)
+	}
+
+	// begin assembling a patch payload - we don't know the generic system interface IDs, so it's just a start
+	patchMap := make(map[string]apstra.CablingMapLink, len(planLinksMap))
+	for key, planLink := range planLinksMap {
+		if planLink.GenericSystemIfName.Equal(stateLinksMap[key].GenericSystemIfName) {
+			continue // server if_name matches, so nothing to do
+		}
+
+		// add entry to our update payload
+		patchMap[key] = apstra.CablingMapLink{
+			Endpoints: [2]apstra.CablingMapLinkEndpoint{
+				{ // server endpoint
+					Interface: apstra.CablingMapLinkEndpointInterface{
+						// Name is the value we want to set, but API requires IF ID of both endpoints
+						Name: pointer.To(planLink.GenericSystemIfName.ValueString()), // potential pointer to empty string is deliberate
+						ID:   "",                                                     // zero value for code readability -- server end IF ID will be filled in below
+					},
+				},
+				{ // switch endpoint
+					Interface: apstra.CablingMapLinkEndpointInterface{
+						Name: pointer.To(planLink.TargetSwitchIfName.ValueString()), // Apstra will move liks around if we don't specify this value.
+						ID:   "",                                                    // zero value for code readability -- switch end IF ID will be filled in below
+					},
+				},
+			},
+		}
+	}
+
+	if len(patchMap) == 0 {
+		return // it turns out no interface names needed update
+	}
+
+	// We need to update server interface names. To do so, we need to collect the server interface IDs.
+	// Begin by retrieving the cabling map associated with the generic system.
+	apiLinks, err := client.GetCablingMapLinksBySystem(ctx, o.Id.ValueString())
+	if err != nil {
+		diags.AddError("Cannot retrieve cabling map", err.Error())
+		return
+	}
+	apiLinksMap := make(map[string]apstra.CablingMapLink, len(apiLinks))
+	for _, link := range apiLinks {
+		if link.Type != nil && *link.Type != enum.LinkTypeEthernet {
+			continue // lag interfaces are not interesting and may not be associated with a system ID (ESI case)
+		}
+		serverEnd := link.EndpointBySystemID(o.Id.ValueString())
+		switchEnd := link.OppositeEndpointBySystemID(o.Id.ValueString())
+		if serverEnd == nil || switchEnd == nil {
+			diags.AddError("Cannot find link endpoint", fmt.Sprintf("API returned link %s with nil endpoint", link.ID))
+			continue
+		}
+		if switchEnd.Interface.Name == nil {
+			diags.AddError("Cannot find link endpoint interface name", fmt.Sprintf("API returned link %s with nil if_name for switch endpoint", link.ID))
+			continue
+		}
+		apiLinksMap[switchEnd.System.ID+":"+*switchEnd.Interface.Name] = link
+	}
+
+	// Use the retrieved cabling map details to fill in the missing server-side interface IDs.
+	for key, patchLink := range patchMap {
+		// find the matching link from the API response
+		apiLink, ok := apiLinksMap[key]
+		if !ok {
+			diags.AddError(
+				"Failed to update generic system interface",
+				fmt.Sprintf("API found no link to %s (system:interface_name) from system %s", key, o.Id.ValueString()),
+			)
+			delete(patchMap, key)
+			continue
+		}
+
+		// identify each endpoint of the link fro the API response
+		switchEnd := apiLink.OppositeEndpointBySystemID(o.Id.ValueString())
+		serverEnd := apiLink.EndpointBySystemID(o.Id.ValueString())
+		if switchEnd == nil || serverEnd == nil {
+			diags.AddError(
+				"Failed to update generic system interface",
+				fmt.Sprintf("API returned link %s with a nil endpoint for system %s", apiLink.ID, o.Id.ValueString()),
+			)
+			delete(patchMap, key)
+			continue
+		}
+
+		// update the patch payload using IDs from the API response
+		patchLink.Endpoints[0].Interface.ID = serverEnd.Interface.ID
+		patchLink.Endpoints[1].Interface.ID = switchEnd.Interface.ID
+		patchMap[key] = patchLink
+	}
+
+	if len(patchMap) == 0 {
+		return // no links could be patched due to errors above, so we can skip the API call
+	}
+
+	// send the patch which updates the interface names
+	err = client.PatchCablingMapLinks(ctx, slices.Collect(maps.Values(patchMap)))
+	if err != nil {
+		diags.AddError("Failed to update generic system interface names", err.Error())
+	}
+}
+
+// CopyGenericSystemInterfaceNamesFromStateWherePlanIsUnknown updates any unknown GenericSystemIfName link attributes
+// with a known value: The value from state (if any) or an empty string (no state, or link not in state)
+func (o *DatacenterGenericSystem) CopyGenericSystemInterfaceNamesFromStateWherePlanIsUnknown(ctx context.Context, state *DatacenterGenericSystem, diags *diag.Diagnostics) {
+	var planLinksMap, stateLinksMap map[string]DatacenterGenericSystemLink
+	planLinksMap = linkSetToMapByDigest(ctx, o.Links, diags)
+	if state != nil {
+		stateLinksMap = linkSetToMapByDigest(ctx, state.Links, diags)
+	}
+	if diags.HasError() {
+		return
+	}
+
+	// copy state value onto unknown plan values
+	// missing state values will produce empty strings, which is what we want
+	for key, planLink := range planLinksMap {
+		if planLink.GenericSystemIfName.IsUnknown() {
+			stateLink := stateLinksMap[key]
+			planLink.GenericSystemIfName = types.StringValue(stateLink.GenericSystemIfName.ValueString())
+			planLinksMap[key] = planLink
+		}
+	}
+
+	o.Links = value.SetOrNull(ctx, DatacenterGenericSystemLink{}.attrType(), slices.Collect(maps.Values(planLinksMap)), diags)
 }
