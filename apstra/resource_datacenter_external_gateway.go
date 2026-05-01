@@ -19,6 +19,7 @@ var (
 	_ resource.ResourceWithConfigure      = &resourceDatacenterExternalGateway{}
 	_ resource.ResourceWithImportState    = &resourceDatacenterExternalGateway{}
 	_ resource.ResourceWithValidateConfig = &resourceDatacenterExternalGateway{}
+	_ resourceWithSetClient               = &resourceDatacenterExternalGateway{}
 	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterExternalGateway{}
 	_ resourceWithSetBpLockFunc           = &resourceDatacenterExternalGateway{}
 )
@@ -317,4 +318,8 @@ func (o *resourceDatacenterExternalGateway) setBpClientFunc(f func(context.Conte
 
 func (o *resourceDatacenterExternalGateway) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDatacenterExternalGateway) setClient(client *apstra.Client) {
+	o.client = client
 }
