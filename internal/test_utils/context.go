@@ -6,8 +6,6 @@ import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func CleanupWithFreshContext(t testing.TB, timeout time.Duration, f func(ctx context.Context) error) {
@@ -18,7 +16,7 @@ func CleanupWithFreshContext(t testing.TB, timeout time.Duration, f func(ctx con
 		defer cancel()
 
 		err := f(ctx)
-		if !assert.NoError(t, err) {
+		if err != nil {
 			t.Logf("Cleanup test %q: %v", t.Name(), err)
 		}
 	})

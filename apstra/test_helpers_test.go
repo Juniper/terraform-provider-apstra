@@ -26,7 +26,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/constraints"
 )
@@ -586,7 +585,7 @@ func TestPadFormatStr(t *testing.T) {
 		t.Run(fmt.Sprintf("%d_with_base_%d", tCase.n, tCase.base), func(t *testing.T) {
 			result, err := padFormatStr(tCase.n, tCase.base)
 			require.NoError(t, err)
-			assert.Equal(t, tCase.expected, result)
+			require.Equal(t, tCase.expected, result)
 		})
 	}
 }
@@ -629,7 +628,7 @@ func TestLineNumbererString(t *testing.T) {
 		}
 		result := ln.string()
 
-		assert.Equal(t, tCase.expected, result)
+		require.Equal(t, tCase.expected, result)
 	}
 }
 
