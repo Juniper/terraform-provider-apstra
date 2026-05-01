@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
+	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/raw"
@@ -19,6 +21,12 @@ var (
 	_ resource.ResourceWithConfigure = &resourceRawJSON{}
 	_ resourceWithSetClient          = &resourceRawJSON{}
 )
+
+var collectorAPIRegex *regexp.Regexp
+
+func init() {
+	collectorAPIRegex = regexp.MustCompile("^/api/telemetry/collectors/([^/]+)$")
+}
 
 type resourceRawJSON struct {
 	client *apstra.Client
@@ -162,7 +170,7 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	if state.ID.IsNull() {
-		resp.Diagnostics.AddWarning("cannot delete raw JSON object", "ID is null -- cannot update")
+		resp.Diagnostics.AddWarning("cannot delete raw JSON object", "ID is null -- cannot delete")
 		return
 	}
 
@@ -178,15 +186,73 @@ func (o *resourceRawJSON) Delete(ctx context.Context, req resource.DeleteRequest
 	}, nil)
 	if err != nil {
 		var ace apstra.ClientErr
-		if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
-			return // 404 is okay
+		if !(errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound) {
+			resp.Diagnostics.AddError("error deleting raw JSON object", err.Error())
+			return
 		}
+	}
 
-		resp.Diagnostics.AddError("error deleting raw JSON object", err.Error())
-		return
+	// if we deleted a collector, we should poll the related service while it is being GC'ed
+	matches := collectorAPIRegex.FindStringSubmatch(u.Path)
+	if len(matches) > 1 {
+		if err = waitForServiceGC(ctx, o.client, matches[1]); err != nil {
+			resp.Diagnostics.AddWarning(fmt.Sprintf("failure while waiting for %q service to be garbage collected", matches[1]), err.Error())
+		}
 	}
 }
 
 func (o *resourceRawJSON) setClient(client *apstra.Client) {
 	o.client = client
+}
+
+func waitForServiceGC(ctx context.Context, client *apstra.Client, name string) error {
+	const (
+		pollInterval = 100 * time.Millisecond
+		gcWait       = 5 * time.Second
+	)
+
+	u, err := url.Parse(fmt.Sprintf("/api/telemetry/services/%s", url.PathEscape(name)))
+	if err != nil {
+		return fmt.Errorf("cannot parse service URL for %q: %w", name, err)
+	}
+
+	var reply struct {
+		Systems map[string]any `json:"systems"`
+	}
+
+	request := apstra.RawJsonRequest{
+		Method: http.MethodGet,
+		Url:    u,
+	}
+
+	stopAt := time.Now().Add(gcWait)
+	var serviceCount int
+
+	for {
+		if err = client.DoRawJsonTransaction(ctx, request, &reply); err != nil {
+			var ace apstra.ClientErr
+			if errors.As(err, &ace) && ace.Type() == apstra.ErrNotfound {
+				return nil // good!
+			}
+
+			return fmt.Errorf("cannot get service status for %q: %w", name, err)
+		}
+
+		replySystemCount := len(reply.Systems)
+		if replySystemCount == 0 {
+			return nil // good!
+		}
+
+		if replySystemCount < serviceCount {
+			// system count has decreased. extend the timer to see if we can reach zero before giving up.
+			stopAt = time.Now().Add(gcWait)
+		}
+
+		if time.Now().After(stopAt) {
+			return fmt.Errorf("timed out waiting for service %q garbage collection", name)
+		}
+
+		serviceCount = replySystemCount // record the new value
+		time.Sleep(pollInterval)
+	}
 }
