@@ -4,6 +4,8 @@ go 1.25.4
 
 //replace github.com/Juniper/apstra-go-sdk => ../apstra-go-sdk
 
+replace gopkg.in/yaml.v3 => github.com/go-yaml/yaml/v3 v3.0.1
+
 require (
 	github.com/IBM/netaddr v1.5.0
 	github.com/Juniper/apstra-go-sdk v0.0.0-20260427235114-41a433ff599b
