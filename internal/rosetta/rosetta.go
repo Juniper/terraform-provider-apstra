@@ -31,6 +31,7 @@ const (
 	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
 	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
 
+	resourceGroupNameLeafLeafLinkIpv6        = "leaf_leaf_link_ips_ipv6"
 	resourceGroupNameSpineLeafLinkIpv6       = "spine_leaf_link_ips_ipv6"
 	resourceGroupNameSpineSuperspineLinkIpv6 = "spine_superspine_link_ips_ipv6"
 	resourceGroupNameToGenericLinkIpv6       = "to_generic_link_ips_ipv6"
@@ -286,6 +287,8 @@ func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 		return resourceGroupNameLeafL3PeerLinksIpv6
 	case apstra.ResourceGroupNameVxlanVnIds:
 		return resourceGroupNameVxlanVnIds
+	case apstra.ResourceGroupNameLeafLeafIp6:
+		return resourceGroupNameLeafLeafLinkIpv6
 	case apstra.ResourceGroupNameSpineLeafIp6:
 		return resourceGroupNameSpineLeafLinkIpv6
 	case apstra.ResourceGroupNameSuperspineSpineIp6:
@@ -497,6 +500,8 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6
 	case resourceGroupNameVxlanVnIds:
 		*target = apstra.ResourceGroupNameVxlanVnIds
+	case resourceGroupNameLeafLeafLinkIpv6:
+		*target = apstra.ResourceGroupNameLeafLeafIp6
 	case resourceGroupNameSpineLeafLinkIpv6:
 		*target = apstra.ResourceGroupNameSpineLeafIp6
 	case resourceGroupNameSpineSuperspineLinkIpv6:
