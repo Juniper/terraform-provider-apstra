@@ -14,6 +14,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
@@ -120,9 +121,16 @@ func (o resourceDataCenterExternalGateway) testChecks(t testing.TB, bpId apstra.
 func TestResourceDatacenterExternalGateway(t *testing.T) {
 	ctx := context.Background()
 
-	bp := testutils.BlueprintC(t, ctx)
+	var bp, bp6 *apstra.TwoStageL3ClosClient
+	var leafIDs, leafIDs6 []string
 
-	leafIds := systemIds(ctx, t, bp, "leaf")
+	bp = testutils.BlueprintC(t, ctx)
+	leafIDs = systemIds(ctx, t, bp, "leaf")
+
+	if compatibility.BPDefaultRoutingZoneAddressingOK.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		bp6 = testutils.BlueprintJ(t, ctx)
+		leafIDs6 = systemIds(ctx, t, bp6, "leaf")
+	}
 
 	type testStep struct {
 		config resourceDataCenterExternalGateway
@@ -131,50 +139,64 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 	type testCase struct {
 		steps              []testStep
 		versionConstraints version.Constraints
+		bp                 *apstra.TwoStageL3ClosClient
+		leafIDs            []string
 	}
 
 	testCases := map[string]testCase{
-		"minimal_with_changes": {
+		"ipv6": {
+			versionConstraints: compatibility.BPDefaultRoutingZoneAddressingOK.Constraints,
+			bp:                 bp6,
 			steps: []testStep{
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID: bp.Id(),
-						name:        acctest.RandString(6),
-						ipAddress:   randIpvAddressMust(t, "10.0.0.0/8"),
-						asn:         uint32(rand.Intn(math.MaxUint32) + 1), // not zero
-						nodes:       []string{leafIds[rand.Intn(len(leafIds))]},
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "3fff::/64"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     leafIDs6,
+					},
+				},
+			},
+		},
+		"minimal_with_changes": {
+			bp: bp,
+			steps: []testStep{
+				{
+					config: resourceDataCenterExternalGateway{
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "10.0.0.0/8"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     []string{leafIDs[rand.Intn(len(leafIDs))]},
 					},
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID: bp.Id(),
-						name:        acctest.RandString(6),
-						ipAddress:   randIpvAddressMust(t, "10.0.0.0/8"),
-						asn:         uint32(rand.Intn(math.MaxUint32) + 1), // not zero
-						nodes:       []string{leafIds[rand.Intn(len(leafIds))]},
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "10.0.0.0/8"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     []string{leafIDs[rand.Intn(len(leafIDs))]},
 					},
 				},
 			},
 		},
 		"start_minimal": {
+			bp: bp,
 			steps: []testStep{
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID: bp.Id(),
-						name:        acctest.RandString(6),
-						ipAddress:   randIpvAddressMust(t, "10.0.0.0/8"),
-						asn:         uint32(rand.Intn(math.MaxUint32) + 1), // not zero
-						nodes:       []string{leafIds[rand.Intn(len(leafIds))]},
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "10.0.0.0/8"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     []string{leafIDs[rand.Intn(len(leafIDs))]},
 					},
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID:   bp.Id(),
 						name:          acctest.RandString(6),
 						ipAddress:     randIpvAddressMust(t, "10.0.0.0/8"),
 						asn:           uint32(rand.Intn(math.MaxUint32) + 1), // not zero
 						routeTypes:    pointer.To(enum.RemoteGatewayRouteTypeFiveOnly),
-						nodes:         leafIds,
+						nodes:         leafIDs,
 						ttl:           pointer.To(uint8(rand.Intn(254) + 2)),               // 2-255
 						keepaliveTime: pointer.To(uint16(rand.Intn(math.MaxUint16) + 1)),   // 1-65535
 						holdTime:      pointer.To(uint16(rand.Intn(math.MaxUint16-2) + 3)), // 3-65535
@@ -183,12 +205,11 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID:   bp.Id(),
 						name:          acctest.RandString(6),
 						ipAddress:     randIpvAddressMust(t, "10.0.0.0/8"),
 						asn:           uint32(rand.Intn(math.MaxUint32) + 1), // not zero
 						routeTypes:    pointer.To(enum.RemoteGatewayRouteTypeFiveOnly),
-						nodes:         leafIds,
+						nodes:         leafIDs,
 						ttl:           pointer.To(uint8(rand.Intn(254) + 2)),               // 2-255
 						keepaliveTime: pointer.To(uint16(rand.Intn(math.MaxUint16) + 1)),   // 1-65535
 						holdTime:      pointer.To(uint16(rand.Intn(math.MaxUint16-2) + 3)), // 3-65535
@@ -197,25 +218,24 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID: bp.Id(),
-						name:        acctest.RandString(6),
-						ipAddress:   randIpvAddressMust(t, "10.0.0.0/8"),
-						asn:         uint32(rand.Intn(math.MaxUint32) + 1), // not zero
-						nodes:       []string{leafIds[rand.Intn(len(leafIds))]},
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "10.0.0.0/8"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     []string{leafIDs[rand.Intn(len(leafIDs))]},
 					},
 				},
 			},
 		},
 		"start_maximal": {
+			bp: bp,
 			steps: []testStep{
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID:   bp.Id(),
 						name:          acctest.RandString(6),
 						ipAddress:     randIpvAddressMust(t, "10.0.0.0/8"),
 						asn:           uint32(rand.Intn(math.MaxUint32) + 1), // not zero
 						routeTypes:    pointer.To(enum.RemoteGatewayRouteTypeFiveOnly),
-						nodes:         leafIds,
+						nodes:         leafIDs,
 						ttl:           pointer.To(uint8(rand.Intn(254) + 2)),               // 2-255
 						keepaliveTime: pointer.To(uint16(rand.Intn(math.MaxUint16) + 1)),   // 1-65535
 						holdTime:      pointer.To(uint16(rand.Intn(math.MaxUint16-2) + 3)), // 3-65535
@@ -224,30 +244,27 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID: bp.Id(),
-						name:        acctest.RandString(6),
-						ipAddress:   randIpvAddressMust(t, "10.0.0.0/8"),
-						asn:         uint32(rand.Intn(math.MaxUint32) + 1), // not zero
-						nodes:       []string{leafIds[rand.Intn(len(leafIds))]},
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "10.0.0.0/8"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     []string{leafIDs[rand.Intn(len(leafIDs))]},
 					},
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID: bp.Id(),
-						name:        acctest.RandString(6),
-						ipAddress:   randIpvAddressMust(t, "10.0.0.0/8"),
-						asn:         uint32(rand.Intn(math.MaxUint32) + 1), // not zero
-						nodes:       []string{leafIds[rand.Intn(len(leafIds))]},
+						name:      acctest.RandString(6),
+						ipAddress: randIpvAddressMust(t, "10.0.0.0/8"),
+						asn:       uint32(rand.Intn(math.MaxUint32) + 1), // not zero
+						nodes:     []string{leafIDs[rand.Intn(len(leafIDs))]},
 					},
 				},
 				{
 					config: resourceDataCenterExternalGateway{
-						blueprintID:   bp.Id(),
 						name:          acctest.RandString(6),
 						ipAddress:     randIpvAddressMust(t, "10.0.0.0/8"),
 						asn:           uint32(rand.Intn(math.MaxUint32) + 1), // not zero
 						routeTypes:    pointer.To(enum.RemoteGatewayRouteTypeFiveOnly),
-						nodes:         leafIds,
+						nodes:         leafIDs,
 						ttl:           pointer.To(uint8(rand.Intn(254) + 2)),               // 2-255
 						keepaliveTime: pointer.To(uint16(rand.Intn(math.MaxUint16) + 1)),   // 1-65535
 						holdTime:      pointer.To(uint16(rand.Intn(math.MaxUint16-2) + 3)), // 3-65535
@@ -262,14 +279,18 @@ func TestResourceDatacenterExternalGateway(t *testing.T) {
 
 	for tName, tCase := range testCases {
 		t.Run(tName, func(t *testing.T) {
-			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+			if tCase.bp == nil {
+				t.Skip("test case has no blueprint - probably a version incompatibility")
+			}
+			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(tCase.bp.Client().ApiVersion()))) {
 				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
 			}
 
 			steps := make([]resource.TestStep, len(tCase.steps))
 			for i, step := range tCase.steps {
+				step.config.blueprintID = tCase.bp.Id()
 				config := step.config.render(resourceType, tName)
-				checks := step.config.testChecks(t, bp.Id(), resourceType, tName)
+				checks := step.config.testChecks(t, tCase.bp.Id(), resourceType, tName)
 
 				chkLog := checks.string()
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)

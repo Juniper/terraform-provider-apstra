@@ -403,6 +403,41 @@ func BlueprintI(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	return bpClient
 }
 
+// BlueprintJ creates an Apstra 6.1.0+ blueprint with IPv6 VTEP addressing
+func BlueprintJ(t testing.TB, ctx context.Context, name ...string) *apstra.TwoStageL3ClosClient {
+	t.Helper()
+
+	client := GetTestClient(t, ctx)
+
+	var bpname string
+	if name == nil {
+		bpname = acctest.RandString(10)
+	} else {
+		bpname = name[0]
+	}
+
+	id, err := client.CreateBlueprintFromTemplate(ctx, &apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:  enum.RefDesignDatacenter,
+		Label:      bpname,
+		TemplateId: "L2_Virtual_EVPN",
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp6),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp6),
+		},
+		AddressingPolicy: &apstra.AddressingPolicy{
+			AddressingSupport: pointer.To(enum.AddressingSchemeIPv46),
+			VTEPAddressing:    pointer.To(enum.AddressingSchemeIPv6),
+		},
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, client.DeleteBlueprint(ctx, id)) })
+
+	bpClient, err := client.NewTwoStageL3ClosClient(ctx, id)
+	require.NoError(t, err)
+
+	return bpClient
+}
+
 func FfBlueprintA(t testing.TB, ctx context.Context) *apstra.FreeformClient {
 	t.Helper()
 

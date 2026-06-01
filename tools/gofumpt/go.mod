@@ -1,6 +1,6 @@
 module tools/gofumpt
 
-go 1.25.4
+go 1.25.9
 
 tool mvdan.cc/gofumpt
 
