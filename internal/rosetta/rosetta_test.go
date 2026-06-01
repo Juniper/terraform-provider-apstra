@@ -43,6 +43,7 @@ func TestRosetta(t *testing.T) {
 		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4}},
 		{string: "leaf_l3_peer_links_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6}},
 
+		{string: "leaf_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafLeafIp6}},
 		{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSpineLeafIp6}},
 		{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}},
 		{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},

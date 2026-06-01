@@ -77,6 +77,7 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   - leaf_l3_peer_links
   - leaf_l3_peer_links_ipv6
   - leaf_leaf_link_ips
+  - leaf_leaf_link_ips_ipv6
   - leaf_loopback_ips
   - leaf_loopback_ips_ipv6
   - mlag_domain_svi_subnets
