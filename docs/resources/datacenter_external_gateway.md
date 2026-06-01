@@ -40,7 +40,7 @@ resource "apstra_datacenter_external_gateway" "example" {
 
 - `asn` (Number) External Gateway AS Number
 - `blueprint_id` (String) Apstra ID of the Blueprint in which the External Gateway should be created.
-- `ip_address` (String) External Gateway IP address
+- `ip_address` (String) External Gateway IP address. IPv6 addresses permitted only with Apstra >=6.1.0.
 - `local_gateway_nodes` (Set of String) Set of IDs of switch nodes which will be configured to peer with the External Gateway
 - `name` (String) External Gateway name
 

@@ -61,7 +61,7 @@ func (o ExternalGateway) ResourceAttributes() map[string]resourceSchema.Attribut
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"ip_address": resourceSchema.StringAttribute{
-			MarkdownDescription: fmt.Sprintf("External Gateway IP address. IPv6 Addresses permitted only with Apstra %s.", compatibility.BlueprintIPv6ApplicationsOK),
+			MarkdownDescription: fmt.Sprintf("External Gateway IP address. IPv6 addresses permitted only with Apstra %s.", compatibility.BPDefaultRoutingZoneAddressingOK),
 			Required:            true,
 			CustomType:          iptypes.IPAddressType{},
 		},
