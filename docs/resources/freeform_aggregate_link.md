@@ -93,8 +93,7 @@ Read-Only:
 
 Required:
 
-- `lag_mode` (String) LAG mode of the logical aggregate interface. Must be one of: ``, `lacp_active`, `lacp_passive`, `static_lag`.
-
+- `lag_mode` (String) LAG mode of the logical aggregate interface. Must be one of: `lacp_active`, `lacp_passive`, `static_lag`.
 - `port_channel_id` (Number) Numerical Port Channel index of the logical aggregate interface.
 - `system_id` (String) ID of a `system` node.
 
@@ -132,7 +131,7 @@ Read-Only:
 
 Required:
 
-- `lag_mode` (String) LAG mode of the logical aggregate interface. Must be one of: ``, `lacp_active`, `lacp_passive`, `static_lag`.
+- `lag_mode` (String) LAG mode of the logical aggregate interface. Must be one of: `lacp_active`, `lacp_passive`, `static_lag`.
 - `port_channel_id` (Number) Numerical Port Channel index of the logical aggregate interface.
 - `system_id` (String) ID of a `system` node.
 
@@ -146,3 +145,6 @@ Optional:
 Read-Only:
 
 - `id` (String) ID of the logical aggregate interface associated belonging to both this Aggregate Link Endpoint and to `system_id`.
+
+
+
