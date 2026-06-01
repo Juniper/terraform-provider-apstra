@@ -145,3 +145,6 @@ Optional:
 Read-Only:
 
 - `id` (String) ID of the logical aggregate interface associated belonging to both this Aggregate Link Endpoint and to `system_id`.
+
+
+
