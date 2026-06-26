@@ -44,7 +44,7 @@ const resourceDataCenterGenericSystemLinkHCL = `
 type resourceDataCenterGenericSystemLink struct {
 	tags                []string
 	lagMode             apstra.RackLinkLagMode
-	targetSwitchId      apstra.ObjectId
+	targetSwitchId      string
 	targetSwitchIf      string
 	targetSwitchTf      int
 	groupLabel          string
@@ -65,7 +65,7 @@ func (o *resourceDataCenterGenericSystemLink) render() string {
 
 func (o *resourceDataCenterGenericSystemLink) addTestChecks(t testing.TB, testChecks *testChecks) {
 	m := map[string]string{
-		"target_switch_id":              o.targetSwitchId.String(),
+		"target_switch_id":              o.targetSwitchId,
 		"target_switch_if_name":         o.targetSwitchIf,
 		"target_switch_if_transform_id": strconv.Itoa(o.targetSwitchTf),
 	}
@@ -253,10 +253,10 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 	bp := testutils.BlueprintF(t, ctx)
 
 	// get leaf switch IDs, sorted as in web UI
-	leafNameToId := testutils.GetSystemIds(t, ctx, bp, "leaf")
+	leafNameToId := testutils.GetSystemIDs(t, ctx, bp, "leaf")
 	leafNames := slices.Collect(maps.Keys(leafNameToId))
 	sort.Strings(leafNames)
-	leafSwitchIds := make([]apstra.ObjectId, len(leafNames))
+	leafSwitchIds := make([]string, len(leafNames))
 	for i, leafName := range leafNames {
 		leafSwitchIds[i] = leafNameToId[leafName]
 	}
@@ -282,9 +282,9 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 	require.NoError(t, ct.SetUserData())
 	require.NoError(t, bp.CreateConnectivityTemplate(ctx, &ct))
 
-	attachCtToSingleLink := func(t *testing.T, swId apstra.ObjectId, ifName string) {
+	attachCtToSingleLink := func(t *testing.T, swId string, ifName string) {
 		t.Helper()
-		ifId, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, swId, ifName)
+		ifId, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(swId), ifName)
 		require.NoError(t, err)
 		require.NoError(t, bp.SetApplicationPointConnectivityTemplates(ctx, ifId, []apstra.ObjectId{*ct.Id}))
 	}
@@ -611,9 +611,9 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 					preApplyResourceActionType: plancheck.ResourceActionNoop,
 					preconfig: func(t *testing.T) { // ensure CT is reattached in previous step
 						// get interface (application point) IDs
-						ifId1, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, leafSwitchIds[0], "ge-0/0/4") // 4 avoids conflict with other test cases
+						ifId1, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(leafSwitchIds[0]), "ge-0/0/4") // 4 avoids conflict with other test cases
 						require.NoError(t, err)
-						ifId2, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, leafSwitchIds[1], "ge-0/0/4") // 4 avoids conflict with other test cases
+						ifId2, err := blueprint.IfIdFromSwIdAndIfName(ctx, bp, apstra.ObjectId(leafSwitchIds[1]), "ge-0/0/4") // 4 avoids conflict with other test cases
 						require.NoError(t, err)
 
 						// determine attached CTs
@@ -1046,7 +1046,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 				},
 				{
 					preconfig: func(t *testing.T) {
-						attachCtToLag(t, leafSwitchIds[0], "bar") // 2 avoids conflict with other test cases
+						attachCtToLag(t, apstra.ObjectId(leafSwitchIds[0]), "bar") // 2 avoids conflict with other test cases
 					},
 					config: resourceDataCenterGenericSystem{
 						clearCtsOnDestroy: pointer.To(true),

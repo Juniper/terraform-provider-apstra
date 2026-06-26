@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
@@ -74,12 +75,12 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 		return applicationPointIds
 	}
 
-	newCt := func(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, tags []string, vlan int, typeName string, assignmentCount int) (apstra.ObjectId, [][]string) {
+	newCt := func(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, tags []string, vlan uint16, typeName string, assignmentCount int) (apstra.ObjectId, [][]string) {
 		t.Helper()
 
-		var vlanId *apstra.VLAN
+		var vlanPtr *uint16
 		if vlan > 0 { // with vlan 0 we send nil pointer to create an invalid CT
-			vlanId = pointer.To(apstra.VLAN(vlan))
+			vlanPtr = pointer.To(vlan)
 		}
 
 		// create a security zone unique for each CT
@@ -88,11 +89,11 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 		if compatibility.BPDefaultRoutingZoneAddressingOK.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
 			as = &enum.AddressingSchemeIPv6
 		}
-		szId, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
+		szId, err := bp.CreateSecurityZone(ctx, datacenter.SecurityZone{
 			Label:             szName,
 			Type:              enum.SecurityZoneTypeEVPN,
 			VRFName:           szName,
-			VLAN:              vlanId,
+			VLAN:              vlanPtr,
 			AddressingSupport: as,
 		})
 		require.NoError(t, err)
@@ -107,7 +108,7 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 					Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
 						SecurityZone: (*apstra.ObjectId)(&szId),
 						Tagged:       true,
-						Vlan:         vlanId,
+						Vlan:         vlanPtr,
 					},
 				},
 			},
@@ -168,13 +169,13 @@ func TestDatasourceDatacenterConnectivityTemplatesStatus(t *testing.T) {
 	}
 
 	// create a valid CT without applying it and add its tests
-	_, checkArgs = newCt(t, ctx, bp, randomStrings(rand.Intn(10)+1, 6), vlanIds[0], datasourceTypeName, 0)
+	_, checkArgs = newCt(t, ctx, bp, randomStrings(rand.Intn(10)+1, 6), uint16(vlanIds[0]), datasourceTypeName, 0)
 	for _, args := range checkArgs {
 		checks.append(t, args[0], args[1:]...)
 	}
 
 	// create a valid CT and apply it and add its tests
-	ctId, checkArgs := newCt(t, ctx, bp, randomStrings(rand.Intn(10)+1, 6), vlanIds[1], datasourceTypeName, len(portIds))
+	ctId, checkArgs := newCt(t, ctx, bp, randomStrings(rand.Intn(10)+1, 6), uint16(vlanIds[1]), datasourceTypeName, len(portIds))
 	for _, args := range checkArgs {
 		checks.append(t, args[0], args[1:]...)
 	}

@@ -30,8 +30,8 @@ data %q "test" {
 `
 
 type dataSourceBlueprintDeviceRenderedConfig struct {
-	nodeId   apstra.ObjectId
-	systemId apstra.ObjectId
+	nodeId   string
+	systemId string
 }
 
 func (o dataSourceBlueprintDeviceRenderedConfig) render(rType, bpId string) string {
@@ -46,7 +46,7 @@ func (o dataSourceBlueprintDeviceRenderedConfig) render(rType, bpId string) stri
 func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 	ctx := context.Background()
 	bp := testutils.BlueprintI(t, ctx)
-	leafMap := testutils.GetSystemIds(t, ctx, bp, "leaf")
+	leafMap := testutils.GetSystemIDs(t, ctx, bp, "leaf")
 	require.Equal(t, 2, len(leafMap))
 
 	type testCase struct {
@@ -56,14 +56,14 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 	}
 
 	nodeLabels := make([]string, len(leafMap))
-	nodeIds := make([]apstra.ObjectId, len(leafMap))
-	sysIds := make([]apstra.ObjectId, len(leafMap))
+	nodeIds := make([]string, len(leafMap))
+	sysIds := make([]string, len(leafMap))
 	var i int
 	for k, v := range leafMap {
 		var node struct {
-			SystemId apstra.ObjectId `json:"system_id"`
+			SystemId string `json:"system_id"`
 		}
-		require.NoError(t, bp.Client().GetNode(ctx, bp.Id(), v, &node))
+		require.NoError(t, bp.Client().GetNode(ctx, bp.Id(), apstra.ObjectId(v), &node))
 
 		nodeLabels[i] = k
 		nodeIds[i] = v
@@ -72,7 +72,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 		i++
 	}
 
-	changeLeafAsn := func(t testing.TB, ctx context.Context, leafId apstra.ObjectId, client *apstra.TwoStageL3ClosClient) {
+	changeLeafAsn := func(t testing.TB, ctx context.Context, leafId string, client *apstra.TwoStageL3ClosClient) {
 		t.Helper()
 
 		query := new(apstra.PathQuery).
@@ -144,7 +144,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 			config: dataSourceBlueprintDeviceRenderedConfig{nodeId: nodeIds[0]},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr("data."+datasourceType+".test", "blueprint_id", bp.Id().String()),
-				resource.TestCheckResourceAttr("data."+datasourceType+".test", "node_id", nodeIds[0].String()),
+				resource.TestCheckResourceAttr("data."+datasourceType+".test", "node_id", nodeIds[0]),
 				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "system_id"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "deployed_config"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "staged_config"),
@@ -158,7 +158,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr("data."+datasourceType+".test", "blueprint_id", bp.Id().String()),
 				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "node_id"),
-				resource.TestCheckResourceAttr("data."+datasourceType+".test", "system_id", sysIds[0].String()),
+				resource.TestCheckResourceAttr("data."+datasourceType+".test", "system_id", sysIds[0]),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "deployed_config"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "staged_config"),
 				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "incremental_config"),
@@ -173,7 +173,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 			config: dataSourceBlueprintDeviceRenderedConfig{nodeId: nodeIds[0]},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr("data."+datasourceType+".test", "blueprint_id", bp.Id().String()),
-				resource.TestCheckResourceAttr("data."+datasourceType+".test", "node_id", nodeIds[0].String()),
+				resource.TestCheckResourceAttr("data."+datasourceType+".test", "node_id", nodeIds[0]),
 				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "system_id"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "deployed_config"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "staged_config"),
@@ -190,7 +190,7 @@ func TestAccDatasourceBlueprintDeviceRenderedConfig(t *testing.T) {
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr("data."+datasourceType+".test", "blueprint_id", bp.Id().String()),
 				resource.TestCheckNoResourceAttr("data."+datasourceType+".test", "node_id"),
-				resource.TestCheckResourceAttr("data."+datasourceType+".test", "system_id", sysIds[0].String()),
+				resource.TestCheckResourceAttr("data."+datasourceType+".test", "system_id", sysIds[0]),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "deployed_config"),
 				resource.TestCheckResourceAttrSet("data."+datasourceType+".test", "staged_config"),
 				resource.TestCheckResourceAttrWith("data."+datasourceType+".test", "incremental_config", expectAsnChange),

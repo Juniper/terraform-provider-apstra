@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -60,10 +62,9 @@ func (o VnBindingConstructor) DataSourceAttributes() map[string]dataSourceSchema
 
 func (o *VnBindingConstructor) Compute(ctx context.Context, bpClient *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// only one VLAN per constructor; get it in the expected form
-	var vlanId *apstra.VLAN
+	var vlan *uint16
 	if utils.HasValue(o.VlanId) {
-		v := apstra.VLAN(o.VlanId.ValueInt64())
-		vlanId = &v
+		vlan = pointer.To(uint16(o.VlanId.ValueInt64()))
 	}
 
 	// extract o.SwitchIds to []string
@@ -133,7 +134,7 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, bpClient *apstra.Two
 
 	// leafToVnBinding is a map keyed by either leaf node ID (non-redundant
 	// leafs) or leaf redundancy group ID
-	leafToVnBinding := make(map[string]apstra.VnBinding)
+	leafToVnBinding := make(map[string]datacenter.VNBinding)
 
 	// loop over access switches, create or update leafToVnBinding entry for each
 	for _, accessSwitchId := range accessSwitchIds {
@@ -194,14 +195,14 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, bpClient *apstra.Two
 		// We may have already created a binding for this leaf...
 		if vnb, ok := leafToVnBinding[leafBindingId]; ok {
 			// binding exists, add our access ID to the list
-			vnb.AccessSwitchNodeIds = utils.Uniq(append(vnb.AccessSwitchNodeIds, apstra.ObjectId(accessBindingId)))
+			vnb.AccessSwitchNodeIDs = utils.Uniq(append(vnb.AccessSwitchNodeIDs, accessBindingId))
 			leafToVnBinding[leafBindingId] = vnb
 		} else {
 			// binding not found, create a new one
-			leafToVnBinding[leafBindingId] = apstra.VnBinding{
-				AccessSwitchNodeIds: []apstra.ObjectId{apstra.ObjectId(accessBindingId)},
-				SystemId:            apstra.ObjectId(leafBindingId),
-				VlanId:              vlanId,
+			leafToVnBinding[leafBindingId] = datacenter.VNBinding{
+				AccessSwitchNodeIDs: []string{accessBindingId},
+				SystemID:            leafBindingId,
+				VLAN:                vlan,
 			}
 		}
 	}
@@ -225,9 +226,9 @@ func (o *VnBindingConstructor) Compute(ctx context.Context, bpClient *apstra.Two
 		// We may have already created a binding for this leafBindingId...
 		if _, ok := leafToVnBinding[leafBindingId]; !ok {
 			// binding not found. create one.
-			leafToVnBinding[leafBindingId] = apstra.VnBinding{
-				SystemId: apstra.ObjectId(leafBindingId),
-				VlanId:   vlanId,
+			leafToVnBinding[leafBindingId] = datacenter.VNBinding{
+				SystemID: leafBindingId,
+				VLAN:     vlan,
 			}
 		}
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -44,12 +44,12 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 	require.NotNil(t, szID)
 
 	testCases := map[string]struct {
-		id         string
-		policyData apstra.PolicyData
-		checks     []resource.TestCheckFunc
+		id     string
+		policy datacenter.Policy
+		checks []resource.TestCheckFunc
 	}{
 		"minimal_enabled": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label:   "minimal_enabled",
 				Enabled: true,
 			},
@@ -60,7 +60,7 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"minimal_disabled": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label:   "minimal_disabled",
 				Enabled: false,
 			},
@@ -71,7 +71,7 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"with_description": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label:       "with_description",
 				Description: "with_description ... description",
 			},
@@ -82,9 +82,9 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"with_src_app_point": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label:               "with_src_app_point",
-				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(*szID)},
+				SrcApplicationPoint: szID,
 			},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "id", "bogus placeholder fixed in loop below. this check must be first"),
@@ -93,9 +93,9 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"with_dst_app_point": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label:               "with_dst_app_point",
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(*szID)},
+				DstApplicationPoint: szID,
 			},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "id", "bogus placeholder fixed in loop below. this check must be first"),
@@ -104,9 +104,9 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"with_tags": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label:               "with_tags",
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(*szID)},
+				DstApplicationPoint: szID,
 				Tags:                []string{"foo", "bar"},
 			},
 			checks: []resource.TestCheckFunc{
@@ -118,50 +118,42 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"with_rules": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label: "with_rules",
-				Rules: []apstra.PolicyRule{
+				Rules: []datacenter.PolicyRule{
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "name_0",
-							Description: "description_0",
-							Protocol:    enum.PolicyRuleProtocolIcmp,
-							Action:      enum.PolicyRuleActionDeny,
-						},
+						Label:       "name_0",
+						Description: "description_0",
+						Protocol:    enum.PolicyRuleProtocolIcmp,
+						Action:      enum.PolicyRuleActionDeny,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "name_1",
-							Description: "description_1",
-							Protocol:    enum.PolicyRuleProtocolIp,
-							Action:      enum.PolicyRuleActionDenyLog,
-						},
+						Label:       "name_1",
+						Description: "description_1",
+						Protocol:    enum.PolicyRuleProtocolIp,
+						Action:      enum.PolicyRuleActionDenyLog,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "name_2",
-							Description: "description_2",
-							Protocol:    enum.PolicyRuleProtocolTcp,
-							Action:      enum.PolicyRuleActionPermitLog,
-						},
+						Label:       "name_2",
+						Description: "description_2",
+						Protocol:    enum.PolicyRuleProtocolTcp,
+						Action:      enum.PolicyRuleActionPermitLog,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "name_3",
-							Description: "description_3",
-							Protocol:    enum.PolicyRuleProtocolTcp,
-							Action:      enum.PolicyRuleActionPermitLog,
-							SrcPort: []apstra.PortRange{
-								{First: 11, Last: 11},
-								{First: 13, Last: 13},
-								{First: 15, Last: 19},
-							},
-							DstPort: []apstra.PortRange{
-								{First: 21, Last: 21},
-								{First: 23, Last: 23},
-								{First: 25, Last: 25},
-								{First: 27, Last: 29},
-							},
+						Label:       "name_3",
+						Description: "description_3",
+						Protocol:    enum.PolicyRuleProtocolTcp,
+						Action:      enum.PolicyRuleActionPermitLog,
+						SrcPort: []datacenter.PortRange{
+							{First: 11, Last: 11},
+							{First: 13, Last: 13},
+							{First: 15, Last: 19},
+						},
+						DstPort: []datacenter.PortRange{
+							{First: 21, Last: 21},
+							{First: 23, Last: 23},
+							{First: 25, Last: 25},
+							{First: 27, Last: 29},
 						},
 					},
 				},
@@ -204,18 +196,16 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		"with_established": {
-			policyData: apstra.PolicyData{
+			policy: datacenter.Policy{
 				Label: "with_established",
-				Rules: []apstra.PolicyRule{
+				Rules: []datacenter.PolicyRule{
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:             "ssh_established",
-							Description:       "ssh established",
-							Protocol:          enum.PolicyRuleProtocolTcp,
-							Action:            enum.PolicyRuleActionPermitLog,
-							SrcPort:           []apstra.PortRange{{First: 22, Last: 22}},
-							TcpStateQualifier: &enum.TcpStateQualifierEstablished,
-						},
+						Label:             "ssh_established",
+						Description:       "ssh established",
+						Protocol:          enum.PolicyRuleProtocolTcp,
+						Action:            enum.PolicyRuleActionPermitLog,
+						SrcPort:           []datacenter.PortRange{{First: 22, Last: 22}},
+						TcpStateQualifier: &enum.TcpStateQualifierEstablished,
 					},
 				},
 			},
@@ -236,13 +226,13 @@ func TestDatacenterSecurityPolicy(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		id, err := bp.CreatePolicy(ctx, &tc.policyData)
+		id, err := bp.CreatePolicy(ctx, tc.policy)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		tc.id = id.String()
-		tc.checks[0] = resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "id", id.String())
+		tc.id = id
+		tc.checks[0] = resource.TestCheckResourceAttr(dataSourceDataCenterSecurityPolicyRefName, "id", id)
 		testCases[i] = tc
 	}
 

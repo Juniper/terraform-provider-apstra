@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -38,7 +39,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 
 	// create a security zone within the blueprint
 	name := acctest.RandString(5)
-	zoneId, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
+	zoneId, err := bp.CreateSecurityZone(ctx, datacenter.SecurityZone{
 		Type:    enum.SecurityZoneTypeEVPN,
 		VRFName: name,
 		Label:   name,
@@ -49,75 +50,70 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 
 	// grab some data we'll need when creating virtual networks
 	leafIdStrings := systemIds(ctx, t, bp, "leaf")
-	vnBindings := make([]apstra.VnBinding, len(leafIdStrings))
+	vnBindings := make([]datacenter.VNBinding, len(leafIdStrings))
 	for i, id := range leafIdStrings {
-		vnBindings[i] = apstra.VnBinding{SystemId: apstra.ObjectId(id)}
+		vnBindings[i] = datacenter.VNBinding{SystemID: id}
 	}
 
 	// specify virtual networks we want to create (and ultimately test the data source against)
-	virtualNetworks := []apstra.VirtualNetwork{
+	virtualNetworks := []datacenter.VirtualNetwork{
 		{
-			Data: &apstra.VirtualNetworkData{
-				Ipv4Enabled:    true,
-				Ipv4Subnet:     randIpNetMust(t, "10.0.0.0/16"),
-				Label:          acctest.RandString(5),
-				SecurityZoneId: apstra.ObjectId(zoneId),
-				VnType:         enum.VnTypeVxlan,
-				VnBindings:     vnBindings,
-			},
+			IPv4Enabled:    true,
+			IPv4Subnet:     randIpNetMust(t, "10.0.0.0/16"),
+			Label:          acctest.RandString(5),
+			SecurityZoneID: zoneId,
+			Type:           enum.VnTypeVxlan,
+			Bindings:       vnBindings,
 		},
 		{
-			Data: &apstra.VirtualNetworkData{
-				Ipv4Enabled:    true,
-				Ipv4Subnet:     randIpNetMust(t, "10.1.0.0/16"),
-				Label:          acctest.RandString(5),
-				SecurityZoneId: apstra.ObjectId(zoneId),
-				VnType:         enum.VnTypeVlan,
-				VnBindings:     []apstra.VnBinding{{SystemId: apstra.ObjectId(leafIdStrings[0])}},
-			},
+			IPv4Enabled:    true,
+			IPv4Subnet:     randIpNetMust(t, "10.1.0.0/16"),
+			Label:          acctest.RandString(5),
+			SecurityZoneID: zoneId,
+			Type:           enum.VnTypeVlan,
+			Bindings:       []datacenter.VNBinding{{SystemID: leafIdStrings[0]}},
 		},
 	}
 
 	// create the test virtual networks
 	for i := range virtualNetworks {
-		virtualNetworks[i].Id, err = bp.CreateVirtualNetwork(ctx, virtualNetworks[i].Data)
-		if err != nil {
-			t.Fatal(err)
-		}
+		id, err := bp.CreateVirtualNetwork(ctx, virtualNetworks[i])
+		require.NoError(t, err)
+		require.NoError(t, virtualNetworks[i].SetID(id))
 	}
 
-	genTestCheckFuncs := func(vn apstra.VirtualNetwork) []resource.TestCheckFunc {
+	genTestCheckFuncs := func(vn datacenter.VirtualNetwork) []resource.TestCheckFunc {
 		result := []resource.TestCheckFunc{
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "id", vn.Id.String()),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "id", *vn.ID()),
 			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "blueprint_id", bp.Id().String()),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "name", vn.Data.Label),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "type", vn.Data.VnType.String()),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_connectivity_enabled", fmt.Sprintf("%t", vn.Data.Ipv4Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_virtual_gateway_enabled", fmt.Sprintf("%t", vn.Data.VirtualGatewayIpv4Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_connectivity_enabled", fmt.Sprintf("%t", vn.Data.Ipv6Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_virtual_gateway_enabled", fmt.Sprintf("%t", vn.Data.VirtualGatewayIpv6Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "bindings.%", fmt.Sprintf("%d", len(vn.Data.VnBindings))),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "name", vn.Label),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "type", vn.Type.String()),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_connectivity_enabled", fmt.Sprintf("%t", vn.IPv4Enabled)),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_virtual_gateway_enabled", fmt.Sprintf("%t", vn.VirtualGatewayIPv4Enabled)),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_connectivity_enabled", fmt.Sprintf("%t", vn.IPv6Enabled)),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_virtual_gateway_enabled", fmt.Sprintf("%t", vn.VirtualGatewayIPv6Enabled)),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "bindings.%", fmt.Sprintf("%d", len(vn.Bindings))),
 		}
 		return result
 	}
 
-	testCheckFuncsByVnId := make(map[apstra.ObjectId][]resource.TestCheckFunc, len(virtualNetworks))
+	testCheckFuncsByVnId := make(map[string][]resource.TestCheckFunc, len(virtualNetworks))
 	for _, virtualNetwork := range virtualNetworks {
-		testCheckFuncsByVnId[virtualNetwork.Id] = genTestCheckFuncs(virtualNetwork)
+		testCheckFuncsByVnId[*virtualNetwork.ID()] = genTestCheckFuncs(virtualNetwork)
 	}
 
 	stepsById := make([]resource.TestStep, len(virtualNetworks))
 	for i, virtualNetwork := range virtualNetworks {
 		stepsById[i] = resource.TestStep{
-			Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDataCenterVirtualNetworkByIdHcl, bp.Id(), virtualNetwork.Id),
-			Check:  resource.ComposeAggregateTestCheckFunc(testCheckFuncsByVnId[virtualNetwork.Id]...),
+			Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDataCenterVirtualNetworkByIdHcl, bp.Id(), *virtualNetwork.ID()),
+			Check:  resource.ComposeAggregateTestCheckFunc(testCheckFuncsByVnId[*virtualNetwork.ID()]...),
 		}
 	}
 
 	stepsByName := make([]resource.TestStep, len(virtualNetworks))
 	for i, virtualNetwork := range virtualNetworks {
 		stepsByName[i] = resource.TestStep{
-			Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDataCenterVirtualNetworkByNameHcl, bp.Id(), virtualNetwork.Data.Label),
+			Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDataCenterVirtualNetworkByNameHcl, bp.Id(), virtualNetwork.Label),
 			Check:  resource.ComposeAggregateTestCheckFunc(genTestCheckFuncs(virtualNetwork)...),
 		}
 	}

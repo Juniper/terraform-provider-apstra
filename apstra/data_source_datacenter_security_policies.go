@@ -130,7 +130,7 @@ func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req dat
 }
 
 func (o *dataSourceDatacenterSecurityPolicies) getAllIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {
-	all, err := bp.GetAllPolicies(ctx)
+	all, err := bp.GetPolicies(ctx)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf("failed to retrieve Security Policies in Blueprint %s", bp.Id()), err.Error())
@@ -139,7 +139,7 @@ func (o *dataSourceDatacenterSecurityPolicies) getAllIds(ctx context.Context, bp
 
 	result := make([]attr.Value, len(all))
 	for i, each := range all {
-		result[i] = types.StringValue(each.Id.String())
+		result[i] = types.StringPointerValue(each.ID())
 	}
 
 	return result

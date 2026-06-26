@@ -269,10 +269,10 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	require.NoError(t, err)
 
 	// set interface map on all leafs
-	leafs := GetSystemIds(t, ctx, bpClient, "leaf")
+	leafs := GetSystemIDs(t, ctx, bpClient, "leaf")
 	assignents := make(apstra.SystemIdToInterfaceMapAssignment, len(leafs))
 	for _, leaf := range leafs {
-		assignents[leaf.String()] = "Juniper_QFX5100-48S__AOS-48x10_6x40-2"
+		assignents[leaf] = "Juniper_QFX5100-48S__AOS-48x10_6x40-2"
 	}
 	err = bpClient.SetInterfaceMapAssignments(ctx, assignents)
 	require.NoError(t, err)
@@ -332,10 +332,10 @@ func BlueprintI(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	require.NoError(t, err)
 
 	// assign leaf interface maps
-	leafIds := GetSystemIds(t, ctx, bpClient, "leaf")
+	leafIds := GetSystemIDs(t, ctx, bpClient, "leaf")
 	mappings := make(apstra.SystemIdToInterfaceMapAssignment, len(leafIds))
 	for _, leafId := range leafIds {
-		mappings[leafId.String()] = "Juniper_vQFX__AOS-7x10-Leaf"
+		mappings[leafId] = "Juniper_vQFX__AOS-7x10-Leaf"
 	}
 	err = bpClient.SetInterfaceMapAssignments(ctx, mappings)
 	require.NoError(t, err)

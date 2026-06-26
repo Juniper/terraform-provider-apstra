@@ -163,7 +163,7 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 			Attributes: &apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink{
 				SecurityZone: (*apstra.ObjectId)(&rzId),
 				Tagged:       true,
-				Vlan:         pointer.To(apstra.VLAN(101 + i)),
+				Vlan:         pointer.To(uint16(101 + i)),
 			},
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,10 +13,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDatacenterSecurityPolicy{}
-var _ resource.ResourceWithImportState = &resourceDatacenterSecurityPolicy{}
-var _ resourceWithSetDcBpClientFunc = &resourceDatacenterSecurityPolicy{}
-var _ resourceWithSetBpLockFunc = &resourceDatacenterSecurityPolicy{}
+var (
+	_ resource.ResourceWithConfigure   = &resourceDatacenterSecurityPolicy{}
+	_ resource.ResourceWithImportState = &resourceDatacenterSecurityPolicy{}
+	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterSecurityPolicy{}
+	_ resourceWithSetBpLockFunc        = &resourceDatacenterSecurityPolicy{}
+)
 
 type resourceDatacenterSecurityPolicy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -137,7 +140,7 @@ func (o *resourceDatacenterSecurityPolicy) Create(ctx context.Context, req resou
 	}
 
 	// set the ID into the plan object and provisionally set state
-	plan.Id = types.StringValue(id.String())
+	plan.Id = types.StringValue(id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
 	// read the policy back from the API to get the rule IDs
@@ -220,7 +223,7 @@ func (o *resourceDatacenterSecurityPolicy) Update(ctx context.Context, req resou
 	}
 
 	// update the security policy
-	err = bp.UpdatePolicy(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err = bp.UpdatePolicy(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating security policy", err.Error())
 		return
@@ -267,7 +270,7 @@ func (o *resourceDatacenterSecurityPolicy) Delete(ctx context.Context, req resou
 	}
 
 	// Delete the security policy
-	err = bp.DeletePolicy(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeletePolicy(ctx, state.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

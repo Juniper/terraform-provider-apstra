@@ -27,7 +27,7 @@ func DatacenterConnectivityTemplateA(t testing.TB, ctx context.Context, bp *apst
 					Label:              acctest.RandString(10),
 					SecurityZone:       (*apstra.ObjectId)(&szID),
 					Tagged:             true,
-					Vlan:               pointer.To(apstra.VLAN(tag)),
+					Vlan:               pointer.To(uint16(tag)),
 					IPv4AddressingType: apstra.CtPrimitiveIPv4AddressingTypeNumbered,
 				},
 			},

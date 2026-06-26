@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
@@ -226,7 +226,7 @@ func (o DatacenterSecurityPolicyRule) ResourceAttributes() map[string]resourceSc
 	}
 }
 
-func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apstra.PolicyRuleData, diags *diag.Diagnostics) {
+func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in datacenter.PolicyRule, diags *diag.Diagnostics) {
 	var established types.Bool
 	if in.Protocol == enum.PolicyRuleProtocolTcp {
 		if in.TcpStateQualifier == nil {
@@ -245,12 +245,12 @@ func (o *DatacenterSecurityPolicyRule) loadApiData(ctx context.Context, in *apst
 	o.Established = established
 }
 
-func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Path, diags *diag.Diagnostics) *apstra.PolicyRuleData {
+func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Path, diags *diag.Diagnostics) datacenter.PolicyRule {
 	var protocol enum.PolicyRuleProtocol
 	err := rosetta.ApiStringerFromFriendlyString(&protocol, o.Protocol.ValueString())
 	if err != nil {
 		diags.AddAttributeError(path, fmt.Sprintf("failed to parse policy rule protocol %s", o.Protocol), err.Error())
-		return nil
+		return datacenter.PolicyRule{}
 	}
 
 	action := enum.PolicyRuleActions.Parse(o.Action.ValueString())
@@ -259,13 +259,13 @@ func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Pa
 			path.AtName("action"),
 			constants.ErrStringParse,
 			fmt.Sprintf("failed to parse action %s", o.Action))
-		return nil
+		return datacenter.PolicyRule{}
 	}
 
 	srcPort := portRangeSetToApstraPortRanges(ctx, o.SrcPorts, diags)
 	dstPort := portRangeSetToApstraPortRanges(ctx, o.DstPorts, diags)
 	if diags.HasError() {
-		return nil
+		return datacenter.PolicyRule{}
 	}
 
 	var tcpStateQualifier *enum.TcpStateQualifier
@@ -273,7 +273,7 @@ func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Pa
 		tcpStateQualifier = &enum.TcpStateQualifierEstablished
 	}
 
-	return &apstra.PolicyRuleData{
+	return datacenter.PolicyRule{
 		Label:             o.Name.ValueString(),
 		Description:       o.Description.ValueString(),
 		Protocol:          protocol,
@@ -284,7 +284,7 @@ func (o *DatacenterSecurityPolicyRule) request(ctx context.Context, path path.Pa
 	}
 }
 
-func newPolicyRuleList(ctx context.Context, in []apstra.PolicyRule, diags *diag.Diagnostics) types.List {
+func newPolicyRuleList(ctx context.Context, in []datacenter.PolicyRule, diags *diag.Diagnostics) types.List {
 	var d diag.Diagnostics
 
 	if len(in) == 0 {
@@ -293,8 +293,8 @@ func newPolicyRuleList(ctx context.Context, in []apstra.PolicyRule, diags *diag.
 
 	rules := make([]attr.Value, len(in))
 	for i, inRule := range in {
-		rule := DatacenterSecurityPolicyRule{Id: types.StringValue(inRule.Id.String())}
-		rule.loadApiData(ctx, inRule.Data, diags)
+		rule := DatacenterSecurityPolicyRule{Id: types.StringPointerValue(inRule.ID())}
+		rule.loadApiData(ctx, inRule, diags)
 		if diags.HasError() {
 			return types.ListNull(types.ObjectType{AttrTypes: DatacenterSecurityPolicyRule{}.attrTypes()})
 		}
@@ -309,7 +309,7 @@ func newPolicyRuleList(ctx context.Context, in []apstra.PolicyRule, diags *diag.
 	return types.ListValueMust(types.ObjectType{AttrTypes: DatacenterSecurityPolicyRule{}.attrTypes()}, rules)
 }
 
-func policyRuleListToApstraPolicyRuleSlice(ctx context.Context, ruleList types.List, diags *diag.Diagnostics) []apstra.PolicyRule {
+func policyRuleListToApstraPolicyRuleSlice(ctx context.Context, ruleList types.List, diags *diag.Diagnostics) []datacenter.PolicyRule {
 	var ruleSlice []DatacenterSecurityPolicyRule
 	diags.Append(ruleList.ElementsAs(ctx, &ruleSlice, false)...)
 	if diags.HasError() {
@@ -320,11 +320,9 @@ func policyRuleListToApstraPolicyRuleSlice(ctx context.Context, ruleList types.L
 		return nil
 	}
 
-	result := make([]apstra.PolicyRule, len(ruleSlice))
+	result := make([]datacenter.PolicyRule, len(ruleSlice))
 	for i, rule := range ruleSlice {
-		result[i] = apstra.PolicyRule{
-			Data: rule.request(ctx, path.Root("rules").AtListIndex(i), diags),
-		}
+		result[i] = rule.request(ctx, path.Root("rules").AtListIndex(i), diags)
 	}
 
 	return result

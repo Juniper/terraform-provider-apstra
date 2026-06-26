@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -385,12 +386,12 @@ func (o DatacenterRoutingZone) ResourceAttributes() map[string]resourceSchema.At
 	}
 }
 
-func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) apstra.SecurityZone {
-	var result apstra.SecurityZone
+func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Client, diags *diag.Diagnostics) datacenter.SecurityZone {
+	var result datacenter.SecurityZone
 	result.SetID(o.Id.ValueString()) // will set empty string if null or unknown -- this is fine
 
 	if !o.VlanId.IsNull() && !o.VlanId.IsUnknown() {
-		result.VLAN = pointer.To(apstra.VLAN(o.VlanId.ValueInt64()))
+		result.VLAN = pointer.To(uint16(o.VlanId.ValueInt64()))
 	}
 
 	if !o.Vni.IsNull() && !o.Vni.IsUnknown() {
@@ -412,11 +413,11 @@ func (o *DatacenterRoutingZone) Request(ctx context.Context, client *apstra.Clie
 		return result
 	}
 
-	result.RTPolicy = new(apstra.RTPolicy)
+	result.RTPolicy = new(datacenter.RTPolicy)
 	diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &result.RTPolicy.ImportRTs, false)...)
 	diags.Append(o.ExportRouteTargets.ElementsAs(ctx, &result.RTPolicy.ExportRTs, false)...)
 	if diags.HasError() {
-		return apstra.SecurityZone{}
+		return datacenter.SecurityZone{}
 	}
 
 	result.Type = enum.SecurityZoneTypeEVPN
@@ -451,7 +452,7 @@ func (o *DatacenterRoutingZone) DhcpServerRequest(_ context.Context, _ *diag.Dia
 	return request
 }
 
-func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz apstra.SecurityZone, diags *diag.Diagnostics) {
+func (o *DatacenterRoutingZone) LoadApiData(ctx context.Context, sz datacenter.SecurityZone, diags *diag.Diagnostics) {
 	if !utils.HasValue(o.Name) { // required attribute
 		o.Name = types.StringValue(sz.Label)
 	}

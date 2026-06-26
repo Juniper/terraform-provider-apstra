@@ -175,7 +175,7 @@ func (o *dataSourceDatacenterVirtualNetworks) Read(ctx context.Context, req data
 }
 
 func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) []attr.Value {
-	ids, err := bp.ListAllVirtualNetworkIds(ctx)
+	ids, err := bp.ListVirtualNetworks(ctx)
 	if err != nil {
 		diags.AddError(
 			fmt.Sprintf("failed to list virtual networks in blueprint %s", bp.Id()), err.Error())
@@ -184,7 +184,7 @@ func (o *dataSourceDatacenterVirtualNetworks) getAllVnIds(ctx context.Context, b
 
 	result := make([]attr.Value, len(ids))
 	for i, id := range ids {
-		result[i] = types.StringValue(id.String())
+		result[i] = types.StringValue(id)
 	}
 
 	return result

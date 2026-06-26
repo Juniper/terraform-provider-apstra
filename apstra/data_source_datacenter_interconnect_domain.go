@@ -59,7 +59,7 @@ func (o *dataSourceDatacenterInterconnectDomain) Read(ctx context.Context, req d
 	var api apstra.EVPNInterconnectGroup
 	switch {
 	case !config.Name.IsNull():
-		api, err = bp.GetEVPNInterconnectGroupByName(ctx, config.Name.ValueString())
+		api, err = bp.GetEVPNInterconnectGroupByLabel(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),

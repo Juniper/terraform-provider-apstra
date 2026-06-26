@@ -3,17 +3,20 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetwork{}
-var _ datasourceWithSetDcBpClientFunc = &dataSourceDatacenterVirtualNetwork{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDatacenterVirtualNetwork{}
+	_ datasourceWithSetDcBpClientFunc    = &dataSourceDatacenterVirtualNetwork{}
+)
 
 type dataSourceDatacenterVirtualNetwork struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -54,10 +57,10 @@ func (o *dataSourceDatacenterVirtualNetwork) Read(ctx context.Context, req datas
 		return
 	}
 
-	var api *apstra.VirtualNetwork
+	var api datacenter.VirtualNetwork
 	switch {
 	case !config.Name.IsNull():
-		api, err = bp.GetVirtualNetworkByName(ctx, config.Name.ValueString())
+		api, err = bp.GetVirtualNetworkByLabel(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -66,7 +69,7 @@ func (o *dataSourceDatacenterVirtualNetwork) Read(ctx context.Context, req datas
 			return
 		}
 	case !config.Id.IsNull():
-		api, err = bp.GetVirtualNetwork(ctx, apstra.ObjectId(config.Id.ValueString()))
+		api, err = bp.GetVirtualNetwork(ctx, config.Id.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
@@ -81,8 +84,7 @@ func (o *dataSourceDatacenterVirtualNetwork) Read(ctx context.Context, req datas
 	}
 
 	// load the API response and set the state
-	config.Id = types.StringValue(api.Id.String())
-	config.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	config.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

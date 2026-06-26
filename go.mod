@@ -8,7 +8,7 @@ replace gopkg.in/yaml.v3 => github.com/go-yaml/yaml/v3 v3.0.1
 
 require (
 	github.com/IBM/netaddr v1.5.0
-	github.com/Juniper/apstra-go-sdk v0.0.0-20260528181704-a27916309791
+	github.com/Juniper/apstra-go-sdk v0.0.0-20260626182247-a56a9bf449b0
 	github.com/chrismarget-j/version-constraints v0.0.0-20250911132047-1122a37b27ae
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-version v1.8.0

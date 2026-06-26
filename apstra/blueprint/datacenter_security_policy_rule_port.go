@@ -2,7 +2,8 @@ package blueprint
 
 import (
 	"context"
-	"github.com/Juniper/apstra-go-sdk/apstra"
+
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -71,19 +72,19 @@ func (o DatacenterSecurityPolicyRulePortRange) ResourceAttributes() map[string]r
 	}
 }
 
-func (o *DatacenterSecurityPolicyRulePortRange) loadApiData(_ context.Context, data *apstra.PortRange, _ *diag.Diagnostics) {
+func (o *DatacenterSecurityPolicyRulePortRange) loadApiData(_ context.Context, data datacenter.PortRange, _ *diag.Diagnostics) {
 	o.FromPort = types.Int64Value(int64(data.First))
 	o.ToPort = types.Int64Value(int64(data.Last))
 }
 
-func (o *DatacenterSecurityPolicyRulePortRange) request(_ context.Context, _ *diag.Diagnostics) *apstra.PortRange {
-	return &apstra.PortRange{
+func (o *DatacenterSecurityPolicyRulePortRange) request(_ context.Context, _ *diag.Diagnostics) datacenter.PortRange {
+	return datacenter.PortRange{
 		First: uint16(o.FromPort.ValueInt64()),
 		Last:  uint16(o.ToPort.ValueInt64()),
 	}
 }
 
-func newDatacenterPolicyRulePortRangeSet(ctx context.Context, in []apstra.PortRange, diags *diag.Diagnostics) types.Set {
+func newDatacenterPolicyRulePortRangeSet(ctx context.Context, in []datacenter.PortRange, diags *diag.Diagnostics) types.Set {
 	if len(in) == 0 {
 		return types.SetNull(types.ObjectType{AttrTypes: DatacenterSecurityPolicyRulePortRange{}.attrTypes()})
 	}
@@ -91,7 +92,7 @@ func newDatacenterPolicyRulePortRangeSet(ctx context.Context, in []apstra.PortRa
 	portRanges := make([]attr.Value, len(in))
 	for i, inRange := range in {
 		var portRange DatacenterSecurityPolicyRulePortRange
-		portRange.loadApiData(ctx, &inRange, diags)
+		portRange.loadApiData(ctx, inRange, diags)
 		if diags.HasError() {
 			return types.SetNull(types.ObjectType{AttrTypes: DatacenterSecurityPolicyRulePortRange{}.attrTypes()})
 		}
@@ -107,7 +108,7 @@ func newDatacenterPolicyRulePortRangeSet(ctx context.Context, in []apstra.PortRa
 	return types.SetValueMust(types.ObjectType{AttrTypes: DatacenterSecurityPolicyRulePortRange{}.attrTypes()}, portRanges)
 }
 
-func portRangeSetToApstraPortRanges(ctx context.Context, portSet types.Set, diags *diag.Diagnostics) apstra.PortRanges {
+func portRangeSetToApstraPortRanges(ctx context.Context, portSet types.Set, diags *diag.Diagnostics) datacenter.PortRanges {
 	var portRangeSlice []DatacenterSecurityPolicyRulePortRange
 	diags.Append(portSet.ElementsAs(ctx, &portRangeSlice, false)...)
 	if diags.HasError() {
@@ -118,9 +119,9 @@ func portRangeSetToApstraPortRanges(ctx context.Context, portSet types.Set, diag
 		return nil
 	}
 
-	result := make(apstra.PortRanges, len(portRangeSlice))
+	result := make(datacenter.PortRanges, len(portRangeSlice))
 	for i, portRange := range portRangeSlice {
-		result[i] = *portRange.request(ctx, diags)
+		result[i] = portRange.request(ctx, diags)
 	}
 
 	return result

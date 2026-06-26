@@ -6,7 +6,6 @@ import (
 	"net"
 	"reflect"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/iptypes"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -95,10 +94,6 @@ func Int64OrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64
 	}
 
 	switch in := in.(type) {
-	case *apstra.VNI:
-		return types.Int64Value(int64(*in))
-	case *apstra.VLAN:
-		return types.Int64Value(int64(*in))
 	case *int:
 		return types.Int64Value(int64(*in))
 	case *int8:
@@ -119,10 +114,6 @@ func Int64OrNull(_ context.Context, in any, diags *diag.Diagnostics) types.Int64
 		return types.Int64Value(int64(*in))
 	case *uint64:
 		return types.Int64Value(int64(*in))
-	case apstra.VNI:
-		return types.Int64Value(int64(in))
-	case apstra.VLAN:
-		return types.Int64Value(int64(in))
 	case int:
 		return types.Int64Value(int64(in))
 	case int8:

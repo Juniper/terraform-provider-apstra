@@ -3,9 +3,10 @@ package blueprint
 import (
 	"context"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -80,32 +81,31 @@ func (o VnBinding) ResourceAttributes() map[string]resourceSchema.Attribute {
 	}
 }
 
-func (o VnBinding) Request(ctx context.Context, leafId string, diags *diag.Diagnostics) *apstra.VnBinding {
-	var vlanId *apstra.VLAN
+func (o VnBinding) Request(ctx context.Context, leafId string, diags *diag.Diagnostics) datacenter.VNBinding {
+	var vlan *uint16
 	if utils.HasValue(o.VlanId) {
-		v := apstra.VLAN(o.VlanId.ValueInt64())
-		vlanId = &v
+		vlan = pointer.To(uint16(o.VlanId.ValueInt64()))
 	}
 
-	var result apstra.VnBinding
-	result.SystemId = apstra.ObjectId(leafId)
-	result.VlanId = vlanId
-	diags.Append(o.AccessIds.ElementsAs(ctx, &result.AccessSwitchNodeIds, false)...)
-	return &result
+	var result datacenter.VNBinding
+	result.SystemID = leafId
+	result.VLAN = vlan
+	diags.Append(o.AccessIds.ElementsAs(ctx, &result.AccessSwitchNodeIDs, false)...)
+	return result
 }
 
-func (o *VnBinding) LoadApiData(ctx context.Context, in apstra.VnBinding, diags *diag.Diagnostics) {
-	accessIds, d := types.SetValueFrom(ctx, types.StringType, in.AccessSwitchNodeIds)
+func (o *VnBinding) LoadApiData(ctx context.Context, in datacenter.VNBinding, diags *diag.Diagnostics) {
+	accessIds, d := types.SetValueFrom(ctx, types.StringType, in.AccessSwitchNodeIDs)
 	diags.Append(d...)
 	if diags.HasError() {
 		return
 	}
 
-	o.VlanId = value.Int64OrNull(ctx, in.VlanId, diags)
+	o.VlanId = value.Int64OrNull(ctx, in.VLAN, diags)
 	o.AccessIds = accessIds
 }
 
-func newBindingMap(ctx context.Context, in []apstra.VnBinding, diags *diag.Diagnostics) types.Map {
+func newBindingMap(ctx context.Context, in []datacenter.VNBinding, diags *diag.Diagnostics) types.Map {
 	if len(in) == 0 {
 		return types.MapNull(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()})
 	}
@@ -117,7 +117,7 @@ func newBindingMap(ctx context.Context, in []apstra.VnBinding, diags *diag.Diagn
 		if diags.HasError() {
 			return types.MapNull(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()})
 		}
-		bindings[in[i].SystemId.String()] = types.ObjectValueMust(
+		bindings[in[i].SystemID] = types.ObjectValueMust(
 			VnBinding{}.AttrTypes(),
 			map[string]attr.Value{
 				"vlan_id":    b.VlanId,
