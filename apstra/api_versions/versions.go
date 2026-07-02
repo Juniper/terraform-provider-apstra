@@ -15,10 +15,12 @@ const (
 	Apstra610  = "6.1.0"
 	Apstra611  = "6.1.1"
 	Apstra612  = "6.1.2"
+	Apstra620  = "6.2.0"
 
 	GeApstra421 = ">=" + Apstra421
 	GeApstra500 = ">=" + Apstra500
 	GeApstra610 = ">=" + Apstra610
+	GeApstra620 = ">=" + Apstra620
 
 	GtApstra422 = ">" + Apstra422
 

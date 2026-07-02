@@ -16,6 +16,7 @@ var (
 	FabricSettingsSetInCreate          = versionconstraints.New(apiversions.GeApstra421)
 	RoutingPolicyExportL3EdgeServerOK  = versionconstraints.New(apiversions.LeApstra422)
 	RoutingZoneTagsOK                  = versionconstraints.New(apiversions.GeApstra500)
+	SwitchingZoneOK                    = versionconstraints.New(apiversions.GeApstra620)
 	TemplateRequiresAntiAffinityPolicy = versionconstraints.New(apiversions.Apstra420)
 	VnDescriptionOk                    = versionconstraints.New(apiversions.GeApstra500)
 	VnEmptyBindingsOk                  = versionconstraints.New(apiversions.GeApstra500)

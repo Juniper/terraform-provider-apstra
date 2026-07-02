@@ -646,6 +646,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterRoutingZoneLoopbackAddresses{} },
 		func() resource.Resource { return &resourceDatacenterRoutingPolicy{} },
 		func() resource.Resource { return &resourceDatacenterSecurityPolicy{} },
+		func() resource.Resource { return &resourceDatacenterSwitchingZone{} },
 		func() resource.Resource { return &resourceDatacenterTag{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
 		func() resource.Resource { return &resourceDeviceAllocation{} },
