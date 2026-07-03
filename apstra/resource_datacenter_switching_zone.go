@@ -169,15 +169,15 @@ func (o *resourceDatacenterSwitchingZone) ImportState(ctx context.Context, req r
 		return
 	}
 
-	sz, err := bp.GetSwitchingZone(ctx, state.BlueprintID.ValueString())
+	sz, err := bp.GetSwitchingZone(ctx, state.ID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddError(
-				"External Gateway not found",
-				fmt.Sprintf("Blueprint %q External Gateway with ID %s not found", bp.Id(), state.ID))
+				"Switching Zone not found",
+				fmt.Sprintf("Blueprint %q Switching Zone with ID %s not found", bp.Id(), state.ID))
 			return
 		}
-		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+		resp.Diagnostics.AddError("Failed to fetch Switching Zone", err.Error())
 		return
 	}
 

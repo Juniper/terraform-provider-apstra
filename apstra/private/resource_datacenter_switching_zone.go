@@ -26,6 +26,10 @@ func (o *ResourceDatacenterSwitchingZone) LoadPrivateState(ctx context.Context, 
 		return
 	}
 
+	if len(b) == 0 {
+		return
+	}
+
 	err := json.Unmarshal(b, &o)
 	if err != nil {
 		diags.AddError("failed to unmarshal private state", err.Error())
