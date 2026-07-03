@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -17,8 +18,8 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceDatacenterSwitchingZone{}
-	//_ resource.ResourceWithImportState    = &resourceDatacenterSwitchingZone{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterSwitchingZone{}
+	_ resource.ResourceWithImportState    = &resourceDatacenterSwitchingZone{}
 	_ resource.ResourceWithModifyPlan     = &resourceDatacenterSwitchingZone{}
 	_ resource.ResourceWithValidateConfig = &resourceDatacenterSwitchingZone{}
 	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterSwitchingZone{}
@@ -126,6 +127,66 @@ func (o *resourceDatacenterSwitchingZone) ModifyPlan(ctx context.Context, req re
 	}
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...) // set the plan
+}
+
+func (o *resourceDatacenterSwitchingZone) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var importID struct {
+		BlueprintID string `json:"blueprint_id"`
+		ID          string `json:"id"`
+	}
+
+	// parse the user-supplied import ID string JSON
+	err := json.Unmarshal([]byte(req.ID), &importID)
+	if err != nil {
+		resp.Diagnostics.AddError("failed parsing import id JSON string", err.Error())
+		return
+	}
+
+	if importID.BlueprintID == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'blueprint_id' element of import ID string cannot be empty")
+		return
+	}
+
+	if importID.ID == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'id' element of import ID string cannot be empty")
+		return
+	}
+
+	// create a state object preloaded with the critical details we need in advance
+	state := blueprint.DatacenterSwitchingZone{
+		BlueprintID: types.StringValue(importID.BlueprintID),
+		ID:          types.StringValue(importID.ID),
+	}
+
+	// get a client for the datacenter reference design
+	bp, err := o.getBpClientFunc(ctx, state.BlueprintID.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, state.BlueprintID), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, state.BlueprintID), err.Error())
+		return
+	}
+
+	sz, err := bp.GetSwitchingZone(ctx, state.BlueprintID.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(
+				"External Gateway not found",
+				fmt.Sprintf("Blueprint %q External Gateway with ID %s not found", bp.Id(), state.ID))
+			return
+		}
+		resp.Diagnostics.AddError("Failed to fetch External Gateway", err.Error())
+		return
+	}
+
+	state.LoadApiData(ctx, sz, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (o *resourceDatacenterSwitchingZone) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
