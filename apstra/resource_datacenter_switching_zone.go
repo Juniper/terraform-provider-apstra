@@ -48,19 +48,8 @@ func (o *resourceDatacenterSwitchingZone) Schema(_ context.Context, _ resource.S
 	}
 }
 
-func (o *resourceDatacenterSwitchingZone) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	// Retrieve values from config.
-	var config blueprint.DatacenterSwitchingZone
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// config-only validation begins here
-
-	// config + api version validation begins here
-
-	// cannot proceed to config + api version validation if the provider has not been configured
+func (o *resourceDatacenterSwitchingZone) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// cannot proceed if the resource has not been configured
 	if o.client == nil {
 		return
 	}

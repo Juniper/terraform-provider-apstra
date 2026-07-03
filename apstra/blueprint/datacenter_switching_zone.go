@@ -271,7 +271,7 @@ func (o *DatacenterSwitchingZone) Query(szResultName string) *apstra.MatchQuery 
 	for _, tag := range o.Tags.Elements() {
 		tagQuery := new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
-				apstra.NodeTypeSecurityZone.QEEAttribute(),
+				apstra.NodeTypeSwitchingZone.QEEAttribute(),
 				{Key: "name", Value: apstra.QEStringVal(szResultName)},
 			}).
 			In([]apstra.QEEAttribute{apstra.RelationshipTypeTag.QEEAttribute()}).
