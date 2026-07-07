@@ -158,9 +158,9 @@ func (o IpLink) ResourceAttributes() map[string]resourceSchema.Attribute {
 }
 
 func (o IpLink) attributes(_ context.Context, diags *diag.Diagnostics) *apstra.ConnectivityTemplatePrimitiveAttributesAttachLogicalLink {
-	var vlan *apstra.VLAN
+	var vlan *uint16
 	if !o.VlanId.IsNull() {
-		vlan = pointer.To(apstra.VLAN(o.VlanId.ValueInt64()))
+		vlan = pointer.To(uint16(o.VlanId.ValueInt64()))
 	}
 
 	var err error

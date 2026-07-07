@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -57,7 +58,7 @@ func (o *dataSourceDatacenterRoutingZone) Read(ctx context.Context, req datasour
 		return
 	}
 
-	var api apstra.SecurityZone
+	var api datacenter.SecurityZone
 	switch {
 	case !config.Id.IsNull():
 		api, err = bp.GetSecurityZone(ctx, config.Id.ValueString())

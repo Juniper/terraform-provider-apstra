@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func leafSwitches(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient) []apstra.ObjectId {
+func leafSwitches(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient) []string {
 	query := new(apstra.PathQuery).
 		SetBlueprintId(client.Id()).
 		SetClient(client.Client()).
@@ -21,14 +21,14 @@ func leafSwitches(t testing.TB, ctx context.Context, client *apstra.TwoStageL3Cl
 	var queryResponse struct {
 		Items []struct {
 			System struct {
-				Id apstra.ObjectId `json:"id"`
+				Id string `json:"id"`
 			} `json:"n_system"`
 		} `json:"items"`
 	}
 
 	require.NoError(t, query.Do(ctx, &queryResponse))
 
-	result := make([]apstra.ObjectId, len(queryResponse.Items))
+	result := make([]string, len(queryResponse.Items))
 	for i, item := range queryResponse.Items {
 		result[i] = item.System.Id
 	}

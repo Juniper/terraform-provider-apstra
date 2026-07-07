@@ -11,6 +11,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/compatibility"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -117,28 +118,28 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 	rzID := testutils.SecurityZoneB(t, ctx, bp, false)
 
 	// discover leaf switch IDs
-	leafs := testutils.GetSystemIds(t, ctx, bp, "leaf")
+	leafs := testutils.GetSystemIDs(t, ctx, bp, "leaf")
 
 	// create a VN to ensure the leaf switches participate in the RZ
-	vnBindings := make([]apstra.VnBinding, len(leafs))
+	vnBindings := make([]datacenter.VNBinding, len(leafs))
 	var i int
 	for _, leafId := range leafs {
-		vnBindings[i] = apstra.VnBinding{SystemId: leafId}
+		vnBindings[i] = datacenter.VNBinding{SystemID: leafId}
 		i++
 	}
-	_, err = bp.CreateVirtualNetwork(ctx, &apstra.VirtualNetworkData{
+	_, err = bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
 		Label:          acctest.RandString(6),
-		SecurityZoneId: apstra.ObjectId(rzID),
-		VnType:         enum.VnTypeVxlan,
-		VnBindings:     vnBindings,
+		SecurityZoneID: rzID,
+		Type:           enum.VnTypeVxlan,
+		Bindings:       vnBindings,
 	})
 	require.NoError(t, err)
 
 	// make a slice of leafIds
 	i = 0
-	leafIds := make([]apstra.ObjectId, len(leafs))
+	leafIDs := make([]string, len(leafs))
 	for _, v := range leafs {
-		leafIds[i] = v
+		leafIDs[i] = v
 		i++
 	}
 
@@ -158,7 +159,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[0].String(): {
+						leafIDs[0]: {
 							iPv4Addr: "",
 							iPv6Addr: "",
 						},
@@ -168,7 +169,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[0].String(): {
+						leafIDs[0]: {
 							iPv4Addr: pointer.To(randomPrefix(t, "10.1.0.0/16", 32)).String(),
 							iPv6Addr: pointer.To(randomPrefix(t, "3fff:1::/32", 128)).String(),
 						},
@@ -178,7 +179,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[0].String(): {
+						leafIDs[0]: {
 							iPv4Addr: "",
 							iPv6Addr: "",
 						},
@@ -192,7 +193,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[1].String(): {
+						leafIDs[1]: {
 							iPv4Addr: pointer.To(randomPrefix(t, "10.2.0.0/16", 32)).String(),
 							iPv6Addr: pointer.To(randomPrefix(t, "3fff:2::/32", 128)).String(),
 						},
@@ -202,7 +203,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[1].String(): {
+						leafIDs[1]: {
 							iPv4Addr: "",
 							iPv6Addr: "",
 						},
@@ -212,7 +213,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[1].String(): {
+						leafIDs[1]: {
 							iPv4Addr: pointer.To(randomPrefix(t, "10.2.0.0/16", 32)).String(),
 							iPv6Addr: pointer.To(randomPrefix(t, "3fff:2::/32", 128)).String(),
 						},
@@ -226,11 +227,11 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[2].String(): {
+						leafIDs[2]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
-						leafIds[3].String(): {
+						leafIDs[3]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
@@ -240,11 +241,11 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[2].String(): {
+						leafIDs[2]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
-						leafIds[3].String(): {
+						leafIDs[3]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
@@ -254,11 +255,11 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[2].String(): {
+						leafIDs[2]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
-						leafIds[3].String(): {
+						leafIDs[3]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
@@ -268,11 +269,11 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[2].String(): {
+						leafIDs[2]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
-						leafIds[3].String(): {
+						leafIDs[3]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
@@ -282,11 +283,11 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[2].String(): {
+						leafIDs[2]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
-						leafIds[3].String(): {
+						leafIDs[3]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},
@@ -296,11 +297,11 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 					blueprintID:   bp.Id().String(),
 					routingZoneID: rzID,
 					loopbacks: map[string]resourceDatacenterRoutingZoneLoopbackAddress{
-						leafIds[2].String(): {
+						leafIDs[2]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.30.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:30::/32", 128)).String(), ""),
 						},
-						leafIds[3].String(): {
+						leafIDs[3]: {
 							iPv4Addr: oneOf(pointer.To(randomPrefix(t, "10.31.0.0/16", 32)).String(), ""),
 							iPv6Addr: oneOf(pointer.To(randomPrefix(t, "3fff:31::/32", 128)).String(), ""),
 						},

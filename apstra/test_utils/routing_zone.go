@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/hashicorp/go-version"
@@ -16,7 +17,7 @@ func SecurityZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3C
 	t.Helper()
 
 	name := acctest.RandString(10)
-	id, err := client.CreateSecurityZone(ctx, apstra.SecurityZone{
+	id, err := client.CreateSecurityZone(ctx, datacenter.SecurityZone{
 		Label:           name,
 		Type:            enum.SecurityZoneTypeEVPN,
 		VRFName:         name,
@@ -51,7 +52,7 @@ func SecurityZoneB(t testing.TB, ctx context.Context, client *apstra.TwoStageL3C
 	if compatibility.BPDefaultRoutingZoneAddressingOK.Check(version.Must(version.NewVersion(client.Client().ApiVersion()))) {
 		as = &enum.AddressingSchemeIPv6
 	}
-	id, err := client.CreateSecurityZone(ctx, apstra.SecurityZone{
+	id, err := client.CreateSecurityZone(ctx, datacenter.SecurityZone{
 		Label:             name,
 		Type:              enum.SecurityZoneTypeEVPN,
 		VRFName:           name,

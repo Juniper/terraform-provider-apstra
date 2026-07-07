@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -92,7 +93,7 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 	routingZoneIds := make([]string, acctest.RandIntRange(5, 10))
 	for i := range routingZoneIds {
 		label := acctest.RandString(6)
-		id, err := bp.CreateSecurityZone(ctx, apstra.SecurityZone{
+		id, err := bp.CreateSecurityZone(ctx, datacenter.SecurityZone{
 			Label:   label,
 			Type:    enum.SecurityZoneTypeEVPN,
 			VRFName: label,

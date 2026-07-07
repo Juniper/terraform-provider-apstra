@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
@@ -60,7 +61,7 @@ func randomCustomStaticRoutes(t testing.TB, ctx context.Context, ipv4Count, ipv6
 	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveCustomStaticRoute, ipv4Count+ipv6Count)
 
 	rzName := acctest.RandString(6)
-	rzID, err := client.CreateSecurityZone(ctx, apstra.SecurityZone{
+	rzID, err := client.CreateSecurityZone(ctx, datacenter.SecurityZone{
 		Label:   rzName,
 		Type:    enum.SecurityZoneTypeEVPN,
 		VRFName: rzName,
@@ -710,7 +711,7 @@ func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, c
 	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
 	for range count {
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
-			virtualNetworkId:         testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String(),
+			virtualNetworkId:         testutils.VirtualNetworkVxlan(t, ctx, client, cleanup),
 			tagged:                   oneOf(true, false),
 			bgpPeeringGenericSystems: randomBgpPeeringGenericSystemPrimitives(t, ctx, rand.IntN(3), client, cleanup),
 			staticRoutes:             randomStaticRoutePrimitives(t, ctx, rand.IntN(3), rand.IntN(3), client, cleanup),
@@ -764,11 +765,11 @@ func randomVirtualNetworkMultiples(t testing.TB, ctx context.Context, count int,
 		var untaggedVnId string
 		if rand.Int()%2 == 0 {
 			for range rand.IntN(3) {
-				taggedVnIds = append(taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String())
+				taggedVnIds = append(taggedVnIds, testutils.VirtualNetworkVxlan(t, ctx, client, cleanup))
 			}
 		}
 		if rand.Int()%2 == 0 || len(taggedVnIds) == 0 {
-			untaggedVnId = testutils.VirtualNetworkVxlan(t, ctx, client, cleanup).String()
+			untaggedVnId = testutils.VirtualNetworkVxlan(t, ctx, client, cleanup)
 		}
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkMultiple{
 			taggedVnIds:  taggedVnIds,

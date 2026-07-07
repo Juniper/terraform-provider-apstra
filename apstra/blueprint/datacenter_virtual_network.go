@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
@@ -595,53 +596,51 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 	}
 }
 
-func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.VirtualNetworkData {
+func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diagnostics) datacenter.VirtualNetwork {
 	var vnType enum.VnType
 	err := vnType.FromString(o.Type.ValueString())
 	if err != nil {
 		diags.Append(
 			validatordiag.BugInProviderDiagnostic(
 				fmt.Sprintf("error parsing virtual network type %q - %s", o.Type.String(), err.Error())))
-		return nil
+		return datacenter.VirtualNetwork{}
 	}
 
 	b := make(map[string]VnBinding)
 	diags.Append(o.Bindings.ElementsAs(ctx, &b, false)...)
 	if diags.HasError() {
-		return nil
+		return datacenter.VirtualNetwork{}
 	}
-	vnBindings := make([]apstra.VnBinding, len(b))
+	vnBindings := make([]datacenter.VNBinding, len(b))
 	var i int
 	for leafId, binding := range b {
-		vnBindings[i] = *binding.Request(ctx, leafId, diags)
+		vnBindings[i] = binding.Request(ctx, leafId, diags)
 		i++
 	}
 	if diags.HasError() {
-		return nil
+		return datacenter.VirtualNetwork{}
 	}
 
-	var vnId *apstra.VNI
+	var vnId *uint32
 	if utils.HasValue(o.Vni) {
-		v := apstra.VNI(o.Vni.ValueInt64())
-		vnId = &v
+		vnId = pointer.To(uint32(o.Vni.ValueInt64()))
 	}
 
 	if o.Type.ValueString() == enum.VnTypeVlan.String() {
 		// Maximum of one binding is required when type==vlan.
 		// Apstra requires vlan == vni when creating a "vlan" type VN.
 		// VNI attribute is forbidden when type == VLAN
-		if len(vnBindings) > 0 && vnBindings[0].VlanId != nil {
-			v := apstra.VNI(*vnBindings[0].VlanId)
-			vnId = &v
+		if len(vnBindings) > 0 && vnBindings[0].VLAN != nil {
+			vnId = pointer.To(uint32(*vnBindings[0].VLAN))
 		}
 	}
 
-	var reservedVlanId *apstra.VLAN
+	var reservedVlanId *uint16
 	if o.ReserveVlan.ValueBool() {
 		if utils.HasValue(o.ReservedVlanId) {
-			reservedVlanId = pointer.To(apstra.VLAN(o.ReservedVlanId.ValueInt64()))
+			reservedVlanId = pointer.To(uint16(o.ReservedVlanId.ValueInt64()))
 		} else {
-			reservedVlanId = vnBindings[0].VlanId
+			reservedVlanId = vnBindings[0].VLAN
 		}
 	}
 
@@ -673,9 +672,9 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		l3Mtu = &i
 	}
 
-	var rtPolicy *apstra.RTPolicy
+	var rtPolicy *datacenter.RTPolicy
 	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
-		rtPolicy = new(apstra.RTPolicy)
+		rtPolicy = new(datacenter.RTPolicy)
 		if !o.ImportRouteTargets.IsNull() {
 			diags.Append(o.ImportRouteTargets.ElementsAs(ctx, &rtPolicy.ImportRTs, false)...)
 		}
@@ -684,77 +683,79 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		}
 	}
 
-	return &apstra.VirtualNetworkData{
+	result := datacenter.VirtualNetwork{
 		Description:               o.Description.ValueString(),
-		DhcpService:               apstra.DhcpServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
-		Ipv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
-		Ipv4Subnet:                ipv4Subnet,
-		Ipv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
-		Ipv6Subnet:                ipv6Subnet,
-		L3Mtu:                     l3Mtu,
+		DHCPService:               datacenter.DHCPServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
+		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
+		IPv4Subnet:                ipv4Subnet,
+		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
+		IPv6Subnet:                ipv6Subnet,
+		L3MTU:                     l3Mtu,
 		Label:                     o.Name.ValueString(),
-		ReservedVlanId:            reservedVlanId,
-		RouteTarget:               "",
-		RtPolicy:                  rtPolicy,
-		SecurityZoneId:            apstra.ObjectId(o.RoutingZoneId.ValueString()),
-		SviIps:                    nil,
-		VirtualGatewayIpv4:        ipv4Gateway,
-		VirtualGatewayIpv6:        ipv6Gateway,
-		VirtualGatewayIpv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
-		VirtualGatewayIpv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
-		VnBindings:                vnBindings,
-		VnId:                      vnId,
-		VnType:                    vnType,
-		VirtualMac:                nil,
+		ReservedVLAN:              reservedVlanId,
+		RTPolicy:                  rtPolicy,
+		SecurityZoneID:            o.RoutingZoneId.ValueString(),
+		SVIIPs:                    nil,
+		VirtualGatewayIPv4:        ipv4Gateway,
+		VirtualGatewayIPv6:        ipv6Gateway,
+		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
+		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
+		Bindings:                  vnBindings,
+		VNI:                       vnId,
+		Type:                      vnType,
+		VirtualMAC:                nil,
 	}
+	_ = result.SetID(o.Id.ValueString()) // skipping error check b/c we know that result.id is currently empty
+	return result
 }
 
-func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in *apstra.VirtualNetworkData, diags *diag.Diagnostics) {
-	var virtualGatewayIpv4, virtualGatewayIpv6 string
-	if len(in.VirtualGatewayIpv4.To4()) == net.IPv4len {
-		virtualGatewayIpv4 = in.VirtualGatewayIpv4.String()
+func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacenter.VirtualNetwork, diags *diag.Diagnostics) {
+	var virtualGatewayIPv4, virtualGatewayIPv6 string
+	if len(in.VirtualGatewayIPv4.To4()) == net.IPv4len {
+		virtualGatewayIPv4 = in.VirtualGatewayIPv4.String()
 	}
-	if len(in.VirtualGatewayIpv6) == net.IPv6len {
-		virtualGatewayIpv6 = in.VirtualGatewayIpv6.String()
+	if len(in.VirtualGatewayIPv6) == net.IPv6len {
+		virtualGatewayIPv6 = in.VirtualGatewayIPv6.String()
 	}
 
+	o.Id = types.StringPointerValue(in.ID())
 	o.Name = types.StringValue(in.Label)
 	o.Description = value.StringOrNull(ctx, in.Description, diags)
-	o.Type = types.StringValue(in.VnType.String())
-	o.RoutingZoneId = types.StringValue(in.SecurityZoneId.String())
-	o.Bindings = newBindingMap(ctx, in.VnBindings, diags)
-	o.Vni = value.Int64OrNull(ctx, in.VnId, diags)
-	o.DhcpServiceEnabled = types.BoolValue(bool(in.DhcpService))
-	o.IPv4ConnectivityEnabled = types.BoolValue(in.Ipv4Enabled)
-	o.IPv6ConnectivityEnabled = types.BoolValue(in.Ipv6Enabled)
-	o.ReserveVlan = types.BoolValue(in.ReservedVlanId != nil)
-	if in.ReservedVlanId == nil {
+	o.Type = types.StringValue(in.Type.String())
+	o.RoutingZoneId = types.StringValue(in.SecurityZoneID)
+	o.Bindings = newBindingMap(ctx, in.Bindings, diags)
+	o.Vni = value.Int64OrNull(ctx, in.VNI, diags)
+	o.DhcpServiceEnabled = types.BoolValue(bool(in.DHCPService))
+	o.IPv4ConnectivityEnabled = types.BoolValue(in.IPv4Enabled)
+	o.IPv6ConnectivityEnabled = types.BoolValue(in.IPv6Enabled)
+	o.ReserveVlan = types.BoolValue(in.ReservedVLAN != nil)
+	if in.ReservedVLAN == nil {
 		o.ReservedVlanId = types.Int64Null()
 	} else {
-		o.ReservedVlanId = types.Int64Value(int64(*in.ReservedVlanId))
+		o.ReservedVlanId = types.Int64Value(int64(*in.ReservedVLAN))
 	}
-	if in.Ipv4Subnet == nil {
+	if in.IPv4Subnet == nil {
 		o.IPv4Subnet = types.StringNull()
 	} else {
-		o.IPv4Subnet = types.StringValue(in.Ipv4Subnet.String())
+		o.IPv4Subnet = types.StringValue(in.IPv4Subnet.String())
 	}
-	if in.Ipv6Subnet == nil {
+	if in.IPv6Subnet == nil {
 		o.IPv6Subnet = types.StringNull()
 	} else {
-		o.IPv6Subnet = types.StringValue(in.Ipv6Subnet.String())
+		o.IPv6Subnet = types.StringValue(in.IPv6Subnet.String())
 	}
-	o.IPv4GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv4Enabled)
-	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIpv6Enabled)
-	o.IPv4Gateway = value.StringOrNull(ctx, virtualGatewayIpv4, diags)
-	o.IPv6Gateway = value.StringOrNull(ctx, virtualGatewayIpv6, diags)
-	o.L3Mtu = value.Int64OrNull(ctx, in.L3Mtu, diags)
+	o.IPv4GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv4Enabled)
+	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv6Enabled)
+	o.IPv4Gateway = value.StringOrNull(ctx, virtualGatewayIPv4, diags)
+	o.IPv6Gateway = value.StringOrNull(ctx, virtualGatewayIPv6, diags)
+	o.L3Mtu = value.Int64OrNull(ctx, in.L3MTU, diags)
 
-	if in.RtPolicy == nil {
+	if in.RTPolicy == nil {
 		o.ImportRouteTargets = types.SetNull(types.StringType)
 		o.ExportRouteTargets = types.SetNull(types.StringType)
 	} else {
-		o.ImportRouteTargets = value.SetOrNull(ctx, types.StringType, in.RtPolicy.ImportRTs, diags)
-		o.ExportRouteTargets = value.SetOrNull(ctx, types.StringType, in.RtPolicy.ExportRTs, diags)
+		o.ImportRouteTargets = value.SetOrNull(ctx, types.StringType, in.RTPolicy.ImportRTs, diags)
+		o.ExportRouteTargets = value.SetOrNull(ctx, types.StringType, in.RTPolicy.ExportRTs, diags)
 	}
 
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)

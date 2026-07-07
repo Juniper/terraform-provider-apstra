@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -195,31 +196,31 @@ func (o DatacenterSecurityPolicy) ResourceAttributes() map[string]resourceSchema
 }
 
 func (o *DatacenterSecurityPolicy) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
-	var api *apstra.Policy
+	var api datacenter.Policy
 	var err error
 
 	if o.Id.IsNull() {
 		api, err = bp.GetPolicyByLabel(ctx, o.Name.ValueString())
 	} else {
-		api, err = bp.GetPolicy(ctx, apstra.ObjectId(o.Id.ValueString()))
+		api, err = bp.GetPolicy(ctx, o.Id.ValueString())
 	}
 	if err != nil {
 		return err
 	}
 
-	o.Id = types.StringValue(api.Id.String())
-	o.loadApiData(ctx, api.Data, diags)
+	o.Id = types.StringPointerValue(api.ID())
+	o.loadApiData(ctx, api, diags)
 
 	return nil
 }
 
-func (o *DatacenterSecurityPolicy) loadApiData(ctx context.Context, data *apstra.PolicyData, diags *diag.Diagnostics) {
+func (o *DatacenterSecurityPolicy) loadApiData(ctx context.Context, data datacenter.Policy, diags *diag.Diagnostics) {
 	var srcAppPointId, dstAppPointId types.String
 	if data.SrcApplicationPoint != nil {
-		srcAppPointId = value.StringOrNull(ctx, data.SrcApplicationPoint.Id.String(), diags)
+		srcAppPointId = types.StringPointerValue(data.SrcApplicationPoint)
 	}
 	if data.DstApplicationPoint != nil {
-		dstAppPointId = value.StringOrNull(ctx, data.DstApplicationPoint.Id.String(), diags)
+		dstAppPointId = types.StringPointerValue(data.DstApplicationPoint)
 	}
 
 	o.Name = types.StringValue(data.Label)
@@ -310,28 +311,22 @@ func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {
 	return matchQuery
 }
 
-func (o *DatacenterSecurityPolicy) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.PolicyData {
-	var srcApplicationPoint, dstApplicationPoint *apstra.PolicyApplicationPointData
-	if !o.SrcAppPointId.IsNull() {
-		srcApplicationPoint = &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(o.SrcAppPointId.ValueString())}
-	}
-	if !o.DstAppPointId.IsNull() {
-		dstApplicationPoint = &apstra.PolicyApplicationPointData{Id: apstra.ObjectId(o.DstAppPointId.ValueString())}
-	}
-
+func (o *DatacenterSecurityPolicy) Request(ctx context.Context, diags *diag.Diagnostics) datacenter.Policy {
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 	if tags == nil {
 		tags = make([]string, 0) // we must send an empty slice to wipe out current tags
 	}
 
-	return &apstra.PolicyData{
+	result := datacenter.Policy{
 		Enabled:             o.Enabled.ValueBool(),
 		Label:               o.Name.ValueString(),
 		Description:         o.Description.ValueString(),
-		SrcApplicationPoint: srcApplicationPoint,
-		DstApplicationPoint: dstApplicationPoint,
+		SrcApplicationPoint: o.SrcAppPointId.ValueStringPointer(),
+		DstApplicationPoint: o.DstAppPointId.ValueStringPointer(),
 		Rules:               policyRuleListToApstraPolicyRuleSlice(ctx, o.Rules, diags),
 		Tags:                tags,
 	}
+	_ = result.SetID(o.Id.ValueString()) // skipping error check b/c we know that result.id is currently empty
+	return result
 }

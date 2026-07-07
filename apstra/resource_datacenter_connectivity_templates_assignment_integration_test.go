@@ -27,9 +27,9 @@ resource %q %q {
 }`
 
 type resourceDatacenterConnectivityTemplatesAssignment struct {
-	blueprintId             apstra.ObjectId
-	applicationPointId      apstra.ObjectId
-	connectivityTemplateIds []apstra.ObjectId
+	blueprintId             string
+	applicationPointId      string
+	connectivityTemplateIds []string
 	fetchIpLinkIds          *bool
 }
 
@@ -47,12 +47,12 @@ func (o resourceDatacenterConnectivityTemplatesAssignment) testChecks(t testing.
 	result := newTestChecks(rType + "." + rName)
 
 	// required and computed attributes can always be checked
-	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId.String())
-	result.append(t, "TestCheckResourceAttr", "application_point_id", o.applicationPointId.String())
+	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId)
+	result.append(t, "TestCheckResourceAttr", "application_point_id", o.applicationPointId)
 	result.append(t, "TestCheckResourceAttr", "connectivity_template_ids.#", strconv.Itoa(len(o.connectivityTemplateIds)))
 
 	for _, connectivityTemplateId := range o.connectivityTemplateIds {
-		result.append(t, "TestCheckTypeSetElemAttr", "connectivity_template_ids.*", connectivityTemplateId.String())
+		result.append(t, "TestCheckTypeSetElemAttr", "connectivity_template_ids.*", connectivityTemplateId)
 	}
 
 	if o.fetchIpLinkIds == nil {
@@ -61,7 +61,7 @@ func (o resourceDatacenterConnectivityTemplatesAssignment) testChecks(t testing.
 		result.append(t, "TestCheckResourceAttr", "fetch_ip_link_ids", strconv.FormatBool(*o.fetchIpLinkIds))
 
 		for _, connectivityTemplateId := range o.connectivityTemplateIds {
-			ctVlans := testutils.DatacenterIpLinkConnectivityTemplateVlans(t, ctx, bp, connectivityTemplateId)
+			ctVlans := testutils.DatacenterIpLinkConnectivityTemplateVlans(t, ctx, bp, apstra.ObjectId(connectivityTemplateId))
 			for _, ctVlan := range ctVlans {
 				result.append(t, "TestCheckResourceAttrSet", fmt.Sprintf(`ip_link_ids.%s.%d`, connectivityTemplateId, ctVlan))
 			}
@@ -79,23 +79,23 @@ func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 
 	// Create blueprint, routing zones and connectivity templates
 	bp := testutils.BlueprintA(t, ctx)
-	interfaceCTs := make([]apstra.ObjectId, ifCTCount)
+	interfaceCTs := make([]string, ifCTCount)
 	for i := range interfaceCTs {
 		szId := testutils.SecurityZoneB(t, ctx, bp, true)
 		ctId := testutils.DatacenterConnectivityTemplateA(t, ctx, bp, szId, 101+i)
-		interfaceCTs[i] = ctId
+		interfaceCTs[i] = string(ctId)
 	}
-	systemCTs := make([]apstra.ObjectId, systemCTCount)
+	systemCTs := make([]string, systemCTCount)
 	for i := range systemCTs {
 		szId := testutils.SecurityZoneA(t, ctx, bp, true)
 		ctid := testutils.DatacenterConnectivityTemplateCustomStaticRoute(t, ctx, bp, apstra.ObjectId(szId))
-		systemCTs[i] = ctid
+		systemCTs[i] = string(ctid)
 	}
 
 	interfaceAPIDs := testutils.LeafSwitchGenericSystemInterfaces(t, ctx, bp)
 	require.Equal(t, 8, len(interfaceAPIDs)) // BlueprintA should have 8 single-homed generic systems
 
-	systemAPIDmap := testutils.GetSystemIds(t, ctx, bp, "leaf")
+	systemAPIDmap := testutils.GetSystemIDs(t, ctx, bp, "leaf")
 	systemAPIDs := slices.Collect(maps.Values(systemAPIDmap))
 	require.Equal(t, 4, len(systemAPIDs))
 
@@ -107,36 +107,36 @@ func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 		"single_csr_one_step": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
-					blueprintId:             bp.Id(),
+					blueprintId:             string(bp.Id()),
 					applicationPointId:      systemAPIDs[0],
-					connectivityTemplateIds: []apstra.ObjectId{systemCTs[0]},
+					connectivityTemplateIds: []string{systemCTs[0]},
 				},
 			},
 		},
 		"single_if_one_step": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
-					blueprintId:             bp.Id(),
-					connectivityTemplateIds: []apstra.ObjectId{interfaceCTs[0]},
-					applicationPointId:      interfaceAPIDs[0],
+					blueprintId:             string(bp.Id()),
+					connectivityTemplateIds: []string{interfaceCTs[0]},
+					applicationPointId:      string(interfaceAPIDs[0]),
 				},
 			},
 		},
 		"multiple_if_one_step": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
-					blueprintId:             bp.Id(),
+					blueprintId:             string(bp.Id()),
 					connectivityTemplateIds: interfaceCTs,
-					applicationPointId:      interfaceAPIDs[0],
+					applicationPointId:      string(interfaceAPIDs[0]),
 				},
 			},
 		},
 		"single_if_with_fetch": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
-					blueprintId:             bp.Id(),
+					blueprintId:             string(bp.Id()),
 					connectivityTemplateIds: interfaceCTs,
-					applicationPointId:      interfaceAPIDs[0],
+					applicationPointId:      string(interfaceAPIDs[0]),
 					fetchIpLinkIds:          pointer.To(true),
 				},
 			},
@@ -144,19 +144,19 @@ func TestAccDatacenterConnectivityTemplatesAssignment(t *testing.T) {
 		"simple_if": {
 			steps: []resourceDatacenterConnectivityTemplatesAssignment{
 				{
-					blueprintId:             bp.Id(),
+					blueprintId:             string(bp.Id()),
 					connectivityTemplateIds: interfaceCTs[0:1],
-					applicationPointId:      interfaceAPIDs[1],
+					applicationPointId:      string(interfaceAPIDs[1]),
 				},
 				{
-					blueprintId:             bp.Id(),
+					blueprintId:             string(bp.Id()),
 					connectivityTemplateIds: interfaceCTs[1:3],
-					applicationPointId:      interfaceAPIDs[1],
+					applicationPointId:      string(interfaceAPIDs[1]),
 				},
 				{
-					blueprintId:             bp.Id(),
+					blueprintId:             string(bp.Id()),
 					connectivityTemplateIds: interfaceCTs[3:4],
-					applicationPointId:      interfaceAPIDs[1],
+					applicationPointId:      string(interfaceAPIDs[1]),
 				},
 			},
 		},

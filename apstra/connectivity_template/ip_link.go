@@ -13,6 +13,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -132,8 +133,7 @@ func (o IpLink) Marshal(ctx context.Context, diags *diag.Diagnostics) string {
 
 	if !o.VlanId.IsNull() {
 		obj.Tagged = true
-		vlan := apstra.VLAN(o.VlanId.ValueInt64())
-		obj.VlanId = &vlan
+		obj.VlanId = pointer.To(uint16(o.VlanId.ValueInt64()))
 	}
 
 	if o.Ipv4AddressingType.IsNull() {
@@ -195,14 +195,14 @@ func (o *IpLink) loadSdkPrimitive(ctx context.Context, in apstra.ConnectivityTem
 var _ JsonPrimitive = &ipLinkPrototype{}
 
 type ipLinkPrototype struct {
-	Label              string       `json:"label,omitempty"`
-	RoutingZoneId      string       `json:"routing_zone_id"`
-	Tagged             bool         `json:"tagged"`
-	VlanId             *apstra.VLAN `json:"vlan_id,omitempty"`
-	Ipv4AddressingType string       `json:"ipv4_addressing_type"`
-	Ipv6AddressingType string       `json:"ipv6_addressing_type"`
-	ChildPrimitives    []string     `json:"child_primitives,omitempty"`
-	L3Mtu              *uint16      `json:"l3_mtu,omitempty"`
+	Label              string   `json:"label,omitempty"`
+	RoutingZoneId      string   `json:"routing_zone_id"`
+	Tagged             bool     `json:"tagged"`
+	VlanId             *uint16  `json:"vlan_id,omitempty"`
+	Ipv4AddressingType string   `json:"ipv4_addressing_type"`
+	Ipv6AddressingType string   `json:"ipv6_addressing_type"`
+	ChildPrimitives    []string `json:"child_primitives,omitempty"`
+	L3Mtu              *uint16  `json:"l3_mtu,omitempty"`
 }
 
 func (o ipLinkPrototype) attributes(_ context.Context, path path.Path, diags *diag.Diagnostics) apstra.ConnectivityTemplatePrimitiveAttributes {

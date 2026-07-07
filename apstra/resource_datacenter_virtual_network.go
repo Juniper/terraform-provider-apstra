@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -215,6 +216,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	}
 
 	// set tags, if any
+	// todo: skip setting tags when talking to Apstra 6.2+ (#1257)
 	if !plan.Tags.IsNull() {
 		var tags []string
 		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
@@ -222,7 +224,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 			return
 		}
 
-		err = bp.SetNodeTags(ctx, id, tags)
+		err = bp.SetNodeTags(ctx, apstra.ObjectId(id), tags)
 		if err != nil {
 			resp.Diagnostics.AddError("error setting tags", err.Error())
 			return
@@ -232,11 +234,11 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	// update the plan with the received ObjectId and set the partial state in
 	// case we have to bail due to error soon.
 	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
-	plan.Id = types.StringValue(id.String())
+	plan.Id = types.StringValue(id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
 	// fetch the virtual network to learn apstra-assigned VLAN assignments
-	var api *apstra.VirtualNetwork
+	var api datacenter.VirtualNetwork
 	retryMax := 25
 	for {
 		if retryMax == 0 {
@@ -251,11 +253,11 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 			return
 		}
 
-		if plan.IPv4ConnectivityEnabled.ValueBool() && api.Data.Ipv4Subnet == nil {
+		if plan.IPv4ConnectivityEnabled.ValueBool() && api.IPv4Subnet == nil {
 			time.Sleep(200 * time.Millisecond)
 			continue // try again
 		}
-		if plan.IPv6ConnectivityEnabled.ValueBool() && api.Data.Ipv6Subnet == nil {
+		if plan.IPv6ConnectivityEnabled.ValueBool() && api.IPv6Subnet == nil {
 			time.Sleep(200 * time.Millisecond)
 			continue // try again
 		}
@@ -267,10 +269,9 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	// instantiating a new object here because #170 (a creation race condition
 	// in the API) means we can't completely rely on the API response.
 	var state blueprint.DatacenterVirtualNetwork
-	state.Id = types.StringValue(id.String())
 	state.BlueprintId = plan.BlueprintId
 	state.HadPriorVniConfig = plan.HadPriorVniConfig
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 
 	// Don't rely on the API response for these values (#170). If the config
 	// supplied a value, use it when setting state.
@@ -321,7 +322,7 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 	}
 
 	// retrieve the virtual network
-	vn, err := bp.GetVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
+	vn, err := bp.GetVirtualNetwork(ctx, state.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -333,7 +334,7 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 	bindingsShouldBeNull := state.Bindings.IsNull()
 
 	// load the API response
-	state.LoadApiData(ctx, vn.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, vn, &resp.Diagnostics)
 
 	// wipe out the bindings if none were recorded in the state (bindings created some other way)
 	if bindingsShouldBeNull && !state.Bindings.IsNull() {
@@ -396,13 +397,14 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		!plan.ImportRouteTargets.Equal(state.ImportRouteTargets) ||
 		!plan.ExportRouteTargets.Equal(state.ExportRouteTargets) {
 
-		err = bp.UpdateVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+		err = bp.UpdateVirtualNetwork(ctx, request)
 		if err != nil {
 			resp.Diagnostics.AddError("error updating virtual network", err.Error())
 		}
 	}
 
 	// update tags, if necessary
+	// todo: skip setting tags when talking to Apstra 6.2+ (#1257)
 	if !plan.Tags.Equal(state.Tags) {
 		var tags []string
 		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
@@ -417,7 +419,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 
 	// fetch the virtual network to learn apstra-assigned VLAN assignments
-	api, err := bp.GetVirtualNetwork(ctx, apstra.ObjectId(plan.Id.ValueString()))
+	api, err := bp.GetVirtualNetwork(ctx, plan.Id.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			fmt.Sprintf("error fetching just-updated virtual network %q", plan.Id.ValueString()),
@@ -429,10 +431,9 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	// instantiating a new object here because #170 (a creation race condition
 	// in the API) means we can't completely rely on the API response.
 	var stateOut blueprint.DatacenterVirtualNetwork
-	stateOut.Id = plan.Id
 	stateOut.BlueprintId = plan.BlueprintId
 	stateOut.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
-	stateOut.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	stateOut.LoadApiData(ctx, api, &resp.Diagnostics)
 
 	// Don't rely on the API response for these values (#170). If the config
 	// supplied a value, use that when setting state.
@@ -495,7 +496,7 @@ func (o *resourceDatacenterVirtualNetwork) Delete(ctx context.Context, req resou
 	}
 
 	// Delete the virtual network
-	err = bp.DeleteVirtualNetwork(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err = bp.DeleteVirtualNetwork(ctx, state.Id.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay

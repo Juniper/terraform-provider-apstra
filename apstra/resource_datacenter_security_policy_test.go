@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
@@ -52,17 +53,17 @@ resource "apstra_datacenter_security_policy" "test" {
 )
 
 type testCaseResourceSecurityPolicy struct {
-	config     apstra.PolicyData
+	config     datacenter.Policy
 	checks     []resource.TestCheckFunc
 	minVersion *version.Version
 }
 
 func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) string {
-	renderPort := func(port apstra.PortRange) string {
+	renderPort := func(port datacenter.PortRange) string {
 		return fmt.Sprintf(resourceDataCenterSecurityPolicyRulePortHCL, port.First, port.Last)
 	}
 
-	renderPorts := func(ports apstra.PortRanges) string {
+	renderPorts := func(ports datacenter.PortRanges) string {
 		if len(ports) == 0 {
 			return "null"
 		}
@@ -84,19 +85,19 @@ func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) strin
 		return strconv.FormatBool(*tsq == enum.TcpStateQualifierEstablished)
 	}
 
-	renderRule := func(rule apstra.PolicyRule) string {
+	renderRule := func(rule datacenter.PolicyRule) string {
 		return fmt.Sprintf(resourceDataCenterSecurityPolicyRuleHCL,
-			rule.Data.Label,
-			stringOrNull(rule.Data.Description),
-			rule.Data.Action.Value,
-			rosetta.StringersToFriendlyString(rule.Data.Protocol),
-			renderPorts(rule.Data.SrcPort),
-			renderPorts(rule.Data.DstPort),
-			renderEstablished(rule.Data.TcpStateQualifier),
+			rule.Label,
+			stringOrNull(rule.Description),
+			rule.Action.Value,
+			rosetta.StringersToFriendlyString(rule.Protocol),
+			renderPorts(rule.SrcPort),
+			renderPorts(rule.DstPort),
+			renderEstablished(rule.TcpStateQualifier),
 		)
 	}
 
-	renderRules := func(rules []apstra.PolicyRule) string {
+	renderRules := func(rules []datacenter.PolicyRule) string {
 		if len(rules) == 0 {
 			return "null"
 		}
@@ -108,14 +109,6 @@ func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) strin
 		}
 		sb.WriteString("    ]\n")
 		return sb.String()
-	}
-
-	renderApplicationPoint := func(p *apstra.PolicyApplicationPointData) string {
-		if p == nil {
-			return "null"
-		}
-
-		return `"` + p.Id.String() + `"`
 	}
 
 	renderTags := func(s []string) string {
@@ -130,8 +123,8 @@ func (o testCaseResourceSecurityPolicy) renderConfig(bpId apstra.ObjectId) strin
 		o.config.Label,
 		stringOrNull(o.config.Description),
 		strconv.FormatBool(o.config.Enabled),
-		renderApplicationPoint(o.config.SrcApplicationPoint),
-		renderApplicationPoint(o.config.DstApplicationPoint),
+		stringPtrOrNull(o.config.SrcApplicationPoint),
+		stringPtrOrNull(o.config.DstApplicationPoint),
 		renderTags(o.config.Tags),
 		renderRules(o.config.Rules),
 	)
@@ -146,13 +139,13 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 	leafIds := systemIds(ctx, t, bpClient, "leaf")
 
 	// create virtual networks
-	vnIds := make([]apstra.ObjectId, 2)
+	vnIds := make([]string, 2)
 	for i := range vnIds {
-		id, err := bpClient.CreateVirtualNetwork(ctx, &apstra.VirtualNetworkData{
-			Ipv4Enabled: true,
+		id, err := bpClient.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
+			IPv4Enabled: true,
 			Label:       acctest.RandString(5),
-			VnBindings:  []apstra.VnBinding{{SystemId: apstra.ObjectId(leafIds[i])}},
-			VnType:      enum.VnTypeVlan,
+			Bindings:    []datacenter.VNBinding{{SystemID: leafIds[i]}},
+			Type:        enum.VnTypeVlan,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -162,7 +155,7 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 
 	tests := []testCaseResourceSecurityPolicy{
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label: "1",
 			},
 			checks: []resource.TestCheckFunc{
@@ -172,7 +165,7 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:       "2",
 				Enabled:     true,
 				Description: "two",
@@ -190,7 +183,7 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:   "3",
 				Enabled: false,
 			},
@@ -201,47 +194,45 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:               "4",
 				Enabled:             true,
-				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[0]},
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[1]},
+				SrcApplicationPoint: &vnIds[0],
+				DstApplicationPoint: &vnIds[1],
 			},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "4"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0].String()),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1].String()),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0]),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1]),
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:               "5",
 				Enabled:             false,
-				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[1]},
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[0]},
+				SrcApplicationPoint: &vnIds[1],
+				DstApplicationPoint: &vnIds[0],
 			},
 			checks: []resource.TestCheckFunc{
 				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "5"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "false"),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[1].String()),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[0].String()),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[1]),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[0]),
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:   "6",
 				Enabled: true,
-				Rules: []apstra.PolicyRule{
+				Rules: []datacenter.PolicyRule{
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "60",
-							Description: "",
-							Protocol:    enum.PolicyRuleProtocolIcmp,
-							Action:      enum.PolicyRuleActionDeny,
-						},
+						Label:       "60",
+						Description: "",
+						Protocol:    enum.PolicyRuleProtocolIcmp,
+						Action:      enum.PolicyRuleActionDeny,
 					},
 				},
 			},
@@ -256,17 +247,15 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:   "7",
 				Enabled: false,
-				Rules: []apstra.PolicyRule{
+				Rules: []datacenter.PolicyRule{
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "70",
-							Description: "seventy",
-							Protocol:    enum.PolicyRuleProtocolIp,
-							Action:      enum.PolicyRuleActionDenyLog,
-						},
+						Label:       "70",
+						Description: "seventy",
+						Protocol:    enum.PolicyRuleProtocolIp,
+						Action:      enum.PolicyRuleActionDenyLog,
 					},
 				},
 			},
@@ -282,44 +271,38 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:               "8",
 				Enabled:             true,
-				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[0]},
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[1]},
-				Rules: []apstra.PolicyRule{
+				SrcApplicationPoint: &vnIds[0],
+				DstApplicationPoint: &vnIds[1],
+				Rules: []datacenter.PolicyRule{
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "80",
-							Description: "eighty",
-							Protocol:    enum.PolicyRuleProtocolUdp,
-							Action:      enum.PolicyRuleActionPermit,
-						},
+						Label:       "80",
+						Description: "eighty",
+						Protocol:    enum.PolicyRuleProtocolUdp,
+						Action:      enum.PolicyRuleActionPermit,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "81",
-							Description: "eightyone",
-							Protocol:    enum.PolicyRuleProtocolTcp,
-							Action:      enum.PolicyRuleActionPermitLog,
-						},
+						Label:       "81",
+						Description: "eightyone",
+						Protocol:    enum.PolicyRuleProtocolTcp,
+						Action:      enum.PolicyRuleActionPermitLog,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:             "82",
-							Description:       "eightytwo",
-							Protocol:          enum.PolicyRuleProtocolTcp,
-							Action:            enum.PolicyRuleActionPermit,
-							TcpStateQualifier: &enum.TcpStateQualifierEstablished,
-							SrcPort: apstra.PortRanges{
-								{First: 1, Last: 1},
-								{First: 3, Last: 5},
-								{First: 7, Last: 9},
-								{First: 11, Last: 11},
-							},
-							DstPort: apstra.PortRanges{
-								{First: 50, Last: 50},
-							},
+						Label:             "82",
+						Description:       "eightytwo",
+						Protocol:          enum.PolicyRuleProtocolTcp,
+						Action:            enum.PolicyRuleActionPermit,
+						TcpStateQualifier: &enum.TcpStateQualifierEstablished,
+						SrcPort: datacenter.PortRanges{
+							{First: 1, Last: 1},
+							{First: 3, Last: 5},
+							{First: 7, Last: 9},
+							{First: 11, Last: 11},
+						},
+						DstPort: datacenter.PortRanges{
+							{First: 50, Last: 50},
 						},
 					},
 				},
@@ -328,8 +311,8 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "8"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0].String()),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1].String()),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0]),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1]),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.#", "3"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.name", "80"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.description", "eighty"),
@@ -350,44 +333,38 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:               "9",
 				Enabled:             true,
-				SrcApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[0]},
-				DstApplicationPoint: &apstra.PolicyApplicationPointData{Id: vnIds[1]},
-				Rules: []apstra.PolicyRule{
+				SrcApplicationPoint: &vnIds[0],
+				DstApplicationPoint: &vnIds[1],
+				Rules: []datacenter.PolicyRule{
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "90",
-							Description: "ninety",
-							Protocol:    enum.PolicyRuleProtocolUdp,
-							Action:      enum.PolicyRuleActionPermit,
-						},
+						Label:       "90",
+						Description: "ninety",
+						Protocol:    enum.PolicyRuleProtocolUdp,
+						Action:      enum.PolicyRuleActionPermit,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:       "91",
-							Description: "ninetyone",
-							Protocol:    enum.PolicyRuleProtocolTcp,
-							Action:      enum.PolicyRuleActionPermitLog,
-						},
+						Label:       "91",
+						Description: "ninetyone",
+						Protocol:    enum.PolicyRuleProtocolTcp,
+						Action:      enum.PolicyRuleActionPermitLog,
 					},
 					{
-						Data: &apstra.PolicyRuleData{
-							Label:             "92",
-							Description:       "ninetytwo",
-							Protocol:          enum.PolicyRuleProtocolTcp,
-							Action:            enum.PolicyRuleActionPermit,
-							TcpStateQualifier: &enum.TcpStateQualifierEstablished,
-							SrcPort: apstra.PortRanges{
-								{First: 1, Last: 1},
-								{First: 7, Last: 9},
-								{First: 11, Last: 11},
-							},
-							DstPort: apstra.PortRanges{
-								{First: 50, Last: 50},
-								{First: 3, Last: 5},
-							},
+						Label:             "92",
+						Description:       "ninetytwo",
+						Protocol:          enum.PolicyRuleProtocolTcp,
+						Action:            enum.PolicyRuleActionPermit,
+						TcpStateQualifier: &enum.TcpStateQualifierEstablished,
+						SrcPort: datacenter.PortRanges{
+							{First: 1, Last: 1},
+							{First: 7, Last: 9},
+							{First: 11, Last: 11},
+						},
+						DstPort: datacenter.PortRanges{
+							{First: 50, Last: 50},
+							{First: 3, Last: 5},
 						},
 					},
 				},
@@ -396,8 +373,8 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "9"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0].String()),
-				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1].String()),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0]),
+				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1]),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.#", "3"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.name", "90"),
 				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.description", "ninety"),
@@ -418,7 +395,7 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 			},
 		},
 		{
-			config: apstra.PolicyData{
+			config: datacenter.Policy{
 				Label:   "10",
 				Enabled: false,
 			},

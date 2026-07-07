@@ -122,7 +122,8 @@ func TestCfgFileToEnv(t testing.TB) {
 	t.Setenv(constants.EnvTlsNoVerify, strconv.FormatBool(testCfg.TlsValidationDisabled))
 }
 
-func GetSystemIds(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, role string) map[string]apstra.ObjectId {
+// GetSystemIDs returns system node IDs keyed by node label
+func GetSystemIDs(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosClient, role string) map[string]string {
 	t.Helper()
 
 	leafQuery := new(apstra.PathQuery).
@@ -138,8 +139,8 @@ func GetSystemIds(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosCl
 	var leafQueryResult struct {
 		Items []struct {
 			System struct {
-				Id    apstra.ObjectId `json:"id"`
-				Label string          `json:"label"`
+				ID    string `json:"id"`
+				Label string `json:"label"`
 			} `json:"n_system"`
 		} `json:"items"`
 	}
@@ -147,9 +148,9 @@ func GetSystemIds(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3ClosCl
 	err := leafQuery.Do(ctx, &leafQueryResult)
 	require.NoError(t, err)
 
-	result := make(map[string]apstra.ObjectId, len(leafQueryResult.Items))
+	result := make(map[string]string, len(leafQueryResult.Items))
 	for _, item := range leafQueryResult.Items {
-		result[item.System.Label] = item.System.Id
+		result[item.System.Label] = item.System.ID
 	}
 
 	return result
