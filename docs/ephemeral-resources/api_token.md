@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_api_token Ephemeral Resource - terraform-provider-apstra"
-subcategory: "Authentication"
+subcategory: "Platform"
 description: |-
   This Ephemeral Resource retrieves a unique API token and (optionally) invalidates it on Close.
 ---
