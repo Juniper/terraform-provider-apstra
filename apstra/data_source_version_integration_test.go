@@ -39,7 +39,7 @@ func (d dataSourceVersion) testChecks(t testing.TB, _ context.Context, rType, rN
 		result.append(t, "TestCheckNoResourceAttr", "results")
 	} else {
 		result.append(t, "TestCheckResourceAttr", "results.%", strconv.Itoa(len(d.checks)))
-		for k, _ := range d.checks {
+		for k := range d.checks {
 			result.append(t, "TestCheckResourceAttrSet", "results."+k)
 		}
 	}
