@@ -14,8 +14,7 @@ This data source returns the version of the Apstra service and facilitates check
 
 ```terraform
 # This example uses the 'apstra_version' data source to conditionally create
-# create a resource which requires Apstra 6.2.0 based on the observed Apstra
-# version.
+# a resource _only_ when it's talking to Apstra 6.2.0 or later.
 
 data "apstra_version" "ours" {
   checks = {
