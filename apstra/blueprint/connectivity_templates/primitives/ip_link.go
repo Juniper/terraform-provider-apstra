@@ -241,7 +241,7 @@ func newIpLink(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttrib
 		// Name:       // handled by caller
 		RoutingZoneId: types.StringPointerValue((*string)(in.SecurityZone)),
 		// VlanId:      // handled below
-		// L3Mtu:       // handled below
+		// L3MTU:       // handled below
 		Ipv4AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.IPv4AddressingType)),
 		Ipv6AddressingType: types.StringValue(rosetta.StringersToFriendlyString(in.IPv6AddressingType)),
 		// StaticRoutes:             handled by caller

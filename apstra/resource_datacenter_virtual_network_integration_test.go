@@ -17,6 +17,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
 	versionconstraints "github.com/chrismarget-j/version-constraints"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
@@ -26,14 +27,14 @@ import (
 )
 
 const (
-	resourceDatacenterVirtualNetworkTemplateHCL = `
-resource %q %q {
+	resourceDatacenterVirtualNetworkTemplateHCL = `resource %q %q {
   blueprint_id              = %q
   name                      = %q
   description               = %s
   type                      = %s
   vni                       = %s
   routing_zone_id           = %s
+  switching_zone_id         = %s
   l3_mtu                    = %s
   bindings                  = %s
   reserve_vlan              = %s
@@ -59,6 +60,7 @@ type resourceDatacenterVirtualNetworkTemplate struct {
 	vnType                  string
 	vni                     *int
 	routingZoneId           string
+	switchingZoneId         string
 	l3Mtu                   *int
 	bindings                []resourceDatacenterVirtualNetworkTemplateBinding
 	reserveVlan             *bool
@@ -90,6 +92,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		stringOrNull(o.vnType),
 		intPtrOrNull(o.vni),
 		stringOrNull(o.routingZoneId),
+		stringOrNull(o.switchingZoneId),
 		intPtrOrNull(o.l3Mtu),
 		bindings.String(),
 		boolPtrOrNull(o.reserveVlan),
@@ -101,7 +104,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 	)
 }
 
-func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType, rName string) testChecks {
+func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType, rName string, apiVer *version.Version) testChecks {
 	result := newTestChecks(rType + "." + rName)
 
 	// required and computed attributes can always be checked
@@ -109,21 +112,35 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 	result.append(t, "TestCheckResourceAttr", "blueprint_id", o.blueprintId.String())
 	result.append(t, "TestCheckResourceAttr", "name", o.name)
 
-	if o.vnType != "" {
-		result.append(t, "TestCheckResourceAttr", "type", o.vnType)
-	} else {
+	if o.vnType == "" {
 		result.append(t, "TestCheckResourceAttr", "type", enum.VnTypeVxlan.String())
+	} else {
+		result.append(t, "TestCheckResourceAttr", "type", o.vnType)
 	}
 
 	if o.vni != nil {
 		result.append(t, "TestCheckResourceAttr", "vni", strconv.Itoa(*o.vni))
 	}
 
-	if o.routingZoneId != "" {
+	if o.routingZoneId == "" {
+		result.append(t, "TestCheckResourceAttrSet", "routing_zone_id")
+	} else {
 		result.append(t, "TestCheckResourceAttr", "routing_zone_id", o.routingZoneId)
 	}
 
-	if o.l3Mtu != nil {
+	if o.switchingZoneId == "" {
+		if compatibility.SwitchingZoneOK.Check(apiVer) {
+			result.append(t, "TestCheckResourceAttrSet", "switching_zone_id")
+		} else {
+			result.append(t, "TestCheckNoResourceAttr", "switching_zone_id")
+		}
+	} else {
+		result.append(t, "TestCheckResourceAttr", "switching_zone_id", o.switchingZoneId)
+	}
+
+	if o.l3Mtu == nil {
+		result.append(t, "TestCheckResourceAttr", "l3_mtu", "9000")
+	} else {
 		result.append(t, "TestCheckResourceAttr", "l3_mtu", strconv.Itoa(*o.l3Mtu))
 	}
 
@@ -200,6 +217,12 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	client := testutils.GetTestClient(t, ctx)
 	apiVersion := version.Must(version.NewVersion(client.ApiVersion()))
 
+	rzCount := 2
+	szCount := 2 // or maybe not, see below
+	if !compatibility.SwitchingZoneOK.Check(apiVersion) {
+		szCount = 0
+	}
+
 	// The action taken when RZ ID is changed depends on the Apstra version.
 	// Prior to 5.0.0 the VN would need to be recreated.
 	var rzChangeResourceActionType plancheck.ResourceActionType
@@ -209,9 +232,16 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 		rzChangeResourceActionType = plancheck.ResourceActionUpdate
 	}
 
-	// Create blueprint and routing zone
+	// Create blueprint, routing zones and switching zones
 	bp := testutils.BlueprintC(t, ctx)
-	szID := testutils.SecurityZoneA(t, ctx, bp, true)
+	rzIDs := make([]string, rzCount)
+	for i := range rzCount {
+		rzIDs[i] = dctestobj.RoutingZoneA(t, ctx, bp, true)
+	}
+	szIDs := make([]string, szCount)
+	for i := range szCount {
+		szIDs[i] = dctestobj.SwitchingZoneA(t, ctx, bp, true)
+	}
 
 	// struct used for both system nodes and redundancy group nodes
 	type node struct {
@@ -251,7 +281,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	}
 
 	type testCase struct {
-		apiVersionConstraints versionconstraints.Constraints
+		apiVersionConstraints []versionconstraints.Constraints
 		steps                 []testStep
 	}
 
@@ -262,7 +292,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						dhcpEnabled:   pointer.To(true),
 						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{{leafId: nodesByLabel["l2_one_access_001_leaf1"]}},
 					},
@@ -271,14 +301,14 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"no_bindings_vlan_start_minimal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -286,7 +316,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -295,20 +325,20 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 			},
 		},
 		"no_bindings_vlan_start_maximal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -317,7 +347,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -325,21 +355,21 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8900),
 					},
 				},
 			},
 		},
 		"no_bindings_vxlan_start_minimal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -348,7 +378,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           pointer.To(rand.IntN(10000) + 5000),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -357,13 +387,13 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 			},
 		},
 		"no_bindings_vxlan_start_maximal": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -371,7 +401,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           pointer.To(rand.IntN(10000) + 5000),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8800),
 					},
 				},
@@ -380,7 +410,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -389,7 +419,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           pointer.To(rand.IntN(10000) + 5000),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8900),
 					},
 				},
@@ -402,7 +432,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -415,7 +445,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -431,7 +461,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_003_leaf1"],
@@ -448,7 +478,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8800),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -464,7 +494,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -477,7 +507,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         pointer.To(8900),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -497,7 +527,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -511,7 +541,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           nil,
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -537,7 +567,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
@@ -555,7 +585,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           nil,
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -581,7 +611,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_esi_acs_dual_002_leaf_pair1"],
@@ -595,7 +625,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
 						vni:           nil,
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						l3Mtu:         nil,
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -614,14 +644,14 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"start_no_description": {
-			apiVersionConstraints: compatibility.VnDescriptionOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnDescriptionOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -630,7 +660,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -638,13 +668,13 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 			},
 		},
 		"start_with_description": {
-			apiVersionConstraints: compatibility.VnDescriptionOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnDescriptionOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -652,7 +682,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -660,7 +690,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -669,20 +699,20 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						name:          acctest.RandString(6),
 						description:   acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 			},
 		},
 		"no_bindings_reserved_vlan_id": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:    bp.Id(),
 						name:           acctest.RandString(6),
 						vnType:         enum.VnTypeVxlan.String(),
-						routingZoneId:  szID,
+						routingZoneId:  rzIDs[0],
 						reserveVlan:    pointer.To(true),
 						reservedVlanId: pointer.To(1100),
 					},
@@ -692,7 +722,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:    bp.Id(),
 						name:           acctest.RandString(6),
 						vnType:         enum.VnTypeVxlan.String(),
-						routingZoneId:  szID,
+						routingZoneId:  rzIDs[0],
 						reserveVlan:    pointer.To(true),
 						reservedVlanId: pointer.To(1101),
 					},
@@ -706,7 +736,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						reserveVlan:   pointer.To(true),
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
@@ -719,14 +749,14 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"set_clear_set_tags": {
-			apiVersionConstraints: compatibility.VnTagsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -735,7 +765,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -743,21 +773,21 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
 			},
 		},
 		"clear_set_clear_tags": {
-			apiVersionConstraints: compatibility.VnTagsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 				{
@@ -765,7 +795,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -774,20 +804,20 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 					},
 				},
 			},
 		},
 		"change_tags_only": {
-			apiVersionConstraints: compatibility.VnTagsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          "change_tags_only",
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
@@ -796,21 +826,21 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          "change_tags_only",
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          randomStrings(rand.IntN(10)+1, 6),
 					},
 				},
 			},
 		},
 		"fixed_tags": {
-			apiVersionConstraints: compatibility.VnTagsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          []string{"fixed tag one", "fixed tag two"},
 					},
 				},
@@ -819,7 +849,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVxlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						tags:          []string{"fixed tag one", "fixed tag two"},
 					},
 				},
@@ -832,7 +862,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						blueprintId:   bp.Id(),
 						name:          acctest.RandString(6),
 						vnType:        enum.VnTypeVlan.String(),
-						routingZoneId: szID,
+						routingZoneId: rzIDs[0],
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
@@ -857,18 +887,44 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"issue_1114_dhcp_with_zero_bindings": {
-			apiVersionConstraints: compatibility.VnEmptyBindingsOk,
+			apiVersionConstraints: []versionconstraints.Constraints{
+				compatibility.VnEmptyBindingsOk,
+				compatibility.VnDHCPUnsafeWithoutWithoutBindings,
+			},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
 						blueprintId:             bp.Id(),
 						name:                    acctest.RandString(6),
 						vnType:                  enum.VnTypeVlan.String(),
-						routingZoneId:           szID,
+						routingZoneId:           rzIDs[0],
 						dhcpEnabled:             pointer.To(true),
 						ipv4ConnectivityEnabled: pointer.To(true),
 					},
 					expectNonEmptyPlan: true,
+				},
+			},
+		},
+		"exercise_switching_zone_620_plus": {
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.SwitchingZoneOK},
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:     bp.Id(),
+						name:            acctest.RandString(6),
+						vnType:          enum.VnTypeVxlan.String(),
+						routingZoneId:   rzIDs[0],
+						switchingZoneId: szIDs[0],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:     bp.Id(),
+						name:            acctest.RandString(6),
+						vnType:          enum.VnTypeVxlan.String(),
+						routingZoneId:   rzIDs[1],
+						switchingZoneId: szIDs[1],
+					},
 				},
 			},
 		},
@@ -880,14 +936,16 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
 
-			if !tCase.apiVersionConstraints.Check(apiVersion) {
-				t.Skipf("test case %s requires Apstra %s", tName, tCase.apiVersionConstraints.String())
+			for _, constraint := range tCase.apiVersionConstraints {
+				if !constraint.Check(apiVersion) {
+					t.Skipf("test case %s requires Apstra %s", tName, constraint)
+				}
 			}
 
 			steps := make([]resource.TestStep, len(tCase.steps))
 			for i, step := range tCase.steps {
 				config := step.config.render(resourceType, tName)
-				checks := step.config.testChecks(t, resourceType, tName)
+				checks := step.config.testChecks(t, resourceType, tName, apiVersion)
 
 				chkLog := checks.string()
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
