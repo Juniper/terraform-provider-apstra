@@ -91,6 +91,7 @@ Read-Only:
 - `blueprint_id` (String) Not applicable in filter context. Ignore.
 - `had_prior_vni_config` (Boolean) Not applicable in filter context. Ignore.
 - `id` (String) Not applicable in filter context. Ignore.
+- `switching_zone_id` (String) Switching Zone ID. Requires Apstra >=6.2.0`
 
 <a id="nestedatt--filter--bindings"></a>
 ### Nested Schema for `filter.bindings`
@@ -129,6 +130,7 @@ Read-Only:
 - `blueprint_id` (String) Not applicable in filter context. Ignore.
 - `had_prior_vni_config` (Boolean) Not applicable in filter context. Ignore.
 - `id` (String) Not applicable in filter context. Ignore.
+- `switching_zone_id` (String) Switching Zone ID. Requires Apstra >=6.2.0`
 
 <a id="nestedatt--filters--bindings"></a>
 ### Nested Schema for `filters.bindings`
