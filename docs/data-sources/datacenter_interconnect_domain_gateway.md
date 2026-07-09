@@ -2,13 +2,13 @@
 page_title: "apstra_datacenter_interconnect_domain_gateway Data Source - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource returns details of an Interconnect Domain Gateway within a Datacenter Blueprint.
+  This data source returns details of an Interconnect Domain Gateway within a Datacenter Blueprint.
   At least one optional attribute is required.
 ---
 
 # apstra_datacenter_interconnect_domain_gateway (Data Source)
 
-This resource returns details of an Interconnect Domain Gateway within a Datacenter Blueprint.
+This data source returns details of an Interconnect Domain Gateway within a Datacenter Blueprint.
 
 At least one optional attribute is required.
 

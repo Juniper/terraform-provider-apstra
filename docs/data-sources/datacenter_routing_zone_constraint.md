@@ -2,13 +2,13 @@
 page_title: "apstra_datacenter_routing_zone_constraint Data Source - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource returns details of a Routing Zone Constraint within a Datacenter Blueprint.
+  This data source returns details of a Routing Zone Constraint within a Datacenter Blueprint.
   At least one optional attribute is required.
 ---
 
 # apstra_datacenter_routing_zone_constraint (Data Source)
 
-This resource returns details of a Routing Zone Constraint within a Datacenter Blueprint.
+This data source returns details of a Routing Zone Constraint within a Datacenter Blueprint.
 
 At least one optional attribute is required.
 
