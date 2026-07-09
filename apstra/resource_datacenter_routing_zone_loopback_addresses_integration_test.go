@@ -16,6 +16,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -115,7 +116,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 	require.NoError(t, bp.SetFabricSettings(ctx, settings))
 
 	// create a routing zone
-	rzID := testutils.SecurityZoneB(t, ctx, bp, false)
+	rzID := dctestobj.RoutingZoneB(t, ctx, bp, false)
 
 	// discover leaf switch IDs
 	leafs := testutils.GetSystemIDs(t, ctx, bp, "leaf")

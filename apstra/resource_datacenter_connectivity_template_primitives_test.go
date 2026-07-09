@@ -19,6 +19,7 @@ import (
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -815,7 +816,7 @@ func randomRoutingZoneConstraints(t testing.TB, ctx context.Context, count int, 
 		case 1: // second loop changes routingZoneIds nil -> {}
 			routingZoneIds = []string{}
 		default: // third and subsequent loops add routing zones
-			routingZoneIds = append(routingZoneIds, testutils.SecurityZoneA(t, ctx, client, cleanup))
+			routingZoneIds = append(routingZoneIds, dctestobj.RoutingZoneA(t, ctx, client, cleanup))
 		}
 	}
 
@@ -973,7 +974,7 @@ func randomIpLinks(t testing.TB, ctx context.Context, count int, client *apstra.
 		}
 
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveIpLink{
-			routingZoneId:            testutils.SecurityZoneA(t, ctx, client, cleanup),
+			routingZoneId:            dctestobj.RoutingZoneA(t, ctx, client, cleanup),
 			vlanId:                   oneOf(nil, pointer.To(rand.IntN(3995)+100)),
 			l3Mtu:                    oneOf(nil, pointer.To((rand.IntN((constants.L3MtuMax-constants.L3MtuMin)/2)*2)+constants.L3MtuMin)),
 			ipv4AddressingType:       ipv4AddressingType,

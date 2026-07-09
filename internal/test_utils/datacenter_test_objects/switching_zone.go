@@ -29,7 +29,7 @@ func SwitchingZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3
 
 	if cleanup {
 		t.Cleanup(func() {
-			err := client.DeleteSecurityZone(ctx, id)
+			err := client.DeleteSwitchingZone(ctx, id)
 			if err != nil {
 				t.Fatal(err)
 			}
