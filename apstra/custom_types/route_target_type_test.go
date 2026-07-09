@@ -50,9 +50,9 @@ func TestRouteTargetTypeValidate(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid Route Target String Value",
-					"A string value was provided that is not valid Route Type string format.\n\n"+
+					"A string value was provided that is not a valid Route Type string format.\n\n"+
 						"Given Value: 4294967296:65535\n"+
-						"Error: parsing 4294967296 as uint32: strconv.ParseUint: parsing \"4294967296\": value out of range\n",
+						"Error: cannot parse 1st part of route target \"4294967296:65535\"\n",
 				),
 			},
 		},
@@ -62,9 +62,9 @@ func TestRouteTargetTypeValidate(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid Route Target String Value",
-					"A string value was provided that is not valid Route Type string format.\n\n"+
+					"A string value was provided that is not a valid Route Type string format.\n\n"+
 						"Given Value: 4294967295:65536\n"+
-						"Error: parsing 65536 as uint16: strconv.ParseUint: parsing \"65536\": value out of range\n",
+						"Error: parsing 2nd part of route target \"4294967295:65536\": strconv.ParseUint: parsing \"65536\": value out of range\n",
 				),
 			},
 		},
@@ -74,9 +74,9 @@ func TestRouteTargetTypeValidate(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid Route Target String Value",
-					"A string value was provided that is not valid Route Type string format.\n\n"+
+					"A string value was provided that is not a valid Route Type string format.\n\n"+
 						"Given Value: 65535:4294967296\n"+
-						"Error: parsing 4294967296 as uint32: strconv.ParseUint: parsing \"4294967296\": value out of range\n",
+						"Error: parsing 2nd part of route target \"65535:4294967296\": strconv.ParseUint: parsing \"4294967296\": value out of range\n",
 				),
 			},
 		},
@@ -86,9 +86,9 @@ func TestRouteTargetTypeValidate(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid Route Target String Value",
-					"A string value was provided that is not valid Route Type string format.\n\n"+
+					"A string value was provided that is not a valid Route Type string format.\n\n"+
 						"Given Value: 65536:4294967295\n"+
-						"Error: parsing 4294967295 as uint16: strconv.ParseUint: parsing \"4294967295\": value out of range\n",
+						"Error: parsing 2nd part of route target \"65536:4294967295\": strconv.ParseUint: parsing \"4294967295\": value out of range\n",
 				),
 			},
 		},
@@ -98,9 +98,9 @@ func TestRouteTargetTypeValidate(t *testing.T) {
 				diag.NewAttributeErrorDiagnostic(
 					path.Root("test"),
 					"Invalid Route Target String Value",
-					"A string value was provided that is not valid Route Type string format.\n\n"+
+					"A string value was provided that is not a valid Route Type string format.\n\n"+
 						"Given Value: 1.2.3.4.5:1\n"+
-						"Error: parsing 1.2.3.4.5 as IPv4 address: ParseAddr(\"1.2.3.4.5\"): IPv4 address too long\n",
+						"Error: cannot parse 1st part of route target \"1.2.3.4.5:1\"\n",
 				),
 			},
 		},
