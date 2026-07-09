@@ -698,6 +698,9 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		}
 	}
 
+	var tags []string
+	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+
 	result := datacenter.VirtualNetwork{
 		Description:               o.Description.ValueString(),
 		DHCPService:               datacenter.DHCPServiceEnabled(o.DHCPEnabled.ValueBool()),
@@ -718,6 +721,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
 		Bindings:                  vnBindings,
 		VNI:                       vnId,
+		Tags:                      tags,
 		Type:                      vnType,
 		VirtualMAC:                nil,
 	}
