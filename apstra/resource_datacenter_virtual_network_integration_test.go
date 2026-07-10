@@ -740,7 +740,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
 							{
 								leafId: nodesByLabel["l2_one_access_001_leaf1"],
-								vlanId: pointer.To(1101),
+								vlanId: pointer.To(1102),
 							},
 						},
 					},
