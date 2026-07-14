@@ -48,6 +48,7 @@ data "apstra_datacenter_security_policy" "by_name" {
 - `description` (String) Description of the Security Policy as seen in the Web UI.
 - `destination_application_point_id` (String) Graph node ID of the destination Application Point (Virtual Network ID, Routing Zone ID, etc...)
 - `enabled` (Boolean) Indicates whether the Security Policy is enabled.
+- `ip_version` (String) Security Policy IP version.
 - `rules` (Attributes List) List of Rules associated with the Security Policy. (see [below for nested schema](#nestedatt--rules))
 - `source_application_point_id` (String) Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)
 - `tags` (Set of String) Set of Tags associated with the Security Policy.

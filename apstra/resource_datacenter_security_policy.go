@@ -7,20 +7,25 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &resourceDatacenterSecurityPolicy{}
-	_ resource.ResourceWithImportState = &resourceDatacenterSecurityPolicy{}
-	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterSecurityPolicy{}
-	_ resourceWithSetBpLockFunc        = &resourceDatacenterSecurityPolicy{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterSecurityPolicy{}
+	_ resource.ResourceWithImportState    = &resourceDatacenterSecurityPolicy{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterSecurityPolicy{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterSecurityPolicy{}
+	_ resourceWithSetClient               = &resourceDatacenterSecurityPolicy{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterSecurityPolicy{}
 )
 
 type resourceDatacenterSecurityPolicy struct {
+	client          *apstra.Client
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
@@ -38,6 +43,47 @@ func (o *resourceDatacenterSecurityPolicy) Schema(_ context.Context, _ resource.
 		MarkdownDescription: docCategoryDatacenter + "This resource creates a Security Policy within a Datacenter Blueprint.",
 		Attributes:          blueprint.DatacenterSecurityPolicy{}.ResourceAttributes(),
 	}
+}
+
+func (o *resourceDatacenterSecurityPolicy) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// Retrieve values from config.
+	var config blueprint.DatacenterSecurityPolicy
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// config-only validation begins here
+
+	// config + api version validation begins here
+
+	// cannot proceed to config + api version validation if the provider has not been configured
+	if o.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
+	// validate the configuration
+	constraints := config.VersionConstraints(ctx, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(
+		compatibility.ValidateConfigConstraints(
+			ctx,
+			compatibility.ValidateConfigConstraintsRequest{
+				Version:     apiVersion,
+				Constraints: constraints,
+			},
+		)...,
+	)
+
 }
 
 func (o *resourceDatacenterSecurityPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
@@ -285,4 +331,8 @@ func (o *resourceDatacenterSecurityPolicy) setBpClientFunc(f func(context.Contex
 
 func (o *resourceDatacenterSecurityPolicy) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
+}
+
+func (o *resourceDatacenterSecurityPolicy) setClient(client *apstra.Client) {
+	o.client = client
 }
