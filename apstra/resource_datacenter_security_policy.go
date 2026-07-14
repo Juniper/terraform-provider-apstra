@@ -83,7 +83,6 @@ func (o *resourceDatacenterSecurityPolicy) ValidateConfig(ctx context.Context, r
 			},
 		)...,
 	)
-
 }
 
 func (o *resourceDatacenterSecurityPolicy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
