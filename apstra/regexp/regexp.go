@@ -20,6 +20,9 @@ const (
 
 	alphaCharsRequiredConstraintReString = "^.*[a-zA-Z]+.*$"
 	AlphaCharsRequiredConstraintMsg      = "value must contain at least one letter"
+
+	renderableDescriptionReString = `^([!#-;=@-[\]-~]([ !#-;=@-[\]-~]*[!#-;=@-[\]-~])?)?$`
+	RenderableDescriptionMsg      = "value must contain only printable ASCII characters other than `\"`, `<`, `>`, `?`, and `\\` with no leading or trailing spaces"
 )
 
 var (
@@ -28,4 +31,5 @@ var (
 	HostNameConstraint           = regexp.MustCompile(hostNameConstraintReString)
 	StdNameConstraint            = regexp.MustCompile(stdNameConstraintReString)
 	AlphaCharsRequiredConstraint = regexp.MustCompile(alphaCharsRequiredConstraintReString)
+	RenderableDescription        = regexp.MustCompile(renderableDescriptionReString)
 )

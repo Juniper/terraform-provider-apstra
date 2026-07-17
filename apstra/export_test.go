@@ -35,6 +35,7 @@ var (
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
 	ResourceDatacenterRoutingZoneConstraint                = resourceDatacenterRoutingZoneConstraint{}
 	ResourceDatacenterRoutingZoneLoopbackAddresses         = resourceDatacenterRoutingZoneLoopbackAddresses{}
+	ResourceDatacenterSwitchingZone                        = resourceDatacenterSwitchingZone{}
 	ResourceDatacenterTag                                  = resourceDatacenterTag{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}
