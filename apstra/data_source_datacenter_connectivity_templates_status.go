@@ -32,7 +32,7 @@ func (o *dataSourceDatacenterConnectivityTemplatesStatus) Configure(ctx context.
 
 func (o *dataSourceDatacenterConnectivityTemplatesStatus) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource returns a map detailing status of Connectivity Templates within a Datacenter Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This data source returns a map detailing status of Connectivity Templates within a Datacenter Blueprint.",
 		Attributes: map[string]schema.Attribute{
 			"blueprint_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the Blueprint",
