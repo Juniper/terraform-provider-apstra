@@ -18,6 +18,7 @@ var (
 	DatacenterPolicyAddressFamilyOK          = versionconstraints.New(apiversions.GeApstra620)
 	DatacenterPolicyAddressFamilyRequired    = versionconstraints.New(apiversions.GeApstra620)
 	FabricSettingsSetInCreate                = versionconstraints.New(apiversions.GeApstra421)
+	PolicyNodesUseTagAttribute               = versionconstraints.New(apiversions.LtApstra620)
 	RoutingPolicyExportL3EdgeServerOK        = versionconstraints.New(apiversions.LeApstra422)
 	RoutingZoneTagsOK                        = versionconstraints.New(apiversions.GeApstra500)
 	SwitchingZoneOK                          = versionconstraints.New(apiversions.GeApstra620)

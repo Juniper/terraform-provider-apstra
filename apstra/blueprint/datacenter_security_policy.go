@@ -295,6 +295,91 @@ func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {
 	}
 
 	// Begin the query with thw SP node using the attributes we've collected so far
+	matchQuery := new(apstra.MatchQuery)
+	matchQuery.Match(new(apstra.PathQuery).Node(nodeAttributes))
+
+	// Add tag traversals as needed.
+	for _, tag := range o.Tags.Elements() {
+		matchQuery.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal(resultName)}}).
+			In([]apstra.QEEAttribute{apstra.RelationshipTypeTag.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeTag.QEEAttribute(),
+				{Key: "label", Value: apstra.QEStringVal(tag.(types.String).ValueString())},
+			}))
+	}
+
+	// prepare a graph traversal to the source application point if needed
+	if !o.SrcAppPointId.IsNull() {
+		matchQuery.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypePolicy.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
+			}).
+			In([]apstra.QEEAttribute{
+				apstra.RelationshipTypeSecurityPolicy.QEEAttribute(),
+				{Key: "policy_direction", Value: apstra.QEStringVal("from")},
+			}).
+			Node([]apstra.QEEAttribute{
+				{Key: "name", Value: apstra.QEStringVal("src_app_point_id")},
+			}))
+	}
+
+	// prepare a graph traversal to the destination application point if needed
+	if !o.DstAppPointId.IsNull() {
+		matchQuery.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypePolicy.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
+			}).
+			In([]apstra.QEEAttribute{
+				apstra.RelationshipTypeSecurityPolicy.QEEAttribute(),
+				{Key: "policy_direction", Value: apstra.QEStringVal("to")},
+			}).
+			Node([]apstra.QEEAttribute{
+				{Key: "name", Value: apstra.QEStringVal("dst_app_point_id")},
+			}))
+	}
+
+	return matchQuery
+}
+
+func (o *DatacenterSecurityPolicy) Query61x(resultName string) apstra.QEQuery {
+	nodeAttributes := []apstra.QEEAttribute{
+		apstra.NodeTypePolicy.QEEAttribute(),
+		{Key: "policy_type", Value: apstra.QEStringVal("security")},
+		{Key: "name", Value: apstra.QEStringVal(resultName)},
+	}
+
+	if !o.Name.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "label",
+			Value: apstra.QEStringVal(o.Name.ValueString()),
+		})
+	}
+
+	if !o.Description.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "description",
+			Value: apstra.QEStringVal(o.Description.ValueString()),
+		})
+	}
+
+	if !o.Enabled.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "enabled",
+			Value: apstra.QEBoolVal(o.Enabled.ValueBool()),
+		})
+	}
+
+	if !o.IPVersion.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "ip_version",
+			Value: apstra.QEStringVal(o.IPVersion.ValueString()),
+		})
+	}
+
+	// Begin the query with thw SP node using the attributes we've collected so far
 	spNodeQuery := new(apstra.PathQuery).Node(nodeAttributes)
 
 	// Add tag matchers for the policy node's embedded tags as needed
