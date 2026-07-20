@@ -17,8 +17,6 @@ provider "apstra" {
 `
 )
 
-var (
-	testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-		"apstra": providerserver.NewProtocol6WithError(tfapstra.NewProvider()),
-	}
-)
+var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"apstra": providerserver.NewProtocol6WithError(tfapstra.NewProvider()),
+}
