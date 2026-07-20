@@ -357,8 +357,8 @@ func (o *DatacenterSecurityPolicy) Request(ctx context.Context, diags *diag.Diag
 		Tags:                make([]string, 0), // potentially overwritten below
 	}
 	if !o.IPVersion.IsNull() {
-		var addressFamily enum.PolicyAddressFamily
-		err := addressFamily.FromString(o.IPVersion.ValueString())
+		result.AddressFamily = new(enum.PolicyAddressFamily)
+		err := result.AddressFamily.FromString(o.IPVersion.ValueString())
 		if err != nil {
 			diags.AddError(fmt.Sprintf("parsing ip_version value %s", o.IPVersion), err.Error())
 		}
