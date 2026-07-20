@@ -2,13 +2,13 @@
 page_title: "apstra_datacenter_virtual_network Data Source - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource returns details of a Virtual Network within a Datacenter Blueprint.
+  This data source returns details of a Virtual Network within a Datacenter Blueprint.
   At least one optional attribute is required.
 ---
 
 # apstra_datacenter_virtual_network (Data Source)
 
-This resource returns details of a Virtual Network within a Datacenter Blueprint.
+This data source returns details of a Virtual Network within a Datacenter Blueprint.
 
 At least one optional attribute is required.
 
