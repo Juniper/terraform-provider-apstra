@@ -151,7 +151,7 @@ func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilters(ctx context.Con
 	queries := make([]attr.Value, len(filters))
 	resultMap := make(map[string]bool)
 	for i, filter := range filters {
-		ids, query := o.getIdsWithFilter(ctx, bp, filter, diags)
+		ids, query := o.getIDsWithFilter(ctx, bp, filter, diags)
 		if diags.HasError() {
 			return nil, nil
 		}
@@ -172,7 +172,7 @@ func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilters(ctx context.Con
 	return ids, queries
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter61x(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilter61x(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
 	query := filter.Query61x("n_security_policy")
 	queryResponse := new(struct {
 		Items []struct {
@@ -199,7 +199,7 @@ func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter61x(ctx context.C
 	return result, query
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
 	vs := bp.Client().ApiVersion()
 	v, err := version.NewVersion(vs)
 	if err != nil {
@@ -207,7 +207,7 @@ func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter(ctx context.Cont
 		return nil, nil
 	}
 	if compatibility.PolicyNodesUseTagAttribute.Check(v) {
-		return o.getIdsWithFilter61x(ctx, bp, filter, diags)
+		return o.getIDsWithFilter61x(ctx, bp, filter, diags)
 	}
 
 	query := filter.Query("n_security_policy")
