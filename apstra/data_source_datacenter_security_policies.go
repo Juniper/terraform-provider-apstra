@@ -62,7 +62,7 @@ func (o *dataSourceDatacenterSecurityPolicies) Schema(_ context.Context, _ datas
 					Validators: []validator.Object{
 						apstravalidator.AtLeastNAttributes(
 							1,
-							"name", "description", "enabled", "tags",
+							"name", "description", "enabled", "tags", "ip_version",
 							"source_application_point_id", "destination_application_point_id"),
 					},
 				},

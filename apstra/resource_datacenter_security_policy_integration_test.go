@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/compatibility"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -32,8 +33,7 @@ data %q %q {
 }
 `
 
-	resourceDataCenterSecurityPolicyHCL = `
-resource %q %q {
+	resourceDataCenterSecurityPolicyHCL = `resource %q %q {
   blueprint_id                     = %q
   name                             = %q
   description                      = %s
@@ -80,11 +80,12 @@ func (r resourceDataCenterSecurityPolicy) render(rType, rName string) string {
 	rules := "null"
 	if len(r.rules) > 0 {
 		sb := new(strings.Builder)
-		sb.WriteString("[\n")
+		sb.WriteString("[")
 		for _, rule := range r.rules {
 			sb.WriteString(rule.render())
 		}
 		sb.WriteString("  ]")
+		rules = sb.String()
 	}
 
 	ipVersion := "null"
@@ -200,7 +201,7 @@ func (o resourceDataCenterSecurityPolicy) testChecks(t testing.TB, rType, rName 
 type resourceDataCenterSecurityPolicyRule struct {
 	name             string
 	description      string
-	action           *enum.PolicyRuleAction
+	action           enum.PolicyRuleAction
 	protocol         enum.PolicyRuleProtocol
 	sourcePorts      []resourceDataCenterSecurityPolicyRulePort
 	destinationPorts []resourceDataCenterSecurityPolicyRulePort
@@ -208,11 +209,6 @@ type resourceDataCenterSecurityPolicyRule struct {
 }
 
 func (r resourceDataCenterSecurityPolicyRule) render() string {
-	var action string
-	if r.action != nil {
-		action = rosetta.StringersToFriendlyString(*r.action)
-	}
-
 	portsToString := func(ports []resourceDataCenterSecurityPolicyRulePort) string {
 		if len(ports) == 0 {
 			return "null"
@@ -230,8 +226,8 @@ func (r resourceDataCenterSecurityPolicyRule) render() string {
 	return fmt.Sprintf(resourceDataCenterSecurityPolicyRuleHCL,
 		r.name,
 		stringOrNull(r.description),
-		stringOrNull(action),
-		r.protocol,
+		r.action,
+		rosetta.StringersToFriendlyString(r.protocol),
 		portsToString(r.sourcePorts),
 		portsToString(r.destinationPorts),
 		boolPtrOrNull(r.established),
@@ -250,14 +246,14 @@ func (r resourceDataCenterSecurityPolicyRule) addTestChecks(t testing.TB, p stri
 	c.append(t, "TestCheckResourceAttr", p+"action", r.action.String())
 	c.append(t, "TestCheckResourceAttr", p+"source_ports.#", strconv.Itoa(len(r.sourcePorts)))
 	for _, port := range r.sourcePorts {
-		c.appendSetNestedCheck(t, p+"source_ports", map[string]string{
+		c.appendSetNestedCheck(t, p+"source_ports.*", map[string]string{
 			"from_port": strconv.Itoa(port.from),
 			"to_port":   strconv.Itoa(port.to),
 		})
 	}
 	c.append(t, "TestCheckResourceAttr", p+"destination_ports.#", strconv.Itoa(len(r.destinationPorts)))
 	for _, port := range r.destinationPorts {
-		c.appendSetNestedCheck(t, p+"destination_ports", map[string]string{
+		c.appendSetNestedCheck(t, p+"destination_ports.*", map[string]string{
 			"from_port": strconv.Itoa(port.from),
 			"to_port":   strconv.Itoa(port.to),
 		})
@@ -279,12 +275,316 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 	// create the blueprint
 	bp := testutils.BlueprintA(t, ctx)
 
+	// collect leaf switch IDs
+	leafIds := systemIds(ctx, t, bp, "leaf")
+
+	// create virtual networks
+	vnIds := make([]string, 2)
+	for i := range vnIds {
+		id, err := bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
+			IPv4Enabled: true,
+			Label:       acctest.RandString(5),
+			Bindings:    []datacenter.VNBinding{{SystemID: leafIds[i]}},
+			Type:        enum.VnTypeVlan,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		vnIds[i] = id
+	}
+
 	type testCase struct {
 		versionconstraints []compatibility.Constraint
 		steps              []resourceDataCenterSecurityPolicy
 	}
 
 	testCases := map[string]testCase{
+		"start_minimal_pre_620": {
+			versionconstraints: []compatibility.Constraint{compatibility.DatacenterPolicyAddressFamilyNotSupported},
+			steps: []resourceDataCenterSecurityPolicy{
+				{
+					blueprintID: string(bp.Id()),
+					name:        acctest.RandString(6),
+				},
+				{
+					blueprintID:                   string(bp.Id()),
+					name:                          acctest.RandString(6),
+					description:                   acctest.RandString(10),
+					enabled:                       random.OneOf(pointer.To(true), pointer.To(false), nil),
+					sourceApplicationPointID:      vnIds[0],
+					destinationApplicationPointID: vnIds[1],
+					tags:                          randomStrings(3, 6),
+					rules: []resourceDataCenterSecurityPolicyRule{
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIcmp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10000, to: 10000},
+								{from: 10010, to: 10020},
+								{from: 10030, to: 10040},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20000, to: 20000},
+								{from: 20010, to: 20020},
+								{from: 20030, to: 20040},
+							},
+							established: pointer.To(true),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10050, to: 10050},
+								{from: 10060, to: 10070},
+								{from: 10080, to: 10090},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20050, to: 20050},
+								{from: 20060, to: 20070},
+								{from: 20080, to: 20090},
+							},
+							established: pointer.To(false),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10100, to: 10100},
+								{from: 10110, to: 10120},
+								{from: 10130, to: 10140},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20100, to: 20100},
+								{from: 20110, to: 20120},
+								{from: 20130, to: 20140},
+							},
+							established: nil,
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolUdp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10150, to: 10150},
+								{from: 10160, to: 10170},
+								{from: 10180, to: 10190},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20150, to: 20150},
+								{from: 20160, to: 20170},
+								{from: 20180, to: 20190},
+							},
+						},
+					},
+				},
+				{
+					blueprintID: string(bp.Id()),
+					name:        acctest.RandString(6),
+				},
+			},
+		},
+		"start_maximal_pre_620": {
+			versionconstraints: []compatibility.Constraint{compatibility.DatacenterPolicyAddressFamilyNotSupported},
+			steps: []resourceDataCenterSecurityPolicy{
+				{
+					blueprintID:                   string(bp.Id()),
+					name:                          acctest.RandString(6),
+					description:                   acctest.RandString(10),
+					enabled:                       random.OneOf(pointer.To(true), pointer.To(false), nil),
+					sourceApplicationPointID:      vnIds[0],
+					destinationApplicationPointID: vnIds[1],
+					tags:                          randomStrings(3, 6),
+					rules: []resourceDataCenterSecurityPolicyRule{
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIcmp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10000, to: 10000},
+								{from: 10010, to: 10020},
+								{from: 10030, to: 10040},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20000, to: 20000},
+								{from: 20010, to: 20020},
+								{from: 20030, to: 20040},
+							},
+							established: pointer.To(true),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10050, to: 10050},
+								{from: 10060, to: 10070},
+								{from: 10080, to: 10090},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20050, to: 20050},
+								{from: 20060, to: 20070},
+								{from: 20080, to: 20090},
+							},
+							established: pointer.To(false),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10100, to: 10100},
+								{from: 10110, to: 10120},
+								{from: 10130, to: 10140},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20100, to: 20100},
+								{from: 20110, to: 20120},
+								{from: 20130, to: 20140},
+							},
+							established: nil,
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolUdp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10150, to: 10150},
+								{from: 10160, to: 10170},
+								{from: 10180, to: 10190},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20150, to: 20150},
+								{from: 20160, to: 20170},
+								{from: 20180, to: 20190},
+							},
+						},
+					},
+				},
+				{
+					blueprintID: string(bp.Id()),
+					name:        acctest.RandString(6),
+				},
+				{
+					blueprintID:                   string(bp.Id()),
+					name:                          acctest.RandString(6),
+					description:                   acctest.RandString(10),
+					enabled:                       random.OneOf(pointer.To(true), pointer.To(false), nil),
+					sourceApplicationPointID:      vnIds[0],
+					destinationApplicationPointID: vnIds[1],
+					tags:                          randomStrings(3, 6),
+					rules: []resourceDataCenterSecurityPolicyRule{
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIcmp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10000, to: 10000},
+								{from: 10010, to: 10020},
+								{from: 10030, to: 10040},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20000, to: 20000},
+								{from: 20010, to: 20020},
+								{from: 20030, to: 20040},
+							},
+							established: pointer.To(true),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10050, to: 10050},
+								{from: 10060, to: 10070},
+								{from: 10080, to: 10090},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20050, to: 20050},
+								{from: 20060, to: 20070},
+								{from: 20080, to: 20090},
+							},
+							established: pointer.To(false),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10100, to: 10100},
+								{from: 10110, to: 10120},
+								{from: 10130, to: 10140},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20100, to: 20100},
+								{from: 20110, to: 20120},
+								{from: 20130, to: 20140},
+							},
+							established: nil,
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolUdp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10150, to: 10150},
+								{from: 10160, to: 10170},
+								{from: 10180, to: 10190},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20150, to: 20150},
+								{from: 20160, to: 20170},
+								{from: 20180, to: 20190},
+							},
+						},
+					},
+				},
+			},
+		},
 		"start_minimal_620_and_later": {
 			versionconstraints: []compatibility.Constraint{compatibility.DatacenterPolicyAddressFamilyRequired},
 			steps: []resourceDataCenterSecurityPolicy{
@@ -292,6 +592,288 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 					blueprintID: string(bp.Id()),
 					name:        acctest.RandString(6),
 					ipVersion:   pointer.To(random.OneOf(enum.PolicyAddressFamilyIPv4, enum.PolicyAddressFamilyIPv6, enum.PolicyAddressFamilyIPv6)),
+				},
+				{
+					blueprintID:                   string(bp.Id()),
+					name:                          acctest.RandString(6),
+					description:                   acctest.RandString(10),
+					enabled:                       random.OneOf(pointer.To(true), pointer.To(false), nil),
+					ipVersion:                     pointer.To(random.OneOf(enum.PolicyAddressFamilyIPv4, enum.PolicyAddressFamilyIPv6, enum.PolicyAddressFamilyIPv6)),
+					sourceApplicationPointID:      vnIds[0],
+					destinationApplicationPointID: vnIds[1],
+					tags:                          randomStrings(3, 6),
+					rules: []resourceDataCenterSecurityPolicyRule{
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIcmp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10000, to: 10000},
+								{from: 10010, to: 10020},
+								{from: 10030, to: 10040},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20000, to: 20000},
+								{from: 20010, to: 20020},
+								{from: 20030, to: 20040},
+							},
+							established: pointer.To(true),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10050, to: 10050},
+								{from: 10060, to: 10070},
+								{from: 10080, to: 10090},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20050, to: 20050},
+								{from: 20060, to: 20070},
+								{from: 20080, to: 20090},
+							},
+							established: pointer.To(false),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10100, to: 10100},
+								{from: 10110, to: 10120},
+								{from: 10130, to: 10140},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20100, to: 20100},
+								{from: 20110, to: 20120},
+								{from: 20130, to: 20140},
+							},
+							established: nil,
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolUdp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10150, to: 10150},
+								{from: 10160, to: 10170},
+								{from: 10180, to: 10190},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20150, to: 20150},
+								{from: 20160, to: 20170},
+								{from: 20180, to: 20190},
+							},
+						},
+					},
+				},
+				{
+					blueprintID: string(bp.Id()),
+					name:        acctest.RandString(6),
+					ipVersion:   pointer.To(random.OneOf(enum.PolicyAddressFamilyIPv4, enum.PolicyAddressFamilyIPv6, enum.PolicyAddressFamilyIPv6)),
+				},
+			},
+		},
+		"start_maximal_620_and_later": {
+			versionconstraints: []compatibility.Constraint{compatibility.DatacenterPolicyAddressFamilyRequired},
+			steps: []resourceDataCenterSecurityPolicy{
+				{
+					blueprintID:                   string(bp.Id()),
+					name:                          acctest.RandString(6),
+					description:                   acctest.RandString(10),
+					enabled:                       random.OneOf(pointer.To(true), pointer.To(false), nil),
+					ipVersion:                     pointer.To(random.OneOf(enum.PolicyAddressFamilyIPv4, enum.PolicyAddressFamilyIPv6, enum.PolicyAddressFamilyIPv6)),
+					sourceApplicationPointID:      vnIds[0],
+					destinationApplicationPointID: vnIds[1],
+					tags:                          randomStrings(3, 6),
+					rules: []resourceDataCenterSecurityPolicyRule{
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIcmp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10000, to: 10000},
+								{from: 10010, to: 10020},
+								{from: 10030, to: 10040},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20000, to: 20000},
+								{from: 20010, to: 20020},
+								{from: 20030, to: 20040},
+							},
+							established: pointer.To(true),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10050, to: 10050},
+								{from: 10060, to: 10070},
+								{from: 10080, to: 10090},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20050, to: 20050},
+								{from: 20060, to: 20070},
+								{from: 20080, to: 20090},
+							},
+							established: pointer.To(false),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10100, to: 10100},
+								{from: 10110, to: 10120},
+								{from: 10130, to: 10140},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20100, to: 20100},
+								{from: 20110, to: 20120},
+								{from: 20130, to: 20140},
+							},
+							established: nil,
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolUdp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10150, to: 10150},
+								{from: 10160, to: 10170},
+								{from: 10180, to: 10190},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20150, to: 20150},
+								{from: 20160, to: 20170},
+								{from: 20180, to: 20190},
+							},
+						},
+					},
+				},
+				{
+					blueprintID: string(bp.Id()),
+					name:        acctest.RandString(6),
+					ipVersion:   pointer.To(random.OneOf(enum.PolicyAddressFamilyIPv4, enum.PolicyAddressFamilyIPv6, enum.PolicyAddressFamilyIPv6)),
+				},
+				{
+					blueprintID:                   string(bp.Id()),
+					name:                          acctest.RandString(6),
+					description:                   acctest.RandString(10),
+					enabled:                       random.OneOf(pointer.To(true), pointer.To(false), nil),
+					ipVersion:                     pointer.To(random.OneOf(enum.PolicyAddressFamilyIPv4, enum.PolicyAddressFamilyIPv6, enum.PolicyAddressFamilyIPv6)),
+					sourceApplicationPointID:      vnIds[0],
+					destinationApplicationPointID: vnIds[1],
+					tags:                          randomStrings(3, 6),
+					rules: []resourceDataCenterSecurityPolicyRule{
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIcmp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:     acctest.RandString(5),
+							protocol: enum.PolicyRuleProtocolIp,
+							action:   random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10000, to: 10000},
+								{from: 10010, to: 10020},
+								{from: 10030, to: 10040},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20000, to: 20000},
+								{from: 20010, to: 20020},
+								{from: 20030, to: 20040},
+							},
+							established: pointer.To(true),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10050, to: 10050},
+								{from: 10060, to: 10070},
+								{from: 10080, to: 10090},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20050, to: 20050},
+								{from: 20060, to: 20070},
+								{from: 20080, to: 20090},
+							},
+							established: pointer.To(false),
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolTcp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10100, to: 10100},
+								{from: 10110, to: 10120},
+								{from: 10130, to: 10140},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20100, to: 20100},
+								{from: 20110, to: 20120},
+								{from: 20130, to: 20140},
+							},
+							established: nil,
+						},
+						{
+							name:        acctest.RandString(5),
+							description: acctest.RandString(10),
+							action:      random.OneOf(enum.PolicyRuleActionDeny, enum.PolicyRuleActionDenyLog, enum.PolicyRuleActionPermit, enum.PolicyRuleActionPermitLog),
+							protocol:    enum.PolicyRuleProtocolUdp,
+							sourcePorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 10150, to: 10150},
+								{from: 10160, to: 10170},
+								{from: 10180, to: 10190},
+							},
+							destinationPorts: []resourceDataCenterSecurityPolicyRulePort{
+								{from: 20150, to: 20150},
+								{from: 20160, to: 20170},
+								{from: 20180, to: 20190},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -337,376 +919,3 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 		})
 	}
 }
-
-//type resourceDataCenterSecurityPolicy struct {
-//	config     datacenter.Policy
-//	checks     []resource.TestCheckFunc
-//	minVersion *version.Version
-//}
-//
-//func (o resourceDataCenterSecurityPolicy) renderConfig(bpId apstra.ObjectId) string {
-//	renderPort := func(port datacenter.PortRange) string {
-//		return fmt.Sprintf(resourceDataCenterSecurityPolicyRulePortHCL, port.First, port.Last)
-//	}
-//
-//	renderPorts := func(ports datacenter.PortRanges) string {
-//		if len(ports) == 0 {
-//			return "null"
-//		}
-//
-//		var sb strings.Builder
-//		sb.WriteString("[\n")
-//		for _, port := range ports {
-//			sb.WriteString(renderPort(port))
-//		}
-//		sb.WriteString("      \n]")
-//		return sb.String()
-//	}
-//
-//	renderEstablished := func(tsq *enum.TcpStateQualifier) string {
-//		if tsq == nil {
-//			return "null"
-//		}
-//
-//		return strconv.FormatBool(*tsq == enum.TcpStateQualifierEstablished)
-//	}
-//
-//	renderRule := func(rule datacenter.PolicyRule) string {
-//		return fmt.Sprintf(resourceDataCenterSecurityPolicyRuleHCL,
-//			rule.Label,
-//			stringOrNull(rule.Description),
-//			rule.Action.Value,
-//			rosetta.StringersToFriendlyString(rule.Protocol),
-//			renderPorts(rule.SrcPort),
-//			renderPorts(rule.DstPort),
-//			renderEstablished(rule.TcpStateQualifier),
-//		)
-//	}
-//
-//	renderRules := func(rules []datacenter.PolicyRule) string {
-//		if len(rules) == 0 {
-//			return "null"
-//		}
-//
-//		var sb strings.Builder
-//		sb.WriteString("[\n")
-//		for _, rule := range rules {
-//			sb.WriteString(renderRule(rule))
-//		}
-//		sb.WriteString("    ]\n")
-//		return sb.String()
-//	}
-//
-//	renderTags := func(s []string) string {
-//		if len(s) == 0 {
-//			return "null"
-//		}
-//		return `["` + strings.Join(s, `","`) + `"]`
-//	}
-//
-//	return insecureProviderConfigHCL + fmt.Sprintf(resourceDataCenterSecurityPolicyHCL,
-//		bpId,
-//		o.config.Label,
-//		stringOrNull(o.config.Description),
-//		strconv.FormatBool(o.config.Enabled),
-//		stringPtrOrNull(o.config.SrcApplicationPoint),
-//		stringPtrOrNull(o.config.DstApplicationPoint),
-//		renderTags(o.config.Tags),
-//		renderRules(o.config.Rules),
-//	)
-//}
-//
-//func TestResourceDatacenterSecurityPolicy(t *testing.T) {
-//	ctx := context.Background()
-//
-//	bpClient := testutils.BlueprintA(t, ctx)
-//
-//	// collect leaf switch IDs
-//	leafIds := systemIds(ctx, t, bpClient, "leaf")
-//
-//	// create virtual networks
-//	vnIds := make([]string, 2)
-//	for i := range vnIds {
-//		id, err := bpClient.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-//			IPv4Enabled: true,
-//			Label:       acctest.RandString(5),
-//			Bindings:    []datacenter.VNBinding{{SystemID: leafIds[i]}},
-//			Type:        enum.VnTypeVlan,
-//		})
-//		if err != nil {
-//			t.Fatal(err)
-//		}
-//		vnIds[i] = id
-//	}
-//
-//	tests := []resourceDataCenterSecurityPolicy{
-//		{
-//			config: datacenter.Policy{
-//				Label: "1",
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "1"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "false"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:       "2",
-//				Enabled:     true,
-//				Description: "two",
-//				Tags:        []string{"a", "b", "c"},
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "2"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "description", "two"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "tags.#", "3"),
-//				resource.TestCheckTypeSetElemAttr(resourceDataCenterSecurityPolicyRefName, "tags.*", "c"),
-//				resource.TestCheckTypeSetElemAttr(resourceDataCenterSecurityPolicyRefName, "tags.*", "a"),
-//				resource.TestCheckTypeSetElemAttr(resourceDataCenterSecurityPolicyRefName, "tags.*", "b"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:   "3",
-//				Enabled: false,
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "3"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "false"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:               "4",
-//				Enabled:             true,
-//				SrcApplicationPoint: &vnIds[0],
-//				DstApplicationPoint: &vnIds[1],
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "4"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0]),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1]),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:               "5",
-//				Enabled:             false,
-//				SrcApplicationPoint: &vnIds[1],
-//				DstApplicationPoint: &vnIds[0],
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "5"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "false"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[1]),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[0]),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:   "6",
-//				Enabled: true,
-//				Rules: []datacenter.PolicyRule{
-//					{
-//						Label:       "60",
-//						Description: "",
-//						Protocol:    enum.PolicyRuleProtocolIcmp,
-//						Action:      enum.PolicyRuleActionDeny,
-//					},
-//				},
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "6"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.#", "1"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.name", "60"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "icmp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.action", "deny"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:   "7",
-//				Enabled: false,
-//				Rules: []datacenter.PolicyRule{
-//					{
-//						Label:       "70",
-//						Description: "seventy",
-//						Protocol:    enum.PolicyRuleProtocolIp,
-//						Action:      enum.PolicyRuleActionDenyLog,
-//					},
-//				},
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "7"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "false"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.#", "1"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.name", "70"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.description", "seventy"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "ip"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.action", "deny_log"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:               "8",
-//				Enabled:             true,
-//				SrcApplicationPoint: &vnIds[0],
-//				DstApplicationPoint: &vnIds[1],
-//				Rules: []datacenter.PolicyRule{
-//					{
-//						Label:       "80",
-//						Description: "eighty",
-//						Protocol:    enum.PolicyRuleProtocolUdp,
-//						Action:      enum.PolicyRuleActionPermit,
-//					},
-//					{
-//						Label:       "81",
-//						Description: "eightyone",
-//						Protocol:    enum.PolicyRuleProtocolTcp,
-//						Action:      enum.PolicyRuleActionPermitLog,
-//					},
-//					{
-//						Label:             "82",
-//						Description:       "eightytwo",
-//						Protocol:          enum.PolicyRuleProtocolTcp,
-//						Action:            enum.PolicyRuleActionPermit,
-//						TcpStateQualifier: &enum.TcpStateQualifierEstablished,
-//						SrcPort: datacenter.PortRanges{
-//							{First: 1, Last: 1},
-//							{First: 3, Last: 5},
-//							{First: 7, Last: 9},
-//							{First: 11, Last: 11},
-//						},
-//						DstPort: datacenter.PortRanges{
-//							{First: 50, Last: 50},
-//						},
-//					},
-//				},
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "8"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0]),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1]),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.#", "3"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.name", "80"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.description", "eighty"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "udp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.action", "permit"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.name", "81"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.description", "eightyone"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.protocol", "tcp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.action", "permit_log"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.established", "false"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.name", "82"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.description", "eightytwo"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.protocol", "tcp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.action", "permit"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.established", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.source_ports.#", "4"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.destination_ports.#", "1"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:               "9",
-//				Enabled:             true,
-//				SrcApplicationPoint: &vnIds[0],
-//				DstApplicationPoint: &vnIds[1],
-//				Rules: []datacenter.PolicyRule{
-//					{
-//						Label:       "90",
-//						Description: "ninety",
-//						Protocol:    enum.PolicyRuleProtocolUdp,
-//						Action:      enum.PolicyRuleActionPermit,
-//					},
-//					{
-//						Label:       "91",
-//						Description: "ninetyone",
-//						Protocol:    enum.PolicyRuleProtocolTcp,
-//						Action:      enum.PolicyRuleActionPermitLog,
-//					},
-//					{
-//						Label:             "92",
-//						Description:       "ninetytwo",
-//						Protocol:          enum.PolicyRuleProtocolTcp,
-//						Action:            enum.PolicyRuleActionPermit,
-//						TcpStateQualifier: &enum.TcpStateQualifierEstablished,
-//						SrcPort: datacenter.PortRanges{
-//							{First: 1, Last: 1},
-//							{First: 7, Last: 9},
-//							{First: 11, Last: 11},
-//						},
-//						DstPort: datacenter.PortRanges{
-//							{First: 50, Last: 50},
-//							{First: 3, Last: 5},
-//						},
-//					},
-//				},
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "9"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "source_application_point_id", vnIds[0]),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "destination_application_point_id", vnIds[1]),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.#", "3"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.name", "90"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.description", "ninety"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.protocol", "udp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.0.action", "permit"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.name", "91"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.description", "ninetyone"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.protocol", "tcp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.action", "permit_log"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.1.established", "false"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.name", "92"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.description", "ninetytwo"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.protocol", "tcp"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.action", "permit"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.established", "true"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.source_ports.#", "3"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "rules.2.destination_ports.#", "2"),
-//			},
-//		},
-//		{
-//			config: datacenter.Policy{
-//				Label:   "10",
-//				Enabled: false,
-//			},
-//			checks: []resource.TestCheckFunc{
-//				resource.TestCheckResourceAttrSet(resourceDataCenterSecurityPolicyRefName, "id"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "name", "10"),
-//				resource.TestCheckResourceAttr(resourceDataCenterSecurityPolicyRefName, "enabled", "false"),
-//			},
-//		},
-//	}
-//
-//	var steps []resource.TestStep
-//	for _, test := range tests {
-//		if test.minVersion != nil && version.Must(version.NewVersion(bpClient.Client().ApiVersion())).LessThan(test.minVersion) {
-//			continue
-//		}
-//		steps = append(steps, resource.TestStep{
-//			Config: test.renderConfig(bpClient.Id()),
-//			Check:  resource.ComposeAggregateTestCheckFunc(test.checks...),
-//		})
-//	}
-//
-//	resource.Test(t, resource.TestCase{
-//		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-//		Steps:                    steps,
-//	})
-//}
-//
