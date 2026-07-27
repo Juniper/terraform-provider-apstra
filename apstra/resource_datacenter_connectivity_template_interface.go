@@ -62,6 +62,11 @@ func (o *resourceDatacenterConnectivityTemplateInterface) ValidateConfig(ctx con
 		return
 	}
 
+	// TODO add version-aware validation of primitives to support override_vlan attribute of VN_Single
+	//  primitive introduced in 6.2.0+ (compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK)
+
+	// TODO add config-only validation to ensure that VN_Single primitives do not specify both *untagged* and VLAN override
+
 	//TODO implement me to catch configuration problems before they hit the API
 	//
 	// ip_link addressing type vs. bgp peering generic system addressing type

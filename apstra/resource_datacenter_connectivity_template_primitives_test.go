@@ -15,11 +15,13 @@ import (
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -647,6 +649,7 @@ func randomStaticRoutePrimitives(t testing.TB, _ context.Context, ipv4Count, ipv
 const resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL = `{
   virtual_network_id          = %q
   tagged                      = %q
+  override_vlan               = %s
   bgp_peering_generic_systems = %s
   static_routes               = %s
 },
@@ -655,6 +658,7 @@ const resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL = `
 type resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle struct {
 	virtualNetworkId         string
 	tagged                   bool
+	overrideVLAN             *int
 	bgpPeeringGenericSystems map[string]resourceDataCenterConnectivityTemplatePrimitiveBgpPeeringGenericSystem
 	staticRoutes             map[string]resourceDataCenterConnectivityTemplatePrimitiveStaticRoute
 }
@@ -685,6 +689,7 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) ren
 		fmt.Sprintf(resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingleHCL,
 			o.virtualNetworkId,
 			strconv.FormatBool(o.tagged),
+			intPtrOrNull(o.overrideVLAN),
 			bgpPeeringGenericSystems,
 			staticRoutes,
 		),
@@ -695,6 +700,11 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) tes
 	var result [][]string
 	result = append(result, []string{"TestCheckResourceAttr", path + ".virtual_network_id", o.virtualNetworkId})
 	result = append(result, []string{"TestCheckResourceAttr", path + ".tagged", strconv.FormatBool(o.tagged)})
+	if o.overrideVLAN == nil {
+		result = append(result, []string{"TestCheckNoResourceAttr", path + ".override_vlan"})
+	} else {
+		result = append(result, []string{"TestCheckResourceAttr", path + ".override_vlan", strconv.Itoa(*o.overrideVLAN)})
+	}
 	result = append(result, []string{"TestCheckResourceAttr", path + ".bgp_peering_generic_systems.%", strconv.Itoa(len(o.bgpPeeringGenericSystems))})
 	for k, v := range o.bgpPeeringGenericSystems {
 		result = append(result, v.testChecks(path+".bgp_peering_generic_systems."+k)...)
@@ -709,11 +719,20 @@ func (o resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle) tes
 func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, client *apstra.TwoStageL3ClosClient, cleanup bool) map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle {
 	t.Helper()
 
+	apiVersion := version.Must(version.NewVersion(client.Client().ApiVersion()))
+	vlanOverride := compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK.Check(apiVersion)
+	tagged := oneOf(true, false)
+
 	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
 	for range count {
+		var overrideVLAN *int
+		if vlanOverride && tagged && rand.Int()%2 == 0 { // 50% probability when supported and taggged
+			overrideVLAN = pointer.To(rand.IntN(2095) + 2000) // 2000-4094
+		}
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
 			virtualNetworkId:         testutils.VirtualNetworkVxlan(t, ctx, client, cleanup),
-			tagged:                   oneOf(true, false),
+			tagged:                   tagged,
+			overrideVLAN:             overrideVLAN,
 			bgpPeeringGenericSystems: randomBgpPeeringGenericSystemPrimitives(t, ctx, rand.IntN(3), client, cleanup),
 			staticRoutes:             randomStaticRoutePrimitives(t, ctx, rand.IntN(3), rand.IntN(3), client, cleanup),
 		}
