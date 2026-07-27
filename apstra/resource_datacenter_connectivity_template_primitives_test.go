@@ -720,13 +720,13 @@ func randomVirtualNetworkSingles(t testing.TB, ctx context.Context, count int, c
 	t.Helper()
 
 	apiVersion := version.Must(version.NewVersion(client.Client().ApiVersion()))
-	vlanOverride := compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK.Check(apiVersion)
+	vlanOverrideOK := compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK.Check(apiVersion)
 	tagged := oneOf(true, false)
 
 	result := make(map[string]resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle, count)
 	for range count {
 		var overrideVLAN *int
-		if vlanOverride && tagged && rand.Int()%2 == 0 { // 50% probability when supported and taggged
+		if vlanOverrideOK && tagged && rand.Int()%2 == 0 { // 50% probability when supported and taggged
 			overrideVLAN = pointer.To(rand.IntN(2095) + 2000) // 2000-4094
 		}
 		result[acctest.RandStringFromCharSet(6, acctest.CharSetAlpha)] = resourceDataCenterConnectivityTemplatePrimitiveVirtualNetworkSingle{
