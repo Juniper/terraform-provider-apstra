@@ -3757,8 +3757,8 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 ## github.com/hashicorp/go-version
 
 * Name: github.com/hashicorp/go-version
-* Version: v1.8.0
-* License: [MPL-2.0](https://github.com/hashicorp/go-version/blob/v1.8.0/LICENSE)
+* Version: v1.9.0
+* License: [MPL-2.0](https://github.com/hashicorp/go-version/blob/v1.9.0/LICENSE)
 
 ```
 Copyright IBM Corp. 2014, 2025
