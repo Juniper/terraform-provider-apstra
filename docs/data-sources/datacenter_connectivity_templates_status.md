@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_connectivity_templates_status Data Source - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource returns a map detailing status of Connectivity Templates within a Datacenter Blueprint.
+  This data source returns a map detailing status of Connectivity Templates within a Datacenter Blueprint.
 ---
 
 # apstra_datacenter_connectivity_templates_status (Data Source)
 
-This resource returns a map detailing status of Connectivity Templates within a Datacenter Blueprint.
+This data source returns a map detailing status of Connectivity Templates within a Datacenter Blueprint.
 
 
 ## Example Usage
