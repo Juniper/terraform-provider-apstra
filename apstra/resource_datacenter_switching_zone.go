@@ -323,6 +323,10 @@ func (o *resourceDatacenterSwitchingZone) Update(ctx context.Context, req resour
 		return
 	}
 
+	//// set new "prior" markers
+	//plan.HadPriorVlanIdConfig = types.BoolValue(utils.HasValue(plan.VlanId))
+	//plan.HadPriorVNIConfig = types.BoolValue(utils.HasValue(plan.VNI))
+
 	// send the update
 	err = bp.UpdateSwitchingZone(ctx, request)
 	if err != nil {
