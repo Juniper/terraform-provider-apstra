@@ -319,9 +319,9 @@ Required:
 Optional:
 
 - `bgp_peering_generic_systems` (Attributes Map) Map of BGP Peering (Generic System) primitives (see [below for nested schema](#nestedatt--virtual_network_singles--bgp_peering_generic_systems))
-- `override_vlan` (Number) Override VLAN ID tag that will be used to attribute traffic to the corresponding roadcast Domain (Virtual Network) for the particular port.
+- `override_vlan` (Number) Override VLAN ID tag that will be used to attribute traffic to the corresponding Broadcast Domain (Virtual Network) for the particular port.
 VLAN ID tag might or might not match the corresponding VLAN ID specified on the VN instance level.
-This feature implies the use of Service rovider rendering style and so far is only available for Junos devices.
+This feature implies the use of Service Provider rendering style and so far is only available for Junos devices.
 Only applicable when VN Endpoint is tagged. Requires Apstra >=6.2.0.
 - `static_routes` (Attributes Map) Map of Static Route primitives (see [below for nested schema](#nestedatt--virtual_network_singles--static_routes))
 

@@ -72,9 +72,9 @@ func (o VirtualNetworkSingle) ResourceAttributes() map[string]resourceSchema.Att
 		},
 		"override_vlan": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("Override VLAN ID tag that will be used to attribute traffic to the "+
-				"corresponding roadcast Domain (Virtual Network) for the particular port.\nVLAN ID tag might or might "+
+				"corresponding Broadcast Domain (Virtual Network) for the particular port.\nVLAN ID tag might or might "+
 				"not match the corresponding VLAN ID specified on the VN instance level.\nThis feature implies the use of "+
-				"Service rovider rendering style and so far is only available for Junos devices.\nOnly applicable when VN "+
+				"Service Provider rendering style and so far is only available for Junos devices.\nOnly applicable when VN "+
 				"Endpoint is tagged. Requires Apstra %s.", compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK.String()),
 			Optional:   true,
 			Validators: []validator.Int64{int64validator.Between(constants.VlanMinUsable, constants.VlanMaxUsable)},
