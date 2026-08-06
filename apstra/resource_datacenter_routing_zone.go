@@ -88,7 +88,7 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 	// This plan modifier solves the same problem for two different
 	// `Optional` + `Computed` attributes:
 	//   - VlanId
-	//   - VNI
+	//   - Vni
 	//
 	// The problem is terraform's ordinary handling of `Optional` + `Computed`
 	// attributes:
@@ -106,7 +106,7 @@ func (o *resourceDatacenterRoutingZone) ModifyPlan(ctx context.Context, req reso
 	// We work around that behavior by using trigger/tracker `Computed` boolean
 	// attributes for each `Computed` + `Optional` resource:
 	//   - HadPriorVlanIdConfig
-	//   - HadPriorVNIConfig
+	//   - HadPriorVniConfig
 	//
 	// Whenever these "prior" attributes are found `true` and the corresponding
 	// config element is `null`, we can conclude that the attribute has just

@@ -32,7 +32,7 @@ func (o *dataSourceDatacenterRoutingZoneConstraint) Configure(ctx context.Contex
 
 func (o *dataSourceDatacenterRoutingZoneConstraint) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a Routing Zone Constraint within a Datacenter Blueprint.\n\n" +
+		MarkdownDescription: docCategoryDatacenter + "This data source returns details of a Routing Zone Constraint within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.DatacenterRoutingZoneConstraint{}.DataSourceAttributes(),
 	}

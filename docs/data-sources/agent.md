@@ -2,12 +2,12 @@
 page_title: "apstra_agent Data Source - terraform-provider-apstra"
 subcategory: "Devices"
 description: |-
-  This resource returns details of a Managed Device Agent.
+  This data source returns details of a Managed Device Agent.
 ---
 
 # apstra_agent (Data Source)
 
-This resource returns details of a Managed Device Agent.
+This data source returns details of a Managed Device Agent.
 
 
 ## Example Usage
