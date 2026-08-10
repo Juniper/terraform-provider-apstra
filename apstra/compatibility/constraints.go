@@ -18,6 +18,7 @@ var (
 	RoutingZoneTagsOK                  = versionconstraints.New(apiversions.GeApstra500)
 	SwitchingZoneOK                    = versionconstraints.New(apiversions.GeApstra620)
 	TemplateRequiresAntiAffinityPolicy = versionconstraints.New(apiversions.Apstra420)
+	VnAPITagsOk                        = versionconstraints.New(apiversions.GeApstra620)
 	VnDHCPUnsafeWithoutWithoutBindings = versionconstraints.New(apiversions.LtApstra620)
 	VnDescriptionOk                    = versionconstraints.New(apiversions.GeApstra500)
 	VnEmptyBindingsOk                  = versionconstraints.New(apiversions.GeApstra500)

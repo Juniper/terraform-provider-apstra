@@ -193,6 +193,13 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
+	// Get Apstra version
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -208,6 +215,11 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
+	// Tags must be nil when creating a VN with Aptra < 6.2.0
+	if !compatibility.VnAPITagsOk.Check(apiVersion) {
+		request.Tags = nil
+	}
+
 	// create the virtual network
 	id, err := bp.CreateVirtualNetwork(ctx, request)
 	if err != nil {
@@ -215,9 +227,8 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		return
 	}
 
-	// set tags, if any
-	// todo: skip setting tags when talking to Apstra 6.2+ (#1257)
-	if !plan.Tags.IsNull() {
+	// On Pre-6.2.0 Apstra, setting tags requires an additional step
+	if !compatibility.VnAPITagsOk.Check(apiVersion) && !plan.Tags.IsNull() {
 		var tags []string
 		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
 		if resp.Diagnostics.HasError() {
@@ -367,6 +378,13 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		return
 	}
 
+	// Get Apstra version
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
 	// Lock the blueprint mutex.
 	err = o.lockFunc(ctx, plan.BlueprintId.ValueString())
 	if err != nil {
@@ -382,36 +400,19 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		return
 	}
 
-	// update the virtual network according to the plan, if necessary
-	if !plan.Name.Equal(state.Name) ||
-		!plan.Description.Equal(state.Description) ||
-		!plan.SwitchingZoneID.Equal(state.SwitchingZoneID) ||
-		!plan.VNI.Equal(state.VNI) ||
-		!plan.ReserveVLAN.Equal(state.ReserveVLAN) ||
-		!plan.ReservedVLAN.Equal(state.ReservedVLAN) ||
-		!plan.Bindings.Equal(state.Bindings) ||
-		!plan.DHCPEnabled.Equal(state.DHCPEnabled) ||
-		!plan.IPv4ConnectivityEnabled.Equal(state.IPv4ConnectivityEnabled) ||
-		!plan.IPv6ConnectivityEnabled.Equal(state.IPv6ConnectivityEnabled) ||
-		!plan.IPv4Subnet.Equal(state.IPv4Subnet) ||
-		!plan.IPv6Subnet.Equal(state.IPv6Subnet) ||
-		!plan.IPv4GatewayEnabled.Equal(state.IPv4GatewayEnabled) ||
-		!plan.IPv6GatewayEnabled.Equal(state.IPv6GatewayEnabled) ||
-		!plan.IPv4Gateway.Equal(state.IPv4Gateway) ||
-		!plan.IPv6Gateway.Equal(state.IPv6Gateway) ||
-		!plan.L3MTU.Equal(state.L3MTU) ||
-		!plan.ImportRouteTargets.Equal(state.ImportRouteTargets) ||
-		!plan.ExportRouteTargets.Equal(state.ExportRouteTargets) {
-
-		err = bp.UpdateVirtualNetwork(ctx, request)
-		if err != nil {
-			resp.Diagnostics.AddError("error updating virtual network", err.Error())
-		}
+	// Tags must be nil when updating a VN with Aptra < 6.2.0
+	if !compatibility.VnAPITagsOk.Check(apiVersion) {
+		request.Tags = nil
 	}
 
-	// update tags, if necessary
-	// todo: skip setting tags when talking to Apstra 6.2+ (#1257)
-	if !plan.Tags.Equal(state.Tags) {
+	// Update the Virtual Network.
+	err = bp.UpdateVirtualNetwork(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError("error updating virtual network", err.Error())
+	}
+
+	// On Pre-6.2.0 Apstra, changing the tags requires an additional step
+	if !compatibility.VnAPITagsOk.Check(apiVersion) && !plan.Tags.Equal(state.Tags) {
 		var tags []string
 		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
 		if resp.Diagnostics.HasError() {
