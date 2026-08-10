@@ -30,7 +30,7 @@ func (o *dataSourceAgent) Configure(ctx context.Context, req datasource.Configur
 
 func (o *dataSourceAgent) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDevices + "This resource returns details of a Managed Device Agent.",
+		MarkdownDescription: docCategoryDevices + "This data source returns details of a Managed Device Agent.",
 		Attributes:          systemAgents.ManagedDevice{}.DataSourceAttributes(),
 	}
 }
