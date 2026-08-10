@@ -66,7 +66,7 @@ func (o *resourceDatacenterVirtualNetwork) ValidateConfig(ctx context.Context, r
 	}
 
 	// enabling DHCP requires enabling IPv4 or IPv6
-	if config.DhcpServiceEnabled.ValueBool() &&
+	if config.DHCPEnabled.ValueBool() &&
 		!config.IPv4ConnectivityEnabled.ValueBool() &&
 		!config.IPv6ConnectivityEnabled.ValueBool() {
 		resp.Diagnostics.AddAttributeError(path.Root("dhcp_service_enabled"), errInvalidConfig,
@@ -129,7 +129,7 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	}
 
 	// Updating the routing_zone_id attribute is only permitted with Apstra >= 5.0.0
-	if !plan.RoutingZoneId.IsUnknown() && !plan.RoutingZoneId.Equal(state.RoutingZoneId) {
+	if !plan.RoutingZoneID.IsUnknown() && !plan.RoutingZoneID.Equal(state.RoutingZoneID) {
 		// routing_zone_id attribute has been changed
 		if o.client != nil && compatibility.ChangeVnRzIdForbidden.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
 			resp.RequiresReplace.Append(path.Root("routing_zone_id"))
@@ -140,7 +140,7 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	// The rest of this plan modifier solves the same problem for two different
 	// `Optional` + `Computed` attributes:
 	//   - VlanId
-	//   - Vni
+	//   - VNI
 	//
 	// The problem is terraform's ordinary handling of `Optional` + `Computed`
 	// attributes:
@@ -158,7 +158,7 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	// We work around that behavior by using trigger/tracker `Computed` boolean
 	// attributes for each `Computed` + `Optional` resource:
 	//   - HadPriorVlanIdConfig
-	//   - HadPriorVniConfig
+	//   - HadPriorVNIConfig
 	//
 	// Whenever these attributes are found `true`, but the corresponding config
 	// element is `null`, we conclude that the attribute been removed from the
@@ -166,9 +166,9 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 	// and record a new choice made by the API.
 
 	// null config with prior configured value means vni was removed
-	if config.Vni.IsNull() && state.HadPriorVniConfig.ValueBool() {
-		plan.Vni = types.Int64Unknown()
-		plan.HadPriorVniConfig = types.BoolValue(false)
+	if config.VNI.IsNull() && state.HadPriorVNIConfig.ValueBool() {
+		plan.VNI = types.Int64Unknown()
+		plan.HadPriorVNIConfig = types.BoolValue(false)
 	}
 
 	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
@@ -233,7 +233,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 
 	// update the plan with the received ObjectId and set the partial state in
 	// case we have to bail due to error soon.
-	plan.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+	plan.HadPriorVNIConfig = types.BoolValue(!plan.VNI.IsUnknown())
 	plan.Id = types.StringValue(id)
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 
@@ -270,7 +270,7 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	// in the API) means we can't completely rely on the API response.
 	var state blueprint.DatacenterVirtualNetwork
 	state.BlueprintId = plan.BlueprintId
-	state.HadPriorVniConfig = plan.HadPriorVniConfig
+	state.HadPriorVNIConfig = plan.HadPriorVNIConfig
 	state.LoadApiData(ctx, api, &resp.Diagnostics)
 
 	// Don't rely on the API response for these values (#170). If the config
@@ -287,16 +287,21 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 	if !plan.IPv6Gateway.IsUnknown() {
 		state.IPv6Gateway = plan.IPv6Gateway
 	}
-	if !plan.Vni.IsUnknown() {
-		state.Vni = plan.Vni
+	if !plan.VNI.IsUnknown() {
+		state.VNI = plan.VNI
 	}
-	if !plan.ReserveVlan.IsUnknown() {
-		state.ReserveVlan = plan.ReserveVlan
+	if !plan.ReserveVLAN.IsUnknown() {
+		state.ReserveVLAN = plan.ReserveVLAN
+	}
+	if !plan.SwitchingZoneID.IsUnknown() {
+		state.SwitchingZoneID = plan.SwitchingZoneID
 	}
 
-	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
-	// Overwrite the discovered value with the planned value.
-	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
+	if compatibility.VnDHCPUnsafeWithoutWithoutBindings.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		// The discovered DHCPEnabled value might be false even if we set it true (#1114).
+		// Overwrite the discovered value with the planned value.
+		state.DHCPEnabled = plan.DHCPEnabled
+	}
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
@@ -380,11 +385,12 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	// update the virtual network according to the plan, if necessary
 	if !plan.Name.Equal(state.Name) ||
 		!plan.Description.Equal(state.Description) ||
-		!plan.Vni.Equal(state.Vni) ||
-		!plan.ReserveVlan.Equal(state.ReserveVlan) ||
-		!plan.ReservedVlanId.Equal(state.ReservedVlanId) ||
+		!plan.SwitchingZoneID.Equal(state.SwitchingZoneID) ||
+		!plan.VNI.Equal(state.VNI) ||
+		!plan.ReserveVLAN.Equal(state.ReserveVLAN) ||
+		!plan.ReservedVLAN.Equal(state.ReservedVLAN) ||
 		!plan.Bindings.Equal(state.Bindings) ||
-		!plan.DhcpServiceEnabled.Equal(state.DhcpServiceEnabled) ||
+		!plan.DHCPEnabled.Equal(state.DHCPEnabled) ||
 		!plan.IPv4ConnectivityEnabled.Equal(state.IPv4ConnectivityEnabled) ||
 		!plan.IPv6ConnectivityEnabled.Equal(state.IPv6ConnectivityEnabled) ||
 		!plan.IPv4Subnet.Equal(state.IPv4Subnet) ||
@@ -393,7 +399,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 		!plan.IPv6GatewayEnabled.Equal(state.IPv6GatewayEnabled) ||
 		!plan.IPv4Gateway.Equal(state.IPv4Gateway) ||
 		!plan.IPv6Gateway.Equal(state.IPv6Gateway) ||
-		!plan.L3Mtu.Equal(state.L3Mtu) ||
+		!plan.L3MTU.Equal(state.L3MTU) ||
 		!plan.ImportRouteTargets.Equal(state.ImportRouteTargets) ||
 		!plan.ExportRouteTargets.Equal(state.ExportRouteTargets) {
 
@@ -432,7 +438,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	// in the API) means we can't completely rely on the API response.
 	var stateOut blueprint.DatacenterVirtualNetwork
 	stateOut.BlueprintId = plan.BlueprintId
-	stateOut.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+	stateOut.HadPriorVNIConfig = types.BoolValue(!plan.VNI.IsUnknown())
 	stateOut.LoadApiData(ctx, api, &resp.Diagnostics)
 
 	// Don't rely on the API response for these values (#170). If the config
@@ -449,20 +455,22 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	if !plan.IPv6Gateway.IsUnknown() {
 		stateOut.IPv6Gateway = plan.IPv6Gateway
 	}
-	if !plan.ReserveVlan.IsUnknown() {
-		stateOut.ReserveVlan = plan.ReserveVlan
+	if !plan.ReserveVLAN.IsUnknown() {
+		stateOut.ReserveVLAN = plan.ReserveVLAN
 	}
 
-	// The discovered DhcpServiceEnabled value might be false even if we set it true (#1114).
-	// Overwrite the discovered value with the planned value.
-	state.DhcpServiceEnabled = plan.DhcpServiceEnabled
+	if compatibility.VnDHCPUnsafeWithoutWithoutBindings.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		// The discovered DHCPEnabled value might be false even if we set it true (#1114).
+		// Overwrite the discovered value with the planned value.
+		state.DHCPEnabled = plan.DHCPEnabled
+	}
 
 	// if the plan modifier didn't take action...
-	if plan.HadPriorVniConfig.IsUnknown() {
+	if plan.HadPriorVNIConfig.IsUnknown() {
 		// ...then the trigger value is set according to whether a VNI value is known.
-		stateOut.HadPriorVniConfig = types.BoolValue(!plan.Vni.IsUnknown())
+		stateOut.HadPriorVNIConfig = types.BoolValue(!plan.VNI.IsUnknown())
 	} else {
-		stateOut.HadPriorVniConfig = plan.HadPriorVniConfig
+		stateOut.HadPriorVNIConfig = plan.HadPriorVNIConfig
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, stateOut)...)

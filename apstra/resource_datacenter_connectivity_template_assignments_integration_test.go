@@ -12,6 +12,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
 )
@@ -78,7 +79,7 @@ func TestAccDatacenterConnectivityTemplateAssignments(t *testing.T) {
 	bp := testutils.BlueprintA(t, ctx)
 	ctIds := make([]apstra.ObjectId, ctCount)
 	for i := range ctIds {
-		szID := testutils.SecurityZoneB(t, ctx, bp, true)
+		szID := dctestobj.RoutingZoneB(t, ctx, bp, true)
 		ctId := testutils.DatacenterConnectivityTemplateA(t, ctx, bp, szID, 101+i)
 		ctIds[i] = ctId
 	}

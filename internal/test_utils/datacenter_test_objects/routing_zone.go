@@ -1,4 +1,4 @@
-package testutils
+package dctestobj
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 )
 
-// SecurityZoneA creates a minimally configured EVPN security zone
-func SecurityZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cleanup bool) string {
+// RoutingZoneA creates a minimally configured EVPN routing (security) zone
+func RoutingZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cleanup bool) string {
 	t.Helper()
 
 	name := acctest.RandString(10)
@@ -43,8 +43,8 @@ func SecurityZoneA(t testing.TB, ctx context.Context, client *apstra.TwoStageL3C
 	return id
 }
 
-// SecurityZoneB creates a minimally configured EVPN security zone. If Apstra version >= 6.1.0, IPv6 will be enabled.
-func SecurityZoneB(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cleanup bool) string {
+// RoutingZoneB creates a minimally configured EVPN routing (security) zone. If Apstra version >= 6.1.0, IPv6 will be enabled.
+func RoutingZoneB(t testing.TB, ctx context.Context, client *apstra.TwoStageL3ClosClient, cleanup bool) string {
 	t.Helper()
 
 	name := acctest.RandString(10)

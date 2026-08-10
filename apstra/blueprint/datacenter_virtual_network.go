@@ -43,13 +43,14 @@ type DatacenterVirtualNetwork struct {
 	Description             types.String `tfsdk:"description"`
 	BlueprintId             types.String `tfsdk:"blueprint_id"`
 	Type                    types.String `tfsdk:"type"`
-	RoutingZoneId           types.String `tfsdk:"routing_zone_id"`
-	Vni                     types.Int64  `tfsdk:"vni"`
-	HadPriorVniConfig       types.Bool   `tfsdk:"had_prior_vni_config"`
-	ReserveVlan             types.Bool   `tfsdk:"reserve_vlan"`
-	ReservedVlanId          types.Int64  `tfsdk:"reserved_vlan_id"`
+	RoutingZoneID           types.String `tfsdk:"routing_zone_id"`
+	SwitchingZoneID         types.String `tfsdk:"switching_zone_id"`
+	VNI                     types.Int64  `tfsdk:"vni"`
+	HadPriorVNIConfig       types.Bool   `tfsdk:"had_prior_vni_config"`
+	ReserveVLAN             types.Bool   `tfsdk:"reserve_vlan"`
+	ReservedVLAN            types.Int64  `tfsdk:"reserved_vlan_id"`
 	Bindings                types.Map    `tfsdk:"bindings"`
-	DhcpServiceEnabled      types.Bool   `tfsdk:"dhcp_service_enabled"`
+	DHCPEnabled             types.Bool   `tfsdk:"dhcp_service_enabled"`
 	IPv4ConnectivityEnabled types.Bool   `tfsdk:"ipv4_connectivity_enabled"`
 	IPv6ConnectivityEnabled types.Bool   `tfsdk:"ipv6_connectivity_enabled"`
 	IPv4Subnet              types.String `tfsdk:"ipv4_subnet"`
@@ -58,7 +59,7 @@ type DatacenterVirtualNetwork struct {
 	IPv6GatewayEnabled      types.Bool   `tfsdk:"ipv6_virtual_gateway_enabled"`
 	IPv4Gateway             types.String `tfsdk:"ipv4_virtual_gateway"`
 	IPv6Gateway             types.String `tfsdk:"ipv6_virtual_gateway"`
-	L3Mtu                   types.Int64  `tfsdk:"l3_mtu"`
+	L3MTU                   types.Int64  `tfsdk:"l3_mtu"`
 	ImportRouteTargets      types.Set    `tfsdk:"import_route_targets"`
 	ExportRouteTargets      types.Set    `tfsdk:"export_route_targets"`
 	Tags                    types.Set    `tfsdk:"tags"`
@@ -98,6 +99,10 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 		},
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Routing Zone ID (only applies when `type == %s`", enum.VnTypeVxlan),
+			Computed:            true,
+		},
+		"switching_zone_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Switching Zone ID. Requires Apstra %s`", compatibility.SwitchingZoneOK),
 			Computed:            true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
@@ -218,6 +223,10 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 		"routing_zone_id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Routing Zone ID (required when `type == %s`)", enum.VnTypeVxlan),
 			Optional:            true,
+		},
+		"switching_zone_id": dataSourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Switching Zone ID. Requires Apstra %s`", compatibility.SwitchingZoneOK),
+			Computed:            true,
 		},
 		"vni": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "EVPN Virtual Network ID to be associated with this Virtual Network.",
@@ -373,6 +382,12 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 					path.MatchRelative().AtParent().AtName("type"),
 				),
 			},
+		},
+		"switching_zone_id": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("Switching Zone ID. Requires Apstra %s`", compatibility.SwitchingZoneOK),
+			Optional:            true,
+			Computed:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"vni": resourceSchema.Int64Attribute{
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
@@ -621,9 +636,9 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		return datacenter.VirtualNetwork{}
 	}
 
-	var vnId *uint32
-	if utils.HasValue(o.Vni) {
-		vnId = pointer.To(uint32(o.Vni.ValueInt64()))
+	var vni *uint32
+	if utils.HasValue(o.VNI) {
+		vni = pointer.To(uint32(o.VNI.ValueInt64()))
 	}
 
 	if o.Type.ValueString() == enum.VnTypeVlan.String() {
@@ -631,14 +646,14 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		// Apstra requires vlan == vni when creating a "vlan" type VN.
 		// VNI attribute is forbidden when type == VLAN
 		if len(vnBindings) > 0 && vnBindings[0].VLAN != nil {
-			vnId = pointer.To(uint32(*vnBindings[0].VLAN))
+			vni = pointer.To(uint32(*vnBindings[0].VLAN))
 		}
 	}
 
 	var reservedVlanId *uint16
-	if o.ReserveVlan.ValueBool() {
-		if utils.HasValue(o.ReservedVlanId) {
-			reservedVlanId = pointer.To(uint16(o.ReservedVlanId.ValueInt64()))
+	if o.ReserveVLAN.ValueBool() {
+		if utils.HasValue(o.ReservedVLAN) {
+			reservedVlanId = pointer.To(uint16(o.ReservedVLAN.ValueInt64()))
 		} else {
 			reservedVlanId = vnBindings[0].VLAN
 		}
@@ -667,8 +682,8 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	}
 
 	var l3Mtu *int
-	if utils.HasValue(o.L3Mtu) {
-		i := int(o.L3Mtu.ValueInt64())
+	if utils.HasValue(o.L3MTU) {
+		i := int(o.L3MTU.ValueInt64())
 		l3Mtu = &i
 	}
 
@@ -685,7 +700,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 
 	result := datacenter.VirtualNetwork{
 		Description:               o.Description.ValueString(),
-		DHCPService:               datacenter.DHCPServiceEnabled(o.DhcpServiceEnabled.ValueBool()),
+		DHCPService:               datacenter.DHCPServiceEnabled(o.DHCPEnabled.ValueBool()),
 		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
 		IPv4Subnet:                ipv4Subnet,
 		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
@@ -694,14 +709,15 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		Label:                     o.Name.ValueString(),
 		ReservedVLAN:              reservedVlanId,
 		RTPolicy:                  rtPolicy,
-		SecurityZoneID:            o.RoutingZoneId.ValueString(),
+		SecurityZoneID:            o.RoutingZoneID.ValueString(),
+		SwitchingZoneID:           o.SwitchingZoneID.ValueString(),
 		SVIIPs:                    nil,
 		VirtualGatewayIPv4:        ipv4Gateway,
 		VirtualGatewayIPv6:        ipv6Gateway,
 		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
 		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
 		Bindings:                  vnBindings,
-		VNI:                       vnId,
+		VNI:                       vni,
 		Type:                      vnType,
 		VirtualMAC:                nil,
 	}
@@ -722,17 +738,18 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	o.Name = types.StringValue(in.Label)
 	o.Description = value.StringOrNull(ctx, in.Description, diags)
 	o.Type = types.StringValue(in.Type.String())
-	o.RoutingZoneId = types.StringValue(in.SecurityZoneID)
+	o.RoutingZoneID = types.StringValue(in.SecurityZoneID)
+	o.SwitchingZoneID = value.StringOrNull(ctx, in.SwitchingZoneID, diags)
 	o.Bindings = newBindingMap(ctx, in.Bindings, diags)
-	o.Vni = value.Int64OrNull(ctx, in.VNI, diags)
-	o.DhcpServiceEnabled = types.BoolValue(bool(in.DHCPService))
+	o.VNI = value.Int64OrNull(ctx, in.VNI, diags)
+	o.DHCPEnabled = types.BoolValue(bool(in.DHCPService))
 	o.IPv4ConnectivityEnabled = types.BoolValue(in.IPv4Enabled)
 	o.IPv6ConnectivityEnabled = types.BoolValue(in.IPv6Enabled)
-	o.ReserveVlan = types.BoolValue(in.ReservedVLAN != nil)
+	o.ReserveVLAN = types.BoolValue(in.ReservedVLAN != nil)
 	if in.ReservedVLAN == nil {
-		o.ReservedVlanId = types.Int64Null()
+		o.ReservedVLAN = types.Int64Null()
 	} else {
-		o.ReservedVlanId = types.Int64Value(int64(*in.ReservedVLAN))
+		o.ReservedVLAN = types.Int64Value(int64(*in.ReservedVLAN))
 	}
 	if in.IPv4Subnet == nil {
 		o.IPv4Subnet = types.StringNull()
@@ -748,7 +765,7 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv6Enabled)
 	o.IPv4Gateway = value.StringOrNull(ctx, virtualGatewayIPv4, diags)
 	o.IPv6Gateway = value.StringOrNull(ctx, virtualGatewayIPv6, diags)
-	o.L3Mtu = value.Int64OrNull(ctx, in.L3MTU, diags)
+	o.L3MTU = value.Int64OrNull(ctx, in.L3MTU, diags)
 
 	if in.RTPolicy == nil {
 		o.ImportRouteTargets = types.SetNull(types.StringType)
@@ -788,24 +805,24 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		})
 	}
 
-	if !o.Vni.IsNull() {
+	if !o.VNI.IsNull() {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "vn_id",
-			Value: apstra.QEStringVal(strconv.Itoa(int(o.Vni.ValueInt64()))),
+			Value: apstra.QEStringVal(strconv.Itoa(int(o.VNI.ValueInt64()))),
 		})
 	}
 
-	if !o.ReserveVlan.IsNull() {
+	if !o.ReserveVLAN.IsNull() {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "reserved_vlan_id",
-			Value: apstra.QENone(!o.ReserveVlan.ValueBool()),
+			Value: apstra.QENone(!o.ReserveVLAN.ValueBool()),
 		})
 	}
 
-	if !o.ReservedVlanId.IsNull() {
+	if !o.ReservedVLAN.IsNull() {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "reserved_vlan_id",
-			Value: apstra.QEIntVal(o.ReservedVlanId.ValueInt64()),
+			Value: apstra.QEIntVal(o.ReservedVLAN.ValueInt64()),
 		})
 	}
 
@@ -854,10 +871,10 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		})
 	}
 
-	if !o.L3Mtu.IsNull() {
+	if !o.L3MTU.IsNull() {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "l3_mtu",
-			Value: apstra.QEIntVal(o.L3Mtu.ValueInt64()),
+			Value: apstra.QEIntVal(o.L3MTU.ValueInt64()),
 		})
 	}
 
@@ -867,7 +884,7 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 	// Begin the query with the VN node
 	vnQuery := new(apstra.MatchQuery).Match(new(apstra.PathQuery).Node(nodeAttributes))
 
-	if !o.RoutingZoneId.IsNull() {
+	if !o.RoutingZoneID.IsNull() {
 		// extend the query with a routing zone match
 		vnQuery.Match(new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
@@ -876,11 +893,24 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 			}).In([]apstra.QEEAttribute{apstra.RelationshipTypeMemberVNs.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeSecurityZone.QEEAttribute(),
-				{Key: "id", Value: apstra.QEStringVal(o.RoutingZoneId.ValueString())},
+				{Key: "id", Value: apstra.QEStringVal(o.RoutingZoneID.ValueString())},
 			}))
 	}
 
-	if !o.DhcpServiceEnabled.IsNull() {
+	if !o.SwitchingZoneID.IsNull() {
+		// extend the query with a switching zone match
+		vnQuery.Match(new(apstra.PathQuery).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
+				{Key: "name", Value: apstra.QEStringVal(resultName)},
+			}).In([]apstra.QEEAttribute{apstra.RelationshipTypeMemberVNs.QEEAttribute()}).
+			Node([]apstra.QEEAttribute{
+				apstra.NodeTypeSwitchingZone.QEEAttribute(),
+				{Key: "id", Value: apstra.QEStringVal(o.SwitchingZoneID.ValueString())},
+			}))
+	}
+
+	if !o.DHCPEnabled.IsNull() {
 		vnQuery.Match(new(apstra.PathQuery).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetwork.QEEAttribute(),
@@ -888,7 +918,7 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 			}).Out([]apstra.QEEAttribute{apstra.RelationshipTypeInstantiatedBy.QEEAttribute()}).
 			Node([]apstra.QEEAttribute{
 				apstra.NodeTypeVirtualNetworkInstance.QEEAttribute(),
-				{Key: "dhcp_enabled", Value: apstra.QEBoolVal(o.DhcpServiceEnabled.ValueBool())},
+				{Key: "dhcp_enabled", Value: apstra.QEBoolVal(o.DHCPEnabled.ValueBool())},
 			}))
 	}
 
@@ -965,7 +995,7 @@ func (o *DatacenterVirtualNetwork) Ipv6Gateway(_ context.Context, _ path.Path, _
 // ID when `reserve_vlan` is true.
 func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.Context, diags *diag.Diagnostics) {
 	// validation only possible when reserve_vlan is set "true"
-	if !o.ReserveVlan.ValueBool() {
+	if !o.ReserveVLAN.ValueBool() {
 		return // skip 'false', 'unknown', 'null' values
 	}
 
@@ -1037,6 +1067,14 @@ func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConst
 				Constraints: compatibility.VnDescriptionOk,
 			},
 		)
+	}
+
+	if utils.HasValue(o.SwitchingZoneID) {
+		response.AddAttributeConstraints(
+			compatibility.AttributeConstraint{
+				Path:        path.Root("switching_zone_id"),
+				Constraints: compatibility.SwitchingZoneOK,
+			})
 	}
 
 	if utils.HasValue(o.Tags) {

@@ -29,4 +29,5 @@ const (
 
 	LtApstra500 = "<" + Apstra500
 	LtApstra610 = "<" + Apstra610
+	LtApstra620 = "<" + Apstra620
 )
