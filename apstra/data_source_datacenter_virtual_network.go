@@ -32,7 +32,7 @@ func (o *dataSourceDatacenterVirtualNetwork) Configure(ctx context.Context, req 
 
 func (o *dataSourceDatacenterVirtualNetwork) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource returns details of a Virtual Network within a Datacenter Blueprint.\n\n" +
+		MarkdownDescription: docCategoryDatacenter + "This data source returns details of a Virtual Network within a Datacenter Blueprint.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: blueprint.DatacenterVirtualNetwork{}.DataSourceAttributes(),
 	}
