@@ -308,9 +308,11 @@ func (o *resourceDatacenterVirtualNetwork) Create(ctx context.Context, req resou
 		state.SwitchingZoneID = plan.SwitchingZoneID
 	}
 
-	// The discovered DHCPEnabled value might be false even if we set it true (#1114).
-	// Overwrite the discovered value with the planned value.
-	state.DHCPEnabled = plan.DHCPEnabled
+	if compatibility.VnDHCPUnsafeWithoutWithoutBindings.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+		// The discovered DHCPEnabled value might be false even if we set it true (#1114).
+		// Overwrite the discovered value with the planned value.
+		state.DHCPEnabled = plan.DHCPEnabled
+	}
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)

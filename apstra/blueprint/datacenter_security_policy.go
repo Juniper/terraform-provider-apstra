@@ -346,6 +346,12 @@ func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {
 }
 
 func (o *DatacenterSecurityPolicy) Request(ctx context.Context, diags *diag.Diagnostics) datacenter.Policy {
+	var tags []string
+	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+	if tags == nil {
+		tags = make([]string, 0) // we must send an empty slice to wipe out current tags
+	}
+
 	result := datacenter.Policy{
 		Enabled:             o.Enabled.ValueBool(),
 		Label:               o.Name.ValueString(),
