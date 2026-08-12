@@ -4,8 +4,8 @@ github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/IBM/netaddr v1.5.0 h1:IJlFZe1+nFs09TeMB/HOP4+xBnX2iM/xgiDOgZgTJq0=
 github.com/IBM/netaddr v1.5.0/go.mod h1:DDBPeYgbFzoXHjSz9Jwk7K8wmWV4+a/Kv0LqRnb8we4=
-github.com/Juniper/apstra-go-sdk v0.0.0-20260703145954-f98312a50f8e h1:b9Aee/gE9T4hpClxZfG2PvYeM/CbBrdNbADsY/bUrkE=
-github.com/Juniper/apstra-go-sdk v0.0.0-20260703145954-f98312a50f8e/go.mod h1:IXhtfYsKJAfSwUgvi1roB+DN+InkGyGb/ely7LOOF/0=
+github.com/Juniper/apstra-go-sdk v0.0.0-20260727150544-760d69f43a51 h1:cMcsMH+LTQRxSMH5ve0mmNZLSGhirOe44Noe5DzFQSw=
+github.com/Juniper/apstra-go-sdk v0.0.0-20260727150544-760d69f43a51/go.mod h1:1BFuu2KjG6G6gOjvUK43E+VG+WlWay2ytFNu5Cf5DMg=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/ProtonMail/go-crypto v1.3.0 h1:ILq8+Sf5If5DCpHQp4PbZdS1J7HDFRXz/+xKBiRGFrw=
@@ -109,8 +109,8 @@ github.com/hashicorp/go-retryablehttp v0.7.8/go.mod h1:rjiScheydd+CxvumBsIrFKlx3
 github.com/hashicorp/go-uuid v1.0.0/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
 github.com/hashicorp/go-uuid v1.0.3 h1:2gKiV6YVmrJ1i2CKKa9obLvRieoRGviZFL26PcT/Co8=
 github.com/hashicorp/go-uuid v1.0.3/go.mod h1:6SBZvOh/SIDV7/2o3Jml5SYk/TvGqwFJ/bN7x4byOro=
-github.com/hashicorp/go-version v1.8.0 h1:KAkNb1HAiZd1ukkxDFGmokVZe1Xy9HG6NUp+bPle2i4=
-github.com/hashicorp/go-version v1.8.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
+github.com/hashicorp/go-version v1.9.0 h1:CeOIz6k+LoN3qX9Z0tyQrPtiB1DFYRPfCIBtaXPSCnA=
+github.com/hashicorp/go-version v1.9.0/go.mod h1:fltr4n8CU8Ke44wwGCBoEymUuxUHl09ZGVZPK5anwXA=
 github.com/hashicorp/hc-install v0.9.3 h1:1H4dgmgzxEVwT6E/d/vIL5ORGVKz9twRwDw+qA5Hyho=
 github.com/hashicorp/hc-install v0.9.3/go.mod h1:FQlQ5I3I/X409N/J1U4pPeQQz1R3BoV0IysB7aiaQE0=
 github.com/hashicorp/hcl/v2 v2.24.0 h1:2QJdZ454DSsYGoaE6QheQZjtKZSUs9Nh2izTWiwQxvE=

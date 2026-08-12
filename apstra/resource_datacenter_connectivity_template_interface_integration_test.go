@@ -11,8 +11,10 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	versionconstraints "github.com/chrismarget-j/version-constraints"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -165,7 +167,7 @@ func TestResourceDatacenterConnectivityTemplateInterface(t *testing.T) {
 
 	type testCase struct {
 		steps              []testStep
-		versionConstraints version.Constraints
+		versionConstraints []versionconstraints.Constraints
 	}
 
 	testCases := map[string]testCase{
@@ -231,6 +233,70 @@ func TestResourceDatacenterConnectivityTemplateInterface(t *testing.T) {
 				},
 			},
 		},
+		"start_minimal_620_and_later": {
+			versionConstraints: []versionconstraints.Constraints{compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK},
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateInterface{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateInterface{
+						blueprintId:             bp.Id().String(),
+						name:                    acctest.RandString(6),
+						description:             acctest.RandString(32),
+						tags:                    randomStrings(3, 6),
+						ipLinks:                 randomIpLinks(t, ctx, 3, bp, cleanup),
+						routingZoneConstraints:  randomRoutingZoneConstraints(t, ctx, 3, bp, cleanup),
+						virtualNetworkMultiples: randomVirtualNetworkMultiples(t, ctx, 3, bp, cleanup),
+						virtualNetworkSingles:   randomVirtualNetworkSingles(t, ctx, 3, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateInterface{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+			},
+		},
+		"start_maximal_620_and_later": {
+			versionConstraints: []versionconstraints.Constraints{compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK},
+			steps: []testStep{
+				{
+					config: resourceDataCenterConnectivityTemplateInterface{
+						blueprintId:             bp.Id().String(),
+						name:                    acctest.RandString(6),
+						description:             acctest.RandString(32),
+						tags:                    randomStrings(3, 6),
+						ipLinks:                 randomIpLinks(t, ctx, 3, bp, cleanup),
+						routingZoneConstraints:  randomRoutingZoneConstraints(t, ctx, 3, bp, cleanup),
+						virtualNetworkMultiples: randomVirtualNetworkMultiples(t, ctx, 3, bp, cleanup),
+						virtualNetworkSingles:   randomVirtualNetworkSingles(t, ctx, 3, bp, cleanup),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateInterface{
+						blueprintId: bp.Id().String(),
+						name:        acctest.RandString(6),
+					},
+				},
+				{
+					config: resourceDataCenterConnectivityTemplateInterface{
+						blueprintId:             bp.Id().String(),
+						name:                    acctest.RandString(6),
+						description:             acctest.RandString(32),
+						tags:                    randomStrings(3, 6),
+						ipLinks:                 randomIpLinks(t, ctx, 3, bp, cleanup),
+						routingZoneConstraints:  randomRoutingZoneConstraints(t, ctx, 3, bp, cleanup),
+						virtualNetworkMultiples: randomVirtualNetworkMultiples(t, ctx, 3, bp, cleanup),
+						virtualNetworkSingles:   randomVirtualNetworkSingles(t, ctx, 3, bp, cleanup),
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterConnectivityTemplateInterface)
@@ -239,8 +305,10 @@ func TestResourceDatacenterConnectivityTemplateInterface(t *testing.T) {
 		t.Run(tName, func(t *testing.T) {
 			t.Parallel()
 
-			if !tCase.versionConstraints.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
-				t.Skipf("test case %s requires Apstra %s", tName, tCase.versionConstraints.String())
+			for _, constraint := range tCase.versionConstraints {
+				if !constraint.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
+					t.Skipf("test case %s requires Apstra %s", tName, constraint.String())
+				}
 			}
 
 			steps := make([]resource.TestStep, len(tCase.steps))

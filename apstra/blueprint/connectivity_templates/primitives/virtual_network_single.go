@@ -6,8 +6,11 @@ import (
 	"strconv"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -24,6 +27,7 @@ type VirtualNetworkSingle struct {
 	PipelineId               types.String `tfsdk:"pipeline_id"`
 	VirtualNetworkId         types.String `tfsdk:"virtual_network_id"`
 	Tagged                   types.Bool   `tfsdk:"tagged"`
+	OverrideVLAN             types.Int64  `tfsdk:"override_vlan"`
 	BgpPeeringGenericSystems types.Map    `tfsdk:"bgp_peering_generic_systems"`
 	StaticRoutes             types.Map    `tfsdk:"static_routes"`
 }
@@ -35,6 +39,7 @@ func (o VirtualNetworkSingle) AttrTypes() map[string]attr.Type {
 		"pipeline_id":                 types.StringType,
 		"virtual_network_id":          types.StringType,
 		"tagged":                      types.BoolType,
+		"override_vlan":               types.Int64Type,
 		"bgp_peering_generic_systems": types.MapType{ElemType: types.ObjectType{AttrTypes: BgpPeeringGenericSystem{}.AttrTypes()}},
 		"static_routes":               types.MapType{ElemType: types.ObjectType{AttrTypes: StaticRoute{}.AttrTypes()}},
 	}
@@ -65,6 +70,15 @@ func (o VirtualNetworkSingle) ResourceAttributes() map[string]resourceSchema.Att
 			MarkdownDescription: "Indicates whether the selected Virtual Network should be presented with an 802.1Q tag",
 			Required:            true,
 		},
+		"override_vlan": resourceSchema.Int64Attribute{
+			MarkdownDescription: fmt.Sprintf("Override VLAN ID tag that will be used to attribute traffic to the "+
+				"corresponding Broadcast Domain (Virtual Network) for the particular port.\nVLAN ID tag might or might "+
+				"not match the corresponding VLAN ID specified on the VN instance level.\nThis feature implies the use of "+
+				"Service Provider rendering style and so far is only available for Junos devices.\nOnly applicable when VN "+
+				"Endpoint is tagged. Requires Apstra %s.", compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK.String()),
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.Between(constants.VlanMinUsable, constants.VlanMaxUsable)},
+		},
 		"bgp_peering_generic_systems": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of BGP Peering (Generic System) primitives",
 			NestedObject: resourceSchema.NestedAttributeObject{
@@ -88,6 +102,7 @@ func (o VirtualNetworkSingle) attributes(_ context.Context, _ *diag.Diagnostics)
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan{
 		Tagged:   o.Tagged.ValueBool(),
 		VnNodeId: (*apstra.ObjectId)(o.VirtualNetworkId.ValueStringPointer()),
+		VLAN:     pointer.To(uint16(o.OverrideVLAN.ValueInt64())),
 	}
 }
 
@@ -132,10 +147,15 @@ func VirtualNetworkSingleSubpolicies(ctx context.Context, virtualNetworkSingleMa
 }
 
 func newVirtualNetworkSingle(_ context.Context, in *apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan, _ *diag.Diagnostics) VirtualNetworkSingle {
+	overrideVLAN := types.Int64Null()
+	if in.VLAN != nil {
+		overrideVLAN = types.Int64Value(int64(*in.VLAN))
+	}
 	return VirtualNetworkSingle{
 		// Name:          // handled by caller
 		VirtualNetworkId: types.StringPointerValue((*string)(in.VnNodeId)),
 		Tagged:           types.BoolValue(in.Tagged),
+		OverrideVLAN:     overrideVLAN,
 	}
 }
 
