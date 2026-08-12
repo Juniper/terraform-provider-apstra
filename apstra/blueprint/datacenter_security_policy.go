@@ -294,7 +294,7 @@ func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {
 		})
 	}
 
-	// Begin the query with thw SP node using the attributes we've collected so far
+	// Begin the query with the SP node using the attributes we've collected so far
 	matchQuery := new(apstra.MatchQuery)
 	matchQuery.Match(new(apstra.PathQuery).Node(nodeAttributes))
 

@@ -636,9 +636,9 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		return datacenter.VirtualNetwork{}
 	}
 
-	var vnId *uint32
+	var vni *uint32
 	if utils.HasValue(o.VNI) {
-		vnId = pointer.To(uint32(o.VNI.ValueInt64()))
+		vni = pointer.To(uint32(o.VNI.ValueInt64()))
 	}
 
 	if o.Type.ValueString() == enum.VnTypeVlan.String() {
@@ -646,7 +646,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		// Apstra requires vlan == vni when creating a "vlan" type VN.
 		// VNI attribute is forbidden when type == VLAN
 		if len(vnBindings) > 0 && vnBindings[0].VLAN != nil {
-			vnId = pointer.To(uint32(*vnBindings[0].VLAN))
+			vni = pointer.To(uint32(*vnBindings[0].VLAN))
 		}
 	}
 
@@ -720,8 +720,8 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
 		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
 		Bindings:                  vnBindings,
-		VNI:                       vnId,
 		Tags:                      tags,
+		VNI:                       vni,
 		Type:                      vnType,
 		VirtualMAC:                nil,
 	}

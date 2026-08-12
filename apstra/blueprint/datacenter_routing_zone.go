@@ -172,8 +172,7 @@ func (o DatacenterRoutingZone) DataSourceFilterAttributes() map[string]dataSourc
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Routing Zone *Label*. This is a mutable attribute of a `security_zone` node in the " +
 				"graph DB. It is not directly viewable in the web UI. The \"name\" value visible in the web UI is the " +
-				"`vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. " +
-				"Required when `id` is omitted.",
+				"`vrf_name` attribute. The *default* Routing Zone can be looked up by the value `Default routing zone`. ",
 			Optional: true,
 		},
 		"vrf_name": dataSourceSchema.StringAttribute{
