@@ -6,8 +6,10 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -121,7 +123,7 @@ func (o *dataSourceDatacenterSecurityPolicies) Read(ctx context.Context, req dat
 		return
 	}
 
-	ids, queries := o.getIdsWithFilters(ctx, bp, filters, &resp.Diagnostics)
+	ids, queries := o.getIDsWithFilters(ctx, bp, filters, &resp.Diagnostics)
 	config.IDs = types.SetValueMust(types.StringType, ids)
 	config.Queries = types.ListValueMust(types.StringType, queries)
 
@@ -145,11 +147,11 @@ func (o *dataSourceDatacenterSecurityPolicies) getAllIds(ctx context.Context, bp
 	return result
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilters(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filters []blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
+func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilters(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filters []blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]attr.Value, []attr.Value) {
 	queries := make([]attr.Value, len(filters))
 	resultMap := make(map[string]bool)
 	for i, filter := range filters {
-		ids, query := o.getIdsWithFilter(ctx, bp, filter, diags)
+		ids, query := o.getIDsWithFilter(ctx, bp, filter, diags)
 		if diags.HasError() {
 			return nil, nil
 		}
@@ -170,7 +172,44 @@ func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilters(ctx context.Con
 	return ids, queries
 }
 
-func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilter61x(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+	query := filter.Query61x("n_security_policy")
+	queryResponse := new(struct {
+		Items []struct {
+			VirtualNetwork struct {
+				Id string `json:"id"`
+			} `json:"n_security_policy"`
+		} `json:"items"`
+	})
+
+	query.(*apstra.MatchQuery).SetClient(bp.Client())
+	query.(*apstra.MatchQuery).SetBlueprintId(bp.Id())
+	query.(*apstra.MatchQuery).SetBlueprintType(apstra.BlueprintTypeStaging)
+	err := query.Do(ctx, queryResponse)
+	if err != nil {
+		diags.AddError("error querying graph datastore", err.Error())
+		return nil, nil
+	}
+
+	result := make([]string, len(queryResponse.Items))
+	for i, item := range queryResponse.Items {
+		result[i] = item.VirtualNetwork.Id
+	}
+
+	return result, query
+}
+
+func (o *dataSourceDatacenterSecurityPolicies) getIDsWithFilter(ctx context.Context, bp *apstra.TwoStageL3ClosClient, filter blueprint.DatacenterSecurityPolicy, diags *diag.Diagnostics) ([]string, apstra.QEQuery) {
+	vs := bp.Client().ApiVersion()
+	v, err := version.NewVersion(vs)
+	if err != nil {
+		diags.AddError(fmt.Sprintf("failed to parse API version %q", vs), err.Error())
+		return nil, nil
+	}
+	if compatibility.PolicyNodesUseTagAttribute.Check(v) {
+		return o.getIDsWithFilter61x(ctx, bp, filter, diags)
+	}
+
 	query := filter.Query("n_security_policy")
 	queryResponse := new(struct {
 		Items []struct {
@@ -180,11 +219,10 @@ func (o *dataSourceDatacenterSecurityPolicies) getIdsWithFilter(ctx context.Cont
 		} `json:"items"`
 	})
 
-	// todo remove this type assertion when QEQuery is extended with new methods used below
 	query.(*apstra.MatchQuery).SetClient(bp.Client())
 	query.(*apstra.MatchQuery).SetBlueprintId(bp.Id())
 	query.(*apstra.MatchQuery).SetBlueprintType(apstra.BlueprintTypeStaging)
-	err := query.Do(ctx, queryResponse)
+	err = query.Do(ctx, queryResponse)
 	if err != nil {
 		diags.AddError("error querying graph datastore", err.Error())
 		return nil, nil
