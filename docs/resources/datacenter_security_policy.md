@@ -100,6 +100,7 @@ resource "apstra_datacenter_security_policy" "server_traffic" {
 - `description` (String) Security Policy description, as seen in the Web UI.
 - `destination_application_point_id` (String) Graph node ID of the destination Application Point (Virtual Network ID, Routing Zone ID, etc...)
 - `enabled` (Boolean) Indicates whether the Security Policy is enabled. Default value: `true`
+- `ip_version` (String) Security Policy IP version. One of: `ipv4`, `ipv6`, `ipv4_ipv6`. Required with Apstra >=6.2.0, not compatible with Apstra <6.2.0.
 - `rules` (Attributes List) Ordered list of policy rules. (see [below for nested schema](#nestedatt--rules))
 - `source_application_point_id` (String) Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)
 - `tags` (Set of String) Set of Tags applied to the Security Policy.

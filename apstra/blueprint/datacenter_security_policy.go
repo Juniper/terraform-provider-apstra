@@ -3,9 +3,13 @@ package blueprint
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
+	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -27,6 +31,7 @@ type DatacenterSecurityPolicy struct {
 	Name          types.String `tfsdk:"name"`
 	Description   types.String `tfsdk:"description"`
 	Enabled       types.Bool   `tfsdk:"enabled"`
+	IPVersion     types.String `tfsdk:"ip_version"`
 	SrcAppPointId types.String `tfsdk:"source_application_point_id"`
 	DstAppPointId types.String `tfsdk:"destination_application_point_id"`
 	Rules         types.List   `tfsdk:"rules"`
@@ -64,6 +69,10 @@ func (o DatacenterSecurityPolicy) DataSourceAttributes() map[string]dataSourceSc
 		},
 		"enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the Security Policy is enabled.",
+			Computed:            true,
+		},
+		"ip_version": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy IP version.",
 			Computed:            true,
 		},
 		"source_application_point_id": dataSourceSchema.StringAttribute{
@@ -109,6 +118,10 @@ func (o DatacenterSecurityPolicy) DataSourceFilterAttributes() map[string]dataSo
 		},
 		"enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Indicates whether the Security Policy is enabled.",
+			Optional:            true,
+		},
+		"ip_version": dataSourceSchema.StringAttribute{
+			MarkdownDescription: "Security Policy IP version.",
 			Optional:            true,
 		},
 		"source_application_point_id": dataSourceSchema.StringAttribute{
@@ -165,6 +178,16 @@ func (o DatacenterSecurityPolicy) ResourceAttributes() map[string]resourceSchema
 			Computed:            true,
 			Default:             booldefault.StaticBool(true),
 		},
+		"ip_version": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(
+				"Security Policy IP version. One of: `%s`. Required with Apstra %s, not compatible with Apstra %s.",
+				strings.Join(enum.PolicyAddressFamilies.Values(), "`, `"),
+				compatibility.DatacenterPolicyAddressFamilyRequired,
+				compatibility.DatacenterPolicyAddressFamilyForbidden,
+			),
+			Optional:   true,
+			Validators: []validator.String{stringvalidator.OneOf(enum.PolicyAddressFamilies.Values()...)},
+		},
 		"source_application_point_id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Graph node ID of the source Application Point (Virtual Network ID, Routing Zone ID, etc...)",
 			Optional:            true,
@@ -215,17 +238,21 @@ func (o *DatacenterSecurityPolicy) Read(ctx context.Context, bp *apstra.TwoStage
 }
 
 func (o *DatacenterSecurityPolicy) loadApiData(ctx context.Context, data datacenter.Policy, diags *diag.Diagnostics) {
-	var srcAppPointId, dstAppPointId types.String
+	var ipVersion, srcAppPointId, dstAppPointId types.String
 	if data.SrcApplicationPoint != nil {
 		srcAppPointId = types.StringPointerValue(data.SrcApplicationPoint)
 	}
 	if data.DstApplicationPoint != nil {
 		dstAppPointId = types.StringPointerValue(data.DstApplicationPoint)
 	}
+	if data.AddressFamily != nil {
+		ipVersion = types.StringValue(data.AddressFamily.String())
+	}
 
 	o.Name = types.StringValue(data.Label)
 	o.Description = value.StringOrNull(ctx, data.Description, diags)
 	o.Enabled = types.BoolValue(data.Enabled)
+	o.IPVersion = ipVersion
 	o.SrcAppPointId = srcAppPointId
 	o.DstAppPointId = dstAppPointId
 	o.Rules = newPolicyRuleList(ctx, data.Rules, diags)
@@ -257,6 +284,13 @@ func (o *DatacenterSecurityPolicy) Query(resultName string) apstra.QEQuery {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "enabled",
 			Value: apstra.QEBoolVal(o.Enabled.ValueBool()),
+		})
+	}
+
+	if !o.IPVersion.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "ip_version",
+			Value: apstra.QEStringVal(o.IPVersion.ValueString()),
 		})
 	}
 
@@ -324,9 +358,39 @@ func (o *DatacenterSecurityPolicy) Request(ctx context.Context, diags *diag.Diag
 		Description:         o.Description.ValueString(),
 		SrcApplicationPoint: o.SrcAppPointId.ValueStringPointer(),
 		DstApplicationPoint: o.DstAppPointId.ValueStringPointer(),
+		AddressFamily:       nil, // potentially overwritten below
 		Rules:               policyRuleListToApstraPolicyRuleSlice(ctx, o.Rules, diags),
-		Tags:                tags,
+		Tags:                make([]string, 0), // potentially overwritten below
 	}
+	if !o.IPVersion.IsNull() {
+		result.AddressFamily = new(enum.PolicyAddressFamily)
+		err := result.AddressFamily.FromString(o.IPVersion.ValueString())
+		if err != nil {
+			diags.AddError(fmt.Sprintf("parsing ip_version value %s", o.IPVersion), err.Error())
+		}
+	}
+	if !o.Tags.IsNull() {
+		diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
+	}
+
 	_ = result.SetID(o.Id.ValueString()) // skipping error check b/c we know that result.id is currently empty
 	return result
+}
+
+func (o DatacenterSecurityPolicy) VersionConstraints(_ context.Context, _ *diag.Diagnostics) compatibility.ConfigConstraints {
+	var response compatibility.ConfigConstraints
+
+	if utils.HasValue(o.IPVersion) {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("ip_version"),
+			Constraints: compatibility.DatacenterPolicyAddressFamilyOK,
+		})
+	} else {
+		response.AddAttributeConstraints(compatibility.AttributeConstraint{
+			Path:        path.Root("ip_version"),
+			Constraints: compatibility.DatacenterPolicyAddressFamilyNotRequired,
+		})
+	}
+
+	return response
 }
