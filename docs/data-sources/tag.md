@@ -41,4 +41,13 @@ resource "apstra_rack_type" "my_rack" {
 
 ### Read-Only
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--definition))
 - `description` (String) The description of the returned Tag.
+
+<a id="nestedatt--definition"></a>
+### Nested Schema for `definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name

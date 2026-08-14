@@ -44,7 +44,16 @@ resource "apstra_tag" "example" {
 
 ### Read-Only
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--definition))
 - `id` (String) Apstra ID of the Tag.
+
+<a id="nestedatt--definition"></a>
+### Nested Schema for `definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
 
 
 

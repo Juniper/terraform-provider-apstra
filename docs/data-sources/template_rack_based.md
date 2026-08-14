@@ -114,9 +114,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--links--tags--definition))
 - `description` (String) Tag description.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name.
+
+<a id="nestedatt--rack_infos--rack_type--access_switches--links--tags--definition"></a>
+### Nested Schema for `rack_infos.rack_type.access_switches.links.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -155,9 +165,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--rack_infos--rack_type--access_switches--tags--definition))
 - `description` (String) Tag description.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name.
+
+<a id="nestedatt--rack_infos--rack_type--access_switches--tags--definition"></a>
+### Nested Schema for `rack_infos.rack_type.access_switches.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -193,9 +213,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems--links--tags--definition))
 - `description` (String) Tag description.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name.
+
+<a id="nestedatt--rack_infos--rack_type--generic_systems--links--tags--definition"></a>
+### Nested Schema for `rack_infos.rack_type.generic_systems.links.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -234,9 +264,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--rack_infos--rack_type--generic_systems--tags--definition))
 - `description` (String) Tag description.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name.
+
+<a id="nestedatt--rack_infos--rack_type--generic_systems--tags--definition"></a>
+### Nested Schema for `rack_infos.rack_type.generic_systems.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -303,9 +343,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--rack_infos--rack_type--leaf_switches--tags--definition))
 - `description` (String) Tag description.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name.
+
+<a id="nestedatt--rack_infos--rack_type--leaf_switches--tags--definition"></a>
+### Nested Schema for `rack_infos.rack_type.leaf_switches.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -359,6 +409,15 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--spine--tags--definition))
 - `description` (String) Tag description.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name.
+
+<a id="nestedatt--spine--tags--definition"></a>
+### Nested Schema for `spine.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
