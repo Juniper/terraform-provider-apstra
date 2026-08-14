@@ -112,7 +112,7 @@ func (o Spine) AttrTypes() map[string]attr.Type {
 		"super_spine_link_speed": types.StringType,
 		"super_spine_link_count": types.Int64Type,
 		"tag_ids":                types.SetType{ElemType: types.StringType},
-		"tags":                   types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.AttrTypes()}},
+		"tags":                   types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.attrTypes()}},
 	}
 }
 
@@ -145,7 +145,7 @@ func (o *Spine) LoadApiData(ctx context.Context, in *apstra.Spine, diags *diag.D
 		o.SuperSpineLinkCount = types.Int64Value(int64(in.LinkPerSuperspineCount))
 	}
 
-	o.Tags = NewTagSet(ctx, in.Tags, diags)
+	o.Tags = NewTagSetLegacy(ctx, in.Tags, diags)
 }
 
 func (o *Spine) CopyWriteOnlyElements(ctx context.Context, src *Spine, diags *diag.Diagnostics) {

@@ -3,7 +3,9 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	adesign "github.com/Juniper/apstra-go-sdk/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -42,12 +44,12 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 		return
 	}
 
+	var api adesign.Tag
 	var err error
-	var api *apstra.DesignTag
 
 	switch {
 	case !config.Name.IsNull():
-		api, err = o.client.GetTagByLabel(ctx, config.Name.ValueString())
+		api, err = o.client.GetTagByLabel2(ctx, config.Name.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("name"),
@@ -55,13 +57,13 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 				fmt.Sprintf("Tag with name %q not found", config.Name.ValueString()))
 			return
 		}
-	case !config.Id.IsNull():
-		api, err = o.client.GetTag(ctx, apstra.ObjectId(config.Id.ValueString()))
+	case !config.ID.IsNull():
+		api, err = o.client.GetTag2(ctx, config.ID.ValueString())
 		if utils.IsApstra404(err) {
 			resp.Diagnostics.AddAttributeError(
 				path.Root("id"),
 				"Tag not found",
-				fmt.Sprintf("Tag with ID %q not found", config.Id.ValueString()))
+				fmt.Sprintf("Tag with ID %q not found", config.ID.ValueString()))
 			return
 		}
 	}
@@ -72,8 +74,8 @@ func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, re
 
 	// create new state object
 	var state design.Tag
-	state.Id = types.StringValue(string(api.Id))
-	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
+	state.ID = types.StringPointerValue(api.ID())
+	state.LoadApiData(ctx, api, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

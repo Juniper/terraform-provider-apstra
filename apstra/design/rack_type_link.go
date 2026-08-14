@@ -168,7 +168,7 @@ func (o RackLink) AttrTypes() map[string]attr.Type {
 		"speed":              types.StringType,
 		"switch_peer":        types.StringType,
 		"tag_ids":            types.SetType{ElemType: types.StringType},
-		"tags":               types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.AttrTypes()}},
+		"tags":               types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.attrTypes()}},
 	}
 }
 
@@ -236,7 +236,7 @@ func (o *RackLink) LoadApiData(ctx context.Context, in *apstra.RackLink, diags *
 	o.LagMode = value.StringWithNull(ctx, in.LagMode.String(), apstra.RackLinkLagModeNone.String(), diags)
 	o.SwitchPeer = value.StringWithNull(ctx, in.SwitchPeer.String(), apstra.RackLinkSwitchPeerNone.String(), diags)
 	o.TagIds = types.SetNull(types.StringType)
-	o.Tags = NewTagSet(ctx, in.Tags, diags)
+	o.Tags = NewTagSetLegacy(ctx, in.Tags, diags)
 }
 
 func (o *RackLink) CopyWriteOnlyElements(ctx context.Context, src *RackLink, diags *diag.Diagnostics) {

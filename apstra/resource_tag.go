@@ -2,6 +2,7 @@ package tfapstra
 
 import (
 	"context"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -41,20 +42,21 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 	}
 
 	// Convert the plan into an API Request
-	tagRequest := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// Create new Tag
-	tagId, err := o.client.CreateTag(ctx, tagRequest)
+	id, err := o.client.CreateTag2(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error creating new Tag", err.Error())
 		return
 	}
 
 	// Save the tag ID
-	plan.Id = types.StringValue(string(tagId))
+	plan.ID = types.StringValue(id)
+	plan.Definition = plan.DefinitionAsObject(ctx, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -68,7 +70,7 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	t, err := o.client.GetTag(ctx, apstra.ObjectId(state.Id.ValueString()))
+	tag, err := o.client.GetTag2(ctx, state.ID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -78,7 +80,7 @@ func (o *resourceTag) Read(ctx context.Context, req resource.ReadRequest, resp *
 		return
 	}
 
-	state.LoadApiData(ctx, t.Data, &resp.Diagnostics)
+	state.LoadApiData(ctx, tag, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -96,17 +98,18 @@ func (o *resourceTag) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 
-	tagRequest := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Update Tag
-	err := o.client.UpdateTag(ctx, apstra.ObjectId(plan.Id.ValueString()), tagRequest)
+	// Update Tag and computed definition
+	err := o.client.UpdateTag2(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating Tag", err.Error())
 		return
 	}
+	plan.Definition = plan.DefinitionAsObject(ctx, &resp.Diagnostics)
 
 	// set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -121,7 +124,7 @@ func (o *resourceTag) Delete(ctx context.Context, req resource.DeleteRequest, re
 	}
 
 	// Delete Tag by calling API
-	err := o.client.DeleteTag(ctx, apstra.ObjectId(state.Id.ValueString()))
+	err := o.client.DeleteTag2(ctx, state.ID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
