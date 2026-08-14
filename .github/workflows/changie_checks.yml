@@ -33,16 +33,12 @@ jobs:
       - name: Install changie
         shell: bash
         run: |
-          go install github.com/miniscruff/changie@v1.25.2
+          go install github.com/miniscruff/changie@8406ffac34697bd95d153550d0423e403fac9a90 #v1.25.2
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-          which changie
           command -v changie
           changie --version
 
       - name: Run changie PR policy checks
         shell: bash
         run: |
-          chmod +x scripts/changie_pr_check.sh
-          chmod +x scripts/changie_normal_pr_check.sh
-          chmod +x scripts/changie_release_pr_check.sh
           scripts/changie_pr_check.sh "origin/${{ github.base_ref }}"
