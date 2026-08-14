@@ -18,6 +18,7 @@ CHANGES_DIR="$(yq '.changesDir' < "$CHANGIE_CFG")"
 
 UNRELEASED_DIR="$CHANGES_DIR/$(yq '.unreleasedDir' < "$CHANGIE_CFG")"
 [ -n "$UNRELEASED_DIR" ] || fail "unreleasedDir is not configured in $CHANGIE_CFG"
+[ -d "$UNRELEASED_DIR" ] || fail "unreleased directory does not exist: $UNRELEASED_DIR"
 
 CHANGELOG="$(yq '.changelogPath' < "$CHANGIE_CFG")"
 [ -n "$CHANGELOG" ] || fail "changelogPath is not configured in $CHANGIE_CFG"
@@ -28,17 +29,17 @@ new_fragment_count=0
 while IFS=$'\t' read -r status path; do
     case "$status:$path" in
         A:"$UNRELEASED_DIR/"*)
-           new_fragment_path="$path"
-           new_fragment_count=$((new_fragment_count + 1)) # Cannot use ((new_fragment_count++)) with set -e
-           ;;
+            new_fragment_path="$path"
+            new_fragment_count=$((new_fragment_count + 1)) # Cannot use ((new_fragment_count++)) with set -e
+            ;;
 
         *:"$UNRELEASED_DIR/"*)
-           fail "normal PR modifies an existing unreleased fragment: $path"
-           ;;
+            fail "normal PR modifies an existing unreleased fragment: $path"
+            ;;
 
         *:"$CHANGES_DIR/"*)
-           fail "normal PR modifies a Changie file: $path"
-           ;;
+            fail "normal PR modifies a Changie file: $path"
+            ;;
 
         *:"$CHANGELOG")
             fail "normal PR modifies $CHANGELOG"
@@ -52,11 +53,9 @@ fi
 
 echo "Validating $new_fragment_path with changie..."
 
-# This check ensures syntax correcness of outstanding change fragments. We only care that changie
-# *runs*, not that it produces any specific output. We use 'patch' (increment least significant
-# semver chunk) here rather than 'auto' because a PR containing only fragments of the INTERNAL or
-# NOTE kind of change fragments (those with `auto: none`) cannot generate a release. Changie won't
-# be able to calculate a new version and would fail in a way that's not useful to our syntax chack.
+# Validate all outstanding fragments with Changie. We use 'patch' rather than
+# 'auto' because fragments whose kinds have `auto: none` cannot independently
+# drive determiation of a release version.
 changie batch patch --dry-run >/dev/null
 
 echo "Normal PR changie checks passed."
