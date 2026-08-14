@@ -17,7 +17,6 @@ jobs:
           command -v docker
           command -v jq
           command -v yq
-          command -v terraform
           command -v changie
 
           git --version
