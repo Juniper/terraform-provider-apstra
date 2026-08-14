@@ -14,8 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceTag{}
-var _ datasourceWithSetClient = &dataSourceTag{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceTag{}
+	_ datasourceWithSetClient            = &dataSourceTag{}
+)
 
 type dataSourceTag struct {
 	client *apstra.Client

@@ -11,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceTag{}
-var _ resourceWithSetClient = &resourceTag{}
+var (
+	_ resource.ResourceWithConfigure = &resourceTag{}
+	_ resourceWithSetClient          = &resourceTag{}
+)
 
 type resourceTag struct {
 	client *apstra.Client

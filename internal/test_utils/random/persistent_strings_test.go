@@ -12,7 +12,6 @@ import (
 )
 
 func TestPersistentStringGeneration(t *testing.T) {
-
 	hasDisallowedChars := func(s, allowed string) bool {
 		return strings.IndexFunc(s, func(r rune) bool {
 			return !strings.ContainsRune(allowed, r)

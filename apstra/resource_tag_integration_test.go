@@ -220,5 +220,4 @@ func TestResourceTag(t *testing.T) {
 			})
 		})
 	}
-
 }
