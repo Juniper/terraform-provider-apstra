@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-set -x
 
 BASE_REF="${1:?usage: $0 <base-ref> [normal|release]}"
 MODE_INPUT="${2:-}"
