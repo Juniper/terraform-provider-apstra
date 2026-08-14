@@ -1,0 +1,3 @@
+kind: internal
+body: Introduce configuration for `changie` which will generate release notes for all future releases.
+time: 2026-08-14T10:31:32.7639-04:00
