@@ -1,0 +1,21 @@
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect environment
+        run: |
+          echo "PATH=$PATH"
+          uname -a
+          cat /etc/os-release
+
+          command -v git
+          command -v docker
+          command -v jq
+          command -v yq
+          command -v terraform
+          command -v changie
+
+          git --version
+          docker --version
+          jq --version
+          changie --version
