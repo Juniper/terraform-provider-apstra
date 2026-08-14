@@ -1,7 +1,7 @@
 name: Inspect Ubuntu Runner
 
 on:
-  workflow_dispatch:
+  push:
 
 jobs:
   inspect:
