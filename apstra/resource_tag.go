@@ -56,7 +56,7 @@ func (o *resourceTag) Create(ctx context.Context, req resource.CreateRequest, re
 		return
 	}
 
-	// Save the tag ID
+	// Save the tag ID and computed Definition
 	plan.ID = types.StringValue(id)
 	plan.Definition = plan.DefinitionAsObject(ctx, &resp.Diagnostics)
 
