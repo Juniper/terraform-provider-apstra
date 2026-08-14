@@ -1,0 +1,40 @@
+# Changie configuration tested with changie v1.25.2
+changesDir: .changes
+unreleasedDir: unreleased
+headerPath: header.tpl.md
+changelogPath: CHANGELOG.md
+versionExt: md
+versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
+kindFormat: '### {{.Kind}}'
+changeFormat: '{{- if ne .KindKey "internal" }}* {{.Body}}{{ end }}'
+kinds:
+    - label: BREAKING CHANGES
+      key: breaking
+      auto: major
+    - label: NOTES
+      key: note
+      auto: none
+    - label: FEATURES
+      key: feature
+      auto: minor
+    - label: ENHANCEMENTS
+      key: enhancement
+      auto: minor
+    - label: BUG FIXES
+      key: bugfix
+      auto: patch
+    - label: DEPRECATIONS
+      key: deprecation
+      auto: minor
+    - label: SECURITY
+      key: security
+      auto: patch
+    - label: INTERNAL
+      key: internal
+      auto: none
+      format: '{{ if eq .Kind "INTERNAL" }}{{ end }}'
+newlines:
+    afterChangelogHeader: 1
+    beforeChangelogVersion: 1
+    endOfVersion: 1
+envPrefix: CHANGIE_
