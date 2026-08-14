@@ -1,0 +1,45 @@
+name: Changie Checks
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+      - ready_for_review
+
+permissions:
+  contents: read
+
+jobs:
+  changie-checks:
+    name: Changie PR checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install changie and yq
+        shell: bash
+        run: |
+          go install github.com/miniscruff/changie@v1.25.2
+          go install github.com/mikefarah/yq/v4@v4.44.3
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Run changie PR policy checks
+        shell: bash
+        run: |
+          chmod +x scripts/changie_pr_check.sh
+          chmod +x scripts/changie_normal_pr_check.sh
+          chmod +x scripts/changie_release_pr_check.sh
+          scripts/changie_pr_check.sh "origin/${{ github.base_ref }}"

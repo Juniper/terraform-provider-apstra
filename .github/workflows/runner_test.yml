@@ -1,3 +1,8 @@
+name: Inspect Ubuntu Runner
+
+on:
+  workflow_dispatch:
+
 jobs:
   inspect:
     runs-on: ubuntu-latest
