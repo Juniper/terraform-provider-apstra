@@ -1,14 +1,15 @@
 name: Changie Checks
 
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - synchronize
-      - labeled
-      - unlabeled
-      - ready_for_review
+  push:
+#  pull_request:
+#    types:
+#      - opened
+#      - reopened
+#      - synchronize
+#      - labeled
+#      - unlabeled
+#      - ready_for_review
 
 permissions:
   contents: read
