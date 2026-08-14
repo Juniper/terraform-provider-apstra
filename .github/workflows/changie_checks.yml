@@ -25,16 +25,16 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
 
-      - name: Install changie and yq
+      - name: Install changie
         shell: bash
         run: |
           go install github.com/miniscruff/changie@v1.25.2
-          go install github.com/mikefarah/yq/v4@v4.44.3
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          which changie
+          command -v changie
+          changie --version
 
       - name: Run changie PR policy checks
         shell: bash
