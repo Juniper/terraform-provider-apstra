@@ -1,4 +1,4 @@
-name: Go code checks
+name: Check 3rd party license compliance
 
 on: [push]
 
