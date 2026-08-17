@@ -22,13 +22,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type LogicalDevicePanel struct {
+type DeprecatedLogicalDevicePanel struct {
 	Rows       types.Int64 `tfsdk:"rows"`
 	Columns    types.Int64 `tfsdk:"columns"`
 	PortGroups types.List  `tfsdk:"port_groups"`
 }
 
-func (o LogicalDevicePanel) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o DeprecatedLogicalDevicePanel) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"rows": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -42,13 +42,13 @@ func (o LogicalDevicePanel) DataSourceAttributes() map[string]dataSourceSchema.A
 			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanelPortGroup{}.DataSourceAttributes(),
+				Attributes: DeprecatedLogicalDevicePanelPortGroup{}.DataSourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevicePanel) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o DeprecatedLogicalDevicePanel) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"rows": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -65,13 +65,13 @@ func (o LogicalDevicePanel) ResourceAttributes() map[string]resourceSchema.Attri
 			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
 			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanelPortGroup{}.ResourceAttributes(),
+				Attributes: DeprecatedLogicalDevicePanelPortGroup{}.ResourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevicePanel) ResourceAttributesReadOnly() map[string]resourceSchema.Attribute {
+func (o DeprecatedLogicalDevicePanel) ResourceAttributesReadOnly() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"rows": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -88,22 +88,22 @@ func (o LogicalDevicePanel) ResourceAttributesReadOnly() map[string]resourceSche
 			Computed:            true,
 			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanelPortGroup{}.ResourceAttributesNested(),
+				Attributes: DeprecatedLogicalDevicePanelPortGroup{}.ResourceAttributesNested(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevicePanel) AttrTypes() map[string]attr.Type {
+func (o DeprecatedLogicalDevicePanel) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"rows":        types.Int64Type,
 		"columns":     types.Int64Type,
-		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: LogicalDevicePanelPortGroup{}.AttrTypes()}},
+		"port_groups": types.ListType{ElemType: types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanelPortGroup{}.AttrTypes()}},
 	}
 }
 
-func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePanel, diags *diag.Diagnostics) {
-	portGroups := make([]LogicalDevicePanelPortGroup, len(in.PortGroups))
+func (o *DeprecatedLogicalDevicePanel) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePanel, diags *diag.Diagnostics) {
+	portGroups := make([]DeprecatedLogicalDevicePanelPortGroup, len(in.PortGroups))
 	for i := range in.PortGroups {
 		portGroups[i].LoadApiData(ctx, &in.PortGroups[i], diags)
 		if diags.HasError() {
@@ -111,7 +111,7 @@ func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *apstra.Logical
 		}
 	}
 
-	portGroupList, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: LogicalDevicePanelPortGroup{}.AttrTypes()}, portGroups)
+	portGroupList, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanelPortGroup{}.AttrTypes()}, portGroups)
 	diags.Append(d...)
 	if diags.HasError() {
 		return
@@ -122,8 +122,8 @@ func (o *LogicalDevicePanel) LoadApiData(ctx context.Context, in *apstra.Logical
 	o.PortGroups = portGroupList
 }
 
-func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.LogicalDevicePanel {
-	tfPortGroups := make([]LogicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
+func (o *DeprecatedLogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.LogicalDevicePanel {
+	tfPortGroups := make([]DeprecatedLogicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
 	diags.Append(o.PortGroups.ElementsAs(ctx, &tfPortGroups, false)...)
 	if diags.HasError() {
 		return nil
@@ -162,7 +162,7 @@ func (o *LogicalDevicePanel) Request(ctx context.Context, diags *diag.Diagnostic
 	}
 }
 
-func (o *LogicalDevicePanel) Validate(ctx context.Context, i int, diags *diag.Diagnostics) {
+func (o *DeprecatedLogicalDevicePanel) Validate(ctx context.Context, i int, diags *diag.Diagnostics) {
 	if o.Rows.IsUnknown() || o.Columns.IsUnknown() || o.PortGroups.IsUnknown() {
 		return
 	}
@@ -193,8 +193,8 @@ func (o *LogicalDevicePanel) Validate(ctx context.Context, i int, diags *diag.Di
 	}
 }
 
-func (o *LogicalDevicePanel) GetPortGroups(ctx context.Context, diags *diag.Diagnostics) []LogicalDevicePanelPortGroup {
-	portGroups := make([]LogicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
+func (o *DeprecatedLogicalDevicePanel) GetPortGroups(ctx context.Context, diags *diag.Diagnostics) []DeprecatedLogicalDevicePanelPortGroup {
+	portGroups := make([]DeprecatedLogicalDevicePanelPortGroup, len(o.PortGroups.Elements()))
 	diags.Append(o.PortGroups.ElementsAs(ctx, &portGroups, false)...)
 	if diags.HasError() {
 		return nil
@@ -203,18 +203,18 @@ func (o *LogicalDevicePanel) GetPortGroups(ctx context.Context, diags *diag.Diag
 	return portGroups
 }
 
-func NewLogicalDevicePanelList(ctx context.Context, in []apstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
+func NewDeprecatedLogicalDevicePanelList(ctx context.Context, in []apstra.LogicalDevicePanel, diags *diag.Diagnostics) types.List {
 	if len(in) == 0 {
-		return types.ListNull(types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()})
+		return types.ListNull(types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanel{}.AttrTypes()})
 	}
 
-	panels := make([]LogicalDevicePanel, len(in))
+	panels := make([]DeprecatedLogicalDevicePanel, len(in))
 	for i, panel := range in {
 		panels[i].LoadApiData(ctx, &panel, diags)
 		if diags.HasError() {
-			return types.ListNull(types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()})
+			return types.ListNull(types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanel{}.AttrTypes()})
 		}
 	}
 
-	return value.ListOrNull(ctx, types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()}, panels, diags)
+	return value.ListOrNull(ctx, types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanel{}.AttrTypes()}, panels, diags)
 }
