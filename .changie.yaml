@@ -10,7 +10,7 @@ changeFormat: '{{- if ne .KindKey "internal" }}* {{.Body}}{{ end }}'
 kinds:
     - label: BREAKING CHANGES
       key: breaking
-      auto: major
+      auto: minor # until v1.0.0
     - label: NOTES
       key: note
       auto: none
