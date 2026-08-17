@@ -35,6 +35,9 @@ device-integration-tests:
 staticcheck:
 	go run honnef.co/go/tools/cmd/staticcheck ./...
 
+release-pr:
+	@sh -c "$(CURDIR)/scripts/make_release_pr.sh"
+
 release:
 	printenv GITHUB_TOKEN > /dev/null || (echo "GITHUB_TOKEN not found in environment"; false)
 	(cd tools/goreleaser && GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go tool goreleaser release --clean)
