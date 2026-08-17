@@ -2,90 +2,26 @@ package tfapstra
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/Juniper/apstra-go-sdk/apstra"
-	adesign "github.com/Juniper/apstra-go-sdk/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-)
-
-var (
-	_ datasource.DataSourceWithConfigure = &dataSourceTag{}
-	_ datasourceWithSetClient            = &dataSourceTag{}
 )
 
 type dataSourceTag struct {
-	client *apstra.Client
+	dataSourceDesignTag
 }
 
 func (o *dataSourceTag) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_tag"
 }
 
-func (o *dataSourceTag) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	configureDataSource(ctx, o, req, resp)
-}
-
 func (o *dataSourceTag) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage: "This resource will be deprecated in a future release, no earlier than v2.0.0. " +
+			"Users are encouraged to migrate their configurations to use `apstra_design_tag`, which is a drop-in replacement.",
 		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Tag.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.Tag{}.DataSourceAttributes(),
 	}
-}
-
-func (o *dataSourceTag) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config design.Tag
-	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var api adesign.Tag
-	var err error
-
-	switch {
-	case !config.Name.IsNull():
-		api, err = o.client.GetTagByLabel2(ctx, config.Name.ValueString())
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("name"),
-				"Tag not found",
-				fmt.Sprintf("Tag with name %q not found", config.Name.ValueString()))
-			return
-		}
-	case !config.ID.IsNull():
-		api, err = o.client.GetTag2(ctx, config.ID.ValueString())
-		if utils.IsApstra404(err) {
-			resp.Diagnostics.AddAttributeError(
-				path.Root("id"),
-				"Tag not found",
-				fmt.Sprintf("Tag with ID %q not found", config.ID.ValueString()))
-			return
-		}
-	}
-	if err != nil { // catch errors other than 404 from above
-		resp.Diagnostics.AddError("Error retrieving Tag", err.Error())
-		return
-	}
-
-	// create new state object
-	var state design.Tag
-	state.ID = types.StringPointerValue(api.ID())
-	state.LoadApiData(ctx, api, &resp.Diagnostics)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// set state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-func (o *dataSourceTag) setClient(client *apstra.Client) {
-	o.client = client
 }

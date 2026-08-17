@@ -22,6 +22,7 @@ const (
 
 	docCategorySeparator    = " --- "
 	docCategoryDatacenter   = "Reference Design: Datacenter" + docCategorySeparator
+	docCategoryDeprecated   = "Deprecated" + docCategorySeparator
 	docCategoryDesign       = "Design" + docCategorySeparator
 	docCategoryDevices      = "Devices" + docCategorySeparator
 	docCategoryFootGun      = "Footgun" + docCategorySeparator

@@ -18,70 +18,70 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//const (
-//	datasourceTagHCL = `data %q %q {
-//  id   = %s
-//  name = %s
-//}`
-//
-//	resourceTagHCL = `resource %q %q {
-//  name        = %q
-//  description = %s
-//}`
-//)
-//
-//type resourceTag struct {
-//	name        string
-//	description string
-//}
-//
-//func (rt resourceTag) render(rType, rName string) string {
-//	resourceBlock := fmt.Sprintf(resourceTagHCL, rType, rName,
-//		rt.name,
-//		stringOrNull(rt.description),
-//	)
-//	datasourceBlockByID := fmt.Sprintf(datasourceTagHCL, rType, rName+"_by_id", fmt.Sprintf("%s.%s.id", rType, rName), "null")
-//	datasourceBlockByName := fmt.Sprintf(datasourceTagHCL, rType, rName+"_by_name", "null", fmt.Sprintf("%s.%s.name", rType, rName))
-//
-//	return resourceBlock + "\n\n" + datasourceBlockByID + "\n\n" + datasourceBlockByName + "\n"
-//}
-//
-//func (rt resourceTag) testChecks(t testing.TB, rType, rName string) []testChecks {
-//	resourceChecks := newTestChecks(rType + "." + rName)
-//	dataByIDChecks := newTestChecks("data." + rType + "." + rName + "_by_id")
-//	dataByNameChecks := newTestChecks("data." + rType + "." + rName + "_by_name")
-//
-//	// required and computed attributes can always be checked
-//	resourceChecks.append(t, "TestCheckResourceAttrSet", "id")
-//	dataByIDChecks.append(t, "TestCheckResourceAttrSet", "id")
-//	dataByNameChecks.append(t, "TestCheckResourceAttrSet", "id")
-//	resourceChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
-//	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
-//	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-//	resourceChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-//	dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-//	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-//
-//	if rt.description != "" {
-//		resourceChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-//		dataByIDChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-//		dataByNameChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-//		resourceChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
-//		dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
-//		dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
-//	} else {
-//		resourceChecks.append(t, "TestCheckNoResourceAttr", "description")
-//		dataByIDChecks.append(t, "TestCheckNoResourceAttr", "description")
-//		dataByNameChecks.append(t, "TestCheckNoResourceAttr", "description")
-//		resourceChecks.append(t, "TestCheckNoResourceAttr", "definition.description")
-//		dataByIDChecks.append(t, "TestCheckNoResourceAttr", "definition.description")
-//		dataByNameChecks.append(t, "TestCheckNoResourceAttr", "definition.description")
-//	}
-//
-//	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks}
-//}
+const (
+	datasourceTagHCL = `data %q %q {
+  id   = %s
+  name = %s
+}`
 
-func TestResourceTag(t *testing.T) {
+	resourceTagHCL = `resource %q %q {
+  name        = %q
+  description = %s
+}`
+)
+
+type resourceTag struct {
+	name        string
+	description string
+}
+
+func (rt resourceTag) render(rType, rName string) string {
+	resourceBlock := fmt.Sprintf(resourceTagHCL, rType, rName,
+		rt.name,
+		stringOrNull(rt.description),
+	)
+	datasourceBlockByID := fmt.Sprintf(datasourceTagHCL, rType, rName+"_by_id", fmt.Sprintf("%s.%s.id", rType, rName), "null")
+	datasourceBlockByName := fmt.Sprintf(datasourceTagHCL, rType, rName+"_by_name", "null", fmt.Sprintf("%s.%s.name", rType, rName))
+
+	return resourceBlock + "\n\n" + datasourceBlockByID + "\n\n" + datasourceBlockByName + "\n"
+}
+
+func (rt resourceTag) testChecks(t testing.TB, rType, rName string) []testChecks {
+	resourceChecks := newTestChecks(rType + "." + rName)
+	dataByIDChecks := newTestChecks("data." + rType + "." + rName + "_by_id")
+	dataByNameChecks := newTestChecks("data." + rType + "." + rName + "_by_name")
+
+	// required and computed attributes can always be checked
+	resourceChecks.append(t, "TestCheckResourceAttrSet", "id")
+	dataByIDChecks.append(t, "TestCheckResourceAttrSet", "id")
+	dataByNameChecks.append(t, "TestCheckResourceAttrSet", "id")
+	resourceChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
+	resourceChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
+
+	if rt.description != "" {
+		resourceChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+		resourceChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
+	} else {
+		resourceChecks.append(t, "TestCheckNoResourceAttr", "description")
+		dataByIDChecks.append(t, "TestCheckNoResourceAttr", "description")
+		dataByNameChecks.append(t, "TestCheckNoResourceAttr", "description")
+		resourceChecks.append(t, "TestCheckNoResourceAttr", "definition.description")
+		dataByIDChecks.append(t, "TestCheckNoResourceAttr", "definition.description")
+		dataByNameChecks.append(t, "TestCheckNoResourceAttr", "definition.description")
+	}
+
+	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks}
+}
+
+func TestResourceDesignTag(t *testing.T) {
 	ctx := context.Background()
 	client := testutils.GetTestClient(t, ctx)
 	clientVersion, err := version.NewVersion(client.ApiVersion())
@@ -175,7 +175,7 @@ func TestResourceTag(t *testing.T) {
 		},
 	}
 
-	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceTag)
+	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDesignTag)
 
 	for tName, tCase := range testCases {
 		t.Run(tName, func(t *testing.T) {
