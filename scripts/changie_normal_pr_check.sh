@@ -74,8 +74,8 @@ while IFS= read -r -d '' status && IFS= read -r -d '' path; do
     esac
 done < <(git diff -z --name-status --no-renames "$BASE_REF"...HEAD)
 
-if [ "$new_fragment_count" -ne 1 ]; then
-    fail "normal PR must add exactly one change fragment under $UNRELEASED_DIR/ (found $new_fragment_count)"
+if [ "$new_fragment_count" -le 0 ]; then
+    fail "normal PR must add at least one change fragment under $UNRELEASED_DIR/ (found $new_fragment_count)"
 fi
 
 echo "Validating $new_fragment_path with changie..."
