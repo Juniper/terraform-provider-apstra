@@ -49,7 +49,7 @@ func (o GenericSystem) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.DataSourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.DataSourceAttributesNested(),
 		},
 		"port_channel_id_min": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
@@ -96,7 +96,7 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"port_channel_id_min": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
@@ -156,7 +156,7 @@ func (o GenericSystem) ResourceAttributesNested() map[string]resourceSchema.Attr
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"port_channel_id_min": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Port channel IDs are used when rendering leaf device port-channel configuration towards generic systems.",
@@ -195,7 +195,7 @@ func (o GenericSystem) ResourceAttributesNested() map[string]resourceSchema.Attr
 func (o GenericSystem) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,
-		"logical_device":      types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
+		"logical_device":      types.ObjectType{AttrTypes: DeprecatedLogicalDevice{}.AttrTypes()},
 		"port_channel_id_min": types.Int64Type,
 		"port_channel_id_max": types.Int64Type,
 		"count":               types.Int64Type,

@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -12,31 +13,33 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceLogicalDevice{}
-var _ datasourceWithSetClient = &dataSourceLogicalDevice{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDeprecatedLogicalDevice{}
+	_ datasourceWithSetClient            = &dataSourceDeprecatedLogicalDevice{}
+)
 
-type dataSourceLogicalDevice struct {
+type dataSourceDeprecatedLogicalDevice struct {
 	client *apstra.Client
 }
 
-func (o *dataSourceLogicalDevice) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (o *dataSourceDeprecatedLogicalDevice) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_logical_device"
 }
 
-func (o *dataSourceLogicalDevice) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (o *dataSourceDeprecatedLogicalDevice) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	configureDataSource(ctx, o, req, resp)
 }
 
-func (o *dataSourceLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (o *dataSourceDeprecatedLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Logical Device.\n\n" +
 			"At least one optional attribute is required.",
-		Attributes: design.LogicalDevice{}.DataSourceAttributes(),
+		Attributes: design.DeprecatedLogicalDevice{}.DataSourceAttributes(),
 	}
 }
 
-func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config design.LogicalDevice
+func (o *dataSourceDeprecatedLogicalDevice) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config design.DeprecatedLogicalDevice
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -71,7 +74,7 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	}
 
 	// create new state object
-	var state design.LogicalDevice
+	var state design.DeprecatedLogicalDevice
 	state.Id = types.StringValue(string(api.Id))
 	state.LoadApiData(ctx, api.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -82,6 +85,6 @@ func (o *dataSourceLogicalDevice) Read(ctx context.Context, req datasource.ReadR
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *dataSourceLogicalDevice) setClient(client *apstra.Client) {
+func (o *dataSourceDeprecatedLogicalDevice) setClient(client *apstra.Client) {
 	o.client = client
 }
