@@ -1,0 +1,3 @@
+kind: internal
+body: Add CI checks which ensure that PRs include change log updates.
+time: 2026-08-14T12:52:16.429783-04:00
