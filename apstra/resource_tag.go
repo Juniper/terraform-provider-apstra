@@ -20,7 +20,7 @@ func (o *resourceTag) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 	resp.Schema = schema.Schema{
 		DeprecationMessage: "This resource will be deprecated in a future release, no earlier than v2.0.0. " +
 			"Users are encouraged to migrate their configurations to use `apstra_design_tag`, which is a drop-in replacement.",
-		MarkdownDescription: docCategoryDesign + "This resource creates a Tag in the Apstra Design tab.",
+		MarkdownDescription: docCategoryDeprecated + "This resource creates a Tag in the Apstra Design tab.",
 		Attributes:          design.Tag{}.ResourceAttributes(),
 	}
 }

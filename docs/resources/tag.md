@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_tag Resource - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: "Deprecated"
 description: |-
   This resource creates a Tag in the Apstra Design tab.
 ---

@@ -20,7 +20,7 @@ func (o *dataSourceTag) Schema(_ context.Context, _ datasource.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		DeprecationMessage: "This resource will be deprecated in a future release, no earlier than v2.0.0. " +
 			"Users are encouraged to migrate their configurations to use `apstra_design_tag`, which is a drop-in replacement.",
-		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Tag.\n\n" +
+		MarkdownDescription: docCategoryDeprecated + "This data source provides details of a specific Tag.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.Tag{}.DataSourceAttributes(),
 	}
