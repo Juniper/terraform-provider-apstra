@@ -32,6 +32,8 @@ func (o *dataSourceDeprecatedLogicalDevice) Configure(ctx context.Context, req d
 
 func (o *dataSourceDeprecatedLogicalDevice) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		DeprecationMessage: "This resource will be deprecated in a future release, no earlier than v2.0.0. " +
+			"Users are encouraged to migrate their configurations to use `apstra_design_logical_device`, which is a drop-in replacement.",
 		MarkdownDescription: docCategoryDesign + "This data source provides details of a specific Logical Device.\n\n" +
 			"At least one optional attribute is required.",
 		Attributes: design.DeprecatedLogicalDevice{}.DataSourceAttributes(),
