@@ -12,11 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var (
-	_ resource.ResourceWithConfigure      = &resourceDeprecatedLogicalDevice{}
-	_ resource.ResourceWithValidateConfig = &resourceDeprecatedLogicalDevice{}
-	_ resourceWithSetClient               = &resourceDeprecatedLogicalDevice{}
-)
+var _ resource.ResourceWithConfigure = &resourceDeprecatedLogicalDevice{}
+var _ resource.ResourceWithValidateConfig = &resourceDeprecatedLogicalDevice{}
+var _ resourceWithSetClient = &resourceDeprecatedLogicalDevice{}
 
 type resourceDeprecatedLogicalDevice struct {
 	client *apstra.Client
