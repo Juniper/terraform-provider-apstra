@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/design"
-	_ "github.com/Juniper/apstra-go-sdk/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -27,14 +25,14 @@ type LogicalDevice struct {
 	Definition types.Object `tfsdk:"definition"`
 }
 
-func (ld LogicalDevice) attrTypes() map[string]attr.Type {
-	return map[string]attr.Type{
-		"id":         types.StringType,
-		"name":       types.StringType,
-		"panels":     types.ListType{ElemType: types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}},
-		"definition": types.ObjectType{AttrTypes: logicalDeviceDefinition{}.attrTypes()},
-	}
-}
+//func (ld LogicalDevice) attrTypes() map[string]attr.Type {
+//	return map[string]attr.Type{
+//		"id":         types.StringType,
+//		"name":       types.StringType,
+//		"panels":     types.ListType{ElemType: types.ObjectType{AttrTypes: logicalDevicePanel{}.attrTypes()}},
+//		"definition": types.ObjectType{AttrTypes: logicalDeviceDefinition{}.attrTypes()},
+//	}
+//}
 
 func (ld LogicalDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
@@ -85,7 +83,7 @@ func (ld LogicalDevice) ResourceAttributes() map[string]resourceSchema.Attribute
 			Required:            true,
 			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: DeprecatedLogicalDevicePanel{}.ResourceAttributes(),
+				Attributes: logicalDevicePanel{}.resourceAttributes(),
 			},
 		},
 		"definition": resourceSchema.SingleNestedAttribute{
