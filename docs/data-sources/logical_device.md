@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_logical_device Data Source - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: "Deprecated"
 description: |-
   This data source provides details of a specific Logical Device.
   At least one optional attribute is required.
