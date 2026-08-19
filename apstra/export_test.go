@@ -40,6 +40,7 @@ var (
 	ResourceDatacenterSwitchingZone                        = resourceDatacenterSwitchingZone{}
 	ResourceDatacenterTag                                  = resourceDatacenterTag{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
+	ResourceDesignLogicalDevice                            = resourceDesignLogicalDevice{}
 	ResourceDesignTag                                      = resourceDesignTag{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}
 	ResourceFreeformAggregateLink                          = resourceFreeformAggregateLink{}
