@@ -80,12 +80,9 @@ data "apstra_design_logical_device" "by_id" {
 <a id="nestedatt--definition"></a>
 ### Nested Schema for `definition`
 
-Optional:
-
-- `name` (String) Web UI name of the Logical Device. Required when `id` is omitted.
-
 Read-Only:
 
+- `name` (String) Web UI name of the Logical Device. Required when `id` is omitted.
 - `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--definition--panels))
 
 <a id="nestedatt--definition--panels"></a>
@@ -94,7 +91,7 @@ Read-Only:
 Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
-- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--definition--panels--port_groups))
+- `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel. (see [below for nested schema](#nestedatt--definition--panels--port_groups))
 - `rows` (Number) Physical vertical dimension of the panel.
 
 <a id="nestedatt--definition--panels--port_groups"></a>

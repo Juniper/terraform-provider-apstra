@@ -12,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceDesignLogicalDevice{}
-var _ resource.ResourceWithValidateConfig = &resourceDesignLogicalDevice{}
-var _ resourceWithSetClient = &resourceDesignLogicalDevice{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDesignLogicalDevice{}
+	_ resource.ResourceWithValidateConfig = &resourceDesignLogicalDevice{}
+	_ resourceWithSetClient               = &resourceDesignLogicalDevice{}
+)
 
 type resourceDesignLogicalDevice struct {
 	client *apstra.Client

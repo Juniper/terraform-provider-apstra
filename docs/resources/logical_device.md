@@ -1,6 +1,6 @@
 ---
 page_title: "apstra_logical_device Resource - terraform-provider-apstra"
-subcategory: "Design"
+subcategory: "Deprecated"
 description: |-
   This resource creates a Logical Device
 ---

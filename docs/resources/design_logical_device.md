@@ -100,7 +100,7 @@ Optional:
 <a id="nestedatt--definition"></a>
 ### Nested Schema for `definition`
 
-Required:
+Read-Only:
 
 - `name` (String) Logical Device name displayed in the Apstra web UI
 - `panels` (Attributes List) Details physical layout of interfaces on the device. (see [below for nested schema](#nestedatt--definition--panels))
@@ -108,7 +108,7 @@ Required:
 <a id="nestedatt--definition--panels"></a>
 ### Nested Schema for `definition.panels`
 
-Required:
+Read-Only:
 
 - `columns` (Number) Physical horizontal dimension of the panel.
 - `port_groups` (Attributes List) Ordered logical groupings of interfaces by speed or purpose within a panel (see [below for nested schema](#nestedatt--definition--panels--port_groups))
@@ -117,14 +117,11 @@ Required:
 <a id="nestedatt--definition--panels--port_groups"></a>
 ### Nested Schema for `definition.panels.port_groups`
 
-Required:
+Read-Only:
 
 - `port_count` (Number) Number of ports in the group.
+- `port_roles` (Set of String) Roles assigned to the port.
 - `port_speed` (String) Port speed.
-
-Optional:
-
-- `port_roles` (Set of String) One or more of: 'access', 'generic', 'leaf', 'peer', 'spine', 'superspine', 'unused', by default all values are selected.
 
 
 
