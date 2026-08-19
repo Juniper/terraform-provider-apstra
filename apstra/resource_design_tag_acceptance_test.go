@@ -35,10 +35,10 @@ type resourceDesignTag struct {
 	description string
 }
 
-func (t resourceDesignTag) render(rType, rName string) string {
+func (dt resourceDesignTag) render(rType, rName string) string {
 	resourceBlock := fmt.Sprintf(resourceDesignTagHCL, rType, rName,
-		t.name,
-		stringOrNull(t.description),
+		dt.name,
+		stringOrNull(dt.description),
 	)
 	datasourceBlockByID := fmt.Sprintf(datasourceDesignTagHCL, rType, rName+"_by_id", fmt.Sprintf("%s.%s.id", rType, rName), "null")
 	datasourceBlockByName := fmt.Sprintf(datasourceDesignTagHCL, rType, rName+"_by_name", "null", fmt.Sprintf("%s.%s.name", rType, rName))
@@ -46,7 +46,7 @@ func (t resourceDesignTag) render(rType, rName string) string {
 	return resourceBlock + "\n\n" + datasourceBlockByID + "\n\n" + datasourceBlockByName + "\n"
 }
 
-func (t resourceDesignTag) testChecks(t testing.TB, rType, rName string) []testChecks {
+func (dt resourceDesignTag) testChecks(t testing.TB, rType, rName string) []testChecks {
 	resourceChecks := newTestChecks(rType + "." + rName)
 	dataByIDChecks := newTestChecks("data." + rType + "." + rName + "_by_id")
 	dataByNameChecks := newTestChecks("data." + rType + "." + rName + "_by_name")
@@ -55,20 +55,20 @@ func (t resourceDesignTag) testChecks(t testing.TB, rType, rName string) []testC
 	resourceChecks.append(t, "TestCheckResourceAttrSet", "id")
 	dataByIDChecks.append(t, "TestCheckResourceAttrSet", "id")
 	dataByNameChecks.append(t, "TestCheckResourceAttrSet", "id")
-	resourceChecks.append(t, "TestCheckResourceAttr", "name", t.name)
-	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", t.name)
-	dataByNameChecks.append(t, "TestCheckResourceAttr", "name", t.name)
-	resourceChecks.append(t, "TestCheckResourceAttr", "definition.name", t.name)
-	dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.name", t.name)
-	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", t.name)
+	resourceChecks.append(t, "TestCheckResourceAttr", "name", dt.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", dt.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "name", dt.name)
+	resourceChecks.append(t, "TestCheckResourceAttr", "definition.name", dt.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.name", dt.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", dt.name)
 
-	if t.description != "" {
-		resourceChecks.append(t, "TestCheckResourceAttr", "description", t.description)
-		dataByIDChecks.append(t, "TestCheckResourceAttr", "description", t.description)
-		dataByNameChecks.append(t, "TestCheckResourceAttr", "description", t.description)
-		resourceChecks.append(t, "TestCheckResourceAttr", "definition.description", t.description)
-		dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.description", t.description)
-		dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.description", t.description)
+	if dt.description != "" {
+		resourceChecks.append(t, "TestCheckResourceAttr", "description", dt.description)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "description", dt.description)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "description", dt.description)
+		resourceChecks.append(t, "TestCheckResourceAttr", "definition.description", dt.description)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.description", dt.description)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.description", dt.description)
 	} else {
 		resourceChecks.append(t, "TestCheckNoResourceAttr", "description")
 		dataByIDChecks.append(t, "TestCheckNoResourceAttr", "description")
