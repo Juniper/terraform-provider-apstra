@@ -89,7 +89,7 @@ func (ldppg logicalDevicePanelPortGroup) resourceAttributes() map[string]resourc
 	}
 }
 
-func (ldppg logicalDevicePanelPortGroup) resourceAttributesDefinition() map[string]resourceSchema.Attribute {
+func (ldppg logicalDevicePanelPortGroup) resourceAttributesReadOnly() map[string]resourceSchema.Attribute {
 	// collect all port roles for use in inline documentation and defaulter
 	var allPortRoles apstra.LogicalDevicePortRoles
 	allPortRoles.IncludeAllUses()

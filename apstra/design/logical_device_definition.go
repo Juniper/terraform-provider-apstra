@@ -45,7 +45,7 @@ func (ldd logicalDeviceDefinition) resourceAttributes() map[string]resourceSchem
 		"panels": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
 			Computed:            true,
-			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanel{}.resourceAttributesDefinition()},
+			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanel{}.resourceAttributesReadOnly()},
 		},
 	}
 }
