@@ -27,26 +27,30 @@ const (
 	datasourceDesignLogicalDeviceHCL = `data %q %q {
   id   = %s
   name = %s
-}`
+}
+`
 
 	resourceDesignLogicalDeviceHCL = `resource %q %q {
-  name        = %q
-  panels      = [%s]
-}`
+  name   = %q
+  panels = [%s
+  ]
+}
+`
 
 	resourceDesignLogicalDevicePanelHCL = `
     {
-      rows = %d
-      columns = %q
-      port_groups =  [%s]
-    }`
+      rows        = %d
+      columns     = %d
+      port_groups = [%s
+      ]
+    },`
 
 	resourceDesignLogicalDevicePanelPortGroupHCL = `
-     {
-       port_count = %d
-       port_speed = %q
-       port_roles = %s
-     }`
+        {
+          port_count = %d
+          port_speed = %q
+          port_roles = %s
+        },`
 )
 
 type resourceDesignLogicalDevice struct {
@@ -57,9 +61,8 @@ type resourceDesignLogicalDevice struct {
 func (ld resourceDesignLogicalDevice) render(rType, rName string) string {
 	sb := new(strings.Builder)
 	for _, p := range ld.panels {
-		sb.WriteString("\n" + p.render())
+		sb.WriteString(p.render())
 	}
-	sb.WriteString(fmt.Sprintf("\n"))
 
 	resourceBlock := fmt.Sprintf(resourceDesignLogicalDeviceHCL, rType, rName,
 		ld.name,
@@ -68,7 +71,7 @@ func (ld resourceDesignLogicalDevice) render(rType, rName string) string {
 	datasourceBlockByID := fmt.Sprintf(datasourceDesignLogicalDeviceHCL, rType, rName+"_by_id", fmt.Sprintf("%s.%s.id", rType, rName), "null")
 	datasourceBlockByName := fmt.Sprintf(datasourceDesignLogicalDeviceHCL, rType, rName+"_by_name", "null", fmt.Sprintf("%s.%s.name", rType, rName))
 
-	return resourceBlock + "\n\n" + datasourceBlockByID + "\n\n" + datasourceBlockByName + "\n"
+	return resourceBlock + "\n" + datasourceBlockByID + "\n" + datasourceBlockByName
 }
 
 func (ld resourceDesignLogicalDevice) testChecks(t testing.TB, rType, rName string) []testChecks {
@@ -103,9 +106,8 @@ type resourceDesignLogicalDevicePanel struct {
 func (ldp resourceDesignLogicalDevicePanel) render() string {
 	sb := new(strings.Builder)
 	for _, ldppg := range ldp.portGroups {
-		sb.WriteString("\n" + ldppg.render() + ",")
+		sb.WriteString(ldppg.render())
 	}
-	sb.WriteString("\n")
 
 	return fmt.Sprintf(resourceDesignLogicalDevicePanelHCL,
 		ldp.rows,
@@ -143,8 +145,17 @@ func (ldppg resourceDesignLogicalDevicePanelPortGroup) testChecks(t testing.TB, 
 	checks.append(t, "TestCheckResourceAttr", fmt.Sprintf("definition.panels.%d.port_groups.%d.port_count", panelIdx, idx), strconv.Itoa(ldppg.count))
 	checks.append(t, "TestCheckResourceAttr", fmt.Sprintf("panels.%d.port_groups.%d.port_speed", panelIdx, idx), string(ldppg.speed))
 	checks.append(t, "TestCheckResourceAttr", fmt.Sprintf("definition.panels.%d.port_groups.%d.port_speed", panelIdx, idx), string(ldppg.speed))
+
+	// empty roles default to having all roles set
+	if len(ldppg.roles) == 0 {
+		var allPortRoles apstra.LogicalDevicePortRoles
+		allPortRoles.IncludeAllUses()
+		ldppg.roles = allPortRoles.Strings()
+	}
+
 	checks.append(t, "TestCheckResourceAttr", fmt.Sprintf("panels.%d.port_groups.%d.port_roles.#", panelIdx, idx), strconv.Itoa(len(ldppg.roles)))
 	checks.append(t, "TestCheckResourceAttr", fmt.Sprintf("definition.panels.%d.port_groups.%d.port_roles.#", panelIdx, idx), strconv.Itoa(len(ldppg.roles)))
+
 	for _, role := range ldppg.roles {
 		checks.append(t, "TestCheckTypeSetElemAttr", fmt.Sprintf("panels.%d.port_groups.%d.port_roles.*", panelIdx, idx), role)
 		checks.append(t, "TestCheckTypeSetElemAttr", fmt.Sprintf("definition.panels.%d.port_groups.%d.port_roles.*", panelIdx, idx), role)
@@ -176,6 +187,119 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				{config: newResourceDesignLogicalDevice()},
 			},
 		},
+		"begin_without_roles": {
+			steps: []testStep{
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(8),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 1,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{
+										count: 1,
+										speed: "100G",
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(8),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 1,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{
+										count: 1,
+										speed: "100G",
+										roles: []string{"spine", "leaf"},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(8),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 1,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{
+										count: 1,
+										speed: "100G",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"begin_with_roles": {
+			steps: []testStep{
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(8),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 1,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{
+										count: 1,
+										speed: "100G",
+										roles: []string{"spine", "leaf"},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(8),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 1,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{
+										count: 1,
+										speed: "100G",
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(8),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 1,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{
+										count: 1,
+										speed: "100G",
+										roles: []string{"spine", "leaf"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDesignLogicalDevice)
@@ -202,8 +326,8 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
 
-				t.Logf("// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
-				t.Logf("// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, checkLog, stepName)
+				t.Logf("\n// ------ begin config for %s ------\n%s// -------- end config for %s ------\n\n", stepName, config, stepName)
+				t.Logf("\n// ------ begin checks for %s ------\n%s// -------- end checks for %s ------\n\n", stepName, checkLog, stepName)
 
 				preApplyPlanChecks := make([]plancheck.PlanCheck, len(step.preApplyResourceActions))
 				for i, preApplyPlanCheck := range step.preApplyResourceActions {
@@ -276,5 +400,5 @@ func newResourceDesignLogicalDevicePanelPortGroup() resourceDesignLogicalDeviceP
 }
 
 func newRandomSpeed() speed.Speed {
-	return speed.Speed(random.OneOf("10M", "100M", "1G", "2500M", "5G", "10G", "25", "40", "50", "100", "200", "400", "800"))
+	return speed.Speed(random.OneOf("100M", "1G", "10G", "25G", "40G", "50G", "100G", "200G", "400G", "800G"))
 }

@@ -66,29 +66,53 @@ func (ldppg logicalDevicePanelPortGroup) resourceAttributes() map[string]resourc
 
 	return map[string]resourceSchema.Attribute{
 		"port_count": resourceSchema.Int64Attribute{
-			Required:            true,
 			MarkdownDescription: "Number of ports in the group.",
+			Required:            true,
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
 		"port_speed": resourceSchema.StringAttribute{
-			Required:            true,
 			MarkdownDescription: "Port speed.",
-			Validators: []validator.String{
-				apstravalidator.ParseSpeed(),
-			},
+			Required:            true,
+			Validators:          []validator.String{apstravalidator.ParseSpeed()},
 		},
 		"port_roles": resourceSchema.SetAttribute{
-			ElementType: types.StringType,
-			Computed:    true,
-			Optional:    true,
-			MarkdownDescription: fmt.Sprintf(
-				"One or more of: '%s', by default all values are selected.",
-				strings.Join(allPortRoles.Strings(), "', '")),
+			MarkdownDescription: fmt.Sprintf("One or more of: '%s', by default all values are selected.", strings.Join(allPortRoles.Strings(), "', '")),
+			Computed:            true,
+			Optional:            true,
+			ElementType:         types.StringType,
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.OneOf(allPortRoles.Strings()...)),
 			},
 			Default: setdefault.StaticValue(types.SetValueMust(types.StringType, defaultRoles)),
+		},
+	}
+}
+
+func (ldppg logicalDevicePanelPortGroup) resourceAttributesDefinition() map[string]resourceSchema.Attribute {
+	// collect all port roles for use in inline documentation and defaulter
+	var allPortRoles apstra.LogicalDevicePortRoles
+	allPortRoles.IncludeAllUses()
+
+	// prepare []attr.Value for defaulter
+	defaultRoles := make([]attr.Value, len(allPortRoles.Strings()))
+	for i, role := range allPortRoles.Strings() {
+		defaultRoles[i] = types.StringValue(role)
+	}
+
+	return map[string]resourceSchema.Attribute{
+		"port_count": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Number of ports in the group.",
+			Computed:            true,
+		},
+		"port_speed": resourceSchema.StringAttribute{
+			MarkdownDescription: "Port speed.",
+			Computed:            true,
+		},
+		"port_roles": resourceSchema.SetAttribute{
+			ElementType:         types.StringType,
+			Computed:            true,
+			MarkdownDescription: "Roles assigned to the port.",
 		},
 	}
 }
