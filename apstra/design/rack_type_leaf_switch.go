@@ -217,7 +217,7 @@ func (o LeafSwitch) AttrTypes() map[string]attr.Type {
 		"spine_link_count":    types.Int64Type,
 		"spine_link_speed":    types.StringType,
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.AttrTypes()}},
+		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.attrTypes()}},
 	}
 }
 
@@ -297,7 +297,7 @@ func (o *LeafSwitch) LoadApiData(ctx context.Context, in *apstra.RackElementLeaf
 	}
 
 	o.TagIds = types.SetNull(types.StringType)
-	o.Tags = NewTagSet(ctx, in.Tags, diags)
+	o.Tags = NewTagSetLegacy(ctx, in.Tags, diags)
 }
 
 func (o *LeafSwitch) CopyWriteOnlyElements(ctx context.Context, src *LeafSwitch, diags *diag.Diagnostics) {

@@ -1,14 +1,14 @@
 ---
-page_title: "apstra_tag Data Source - terraform-provider-apstra"
-subcategory: "Deprecated"
+page_title: "apstra_design_tag Data Source - terraform-provider-apstra"
+subcategory: "Design"
 description: |-
-  This data source provides details of a specific Tag.
+  This data source provides details of a specific Tag from the Apstra Design tab.
   At least one optional attribute is required.
 ---
 
-# apstra_tag (Data Source)
+# apstra_design_tag (Data Source)
 
-This data source provides details of a specific Tag.
+This data source provides details of a specific Tag from the Apstra Design tab.
 
 At least one optional attribute is required.
 
@@ -22,7 +22,7 @@ At least one optional attribute is required.
 
 variable "tag_key" {}
 
-data "apstra_tag" "selected" {
+data "apstra_design_tag" "selected" {
     key = var.tag_key
 }
 

@@ -201,7 +201,7 @@ func (o GenericSystem) AttrTypes() map[string]attr.Type {
 		"count":               types.Int64Type,
 		"links":               types.MapType{ElemType: types.ObjectType{AttrTypes: RackLink{}.AttrTypes()}},
 		"tag_ids":             types.SetType{ElemType: types.StringType},
-		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.AttrTypes()}},
+		"tags":                types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.attrTypes()}},
 	}
 }
 
@@ -259,7 +259,7 @@ func (o *GenericSystem) LoadApiData(ctx context.Context, in *apstra.RackElementG
 	o.Count = types.Int64Value(int64(in.Count))
 	o.Links = NewLinkMap(ctx, in.Links, diags)
 	o.TagIds = types.SetNull(types.StringType)
-	o.Tags = NewTagSet(ctx, in.Tags, diags)
+	o.Tags = NewTagSetLegacy(ctx, in.Tags, diags)
 }
 
 func (o *GenericSystem) GetLinks(ctx context.Context, diags *diag.Diagnostics) map[string]RackLink {

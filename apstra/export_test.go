@@ -40,6 +40,7 @@ var (
 	ResourceDatacenterSwitchingZone                        = resourceDatacenterSwitchingZone{}
 	ResourceDatacenterTag                                  = resourceDatacenterTag{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
+	ResourceDesignTag                                      = resourceDesignTag{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}
 	ResourceFreeformAggregateLink                          = resourceFreeformAggregateLink{}
 	ResourceFreeformBlueprint                              = resourceFreeformBlueprint{}
@@ -55,6 +56,7 @@ var (
 	ResourceIntegerPool                                    = resourceIntegerPool{}
 	ResourceIpv4Pool                                       = resourceIpv4Pool{}
 	ResourceIpv6Pool                                       = resourceIpv6Pool{}
+	ResourceTag                                            = resourceTag{}
 	ResourceTelemetryServiceRegistryEntry                  = resourceTelemetryServiceRegistryEntry{}
 	ResourceTemplateCollapsed                              = resourceTemplateCollapsed{}
 	ResourceTemplatePodBased                               = resourceTemplatePodBased{}

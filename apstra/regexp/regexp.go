@@ -21,15 +21,19 @@ const (
 	alphaCharsRequiredConstraintReString = "^.*[a-zA-Z]+.*$"
 	AlphaCharsRequiredConstraintMsg      = "value must contain at least one letter"
 
+	noLeadingOrTrailingWhitespaceString = `^(?:\S(?:.*\S)?)?$`
+	NoLeadingOrTrailingWhitespaceMsg    = "value must not have leading or trailing whitespace"
+
 	renderableDescriptionReString = `^([!#-;=@-[\]-~]([ !#-;=@-[\]-~]*[!#-;=@-[\]-~])?)?$`
 	RenderableDescriptionMsg      = "value must contain only printable ASCII characters other than `\"`, `<`, `>`, `?`, and `\\` with no leading or trailing spaces"
 )
 
 var (
-	AlphaNumW2HLConstraint       = regexp.MustCompile(alphaNumW2HLConstraintReString)
-	FreeformHostnameConstraint   = regexp.MustCompile(freeformHostnameConstraintReString)
-	HostNameConstraint           = regexp.MustCompile(hostNameConstraintReString)
-	StdNameConstraint            = regexp.MustCompile(stdNameConstraintReString)
-	AlphaCharsRequiredConstraint = regexp.MustCompile(alphaCharsRequiredConstraintReString)
-	RenderableDescription        = regexp.MustCompile(renderableDescriptionReString)
+	AlphaNumW2HLConstraint        = regexp.MustCompile(alphaNumW2HLConstraintReString)
+	FreeformHostnameConstraint    = regexp.MustCompile(freeformHostnameConstraintReString)
+	HostNameConstraint            = regexp.MustCompile(hostNameConstraintReString)
+	StdNameConstraint             = regexp.MustCompile(stdNameConstraintReString)
+	AlphaCharsRequiredConstraint  = regexp.MustCompile(alphaCharsRequiredConstraintReString)
+	NoLeadingOrTrailingWhitespace = regexp.MustCompile(noLeadingOrTrailingWhitespaceString)
+	RenderableDescription         = regexp.MustCompile(renderableDescriptionReString)
 )

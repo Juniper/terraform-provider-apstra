@@ -150,9 +150,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--leaf_switches--tags--definition))
 - `description` (String) Tag description field as seen in the web UI.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name field as seen in the web UI.
+
+<a id="nestedatt--leaf_switches--tags--definition"></a>
+### Nested Schema for `leaf_switches.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -208,7 +218,17 @@ Optional:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--access_switches--links--tags--definition))
 - `id` (String) Apstra ID of the Tag.
+
+<a id="nestedatt--access_switches--links--tags--definition"></a>
+### Nested Schema for `access_switches.links.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -256,9 +276,19 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--access_switches--tags--definition))
 - `description` (String) Tag description field as seen in the web UI.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name field as seen in the web UI.
+
+<a id="nestedatt--access_switches--tags--definition"></a>
+### Nested Schema for `access_switches.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -314,7 +344,17 @@ Optional:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--generic_systems--links--tags--definition))
 - `id` (String) Apstra ID of the Tag.
+
+<a id="nestedatt--generic_systems--links--tags--definition"></a>
+### Nested Schema for `generic_systems.links.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
+
 
 
 
@@ -353,9 +393,18 @@ Read-Only:
 
 Read-Only:
 
+- `definition` (Attributes) Used in nested contexts. (see [below for nested schema](#nestedatt--generic_systems--tags--definition))
 - `description` (String) Tag description field as seen in the web UI.
 - `id` (String) ID will always be `<null>` in nested contexts.
 - `name` (String) Tag name field as seen in the web UI.
+
+<a id="nestedatt--generic_systems--tags--definition"></a>
+### Nested Schema for `generic_systems.tags.definition`
+
+Read-Only:
+
+- `description` (String) Tag description
+- `name` (String) Tag name
 
 
 
