@@ -13,8 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 )
 
-var _ datasource.DataSourceWithConfigure = &dataSourceDeviceProfile{}
-var _ datasourceWithSetClient = &dataSourceDeviceProfile{}
+var (
+	_ datasource.DataSourceWithConfigure = &dataSourceDeviceProfile{}
+	_ datasourceWithSetClient            = &dataSourceDeviceProfile{}
+)
 
 type dataSourceDeviceProfile struct {
 	client *apstra.Client
