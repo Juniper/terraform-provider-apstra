@@ -88,7 +88,7 @@ func TestResourceTag(t *testing.T) {
 	require.NoError(t, err)
 
 	type testStep struct {
-		config                  resourceTag
+		config                  resourceDesignTag
 		preApplyResourceActions []plancheck.ResourceActionType
 	}
 
@@ -102,13 +102,13 @@ func TestResourceTag(t *testing.T) {
 			versionConstraints: nil,
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_simple", 8),
 						description: acctest.RandString(8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_simple", 8),
 						description: acctest.RandString(8),
 					},
@@ -119,18 +119,18 @@ func TestResourceTag(t *testing.T) {
 			versionConstraints: nil,
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_nullify_description", 8),
 						description: acctest.RandString(8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: random.PersistentString("TestResoruceTag_nullify_description", 8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_nullify_description", 8),
 						description: acctest.RandString(8),
 					},
@@ -141,18 +141,18 @@ func TestResourceTag(t *testing.T) {
 			versionConstraints: nil,
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: random.PersistentString("TestResoruceTag_start_with_null_description", 8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_start_with_null_description", 8),
 						description: acctest.RandString(8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: random.PersistentString("TestResoruceTag_start_with_null_description", 8),
 					},
 				},
@@ -161,13 +161,13 @@ func TestResourceTag(t *testing.T) {
 		"rename_forces_replace": {
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: acctest.RandString(8),
 					},
 				},
 				{
 					preApplyResourceActions: []plancheck.ResourceActionType{plancheck.ResourceActionDestroyBeforeCreate},
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: acctest.RandString(8),
 					},
 				},

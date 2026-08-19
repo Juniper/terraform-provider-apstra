@@ -19,34 +19,34 @@ import (
 )
 
 const (
-	datasourceTagHCL = `data %q %q {
+	datasourceDesignTagHCL = `data %q %q {
   id   = %s
   name = %s
 }`
 
-	resourceTagHCL = `resource %q %q {
+	resourceDesignTagHCL = `resource %q %q {
   name        = %q
   description = %s
 }`
 )
 
-type resourceTag struct {
+type resourceDesignTag struct {
 	name        string
 	description string
 }
 
-func (rt resourceTag) render(rType, rName string) string {
-	resourceBlock := fmt.Sprintf(resourceTagHCL, rType, rName,
-		rt.name,
-		stringOrNull(rt.description),
+func (t resourceDesignTag) render(rType, rName string) string {
+	resourceBlock := fmt.Sprintf(resourceDesignTagHCL, rType, rName,
+		t.name,
+		stringOrNull(t.description),
 	)
-	datasourceBlockByID := fmt.Sprintf(datasourceTagHCL, rType, rName+"_by_id", fmt.Sprintf("%s.%s.id", rType, rName), "null")
-	datasourceBlockByName := fmt.Sprintf(datasourceTagHCL, rType, rName+"_by_name", "null", fmt.Sprintf("%s.%s.name", rType, rName))
+	datasourceBlockByID := fmt.Sprintf(datasourceDesignTagHCL, rType, rName+"_by_id", fmt.Sprintf("%s.%s.id", rType, rName), "null")
+	datasourceBlockByName := fmt.Sprintf(datasourceDesignTagHCL, rType, rName+"_by_name", "null", fmt.Sprintf("%s.%s.name", rType, rName))
 
 	return resourceBlock + "\n\n" + datasourceBlockByID + "\n\n" + datasourceBlockByName + "\n"
 }
 
-func (rt resourceTag) testChecks(t testing.TB, rType, rName string) []testChecks {
+func (t resourceDesignTag) testChecks(t testing.TB, rType, rName string) []testChecks {
 	resourceChecks := newTestChecks(rType + "." + rName)
 	dataByIDChecks := newTestChecks("data." + rType + "." + rName + "_by_id")
 	dataByNameChecks := newTestChecks("data." + rType + "." + rName + "_by_name")
@@ -55,20 +55,20 @@ func (rt resourceTag) testChecks(t testing.TB, rType, rName string) []testChecks
 	resourceChecks.append(t, "TestCheckResourceAttrSet", "id")
 	dataByIDChecks.append(t, "TestCheckResourceAttrSet", "id")
 	dataByNameChecks.append(t, "TestCheckResourceAttrSet", "id")
-	resourceChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
-	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
-	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-	resourceChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-	dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
-	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", rt.name)
+	resourceChecks.append(t, "TestCheckResourceAttr", "name", t.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "name", t.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "name", t.name)
+	resourceChecks.append(t, "TestCheckResourceAttr", "definition.name", t.name)
+	dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.name", t.name)
+	dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.name", t.name)
 
-	if rt.description != "" {
-		resourceChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-		dataByIDChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-		dataByNameChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-		resourceChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
-		dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
-		dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.description", rt.description)
+	if t.description != "" {
+		resourceChecks.append(t, "TestCheckResourceAttr", "description", t.description)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "description", t.description)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "description", t.description)
+		resourceChecks.append(t, "TestCheckResourceAttr", "definition.description", t.description)
+		dataByIDChecks.append(t, "TestCheckResourceAttr", "definition.description", t.description)
+		dataByNameChecks.append(t, "TestCheckResourceAttr", "definition.description", t.description)
 	} else {
 		resourceChecks.append(t, "TestCheckNoResourceAttr", "description")
 		dataByIDChecks.append(t, "TestCheckNoResourceAttr", "description")
@@ -81,14 +81,14 @@ func (rt resourceTag) testChecks(t testing.TB, rType, rName string) []testChecks
 	return []testChecks{resourceChecks, dataByIDChecks, dataByNameChecks}
 }
 
-func TestResourceDesignTag(t *testing.T) {
+func TestAccResourceDesignTag(t *testing.T) {
 	ctx := context.Background()
 	client := testutils.GetTestClient(t, ctx)
 	clientVersion, err := version.NewVersion(client.ApiVersion())
 	require.NoError(t, err)
 
 	type testStep struct {
-		config                  resourceTag
+		config                  resourceDesignTag
 		preApplyResourceActions []plancheck.ResourceActionType
 	}
 
@@ -102,13 +102,13 @@ func TestResourceDesignTag(t *testing.T) {
 			versionConstraints: nil,
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_simple", 8),
 						description: acctest.RandString(8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_simple", 8),
 						description: acctest.RandString(8),
 					},
@@ -119,18 +119,18 @@ func TestResourceDesignTag(t *testing.T) {
 			versionConstraints: nil,
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_nullify_description", 8),
 						description: acctest.RandString(8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: random.PersistentString("TestResoruceTag_nullify_description", 8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_nullify_description", 8),
 						description: acctest.RandString(8),
 					},
@@ -141,18 +141,18 @@ func TestResourceDesignTag(t *testing.T) {
 			versionConstraints: nil,
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: random.PersistentString("TestResoruceTag_start_with_null_description", 8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name:        random.PersistentString("TestResoruceTag_start_with_null_description", 8),
 						description: acctest.RandString(8),
 					},
 				},
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: random.PersistentString("TestResoruceTag_start_with_null_description", 8),
 					},
 				},
@@ -161,13 +161,13 @@ func TestResourceDesignTag(t *testing.T) {
 		"rename_forces_replace": {
 			steps: []testStep{
 				{
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: acctest.RandString(8),
 					},
 				},
 				{
 					preApplyResourceActions: []plancheck.ResourceActionType{plancheck.ResourceActionDestroyBeforeCreate},
-					config: resourceTag{
+					config: resourceDesignTag{
 						name: acctest.RandString(8),
 					},
 				},
