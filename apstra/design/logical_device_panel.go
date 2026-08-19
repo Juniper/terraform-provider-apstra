@@ -72,7 +72,7 @@ func (o logicalDevicePanel) resourceAttributes() map[string]resourceSchema.Attri
 	}
 }
 
-func (o logicalDevicePanel) resourceAttributesDefinition() map[string]resourceSchema.Attribute {
+func (o logicalDevicePanel) resourceAttributesReadOnly() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"rows": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Physical vertical dimension of the panel.",
@@ -85,7 +85,7 @@ func (o logicalDevicePanel) resourceAttributesDefinition() map[string]resourceSc
 		"port_groups": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
 			Computed:            true,
-			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanelPortGroup{}.resourceAttributesDefinition()},
+			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanelPortGroup{}.resourceAttributesReadOnly()},
 		},
 	}
 }
