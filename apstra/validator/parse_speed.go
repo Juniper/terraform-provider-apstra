@@ -28,6 +28,7 @@ func (o ParseSpeedValidator) ValidateString(_ context.Context, req validator.Str
 
 	validMap := make(map[string]struct{})
 	validStrings := []string{
+		"10M",
 		"100M",
 		"1G",
 		"10G",
