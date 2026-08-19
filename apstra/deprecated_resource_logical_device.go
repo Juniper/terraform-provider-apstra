@@ -3,40 +3,42 @@ package tfapstra
 import (
 	"context"
 	"fmt"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceLogicalDevice{}
-var _ resource.ResourceWithValidateConfig = &resourceLogicalDevice{}
-var _ resourceWithSetClient = &resourceLogicalDevice{}
+var (
+	_ resource.ResourceWithConfigure      = &resourceDeprecatedLogicalDevice{}
+	_ resource.ResourceWithValidateConfig = &resourceDeprecatedLogicalDevice{}
+	_ resourceWithSetClient               = &resourceDeprecatedLogicalDevice{}
+)
 
-type resourceLogicalDevice struct {
+type resourceDeprecatedLogicalDevice struct {
 	client *apstra.Client
 }
 
-func (o *resourceLogicalDevice) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o *resourceDeprecatedLogicalDevice) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_logical_device"
 }
 
-func (o *resourceLogicalDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDeprecatedLogicalDevice) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDeprecatedLogicalDevice) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDesign + "This resource creates a Logical Device",
-		Attributes:          design.LogicalDevice{}.ResourceAttributes(),
+		Attributes:          design.DeprecatedLogicalDevice{}.ResourceAttributes(),
 	}
 }
 
-func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	var config design.LogicalDevice
+func (o *resourceDeprecatedLogicalDevice) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var config design.DeprecatedLogicalDevice
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -60,9 +62,9 @@ func (o *resourceLogicalDevice) ValidateConfig(ctx context.Context, req resource
 	}
 }
 
-func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDeprecatedLogicalDevice) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
-	var plan design.LogicalDevice
+	var plan design.DeprecatedLogicalDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -83,9 +85,9 @@ func (o *resourceLogicalDevice) Create(ctx context.Context, req resource.CreateR
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDeprecatedLogicalDevice) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Get current state
-	var state design.LogicalDevice
+	var state design.DeprecatedLogicalDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -107,7 +109,7 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// Create new state object
-	var newState design.LogicalDevice
+	var newState design.DeprecatedLogicalDevice
 	newState.Id = types.StringValue(string(ld.Id))
 	newState.LoadApiData(ctx, ld.Data, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
@@ -118,9 +120,9 @@ func (o *resourceLogicalDevice) Read(ctx context.Context, req resource.ReadReque
 	resp.Diagnostics.Append(resp.State.Set(ctx, &newState)...)
 }
 
-func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDeprecatedLogicalDevice) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values
-	var plan design.LogicalDevice
+	var plan design.DeprecatedLogicalDevice
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -141,8 +143,8 @@ func (o *resourceLogicalDevice) Update(ctx context.Context, req resource.UpdateR
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state design.LogicalDevice
+func (o *resourceDeprecatedLogicalDevice) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state design.DeprecatedLogicalDevice
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -159,6 +161,6 @@ func (o *resourceLogicalDevice) Delete(ctx context.Context, req resource.DeleteR
 	}
 }
 
-func (o *resourceLogicalDevice) setClient(client *apstra.Client) {
+func (o *resourceDeprecatedLogicalDevice) setClient(client *apstra.Client) {
 	o.client = client
 }

@@ -29,7 +29,7 @@ type SuperSpine struct {
 func (o SuperSpine) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id": types.StringType,
-		"logical_device":    types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
+		"logical_device":    types.ObjectType{AttrTypes: DeprecatedLogicalDevice{}.AttrTypes()},
 		"plane_count":       types.Int64Type,
 		"per_plane_count":   types.Int64Type,
 		"tag_ids":           types.SetType{ElemType: types.StringType},
@@ -46,7 +46,7 @@ func (o SuperSpine) DataSourceAttributes() map[string]dataSourceSchema.Attribute
 		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.DataSourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.DataSourceAttributesNested(),
 		},
 		"plane_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of planes.",
@@ -81,7 +81,7 @@ func (o SuperSpine) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"plane_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Permits creation of multi-planar 5-stage topologies. Default: 1",

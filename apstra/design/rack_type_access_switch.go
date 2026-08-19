@@ -56,7 +56,7 @@ func (o AccessSwitch) DataSourceAttributes() map[string]dataSourceSchema.Attribu
 		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.DataSourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.DataSourceAttributesNested(),
 		},
 		"esi_lag_info": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Interconnect information for Access Switches in ESI-LAG redundancy mode.",
@@ -104,7 +104,7 @@ func (o AccessSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"esi_lag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Including this stanza converts the Access Switch into a redundant pair.",
@@ -153,7 +153,7 @@ func (o AccessSwitch) ResourceAttributesNested() map[string]resourceSchema.Attri
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"esi_lag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Defines connectivity between ESI LAG peers when "+
@@ -194,7 +194,7 @@ func (o AccessSwitch) ResourceAttributesNested() map[string]resourceSchema.Attri
 func (o AccessSwitch) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,
-		"logical_device":      types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
+		"logical_device":      types.ObjectType{AttrTypes: DeprecatedLogicalDevice{}.AttrTypes()},
 		"esi_lag_info":        types.ObjectType{AttrTypes: EsiLagInfo{}.AttrTypes()},
 		"redundancy_protocol": types.StringType,
 		"count":               types.Int64Type,

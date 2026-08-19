@@ -23,13 +23,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type LogicalDevicePanelPortGroup struct {
+type DeprecatedLogicalDevicePanelPortGroup struct {
 	PortCount types.Int64  `tfsdk:"port_count"`
 	PortSpeed types.String `tfsdk:"port_speed"`
 	PortRoles types.Set    `tfsdk:"port_roles"`
 }
 
-func (o LogicalDevicePanelPortGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o DeprecatedLogicalDevicePanelPortGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"port_count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of ports in the group.",
@@ -47,7 +47,7 @@ func (o LogicalDevicePanelPortGroup) DataSourceAttributes() map[string]dataSourc
 	}
 }
 
-func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o DeprecatedLogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 	// collect all port roles for use in inline documentation and defaulter
 	var allPortRoles apstra.LogicalDevicePortRoles
 	allPortRoles.IncludeAllUses()
@@ -87,7 +87,7 @@ func (o LogicalDevicePanelPortGroup) ResourceAttributes() map[string]resourceSch
 	}
 }
 
-func (o LogicalDevicePanelPortGroup) ResourceAttributesNested() map[string]resourceSchema.Attribute {
+func (o DeprecatedLogicalDevicePanelPortGroup) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"port_count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of ports in the group.",
@@ -108,7 +108,7 @@ func (o LogicalDevicePanelPortGroup) ResourceAttributesNested() map[string]resou
 	}
 }
 
-func (o LogicalDevicePanelPortGroup) AttrTypes() map[string]attr.Type {
+func (o DeprecatedLogicalDevicePanelPortGroup) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"port_count": types.Int64Type,
 		"port_speed": types.StringType,
@@ -116,7 +116,7 @@ func (o LogicalDevicePanelPortGroup) AttrTypes() map[string]attr.Type {
 	}
 }
 
-func (o *LogicalDevicePanelPortGroup) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
+func (o *DeprecatedLogicalDevicePanelPortGroup) LoadApiData(ctx context.Context, in *apstra.LogicalDevicePortGroup, diags *diag.Diagnostics) {
 	portRoles, d := types.SetValueFrom(ctx, types.StringType, in.Roles.Strings())
 	diags.Append(d...)
 	if diags.HasError() {
