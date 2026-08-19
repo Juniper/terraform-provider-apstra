@@ -3,13 +3,10 @@ package design
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -29,16 +26,12 @@ func (ldd logicalDeviceDefinition) dataSourceAttributes() map[string]dataSourceS
 	return map[string]dataSourceSchema.Attribute{
 		"name": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Web UI name of the Logical Device. Required when `id` is omitted.",
-			Optional:            true,
 			Computed:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
 		"panels": dataSourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
 			Computed:            true,
-			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: DeprecatedLogicalDevicePanel{}.DataSourceAttributes(),
-			},
+			NestedObject:        dataSourceSchema.NestedAttributeObject{Attributes: logicalDevicePanel{}.dataSourceAttributes()},
 		},
 	}
 }
@@ -47,16 +40,12 @@ func (ldd logicalDeviceDefinition) resourceAttributes() map[string]resourceSchem
 	return map[string]resourceSchema.Attribute{
 		"name": resourceSchema.StringAttribute{
 			MarkdownDescription: "Logical Device name displayed in the Apstra web UI",
-			Required:            true,
-			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			Computed:            true,
 		},
 		"panels": resourceSchema.ListNestedAttribute{
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
-			Required:            true,
-			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
-			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: DeprecatedLogicalDevicePanel{}.ResourceAttributes(),
-			},
+			Computed:            true,
+			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanel{}.resourceAttributesDefinition()},
 		},
 	}
 }

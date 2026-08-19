@@ -64,10 +64,28 @@ func (o logicalDevicePanel) resourceAttributes() map[string]resourceSchema.Attri
 			Validators:          []validator.Int64{int64validator.AtLeast(1)},
 		},
 		"port_groups": resourceSchema.ListNestedAttribute{
-			Required:            true,
 			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			Required:            true,
 			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanelPortGroup{}.resourceAttributes()},
+		},
+	}
+}
+
+func (o logicalDevicePanel) resourceAttributesDefinition() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"rows": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical vertical dimension of the panel.",
+			Computed:            true,
+		},
+		"columns": resourceSchema.Int64Attribute{
+			MarkdownDescription: "Physical horizontal dimension of the panel.",
+			Computed:            true,
+		},
+		"port_groups": resourceSchema.ListNestedAttribute{
+			MarkdownDescription: "Ordered logical groupings of interfaces by speed or purpose within a panel",
+			Computed:            true,
+			NestedObject:        resourceSchema.NestedAttributeObject{Attributes: logicalDevicePanelPortGroup{}.resourceAttributesDefinition()},
 		},
 	}
 }
