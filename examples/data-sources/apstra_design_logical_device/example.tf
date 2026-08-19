@@ -1,18 +1,3 @@
-terraform {
-  required_providers {
-    apstra = {
-      source = "Juniper/apstra"
-    }
-  }
-}
-
-provider "apstra" {
-  url                     = "https://admin:admin@10.28.155.3"
-  tls_validation_disabled = true
-  blueprint_mutex_enabled = false
-  experimental            = true
-}
-
 # The following example creates a Logical Device then retrives it by name and by ID.
 
 resource "apstra_design_logical_device" "example" {
