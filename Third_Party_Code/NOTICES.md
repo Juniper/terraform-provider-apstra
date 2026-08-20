@@ -10747,13 +10747,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## github.com/zclconf/go-cty/cty
 
 * Name: github.com/zclconf/go-cty/cty
-* Version: v1.17.0
-* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.17.0/LICENSE)
+* Version: v1.19.0
+* License: [MIT](https://github.com/zclconf/go-cty/blob/v1.19.0/LICENSE)
 
 ```
 MIT License
 
-Copyright (c) 2017-2018 Martin Atkins
+Copyright (c) 2017-2026 Martin Atkins and various other contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -10778,8 +10778,8 @@ SOFTWARE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.48.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.48.0:LICENSE)
+* Version: v0.54.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.54.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10852,8 +10852,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/mod
 
 * Name: golang.org/x/mod
-* Version: v0.33.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.33.0:LICENSE)
+* Version: v0.38.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/mod/+/v0.38.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10889,8 +10889,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.50.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.50.0:LICENSE)
+* Version: v0.57.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.57.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10926,8 +10926,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys
 
 * Name: golang.org/x/sys
-* Version: v0.41.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.41.0:LICENSE)
+* Version: v0.47.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.47.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -10963,8 +10963,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.34.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.34.0:LICENSE)
+* Version: v0.40.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.40.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
