@@ -1,0 +1,3 @@
+kind: bugfix
+body: 'Fix issue #1230 in `apstra_freeform_blueprint` resource'
+time: 2026-08-20T17:48:46.532639-04:00
