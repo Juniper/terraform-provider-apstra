@@ -1,4 +1,4 @@
-name: Changie Checks
+name: Changie
 
 on:
   pull_request:
@@ -10,12 +10,9 @@ on:
       - unlabeled
       - ready_for_review
 
-permissions:
-  contents: read
-
 jobs:
-  changie-checks:
-    name: Changie PR checks
+  checks:
+    name: PR checks
     runs-on: ubuntu-latest
 
     steps:

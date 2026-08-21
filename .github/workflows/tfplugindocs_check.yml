@@ -1,9 +1,9 @@
-name: Check provider docs
+name: Documentation
 
 on: [push]
 
 jobs:
-  go-tools:
+  check:
 
     runs-on: ubuntu-latest
     steps:
@@ -15,5 +15,5 @@ jobs:
         with:
           go-version: '1.25.9'
 
-      - name: tfplugindocs check
+      - name: tfplugindocs
         run: make docs-check
