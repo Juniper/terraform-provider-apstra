@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -126,7 +127,7 @@ func (o AggregateLink) ResourceAttributes() map[string]resourceSchema.Attribute 
 	}
 }
 
-func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) apstra.FreeformAggregateLink {
+func (o *AggregateLink) Request(ctx context.Context, sysIDToLAGID map[string]string, diags *diag.Diagnostics) apstra.FreeformAggregateLink {
 	var result apstra.FreeformAggregateLink
 
 	if !o.Name.IsUnknown() || !o.Name.IsNull() { // leave nil when no value set
@@ -142,8 +143,8 @@ func (o *AggregateLink) Request(ctx context.Context, diags *diag.Diagnostics) ap
 		return result
 	}
 
-	result.EndpointGroups[0] = endpointGroup1.Request(ctx, path.Root("endpoint_group_1"), diags)
-	result.EndpointGroups[1] = endpointGroup2.Request(ctx, path.Root("endpoint_group_2"), diags)
+	result.EndpointGroups[0] = endpointGroup1.Request(ctx, path.Root("endpoint_group_1"), sysIDToLAGID, diags)
+	result.EndpointGroups[1] = endpointGroup2.Request(ctx, path.Root("endpoint_group_2"), sysIDToLAGID, diags)
 	if diags.HasError() {
 		return result
 	}
@@ -179,4 +180,31 @@ func (o *AggregateLink) LoadApiData(ctx context.Context, in apstra.FreeformAggre
 
 	o.MemberLinkIDs = value.SetOrNull(ctx, types.StringType, in.MemberLinkIds, diags)
 	o.Tags = value.SetOrNull(ctx, types.StringType, in.Tags, diags)
+}
+
+func (o AggregateLink) Private(ctx context.Context, diags *diag.Diagnostics) private.ResourceFreeformAggregateLink {
+	var result private.ResourceFreeformAggregateLink
+	var endpointGroup1, endpointGroup2 AggregateLinkEndpointGroup
+	diags.Append(o.EndpointGroup1.As(ctx, &endpointGroup1, basetypes.ObjectAsOptions{})...)
+	diags.Append(o.EndpointGroup2.As(ctx, &endpointGroup2, basetypes.ObjectAsOptions{})...)
+	if diags.HasError() {
+		return result
+	}
+
+	group1 := endpointGroup1.Request(ctx, path.Root("endpoint_group_1"), nil, diags)
+	group2 := endpointGroup2.Request(ctx, path.Root("endpoint_group_2"), nil, diags)
+	if diags.HasError() {
+		return result
+	}
+
+	result.SysIDToLAGID = make(map[string]string, len(group1.Endpoints)+len(group2.Endpoints))
+	for _, group := range append(group1.Endpoints, group2.Endpoints...) {
+		ifID := group.ID()
+		if ifID == nil {
+			continue
+		}
+		result.SysIDToLAGID[group.SystemID] = *ifID
+	}
+
+	return result
 }

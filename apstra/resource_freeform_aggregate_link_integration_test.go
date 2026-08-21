@@ -268,6 +268,64 @@ func TestResourceFreeformAggregateLink(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
+		"issue_1230": {
+			steps: []resourceFreeformAggregateLink{
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[0]},
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[0]][0],
+								ifName:        "ae123",
+								portChannelID: 123,
+								lagMode:       enum.LAGModeActiveLACP,
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[0]][1],
+								ifName:        "ae123",
+								portChannelID: 123,
+								lagMode:       enum.LAGModePassiveLACP,
+							},
+						},
+					},
+				},
+				{
+					blueprintID:   bp.Id().String(),
+					name:          acctest.RandString(6),
+					memberLinkIDs: []string{linkIDs[0]},
+					endpointGroup1: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[0]][0],
+								ifName:        "ae123",
+								portChannelID: 123,
+								lagMode:       enum.LAGModePassiveLACP,
+							},
+						},
+					},
+					endpointGroup2: resourceFreeformAggregateLinkEndpointGroup{
+						label: acctest.RandString(6),
+						endpoints: []resourceFreeformAggregateLinkEndpoint{
+							{
+								systemID:      linkIDToSysIDs[linkIDs[0]][1],
+								ifName:        "ae123",
+								portChannelID: 123,
+								lagMode:       enum.LAGModeActiveLACP,
+							},
+						},
+					},
+				},
+			},
+		},
 		"one_link_one_step": {
 			steps: []resourceFreeformAggregateLink{
 				{
