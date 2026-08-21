@@ -87,7 +87,7 @@ func (o AggregateLinkEndpointGroup) resourceAttributes() map[string]resourceSche
 	}
 }
 
-func (o AggregateLinkEndpointGroup) Request(ctx context.Context, path path.Path, diags *diag.Diagnostics) apstra.FreeformAggregateLinkEndpointGroup {
+func (o AggregateLinkEndpointGroup) Request(ctx context.Context, path path.Path, sysIDToLAGID map[string]string, diags *diag.Diagnostics) apstra.FreeformAggregateLinkEndpointGroup {
 	var result apstra.FreeformAggregateLinkEndpointGroup
 
 	if !o.Label.IsNull() || !o.Label.IsUnknown() { // leave nil when no value set
@@ -104,7 +104,7 @@ func (o AggregateLinkEndpointGroup) Request(ctx context.Context, path path.Path,
 
 	result.Endpoints = make([]apstra.FreeformAggregateLinkEndpoint, len(endpoints))
 	for i, endpoint := range endpoints {
-		result.Endpoints[i] = endpoint.Request(ctx, path.AtName("endpoints").AtSetValue(o.Endpoints.Elements()[i]), diags)
+		result.Endpoints[i] = endpoint.Request(ctx, path.AtName("endpoints").AtSetValue(o.Endpoints.Elements()[i]), sysIDToLAGID, diags)
 	}
 	if diags.HasError() {
 		return result

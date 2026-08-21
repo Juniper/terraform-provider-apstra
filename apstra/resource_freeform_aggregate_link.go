@@ -6,6 +6,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/freeform"
+	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -67,7 +68,7 @@ func (o resourceFreeformAggregateLink) Create(ctx context.Context, req resource.
 	}
 
 	// Convert the plan into an API Request
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, nil, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -129,6 +130,9 @@ func (o resourceFreeformAggregateLink) Read(ctx context.Context, req resource.Re
 
 	// Set state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+
+	// Set private state
+	state.Private(ctx, &resp.Diagnostics).SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 }
 
 func (o resourceFreeformAggregateLink) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
@@ -159,7 +163,15 @@ func (o resourceFreeformAggregateLink) Update(ctx context.Context, req resource.
 		return
 	}
 
-	request := plan.Request(ctx, &resp.Diagnostics)
+	// Extract private state
+	var ps private.ResourceFreeformAggregateLink
+	ps.LoadPrivateState(ctx, req.Private, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create a request using the current map of system ID -> LAG Intf ID from private state
+	request := plan.Request(ctx, ps.SysIDToLAGID, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
