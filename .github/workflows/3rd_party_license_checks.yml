@@ -1,9 +1,9 @@
-name: Check 3rd party license compliance
+name: 3rd party license compliance
 
 on: [push]
 
 jobs:
-  go-tools:
+  check:
 
     runs-on: ubuntu-latest
     steps:
