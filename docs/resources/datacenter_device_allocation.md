@@ -107,7 +107,7 @@ Optional:
 - `loopback_ipv4` (String) IPv4 address of loopback interface in CIDR notation, must use 32-bit mask. Setting loopback addresses is supported only for Spine and Leaf switches.
 - `loopback_ipv6` (String) IPv6 address of loopback interface in CIDR notation, must use 128-bit mask. Setting loopback addresses is supported only for Spine and Leaf switches. IPv6 must be enabled in the Blueprint to use this attribute.
 - `name` (String) Web UI label for the system node.
-- `tags` (Set of String) Tag labels to be applied to the System node. If a Tag doesn't exist in the Blueprint it will be created automatically.
+- `tags` (Set of String) Tag labels to be applied to the System node. If a Tag doesn't exist in the Blueprint it will be created automatically. Note that this resource takes control of Tags. Any tags applied in the design phase will be overwritten by this resource, even if this attribute is omitted.
 
 
 

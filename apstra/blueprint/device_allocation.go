@@ -776,11 +776,19 @@ func (o *DeviceAllocation) SetSystemAttributes(ctx context.Context, state *Devic
 		}
 	}
 
-	// did the user configure `system_attributes`?
+	// did the user omit `system_attributes`?
 	if !utils.HasValue(o.SystemAttributes) {
 		// `system_attributes` not configured - we may need to clear existing tags
-		if stateSA != nil && len(stateSA.Tags.Elements()) > 0 {
-			// tags exist. clear them.
+		if state == nil || // State is nil, indicating we are called by Create()?
+			(stateSA != nil && len(stateSA.Tags.Elements()) > 0) { // Tags found in state?
+			// If we get here, either we're in Create(), or tags were deleted from the configuration.
+			// In either case, we need to clear tags.
+			//
+			// We clear tags in Create() because tags may have propagated through from the design
+			// API during the blueprint scaffolding process. This resource, by virtue of its
+			// existence is now authoritative on tags, and must control. Failure to delete tags
+			// propagated via the template will provoke a "inconsistent result after apply" error.
+			// Rather than check-then-clear-if-necessary, we clear tags unconditionally.
 			err := bp.SetNodeTags(ctx, apstra.ObjectId(o.NodeId.ValueString()), []string{})
 			if err != nil {
 				diags.AddError(fmt.Sprintf("failed clearing tags from system node %s", o.NodeId), err.Error())
