@@ -1,11 +1,11 @@
 ---
-page_title: "apstra_tag Resource - terraform-provider-apstra"
-subcategory: "Deprecated"
+page_title: "apstra_design_tag Resource - terraform-provider-apstra"
+subcategory: "Design"
 description: |-
   This resource creates a Tag in the Apstra Design tab.
 ---
 
-# apstra_tag (Resource)
+# apstra_design_tag (Resource)
 
 This resource creates a Tag in the Apstra Design tab.
 
@@ -24,7 +24,7 @@ locals {
   ])
 }
 
-resource "apstra_tag" "example" {
+resource "apstra_design_tag" "example" {
   for_each    = local.device_owners
   name        = each.key
   description = format("device maintained by %q team", each.key)

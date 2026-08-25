@@ -1,0 +1,3 @@
+kind: deprecation
+body: The `apstra_tag` resource and data source will be removed no earlier than v2.0.0. Users should migrate their configurations to use the `apstra_design_tag` drop-in replacements.
+time: 2026-08-17T15:59:16.399968-04:00

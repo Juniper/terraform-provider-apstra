@@ -33,7 +33,7 @@ func (o SuperSpine) AttrTypes() map[string]attr.Type {
 		"plane_count":       types.Int64Type,
 		"per_plane_count":   types.Int64Type,
 		"tag_ids":           types.SetType{ElemType: types.StringType},
-		"tags":              types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.AttrTypes()}},
+		"tags":              types.SetType{ElemType: types.ObjectType{AttrTypes: Tag{}.attrTypes()}},
 	}
 }
 
@@ -130,7 +130,7 @@ func (o *SuperSpine) LoadApiData(ctx context.Context, in *apstra.Superspine, dia
 	o.LogicalDevice = NewLogicalDeviceObject(ctx, &in.LogicalDevice, diags)
 	o.PlaneCount = types.Int64Value(int64(in.PlaneCount))
 	o.PerPlaneCount = types.Int64Value(int64(in.SuperspinePerPlane))
-	o.Tags = NewTagSet(ctx, in.Tags, diags)
+	o.Tags = NewTagSetLegacy(ctx, in.Tags, diags)
 }
 
 func (o *SuperSpine) CopyWriteOnlyElements(ctx context.Context, src *SuperSpine, diags *diag.Diagnostics) {
