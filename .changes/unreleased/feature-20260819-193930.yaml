@@ -1,3 +1,0 @@
-kind: feature
-body: Introduce `apstra_device_profile` data source for discovering Device Profile IDs.
-time: 2026-08-19T19:39:30.088032-04:00

@@ -1,3 +1,0 @@
-kind: feature
-body: Introduced `apstra_design_logical_device` resource and data source to replace `apstra_logical_device`.
-time: 2026-08-19T15:07:11.56956-04:00
