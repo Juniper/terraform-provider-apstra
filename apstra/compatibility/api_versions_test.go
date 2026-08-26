@@ -1,6 +1,7 @@
 package compatibility
 
 import (
+	"log"
 	"slices"
 	"testing"
 
@@ -41,10 +42,11 @@ func TestSupportedApiVersionsPretty(t *testing.T) {
 		apiversions.Apstra600 + ", " +
 		apiversions.Apstra610 + ", " +
 		apiversions.Apstra611 + ", " +
-		apiversions.Apstra612 + ", and " +
+		apiversions.Apstra612 + " and " +
 		apiversions.Apstra620
 
 	result := SupportedApiVersionsPretty()
+	log.Println(result)
 	if expected != result {
 		t.Fatalf("expected:\n%q\ngot:\n%q", expected, result)
 	}

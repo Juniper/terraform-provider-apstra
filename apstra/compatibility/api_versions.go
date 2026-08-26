@@ -49,6 +49,7 @@ func SupportedApiVersionsPretty() string {
 	stop := len(supportedVers) - 1
 	for i := range supportedVers {
 		if i == stop {
+			supportedVers[i-1] = strings.TrimSuffix(supportedVers[i-1], ",")
 			supportedVers[i] = "and " + supportedVers[i]
 			break
 		}
