@@ -1,0 +1,3 @@
+kind: deprecation
+body: The `apstra_logical_device` resource and data source will be removed no earlier than v2.0.0. Users should migrate their configurations to use the `apstra_design_logical_device` drop-in replacements.
+time: 2026-08-19T15:07:39.180125-04:00
