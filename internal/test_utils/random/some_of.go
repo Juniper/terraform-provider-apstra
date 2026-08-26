@@ -19,10 +19,7 @@ func SomeOf[T any](t []T, min_max ...uint16) []T {
 	}
 
 	if len(min_max) > 1 { // did we gat a max parameter?
-		maxCount = int(min_max[1])
-		if maxCount > len(t) {
-			maxCount = len(t)
-		}
+		maxCount = min(int(min_max[1]), len(t))
 	}
 
 	count := BetweenInclusive(minCount, maxCount)

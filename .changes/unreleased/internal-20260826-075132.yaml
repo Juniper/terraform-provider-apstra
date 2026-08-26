@@ -1,0 +1,3 @@
+kind: internal
+body: 'Use `min()` function in `SomeOf()`; Rewrite `TestSomeOfBounds()` for better handling of negative test cases.'
+time: 2026-08-26T07:51:32.551008-04:00
