@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
+echo "----- printenv -----"
 printenv
+echo "----- printenv -----"
+echo ""
+echo "----- cat $GITHUB_EVENT_PATH -----"
+cat $GITHUB_EVENT_PATH
+echo "----- cat $GITHUB_EVENT_PATH -----"
+echo ""
 
 set -euo pipefail
 
