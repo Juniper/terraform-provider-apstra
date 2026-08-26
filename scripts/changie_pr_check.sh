@@ -4,9 +4,9 @@
 #printenv
 #echo "----- printenv -----"
 #echo ""
-echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
-jq '.pull_request.labels' < "$GITHUB_EVENT_PATH"
-echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
+#echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
+#jq '.pull_request.labels' < "$GITHUB_EVENT_PATH"
+#echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
 #echo "----- base64 $GITHUB_EVENT_PATH -----"
 #base64 "$GITHUB_EVENT_PATH"
 #echo "----- base64 $GITHUB_EVENT_PATH -----"
@@ -39,8 +39,6 @@ pr_has_release_label() {
     [[ -n "${GITHUB_EVENT_PATH:-}" ]] || fail "GITHUB_EVENT_PATH is not set; pass mode as second argument (normal|release)"
     [[ -r "$GITHUB_EVENT_PATH" ]] || fail "GITHUB_EVENT_PATH is not readable: $GITHUB_EVENT_PATH"
 
-    jq -e '.pull_request.labels' "$GITHUB_EVENT_PATH"
-
     # Use lowercase label names to make matching case-insensitive.
     jq -e '.pull_request.labels[]?.name | ascii_downcase == "release"' "$GITHUB_EVENT_PATH" >/dev/null 2>&1
 }
@@ -49,16 +47,12 @@ resolve_mode() {
     local mode=""
 
     if [[ -n "$MODE_INPUT" ]]; then
-        echo "mode from MODE_INPUT: $MODE_INPUT"
         mode="$MODE_INPUT"
     elif [[ -n "${CHANGIE_PR_KIND:-}" ]]; then
-        echo "mode from CHANGIE_PR_KIND: $CHANGIE_PR_KIND"
         mode="$CHANGIE_PR_KIND"
     elif pr_has_release_label; then
-        echo "pr_has release_label: true"
         mode="release"
     else
-        echo "no clues found, setting release mode normal"
         mode="normal"
     fi
 
