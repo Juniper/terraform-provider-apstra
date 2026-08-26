@@ -39,6 +39,8 @@ pr_has_release_label() {
     [[ -n "${GITHUB_EVENT_PATH:-}" ]] || fail "GITHUB_EVENT_PATH is not set; pass mode as second argument (normal|release)"
     [[ -r "$GITHUB_EVENT_PATH" ]] || fail "GITHUB_EVENT_PATH is not readable: $GITHUB_EVENT_PATH"
 
+    jq -e '.pull_request.labels"' "$GITHUB_EVENT_PATH"
+
     # Use lowercase label names to make matching case-insensitive.
     jq -e '.pull_request.labels[]?.name | ascii_downcase == "release"' "$GITHUB_EVENT_PATH" >/dev/null 2>&1
 }
