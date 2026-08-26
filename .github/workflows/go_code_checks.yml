@@ -1,9 +1,9 @@
-name: Check Go code
+name: Go code
 
 on: [push]
 
 jobs:
-  go-tools:
+  check:
 
     runs-on: ubuntu-latest
     steps:
