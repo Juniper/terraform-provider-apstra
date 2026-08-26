@@ -1,4 +1,4 @@
-all: compliance-check docs-check gofmt govet unit-tests integration-tests device-integration-tests
+all: install gofmt gofumpt compliance docs govet unit-tests staticcheck check-repo-clean
 
 check-repo-clean:
 	git update-index --refresh && git diff-index --quiet HEAD --
@@ -11,6 +11,9 @@ compliance-with-source:
 
 compliance-check: compliance check-repo-clean
 
+device-integration-tests:
+	go test -tags device-integration -v ./...
+
 docs:
 	@sh -c "$(CURDIR)/scripts/tfplugindocs.sh"
 
@@ -20,23 +23,17 @@ docs-check:
 gofmt:
 	@sh -c "$(CURDIR)/scripts/gofmtcheck.sh"
 
+gofumpt:
+	@sh -c "$(CURDIR)/scripts/gofumptcheck.sh"
+
 govet:
 	go vet -v ./...
 
-unit-tests:
-	go test -v ./...
+install:
+	go install
 
 integration-tests:
 	go test -tags integration -v ./...
-
-device-integration-tests:
-	go test -tags device-integration -v ./...
-
-staticcheck:
-	go run honnef.co/go/tools/cmd/staticcheck ./...
-
-release-pr:
-	@sh -c "$(CURDIR)/scripts/make_release_pr.sh"
 
 release:
 	printenv GITHUB_TOKEN > /dev/null || (echo "GITHUB_TOKEN not found in environment"; false)
@@ -45,7 +42,31 @@ release:
 release-dry-run:
 	(cd tools/goreleaser && GPG_FINGERPRINT=4EACB71B2FC20EC8499576BDCB9C922903A66F3F go tool goreleaser release --clean --skip-publish)
 
-gofumpt:
-	@sh -c "$(CURDIR)/scripts/gofumptcheck.sh"
+release-pr:
+	@sh -c "$(CURDIR)/scripts/make_release_pr.sh"
 
-.PHONY: all compliance compliance-check docs docs-check gofmt govet unit-tests integration-tests device-integration-tests staticcheck
+staticcheck:
+	go run honnef.co/go/tools/cmd/staticcheck ./...
+
+unit-tests:
+	go test -v ./...
+
+.PHONY: \
+  all \
+  check-repo-clean \
+  compliance \
+  compliance-with-source \
+  compliance-check \
+  device-integration-tests \
+  docs \
+  docs-check \
+  gofmt \
+  gofumpt \
+  govet \
+  install \
+  integration-tests \
+  release \
+  release-dry-run \
+  release-pr \
+  staticcheck \
+  unit-tests
