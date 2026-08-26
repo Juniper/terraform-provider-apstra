@@ -1,3 +1,0 @@
-kind: bugfix
-body: '`apstra_datacenter_device_allocation` will remove existing tags if `system_attributes.tags == null` during create phase.'
-time: 2026-08-25T10:06:04.917665-04:00
