@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
 
-#echo "----- printenv -----"
-#printenv
-#echo "----- printenv -----"
-#echo ""
-#echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
-#jq '.pull_request.labels' < "$GITHUB_EVENT_PATH"
-#echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
-#echo "----- base64 $GITHUB_EVENT_PATH -----"
-#base64 "$GITHUB_EVENT_PATH"
-#echo "----- base64 $GITHUB_EVENT_PATH -----"
-#echo ""
-
 set -euo pipefail
 
 BASE_REF="${1:?usage: $0 <base-ref> [normal|release]}"
