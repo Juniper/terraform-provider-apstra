@@ -96,10 +96,11 @@ func (o DeviceAllocationSystemAttributes) ResourceAttributes() map[string]resour
 		},
 		"tags": resourceSchema.SetAttribute{
 			MarkdownDescription: "Tag labels to be applied to the System node. If a Tag doesn't exist " +
-				"in the Blueprint it will be created automatically.",
+				"in the Blueprint it will be created automatically. Note that this resource takes control " +
+				"of Tags. Any tags applied in the design phase will be overwritten by this resource, even if " +
+				"this attribute is omitted.",
 			ElementType: types.StringType,
 			Optional:    true,
-			Computed:    false, // the user controls this field directly
 			Validators: []validator.Set{
 				setvalidator.SizeAtLeast(1),
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
