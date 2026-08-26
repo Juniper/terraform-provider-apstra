@@ -35,7 +35,7 @@ func (o Spine) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.DataSourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.DataSourceAttributesNested(),
 		},
 		"count": dataSourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of Spine switches.",
@@ -73,7 +73,7 @@ func (o Spine) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"count": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of Spine Switches.",
@@ -107,7 +107,7 @@ func (o Spine) ResourceAttributes() map[string]resourceSchema.Attribute {
 func (o Spine) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":      types.StringType,
-		"logical_device":         types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
+		"logical_device":         types.ObjectType{AttrTypes: DeprecatedLogicalDevice{}.AttrTypes()},
 		"count":                  types.Int64Type,
 		"super_spine_link_speed": types.StringType,
 		"super_spine_link_count": types.Int64Type,

@@ -59,7 +59,7 @@ func (o LeafSwitch) DataSourceAttributes() map[string]dataSourceSchema.Attribute
 		"logical_device": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes as represented in the Global Catalog.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.DataSourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.DataSourceAttributesNested(),
 		},
 		"mlag_info": dataSourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Details settings when the Leaf Switch is an MLAG-capable pair.",
@@ -103,7 +103,7 @@ func (o LeafSwitch) ResourceAttributes() map[string]resourceSchema.Attribute {
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"mlag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Required when `redundancy_protocol` set to `%s`, "+
@@ -171,7 +171,7 @@ func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribu
 		"logical_device": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: "Logical Device attributes cloned from the Global Catalog at creation time.",
 			Computed:            true,
-			Attributes:          LogicalDevice{}.ResourceAttributesNested(),
+			Attributes:          DeprecatedLogicalDevice{}.ResourceAttributesNested(),
 		},
 		"mlag_info": resourceSchema.SingleNestedAttribute{
 			MarkdownDescription: fmt.Sprintf("Defines connectivity between MLAG peers when "+
@@ -211,7 +211,7 @@ func (o LeafSwitch) ResourceAttributesNested() map[string]resourceSchema.Attribu
 func (o LeafSwitch) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"logical_device_id":   types.StringType,
-		"logical_device":      types.ObjectType{AttrTypes: LogicalDevice{}.AttrTypes()},
+		"logical_device":      types.ObjectType{AttrTypes: DeprecatedLogicalDevice{}.AttrTypes()},
 		"mlag_info":           types.ObjectType{AttrTypes: MlagInfo{}.AttrTypes()},
 		"redundancy_protocol": types.StringType,
 		"spine_link_count":    types.Int64Type,

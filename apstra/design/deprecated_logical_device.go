@@ -18,13 +18,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-type LogicalDevice struct {
+type DeprecatedLogicalDevice struct {
 	Id     types.String `tfsdk:"id"`
 	Name   types.String `tfsdk:"name"`
 	Panels types.List   `tfsdk:"panels"`
 }
 
-func (o LogicalDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
+func (o DeprecatedLogicalDevice) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID of the Logical Device. Required when `name` is omitted.",
@@ -48,13 +48,13 @@ func (o LogicalDevice) DataSourceAttributes() map[string]dataSourceSchema.Attrib
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanel{}.DataSourceAttributes(),
+				Attributes: DeprecatedLogicalDevicePanel{}.DataSourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevice) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
+func (o DeprecatedLogicalDevice) DataSourceAttributesNested() map[string]dataSourceSchema.Attribute {
 	return map[string]dataSourceSchema.Attribute{
 		"id": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
@@ -68,13 +68,13 @@ func (o LogicalDevice) DataSourceAttributesNested() map[string]dataSourceSchema.
 			MarkdownDescription: "Details physical layout of interfaces on the device.",
 			Computed:            true,
 			NestedObject: dataSourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanel{}.DataSourceAttributes(),
+				Attributes: DeprecatedLogicalDevicePanel{}.DataSourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevice) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o DeprecatedLogicalDevice) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "Apstra ID number of the Logical Device",
@@ -91,13 +91,13 @@ func (o LogicalDevice) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Required:            true,
 			Validators:          []validator.List{listvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanel{}.ResourceAttributes(),
+				Attributes: DeprecatedLogicalDevicePanel{}.ResourceAttributes(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevice) ResourceAttributesNested() map[string]resourceSchema.Attribute {
+func (o DeprecatedLogicalDevice) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"id": resourceSchema.StringAttribute{
 			MarkdownDescription: "ID will always be `<null>` in nested contexts.",
@@ -113,22 +113,22 @@ func (o LogicalDevice) ResourceAttributesNested() map[string]resourceSchema.Attr
 			Computed:            true,
 			PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: LogicalDevicePanel{}.ResourceAttributesReadOnly(),
+				Attributes: DeprecatedLogicalDevicePanel{}.ResourceAttributesReadOnly(),
 			},
 		},
 	}
 }
 
-func (o LogicalDevice) AttrTypes() map[string]attr.Type {
+func (o DeprecatedLogicalDevice) AttrTypes() map[string]attr.Type {
 	return map[string]attr.Type{
 		"id":     types.StringType,
 		"name":   types.StringType,
-		"panels": types.ListType{ElemType: types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()}},
+		"panels": types.ListType{ElemType: types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanel{}.AttrTypes()}},
 	}
 }
 
-func (o *LogicalDevice) LoadApiData(ctx context.Context, in *apstra.LogicalDeviceData, diags *diag.Diagnostics) {
-	panels := make([]LogicalDevicePanel, len(in.Panels))
+func (o *DeprecatedLogicalDevice) LoadApiData(ctx context.Context, in *apstra.LogicalDeviceData, diags *diag.Diagnostics) {
+	panels := make([]DeprecatedLogicalDevicePanel, len(in.Panels))
 	for i, panel := range in.Panels {
 		panels[i].LoadApiData(ctx, &panel, diags)
 		if diags.HasError() {
@@ -137,20 +137,20 @@ func (o *LogicalDevice) LoadApiData(ctx context.Context, in *apstra.LogicalDevic
 	}
 
 	o.Name = types.StringValue(in.DisplayName)
-	o.Panels = NewLogicalDevicePanelList(ctx, in.Panels, diags)
+	o.Panels = NewDeprecatedLogicalDevicePanelList(ctx, in.Panels, diags)
 
 	if len(panels) > 0 {
 		var d diag.Diagnostics
-		o.Panels, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()}, panels)
+		o.Panels, d = types.ListValueFrom(ctx, types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanel{}.AttrTypes()}, panels)
 		diags.Append(d...)
 	} else {
-		o.Panels = types.ListNull(types.ObjectType{AttrTypes: LogicalDevicePanel{}.AttrTypes()})
+		o.Panels = types.ListNull(types.ObjectType{AttrTypes: DeprecatedLogicalDevicePanel{}.AttrTypes()})
 	}
 }
 
-func (o *LogicalDevice) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.LogicalDeviceData {
+func (o *DeprecatedLogicalDevice) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.LogicalDeviceData {
 	var d diag.Diagnostics
-	var panelElements []LogicalDevicePanel
+	var panelElements []DeprecatedLogicalDevicePanel
 	d = o.Panels.ElementsAs(ctx, &panelElements, false)
 	diags.Append(d...)
 	if diags.HasError() {
@@ -167,28 +167,28 @@ func (o *LogicalDevice) Request(ctx context.Context, diags *diag.Diagnostics) *a
 	}
 }
 
-func (o *LogicalDevice) GetPanels(ctx context.Context, diags *diag.Diagnostics) []LogicalDevicePanel {
-	panels := make([]LogicalDevicePanel, len(o.Panels.Elements()))
+func (o *DeprecatedLogicalDevice) GetPanels(ctx context.Context, diags *diag.Diagnostics) []DeprecatedLogicalDevicePanel {
+	panels := make([]DeprecatedLogicalDevicePanel, len(o.Panels.Elements()))
 	diags.Append(o.Panels.ElementsAs(ctx, &panels, false)...)
 	return panels
 }
 
 func NewLogicalDeviceObject(ctx context.Context, in *apstra.LogicalDeviceData, diags *diag.Diagnostics) types.Object {
 	if in == nil {
-		return types.ObjectNull(LogicalDevice{}.AttrTypes())
+		return types.ObjectNull(DeprecatedLogicalDevice{}.AttrTypes())
 	}
 
-	var ld LogicalDevice
+	var ld DeprecatedLogicalDevice
 	ld.Id = types.StringNull()
 	ld.LoadApiData(ctx, in, diags)
 	if diags.HasError() {
-		return types.ObjectNull(LogicalDevice{}.AttrTypes())
+		return types.ObjectNull(DeprecatedLogicalDevice{}.AttrTypes())
 	}
 
-	result, d := types.ObjectValueFrom(ctx, LogicalDevice{}.AttrTypes(), &ld)
+	result, d := types.ObjectValueFrom(ctx, DeprecatedLogicalDevice{}.AttrTypes(), &ld)
 	diags.Append(d...)
 	if diags.HasError() {
-		return types.ObjectNull(LogicalDevice{}.AttrTypes())
+		return types.ObjectNull(DeprecatedLogicalDevice{}.AttrTypes())
 	}
 
 	return result
