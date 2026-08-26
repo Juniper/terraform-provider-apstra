@@ -14,7 +14,6 @@ func TestSomeOfBounds(t *testing.T) {
 	testCases := map[string]struct {
 		input     []string
 		args      []uint16
-		want      *int
 		wantMin   *int
 		wantMax   *int
 		wantPanic bool
@@ -31,9 +30,10 @@ func TestSomeOfBounds(t *testing.T) {
 			wantMax: pointer.To(3),
 		},
 		"bounded_exact value": {
-			input: []string{"a", "b", "c", "d"},
-			args:  []uint16{3, 3},
-			want:  pointer.To(3),
+			input:   []string{"a", "b", "c", "d"},
+			args:    []uint16{3, 3},
+			wantMin: pointer.To(3),
+			wantMax: pointer.To(3),
 		},
 		"min_above_slice_length_panics": {
 			input:     []string{"a", "b", "c", "d"},
@@ -55,9 +55,6 @@ func TestSomeOfBounds(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			if tc.want != nil && (tc.wantMin != nil || tc.wantMax != nil) {
-				panic("test case set want along with wantMin or wantMax")
-			}
 			if tc.wantPanic {
 				require.Panics(t, func() { random.SomeOf(tc.input, tc.args...) })
 				return
@@ -68,9 +65,6 @@ func TestSomeOfBounds(t *testing.T) {
 			require.LessOrEqual(t, len(got), len(tc.input))
 			require.Subset(t, tc.input, got)
 
-			if tc.want != nil {
-				require.Len(t, got, *tc.want)
-			}
 			if tc.wantMin != nil {
 				require.LessOrEqual(t, *tc.wantMin, len(got))
 			}
