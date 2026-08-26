@@ -4,9 +4,9 @@ echo "----- printenv -----"
 printenv
 echo "----- printenv -----"
 echo ""
-echo "----- cat $GITHUB_EVENT_PATH -----"
-cat $GITHUB_EVENT_PATH
-echo "----- cat $GITHUB_EVENT_PATH -----"
+echo "----- jq < $GITHUB_EVENT_PATH -----"
+jq < "$GITHUB_EVENT_PATH"
+echo "----- jq < $GITHUB_EVENT_PATH -----"
 echo ""
 
 set -euo pipefail
