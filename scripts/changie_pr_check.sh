@@ -7,6 +7,9 @@ echo ""
 echo "----- jq < $GITHUB_EVENT_PATH -----"
 jq < "$GITHUB_EVENT_PATH"
 echo "----- jq < $GITHUB_EVENT_PATH -----"
+echo "----- base64 $GITHUB_EVENT_PATH -----"
+base64 "$GITHUB_EVENT_PATH"
+echo "----- base64 $GITHUB_EVENT_PATH -----"
 echo ""
 
 set -euo pipefail
