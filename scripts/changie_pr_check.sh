@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-echo "----- printenv -----"
-printenv
-echo "----- printenv -----"
-echo ""
-echo "----- jq < $GITHUB_EVENT_PATH -----"
-jq < "$GITHUB_EVENT_PATH"
-echo "----- jq < $GITHUB_EVENT_PATH -----"
-echo "----- base64 $GITHUB_EVENT_PATH -----"
-base64 "$GITHUB_EVENT_PATH"
-echo "----- base64 $GITHUB_EVENT_PATH -----"
-echo ""
+#echo "----- printenv -----"
+#printenv
+#echo "----- printenv -----"
+#echo ""
+echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
+jq '.pull_request.labels' < "$GITHUB_EVENT_PATH"
+echo "----- jq '.pull_request.labels' < $GITHUB_EVENT_PATH -----"
+#echo "----- base64 $GITHUB_EVENT_PATH -----"
+#base64 "$GITHUB_EVENT_PATH"
+#echo "----- base64 $GITHUB_EVENT_PATH -----"
+#echo ""
 
 set -euo pipefail
 
@@ -49,12 +49,16 @@ resolve_mode() {
     local mode=""
 
     if [[ -n "$MODE_INPUT" ]]; then
+        echo "mode from MODE_INPUT: $MODE_INPUT"
         mode="$MODE_INPUT"
     elif [[ -n "${CHANGIE_PR_KIND:-}" ]]; then
+        echo "mode from CHANGIE_PR_KIND: $CHANGIE_PR_KIND"
         mode="$CHANGIE_PR_KIND"
     elif pr_has_release_label; then
+        echo "pr_has release_label: true"
         mode="release"
     else
+        echo "no clues found, setting release mode normal"
         mode="normal"
     fi
 
