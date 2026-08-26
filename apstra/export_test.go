@@ -12,6 +12,7 @@ var (
 	DataSourceBlueprintNodeConfig                   = dataSourceBlueprintNodeConfig{}
 	DataSourceDatacenterSystemNodes                 = dataSourceDatacenterSystemNodes{}
 	DataSourceDatacenterConnectivityTemplatesStatus = dataSourceDatacenterConnectivityTemplatesStatus{}
+	DataSourceDeviceProfile                         = dataSourceDeviceProfile{}
 	DataSourceVersion                               = dataSourceVersion{}
 
 	ResourceAgentProfile                                   = resourceAgentProfile{}

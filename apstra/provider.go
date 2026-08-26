@@ -572,6 +572,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDeprecatedLogicalDevice{} },
 		func() datasource.DataSource { return &dataSourceDesignLogicalDevice{} },
 		func() datasource.DataSource { return &dataSourceDeviceConfig{} },
+		func() datasource.DataSource { return &dataSourceDeviceProfile{} },
 		func() datasource.DataSource { return &dataSourceFreeformAggregateLink{} },
 		func() datasource.DataSource { return &dataSourceFreeformAllocGroup{} },
 		func() datasource.DataSource { return &dataSourceFreeformBlueprint{} },
