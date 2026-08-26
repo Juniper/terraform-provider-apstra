@@ -147,18 +147,27 @@ func (o AggregateLinkEndpoint) resourceAttributes() map[string]resourceSchema.At
 	}
 }
 
-func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, diags *diag.Diagnostics) apstra.FreeformAggregateLinkEndpoint {
-	result := apstra.FreeformAggregateLinkEndpoint{
-		SystemID: o.SystemID.ValueString(),
-		IfName:   o.IfName.ValueString(),
-		// IPv4Addr:   nil, // see below
-		// IPv6Addr:   nil, // see below
-		PortChannelID: int(o.PortChannelID.ValueInt64()),
-		// Tags:       nil, // see below
-		// LAGMode:    enum.LAGMode{}, // see below
+func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, sysIDToLAGID map[string]string, diags *diag.Diagnostics) apstra.FreeformAggregateLinkEndpoint {
+	var result apstra.FreeformAggregateLinkEndpoint
+
+	// If we've been given a sysIDToLAGID map, our request must use the ID from the that map
+	// (discovered in Read() and telegraphed via private state) because the value in state
+	// can be wrong due to:
+	// - manual changes on Apstra
+	// - offsets due to addition/deletion from the terraform endpoint list
+	// An empty request is okay - having the correct ID is only critical if the system
+	// currently has a LAG interface participating in the LAG (endpoint) group. In that
+	// case, PATCH will fail if we don't include the LAG interface ID in our request.
+	if sysIDToLAGID != nil {
+		result = apstra.NewFreeformAggregateLinkEndpoint(sysIDToLAGID[o.SystemID.ValueString()])
+	} else {
+		// this code path used when generating private state
+		result = apstra.NewFreeformAggregateLinkEndpoint(o.ID.ValueString())
 	}
 
-	var err error
+	result.SystemID = o.SystemID.ValueString()
+	result.IfName = o.IfName.ValueString()
+	result.PortChannelID = int(o.PortChannelID.ValueInt64())
 
 	if !o.IPv4Address.IsNull() {
 		addr, err := netip.ParsePrefix(o.IPv4Address.ValueString())
@@ -188,7 +197,7 @@ func (o AggregateLinkEndpoint) Request(ctx context.Context, path path.Path, diag
 
 	diags.Append(o.Tags.ElementsAs(ctx, &result.Tags, false)...)
 
-	err = result.LAGMode.FromString(o.LAGMode.ValueString())
+	err := result.LAGMode.FromString(o.LAGMode.ValueString())
 	if err != nil {
 		diags.AddAttributeError(
 			path.AtName("lag_mode"),
