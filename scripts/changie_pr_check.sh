@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+printenv
+
 set -euo pipefail
 
 BASE_REF="${1:?usage: $0 <base-ref> [normal|release]}"
