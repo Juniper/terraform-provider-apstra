@@ -644,6 +644,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterGenericSystem{} },
 		func() resource.Resource { return &resourceDatacenterInterconnectDomain{} },
 		func() resource.Resource { return &resourceDatacenterInterconnectDomainGateway{} },
+		func() resource.Resource { return &resourceDatacenterInterconnectDomainL3Policy{} },
 		func() resource.Resource { return &resourceDatacenterIpLinkAddressing{} },
 		func() resource.Resource { return &resourceDatacenterPropertySet{} },
 		func() resource.Resource { return &resourceDatacenterRack{} },
