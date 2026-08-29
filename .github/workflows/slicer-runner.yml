@@ -1,0 +1,223 @@
+name: Slicer local Runner Workflow
+
+on:
+  push:
+    branches:
+      - hk_demo_slicer_local_runner
+  workflow_dispatch:
+
+env:
+  TERRAFORM_PROVIDER_APSTRA_LOG_LEVEL: DEBUG
+  TF_LOG: DEBUG
+
+jobs:
+  slicer-topology-deployment:
+    runs-on: self-hosted
+
+    # Ensure cleanup runs even if job fails
+    strategy:
+      fail-fast: false
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Create Python virtual environment
+      run: |
+        python -m venv venv
+
+    - name: Install systest3_tools package
+      run: |
+        source venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install requests>=2.31.0
+        pip install pyyaml>=6.0.0
+        pip install https://jenkins.dc1.apstra.com/job/OB/job/Slicer_OB/lastSuccessfulBuild/artifact/dist/systest3_tools-0.2.0-py3-none-any.whl
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Deploy Slicer Topology
+      id: deploy_topology
+      run: |
+        source venv/bin/activate
+        python apstra/test_utils/test_slicer_topology.py > topology_deployment.log 2>&1
+        echo "Topology deployment completed"
+        cat topology_deployment.log
+
+    - name: Extract AOS VM IP Address
+      id: get_aos_ip
+      if: success()
+      run: |
+        # Export the IP as environment variable
+        if [ -f aos_ip.txt ]; then
+          AOS_IP=$(cat aos_ip.txt)
+          echo "aos_ip=$AOS_IP" >> $GITHUB_OUTPUT
+          echo "AOS_IP=$AOS_IP"
+        else
+          echo "Warning: Could not determine AOS IP address"
+          echo "aos_ip=unknown" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Run Go Integration Tests
+      if: success()
+      env:
+        APSTRA_URL: https://${{ steps.get_aos_ip.outputs.aos_ip }}
+        APSTRA_USER: admin
+        APSTRA_PASS: admin
+        APSTRA_TLS_VALIDATION_DISABLED: "true"
+        GOTMPDIR: /home/runner/_work/_tmp
+      run: |
+        # Run integration tests with the deployed AOS instance
+        mkdir -p "$GOTMPDIR"
+        go test -tags integration -v -timeout 30m ./... 2>&1 | tee test_results.log
+      continue-on-error: true
+
+    - name: Generate Test Report
+      if: always()
+      run: |
+        # Generate a summary of test results
+        echo "# Go Test Results" > test_report.md
+        echo "" >> test_report.md
+        echo "## Summary" >> test_report.md
+        echo "" >> test_report.md
+        
+        if [ -f test_results.log ]; then
+          PASS_COUNT=$(grep -c "^--- PASS:" test_results.log 2>/dev/null || true)
+          FAIL_COUNT=$(grep -c "^--- FAIL:" test_results.log 2>/dev/null || true)
+          
+          echo "- **Passed**: $PASS_COUNT" >> test_report.md
+          echo "- **Failed**: $FAIL_COUNT" >> test_report.md
+          echo "" >> test_report.md
+          
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "## Failed Tests" >> test_report.md
+            echo "" >> test_report.md
+            grep "^--- FAIL:" test_results.log >> test_report.md || true
+            echo "" >> test_report.md
+          fi
+        fi
+        
+        echo "## Test Output" >> test_report.md
+        echo '```' >> test_report.md
+        if [ -f test_results.log ]; then
+          tail -100 test_results.log >> test_report.md
+        fi
+        echo '```' >> test_report.md
+        
+        cat test_report.md
+
+    - name: Save Logs as Artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: workflow-logs
+        path: |
+          topology_deployment.log
+          test_results.log
+          test_report.md
+          aos_ip.txt
+        retention-days: 30
+
+    - name: Post Test Report Comment
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          let reportContent = '## Slicer Topology Test Report\n\n';
+          
+          if (fs.existsSync('test_report.md')) {
+            reportContent += fs.readFileSync('test_report.md', 'utf8');
+          } else {
+            reportContent += 'Test report not available.';
+          }
+          
+          reportContent += '\n\n### Deployment Log\n```\n';
+          if (fs.existsSync('topology_deployment.log')) {
+            const log = fs.readFileSync('topology_deployment.log', 'utf8');
+            reportContent += log.slice(-2000); // Last 2000 chars
+          }
+          reportContent += '\n```';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: reportContent
+          }).catch(() => {
+            console.log('Could not post comment (likely on push event)');
+          });
+
+    - name: Cleanup Slicer Topology
+      if: always()
+      run: |
+        source venv/bin/activate
+        python - <<'EOF'
+        import sys
+        from systest.web.slicer_client import SlicerClient
+        
+        systest_name = "github_runner"
+        owner = "github@apstra.com"
+        
+        print("=" * 70)
+        print("Starting cleanup process...")
+        print("=" * 70)
+        
+        try:
+            slicer_client = SlicerClient(slicer_server_url="https://api.slicer.dc1.apstra.com")
+            
+            # Undeploy topology
+            print("\nUndeploying topology...")
+            try:
+                slicer_client.undeploy_testbed(systest_name, timeout=600, wait=True)
+                print("✓ Topology undeployed successfully")
+            except Exception as e:
+                print(f"⚠ Warning: Failed to undeploy topology: {e}")
+            
+            # Unreserve topology
+            print("\nUnreserving topology...")
+            try:
+                slicer_client.release_resources(systest_name)
+                print("✓ Topology unreserved successfully")
+            except Exception as e:
+                print(f"⚠ Warning: Failed to unreserve topology: {e}")
+            
+            # Delete topology
+            print("\nDeleting topology...")
+            try:
+                slicer_client.delete_systest(systest_name)
+                print("✓ Topology deleted successfully")
+            except Exception as e:
+                print(f"⚠ Warning: Failed to delete topology: {e}")
+            
+            print("\n" + "=" * 70)
+            print("Cleanup completed!")
+            print("=" * 70)
+            
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            sys.exit(1)
+        EOF
+      continue-on-error: true
+
+    - name: Fail workflow if tests failed
+      if: always()
+      run: |
+        if [ ! -f test_results.log ]; then
+          echo "test_results.log not found; skipping failure check."
+          exit 0
+        fi
+        FAIL_COUNT=$(grep -c "^--- FAIL:" test_results.log 2>/dev/null || true)
+        if [ "$FAIL_COUNT" -gt 0 ]; then
+          echo "Go integration tests failed: $FAIL_COUNT"
+          exit 1
+        fi
+        echo "Go integration tests passed."
