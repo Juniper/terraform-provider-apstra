@@ -548,6 +548,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceDatacenterInterconnectDomains{} },
 		func() datasource.DataSource { return &dataSourceDatacenterInterconnectDomainGateway{} },
 		func() datasource.DataSource { return &dataSourceDatacenterInterconnectDomainGateways{} },
+		func() datasource.DataSource { return &dataSourceDatacenterInterconnectDomainL3Policy{} },
 		func() datasource.DataSource { return &dataSourceDatacenterGraphQuery{} },
 		func() datasource.DataSource { return &dataSourceDatacenterPropertySet{} },
 		func() datasource.DataSource { return &dataSourceDatacenterPropertySets{} },

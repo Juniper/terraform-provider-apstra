@@ -50,7 +50,7 @@ func (l3p InterconnectDomainL3Policy) DatasourceAttributes() map[string]datasour
 			Computed: true,
 		},
 		"routing_policy_id": datasourceSchema.StringAttribute{
-			MarkdownDescription: "Select the routing policy to be applied to DCI for this Routing Zone (VRF).",
+			MarkdownDescription: "The routing policy applied to DCI for this Routing Zone (VRF).",
 			Computed:            true,
 		},
 		"route_target": datasourceSchema.StringAttribute{
