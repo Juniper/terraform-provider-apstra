@@ -17,7 +17,6 @@ var (
 )
 
 type dataSourceDatacenterInterconnectDomainL3Policy struct {
-	lockFunc        func(context.Context, string) error
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
