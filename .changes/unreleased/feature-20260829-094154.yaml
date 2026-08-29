@@ -1,0 +1,3 @@
+kind: feature
+body: Added support for DCI L3 Policy via the `apstra_datacenter_interconnect_domain_layer_3_policy` resource and data source.
+time: 2026-08-29T09:41:54.328088-04:00
