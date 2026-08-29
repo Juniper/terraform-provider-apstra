@@ -244,7 +244,6 @@ func TestACCResourceDatacenterInterconnectDomainL3Policy(t *testing.T) {
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps:                    steps,
 			})
-
 		})
 	}
 }
