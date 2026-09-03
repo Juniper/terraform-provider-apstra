@@ -1,0 +1,3 @@
+kind: internal
+body: 'Bump SDK, handle name change: GetAllEVPNInterconnectGroups -> GetEVPNInterconnectGroups'
+time: 2026-09-03T17:32:46.667979-04:00
