@@ -21,15 +21,15 @@ type dataSourceDatacenterInterconnectDomainL3Policy struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
-func (r *dataSourceDatacenterInterconnectDomainL3Policy) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *dataSourceDatacenterInterconnectDomainL3Policy) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_datacenter_interconnect_domain_layer_3_policy"
 }
 
-func (r *dataSourceDatacenterInterconnectDomainL3Policy) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	configureDataSource(ctx, r, req, resp)
+func (d *dataSourceDatacenterInterconnectDomainL3Policy) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	configureDataSource(ctx, d, req, resp)
 }
 
-func (r *dataSourceDatacenterInterconnectDomainL3Policy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *dataSourceDatacenterInterconnectDomainL3Policy) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This data source retrieve details of an Interconnect Domain Layer 3 Policy within a Blueprint.",
 		Attributes:          blueprint.InterconnectDomainL3Policy{}.DatasourceAttributes(),
