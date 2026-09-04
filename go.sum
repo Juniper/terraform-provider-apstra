@@ -4,8 +4,8 @@ github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/IBM/netaddr v1.5.0 h1:IJlFZe1+nFs09TeMB/HOP4+xBnX2iM/xgiDOgZgTJq0=
 github.com/IBM/netaddr v1.5.0/go.mod h1:DDBPeYgbFzoXHjSz9Jwk7K8wmWV4+a/Kv0LqRnb8we4=
-github.com/Juniper/apstra-go-sdk v0.0.0-20260902010506-947ed182afa6 h1:7mbfKjnOVy5UoDqaGYuEs2cMpHh6NSol1broOcHUb5A=
-github.com/Juniper/apstra-go-sdk v0.0.0-20260902010506-947ed182afa6/go.mod h1:AI3GMajKxSycUNAuBpTdl56TGfIxU+9hxAZ1rSbnSeg=
+github.com/Juniper/apstra-go-sdk v0.0.0-20260903230315-94db5ae2a655 h1:kLotrrf0hDN/1GYJcu27xQofT2jaK7bFcTzvmq1Jppk=
+github.com/Juniper/apstra-go-sdk v0.0.0-20260903230315-94db5ae2a655/go.mod h1:AI3GMajKxSycUNAuBpTdl56TGfIxU+9hxAZ1rSbnSeg=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/ProtonMail/go-crypto v1.3.0 h1:ILq8+Sf5If5DCpHQp4PbZdS1J7HDFRXz/+xKBiRGFrw=

@@ -3,11 +3,13 @@ package tfapstra
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -87,7 +89,10 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) ImportState(ctx context.C
 		return
 	}
 
-	state.Read(ctx, bp, &resp.Diagnostics)
+	err = state.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		resp.Diagnostics.AddError(ierrors.ImportError(r), err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -117,9 +122,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Create(ctx context.Contex
 	// Lock the blueprint mutex.
 	err = r.lockFunc(ctx, plan.BlueprintID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %s mutex", plan.BlueprintID),
-			err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("error locking blueprint %s mutex", plan.BlueprintID), err.Error())
 		return
 	}
 
@@ -130,7 +133,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Create(ctx context.Contex
 
 	err = bp.UpdateEVPNInterconnectGroup(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error setting Interconnect Domain Layer 3 Policy", err.Error())
+		resp.Diagnostics.AddError(ierrors.CreateError(r), err.Error())
 		return
 	}
 
@@ -156,7 +159,14 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Read(ctx context.Context,
 		return
 	}
 
-	state.Read(ctx, bp, &resp.Diagnostics)
+	err = state.Read(ctx, bp, &resp.Diagnostics)
+	if err != nil {
+		if errors.As(err, new(ierrors.ResourceNotFound)) {
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError(ierrors.ReadError(r), err.Error())
+	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -182,9 +192,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Update(ctx context.Contex
 	// Lock the blueprint mutex.
 	err = r.lockFunc(ctx, plan.BlueprintID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %s mutex", plan.BlueprintID),
-			err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("error locking blueprint %s mutex", plan.BlueprintID), err.Error())
 		return
 	}
 
@@ -195,7 +203,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Update(ctx context.Contex
 
 	err = bp.UpdateEVPNInterconnectGroup(ctx, request)
 	if err != nil {
-		resp.Diagnostics.AddError("error updating Interconnect Domain Layer 3 Policy", err.Error())
+		resp.Diagnostics.AddError(ierrors.UpdateError(r), err.Error())
 		return
 	}
 
@@ -223,9 +231,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Contex
 	// Lock the blueprint mutex.
 	err = r.lockFunc(ctx, state.BlueprintID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			fmt.Sprintf("error locking blueprint %s mutex", state.BlueprintID),
-			err.Error())
+		resp.Diagnostics.AddError(fmt.Sprintf("error locking blueprint %s mutex", state.BlueprintID), err.Error())
 		return
 	}
 
@@ -241,7 +247,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Contex
 		if utils.IsApstra404(err) {
 			return // 404 is okay
 		}
-		resp.Diagnostics.AddError("error deleting Interconnect Domain Layer 3 Policy", err.Error())
+		resp.Diagnostics.AddError(ierrors.DeleteError(r), err.Error())
 	}
 }
 

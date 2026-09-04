@@ -7,6 +7,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	customtypes "github.com/Juniper/terraform-provider-apstra/apstra/custom_types"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/errors"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	datasourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -117,22 +118,28 @@ func (l3p InterconnectDomainL3Policy) Request(_ context.Context, _ *diag.Diagnos
 	return result
 }
 
-func (l3p *InterconnectDomainL3Policy) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+// Read returns ResourceNotFound errors on 404 rather than diagnostics so that the caller can decide how to handle them.
+func (l3p *InterconnectDomainL3Policy) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) error {
 	g, err := bp.GetEVPNInterconnectGroup(ctx, l3p.InterconnectDomainID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
-			diags.AddError("Not Found", fmt.Sprintf("Interconnect Domain %s of Blueprint %s not found", l3p.InterconnectDomainID, l3p.BlueprintID))
-			return
+			return errors.ResourceNotFound(err.Error())
 		}
 		diags.AddError("Failed to fetch Interconnect Domain", err.Error())
-		return
+		return nil
 	}
 
 	if l3Policy, ok := g.InterconnectSecurityZones[l3p.RoutingZoneID.ValueString()]; ok {
 		l3p.EnabledForType5 = types.BoolValue(l3Policy.L3Enabled)
 		l3p.RoutingPolicyID = types.StringPointerValue(l3Policy.RoutingPolicyId)
 		l3p.RouteTarget = customtypes.NewRouteTargetPointerValue(l3Policy.RouteTarget)
-	} else {
-		diags.AddError("Layer 3 Policy not found", fmt.Sprintf("Interconnect Domain %s of Blueprint %s does not have Interconnect Domain policy settings for Routing Zone %s", l3p.InterconnectDomainID, l3p.BlueprintID, l3p.RoutingZoneID))
+		return nil
 	}
+
+	return errors.ResourceNotFound(
+		fmt.Sprintf(
+			"Interconnect Domain %s of Blueprint %s does not have Interconnect Domain policy settings for Routing Zone %s",
+			l3p.InterconnectDomainID, l3p.BlueprintID, l3p.RoutingZoneID,
+		),
+	)
 }
