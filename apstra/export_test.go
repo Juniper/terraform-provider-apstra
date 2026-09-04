@@ -31,6 +31,7 @@ var (
 	ResourceDatacenterGenericSystem                        = resourceDatacenterGenericSystem{}
 	ResourceDatacenterInterconnectDomain                   = resourceDatacenterInterconnectDomain{}
 	ResourceDatacenterInterconnectDomainGateway            = resourceDatacenterInterconnectDomainGateway{}
+	ResourceDatacenterInterconnectDomainL3Policy           = resourceDatacenterInterconnectDomainL3Policy{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRack                                 = resourceDatacenterRack{}
 	ResourceDatacenterRoutingPolicy                        = resourceDatacenterRoutingPolicy{}
