@@ -16,37 +16,37 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &resourceDatacenterInterconnectDomainL3Policy{}
-	_ resource.ResourceWithImportState = &resourceDatacenterInterconnectDomainL3Policy{}
-	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterInterconnectDomainL3Policy{}
-	_ resourceWithSetBpLockFunc        = &resourceDatacenterInterconnectDomainL3Policy{}
+	_ resource.ResourceWithConfigure   = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resource.ResourceWithImportState = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resourceWithSetBpLockFunc        = &resourceDatacenterInterconnectDomainConnectionType{}
 )
 
-type resourceDatacenterInterconnectDomainL3Policy struct {
+type resourceDatacenterInterconnectDomainConnectionType struct {
 	lockFunc        func(context.Context, string) error
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_interconnect_domain_layer_3_policy"
+func (r *resourceDatacenterInterconnectDomainConnectionType) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_interconnect_domain_connection_type"
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, r, req, resp)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource configures per-RZ DCI details within a Blueprint.",
-		Attributes:          blueprint.InterconnectDomainL3Policy{}.ResourceAttributes(),
+		MarkdownDescription: docCategoryDatacenter + "This resource configures per-VN DCI details within a Blueprint.",
+		Attributes:          blueprint.InterconnectDomainConnectionType{}.ResourceAttributes(),
 	}
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	var importID struct {
 		BlueprintID          string `json:"blueprint_id"`
 		InterconnectDomainID string `json:"interconnect_domain_id"`
-		RoutingZoneID        string `json:"routing_zone_id"`
+		VirtualNetworkID     string `json:"virtual_network_id"`
 	}
 
 	// parse the user-supplied import ID string JSON
@@ -66,16 +66,16 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) ImportState(ctx context.C
 		return
 	}
 
-	if importID.RoutingZoneID == "" {
-		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'routing_zone_id' element of import ID string cannot be empty")
+	if importID.VirtualNetworkID == "" {
+		resp.Diagnostics.AddError(errImportJsonMissingRequiredField, "'virtual_network_id' element of import ID string cannot be empty")
 		return
 	}
 
 	// create a state object preloaded with the critical details we need in advance
-	state := blueprint.InterconnectDomainL3Policy{
+	state := blueprint.InterconnectDomainConnectionType{
 		BlueprintID:          types.StringValue(importID.BlueprintID),
 		InterconnectDomainID: types.StringValue(importID.InterconnectDomainID),
-		RoutingZoneID:        types.StringValue(importID.RoutingZoneID),
+		VirtualNetworkID:     types.StringValue(importID.VirtualNetworkID),
 	}
 
 	// get a client for the datacenter reference design
@@ -100,9 +100,9 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) ImportState(ctx context.C
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.InterconnectDomainL3Policy
+	var plan blueprint.InterconnectDomainConnectionType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -140,9 +140,9 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Create(ctx context.Contex
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
-	var state blueprint.InterconnectDomainL3Policy
+	var state blueprint.InterconnectDomainConnectionType
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -174,9 +174,9 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Read(ctx context.Context,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
-	var plan blueprint.InterconnectDomainL3Policy
+	var plan blueprint.InterconnectDomainConnectionType
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -210,9 +210,9 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Update(ctx context.Contex
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
-	var state blueprint.InterconnectDomainL3Policy
+	var state blueprint.InterconnectDomainConnectionType
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -235,10 +235,10 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Contex
 		return
 	}
 
-	// Clear the DCI L3 Policy
+	// Clear the DCI Connection Type settings by disabling L2 and L3.
 	request := apstra.EVPNInterconnectGroup{
-		InterconnectSecurityZones: map[string]apstra.InterconnectSecurityZone{
-			state.RoutingZoneID.ValueString(): {L3Enabled: false},
+		InterconnectVirtualNetworks: map[string]apstra.InterconnectVirtualNetwork{
+			state.VirtualNetworkID.ValueString(): {L2Enabled: false, L3Enabled: false},
 		},
 	}
 	_ = request.SetID(state.InterconnectDomainID.ValueString())
@@ -251,10 +251,10 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Contex
 	}
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	r.getBpClientFunc = f
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) setBpLockFunc(f func(context.Context, string) error) {
+func (r *resourceDatacenterInterconnectDomainConnectionType) setBpLockFunc(f func(context.Context, string) error) {
 	r.lockFunc = f
 }
