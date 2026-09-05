@@ -62,7 +62,6 @@ func TestConvertInteger(t *testing.T) {
 				panic("this should never happen with proper test data. " +
 					"The interface itself should never be nil. It'll always " +
 					"be a (possibly nil) pointer to some type.")
-
 			}
 
 			got := tc.call()

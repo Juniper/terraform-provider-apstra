@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_interconnect_domain_layer_3_policy Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource configures an Interconnect Domain Layer 3 Policy within a Blueprint.
+  This resource configures per-RZ DCI details within a Blueprint.
 ---
 
 # apstra_datacenter_interconnect_domain_layer_3_policy (Resource)
 
-This resource configures an Interconnect Domain Layer 3 Policy within a Blueprint.
+This resource configures per-RZ DCI details within a Blueprint.
 
 
 ## Example Usage
