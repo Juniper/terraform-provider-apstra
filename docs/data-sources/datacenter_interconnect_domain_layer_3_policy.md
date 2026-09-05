@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_interconnect_domain_layer_3_policy Data Source - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This data source retrieve details of an Interconnect Domain Layer 3 Policy within a Blueprint.
+  This data source retrieves per-RZ DCI details within a Blueprint.
 ---
 
 # apstra_datacenter_interconnect_domain_layer_3_policy (Data Source)
 
-This data source retrieve details of an Interconnect Domain Layer 3 Policy within a Blueprint.
+This data source retrieves per-RZ DCI details within a Blueprint.
 
 
 ## Example Usage
