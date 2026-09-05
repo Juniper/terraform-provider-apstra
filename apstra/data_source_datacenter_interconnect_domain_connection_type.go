@@ -31,7 +31,7 @@ func (d *dataSourceDatacenterInterconnectDomainConnectionType) Configure(ctx con
 
 func (d *dataSourceDatacenterInterconnectDomainConnectionType) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This data source retrieve Interconnect Domain Connection Type (Virtual Network selections) within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This data source retrieves per-VN DCI Details within a Blueprint.",
 		Attributes:          blueprint.InterconnectDomainConnectionType{}.DatasourceAttributes(),
 	}
 }

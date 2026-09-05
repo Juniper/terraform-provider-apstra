@@ -37,7 +37,7 @@ func (r *resourceDatacenterInterconnectDomainConnectionType) Configure(ctx conte
 
 func (r *resourceDatacenterInterconnectDomainConnectionType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource configures Interconnect Domain Connection Type (Virtual Network selections) within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource configures per-VN DCI details within a Blueprint.",
 		Attributes:          blueprint.InterconnectDomainConnectionType{}.ResourceAttributes(),
 	}
 }

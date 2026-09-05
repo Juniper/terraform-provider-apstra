@@ -37,7 +37,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Configure(ctx context.Con
 
 func (r *resourceDatacenterInterconnectDomainL3Policy) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource configures an Interconnect Domain Layer 3 Policy within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource configures per-RZ DCI details within a Blueprint.",
 		Attributes:          blueprint.InterconnectDomainL3Policy{}.ResourceAttributes(),
 	}
 }
