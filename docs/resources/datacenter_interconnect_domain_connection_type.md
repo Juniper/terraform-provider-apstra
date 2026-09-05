@@ -54,6 +54,3 @@ resource "apstra_datacenter_interconnect_domain_connection_type" "web_dci" {
 ### Optional
 
 - `translation_vni` (Number) The intermediate VNI to be used. It isn't required, but it needs to match the remote VNI either by translation on the other side or by both data centers using the same VNI for the virtual network that's being extended
-
-
-
