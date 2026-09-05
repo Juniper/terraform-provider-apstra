@@ -110,7 +110,7 @@ func (l3p InterconnectDomainL3Policy) Request(_ context.Context, _ *diag.Diagnos
 			l3p.RoutingZoneID.ValueString(): {
 				L3Enabled:       l3p.EnabledForType5.ValueBool(),
 				RouteTarget:     l3p.RouteTarget.ValueStringPointer(),
-				RoutingPolicyId: l3p.RoutingPolicyID.ValueStringPointer(),
+				RoutingPolicyID: l3p.RoutingPolicyID.ValueStringPointer(),
 			},
 		},
 	}
@@ -131,7 +131,7 @@ func (l3p *InterconnectDomainL3Policy) Read(ctx context.Context, bp *apstra.TwoS
 
 	if l3Policy, ok := g.InterconnectSecurityZones[l3p.RoutingZoneID.ValueString()]; ok {
 		l3p.EnabledForType5 = types.BoolValue(l3Policy.L3Enabled)
-		l3p.RoutingPolicyID = types.StringPointerValue(l3Policy.RoutingPolicyId)
+		l3p.RoutingPolicyID = types.StringPointerValue(l3Policy.RoutingPolicyID)
 		l3p.RouteTarget = customtypes.NewRouteTargetPointerValue(l3Policy.RouteTarget)
 		return nil
 	}
