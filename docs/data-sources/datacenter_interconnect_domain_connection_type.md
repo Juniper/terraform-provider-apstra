@@ -23,7 +23,7 @@ locals {
 # Find the "web" Virtual Network
 data "apstra_datacenter_virtual_network" "web" {
   blueprint_id = local.blueprint_id
-  name = local.virtual_network_name
+  name         = local.virtual_network_name
 }
 
 # Discover all DCI Interconnect domains (we expect exactly one)
@@ -35,7 +35,7 @@ data "apstra_datacenter_interconnect_domains" "dci" {
 data "apstra_datacenter_interconnect_domain_connection_type" "web" {
   blueprint_id           = local.blueprint_id
   interconnect_domain_id = one(data.apstra_datacenter_interconnect_domains.dci.ids)
-  virtual_network_id        = data.apstra_datacenter_virtual_network.web.id
+  virtual_network_id     = data.apstra_datacenter_virtual_network.web.id
 }
 
 output "web_vn_connection_type" { value = data.apstra_datacenter_interconnect_domain_connection_type.web }

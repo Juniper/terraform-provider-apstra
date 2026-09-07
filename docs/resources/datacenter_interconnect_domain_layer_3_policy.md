@@ -20,7 +20,7 @@ locals { blueprint_id = "4ef73591-d23d-4f66-9ab2-16fbf156bfac" }
 # Create a DCI Domain
 resource "apstra_datacenter_interconnect_domain" "dci" {
   blueprint_id = local.blueprint_id
-  name = "my_dci"
+  name         = "my_dci"
   route_target = "64512:100"
 }
 
