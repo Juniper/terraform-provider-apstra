@@ -51,6 +51,7 @@ type DatacenterVirtualNetwork struct {
 	ReservedVLAN            types.Int64  `tfsdk:"reserved_vlan_id"`
 	Bindings                types.Map    `tfsdk:"bindings"`
 	DHCPEnabled             types.Bool   `tfsdk:"dhcp_service_enabled"`
+	EncapsulateInnerVLAN    types.Bool   `tfsdk:"encapsulate_inner_vlan"`
 	IPv4ConnectivityEnabled types.Bool   `tfsdk:"ipv4_connectivity_enabled"`
 	IPv6ConnectivityEnabled types.Bool   `tfsdk:"ipv6_connectivity_enabled"`
 	IPv4Subnet              types.String `tfsdk:"ipv4_subnet"`
@@ -133,6 +134,13 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 		"dhcp_service_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables a DHCP relay agent.",
 			Computed:            true,
+		},
+		"encapsulate_inner_vlan": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming " +
+				"traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet " +
+				"with the source VLAN identifier unchanged. This configuration supports overlapping VLANs " +
+				"through multiple MAC virtual routing and forwarding instances (MAC-VRFs).",
+			Computed: true,
 		},
 		"ipv4_connectivity_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network.",
@@ -254,6 +262,13 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 		"dhcp_service_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables a DHCP relay agent.",
 			Optional:            true,
+		},
+		"encapsulate_inner_vlan": dataSourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming " +
+				"traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet " +
+				"with the source VLAN identifier unchanged. This configuration supports overlapping VLANs " +
+				"through multiple MAC virtual routing and forwarding instances (MAC-VRFs).",
+			Optional: true,
 		},
 		"ipv4_connectivity_enabled": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network.",
@@ -468,6 +483,19 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			Optional: true,
 			Computed: true,
 			Default:  booldefault.StaticBool(false),
+		},
+		"encapsulate_inner_vlan": resourceSchema.BoolAttribute{
+			MarkdownDescription: "Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming " +
+				"traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet " +
+				"with the source VLAN identifier unchanged. This configuration supports overlapping VLANs " +
+				"through multiple MAC virtual routing and forwarding instances (MAC-VRFs). Requires Apstra " +
+				compatibility.VnEncapsulateInnerVLANOK.String(),
+			Optional: true,
+			Computed: true,
+			Validators: []validator.Bool{
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv4_connectivity_enabled"), types.BoolValue(true)),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("ipv6_connectivity_enabled"), types.BoolValue(true)),
+			},
 		},
 		"ipv4_connectivity_enabled": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Enables IPv4 within the Virtual Network. Default: true",
@@ -704,6 +732,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	result := datacenter.VirtualNetwork{
 		Description:               o.Description.ValueString(),
 		DHCPService:               datacenter.DHCPServiceEnabled(o.DHCPEnabled.ValueBool()),
+		EncapsulateInnerVLAN:      o.EncapsulateInnerVLAN.ValueBoolPointer(),
 		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
 		IPv4Subnet:                ipv4Subnet,
 		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
@@ -747,6 +776,7 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	o.Bindings = newBindingMap(ctx, in.Bindings, diags)
 	o.VNI = value.Int64OrNull(ctx, in.VNI, diags)
 	o.DHCPEnabled = types.BoolValue(bool(in.DHCPService))
+	o.EncapsulateInnerVLAN = types.BoolPointerValue(in.EncapsulateInnerVLAN)
 	o.IPv4ConnectivityEnabled = types.BoolValue(in.IPv4Enabled)
 	o.IPv6ConnectivityEnabled = types.BoolValue(in.IPv6Enabled)
 	o.ReserveVLAN = types.BoolValue(in.ReservedVLAN != nil)
@@ -827,6 +857,13 @@ func (o *DatacenterVirtualNetwork) Query(resultName string) apstra.QEQuery {
 		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
 			Key:   "reserved_vlan_id",
 			Value: apstra.QEIntVal(o.ReservedVLAN.ValueInt64()),
+		})
+	}
+
+	if !o.EncapsulateInnerVLAN.IsNull() {
+		nodeAttributes = append(nodeAttributes, apstra.QEEAttribute{
+			Key:   "encapsulate_inner_vlan",
+			Value: apstra.QEBoolVal(o.EncapsulateInnerVLAN.ValueBool()),
 		})
 	}
 
@@ -1069,6 +1106,15 @@ func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConst
 			compatibility.AttributeConstraint{
 				Path:        path.Root("description"),
 				Constraints: compatibility.VnDescriptionOk,
+			},
+		)
+	}
+
+	if utils.HasValue(o.EncapsulateInnerVLAN) {
+		response.AddAttributeConstraints(
+			compatibility.AttributeConstraint{
+				Path:        path.Root("encapsulate_inner_vlan"),
+				Constraints: compatibility.VnEncapsulateInnerVLANOK,
 			},
 		)
 	}

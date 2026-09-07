@@ -28,5 +28,6 @@ var (
 	VnDHCPUnsafeWithoutWithoutBindings          = versionconstraints.New(apiversions.LtApstra620)
 	VnDescriptionOk                             = versionconstraints.New(apiversions.GeApstra500)
 	VnEmptyBindingsOk                           = versionconstraints.New(apiversions.GeApstra500)
+	VnEncapsulateInnerVLANOK                    = versionconstraints.New(apiversions.GeApstra620)
 	VnTagsOk                                    = versionconstraints.New(apiversions.GeApstra500)
 )

@@ -41,6 +41,7 @@ const (
   reserved_vlan_id          = %s
   tags                      = %s
   dhcp_service_enabled      = %s
+  encapsulate_inner_vlan    = %s
   ipv4_connectivity_enabled = %s
   ipv6_connectivity_enabled = %s
 }
@@ -67,6 +68,7 @@ type resourceDatacenterVirtualNetworkTemplate struct {
 	reservedVlanId          *int
 	tags                    []string
 	dhcpEnabled             *bool
+	encapsulateInnerVlan    *bool
 	ipv4ConnectivityEnabled *bool
 	ipv6ConnectivityEnabled *bool
 }
@@ -99,6 +101,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) render(rType, rName string) st
 		intPtrOrNull(o.reservedVlanId),
 		stringSliceOrNull(o.tags),
 		boolPtrOrNull(o.dhcpEnabled),
+		boolPtrOrNull(o.encapsulateInnerVlan),
 		boolPtrOrNull(o.ipv4ConnectivityEnabled),
 		boolPtrOrNull(o.ipv6ConnectivityEnabled),
 	)
@@ -162,6 +165,10 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 		result.append(t, "TestCheckResourceAttr", "dhcp_service_enabled", strconv.FormatBool(false))
 	} else {
 		result.append(t, "TestCheckResourceAttr", "dhcp_service_enabled", strconv.FormatBool(*o.dhcpEnabled))
+	}
+
+	if o.encapsulateInnerVlan != nil {
+		result.append(t, "TestCheckResourceAttr", "encapsulate_inner_vlan", strconv.FormatBool(*o.encapsulateInnerVlan))
 	}
 
 	if o.ipv4ConnectivityEnabled == nil {
@@ -285,6 +292,82 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
+		"encap_clear_encap_inner_vlan": {
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEncapsulateInnerVLANOK},
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(false),
+						ipv6ConnectivityEnabled: pointer.To(false),
+						encapsulateInnerVlan:    pointer.To(true),
+						routingZoneId:           rzIDs[0],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(false),
+						ipv6ConnectivityEnabled: pointer.To(false),
+						encapsulateInnerVlan:    pointer.To(false),
+						routingZoneId:           rzIDs[0],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(false),
+						ipv6ConnectivityEnabled: pointer.To(false),
+						encapsulateInnerVlan:    pointer.To(true),
+						routingZoneId:           rzIDs[0],
+					},
+				},
+			},
+		},
+		"clear_encap_clear_inner_vlan": {
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEncapsulateInnerVLANOK},
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(false),
+						ipv6ConnectivityEnabled: pointer.To(false),
+						encapsulateInnerVlan:    pointer.To(false),
+						routingZoneId:           rzIDs[0],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(false),
+						ipv6ConnectivityEnabled: pointer.To(false),
+						encapsulateInnerVlan:    pointer.To(true),
+						routingZoneId:           rzIDs[0],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(false),
+						ipv6ConnectivityEnabled: pointer.To(false),
+						encapsulateInnerVlan:    pointer.To(false),
+						routingZoneId:           rzIDs[0],
+					},
+				},
+			},
+		},
 		"invalid_dhcp_without_ip": {
 			steps: []testStep{
 				{
