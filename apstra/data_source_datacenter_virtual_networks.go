@@ -66,8 +66,8 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 					apstravalidator.AtLeastNAttributes(
 						1,
 						"name", "type", "routing_zone_id", "vni", "reserve_vlan", "dhcp_service_enabled",
-						"ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet", "ipv6_subnet",
-						"ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
+						"encapsulate_inner_vlan", "ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet",
+						"ipv6_subnet", "ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
 						"ipv6_virtual_gateway", "l3_mtu", "import_route_targets", "export_route_targets", "description",
 					),
 				},
@@ -87,8 +87,8 @@ func (o *dataSourceDatacenterVirtualNetworks) Schema(_ context.Context, _ dataso
 						apstravalidator.AtLeastNAttributes(
 							1,
 							"name", "type", "routing_zone_id", "vni", "reserve_vlan", "dhcp_service_enabled",
-							"ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet", "ipv6_subnet",
-							"ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
+							"encapsulate_inner_vlan", "ipv4_connectivity_enabled", "ipv6_connectivity_enabled", "ipv4_subnet",
+							"ipv6_subnet", "ipv4_virtual_gateway_enabled", "ipv6_virtual_gateway_enabled", "ipv4_virtual_gateway",
 							"ipv6_virtual_gateway", "l3_mtu", "import_route_targets", "export_route_targets", "description",
 						),
 					},

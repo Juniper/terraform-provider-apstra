@@ -45,6 +45,7 @@ locals {
 - `bindings` (Attributes Map) Details availability of the virtual network on leaf and access switches (see [below for nested schema](#nestedatt--bindings))
 - `description` (String) Virtual Network Description
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `encapsulate_inner_vlan` (Boolean) Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet with the source VLAN identifier unchanged. This configuration supports overlapping VLANs through multiple MAC virtual routing and forwarding instances (MAC-VRFs).
 - `export_route_targets` (Set of String) Export RTs for this Virtual Network.
 - `had_prior_vni_config` (Boolean) Not applicable in data source context. Ignore.
 - `import_route_targets` (Set of String) Import RTs for this Virtual Network.

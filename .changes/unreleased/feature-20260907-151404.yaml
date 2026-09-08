@@ -1,0 +1,3 @@
+kind: feature
+body: Introduce support for `apstra_datacenter_virtual_network.encapsulate_inner_vlan`
+time: 2026-09-07T15:14:04.327688-04:00

@@ -66,6 +66,7 @@ Optional:
 
 - `description` (String) Virtual Network Description
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `encapsulate_inner_vlan` (Boolean) Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet with the source VLAN identifier unchanged. This configuration supports overlapping VLANs through multiple MAC virtual routing and forwarding instances (MAC-VRFs).
 - `export_route_targets` (Set of String) This is a set of *required* export RTs, not an exact-match list.
 - `import_route_targets` (Set of String) This is a set of *required* import RTs, not an exact-match list.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network.
@@ -105,6 +106,7 @@ Optional:
 
 - `description` (String) Virtual Network Description
 - `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent.
+- `encapsulate_inner_vlan` (Boolean) Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet with the source VLAN identifier unchanged. This configuration supports overlapping VLANs through multiple MAC virtual routing and forwarding instances (MAC-VRFs).
 - `export_route_targets` (Set of String) This is a set of *required* export RTs, not an exact-match list.
 - `import_route_targets` (Set of String) This is a set of *required* import RTs, not an exact-match list.
 - `ipv4_connectivity_enabled` (Boolean) Enables IPv4 within the Virtual Network.
