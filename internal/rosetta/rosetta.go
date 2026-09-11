@@ -283,8 +283,8 @@ func storageSchemaPathToFriendlyString(in enum.StorageSchemaPath) string {
 
 func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 	switch in {
-	//case apstra.ResourceGroupNameAccessAccessIp4: // todo save this for v1.0.0
-	//	return resourceGroupNameAccessAccessLinkIp4 // todo save this for v1.0.0
+	// case apstra.ResourceGroupNameAccessAccessIp4: // todo save this for v1.0.0
+	//	return resourceGroupNameAccessAccessLinkIp4  // todo save this for v1.0.0
 	case apstra.ResourceGroupNameAccessAccessIp6:
 		return resourceGroupNameAccessAccessLinkIp6
 	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4:
@@ -500,7 +500,7 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 	}
 
 	switch in[0] {
-	//case resourceGroupNameAccessAccessLinkIp4:          // todo save this for v1.0.0
+	// case resourceGroupNameAccessAccessLinkIp4:         // todo save this for v1.0.0
 	//	*target = apstra.ResourceGroupNameAccessAccessIp4 // todo save this for v1.0.0
 	case resourceGroupNameAccessAccessLinkIp6:
 		*target = apstra.ResourceGroupNameAccessAccessIp6
