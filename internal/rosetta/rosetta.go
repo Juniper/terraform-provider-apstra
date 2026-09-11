@@ -28,6 +28,8 @@ const (
 	nodeDeployModeNotSet = "not_set"
 
 	resourceGroupNameVxlanVnIds          = "vni_virtual_network_ids"
+	resourceGroupNameAccessAccessLinkIp4 = "access_l3_peer_links"
+	resourceGroupNameAccessAccessLinkIp6 = "access_l3_peer_links_ipv6"
 	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
 	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
 
@@ -281,6 +283,10 @@ func storageSchemaPathToFriendlyString(in enum.StorageSchemaPath) string {
 
 func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
 	switch in {
+	//case apstra.ResourceGroupNameAccessAccessIp4: // todo save this for v1.0.0
+	//	return resourceGroupNameAccessAccessLinkIp4 // todo save this for v1.0.0
+	case apstra.ResourceGroupNameAccessAccessIp6:
+		return resourceGroupNameAccessAccessLinkIp6
 	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4:
 		return resourceGroupNameLeafL3PeerLinksIpv4
 	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6:
@@ -494,6 +500,10 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 	}
 
 	switch in[0] {
+	//case resourceGroupNameAccessAccessLinkIp4:          // todo save this for v1.0.0
+	//	*target = apstra.ResourceGroupNameAccessAccessIp4 // todo save this for v1.0.0
+	case resourceGroupNameAccessAccessLinkIp6:
+		*target = apstra.ResourceGroupNameAccessAccessIp6
 	case resourceGroupNameLeafL3PeerLinksIpv4:
 		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4
 	case resourceGroupNameLeafL3PeerLinksIpv6:
