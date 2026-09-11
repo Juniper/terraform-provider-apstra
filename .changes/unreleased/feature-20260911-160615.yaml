@@ -1,0 +1,3 @@
+kind: feature
+body: 'Introduced support for new roles in the `apstra_datacenter_resource_pool_allocation` resource: `access_l3_peer_links_ipv6`, `access_loopback_ips_ipv6`, `external_vn_local_vnis` and `vtep_ips_ipv6`'
+time: 2026-09-11T16:06:15.795705-04:00
