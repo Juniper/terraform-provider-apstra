@@ -68,8 +68,11 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
 - `role` (String) Fabric Role (Apstra Resource Group Name) must be one of:
   - access_asns
   - access_l3_peer_link_link_ips
+  - access_l3_peer_links_ipv6
   - access_loopback_ips
+  - access_loopback_ips_ipv6
   - evpn_l3_vnis
+  - external_vn_local_vnis
   - generic_asns
   - generic_loopback_ips
   - generic_loopback_ips_ipv6
@@ -98,6 +101,7 @@ resource "apstra_datacenter_resource_pool_allocation" "ipv4" {
   - virtual_network_svi_subnets_ipv6
   - vni_virtual_network_ids
   - vtep_ips
+  - vtep_ips_ipv6
 
 ### Optional
 
