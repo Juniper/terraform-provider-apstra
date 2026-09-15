@@ -108,7 +108,7 @@ func TestACCResourceDatacenterInterconnectDomainConnectionType(t *testing.T) {
 
 	client := testutils.GetTestClient(t, ctx)
 	ver := version.Must(version.NewVersion(client.ApiVersion()))
-	if !compatibility.DCIVNOldStylePatchSemantics.Check(ver) {
+	if !compatibility.DCIVNUpdatedPatchSemantics.Check(ver) {
 		t.Skipf("skipping test because Apstra version %s does not support PATCH semantics for the interconnect_virtual_networks field within the evpn_interconnect_groups API", ver.String())
 	}
 

@@ -42,7 +42,7 @@ func (r *resourceDatacenterInterconnectDomainConnectionType) Configure(ctx conte
 
 func (r *resourceDatacenterInterconnectDomainConnectionType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource configures per-VN DCI details within a Blueprint. Requires Apstra " + compatibility.DCIVNOldStylePatchSemantics.String() + ".",
+		MarkdownDescription: docCategoryDatacenter + "This resource configures per-VN DCI details within a Blueprint. Requires Apstra " + compatibility.DCIVNUpdatedPatchSemantics.String() + ".",
 		Attributes:          blueprint.InterconnectDomainConnectionType{}.ResourceAttributes(),
 	}
 }
@@ -59,10 +59,10 @@ func (r *resourceDatacenterInterconnectDomainConnectionType) ValidateConfig(_ co
 		return
 	}
 
-	if !compatibility.DCIVNOldStylePatchSemantics.Check(apiVersion) {
+	if !compatibility.DCIVNUpdatedPatchSemantics.Check(apiVersion) {
 		resp.Diagnostics.AddError(
-			"Resource requires Apstra "+compatibility.DCIVNOldStylePatchSemantics.String(),
-			"Resource requires Apstra "+compatibility.DCIVNOldStylePatchSemantics.String(),
+			"Resource requires Apstra "+compatibility.DCIVNUpdatedPatchSemantics.String(),
+			"Resource requires Apstra "+compatibility.DCIVNUpdatedPatchSemantics.String(),
 		)
 		return
 	}
