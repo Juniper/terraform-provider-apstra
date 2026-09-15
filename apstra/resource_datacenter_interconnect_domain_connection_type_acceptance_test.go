@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/compatibility"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
@@ -108,8 +108,8 @@ func TestACCResourceDatacenterInterconnectDomainConnectionType(t *testing.T) {
 
 	client := testutils.GetTestClient(t, ctx)
 	ver := version.Must(version.NewVersion(client.ApiVersion()))
-	if !compatibility.EmptyVnBindingsOk.Check(ver) {
-		t.Skipf("skipping test because Apstra version %s does not support empty virtual network bindings", ver.String())
+	if !compatibility.DCIVNOldStylePatchSemantics.Check(ver) {
+		t.Skipf("skipping test because Apstra version %s does not support PATCH semantics for the interconnect_virtual_networks field within the evpn_interconnect_groups API", ver.String())
 	}
 
 	// Create a Blueprint, Routing Zone and DCI Domain

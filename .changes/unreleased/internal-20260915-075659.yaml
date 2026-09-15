@@ -1,0 +1,3 @@
+kind: internal
+body: 'Bugfix to unreleased `apstra_datacenter_interconnect_domain_connection_type` resource: Version constraints to ensure it''s used only with 6.2.0+'
+time: 2026-09-15T07:56:59.460445-04:00
