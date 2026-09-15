@@ -62,7 +62,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Con
 	default: // Neither identity nor legacy import ID string provided.
 		resp.Diagnostics.AddError(
 			"Missing import input",
-			"Provide either a legacy import ID string (non-empty) or an identity object.",
+			"Provide either a legacy import ID string (JSON format) or an identity object.",
 		)
 	}
 	if resp.Diagnostics.HasError() {
@@ -141,7 +141,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
 	var state blueprint.InterconnectDomainL3Policy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -175,7 +175,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Read(ctx context.Context,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
 	var plan blueprint.InterconnectDomainL3Policy
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -211,7 +211,7 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Update(ctx context.Contex
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
 	var state blueprint.InterconnectDomainL3Policy
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -252,10 +252,10 @@ func (r *resourceDatacenterInterconnectDomainL3Policy) Delete(ctx context.Contex
 	}
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+func (r *resourceDatacenterVirtualNetworkAssignment) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	r.getBpClientFunc = f
 }
 
-func (r *resourceDatacenterInterconnectDomainL3Policy) setBpLockFunc(f func(context.Context, string) error) {
+func (r *resourceDatacenterVirtualNetworkAssignment) setBpLockFunc(f func(context.Context, string) error) {
 	r.lockFunc = f
 }
