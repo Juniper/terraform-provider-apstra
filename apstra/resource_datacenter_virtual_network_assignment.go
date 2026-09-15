@@ -46,31 +46,23 @@ func (r *resourceDatacenterVirtualNetworkAssignment) IdentitySchema(_ context.Co
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource assigns a Virtual Network to a Leaf Switch or a Leaf Switch Redundancy Group within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource assigns a Virtual Network to a Leaf Switch within a *Datacenter* Blueprint.",
 		Attributes:          blueprint.InterconnectDomainL3Policy{}.ResourceAttributes(),
 	}
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	hasIdentity := req.Identity != nil
-	hasID := req.ID != ""
-
 	var identity blueprint.VirtualNetworkAssignmentIdentity
 
 	switch {
-	case hasID && hasIdentity: // Why do we have both?
-		resp.Diagnostics.AddError(
-			"Ambiguous import input",
-			"Provide either legacy import ID or identity, not both.",
-		)
-	case hasIdentity: // Unpack the provided identity into our identity struct.
+	case req.Identity != nil: // Unpack the provided identity into our identity struct.
 		resp.Diagnostics.Append(req.Identity.Get(ctx, &identity)...)
-	case hasID: // Our identity struct will parse the legacy import ID string into its fields.
+	case req.ID != "": // Our identity struct will parse the legacy import ID string into its fields.
 		identity.ParseLegacyID(ctx, req.ID, &resp.Diagnostics)
 	default: // Neither identity nor legacy import ID string provided.
 		resp.Diagnostics.AddError(
 			"Missing import input",
-			"Provide either a legacy import ID string or an identity object.",
+			"Provide either a legacy import ID string (non-empty) or an identity object.",
 		)
 	}
 	if resp.Diagnostics.HasError() {
