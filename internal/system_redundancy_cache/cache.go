@@ -1,4 +1,4 @@
-package sysredundancyinfo
+package sysredundancycache
 
 import (
 	"context"

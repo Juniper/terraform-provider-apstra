@@ -1,4 +1,4 @@
-package sysredundancyinfo_test
+package sysredundancycache_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
-	sysredundancyinfo "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_info"
+	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/stretchr/testify/require"
 )
@@ -20,13 +20,13 @@ func TestLookup(t *testing.T) {
 	expectedSystemCount := 15
 
 	clearBPToSystemToGroupCache := func() {
-		for key := range sysredundancyinfo.BPToSystemToGroup {
-			delete(sysredundancyinfo.BPToSystemToGroup, key)
+		for key := range cache.BPToSystemToGroup {
+			delete(cache.BPToSystemToGroup, key)
 		}
 	}
 	clearBPToGroupToSystemsCache := func() {
-		for key := range sysredundancyinfo.BPToGroupToSystem {
-			delete(sysredundancyinfo.BPToGroupToSystem, key)
+		for key := range cache.BPToGroupToSystem {
+			delete(cache.BPToGroupToSystem, key)
 		}
 	}
 
@@ -36,14 +36,14 @@ func TestLookup(t *testing.T) {
 		clearBPToSystemToGroupCache()
 
 		var diags diag.Diagnostics
-		systems := sysredundancyinfo.LookupSystem(ctx, bp, "bogus-group-id", &diags)
+		systems := cache.LookupSystem(ctx, bp, "bogus-group-id", &diags)
 		require.True(t, diags.HasError(), "expected error for bogus group ID, but got none")
 		require.Empty(t, systems[0], "expected first member of bogus redundant system pair to have empty ID")
 		require.Empty(t, systems[1], "expected second member of bogus redundant system pair to have empty ID")
-		require.Equal(t, 1, len(sysredundancyinfo.BPToGroupToSystem))                         // one blueprint in the group->system cache
-		require.Equal(t, expectedGroupCount, len(sysredundancyinfo.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
-		require.Equal(t, 1, len(sysredundancyinfo.BPToSystemToGroup))                         // one blueprint in the system->group cache
-		require.Equal(t, expectedSystemCount, len(sysredundancyinfo.BPToSystemToGroup[bpID])) // expectedSystemCount systems in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
+		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
+		require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID])) // expectedSystemCount systems in the per-bp cache
 	})
 
 	t.Run("lookup_group_using_bogus_system_id", func(t *testing.T) {
@@ -52,13 +52,13 @@ func TestLookup(t *testing.T) {
 		clearBPToSystemToGroupCache()
 
 		var diags diag.Diagnostics
-		group := sysredundancyinfo.LookupGroup(ctx, bp, "bogus-system-id", &diags)
+		group := cache.LookupGroup(ctx, bp, "bogus-system-id", &diags)
 		require.Nilf(t, group, "expected nil group for bogus system id")
 		require.True(t, diags.HasError(), "expected error for bogus system ID, but got none")
-		require.Equal(t, 1, len(sysredundancyinfo.BPToGroupToSystem))                         // one blueprint in the group->system cache
-		require.Equal(t, expectedGroupCount, len(sysredundancyinfo.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
-		require.Equal(t, 1, len(sysredundancyinfo.BPToSystemToGroup))                         // one blueprint in the system->group cache
-		require.Equal(t, expectedSystemCount, len(sysredundancyinfo.BPToSystemToGroup[bpID])) // expectedSystemCount systems in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
+		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
+		require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID])) // expectedSystemCount systems in the per-bp cache
 	})
 
 	// Function which returns system IDs of switch nodes.
@@ -128,7 +128,7 @@ func TestLookup(t *testing.T) {
 			groupCount++
 			groupIDSet[groupID] = struct{}{}
 			var diags diag.Diagnostics
-			systemIDs := sysredundancyinfo.LookupSystem(ctx, bp, groupID, &diags)
+			systemIDs := cache.LookupSystem(ctx, bp, groupID, &diags)
 			require.False(t, diags.HasError())
 			require.NotEmpty(t, systemIDs[0])
 			require.NotEmpty(t, systemIDs[1])
@@ -147,7 +147,7 @@ func TestLookup(t *testing.T) {
 		for _, systemID := range switchIDs(t, ctx, bp) {
 			systemIDSet[systemID] = struct{}{}
 			var diags diag.Diagnostics
-			groupID := sysredundancyinfo.LookupGroup(ctx, bp, systemID, &diags)
+			groupID := cache.LookupGroup(ctx, bp, systemID, &diags)
 			require.False(t, diags.HasError())
 			if groupID != nil {
 				groupIDSet[*groupID] = struct{}{}
@@ -159,6 +159,6 @@ func TestLookup(t *testing.T) {
 
 	require.Equal(t, expectedGroupCount, len(groupIDSet))
 	require.Equal(t, expectedSystemCount, len(systemIDSet))
-	require.Equal(t, expectedGroupCount, len(sysredundancyinfo.BPToGroupToSystem[bpID]))
-	require.Equal(t, expectedSystemCount, len(sysredundancyinfo.BPToSystemToGroup[bpID]))
+	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))
+	require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID]))
 }
