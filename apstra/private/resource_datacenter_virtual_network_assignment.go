@@ -24,11 +24,9 @@ func (gm accessRedundancyGroupMembers) AsMapKeyedBySwitch() map[string]string {
 }
 
 type ResourceDatacenterVirtualNetworkAssignment struct {
-	ConfiguredLeafID             string                       `json:"configured_leaf_id"` // may be a leaf redundancy group ID or a leaf switch ID
-	ConfiguredLeafNodeType       apstra.NodeType              `json:"configured_leaf_node_type"`
-	ConfiguredAccessIDs          []string                     `json:"configured_access_ids"`
+	AccessIDs                    []string                     `json:"access_ids"`
 	AccessRedundancyGroupMembers accessRedundancyGroupMembers `json:"access_redundancy_group_members"`
-	PriorVLAN                    *int64                       `json:"prior_vlan"`
+	VLAN                         *int64                       `json:"vlan"`
 }
 
 func (vna *ResourceDatacenterVirtualNetworkAssignment) FetchRedundancyGroups(ctx context.Context, vnID string, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {

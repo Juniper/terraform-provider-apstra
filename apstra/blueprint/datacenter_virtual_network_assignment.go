@@ -17,23 +17,25 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type VirtualNetworkAssignment struct {
-	BlueprintID types.String       `tfsdk:"blueprint_id"`
-	VNID        types.String       `tfsdk:"virtual_network_id"`
-	LeafID      types.String       `tfsdk:"leaf_switch_id"`
-	LeafRGID    types.String       `tfsdk:"leaf_redundancy_group_id"`
+	BlueprintID types.String `tfsdk:"blueprint_id"`
+	VNID        types.String `tfsdk:"virtual_network_id"`
+	LeafID      types.String `tfsdk:"leaf_switch_id"`
+	//LeafRGID    types.String       `tfsdk:"leaf_redundancy_group_id"`
 	VLAN        types.Int64        `tfsdk:"vlan"`
 	IPv4Mode    types.String       `tfsdk:"ipv4_mode"`
 	IPv4Address cidrtypes.IPPrefix `tfsdk:"ipv4_address"`
 	IPv6Mode    types.String       `tfsdk:"ipv6_mode"`
 	IPv6Address cidrtypes.IPPrefix `tfsdk:"ipv6_address"`
 	AccessIDs   types.Set          `tfsdk:"access_ids"`
-	AccessRGIDs types.Map          `tfsdk:"access_rg_ids"`
+	//AccessRGIDs types.Map          `tfsdk:"access_rg_ids"`
 }
 
 func (vna *VirtualNetworkAssignment) DatasourceAttributes() map[string]datasourceSchema.Attribute {
@@ -50,10 +52,10 @@ func (vna *VirtualNetworkAssignment) DatasourceAttributes() map[string]datasourc
 			MarkdownDescription: "",
 			Computed:            true,
 		},
-		"leaf_redundancy_group_id": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
+		//"leaf_redundancy_group_id": datasourceSchema.StringAttribute{
+		//	MarkdownDescription: "",
+		//	Computed:            true,
+		//},
 		"vlan": datasourceSchema.Int64Attribute{
 			MarkdownDescription: "",
 			Computed:            true,
@@ -78,35 +80,38 @@ func (vna *VirtualNetworkAssignment) DatasourceAttributes() map[string]datasourc
 			MarkdownDescription: "",
 			Computed:            true,
 		},
-		"access_rg_ids": datasourceSchema.MapAttribute{
-			MarkdownDescription: "",
-			ElementType:         types.StringType,
-			Computed:            true,
-		},
+		//"access_rg_ids": datasourceSchema.MapAttribute{
+		//	MarkdownDescription: "",
+		//	ElementType:         types.StringType,
+		//	Computed:            true,
+		//},
 	}
 }
 
 func (vna *VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
 		"blueprint_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Blueprint ID",
+			MarkdownDescription: "ID of the Blueprint in which this Virtual Network Assignment is being configured.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"virtual_network_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Virtual network ID",
+			MarkdownDescription: "ID of the Virtual Network to be assigned to a Leaf Switch.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"leaf_switch_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "Leaf Switch node ID",
+			MarkdownDescription: "ID of the Leaf Switch to which the Virtual Network is being assigned.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
-		"leaf_redundancy_group_id": resourceSchema.StringAttribute{
-			MarkdownDescription: "If the Leaf Switch is part of a Redundancy Group, this attribute will contain the Redundancy Group ID. Otherwise `null`.",
-			Computed:            true,
-		},
+		//"leaf_redundancy_group_id": resourceSchema.StringAttribute{
+		//	MarkdownDescription: "If the Leaf Switch is part of a Redundancy Group, this attribute will contain the Redundancy Group ID. Otherwise `null`.",
+		//	Computed:            true,
+		//},
 		"vlan": resourceSchema.Int64Attribute{
 			MarkdownDescription: "VLAN to use when associating the Virtual Network with this Leaf Switch.",
 			Optional:            true,
@@ -165,7 +170,7 @@ func (vna *VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSch
 				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
 			},
 		},
-		"access_rg_ids": resourceSchema.MapAttribute{},
+		//"access_rg_ids": resourceSchema.MapAttribute{},
 	}
 }
 
